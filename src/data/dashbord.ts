@@ -1,0 +1,190 @@
+import { hent } from "../db";
+
+/**
+ * Tallene årsskjermen bygger på.
+ *
+ * Alle spørringene her filtrerer bort `teller_ikke = 1` — «ikke i økta» og
+ * `IV`. De verdiene er fravær av grunnlag, ikke et dårlig resultat, og skal
+ * aldri inngå i snitt eller sammenstilling. Filteret ligger her i
+ * spørringslaget, ikke i visningen, slik at ingen ny graf kan glemme det.
+ */
+
+// --------------------------------------------------------------- innsats
+
+export type Uketall = {
+  /** ISO-uke som "2026-34", til gruppering og sortering */
+  uke: string;
+  /** Mandagen i uka, til aksemerking */
+  forste: string;
+  gronn: number;
+  gul: number;
+  rod: number;
+};
+
+/**
+ * Skåringene per uke, fordelt på farge.
+ *
+ * Stolpehøyden er antall skåringer, ikke andel. Det er med vilje: en uke med
+ * to skåringer og en uke med tretti sier ikke det samme om klassen, og en
+ * andelsgraf ville skjult forskjellen.
+ */
+export async function hentInnsatsPerUke(
+  skolearId: string,
+  skolearFagId?: string | null,
+): Promise<Uketall[]> {
+  return hent<Uketall>(
+    `SELECT strftime('%Y-%W', o.dato)                        AS uke,
+            MIN(o.dato)                                      AS forste,
+            SUM(CASE WHEN sv.farge = 'gronn' THEN 1 ELSE 0 END) AS gronn,
+            SUM(CASE WHEN sv.farge = 'gul'   THEN 1 ELSE 0 END) AS gul,
+            SUM(CASE WHEN sv.farge = 'rod'   THEN 1 ELSE 0 END) AS rod
+       FROM skaring s
+       JOIN okt o          ON o.id = s.okt_id AND o.slettet IS NULL
+       JOIN skalaverdi sv  ON sv.id = s.skalaverdi_id
+       JOIN skolear_fag sf ON sf.id = o.skolear_fag_id AND sf.slettet IS NULL
+      WHERE s.slettet IS NULL
+        AND sv.teller_ikke = 0
+        AND sf.skolear_id = $1
+        AND ($2 IS NULL OR sf.id = $2)
+      GROUP BY uke
+      ORDER BY uke`,
+    [skolearId, skolearFagId ?? null],
+  );
+}
+
+// ----------------------------------------------------------- timeregnskap
+
+export type Fagtimer = {
+  skolearFagId: string;
+  kode: string;
+  navn: string;
+  farge: string | null;
+  /** Årstimetallet læreren har lagt inn. null = ikke satt */
+  arstimetall: number | null;
+  planlagtMin: number;
+  antallOkter: number;
+  /** Hvor mange av øktene som er avholdt, altså har minst én skåring */
+  avholdte: number;
+};
+
+/**
+ * Planlagte timer mot årstimetall, per fag.
+ *
+ * «Avholdt» utledes av at det finnes minst én skåring på økta (§3.3) — det er
+ * ikke et felt, og skal ikke bli et.
+ */
+export async function hentTimeregnskap(skolearId: string): Promise<Fagtimer[]> {
+  return hent<Fagtimer>(
+    `SELECT sf.id                                   AS skolearFagId,
+            f.kode                                  AS kode,
+            f.navn                                  AS navn,
+            f.farge                                 AS farge,
+            sf.arstimetall                          AS arstimetall,
+            COALESCE(SUM(o.varighet_min), 0)        AS planlagtMin,
+            COUNT(o.id)                             AS antallOkter,
+            COALESCE(SUM(
+              CASE WHEN EXISTS (
+                SELECT 1 FROM skaring s
+                 WHERE s.okt_id = o.id AND s.slettet IS NULL
+              ) THEN 1 ELSE 0 END), 0)              AS avholdte
+       FROM skolear_fag sf
+       JOIN fag f ON f.id = sf.fag_id
+       LEFT JOIN okt o ON o.skolear_fag_id = sf.id AND o.slettet IS NULL
+      WHERE sf.slettet IS NULL AND sf.skolear_id = $1
+      GROUP BY sf.id
+      ORDER BY f.kode`,
+    [skolearId],
+  );
+}
+
+// ------------------------------------------------------------ elever som glipper
+
+export type Glipp = {
+  elevId: string;
+  fornavn: string;
+  etternavn: string;
+  klasse: string | null;
+  /** Siste dato eleven ble skåret i år. null = aldri */
+  siste: string | null;
+  antall: number;
+};
+
+/**
+ * Elevene med færrest skåringer, og hvor lenge siden sist.
+ *
+ * Poenget er å avsløre dem du har oversett, ikke dem som har vært borte —
+ * derfor teller «ikke i økta» ikke med her heller. En elev du har registrert
+ * som fraværende er sett; en elev uten rader er ikke det.
+ */
+export async function hentGlipp(
+  skolearId: string,
+  grense = 8,
+): Promise<Glipp[]> {
+  return hent<Glipp>(
+    `SELECT e.id                       AS elevId,
+            e.fornavn                  AS fornavn,
+            e.etternavn                AS etternavn,
+            k.navn                     AS klasse,
+            MAX(o.dato)                AS siste,
+            COUNT(s.id)                AS antall
+       FROM elev e
+       JOIN elev_fag ef    ON ef.elev_id = e.id AND ef.slettet IS NULL
+       JOIN skolear_fag sf ON sf.id = ef.skolear_fag_id
+                          AND sf.slettet IS NULL AND sf.skolear_id = $1
+       LEFT JOIN elev_klasse ek ON ek.elev_id = e.id
+                          AND ek.skolear_id = $1 AND ek.slettet IS NULL
+       LEFT JOIN klasse k  ON k.id = ek.klasse_id AND k.slettet IS NULL
+       LEFT JOIN skaring s ON s.elev_id = e.id AND s.slettet IS NULL
+       LEFT JOIN okt o     ON o.id = s.okt_id AND o.slettet IS NULL
+                          AND o.skolear_fag_id = sf.id
+       LEFT JOIN skalaverdi sv ON sv.id = s.skalaverdi_id AND sv.teller_ikke = 0
+      WHERE e.slettet IS NULL AND (s.id IS NULL OR sv.id IS NOT NULL)
+      GROUP BY e.id
+      ORDER BY antall ASC, siste ASC
+      LIMIT $2`,
+    [skolearId, grense],
+  );
+}
+
+// --------------------------------------------------------- kommende vurderinger
+
+export type Kommende = {
+  vurderingId: string;
+  tittel: string;
+  frist: string;
+  kode: string;
+  farge: string | null;
+  /** Hvor mange elever som har fått et resultat */
+  fort: number;
+  elever: number;
+};
+
+/**
+ * Vurderinger med frist, nærmeste først. Tar med dem som har passert og
+ * ikke er ferdig ført — en glemt frist er nettopp det man vil se.
+ */
+export async function hentKommendeVurderinger(
+  skolearId: string,
+  grense = 6,
+): Promise<Kommende[]> {
+  return hent<Kommende>(
+    `SELECT v.id     AS vurderingId,
+            v.tittel AS tittel,
+            v.frist  AS frist,
+            f.kode   AS kode,
+            f.farge  AS farge,
+            (SELECT COUNT(*) FROM vurderingsresultat vr
+              WHERE vr.vurdering_id = v.id AND vr.slettet IS NULL
+                AND vr.skalaverdi_id IS NOT NULL)        AS fort,
+            (SELECT COUNT(*) FROM elev_fag ef
+              WHERE ef.skolear_fag_id = v.skolear_fag_id
+                AND ef.slettet IS NULL)                  AS elever
+       FROM vurdering v
+       JOIN skolear_fag sf ON sf.id = v.skolear_fag_id AND sf.slettet IS NULL
+       JOIN fag f          ON f.id = sf.fag_id
+      WHERE v.slettet IS NULL AND sf.skolear_id = $1 AND v.frist IS NOT NULL
+      ORDER BY v.frist ASC
+      LIMIT $2`,
+    [skolearId, grense],
+  );
+}

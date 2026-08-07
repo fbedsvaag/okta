@@ -3,12 +3,15 @@ import type { Skolear } from "../data/skolear";
 import type { FagIAr } from "../data/fag";
 import { hentOkter, type Okt } from "../data/okter";
 import { Knapp, Tomtilstand } from "../ui/felles";
+import { Arsoversikt } from "./Arsoversikt";
 
 /**
- * I dag — startskjermen, SPEC §4.1.
+ * I dag — startskjermen, SPEC §4.1, med årsoversikten under.
  *
- * Dagens økter først, så resten av uka. Ikke et dashboard: ingen kort med
- * store tall, ingen grafer (§13). Statistikk over skoleåret hører til §10.
+ * MERK: §13 sier «ingen grafer på forsiden», og §10 legger et rikere dashbord
+ * til senere. Årsoversikten er lagt inn etter uttrykkelig beslutning fra
+ * eieren, som overstyrer begge. SPEC.md er ikke skrevet om — koden avviker
+ * altså bevisst fra spec-en på dette punktet.
  */
 export function IDag({
   skolear,
@@ -18,7 +21,7 @@ export function IDag({
 }: {
   skolear: Skolear;
   fag: FagIAr[];
-  onGaTil: (visning: "fag" | "elever" | "okter") => void;
+  onGaTil: (visning: "fag" | "elever" | "okter" | "vurderinger") => void;
   onApneOkt: (id: string) => void;
 }) {
   const [okter, setOkter] = useState<Okt[]>([]);
@@ -37,7 +40,7 @@ export function IDag({
   const kommende = okter.filter((o) => o.dato > idag).slice(0, 3);
 
   return (
-    <div className="max-w-2xl">
+    <div className="max-w-6xl">
       <h1 className="text-overskrift font-semibold first-letter:uppercase">
         {langDato(idag)}
       </h1>
@@ -98,6 +101,12 @@ export function IDag({
           ))}
         </Bolk>
       )}
+
+      <Arsoversikt
+        skolearId={skolear.id}
+        onApneElev={() => onGaTil("elever")}
+        onApneVurderinger={() => onGaTil("vurderinger")}
+      />
     </div>
   );
 }

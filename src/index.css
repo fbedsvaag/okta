@@ -220,6 +220,33 @@ html {
 }
 
 /*
+ * TEMA.
+ *
+ * Tokenene over er det lyse temaet, og ligger i :root via @theme. Et mørkt
+ * tema er ikke en ny kodesti — det er de samme navnene med andre verdier
+ * under en selektor. Ingen komponent må røres, for ingen av dem kjenner en
+ * eneste hex-kode lenger.
+ *
+ * Strukturen står klar. Verdiene er bevisst ikke fylt ut: klasserom er lyse,
+ * og §13 setter mørk modus lavt. Når den skal fylles, er det nøyaktig disse
+ * navnene som trenger en mørk verdi — ikke flere, ikke færre.
+ *
+ * MERK: trafikklyset må VELGES på nytt mot mørk flate, ikke snus automatisk.
+ * En farge som er lesbar på papirhvitt er ikke nødvendigvis lesbar på svart,
+ * og de tre må fortsatt skilles fra hverandre ved fargeblindhet.
+ */
+:root[data-tema="mork"] {
+  /* Flater:  --color-bord --color-ark --color-flate --color-flate-svak --color-valgt
+     Blekk:   --color-blekk --color-blekk-dempet --color-blekk-svak --color-blekk-svakest
+     Linjer:  --color-linje-svak --color-linje --color-linje-medium --color-linje-sterk
+     Aksent:  --color-aksent --color-aksent-mork --color-aksent-dyp --color-aksent-dypere
+     Lys:     --color-lys-gronn --color-lys-gronngul --color-lys-gul
+              --color-lys-oransje --color-lys-rod --color-lys-borte
+     Status:  --color-feil --color-feil-mork --color-varsel
+              --color-feil-flate --color-helligdag-flate --color-fri-flate */
+}
+
+/*
  * Sidepanelene som glir inn fra høyre, med kurvene fra merkevareguiden.
  * Inn er roligere enn ut: 180 ms mot 130 ms. Det er den vanlige asymmetrien —
  * noe som kommer skal rekke å bli sett, noe som går skal komme seg vekk.
