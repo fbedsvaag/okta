@@ -66,7 +66,7 @@ export function Perioder({
         <select
           value={fagId}
           onChange={(e) => setFagId(e.target.value)}
-          className="rounded border border-neutral-300 bg-white px-2 py-1.5 text-[13px]"
+          className="rounded border border-linje bg-ark px-2 py-1.5 text-brod"
         >
           {fag.map((f) => (
             <option key={f.id} value={f.id}>
@@ -75,7 +75,7 @@ export function Perioder({
           ))}
         </select>
 
-        <span className="text-[13px] tabular-nums text-neutral-600">
+        <span className="text-brod tabular-nums text-blekk-dempet">
           {okter.length} økter · {planlagt} timer planlagt
           {valgtFag?.arstimetall != null && (
             <>
@@ -101,7 +101,7 @@ export function Perioder({
       </div>
 
       {kolliderer.length > 0 && (
-        <p className="mb-3 text-[12px] text-feil">
+        <p className="mb-3 text-liten text-feil">
           ! {kolliderer.map(([a, b]) => `${a.navn} og ${b.navn}`).join(", ")}{" "}
           overlapper i tid. Øktene i overlappet havner i den første av dem.
         </p>
@@ -180,7 +180,7 @@ function Tidslinje({
 
   return (
     <div>
-      <div className="relative h-9 border-y border-neutral-200 bg-neutral-50">
+      <div className="relative h-9 border-y border-linje-medium bg-flate">
         {med.map((b) => {
           const v = andel(b.periode!.start!);
           const h = andel(b.periode!.slutt!) - v;
@@ -188,20 +188,20 @@ function Tidslinje({
             <div
               key={b.periode!.id}
               title={`${b.periode!.navn} · ${b.okter.length} økter · ${timer(b.minutter)} t`}
-              className="absolute top-1 flex h-7 items-center overflow-hidden rounded-sm border border-na-periode-kant bg-na-periode px-1.5"
+              className="absolute top-1 flex h-7 items-center overflow-hidden rounded-sm border border-linje-sterk bg-flate-svak px-1.5"
               style={{
                 left: `${Math.max(0, v) * 100}%`,
                 width: `${Math.max(0.02, h) * 100}%`,
               }}
             >
-              <span className="truncate text-[11px] text-na-blaa">
+              <span className="truncate text-etikett text-aksent">
                 {b.periode!.navn}
               </span>
             </div>
           );
         })}
       </div>
-      <div className="flex justify-between pt-0.5 text-[10px] tabular-nums text-neutral-400">
+      <div className="flex justify-between pt-0.5 text-mikro tabular-nums text-blekk-svak">
         <span>{skolear.start}</span>
         <span>{skolear.slutt}</span>
       </div>
@@ -226,7 +226,7 @@ function Bunke({
 
   return (
     <section className="mb-5">
-      <header className="flex flex-wrap items-baseline gap-2 border-b border-neutral-300 pb-1">
+      <header className="flex flex-wrap items-baseline gap-2 border-b border-linje pb-1">
         {p ? (
           <>
             <input
@@ -239,7 +239,7 @@ function Bunke({
                   onEndret();
                 }
               }}
-              className="rounded border border-transparent px-1 py-0.5 text-[14px] font-semibold hover:border-neutral-300 focus:border-na-blaa focus:outline-none"
+              className="rounded border border-transparent px-1 py-0.5 text-medium font-semibold hover:border-linje focus:border-aksent focus:outline-none"
             />
             <Spennfelt
               verdi={p.start}
@@ -248,7 +248,7 @@ function Bunke({
                 onEndret();
               }}
             />
-            <span className="text-neutral-400">–</span>
+            <span className="text-blekk-svak">–</span>
             <Spennfelt
               verdi={p.slutt}
               onLagre={async (v) => {
@@ -258,15 +258,15 @@ function Bunke({
             />
           </>
         ) : (
-          <span className="text-[14px] font-semibold text-neutral-500">
+          <span className="text-medium font-semibold text-blekk-dempet">
             Uten periode
           </span>
         )}
 
-        <span className="ml-auto text-[12px] tabular-nums text-neutral-500">
+        <span className="ml-auto text-liten tabular-nums text-blekk-dempet">
           {bunke.okter.length} økter · {timer(bunke.minutter)} t
           {p && bunke.faktiskFra && (bunke.faktiskFra !== p.start || bunke.faktiskTil !== p.slutt) && (
-            <span className="ml-2 text-neutral-400">
+            <span className="ml-2 text-blekk-svak">
               faktisk {bunke.faktiskFra} – {bunke.faktiskTil}
             </span>
           )}
@@ -284,7 +284,7 @@ function Bunke({
               await slettPeriode(p.id);
               onEndret();
             }}
-            className="text-[12px] text-neutral-400 hover:text-red-700"
+            className="text-liten text-blekk-svak hover:text-red-700"
           >
             Slett
           </button>
@@ -292,7 +292,7 @@ function Bunke({
       </header>
 
       {bunke.okter.length === 0 ? (
-        <p className="py-2 text-[13px] text-neutral-400">
+        <p className="py-2 text-brod text-blekk-svak">
           Ingen økter i dette spennet ennå.
         </p>
       ) : (
@@ -301,19 +301,19 @@ function Bunke({
             <button
               key={o.id}
               onClick={() => onApneOkt(o.id)}
-              className="flex w-full items-center gap-3 border-b border-neutral-100 py-1 text-left text-[13px] hover:bg-neutral-50"
+              className="flex w-full items-center gap-3 border-b border-linje-svak py-1 text-left text-brod hover:bg-flate"
             >
-              <span className="w-8 shrink-0 tabular-nums text-neutral-400">
+              <span className="w-8 shrink-0 tabular-nums text-blekk-svak">
                 {ukenummer(o.dato)}
               </span>
-              <span className="w-24 shrink-0 tabular-nums text-neutral-600">
+              <span className="w-24 shrink-0 tabular-nums text-blekk-dempet">
                 {kortDato(o.dato)}
               </span>
-              <span className="w-16 shrink-0 text-right tabular-nums text-neutral-500">
+              <span className="w-16 shrink-0 text-right tabular-nums text-blekk-dempet">
                 {o.varighetMin} min
               </span>
               <span className="flex-1 truncate">
-                {o.tema ?? <span className="text-neutral-400">—</span>}
+                {o.tema ?? <span className="text-blekk-svak">—</span>}
               </span>
             </button>
           ))}
@@ -338,7 +338,7 @@ function Spennfelt({
       onBlur={(e) => {
         if (e.target.value !== (verdi ?? "")) onLagre(e.target.value || null);
       }}
-      className="rounded border border-transparent px-1 py-0.5 text-[12px] tabular-nums text-neutral-600 hover:border-neutral-300 focus:border-na-blaa focus:outline-none"
+      className="rounded border border-transparent px-1 py-0.5 text-liten tabular-nums text-blekk-dempet hover:border-linje focus:border-aksent focus:outline-none"
     />
   );
 }
@@ -367,7 +367,7 @@ function NyPeriode({
   }
 
   return (
-    <div className="mb-4 flex flex-wrap items-end gap-3 border border-neutral-300 bg-neutral-50 p-3">
+    <div className="mb-4 flex flex-wrap items-end gap-3 border border-linje bg-flate p-3">
       <Felt
         etikett="Navn"
         verdi={navn}

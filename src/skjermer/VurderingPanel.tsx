@@ -122,20 +122,20 @@ export function VurderingPanel({
   }
 
   return (
-    <aside className="flex h-full flex-col border-l border-neutral-300 bg-white">
-      <header className="flex items-baseline gap-3 border-b border-neutral-200 px-5 py-3">
+    <aside className="flex h-full flex-col border-l border-linje bg-ark">
+      <header className="flex items-baseline gap-3 border-b border-linje-medium px-5 py-3">
         <span
           aria-hidden
           className="h-3.5 w-[3px] rounded-full"
-          style={{ background: vurdering.farge ?? "var(--color-na-fagstrek)" }}
+          style={{ background: vurdering.farge ?? "var(--color-linje-sterk)" }}
         />
-        <span className="text-[13px] font-semibold">{vurdering.fagKode}</span>
-        <span className="truncate text-[13px] text-neutral-600">
+        <span className="text-brod font-semibold">{vurdering.fagKode}</span>
+        <span className="truncate text-brod text-blekk-dempet">
           {vurdering.tittel}
         </span>
         <button
           onClick={onLukk}
-          className="ml-auto shrink-0 text-[12px] text-neutral-400 hover:text-neutral-900"
+          className="ml-auto shrink-0 text-liten text-blekk-svak hover:text-blekk"
         >
           Lukk (Esc)
         </button>
@@ -148,18 +148,18 @@ export function VurderingPanel({
           onEndret={onEndret}
         />
 
-        <div className="flex items-baseline justify-between border-y border-neutral-200 bg-neutral-50 px-5 py-1.5">
-          <span className="text-[11px] uppercase tracking-wide text-neutral-500">
+        <div className="flex items-baseline justify-between border-y border-linje-medium bg-flate px-5 py-1.5">
+          <span className="text-etikett uppercase tracking-etikett text-blekk-dempet">
             Resultater
           </span>
-          <span className="text-[12px] tabular-nums text-neutral-500">
+          <span className="text-liten tabular-nums text-blekk-dempet">
             {antallFort} av {elever.length} ført
           </span>
         </div>
 
         <div ref={liste} tabIndex={0} onKeyDown={tastetrykk} className="outline-none">
           {elever.length === 0 && (
-            <p className="px-5 py-6 text-center text-[13px] text-neutral-500">
+            <p className="px-5 py-6 text-center text-brod text-blekk-dempet">
               Ingen elever er koblet til {vurdering.fagKode} ennå.
             </p>
           )}
@@ -196,7 +196,7 @@ export function VurderingPanel({
               onLukk();
               onEndret();
             }}
-            className="text-[12px] text-neutral-400 hover:text-red-700"
+            className="text-liten text-blekk-svak hover:text-red-700"
           >
             Slett vurderingen
           </button>
@@ -249,18 +249,18 @@ function ElevRad({
   return (
     <div
       onClick={onKlikk}
-      className={`flex cursor-default items-center gap-2 border-b border-neutral-100 px-5 py-1 ${
-        markert ? "bg-na-blaa-flate" : "hover:bg-neutral-50"
+      className={`flex cursor-default items-center gap-2 border-b border-linje-svak px-5 py-1 ${
+        markert ? "bg-valgt" : "hover:bg-flate"
       }`}
     >
-      <span className="w-3 text-[11px] text-na-blaa">{markert ? "▸" : ""}</span>
+      <span className="w-3 text-etikett text-aksent">{markert ? "▸" : ""}</span>
       <button
         onClick={(e) => {
           e.stopPropagation();
           onApneElev();
         }}
         title="Åpne eleven"
-        className="w-44 shrink-0 truncate text-left text-[13px] hover:text-na-blaa hover:underline"
+        className="w-44 shrink-0 truncate text-left text-brod hover:text-aksent hover:underline"
       >
         {elev.fornavn} {elev.etternavn}
       </button>
@@ -271,10 +271,10 @@ function ElevRad({
           onKommentar();
         }}
         title={elev.kommentar ?? "Legg til kommentar (K)"}
-        className={`flex-1 truncate text-left text-[12px] italic ${
+        className={`flex-1 truncate text-left text-liten italic ${
           elev.kommentar
-            ? "text-neutral-600 hover:text-neutral-900"
-            : "text-neutral-300 hover:text-neutral-600"
+            ? "text-blekk-dempet hover:text-blekk"
+            : "text-blekk-svakest hover:text-blekk-dempet"
         }`}
       >
         {elev.kommentar ?? "+ kommentar"}
@@ -283,7 +283,7 @@ function ElevRad({
       <label
         onClick={(e) => e.stopPropagation()}
         title="Levert"
-        className="flex items-center text-[11px] text-neutral-400"
+        className="flex items-center text-etikett text-blekk-svak"
       >
         <input
           type="checkbox"
@@ -301,10 +301,10 @@ function ElevRad({
               onVelg(v);
             }}
             title={`${tastekart.get(v.id) ?? ""} — ${v.kode}${v.etikett ? `: ${v.etikett}` : ""}`}
-            className={`min-w-7 rounded-sm border px-1.5 py-0.5 text-[12px] tabular-nums ${
+            className={`min-w-7 rounded-sm border px-1.5 py-0.5 text-liten tabular-nums ${
               elev.skalaverdiId === v.id
-                ? "border-na-blaa bg-na-blaa text-white"
-                : "border-neutral-300 text-neutral-600 hover:bg-neutral-100"
+                ? "border-aksent bg-aksent text-white"
+                : "border-linje text-blekk-dempet hover:bg-flate"
             }`}
           >
             {v.kode}
@@ -435,8 +435,8 @@ function Kommentar({
   const [tekst, setTekst] = useState(elev.kommentar ?? "");
 
   return (
-    <div className="border-t border-neutral-300 bg-neutral-50 px-5 py-3">
-      <p className="mb-1 text-[11px] uppercase tracking-wide text-neutral-500">
+    <div className="border-t border-linje bg-flate px-5 py-3">
+      <p className="mb-1 text-etikett uppercase tracking-etikett text-blekk-dempet">
         Kommentar · {elev.fornavn} {elev.etternavn}
       </p>
       <textarea
@@ -450,11 +450,11 @@ function Kommentar({
         }}
         className={feltStil}
       />
-      <div className="mt-1 flex gap-3 text-[12px] text-neutral-500">
-        <button onClick={() => onLukk(tekst)} className="hover:text-neutral-900">
+      <div className="mt-1 flex gap-3 text-liten text-blekk-dempet">
+        <button onClick={() => onLukk(tekst)} className="hover:text-blekk">
           Lagre (⌘↵)
         </button>
-        <button onClick={() => onLukk(null)} className="hover:text-neutral-900">
+        <button onClick={() => onLukk(null)} className="hover:text-blekk">
           Avbryt (Esc)
         </button>
       </div>
@@ -463,7 +463,7 @@ function Kommentar({
 }
 
 const feltStil =
-  "w-full rounded border border-neutral-300 bg-white px-2 py-1 text-[13px] tabular-nums outline-none placeholder:text-neutral-400 focus:border-na-blaa";
+  "w-full rounded border border-linje bg-ark px-2 py-1 text-brod tabular-nums outline-none placeholder:text-blekk-svak focus:border-aksent";
 
 function Linje({
   etikett,
@@ -474,7 +474,7 @@ function Linje({
 }) {
   return (
     <label className="block w-full">
-      <span className="mb-0.5 block text-[11px] uppercase tracking-wide text-neutral-500">
+      <span className="mb-0.5 block text-etikett uppercase tracking-etikett text-blekk-dempet">
         {etikett}
       </span>
       {children}

@@ -338,7 +338,7 @@ function Rute({ rute, onKlikk }: { rute: HeatmapRute; onKlikk: () => void }) {
       className="h-3.5 w-3.5 rounded-[2px] border"
       style={
         !avholdt
-          ? { borderColor: "var(--color-na-kant-svak)", borderStyle: "dotted", background: "transparent" }
+          ? { borderColor: "var(--color-linje-medium)", borderStyle: "dotted", background: "transparent" }
           : ikkeIOkta
             ? { borderColor: NOYTRAL, borderStyle: "dashed", background: "transparent" }
             : { borderColor: farge ?? NOYTRAL, background: farge ?? "transparent" }

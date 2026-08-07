@@ -164,11 +164,16 @@
    * Formen bærer betydningen sammen med fargen: fylt, halvfylt, ring, tynn ring.
    */
   --color-lys-gronn: #3f9d49;
+  --color-lys-gronngul: #8ba33e;
   --color-lys-gul: #d9a92f;
   --color-lys-oransje: #cf7a35;
   --color-lys-rod: #c04a3d;
   --color-lys-borte: #b6bcc4;
 
+  --color-varsel: #8a5a00;
+  --color-feil-flate: #fdf0ef;
+  --color-helligdag-flate: #fbf3f3;
+  --color-fri-flate: #f6f4f0;
   --color-feil: #b3261e;
   --color-feil-mork: #7a1a14;
 
@@ -179,6 +184,7 @@
   --text-brod: 13px;
   --text-medium: 14px;
   --text-tittel: 15px;
+  --text-overskrift: 17px;
   --tracking-etikett: 0.05em;
 
   /* Radier. Skarpt, ikke avrundet — dette er et skjema, ikke et kort. */
@@ -206,31 +212,10 @@
   --shadow-ark: 0 4px 10px rgba(36, 31, 51, 0.16), 0 12px 32px rgba(36, 31, 51, 0.12);
   --shadow-dyp: 0 8px 20px rgba(36, 31, 51, 0.22), 0 24px 60px rgba(36, 31, 51, 0.18);
 
-  /* =====================================================================
-   * DAGENS VERDIER — uendret. Disse er de samme hex-kodene som lå strødd
-   * i komponentene, bare samlet og navngitt. Ingenting skal se annerledes
-   * ut av at de flyttet hit. `na-` betyr nåværende, og gruppa tømmes
-   * etter hvert som skjermene går over til paletten over.
-   * ===================================================================== */
-  --color-na-blaa: #1d4e7c;
-  --color-na-blaa-mork: #194365;
-  --color-na-blaa-flate: #eaf0f6;
-  --color-na-blaa-svak: #f4f7fa;
-  --color-na-periode: #e8eff6;
-  --color-na-periode-kant: #c3d2e0;
-  --color-na-varsel: #8a5a00;
-  --color-na-ok: #2e7d32;
-  --color-na-konflikt: #fdf0ef;
-  --color-na-helligdag: #fbf3f3;
-  --color-na-fri: #f6f4f0;
-  --color-na-fagstrek: #c9c9c9;
-  --color-na-fagmerke: #6b6b6b;
-  --color-na-kant: #d4d4d4;
-  --color-na-kant-svak: #e5e5e5;
 }
 
 html {
-  background: #fff;
+  background: var(--color-bord);
   font-family: var(--font-sans);
 }
 

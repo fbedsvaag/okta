@@ -38,10 +38,10 @@ export function IDag({
 
   return (
     <div className="max-w-2xl">
-      <h1 className="text-[17px] font-semibold first-letter:uppercase">
+      <h1 className="text-overskrift font-semibold first-letter:uppercase">
         {langDato(idag)}
       </h1>
-      <p className="mt-1 text-[13px] text-neutral-500">
+      <p className="mt-1 text-brod text-blekk-dempet">
         Skoleåret {skolear.navn}
       </p>
 
@@ -65,7 +65,7 @@ export function IDag({
             }
           />
         ) : (
-          <p className="py-2 text-[13px] text-neutral-500">
+          <p className="py-2 text-brod text-blekk-dempet">
             Ingen økter i dag.
           </p>
         )}
@@ -75,7 +75,7 @@ export function IDag({
         <Bolk tittel="Resten av uka">
           {grupperPaDag(uka).map(([dato, gruppe]) => (
             <div key={dato}>
-              <p className="mt-2 text-[12px] text-neutral-500 first-letter:uppercase">
+              <p className="mt-2 text-liten text-blekk-dempet first-letter:uppercase">
                 {langDato(dato)}
               </p>
               {gruppe.map((o) => (
@@ -90,7 +90,7 @@ export function IDag({
         <Bolk tittel="Neste økter">
           {kommende.map((o) => (
             <div key={o.id}>
-              <p className="mt-2 text-[12px] text-neutral-500 first-letter:uppercase">
+              <p className="mt-2 text-liten text-blekk-dempet first-letter:uppercase">
                 {langDato(o.dato)}
               </p>
               <OktLinje okt={o} onApne={onApneOkt} />
@@ -105,7 +105,7 @@ export function IDag({
 function Bolk({ tittel, children }: { tittel: string; children: React.ReactNode }) {
   return (
     <section className="mt-6">
-      <h2 className="mb-1 border-b border-neutral-200 pb-1 text-[11px] uppercase tracking-wide text-neutral-500">
+      <h2 className="mb-1 border-b border-linje-medium pb-1 text-etikett uppercase tracking-etikett text-blekk-dempet">
         {tittel}
       </h2>
       {children}
@@ -117,21 +117,21 @@ function OktLinje({ okt, onApne }: { okt: Okt; onApne: (id: string) => void }) {
   return (
     <button
       onClick={() => onApne(okt.id)}
-      className="flex w-full items-center gap-3 border-b border-neutral-100 py-1.5 text-left text-[13px] hover:bg-neutral-50"
+      className="flex w-full items-center gap-3 border-b border-linje-svak py-1.5 text-left text-brod hover:bg-flate"
     >
       <span
         aria-hidden
         className="h-3.5 w-[3px] shrink-0 rounded-full"
-        style={{ background: okt.farge ?? "var(--color-na-fagstrek)" }}
+        style={{ background: okt.farge ?? "var(--color-linje-sterk)" }}
       />
       <span className="w-12 shrink-0 font-medium">{okt.fagKode}</span>
-      <span className="w-12 shrink-0 tabular-nums text-neutral-500">
+      <span className="w-12 shrink-0 tabular-nums text-blekk-dempet">
         {okt.klokkeslett ?? "–"}
       </span>
       <span className="flex-1 truncate">
-        {okt.tema ?? <span className="text-neutral-400">—</span>}
+        {okt.tema ?? <span className="text-blekk-svak">—</span>}
       </span>
-      <span className="shrink-0 tabular-nums text-neutral-500">
+      <span className="shrink-0 tabular-nums text-blekk-dempet">
         {okt.skaret === 0
           ? ""
           : okt.skaret >= okt.elever

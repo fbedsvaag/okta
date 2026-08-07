@@ -83,18 +83,18 @@ export function Skoleruta({
 
       <Bolk tittel="Ferier og fridager">
         {fridager.length === 0 ? (
-          <p className="py-1 text-[13px] text-neutral-400">
+          <p className="py-1 text-brod text-blekk-svak">
             Ingen lagt inn ennå. Høstferie, juleferie, vinterferie og
             planleggingsdager hører hjemme her.
           </p>
         ) : (
-          <table className="w-full text-[13px]">
+          <table className="w-full text-brod">
             <tbody>
               {fridager.map((f) => (
-                <tr key={f.id} className="border-b border-neutral-100">
+                <tr key={f.id} className="border-b border-linje-svak">
                   <td className="py-1.5">{f.navn}</td>
-                  <td className="w-24 py-1.5 text-neutral-500">{TYPENAVN[f.type]}</td>
-                  <td className="w-44 py-1.5 tabular-nums text-neutral-600">
+                  <td className="w-24 py-1.5 text-blekk-dempet">{TYPENAVN[f.type]}</td>
+                  <td className="w-44 py-1.5 tabular-nums text-blekk-dempet">
                     {kort(f.fra)}
                     {f.til !== f.fra && ` – ${kort(f.til)}`}
                   </td>
@@ -104,7 +104,7 @@ export function Skoleruta({
                         await slettFridag(f.id);
                         await last();
                       }}
-                      className="text-[12px] text-neutral-400 hover:text-red-700"
+                      className="text-liten text-blekk-svak hover:text-red-700"
                     >
                       Slett
                     </button>
@@ -119,17 +119,17 @@ export function Skoleruta({
       </Bolk>
 
       <Bolk tittel={`Røde dager i ${skolear.navn}`}>
-        <p className="mb-2 text-[12px] text-neutral-500">
+        <p className="mb-2 text-liten text-blekk-dempet">
           Regnes ut fra påsken og trenger ingen vedlikehold. Serier hopper over
           dem automatisk.
         </p>
-        <ul className="columns-2 text-[13px]">
+        <ul className="columns-2 text-brod">
           {rode.map((r) => (
             <li key={r.dato + r.navn} className="flex gap-2 py-0.5">
-              <span className="w-24 tabular-nums text-neutral-600">
+              <span className="w-24 tabular-nums text-blekk-dempet">
                 {kort(r.dato)}
               </span>
-              <span className="text-neutral-500">{r.navn}</span>
+              <span className="text-blekk-dempet">{r.navn}</span>
             </li>
           ))}
         </ul>
@@ -167,7 +167,7 @@ function NyFridag({
   }
 
   return (
-    <div className="mt-3 flex flex-wrap items-end gap-2 border-t border-neutral-200 pt-3">
+    <div className="mt-3 flex flex-wrap items-end gap-2 border-t border-linje-medium pt-3">
       <Felt
         etikett="Navn"
         verdi={navn}
@@ -202,11 +202,11 @@ function NyFridag({
 }
 
 const felt =
-  "rounded border border-neutral-300 bg-white px-2 py-1.5 text-[13px] tabular-nums";
+  "rounded border border-linje bg-ark px-2 py-1.5 text-brod tabular-nums";
 
 function Etikett({ children }: { children: React.ReactNode }) {
   return (
-    <span className="mb-1 block text-[11px] uppercase tracking-wide text-neutral-500">
+    <span className="mb-1 block text-etikett uppercase tracking-etikett text-blekk-dempet">
       {children}
     </span>
   );
@@ -215,7 +215,7 @@ function Etikett({ children }: { children: React.ReactNode }) {
 function Bolk({ tittel, children }: { tittel: string; children: React.ReactNode }) {
   return (
     <section className="mb-7">
-      <h2 className="mb-2 border-b border-neutral-200 pb-1 text-[11px] uppercase tracking-wide text-neutral-500">
+      <h2 className="mb-2 border-b border-linje-medium pb-1 text-etikett uppercase tracking-etikett text-blekk-dempet">
         {tittel}
       </h2>
       {children}

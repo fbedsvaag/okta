@@ -53,8 +53,8 @@ export function Fag({
     <div className="flex h-full overflow-hidden">
       <div className={`liste-bredde min-w-0 overflow-y-auto ${glir ? "hidden w-full pr-4 lg:block lg:w-1/3" : "w-full max-w-4xl"}`}>
       <div className="flex items-baseline justify-between">
-        <h2 className="text-[15px] font-semibold">Fag i dette skoleåret</h2>
-        <label className="flex items-center gap-2 text-[12px] text-neutral-500">
+        <h2 className="text-tittel font-semibold">Fag i dette skoleåret</h2>
+        <label className="flex items-center gap-2 text-liten text-blekk-dempet">
           <input
             type="checkbox"
             checked={rediger}
@@ -66,7 +66,7 @@ export function Fag({
           Rediger
         </label>
       </div>
-      <p className="mt-1 text-[13px] text-neutral-500">
+      <p className="mt-1 text-brod text-blekk-dempet">
         {rediger
           ? "Feltene lagrer når du forlater dem. Escape angrer."
           : "Klikk på et fag for å åpne det. Slå på Rediger for å endre feltene."}
@@ -78,9 +78,9 @@ export function Fag({
         </div>
       ) : (
         <div className="overflow-x-auto">
-        <table className="mt-5 w-full min-w-[38rem] text-[13px]">
+        <table className="mt-5 w-full min-w-[38rem] text-brod">
           <thead>
-            <tr className="border-b border-neutral-300 text-left text-[11px] uppercase tracking-wide text-neutral-500">
+            <tr className="border-b border-linje text-left text-etikett uppercase tracking-etikett text-blekk-dempet">
               <th className="w-6 py-1 font-normal"></th>
               <th className="w-28 py-1 font-normal">Kode</th>
               <th className="py-1 font-normal">Navn</th>
@@ -155,8 +155,8 @@ function FagRad({
   if (!rediger) {
     return (
       <tr
-        className={`cursor-pointer border-b border-neutral-100 ${
-          valgt ? "bg-na-blaa-flate" : "hover:bg-na-blaa-svak"
+        className={`cursor-pointer border-b border-linje-svak ${
+          valgt ? "bg-valgt" : "hover:bg-flate-svak"
         }`}
         onClick={onApne}
       >
@@ -164,7 +164,7 @@ function FagRad({
           <span
             aria-hidden
             className="block h-4 w-[3px] rounded-full"
-            style={{ background: fag.farge ?? "var(--color-na-fagstrek)" }}
+            style={{ background: fag.farge ?? "var(--color-linje-sterk)" }}
           />
         </td>
         <td className="py-1.5 font-medium">{fag.kode}</td>
@@ -174,10 +174,10 @@ function FagRad({
           De ble tidligere skjult for å spare bredde, men det er nettopp
           tallene man vil se mens man ser på faget.
         */}
-        <td className="py-1.5 text-right tabular-nums text-neutral-500">
+        <td className="py-1.5 text-right tabular-nums text-blekk-dempet">
           {fag.arstimetall ?? "—"}
         </td>
-        <td className="py-1.5 text-right tabular-nums text-neutral-500">
+        <td className="py-1.5 text-right tabular-nums text-blekk-dempet">
           {fag.standardVarighetMin ?? `${globalVarighet} (arvet)`}
         </td>
         <td />
@@ -186,17 +186,17 @@ function FagRad({
   }
 
   return (
-    <tr className="border-b border-neutral-100">
+    <tr className="border-b border-linje-svak">
       <td className="py-1.5">
         <div className="relative">
           <button
             onClick={() => setVisFarger((v) => !v)}
             title="Bytt farge"
             className="block h-4 w-[3px] rounded-full"
-            style={{ background: fag.farge ?? "var(--color-na-fagstrek)" }}
+            style={{ background: fag.farge ?? "var(--color-linje-sterk)" }}
           />
           {visFarger && (
-            <div className="absolute left-0 top-full z-20 mt-1 w-52 rounded border border-neutral-300 bg-white p-2 shadow-lg">
+            <div className="absolute left-0 top-full z-20 mt-1 w-52 rounded border border-linje bg-ark p-2 shadow-lg">
               <div className="grid grid-cols-6 gap-1">
                 {FAGFARGER.map((farge) => (
                   <button
@@ -207,15 +207,15 @@ function FagRad({
                       setVisFarger(false);
                       onEndret();
                     }}
-                    className={`h-5 w-5 rounded-sm ring-offset-1 hover:ring-1 hover:ring-neutral-400 ${
-                      fag.farge === farge ? "ring-1 ring-neutral-700" : ""
+                    className={`h-5 w-5 rounded-sm ring-offset-1 hover:ring-1 hover:ring-linje-sterk ${
+                      fag.farge === farge ? "ring-1 ring-blekk-dempet" : ""
                     }`}
                     style={{ background: farge }}
                   />
                 ))}
               </div>
 
-              <label className="mt-2 flex items-center gap-2 border-t border-neutral-200 pt-2 text-[12px] text-neutral-500">
+              <label className="mt-2 flex items-center gap-2 border-t border-linje-medium pt-2 text-liten text-blekk-dempet">
                 <input
                   type="color"
                   // Hex, ikke token: <input type="color"> godtar bare en
@@ -225,14 +225,14 @@ function FagRad({
                     await endreFag(fag.fagId, { farge: e.target.value });
                     onEndret();
                   }}
-                  className="h-6 w-8 cursor-pointer rounded border border-neutral-300 bg-white p-0.5"
+                  className="h-6 w-8 cursor-pointer rounded border border-linje bg-ark p-0.5"
                 />
                 Egen farge
               </label>
 
               <button
                 onClick={() => setVisFarger(false)}
-                className="mt-1 w-full text-[12px] text-neutral-500 hover:text-neutral-900"
+                className="mt-1 w-full text-liten text-blekk-dempet hover:text-blekk"
               >
                 Lukk
               </button>
@@ -302,7 +302,7 @@ function FagRad({
             await fjernFagFraAr(fag.id);
             onEndret();
           }}
-          className="text-[12px] text-neutral-400 hover:text-red-700"
+          className="text-liten text-blekk-svak hover:text-red-700"
         >
           Fjern
         </button>
@@ -345,7 +345,7 @@ function Innfelt({
           e.currentTarget.blur();
         }
       }}
-      className={`w-full rounded border border-transparent px-1 py-0.5 tabular-nums outline-none placeholder:text-neutral-400 hover:border-neutral-300 focus:border-na-blaa ${
+      className={`w-full rounded border border-transparent px-1 py-0.5 tabular-nums outline-none placeholder:text-blekk-svak hover:border-linje focus:border-aksent ${
         hoyre ? "text-right" : ""
       } ${klasser}`}
     />
@@ -378,7 +378,7 @@ function NyttFag({
   }
 
   return (
-    <div className="mt-5 flex items-end gap-3 border-t border-neutral-200 pt-4">
+    <div className="mt-5 flex items-end gap-3 border-t border-linje-medium pt-4">
       <Felt
         etikett="Kode"
         verdi={kode}

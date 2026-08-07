@@ -19,15 +19,20 @@
  * for seg.
  */
 export const TRAFIKKLYS = {
-  gronn: "#2dc937",
-  gronngul: "#99c140",
-  gul: "#e7b416",
-  guloransje: "#db7b2b",
-  rod: "#cc3232",
+  gronn: "var(--color-lys-gronn)",
+  gronngul: "var(--color-lys-gronngul)",
+  gul: "var(--color-lys-gul)",
+  guloransje: "var(--color-lys-oransje)",
+  rod: "var(--color-lys-rod)",
 } as const;
 
-/** Verdier uten farge, og «ikke i økta». */
-export const NOYTRAL = "#9e9e9e";
+/**
+ * Verdier uten farge, og «ikke i økta».
+ *
+ * Peker på et token framfor en hex-kode, som resten av paletten. Det er
+ * det som gjør at et temabytte også treffer trafikklyset.
+ */
+export const NOYTRAL = "var(--color-lys-borte)";
 
 /**
  * Slår opp fargen til en skalaverdi. Ukjente navn og `null` gir den nøytrale

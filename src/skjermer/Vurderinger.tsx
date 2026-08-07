@@ -72,7 +72,7 @@ export function Vurderinger({
           <select
             value={filterFag}
             onChange={(e) => setFilterFag(e.target.value)}
-            className="rounded border border-neutral-300 bg-white px-2 py-1.5 text-[13px]"
+            className="rounded border border-linje bg-ark px-2 py-1.5 text-brod"
           >
             <option value="">Alle fag</option>
             {fag.map((f) => (
@@ -118,7 +118,7 @@ export function Vurderinger({
             }
           />
         ) : (
-          <div className="border-t border-neutral-200">
+          <div className="border-t border-linje-medium">
             {synlige.map((v) => (
               <Rad
                 key={v.id}
@@ -132,7 +132,7 @@ export function Vurderinger({
         )}
 
         {vurderinger.length > 0 && (
-          <p className="mt-3 text-[12px] text-neutral-500">
+          <p className="mt-3 text-liten text-blekk-dempet">
             {synlige.length} av {vurderinger.length} vurderinger
           </p>
         )}
@@ -187,19 +187,19 @@ function Rad({
   return (
     <button
       onClick={onVelg}
-      className={`flex w-full items-center gap-3 border-b border-neutral-100 px-2 py-1.5 text-left text-[13px] ${
-        valgt ? "bg-na-blaa-flate" : "hover:bg-neutral-50"
+      className={`flex w-full items-center gap-3 border-b border-linje-svak px-2 py-1.5 text-left text-brod ${
+        valgt ? "bg-valgt" : "hover:bg-flate"
       }`}
     >
       <span
         aria-hidden
         className="h-3.5 w-[3px] shrink-0 rounded-full"
-        style={{ background: vurdering.farge ?? "var(--color-na-fagstrek)" }}
+        style={{ background: vurdering.farge ?? "var(--color-linje-sterk)" }}
       />
       <span className="w-12 shrink-0 font-medium">{vurdering.fagKode}</span>
       <span
         className={`w-24 shrink-0 tabular-nums ${
-          passert ? "font-medium text-feil" : "text-neutral-600"
+          passert ? "font-medium text-feil" : "text-blekk-dempet"
         }`}
       >
         {vurdering.frist ? kortDato(vurdering.frist) : "ingen frist"}
@@ -207,15 +207,15 @@ function Rad({
       <span className="flex-1 truncate">{vurdering.tittel}</span>
       {!kompakt && (
         <>
-          <span className="w-20 shrink-0 text-neutral-500">
+          <span className="w-20 shrink-0 text-blekk-dempet">
             {vurdering.type ? TYPENAVN[vurdering.type] : ""}
           </span>
-          <span className="w-32 shrink-0 truncate text-neutral-400">
+          <span className="w-32 shrink-0 truncate text-blekk-svak">
             {vurdering.skalaNavn}
           </span>
         </>
       )}
-      <span className="w-14 shrink-0 text-right tabular-nums text-neutral-500">
+      <span className="w-14 shrink-0 text-right tabular-nums text-blekk-dempet">
         {vurdering.fort === 0
           ? "·"
           : vurdering.fort >= vurdering.elever
@@ -261,7 +261,7 @@ function NyVurdering({
   }
 
   return (
-    <div className="mb-4 flex flex-wrap items-end gap-3 border border-neutral-300 bg-neutral-50 p-3">
+    <div className="mb-4 flex flex-wrap items-end gap-3 border border-linje bg-flate p-3">
       <label className="block">
         <Etikett>Fag</Etikett>
         <select
@@ -329,11 +329,11 @@ function NyVurdering({
 }
 
 const velgerStil =
-  "rounded border border-neutral-300 bg-white px-2 py-1.5 text-[13px]";
+  "rounded border border-linje bg-ark px-2 py-1.5 text-brod";
 
 function Etikett({ children }: { children: React.ReactNode }) {
   return (
-    <span className="mb-1 block text-[11px] uppercase tracking-wide text-neutral-500">
+    <span className="mb-1 block text-etikett uppercase tracking-etikett text-blekk-dempet">
       {children}
     </span>
   );

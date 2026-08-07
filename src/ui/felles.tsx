@@ -21,11 +21,11 @@ export function Knapp({
 }) {
   const stil = {
     vanlig:
-      "border border-neutral-300 bg-white text-neutral-800 hover:bg-neutral-50",
+      "border border-linje bg-ark text-blekk hover:bg-flate",
     primar:
-      "border border-na-blaa bg-na-blaa text-white hover:bg-na-blaa-mork",
+      "border border-aksent bg-aksent text-white hover:bg-aksent-mork",
     stille:
-      "border border-transparent text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100",
+      "border border-transparent text-blekk-dempet hover:text-blekk hover:bg-flate",
   }[variant];
 
   return (
@@ -33,7 +33,7 @@ export function Knapp({
       type={type}
       onClick={onClick}
       disabled={disabled}
-      className={`rounded px-3 py-1.5 text-[13px] transition-colors disabled:opacity-40 disabled:hover:bg-inherit ${stil}`}
+      className={`rounded px-3 py-1.5 text-brod transition-colors disabled:opacity-40 disabled:hover:bg-inherit ${stil}`}
     >
       {children}
     </button>
@@ -62,7 +62,7 @@ export function Felt({
   return (
     <label className={`block ${bredde}`}>
       {etikett && (
-        <span className="mb-1 block text-[11px] uppercase tracking-wide text-neutral-500">
+        <span className="mb-1 block text-etikett uppercase tracking-etikett text-blekk-dempet">
           {etikett}
         </span>
       )}
@@ -78,7 +78,7 @@ export function Felt({
             onEnter();
           }
         }}
-        className="w-full rounded border border-neutral-300 bg-white px-2 py-1.5 text-[13px] tabular-nums outline-none focus:border-na-blaa focus:ring-1 focus:ring-na-blaa"
+        className="w-full rounded border border-linje bg-ark px-2 py-1.5 text-brod tabular-nums outline-none focus:border-aksent focus:ring-1 focus:ring-aksent"
       />
     </label>
   );
@@ -92,7 +92,7 @@ export function Tomtilstand({
   handling?: ReactNode;
 }) {
   return (
-    <div className="border border-dashed border-neutral-300 px-4 py-8 text-center text-[13px] text-neutral-500">
+    <div className="border border-dashed border-linje px-4 py-8 text-center text-brod text-blekk-dempet">
       <p>{tekst}</p>
       {handling && <div className="mt-3 flex justify-center">{handling}</div>}
     </div>
@@ -104,7 +104,7 @@ export function Fagstrek({ farge }: { farge: string | null }) {
     <span
       aria-hidden
       className="inline-block h-3.5 w-[3px] shrink-0 rounded-full align-middle"
-      style={{ background: farge ?? "var(--color-na-fagstrek)" }}
+      style={{ background: farge ?? "var(--color-linje-sterk)" }}
     />
   );
 }
@@ -130,7 +130,7 @@ export function Fagmerke({
   return (
     <span
       className={`inline-block whitespace-nowrap rounded-sm font-medium ${
-        liten ? "px-1 py-0 text-[11px]" : "px-1.5 py-0.5 text-[12px]"
+        liten ? "px-1 py-0 text-etikett" : "px-1.5 py-0.5 text-liten"
       }`}
       style={{ background: `${f}1f`, color: f }}
     >
@@ -160,11 +160,11 @@ export function Kolonnevelger({
         Kolonner
       </Knapp>
       {apen && (
-        <div className="absolute right-0 top-full z-20 mt-1 w-44 rounded border border-neutral-300 bg-white p-2 shadow-lg">
+        <div className="absolute right-0 top-full z-20 mt-1 w-44 rounded border border-linje bg-ark p-2 shadow-lg">
           {valgbare.map((k) => (
             <label
               key={k.id}
-              className="flex items-center gap-2 py-0.5 text-[13px] hover:bg-neutral-50"
+              className="flex items-center gap-2 py-0.5 text-brod hover:bg-flate"
             >
               <input
                 type="checkbox"
@@ -176,7 +176,7 @@ export function Kolonnevelger({
           ))}
           <button
             onClick={() => setApen(false)}
-            className="mt-1 w-full border-t border-neutral-200 pt-1 text-[12px] text-neutral-500"
+            className="mt-1 w-full border-t border-linje-medium pt-1 text-liten text-blekk-dempet"
           >
             Lukk
           </button>

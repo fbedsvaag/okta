@@ -112,14 +112,14 @@ export default function App() {
 
   if (feil) {
     return (
-      <main className="p-8 font-mono text-[13px] text-red-800">
+      <main className="p-8 font-mono text-brod text-red-800">
         <p className="font-semibold">Databasen svarte ikke som forventet:</p>
         <pre className="mt-2 whitespace-pre-wrap">{feil}</pre>
       </main>
     );
   }
 
-  if (laster) return <main className="p-8 text-[13px] text-neutral-400">…</main>;
+  if (laster) return <main className="p-8 text-brod text-blekk-svak">…</main>;
 
   if (!skolear) {
     return (
@@ -133,8 +133,8 @@ export default function App() {
   }
 
   return (
-    <div className="app-skall flex h-screen flex-col overflow-hidden bg-white text-neutral-900">
-      <header className="ikkeutskrift flex shrink-0 flex-wrap items-center gap-x-1 gap-y-1 border-b border-neutral-300 px-4 py-2">
+    <div className="app-skall flex h-screen flex-col overflow-hidden bg-bord text-blekk">
+      <header className="ikkeutskrift flex shrink-0 flex-wrap items-center gap-x-1 gap-y-1 border-b border-linje px-4 py-2">
         <Pil
           retning="tilbake"
           av={peker === 0}
@@ -147,7 +147,7 @@ export default function App() {
           onKlikk={fram}
           hint="Fram (⌘])"
         />
-        <span className="mx-2 h-4 w-px bg-neutral-200" />
+        <span className="mx-2 h-4 w-px bg-linje-medium" />
         <Fane
           navn={skolear.navn}
           aktiv={erArsfane(visning)}
@@ -183,7 +183,7 @@ export default function App() {
       </header>
 
       {(visning === "okter" || visning === "perioder") && (
-        <div className="ikkeutskrift flex shrink-0 gap-1 border-b border-neutral-200 px-6 py-1.5">
+        <div className="ikkeutskrift flex shrink-0 gap-1 border-b border-linje-medium px-6 py-1.5">
           <Underfane
             navn="Liste"
             aktiv={visning === "okter"}
@@ -198,7 +198,7 @@ export default function App() {
       )}
 
       {erArsfane(visning) && (
-        <div className="ikkeutskrift flex shrink-0 gap-1 border-b border-neutral-200 px-6 py-1.5">
+        <div className="ikkeutskrift flex shrink-0 gap-1 border-b border-linje-medium px-6 py-1.5">
           <Underfane
             navn="I dag"
             aktiv={visning === "idag"}
@@ -218,7 +218,7 @@ export default function App() {
       )}
 
       {melding && (
-        <div className="ikkeutskrift flex shrink-0 items-center gap-3 border-b border-neutral-200 bg-na-blaa-svak px-6 py-1.5 text-[13px] text-na-blaa">
+        <div className="ikkeutskrift flex shrink-0 items-center gap-3 border-b border-linje-medium bg-flate-svak px-6 py-1.5 text-brod text-aksent">
           <span>✓ {melding}</span>
           <Knapp variant="stille" onClick={() => setMelding(null)}>
             Lukk
@@ -232,12 +232,6 @@ export default function App() {
             medPanel(visning)
               ? "h-full px-6 py-4"
               : "h-full overflow-y-auto px-6 py-5 sm:px-8 sm:py-6"
-          } ${
-            // Skrivebordsfargen fra merkevareguiden. Ligger foreløpig bare på
-            // Elever — de andre skjermene er ikke flyttet over ennå, og et
-            // halvveis omgjort skall er verre enn et helt gammelt. Løftes til
-            // <main> når resten er over.
-            visning === "elever" ? "bg-bord" : ""
           }`}
         >
         {visning === "idag" && (
@@ -359,7 +353,7 @@ function Pil({
       onClick={onKlikk}
       disabled={av}
       title={hint}
-      className="rounded px-1.5 py-0.5 text-[15px] leading-none text-neutral-400 hover:bg-neutral-100 hover:text-neutral-900 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-neutral-400"
+      className="rounded px-1.5 py-0.5 text-tittel leading-none text-blekk-svak hover:bg-flate hover:text-blekk disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-blekk-svak"
     >
       {retning === "tilbake" ? "\u2039" : "\u203a"}
     </button>
@@ -380,10 +374,10 @@ function Fane({
   return (
     <button
       onClick={onKlikk}
-      className={`rounded px-2 py-0.5 text-[13px] ${tabulaer ? "tabular-nums" : ""} ${
+      className={`rounded px-2 py-0.5 text-brod ${tabulaer ? "tabular-nums" : ""} ${
         aktiv
-          ? "bg-na-blaa-flate font-medium text-na-blaa"
-          : "text-neutral-500 hover:text-neutral-900"
+          ? "bg-valgt font-medium text-aksent"
+          : "text-blekk-dempet hover:text-blekk"
       }`}
     >
       {navn}
@@ -397,7 +391,7 @@ function erArsfane(v: Visning): boolean {
 }
 
 function Skille() {
-  return <span className="hidden select-none px-0.5 text-neutral-300 sm:inline">·</span>;
+  return <span className="hidden select-none px-0.5 text-blekk-svakest sm:inline">·</span>;
 }
 
 function Underfane({
@@ -412,10 +406,10 @@ function Underfane({
   return (
     <button
       onClick={onKlikk}
-      className={`rounded px-2 py-0.5 text-[12px] ${
+      className={`rounded px-2 py-0.5 text-liten ${
         aktiv
-          ? "bg-neutral-100 font-medium text-neutral-900"
-          : "text-neutral-500 hover:text-neutral-900"
+          ? "bg-flate font-medium text-blekk"
+          : "text-blekk-dempet hover:text-blekk"
       }`}
     >
       {navn}

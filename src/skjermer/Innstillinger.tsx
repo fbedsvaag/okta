@@ -91,9 +91,9 @@ export function Innstillinger() {
                   setVarighet(e.target.value);
                   setLagret(false);
                 }}
-                className="w-24 rounded border border-neutral-300 px-2 py-1.5 text-[13px] tabular-nums"
+                className="w-24 rounded border border-linje px-2 py-1.5 text-brod tabular-nums"
               />
-              <span className="text-[13px] text-neutral-500">minutter</span>
+              <span className="text-brod text-blekk-dempet">minutter</span>
             </div>
           </label>
           <Knapp
@@ -107,9 +107,9 @@ export function Innstillinger() {
           >
             Lagre
           </Knapp>
-          {lagret && <span className="pb-2 text-[12px] text-na-blaa">✓ lagret</span>}
+          {lagret && <span className="pb-2 text-liten text-aksent">✓ lagret</span>}
         </div>
-        <p className="mt-2 text-[12px] text-neutral-500">
+        <p className="mt-2 text-liten text-blekk-dempet">
           Varighet arves i tre ledd: denne verdien → fagets egen standard →
           øktas egen verdi. Sett fagets standard under Fag hvis ett fag alltid
           har en annen lengde.
@@ -117,16 +117,16 @@ export function Innstillinger() {
       </Bolk>
 
       <Bolk tittel="Skalaer">
-        <p className="mb-3 text-[12px] text-neutral-500">
+        <p className="mb-3 text-liten text-blekk-dempet">
           Tastene utledes av rekkefølgen, ikke av kode. Verdien som betyr
           «ingenting her» får alltid <code>0</code>. Egne skalaer kan lages
           senere — se §5.3.
         </p>
         {skalaer.map((skala) => (
           <div key={skala.id} className="mb-4">
-            <p className="text-[13px] font-medium">
+            <p className="text-brod font-medium">
               {skala.navn}{" "}
-              <span className="font-normal text-neutral-500">
+              <span className="font-normal text-blekk-dempet">
                 · {skala.bruksomrade}
               </span>
             </p>
@@ -137,16 +137,16 @@ export function Innstillinger() {
                   <span
                     key={v.id}
                     title={v.etikett ?? undefined}
-                    className="flex items-center gap-1.5 rounded-sm border border-neutral-300 px-2 py-0.5 text-[12px]"
+                    className="flex items-center gap-1.5 rounded-sm border border-linje px-2 py-0.5 text-liten"
                   >
                     {t && (
-                      <kbd className="rounded-sm bg-neutral-100 px-1 font-mono text-[11px] text-neutral-500">
+                      <kbd className="rounded-sm bg-flate px-1 font-mono text-etikett text-blekk-dempet">
                         {t}
                       </kbd>
                     )}
                     {v.kode}
                     {v.teller_ikke === 1 && (
-                      <span className="text-neutral-400">teller ikke</span>
+                      <span className="text-blekk-svak">teller ikke</span>
                     )}
                   </span>
                 );
@@ -157,10 +157,10 @@ export function Innstillinger() {
       </Bolk>
 
       <Bolk tittel="Sikkerhetskopi">
-        <p className="mb-3 text-[13px] text-neutral-600">
+        <p className="mb-3 text-brod text-blekk-dempet">
           Det tas en kopi av databasen hver gang appen åpnes, én gang i døgnet.
           De 30 nyeste beholdes. Kopien skrives med SQLites egen
-          <code className="mx-1 text-[12px]">VACUUM INTO</code>, som gir en hel
+          <code className="mx-1 text-liten">VACUUM INTO</code>, som gir en hel
           database også hvis noe skrives samtidig.
         </p>
 
@@ -183,7 +183,7 @@ export function Innstillinger() {
           {kopimappe && (
             <button
               onClick={() => void revealItemInDir(kopimappe)}
-              className="text-[12px] text-neutral-500 underline hover:text-neutral-900"
+              className="text-liten text-blekk-dempet underline hover:text-blekk"
             >
               Vis mappa i Finder
             </button>
@@ -191,27 +191,27 @@ export function Innstillinger() {
         </div>
 
         {kopier.length === 0 ? (
-          <p className="text-[13px] text-neutral-400">Ingen kopier ennå.</p>
+          <p className="text-brod text-blekk-svak">Ingen kopier ennå.</p>
         ) : (
-          <table className="w-full max-w-xl text-[13px]">
+          <table className="w-full max-w-xl text-brod">
             <tbody>
               {kopier.slice(0, 8).map((k) => (
-                <tr key={k.navn} className="border-b border-neutral-100">
-                  <td className="py-1 font-mono text-[12px]">
+                <tr key={k.navn} className="border-b border-linje-svak">
+                  <td className="py-1 font-mono text-liten">
                     {k.navn}
                     {!k.daglig && (
-                      <span className="ml-2 font-sans text-[11px] text-neutral-400">
+                      <span className="ml-2 font-sans text-etikett text-blekk-svak">
                         før gjenoppretting
                       </span>
                     )}
                   </td>
-                  <td className="w-20 py-1 text-right tabular-nums text-neutral-500">
+                  <td className="w-20 py-1 text-right tabular-nums text-blekk-dempet">
                     {(k.bytes / 1024).toFixed(0)} kB
                   </td>
                   <td className="w-24 py-1 text-right">
                     <button
                       onClick={() => void gjenopprett(`${kopimappe}/${k.navn}`, k.navn)}
-                      className="text-[12px] text-neutral-500 hover:text-na-blaa"
+                      className="text-liten text-blekk-dempet hover:text-aksent"
                     >
                       Gjenopprett
                     </button>
@@ -222,12 +222,12 @@ export function Innstillinger() {
           </table>
         )}
         {kopier.length > 8 && (
-          <p className="mt-1 text-[12px] text-neutral-500">
+          <p className="mt-1 text-liten text-blekk-dempet">
             og {kopier.length - 8} eldre — de ligger i mappa
           </p>
         )}
 
-        <p className="mt-3 text-[12px] text-neutral-500">
+        <p className="mt-3 text-liten text-blekk-dempet">
           Mappa skal aldri legges i iCloud, Dropbox eller annen synktjeneste.
           Synk kan skrive delvis tilbake i ei åpen SQLite-fil, og da blir
           den ødelagt uten forvarsel.
@@ -235,14 +235,14 @@ export function Innstillinger() {
       </Bolk>
 
       <Bolk tittel="Personvern">
-        <p className="text-[13px] text-neutral-600">
+        <p className="text-brod text-blekk-dempet">
           Appen gjør ingen nettverkskall. Databasen ligger lokalt i{" "}
-          <code className="text-[12px]">
+          <code className="text-liten">
             ~/Library/Application Support/no.elevtracking.app/
           </code>
           .
         </p>
-        <p className="mt-2 text-[13px] text-neutral-600">
+        <p className="mt-2 text-brod text-blekk-dempet">
           Notatfeltene er lærerens arbeidsmateriale. Helse, hjemmeforhold og
           andre særlige kategorier hører ikke hjemme der.
         </p>
@@ -253,7 +253,7 @@ export function Innstillinger() {
 
 function Etikett({ children }: { children: React.ReactNode }) {
   return (
-    <span className="mb-1 block text-[11px] uppercase tracking-wide text-neutral-500">
+    <span className="mb-1 block text-etikett uppercase tracking-etikett text-blekk-dempet">
       {children}
     </span>
   );
@@ -262,7 +262,7 @@ function Etikett({ children }: { children: React.ReactNode }) {
 function Bolk({ tittel, children }: { tittel: string; children: React.ReactNode }) {
   return (
     <section className="mb-7">
-      <h2 className="mb-2 border-b border-neutral-200 pb-1 text-[11px] uppercase tracking-wide text-neutral-500">
+      <h2 className="mb-2 border-b border-linje-medium pb-1 text-etikett uppercase tracking-etikett text-blekk-dempet">
         {tittel}
       </h2>
       {children}

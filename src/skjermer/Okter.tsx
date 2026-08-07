@@ -183,7 +183,7 @@ export function Okter({
           <select
             value={filterFag}
             onChange={(e) => setFilterFag(e.target.value)}
-            className="rounded border border-neutral-300 bg-white px-2 py-1.5 text-[13px]"
+            className="rounded border border-linje bg-ark px-2 py-1.5 text-brod"
           >
             <option value="">Alle fag</option>
             {fag.map((f) => (
@@ -265,7 +265,7 @@ export function Okter({
         )}
 
         {okter.length > 0 && (
-          <p className="mt-3 text-[12px] text-neutral-500">
+          <p className="mt-3 text-liten text-blekk-dempet">
             {synlige.length} av {okter.length} økter ·{" "}
             {timer(synlige.reduce((sum, o) => sum + o.varighetMin, 0))}
             {blokkert.size > 0 && (
@@ -343,7 +343,7 @@ function Liste({
 
   return (
     <div className="min-w-[52rem]">
-      <div className="flex items-center gap-3 border-b border-neutral-300 px-2 py-1 text-[11px] uppercase tracking-wide text-neutral-500">
+      <div className="flex items-center gap-3 border-b border-linje px-2 py-1 text-etikett uppercase tracking-etikett text-blekk-dempet">
         {vis.has("uke") && (
           <span className="w-7 shrink-0" title="Ukenummer">
             Uke
@@ -372,32 +372,32 @@ function Liste({
         return (
           <div key={o.id}>
             {nyManed && (
-              <div className="border-b border-neutral-200 bg-neutral-50 px-2 py-1 text-[11px] uppercase tracking-wide text-neutral-500">
+              <div className="border-b border-linje-medium bg-flate px-2 py-1 text-etikett uppercase tracking-etikett text-blekk-dempet">
                 {manedsnavn(o.dato)}
               </div>
             )}
             <button
               onClick={() => onVelg(o.id)}
-              className={`flex w-full items-center gap-3 border-b border-neutral-100 px-2 py-1.5 text-left text-[13px] ${
-                valgt === o.id ? "bg-na-blaa-flate" : "hover:bg-neutral-50"
+              className={`flex w-full items-center gap-3 border-b border-linje-svak px-2 py-1.5 text-left text-brod ${
+                valgt === o.id ? "bg-valgt" : "hover:bg-flate"
               }`}
             >
               {vis.has("uke") && (
-                <span className="w-7 shrink-0 tabular-nums text-neutral-400">
+                <span className="w-7 shrink-0 tabular-nums text-blekk-svak">
                   {ukenummer(o.dato)}
                 </span>
               )}
               <span
                 aria-hidden
                 className="h-3.5 w-[3px] shrink-0 rounded-full"
-                style={{ background: o.farge ?? "var(--color-na-fagstrek)" }}
+                style={{ background: o.farge ?? "var(--color-linje-sterk)" }}
               />
               <span className="w-12 shrink-0 font-medium">{o.fagKode}</span>
               <span
                 className={`w-24 shrink-0 tabular-nums ${
                   blokkert.has(o.id)
                     ? "font-medium text-feil"
-                    : "text-neutral-600"
+                    : "text-blekk-dempet"
                 }`}
                 title={blokkert.get(o.id)?.navn}
               >
@@ -405,17 +405,17 @@ function Liste({
                 {blokkert.has(o.id) && " !"}
               </span>
               {vis.has("tid") && (
-                <span className="w-12 shrink-0 tabular-nums text-neutral-500">
+                <span className="w-12 shrink-0 tabular-nums text-blekk-dempet">
                   {o.klokkeslett ?? "–"}
                 </span>
               )}
               {vis.has("varighet") && (
-                <span className="w-16 shrink-0 text-right tabular-nums text-neutral-500">
+                <span className="w-16 shrink-0 text-right tabular-nums text-blekk-dempet">
                   {o.varighetMin} min
                 </span>
               )}
               <span className="flex-1 truncate">
-                {o.tema ?? <span className="text-neutral-400">—</span>}
+                {o.tema ?? <span className="text-blekk-svak">—</span>}
               </span>
               {vis.has("periode") && (
                 <span className="w-36 shrink-0 truncate">
@@ -426,23 +426,23 @@ function Liste({
                         onApnePerioder();
                       }}
                       title="Åpne periodevisningen"
-                      className="rounded-sm bg-neutral-100 px-1.5 py-0.5 text-[12px] text-neutral-600 hover:bg-neutral-200"
+                      className="rounded-sm bg-flate px-1.5 py-0.5 text-liten text-blekk-dempet hover:bg-linje-medium"
                     >
                       {perioder.get(o.id)!.navn}
                     </span>
                   ) : (
-                    <span className="text-neutral-300">—</span>
+                    <span className="text-blekk-svakest">—</span>
                   )}
                 </span>
               )}
               {vis.has("vurdering") && (
-                <span className="w-40 shrink-0 truncate text-neutral-600">
+                <span className="w-40 shrink-0 truncate text-blekk-dempet">
                   {(vurderinger.get(o.id) ?? []).map((v) => v.tittel).join(", ")}
                 </span>
               )}
               {vis.has("logg") && (
                 <span
-                  className="w-40 shrink-0 truncate text-[12px] italic text-neutral-500"
+                  className="w-40 shrink-0 truncate text-liten italic text-blekk-dempet"
                   title={o.logg ?? undefined}
                 >
                   {o.logg ?? ""}
@@ -468,7 +468,7 @@ function Liste({
  */
 function Innsats({ okt }: { okt: Okt }) {
   const talt = okt.gronn + okt.gul + okt.rod;
-  if (talt === 0) return <span className="text-[12px] text-neutral-300">—</span>;
+  if (talt === 0) return <span className="text-liten text-blekk-svakest">—</span>;
 
   const deler = [
     { antall: okt.gronn, farge: TRAFIKKLYS.gronn },
@@ -479,7 +479,7 @@ function Innsats({ okt }: { okt: Okt }) {
   return (
     <span
       title={`${okt.gronn} grønne, ${okt.gul} gule, ${okt.rod} røde`}
-      className="flex h-2 w-20 overflow-hidden rounded-full bg-neutral-100"
+      className="flex h-2 w-20 overflow-hidden rounded-full bg-flate"
     >
       {deler.map((d, i) => (
         <span
@@ -493,11 +493,11 @@ function Innsats({ okt }: { okt: Okt }) {
 
 function Status({ okt }: { okt: Okt }) {
   if (okt.skaret === 0)
-    return <span className="w-14 shrink-0 text-right text-neutral-300">·</span>;
+    return <span className="w-14 shrink-0 text-right text-blekk-svakest">·</span>;
   if (okt.skaret >= okt.elever)
-    return <span className="w-14 shrink-0 text-right text-na-ok">✓</span>;
+    return <span className="w-14 shrink-0 text-right text-lys-gronn">✓</span>;
   return (
-    <span className="w-14 shrink-0 text-right tabular-nums text-neutral-500">
+    <span className="w-14 shrink-0 text-right tabular-nums text-blekk-dempet">
       {okt.skaret}/{okt.elever}
     </span>
   );
@@ -542,15 +542,15 @@ function NyOkt({
   }
 
   return (
-    <div className="mb-4 flex flex-wrap items-end gap-3 border border-neutral-300 bg-neutral-50 p-3">
+    <div className="mb-4 flex flex-wrap items-end gap-3 border border-linje bg-flate p-3">
       <label className="block">
-        <span className="mb-1 block text-[11px] uppercase tracking-wide text-neutral-500">
+        <span className="mb-1 block text-etikett uppercase tracking-etikett text-blekk-dempet">
           Fag
         </span>
         <select
           value={fagId}
           onChange={(e) => setFagId(e.target.value)}
-          className="rounded border border-neutral-300 bg-white px-2 py-1.5 text-[13px]"
+          className="rounded border border-linje bg-ark px-2 py-1.5 text-brod"
         >
           {fag.map((f) => (
             <option key={f.id} value={f.id}>

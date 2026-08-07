@@ -131,19 +131,19 @@ export function OktPanel({
   }
 
   return (
-    <aside className="flex h-full flex-col border-l border-neutral-300 bg-white">
-      <header className="flex items-baseline gap-3 border-b border-neutral-200 px-5 py-3">
+    <aside className="flex h-full flex-col border-l border-linje bg-ark">
+      <header className="flex items-baseline gap-3 border-b border-linje-medium px-5 py-3">
         <span
           aria-hidden
           className="h-3.5 w-[3px] rounded-full"
-          style={{ background: okt.farge ?? "var(--color-na-fagstrek)" }}
+          style={{ background: okt.farge ?? "var(--color-linje-sterk)" }}
         />
-        <span className="text-[13px] font-semibold">{okt.fagKode}</span>
-        <span className="text-[13px] text-neutral-600">{langDato(okt.dato)}</span>
-        <span className="font-mono text-[11px] text-neutral-400">{okt.kode}</span>
+        <span className="text-brod font-semibold">{okt.fagKode}</span>
+        <span className="text-brod text-blekk-dempet">{langDato(okt.dato)}</span>
+        <span className="font-mono text-etikett text-blekk-svak">{okt.kode}</span>
         <button
           onClick={onLukk}
-          className="ml-auto text-[12px] text-neutral-400 hover:text-neutral-900"
+          className="ml-auto text-liten text-blekk-svak hover:text-blekk"
         >
           Lukk (Esc)
         </button>
@@ -152,11 +152,11 @@ export function OktPanel({
       <div className="overflow-y-auto">
         <OktFelter okt={okt} perioder={perioder} onEndret={onEndret} />
 
-        <div className="flex items-baseline justify-between border-y border-neutral-200 bg-neutral-50 px-5 py-1.5">
-          <span className="text-[11px] uppercase tracking-wide text-neutral-500">
+        <div className="flex items-baseline justify-between border-y border-linje-medium bg-flate px-5 py-1.5">
+          <span className="text-etikett uppercase tracking-etikett text-blekk-dempet">
             Elever
           </span>
-          <span className="text-[12px] tabular-nums text-neutral-500">
+          <span className="text-liten tabular-nums text-blekk-dempet">
             {antallSkaret} av {elever.length} skåret
           </span>
         </div>
@@ -168,7 +168,7 @@ export function OktPanel({
           className="outline-none"
         >
           {elever.length === 0 && (
-            <p className="px-5 py-6 text-center text-[13px] text-neutral-500">
+            <p className="px-5 py-6 text-center text-brod text-blekk-dempet">
               Ingen elever er koblet til {okt.fagKode} ennå. Legg dem inn under
               Elever, så dukker de opp her — også i økter som allerede er skåret.
             </p>
@@ -248,19 +248,19 @@ function ElevRad({
   return (
     <div
       onClick={onKlikk}
-      className={`flex cursor-default items-center gap-2 border-b border-neutral-100 px-5 py-1 ${
-        markert ? "bg-na-blaa-flate" : "hover:bg-neutral-50"
+      className={`flex cursor-default items-center gap-2 border-b border-linje-svak px-5 py-1 ${
+        markert ? "bg-valgt" : "hover:bg-flate"
       }`}
     >
-      <span className="w-3 text-[11px] text-na-blaa">{markert ? "▸" : ""}</span>
+      <span className="w-3 text-etikett text-aksent">{markert ? "▸" : ""}</span>
       <button
         onClick={(e) => {
           e.stopPropagation();
           onApneElev();
         }}
         title="Åpne eleven"
-        className={`w-44 shrink-0 truncate text-left text-[13px] hover:text-na-blaa hover:underline ${
-          eksplisitt ? "" : "text-neutral-500"
+        className={`w-44 shrink-0 truncate text-left text-brod hover:text-aksent hover:underline ${
+          eksplisitt ? "" : "text-blekk-dempet"
         }`}
       >
         {elev.fornavn} {elev.etternavn}
@@ -272,10 +272,10 @@ function ElevRad({
           onNotat();
         }}
         title={elev.notat ?? "Legg til notat (N)"}
-        className={`flex-1 truncate text-left text-[12px] italic ${
+        className={`flex-1 truncate text-left text-liten italic ${
           elev.notat
-            ? "text-neutral-600 hover:text-neutral-900"
-            : "text-neutral-300 hover:text-neutral-600"
+            ? "text-blekk-dempet hover:text-blekk"
+            : "text-blekk-svakest hover:text-blekk-dempet"
         }`}
       >
         {elev.notat ?? "+ notat"}
@@ -323,12 +323,12 @@ function Merke({
     <button
       onClick={onVelg}
       title={`${tast ? `${tast} — ` : ""}${verdi.kode}${verdi.etikett ? `: ${verdi.etikett}` : ""}`}
-      className="grid h-5 w-5 place-items-center rounded-sm hover:bg-neutral-200"
+      className="grid h-5 w-5 place-items-center rounded-sm hover:bg-linje-medium"
     >
       <span
         className="block h-3 w-3 rounded-full border-2"
         style={{
-          borderColor: valgt ? farge : "var(--color-na-kant)",
+          borderColor: valgt ? farge : "var(--color-linje)",
           background: valgt ? (eksplisitt ? farge : "transparent") : "transparent",
           borderStyle: verdi.teller_ikke === 1 ? "dashed" : "solid",
         }}
@@ -472,7 +472,7 @@ function Logg({ okt, onEndret }: { okt: Okt; onEndret: () => void }) {
           await slettOkt(okt.id);
           onEndret();
         }}
-        className="mt-4 text-[12px] text-neutral-400 hover:text-red-700"
+        className="mt-4 text-liten text-blekk-svak hover:text-red-700"
       >
         Slett økta
       </button>
@@ -491,8 +491,8 @@ function Notat({
   const [tekst, setTekst] = useState(elev.notat ?? "");
 
   return (
-    <div className="border-t border-neutral-300 bg-neutral-50 px-5 py-3">
-      <p className="mb-1 text-[11px] uppercase tracking-wide text-neutral-500">
+    <div className="border-t border-linje bg-flate px-5 py-3">
+      <p className="mb-1 text-etikett uppercase tracking-etikett text-blekk-dempet">
         Notat · {elev.fornavn} {elev.etternavn}
       </p>
       <textarea
@@ -506,11 +506,11 @@ function Notat({
         }}
         className={feltStil}
       />
-      <div className="mt-1 flex gap-3 text-[12px] text-neutral-500">
-        <button onClick={() => onLukk(tekst)} className="hover:text-neutral-900">
+      <div className="mt-1 flex gap-3 text-liten text-blekk-dempet">
+        <button onClick={() => onLukk(tekst)} className="hover:text-blekk">
           Lagre (⌘↵)
         </button>
-        <button onClick={() => onLukk(null)} className="hover:text-neutral-900">
+        <button onClick={() => onLukk(null)} className="hover:text-blekk">
           Avbryt (Esc)
         </button>
       </div>
@@ -519,7 +519,7 @@ function Notat({
 }
 
 const feltStil =
-  "w-full rounded border border-neutral-300 bg-white px-2 py-1 text-[13px] tabular-nums outline-none placeholder:text-neutral-400 focus:border-na-blaa";
+  "w-full rounded border border-linje bg-ark px-2 py-1 text-brod tabular-nums outline-none placeholder:text-blekk-svak focus:border-aksent";
 
 function Linje({
   etikett,
@@ -530,7 +530,7 @@ function Linje({
 }) {
   return (
     <label className="block w-full">
-      <span className="mb-0.5 block text-[11px] uppercase tracking-wide text-neutral-500">
+      <span className="mb-0.5 block text-etikett uppercase tracking-etikett text-blekk-dempet">
         {etikett}
       </span>
       {children}

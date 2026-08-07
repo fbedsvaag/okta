@@ -54,7 +54,7 @@ export function Arsplan({
               </thead>
               <tbody>
                 {egne.map((o) => (
-                  <tr key={o.id} className="border-b border-neutral-300 align-top">
+                  <tr key={o.id} className="border-b border-linje align-top">
                     <td className="py-1 tabular-nums">{kortDato(o.dato)}</td>
                     <td className="py-1">{ukedag(o.dato)}</td>
                     <td className="py-1 tabular-nums">{o.klokkeslett ?? ""}</td>
@@ -67,7 +67,7 @@ export function Arsplan({
               </tbody>
             </table>
 
-            <p className="mt-3 text-[8pt] text-neutral-600">
+            <p className="mt-3 text-[8pt] text-blekk-dempet">
               Med forbehold om endringer.
             </p>
           </section>

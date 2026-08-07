@@ -98,14 +98,14 @@ export function Skolekalender({
 
   return (
     <div>
-      <div className="mb-4 flex flex-wrap items-center gap-4 text-[12px] text-neutral-500">
+      <div className="mb-4 flex flex-wrap items-center gap-4 text-liten text-blekk-dempet">
         <span>{okter.length} økter i året</span>
         {fag.map((f) => (
           <span key={f.id} className="flex items-center gap-1.5">
             <span
               aria-hidden
               className="h-2.5 w-2.5 rounded-sm"
-              style={{ background: f.farge ?? "var(--color-na-fagstrek)" }}
+              style={{ background: f.farge ?? "var(--color-linje-sterk)" }}
             />
             {f.kode}
           </span>
@@ -191,10 +191,10 @@ function Maned({
 
   return (
     <section>
-      <h3 className="mb-1 text-[12px] font-semibold first-letter:uppercase">
+      <h3 className="mb-1 text-liten font-semibold first-letter:uppercase">
         {manedsnavn(maned)}
       </h3>
-      <div className="grid grid-cols-[1.6rem_repeat(5,1fr)] gap-px border-b border-neutral-200 pb-1 text-[10px] uppercase tracking-wide text-neutral-400">
+      <div className="grid grid-cols-[1.6rem_repeat(5,1fr)] gap-px border-b border-linje-medium pb-1 text-mikro uppercase tracking-etikett text-blekk-svak">
         <span className="px-1" title="Ukenummer">
           uke
         </span>
@@ -205,17 +205,17 @@ function Maned({
         ))}
       </div>
 
-      <div className="grid grid-cols-[1.6rem_repeat(5,1fr)] gap-px bg-neutral-200">
+      <div className="grid grid-cols-[1.6rem_repeat(5,1fr)] gap-px bg-linje-medium">
         {uker.map((uke, r) => (
           <Fragment key={r}>
-            <div className="flex min-h-[3.25rem] items-start justify-center bg-white pt-1 text-[10px] tabular-nums text-neutral-400">
+            <div className="flex min-h-[3.25rem] items-start justify-center bg-ark pt-1 text-mikro tabular-nums text-blekk-svak">
               {uke.find((d) => d !== null)
                 ? ukenummer(uke.find((d) => d !== null)!)
                 : ""}
             </div>
             {uke.map((dato, i) =>
               dato === null ? (
-                <div key={i} className="min-h-[3.25rem] bg-white" />
+                <div key={i} className="min-h-[3.25rem] bg-ark" />
               ) : (
                 <Dag
                   key={dato}
@@ -264,30 +264,30 @@ function Dag({
   const konflikt = blokkert !== null && okter.length > 0;
 
   const bakgrunn = utenfor
-    ? "bg-neutral-50"
+    ? "bg-flate"
     : konflikt
-      ? "bg-na-konflikt"
+      ? "bg-feil-flate"
       : blokkert
         ? blokkert.type === "helligdag"
-          ? "bg-na-helligdag"
-          : "bg-na-fri"
-        : "bg-white";
+          ? "bg-helligdag-flate"
+          : "bg-fri-flate"
+        : "bg-ark";
 
   return (
     <div
       onClick={utenfor ? undefined : onVelg}
       className={`min-h-[3.25rem] px-1 py-0.5 ${bakgrunn} ${
         utenfor ? "" : "cursor-pointer hover:brightness-[0.98]"
-      } ${valgt ? "outline outline-2 -outline-offset-2 outline-na-blaa" : ""}`}
+      } ${valgt ? "outline outline-2 -outline-offset-2 outline-aksent" : ""}`}
     >
       <div className="flex items-baseline gap-1">
         <span
-          className={`text-[11px] tabular-nums ${
+          className={`text-etikett tabular-nums ${
             erIdag
-              ? "rounded-sm bg-na-blaa px-1 font-medium text-white"
+              ? "rounded-sm bg-aksent px-1 font-medium text-white"
               : utenfor
-                ? "text-neutral-300"
-                : "text-neutral-500"
+                ? "text-blekk-svakest"
+                : "text-blekk-dempet"
           }`}
         >
           {dagnr}
@@ -295,7 +295,7 @@ function Dag({
         {konflikt && (
           <span
             title={`${okter.length} økt(er) ligger på ${blokkert!.navn}`}
-            className="text-[11px] font-bold text-feil"
+            className="text-etikett font-bold text-feil"
           >
             !
           </span>
@@ -304,8 +304,8 @@ function Dag({
 
       {blokkert && !utenfor && (
         <p
-          className={`truncate text-[10px] ${
-            konflikt ? "text-feil" : "text-neutral-400"
+          className={`truncate text-mikro ${
+            konflikt ? "text-feil" : "text-blekk-svak"
           }`}
           title={blokkert.navn}
         >
@@ -321,7 +321,7 @@ function Dag({
       {okter.map((o) => (
         <div
           key={o.id}
-          className="group/okt mt-0.5 flex w-full items-center gap-1 rounded-[2px] px-0.5 text-[10px] hover:bg-neutral-100"
+          className="group/okt mt-0.5 flex w-full items-center gap-1 rounded-[2px] px-0.5 text-mikro hover:bg-flate"
         >
           <button
             onClick={(e) => {
@@ -334,7 +334,7 @@ function Dag({
             <span
               aria-hidden
               className="h-2.5 w-[3px] shrink-0 rounded-full"
-              style={{ background: o.farge ?? "var(--color-na-fagstrek)" }}
+              style={{ background: o.farge ?? "var(--color-linje-sterk)" }}
             />
             <span className="truncate">{o.fagKode}</span>
           </button>
@@ -344,7 +344,7 @@ function Dag({
               onSlettOkt(o);
             }}
             title={`Slett ${o.fagKode} denne dagen`}
-            className="hidden shrink-0 px-0.5 leading-none text-neutral-400 hover:text-red-700 group-hover/okt:block"
+            className="hidden shrink-0 px-0.5 leading-none text-blekk-svak hover:text-red-700 group-hover/okt:block"
           >
             &times;
           </button>
@@ -403,13 +403,13 @@ function Valgtlinje({
   }
 
   return (
-    <div className="sticky bottom-0 mt-4 flex flex-wrap items-center gap-2 border border-neutral-300 bg-neutral-50 px-3 py-2 text-[13px] shadow-[0_-4px_12px_rgba(0,0,0,0.04)]">
+    <div className="sticky bottom-0 mt-4 flex flex-wrap items-center gap-2 border border-linje bg-flate px-3 py-2 text-brod shadow-[0_-4px_12px_rgba(0,0,0,0.04)]">
       <span className="font-medium tabular-nums">
         {datoer.length === 1 ? langDato(datoer[0]) : `${datoer.length} dager valgt`}
       </span>
 
       {blokkerte.length > 0 && (
-        <span className="text-[12px] text-feil">
+        <span className="text-liten text-feil">
           {blokkerte.length === datoer.length
             ? "merket som fri"
             : `${blokkerte.length} av dem er merket som fri`}
@@ -420,21 +420,21 @@ function Valgtlinje({
         value={klokke}
         onChange={(e) => setKlokke(e.target.value)}
         placeholder="09:15"
-        className="w-20 rounded border border-neutral-300 px-2 py-1 tabular-nums outline-none focus:border-na-blaa"
+        className="w-20 rounded border border-linje px-2 py-1 tabular-nums outline-none focus:border-aksent"
       />
 
-      <span className="text-neutral-500">Legg inn økt i:</span>
+      <span className="text-blekk-dempet">Legg inn økt i:</span>
       {fag.map((f) => (
         <button
           key={f.id}
           disabled={jobber}
           onClick={() => leggTil(f)}
-          className="flex items-center gap-1.5 rounded border border-neutral-300 bg-white px-2 py-1 hover:bg-neutral-100 disabled:opacity-40"
+          className="flex items-center gap-1.5 rounded border border-linje bg-ark px-2 py-1 hover:bg-flate disabled:opacity-40"
         >
           <span
             aria-hidden
             className="h-3 w-[3px] rounded-full"
-            style={{ background: f.farge ?? "var(--color-na-fagstrek)" }}
+            style={{ background: f.farge ?? "var(--color-linje-sterk)" }}
           />
           {f.kode}
         </button>
@@ -444,14 +444,14 @@ function Valgtlinje({
         {okter.length > 0 && (
           <button
             onClick={onSlett}
-            className="text-[12px] text-neutral-400 hover:text-red-700"
+            className="text-liten text-blekk-svak hover:text-red-700"
           >
             Slett {okter.length === 1 ? "økta" : `${okter.length} øktene`} her
           </button>
         )}
         <button
           onClick={onTom}
-          className="text-[12px] text-neutral-500 hover:text-neutral-900"
+          className="text-liten text-blekk-dempet hover:text-blekk"
         >
           Nullstill valget
         </button>

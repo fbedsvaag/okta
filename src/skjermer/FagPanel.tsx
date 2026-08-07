@@ -63,18 +63,18 @@ export function FagPanel({
   const andel = tall.okter === 0 ? 0 : tall.avholdte / tall.okter;
 
   return (
-    <aside className="flex h-full flex-col border-l border-neutral-300 bg-white">
-      <header className="flex items-baseline gap-3 border-b border-neutral-200 px-5 py-3">
+    <aside className="flex h-full flex-col border-l border-linje bg-ark">
+      <header className="flex items-baseline gap-3 border-b border-linje-medium px-5 py-3">
         <span
           aria-hidden
           className="h-3.5 w-[3px] rounded-full"
-          style={{ background: fag.farge ?? "var(--color-na-fagstrek)" }}
+          style={{ background: fag.farge ?? "var(--color-linje-sterk)" }}
         />
-        <span className="text-[15px] font-semibold">{fag.kode}</span>
-        <span className="truncate text-[13px] text-neutral-600">{fag.navn}</span>
+        <span className="text-tittel font-semibold">{fag.kode}</span>
+        <span className="truncate text-brod text-blekk-dempet">{fag.navn}</span>
         <button
           onClick={onLukk}
-          className="ml-auto shrink-0 text-[12px] text-neutral-400 hover:text-neutral-900"
+          className="ml-auto shrink-0 text-liten text-blekk-svak hover:text-blekk"
         >
           Lukk (Esc)
         </button>
@@ -82,25 +82,25 @@ export function FagPanel({
 
       <div className="overflow-y-auto px-5 py-4">
         <section className="mb-6">
-          <div className="flex items-baseline justify-between text-[13px]">
+          <div className="flex items-baseline justify-between text-brod">
             <span>
               <strong className="tabular-nums">{tall.avholdte}</strong> av{" "}
               <span className="tabular-nums">{tall.okter}</span> økter avholdt
             </span>
-            <span className="tabular-nums text-neutral-500">
+            <span className="tabular-nums text-blekk-dempet">
               {Math.round(andel * 100)} %
             </span>
           </div>
-          <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-neutral-200">
+          <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-linje-medium">
             <div
               className="h-full rounded-full"
               style={{
                 width: `${andel * 100}%`,
-                background: fag.farge ?? "var(--color-na-blaa)",
+                background: fag.farge ?? "var(--color-aksent)",
               }}
             />
           </div>
-          <p className="mt-1.5 text-[12px] tabular-nums text-neutral-500">
+          <p className="mt-1.5 text-liten tabular-nums text-blekk-dempet">
             {tall.elever} elever · {timer} timer planlagt
             {fag.arstimetall !== null && (
               <>
@@ -118,7 +118,7 @@ export function FagPanel({
           handling={
             <button
               onClick={onApneVurderinger}
-              className="text-[12px] text-neutral-500 hover:text-na-blaa"
+              className="text-liten text-blekk-dempet hover:text-aksent"
             >
               Åpne Vurderinger
             </button>
@@ -127,16 +127,16 @@ export function FagPanel({
           {vurderinger.length === 0 ? (
             <Stille>Ingen vurderinger planlagt i {fag.kode}.</Stille>
           ) : (
-            <table className="w-full text-[13px]">
+            <table className="w-full text-brod">
               <tbody>
                 {vurderinger.map((v) => (
-                  <tr key={v.id} className="border-b border-neutral-100">
+                  <tr key={v.id} className="border-b border-linje-svak">
                     <td className="py-1.5">{v.tittel}</td>
-                    <td className="w-20 py-1.5 text-neutral-500">{v.type ?? ""}</td>
-                    <td className="w-28 py-1.5 tabular-nums text-neutral-600">
+                    <td className="w-20 py-1.5 text-blekk-dempet">{v.type ?? ""}</td>
+                    <td className="w-28 py-1.5 tabular-nums text-blekk-dempet">
                       {v.frist ? kort(v.frist) : "ingen frist"}
                     </td>
-                    <td className="w-14 py-1.5 text-right tabular-nums text-neutral-500">
+                    <td className="w-14 py-1.5 text-right tabular-nums text-blekk-dempet">
                       {v.fort === 0 ? "·" : `${v.fort}`}
                     </td>
                   </tr>
@@ -150,25 +150,25 @@ export function FagPanel({
           {elever.length === 0 ? (
             <Stille>Ingen elever koblet til {fag.kode} ennå.</Stille>
           ) : (
-            <table className="w-full text-[13px]">
+            <table className="w-full text-brod">
               <tbody>
                 {elever.map((e) => (
-                  <tr key={e.elevId} className="border-b border-neutral-100">
+                  <tr key={e.elevId} className="border-b border-linje-svak">
                     <td className="py-1.5">
                       <button
                         onClick={() => onApneElev(e.elevId)}
-                        className="text-left hover:text-na-blaa hover:underline"
+                        className="text-left hover:text-aksent hover:underline"
                       >
                         {e.fornavn} {e.etternavn}
                       </button>
                     </td>
-                    <td className="w-16 py-1.5 tabular-nums text-neutral-500">
+                    <td className="w-16 py-1.5 tabular-nums text-blekk-dempet">
                       {e.klasse ?? ""}
                     </td>
                     <td className="w-40 py-1.5">
                       <Fordeling elev={e} />
                     </td>
-                    <td className="w-14 py-1.5 text-right tabular-nums text-neutral-500">
+                    <td className="w-14 py-1.5 text-right tabular-nums text-blekk-dempet">
                       {e.talt || "–"}
                     </td>
                   </tr>
@@ -188,7 +188,7 @@ export function FagPanel({
  */
 function Fordeling({ elev }: { elev: FagElev }) {
   if (elev.talt === 0)
-    return <span className="text-[12px] text-neutral-300">ingen skåringer</span>;
+    return <span className="text-liten text-blekk-svakest">ingen skåringer</span>;
 
   const deler = [
     { antall: elev.gronn, farge: TRAFIKKLYS.gronn },
@@ -199,7 +199,7 @@ function Fordeling({ elev }: { elev: FagElev }) {
   return (
     <span
       title={`${elev.gronn} grønne, ${elev.gul} gule, ${elev.rod} røde`}
-      className="flex h-2 w-32 overflow-hidden rounded-full bg-neutral-100"
+      className="flex h-2 w-32 overflow-hidden rounded-full bg-flate"
     >
       {deler.map((d, i) => (
         <span
@@ -231,8 +231,8 @@ function Bolk({
 }) {
   return (
     <section className="mb-6">
-      <div className="mb-2 flex items-baseline justify-between border-b border-neutral-200 pb-1">
-        <h3 className="text-[11px] uppercase tracking-wide text-neutral-500">
+      <div className="mb-2 flex items-baseline justify-between border-b border-linje-medium pb-1">
+        <h3 className="text-etikett uppercase tracking-etikett text-blekk-dempet">
           {tittel}
         </h3>
         {handling}
@@ -243,7 +243,7 @@ function Bolk({
 }
 
 function Stille({ children }: { children: React.ReactNode }) {
-  return <p className="py-1 text-[13px] text-neutral-400">{children}</p>;
+  return <p className="py-1 text-brod text-blekk-svak">{children}</p>;
 }
 
 function kort(dato: string): string {

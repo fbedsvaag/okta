@@ -21,16 +21,16 @@ export function Veiviser({ onFerdig }: { onFerdig: () => void }) {
 
   return (
     <div className="mx-auto max-w-2xl px-8 py-12">
-      <ol className="mb-8 flex gap-6 text-[12px]">
+      <ol className="mb-8 flex gap-6 text-liten">
         {["Skoleår", "Fag", "Elever"].map((navn, i) => (
           <li
             key={navn}
             className={
               i + 1 === steg
-                ? "font-semibold text-neutral-900"
+                ? "font-semibold text-blekk"
                 : i + 1 < steg
-                  ? "text-neutral-400"
-                  : "text-neutral-300"
+                  ? "text-blekk-svak"
+                  : "text-blekk-svakest"
             }
           >
             {i + 1}. {navn}
@@ -73,8 +73,8 @@ function StegSkolear({ onFerdig }: { onFerdig: (id: string) => void }) {
 
   return (
     <section>
-      <h1 className="text-[17px] font-semibold">Opprett skoleåret</h1>
-      <p className="mt-1 text-[13px] text-neutral-500">
+      <h1 className="text-overskrift font-semibold">Opprett skoleåret</h1>
+      <p className="mt-1 text-brod text-blekk-dempet">
         Alt annet i appen henger under et skoleår. Datoene kan endres senere.
       </p>
 
@@ -124,19 +124,19 @@ function StegFag({
 
   return (
     <section>
-      <h1 className="text-[17px] font-semibold">Hvilke fag har du i år?</h1>
-      <p className="mt-1 text-[13px] text-neutral-500">
+      <h1 className="text-overskrift font-semibold">Hvilke fag har du i år?</h1>
+      <p className="mt-1 text-brod text-blekk-dempet">
         Kode og navn skriver du selv — <code>MFL1</code>, <code>ENG1</code>,{" "}
         <code>Norsk</code>, hva du nå enn underviser i.
       </p>
 
       {fag.length > 0 && (
-        <ul className="mt-5 divide-y divide-neutral-100 border-y border-neutral-200">
+        <ul className="mt-5 divide-y divide-linje-svak border-y border-linje-medium">
           {fag.map((f) => (
-            <li key={f.id} className="flex items-center gap-2 py-1.5 text-[13px]">
+            <li key={f.id} className="flex items-center gap-2 py-1.5 text-brod">
               <Fagstrek farge={f.farge} />
               <span className="w-20 font-medium">{f.kode}</span>
-              <span className="text-neutral-500">{f.navn}</span>
+              <span className="text-blekk-dempet">{f.navn}</span>
             </li>
           ))}
         </ul>
@@ -198,8 +198,8 @@ function StegElever({
 
   return (
     <section>
-      <h1 className="text-[17px] font-semibold">Legg inn klasselistene</h1>
-      <p className="mt-1 text-[13px] text-neutral-500">
+      <h1 className="text-overskrift font-semibold">Legg inn klasselistene</h1>
+      <p className="mt-1 text-brod text-blekk-dempet">
         Ett fag om gangen. Kjenner appen igjen et navn fra et fag du allerede
         har fylt, spør den om det er samme elev. Svarer du ja, blir eleven
         lagt til i dette faget også — koblet til den som finnes, i stedet for
@@ -207,7 +207,7 @@ function StegElever({
       </p>
 
       {meldinger.length > 0 && (
-        <ul className="mt-5 space-y-1 border-y border-neutral-200 py-2 text-[13px] text-neutral-600">
+        <ul className="mt-5 space-y-1 border-y border-linje-medium py-2 text-brod text-blekk-dempet">
           {meldinger.map((m, i) => (
             <li key={i}>✓ {m}</li>
           ))}
@@ -223,7 +223,7 @@ function StegElever({
         </Knapp>
       </div>
 
-      <p className="mt-8 border-t border-neutral-200 pt-4 text-[12px] text-neutral-500">
+      <p className="mt-8 border-t border-linje-medium pt-4 text-liten text-blekk-dempet">
         Til orientering: notatfeltene i appen er lærerens arbeidsmateriale.
         Opplysninger om helse, hjemmeforhold og andre særlige kategorier hører
         ikke hjemme der.

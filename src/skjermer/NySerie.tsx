@@ -92,24 +92,24 @@ export function NySerie({
     const hoppet = dager.filter((d) => d.hoppet !== null);
 
     return (
-      <div className="mb-4 border border-neutral-300 bg-neutral-50 p-3">
-        <p className="text-[13px]">
+      <div className="mb-4 border border-linje bg-flate p-3">
+        <p className="text-brod">
           <strong>{antallValgt} økter</strong> i {valgtFag?.kode} på{" "}
           {ukedagsnavn(ukedag)}
           {hoppet.length > 0 && (
-            <span className="text-neutral-500">
+            <span className="text-blekk-dempet">
               {" "}
               · {hoppet.length} dager faller bort
             </span>
           )}
         </p>
 
-        <div className="mt-2 max-h-64 overflow-y-auto border-y border-neutral-200 bg-white">
+        <div className="mt-2 max-h-64 overflow-y-auto border-y border-linje-medium bg-ark">
           {dager.map((dag, i) => (
             <label
               key={dag.dato}
-              className={`flex items-center gap-3 border-b border-neutral-100 px-2 py-1 text-[13px] ${
-                dag.hoppet ? "text-neutral-400" : ""
+              className={`flex items-center gap-3 border-b border-linje-svak px-2 py-1 text-brod ${
+                dag.hoppet ? "text-blekk-svak" : ""
               }`}
             >
               <input
@@ -123,7 +123,7 @@ export function NySerie({
               />
               <span className="w-32 tabular-nums">{langDato(dag.dato)}</span>
               {dag.forklaring && (
-                <span className="text-[12px]">{dag.forklaring}</span>
+                <span className="text-liten">{dag.forklaring}</span>
               )}
             </label>
           ))}
@@ -145,8 +145,8 @@ export function NySerie({
   }
 
   return (
-    <div className="mb-4 border border-neutral-300 bg-neutral-50 p-3">
-      <p className="mb-3 text-[13px] text-neutral-600">
+    <div className="mb-4 border border-linje bg-flate p-3">
+      <p className="mb-3 text-brod text-blekk-dempet">
         Legg inn en hel termin på én gang. Helger og røde dager hoppes over
         automatisk; ferier og planleggingsdager hentes fra skoleåret.
       </p>
@@ -198,7 +198,7 @@ export function NySerie({
       </div>
 
       {fridager.length === 0 && (
-        <p className="mt-2 text-[12px] text-neutral-500">
+        <p className="mt-2 text-liten text-blekk-dempet">
           Ingen ferier er lagt inn på skoleåret ennå. Legg dem inn under
           skoleåret, så slipper du å hake bort ferieukene her.
         </p>
@@ -207,11 +207,11 @@ export function NySerie({
   );
 }
 
-const velger = "rounded border border-neutral-300 bg-white px-2 py-1.5 text-[13px]";
+const velger = "rounded border border-linje bg-ark px-2 py-1.5 text-brod";
 
 function Etikett({ children }: { children: React.ReactNode }) {
   return (
-    <span className="mb-1 block text-[11px] uppercase tracking-wide text-neutral-500">
+    <span className="mb-1 block text-etikett uppercase tracking-etikett text-blekk-dempet">
       {children}
     </span>
   );
