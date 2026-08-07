@@ -153,16 +153,17 @@ export function Elever({
         </div>
       </div>
 
+      {/* Arket lista ligger på. Skrivebordet er flata rundt (§13). */}
       {elever.length === 0 ? (
         <Tomtilstand
           tekst="Ingen elever i dette skoleåret ennå."
           handling={<Knapp variant="primar" onClick={onLimInn}>Lim inn en klasseliste</Knapp>}
         />
       ) : (
-        <div className="overflow-x-auto">
-        <table className="w-full text-[13px]">
+        <div className="overflow-x-auto rounded-vanlig border border-linje bg-ark px-3">
+        <table className="w-full text-brod">
           <thead>
-            <tr className="border-b border-neutral-300 text-left text-[11px] uppercase tracking-wide text-neutral-500">
+            <tr className="border-b border-linje text-left text-etikett uppercase tracking-etikett text-blekk-dempet">
               <Overskrift kolonne="fornavn" sortering={sortering} onKlikk={bytSortering}>
                 Fornavn
               </Overskrift>
@@ -244,7 +245,7 @@ export function Elever({
         </div>
       )}
 
-      <p className="mt-3 text-[12px] text-neutral-500">
+      <p className="mt-3 text-liten text-blekk-dempet">
         {synlige.length} av {elever.length} elever
       </p>
       </div>
@@ -323,12 +324,12 @@ function Overskrift({
 }) {
   const aktiv = sortering.kolonne === kolonne;
   return (
-    <th className="whitespace-nowrap py-1 pr-5 font-normal">
+    <th className="h-[var(--hoyde-rad)] whitespace-nowrap py-1 pr-5 font-normal">
       <button
         onClick={() => onKlikk(kolonne)}
-        className={`flex w-full items-center gap-1 uppercase tracking-wide hover:text-neutral-900 ${
+        className={`flex w-full items-center gap-1 uppercase tracking-etikett hover:text-blekk ${
           hoyre ? "justify-end" : ""
-        } ${aktiv ? "text-neutral-900" : ""}`}
+        } ${aktiv ? "text-blekk" : ""}`}
       >
         {children}
         <span className={aktiv ? "" : "invisible"}>
@@ -354,7 +355,7 @@ function Velger({
     <select
       value={verdi}
       onChange={(e) => settVerdi(e.target.value)}
-      className="rounded border border-neutral-300 bg-white px-2 py-1.5 text-[13px]"
+      className="rounded-vanlig border border-linje bg-ark px-2 py-1.5 text-brod"
     >
       <option value="">{tom}</option>
       {valg.map((v) => (
@@ -410,14 +411,14 @@ function Rad({
 
   return (
     <tr
-      className={`border-b border-neutral-100 ${
-        valgt ? "bg-[#eaf0f6]" : "hover:bg-[#f4f7fa]"
+      className={`h-[var(--hoyde-rad)] border-b border-linje-svak ${
+        valgt ? "bg-valgt" : "hover:bg-flate-svak"
       }`}
     >
       <td className="whitespace-nowrap py-1.5 pr-5">
         <button
           onClick={onApne}
-          className="text-left hover:text-[#1d4e7c] hover:underline"
+          className="text-left hover:text-aksent hover:underline"
         >
           {elev.fornavn}
         </button>
@@ -426,14 +427,14 @@ function Rad({
         <td className="whitespace-nowrap py-1.5 pr-5">
           <button
             onClick={onApne}
-            className="text-left hover:text-[#1d4e7c] hover:underline"
+            className="text-left hover:text-aksent hover:underline"
           >
             {elev.etternavn}
           </button>
         </td>
       )}
       {vis.has("kode") && (
-        <td className="whitespace-nowrap py-1.5 pr-5 font-mono text-[12px] tabular-nums text-neutral-400">
+        <td className="whitespace-nowrap py-1.5 pr-5 font-mono text-liten tabular-nums text-blekk-svak">
           {elev.kode}
         </td>
       )}
@@ -447,13 +448,13 @@ function Rad({
               if (e.key === "Enter") e.currentTarget.blur();
               if (e.key === "Escape") setSkriverKlasse(false);
             }}
-            className="w-full rounded border border-[#1d4e7c] px-1 py-0.5 outline-none"
+            className="w-full rounded-vanlig border border-aksent px-1 py-0.5 outline-none"
           />
         ) : (
           <select
             value={elev.klasseId ?? ""}
             onChange={(e) => byttKlasse(e.target.value)}
-            className="w-full rounded border border-transparent bg-transparent px-1 py-0.5 hover:border-neutral-300 focus:border-[#1d4e7c] focus:outline-none"
+            className="w-full rounded-vanlig border border-transparent bg-transparent px-1 py-0.5 hover:border-linje focus:border-aksent focus:outline-none"
           >
             <option value="">Ingen klasse</option>
             {klasser.map((k) => (
@@ -468,7 +469,7 @@ function Rad({
       <td className={`relative py-1.5 pr-5 ${vis.has("fag") ? "" : "hidden"}`}>
         <button
           onClick={() => setApenFag((v) => !v)}
-          className="w-full rounded border border-transparent px-1 py-0.5 text-left hover:border-neutral-300"
+          className="w-full rounded-vanlig border border-transparent px-1 py-0.5 text-left hover:border-linje"
         >
           {elev.fagIder.length > 0 ? (
             <span className="flex flex-wrap gap-1">
@@ -478,15 +479,15 @@ function Rad({
               })}
             </span>
           ) : (
-            <span className="text-neutral-400">ingen fag</span>
+            <span className="text-blekk-svak">ingen fag</span>
           )}
         </button>
         {apenFag && (
-          <div className="absolute left-0 top-full z-10 mt-1 w-56 rounded border border-neutral-300 bg-white p-2 shadow-lg">
+          <div className="absolute left-0 top-full z-10 mt-1 w-56 rounded-vanlig border border-linje bg-ark p-2 shadow-lg">
             {fag.map((f) => (
               <label
                 key={f.id}
-                className="flex items-center gap-2 py-0.5 text-[13px] hover:bg-neutral-50"
+                className="flex items-center gap-2 py-0.5 text-brod hover:bg-flate"
               >
                 <input
                   type="checkbox"
@@ -498,12 +499,12 @@ function Rad({
                   }}
                 />
                 <Fagmerke kode={f.kode} farge={f.farge} />
-                <span className="truncate text-neutral-500">{f.navn}</span>
+                <span className="truncate text-blekk-dempet">{f.navn}</span>
               </label>
             ))}
             <button
               onClick={() => setApenFag(false)}
-              className="mt-1 w-full border-t border-neutral-200 pt-1 text-[12px] text-neutral-500"
+              className="mt-1 w-full border-t border-linje-medium pt-1 text-liten text-blekk-dempet"
             >
               Lukk
             </button>
@@ -516,7 +517,7 @@ function Rad({
         </td>
       )}
       {vis.has("siste") && (
-        <td className="whitespace-nowrap py-1.5 pr-5 text-right tabular-nums text-neutral-500">
+        <td className="whitespace-nowrap py-1.5 pr-5 text-right tabular-nums text-blekk-dempet">
           {elev.siste ? dagerSiden(elev.siste) : "–"}
         </td>
       )}
@@ -578,7 +579,7 @@ function NyElevRad({
             }
           }}
           placeholder="+ Legg til elev …"
-          className="w-full rounded border border-transparent px-1 py-0.5 text-neutral-600 outline-none placeholder:text-neutral-400 hover:border-neutral-300 focus:border-[#1d4e7c]"
+          className="w-full rounded-vanlig border border-transparent px-1 py-0.5 text-blekk-dempet outline-none placeholder:text-blekk-svak hover:border-linje focus:border-aksent"
         />
       </td>
     </tr>
@@ -601,7 +602,7 @@ function Klasser({
   return (
     <div className="max-w-lg">
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-[15px] font-semibold">Klasser</h2>
+        <h2 className="text-tittel font-semibold">Klasser</h2>
         <Knapp variant="stille" onClick={onTilbake}>
           Tilbake til elevene
         </Knapp>
@@ -610,10 +611,10 @@ function Klasser({
       {klasser.length === 0 ? (
         <Tomtilstand tekst="Ingen klasser ennå. De opprettes når du limer inn en liste." />
       ) : (
-        <table className="w-full text-[13px]">
+        <table className="w-full text-brod">
           <tbody>
             {klasser.map((k) => (
-              <tr key={k.id} className="border-b border-neutral-100">
+              <tr key={k.id} className="border-b border-linje-svak">
                 <td className="py-1.5">
                   <input
                     defaultValue={k.navn}
@@ -624,10 +625,10 @@ function Klasser({
                         onEndret();
                       }
                     }}
-                    className="rounded border border-transparent px-1 py-0.5 hover:border-neutral-300 focus:border-[#1d4e7c] focus:outline-none"
+                    className="rounded-vanlig border border-transparent px-1 py-0.5 hover:border-linje focus:border-aksent focus:outline-none"
                   />
                 </td>
-                <td className="w-24 py-1.5 text-right tabular-nums text-neutral-500">
+                <td className="w-24 py-1.5 text-right tabular-nums text-blekk-dempet">
                   {k.antall} elever
                 </td>
                 <td className="w-20 py-1.5 text-right">
@@ -642,7 +643,7 @@ function Klasser({
                       await slettKlasse(k.id);
                       onEndret();
                     }}
-                    className="text-[12px] text-neutral-400 hover:text-red-700"
+                    className="text-liten text-blekk-svak hover:text-red-700"
                   >
                     Slett
                   </button>

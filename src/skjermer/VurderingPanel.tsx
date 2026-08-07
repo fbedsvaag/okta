@@ -127,7 +127,7 @@ export function VurderingPanel({
         <span
           aria-hidden
           className="h-3.5 w-[3px] rounded-full"
-          style={{ background: vurdering.farge ?? "#c9c9c9" }}
+          style={{ background: vurdering.farge ?? "var(--color-na-fagstrek)" }}
         />
         <span className="text-[13px] font-semibold">{vurdering.fagKode}</span>
         <span className="truncate text-[13px] text-neutral-600">
@@ -250,17 +250,17 @@ function ElevRad({
     <div
       onClick={onKlikk}
       className={`flex cursor-default items-center gap-2 border-b border-neutral-100 px-5 py-1 ${
-        markert ? "bg-[#eaf0f6]" : "hover:bg-neutral-50"
+        markert ? "bg-na-blaa-flate" : "hover:bg-neutral-50"
       }`}
     >
-      <span className="w-3 text-[11px] text-[#1d4e7c]">{markert ? "▸" : ""}</span>
+      <span className="w-3 text-[11px] text-na-blaa">{markert ? "▸" : ""}</span>
       <button
         onClick={(e) => {
           e.stopPropagation();
           onApneElev();
         }}
         title="Åpne eleven"
-        className="w-44 shrink-0 truncate text-left text-[13px] hover:text-[#1d4e7c] hover:underline"
+        className="w-44 shrink-0 truncate text-left text-[13px] hover:text-na-blaa hover:underline"
       >
         {elev.fornavn} {elev.etternavn}
       </button>
@@ -303,7 +303,7 @@ function ElevRad({
             title={`${tastekart.get(v.id) ?? ""} — ${v.kode}${v.etikett ? `: ${v.etikett}` : ""}`}
             className={`min-w-7 rounded-sm border px-1.5 py-0.5 text-[12px] tabular-nums ${
               elev.skalaverdiId === v.id
-                ? "border-[#1d4e7c] bg-[#1d4e7c] text-white"
+                ? "border-na-blaa bg-na-blaa text-white"
                 : "border-neutral-300 text-neutral-600 hover:bg-neutral-100"
             }`}
           >
@@ -463,7 +463,7 @@ function Kommentar({
 }
 
 const feltStil =
-  "w-full rounded border border-neutral-300 bg-white px-2 py-1 text-[13px] tabular-nums outline-none placeholder:text-neutral-400 focus:border-[#1d4e7c]";
+  "w-full rounded border border-neutral-300 bg-white px-2 py-1 text-[13px] tabular-nums outline-none placeholder:text-neutral-400 focus:border-na-blaa";
 
 function Linje({
   etikett,

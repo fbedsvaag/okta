@@ -93,12 +93,12 @@ export function ElevPanel({
   const detteAret = ar.find((a) => a.skolearId === valgtAr);
 
   return (
-    <aside className="flex h-full flex-col border-l border-neutral-300 bg-white">
-      <header className="flex items-baseline gap-3 border-b border-neutral-200 px-5 py-3">
-        <span className="text-[15px] font-semibold">
+    <aside className="flex h-full flex-col border-l border-linje bg-ark">
+      <header className="flex items-baseline gap-3 border-b border-linje-medium px-5 py-3">
+        <span className="text-tittel font-semibold">
           {elev.fornavn} {elev.etternavn}
         </span>
-        <span className="font-mono text-[11px] text-neutral-400">{elev.kode}</span>
+        <span className="font-mono text-etikett text-blekk-svak">{elev.kode}</span>
         <Klassevelger
           klasser={klasser}
           valgt={detteAret?.klasse ?? null}
@@ -115,7 +115,7 @@ export function ElevPanel({
         />
         <button
           onClick={onLukk}
-          className="ml-auto shrink-0 text-[12px] text-neutral-400 hover:text-neutral-900"
+          className="ml-auto shrink-0 text-liten text-blekk-svak hover:text-blekk"
         >
           Lukk (Esc)
         </button>
@@ -128,10 +128,10 @@ export function ElevPanel({
               <button
                 key={a.skolearId}
                 onClick={() => setValgtAr(a.skolearId)}
-                className={`rounded px-2 py-0.5 text-[12px] tabular-nums ${
+                className={`rounded-vanlig px-2 py-0.5 text-liten tabular-nums ${
                   a.skolearId === valgtAr
-                    ? "bg-[#eaf0f6] font-medium text-[#1d4e7c]"
-                    : "text-neutral-500 hover:text-neutral-900"
+                    ? "bg-valgt font-medium text-aksent"
+                    : "text-blekk-dempet hover:text-blekk"
                 }`}
               >
                 {a.navn}
@@ -165,31 +165,31 @@ export function ElevPanel({
           {vurderinger.length === 0 ? (
             <Stille>Ingen vurderinger i fagene hens ennå.</Stille>
           ) : (
-            <table className="w-full text-[13px]">
+            <table className="w-full text-brod">
               <tbody>
                 {vurderinger.map((v, i) => (
-                  <tr key={i} className="border-b border-neutral-100 align-top">
+                  <tr key={i} className="border-b border-linje-svak align-top">
                     <td className="w-16 py-1.5">
                       <Fagmerke kode={v.fagKode} farge={null} liten />
                     </td>
                     <td className="py-1.5">
                       {v.tittel}
                       {v.kommentar && (
-                        <p className="text-[12px] italic text-neutral-500">
+                        <p className="text-liten italic text-blekk-dempet">
                           {v.kommentar}
                         </p>
                       )}
                     </td>
-                    <td className="w-20 py-1.5 tabular-nums text-neutral-500">
+                    <td className="w-20 py-1.5 tabular-nums text-blekk-dempet">
                       {v.frist ?? ""}
                     </td>
                     <td className="w-16 py-1.5 text-right">
                       {v.resultat ? (
-                        <span className="rounded-sm border border-neutral-300 px-1.5 py-0.5 tabular-nums">
+                        <span className="rounded-liten border border-linje px-1.5 py-0.5 tabular-nums">
                           {v.resultat}
                         </span>
                       ) : (
-                        <span className="text-neutral-300">
+                        <span className="text-blekk-svakest">
                           {v.levert === 1 ? "levert" : "–"}
                         </span>
                       )}
@@ -208,9 +208,9 @@ export function ElevPanel({
             rows={4}
             placeholder="Observasjoner, avtaler, det du vil huske til elevsamtalen."
             onBlur={(e) => void settElevnotat(elev.id, e.target.value)}
-            className="w-full rounded border border-neutral-300 px-2 py-1.5 text-[13px] outline-none placeholder:text-neutral-400 focus:border-[#1d4e7c]"
+            className="w-full rounded-vanlig border border-linje px-2 py-1.5 text-brod outline-none placeholder:text-blekk-svak focus:border-aksent"
           />
-          <p className="mt-1 text-[11px] text-neutral-400">
+          <p className="mt-1 text-etikett text-blekk-svak">
             Dette er arbeidsmateriale. Helse, hjemmeforhold og andre særlige
             kategorier hører ikke hjemme her.
           </p>
@@ -252,7 +252,7 @@ function Klassevelger({
           if (e.key === "Enter") e.currentTarget.blur();
           if (e.key === "Escape") setSkriver(false);
         }}
-        className="w-24 rounded border border-[#1d4e7c] px-1 py-0.5 text-[13px] outline-none"
+        className="w-24 rounded-vanlig border border-aksent px-1 py-0.5 text-brod outline-none"
       />
     );
   }
@@ -265,7 +265,7 @@ function Klassevelger({
         onVelg(e.target.value === "" ? null : e.target.value);
       }}
       title="Klasse dette skoleåret"
-      className="rounded border border-transparent bg-transparent px-1 py-0.5 text-[13px] text-neutral-600 hover:border-neutral-300 focus:border-[#1d4e7c] focus:outline-none"
+      className="rounded-vanlig border border-transparent bg-transparent px-1 py-0.5 text-brod text-blekk-dempet hover:border-linje focus:border-aksent focus:outline-none"
     >
       <option value="">Ingen klasse</option>
       {klasser.map((k) => (
@@ -299,7 +299,7 @@ function Heatmap({
           ))}
         </div>
       </div>
-      <p className="ml-[4.5rem] mt-1 text-[12px] tabular-nums text-neutral-500">
+      <p className="ml-[4.5rem] mt-1 text-liten tabular-nums text-blekk-dempet">
         {rad.ruter.length} økter · {talt.gronn} grønne, {talt.gul} gule, {talt.rod}{" "}
         røde
         {talt.ikke > 0 && `, ${talt.ikke} ikke i økta`}
@@ -338,7 +338,7 @@ function Rute({ rute, onKlikk }: { rute: HeatmapRute; onKlikk: () => void }) {
       className="h-3.5 w-3.5 rounded-[2px] border"
       style={
         !avholdt
-          ? { borderColor: "#e5e5e5", borderStyle: "dotted", background: "transparent" }
+          ? { borderColor: "var(--color-na-kant-svak)", borderStyle: "dotted", background: "transparent" }
           : ikkeIOkta
             ? { borderColor: NOYTRAL, borderStyle: "dashed", background: "transparent" }
             : { borderColor: farge ?? NOYTRAL, background: farge ?? "transparent" }
@@ -362,7 +362,7 @@ function tell(ruter: HeatmapRute[]) {
 function Bolk({ tittel, children }: { tittel: string; children: React.ReactNode }) {
   return (
     <section className="mb-6">
-      <h3 className="mb-2 border-b border-neutral-200 pb-1 text-[11px] uppercase tracking-wide text-neutral-500">
+      <h3 className="mb-2 border-b border-linje-medium pb-1 text-etikett uppercase tracking-etikett text-blekk-dempet">
         {tittel}
       </h3>
       {children}
@@ -371,5 +371,5 @@ function Bolk({ tittel, children }: { tittel: string; children: React.ReactNode 
 }
 
 function Stille({ children }: { children: React.ReactNode }) {
-  return <p className="py-1 text-[13px] text-neutral-400">{children}</p>;
+  return <p className="py-1 text-brod text-blekk-svak">{children}</p>;
 }

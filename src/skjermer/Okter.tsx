@@ -266,7 +266,7 @@ export function Okter({
             {synlige.length} av {okter.length} økter ·{" "}
             {timer(synlige.reduce((sum, o) => sum + o.varighetMin, 0))}
             {blokkert.size > 0 && (
-              <span className="ml-2 text-[#b3261e]">
+              <span className="ml-2 text-feil">
                 ! {blokkert.size}{" "}
                 {blokkert.size === 1 ? "økt ligger" : "økter ligger"} på en fridag
               </span>
@@ -376,7 +376,7 @@ function Liste({
             <button
               onClick={() => onVelg(o.id)}
               className={`flex w-full items-center gap-3 border-b border-neutral-100 px-2 py-1.5 text-left text-[13px] ${
-                valgt === o.id ? "bg-[#eaf0f6]" : "hover:bg-neutral-50"
+                valgt === o.id ? "bg-na-blaa-flate" : "hover:bg-neutral-50"
               }`}
             >
               {vis.has("uke") && (
@@ -387,13 +387,13 @@ function Liste({
               <span
                 aria-hidden
                 className="h-3.5 w-[3px] shrink-0 rounded-full"
-                style={{ background: o.farge ?? "#c9c9c9" }}
+                style={{ background: o.farge ?? "var(--color-na-fagstrek)" }}
               />
               <span className="w-12 shrink-0 font-medium">{o.fagKode}</span>
               <span
                 className={`w-24 shrink-0 tabular-nums ${
                   blokkert.has(o.id)
-                    ? "font-medium text-[#b3261e]"
+                    ? "font-medium text-feil"
                     : "text-neutral-600"
                 }`}
                 title={blokkert.get(o.id)?.navn}
@@ -492,7 +492,7 @@ function Status({ okt }: { okt: Okt }) {
   if (okt.skaret === 0)
     return <span className="w-14 shrink-0 text-right text-neutral-300">·</span>;
   if (okt.skaret >= okt.elever)
-    return <span className="w-14 shrink-0 text-right text-[#2e7d32]">✓</span>;
+    return <span className="w-14 shrink-0 text-right text-na-ok">✓</span>;
   return (
     <span className="w-14 shrink-0 text-right tabular-nums text-neutral-500">
       {okt.skaret}/{okt.elever}

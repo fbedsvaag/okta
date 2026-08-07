@@ -218,7 +218,7 @@ export default function App() {
       )}
 
       {melding && (
-        <div className="flex shrink-0 items-center gap-3 border-b border-neutral-200 bg-[#f4f7fa] px-6 py-1.5 text-[13px] text-[#1d4e7c]">
+        <div className="flex shrink-0 items-center gap-3 border-b border-neutral-200 bg-na-blaa-svak px-6 py-1.5 text-[13px] text-na-blaa">
           <span>✓ {melding}</span>
           <Knapp variant="stille" onClick={() => setMelding(null)}>
             Lukk
@@ -228,11 +228,17 @@ export default function App() {
 
       <main className="min-h-0 flex-1 overflow-hidden">
         <div
-          className={
+          className={`${
             medPanel(visning)
               ? "h-full px-6 py-4"
               : "h-full overflow-y-auto px-6 py-5 sm:px-8 sm:py-6"
-          }
+          } ${
+            // Skrivebordsfargen fra merkevareguiden. Ligger foreløpig bare på
+            // Elever — de andre skjermene er ikke flyttet over ennå, og et
+            // halvveis omgjort skall er verre enn et helt gammelt. Løftes til
+            // <main> når resten er over.
+            visning === "elever" ? "bg-bord" : ""
+          }`}
         >
         {visning === "idag" && (
           <IDag
@@ -376,7 +382,7 @@ function Fane({
       onClick={onKlikk}
       className={`rounded px-2 py-0.5 text-[13px] ${tabulaer ? "tabular-nums" : ""} ${
         aktiv
-          ? "bg-[#eaf0f6] font-medium text-[#1d4e7c]"
+          ? "bg-na-blaa-flate font-medium text-na-blaa"
           : "text-neutral-500 hover:text-neutral-900"
       }`}
     >

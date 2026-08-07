@@ -68,7 +68,7 @@ export function FagPanel({
         <span
           aria-hidden
           className="h-3.5 w-[3px] rounded-full"
-          style={{ background: fag.farge ?? "#c9c9c9" }}
+          style={{ background: fag.farge ?? "var(--color-na-fagstrek)" }}
         />
         <span className="text-[15px] font-semibold">{fag.kode}</span>
         <span className="truncate text-[13px] text-neutral-600">{fag.navn}</span>
@@ -96,7 +96,7 @@ export function FagPanel({
               className="h-full rounded-full"
               style={{
                 width: `${andel * 100}%`,
-                background: fag.farge ?? "#1d4e7c",
+                background: fag.farge ?? "var(--color-na-blaa)",
               }}
             />
           </div>
@@ -118,7 +118,7 @@ export function FagPanel({
           handling={
             <button
               onClick={onApneVurderinger}
-              className="text-[12px] text-neutral-500 hover:text-[#1d4e7c]"
+              className="text-[12px] text-neutral-500 hover:text-na-blaa"
             >
               Åpne Vurderinger
             </button>
@@ -157,7 +157,7 @@ export function FagPanel({
                     <td className="py-1.5">
                       <button
                         onClick={() => onApneElev(e.elevId)}
-                        className="text-left hover:text-[#1d4e7c] hover:underline"
+                        className="text-left hover:text-na-blaa hover:underline"
                       >
                         {e.fornavn} {e.etternavn}
                       </button>

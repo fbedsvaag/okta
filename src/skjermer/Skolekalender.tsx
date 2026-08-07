@@ -105,7 +105,7 @@ export function Skolekalender({
             <span
               aria-hidden
               className="h-2.5 w-2.5 rounded-sm"
-              style={{ background: f.farge ?? "#c9c9c9" }}
+              style={{ background: f.farge ?? "var(--color-na-fagstrek)" }}
             />
             {f.kode}
           </span>
@@ -266,11 +266,11 @@ function Dag({
   const bakgrunn = utenfor
     ? "bg-neutral-50"
     : konflikt
-      ? "bg-[#fdf0ef]"
+      ? "bg-na-konflikt"
       : blokkert
         ? blokkert.type === "helligdag"
-          ? "bg-[#fbf3f3]"
-          : "bg-[#f6f4f0]"
+          ? "bg-na-helligdag"
+          : "bg-na-fri"
         : "bg-white";
 
   return (
@@ -278,13 +278,13 @@ function Dag({
       onClick={utenfor ? undefined : onVelg}
       className={`min-h-[3.25rem] px-1 py-0.5 ${bakgrunn} ${
         utenfor ? "" : "cursor-pointer hover:brightness-[0.98]"
-      } ${valgt ? "outline outline-2 -outline-offset-2 outline-[#1d4e7c]" : ""}`}
+      } ${valgt ? "outline outline-2 -outline-offset-2 outline-na-blaa" : ""}`}
     >
       <div className="flex items-baseline gap-1">
         <span
           className={`text-[11px] tabular-nums ${
             erIdag
-              ? "rounded-sm bg-[#1d4e7c] px-1 font-medium text-white"
+              ? "rounded-sm bg-na-blaa px-1 font-medium text-white"
               : utenfor
                 ? "text-neutral-300"
                 : "text-neutral-500"
@@ -295,7 +295,7 @@ function Dag({
         {konflikt && (
           <span
             title={`${okter.length} økt(er) ligger på ${blokkert!.navn}`}
-            className="text-[11px] font-bold text-[#b3261e]"
+            className="text-[11px] font-bold text-feil"
           >
             !
           </span>
@@ -305,7 +305,7 @@ function Dag({
       {blokkert && !utenfor && (
         <p
           className={`truncate text-[10px] ${
-            konflikt ? "text-[#b3261e]" : "text-neutral-400"
+            konflikt ? "text-feil" : "text-neutral-400"
           }`}
           title={blokkert.navn}
         >
@@ -334,7 +334,7 @@ function Dag({
             <span
               aria-hidden
               className="h-2.5 w-[3px] shrink-0 rounded-full"
-              style={{ background: o.farge ?? "#c9c9c9" }}
+              style={{ background: o.farge ?? "var(--color-na-fagstrek)" }}
             />
             <span className="truncate">{o.fagKode}</span>
           </button>
@@ -409,7 +409,7 @@ function Valgtlinje({
       </span>
 
       {blokkerte.length > 0 && (
-        <span className="text-[12px] text-[#b3261e]">
+        <span className="text-[12px] text-feil">
           {blokkerte.length === datoer.length
             ? "merket som fri"
             : `${blokkerte.length} av dem er merket som fri`}
@@ -420,7 +420,7 @@ function Valgtlinje({
         value={klokke}
         onChange={(e) => setKlokke(e.target.value)}
         placeholder="09:15"
-        className="w-20 rounded border border-neutral-300 px-2 py-1 tabular-nums outline-none focus:border-[#1d4e7c]"
+        className="w-20 rounded border border-neutral-300 px-2 py-1 tabular-nums outline-none focus:border-na-blaa"
       />
 
       <span className="text-neutral-500">Legg inn økt i:</span>
@@ -434,7 +434,7 @@ function Valgtlinje({
           <span
             aria-hidden
             className="h-3 w-[3px] rounded-full"
-            style={{ background: f.farge ?? "#c9c9c9" }}
+            style={{ background: f.farge ?? "var(--color-na-fagstrek)" }}
           />
           {f.kode}
         </button>

@@ -185,18 +185,18 @@ function Rad({
     <button
       onClick={onVelg}
       className={`flex w-full items-center gap-3 border-b border-neutral-100 px-2 py-1.5 text-left text-[13px] ${
-        valgt ? "bg-[#eaf0f6]" : "hover:bg-neutral-50"
+        valgt ? "bg-na-blaa-flate" : "hover:bg-neutral-50"
       }`}
     >
       <span
         aria-hidden
         className="h-3.5 w-[3px] shrink-0 rounded-full"
-        style={{ background: vurdering.farge ?? "#c9c9c9" }}
+        style={{ background: vurdering.farge ?? "var(--color-na-fagstrek)" }}
       />
       <span className="w-12 shrink-0 font-medium">{vurdering.fagKode}</span>
       <span
         className={`w-24 shrink-0 tabular-nums ${
-          passert ? "font-medium text-[#b3261e]" : "text-neutral-600"
+          passert ? "font-medium text-feil" : "text-neutral-600"
         }`}
       >
         {vurdering.frist ? kortDato(vurdering.frist) : "ingen frist"}

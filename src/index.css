@@ -1,7 +1,237 @@
 @import "tailwindcss";
 
+/*
+ * Fira Sans og Fira Sans Condensed, SIL OFL. Filene ligger i public/fonts/ og
+ * lastes fra disk — appen gjør ingen nettverkskall (§1). Lisensen følger med
+ * i public/fonts/OFL.txt, som OFL-en krever.
+ *
+ * font-display: block, ikke swap: filene er lokale og laster momentant, og da
+ * er et kort usynlig øyeblikk bedre enn at all tekst hopper når reserveskrifta
+ * byttes ut. Appen skal starte på under ett sekund (§2) og bør ikke blafre.
+ *
+ * MERK: sifrene i Fira har ulik bredde som standard (433-558 enheter). Tall
+ * som skal flukte i kolonner MÅ ha tabular-nums — det er verifisert at tnum
+ * gir alle ti sifrene lik bredde. Klassene som allerede står på datoer,
+ * klokkeslett og tall i appen er derfor bærende, ikke pynt.
+ */
+
+@font-face {
+  font-family: "Fira Sans";
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src: url("/fonts/fira-sans-400-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Fira Sans";
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src: url("/fonts/fira-sans-400-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: "Fira Sans";
+  font-style: normal;
+  font-weight: 500;
+  font-display: block;
+  src: url("/fonts/fira-sans-500-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Fira Sans";
+  font-style: normal;
+  font-weight: 500;
+  font-display: block;
+  src: url("/fonts/fira-sans-500-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: "Fira Sans";
+  font-style: normal;
+  font-weight: 600;
+  font-display: block;
+  src: url("/fonts/fira-sans-600-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Fira Sans";
+  font-style: normal;
+  font-weight: 600;
+  font-display: block;
+  src: url("/fonts/fira-sans-600-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: "Fira Sans Condensed";
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src: url("/fonts/fira-sans-condensed-400-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Fira Sans Condensed";
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src: url("/fonts/fira-sans-condensed-400-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: "Fira Sans Condensed";
+  font-style: normal;
+  font-weight: 500;
+  font-display: block;
+  src: url("/fonts/fira-sans-condensed-500-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Fira Sans Condensed";
+  font-style: normal;
+  font-weight: 500;
+  font-display: block;
+  src: url("/fonts/fira-sans-condensed-500-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: "Fira Sans Condensed";
+  font-style: normal;
+  font-weight: 600;
+  font-display: block;
+  src: url("/fonts/fira-sans-condensed-600-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Fira Sans Condensed";
+  font-style: normal;
+  font-weight: 600;
+  font-display: block;
+  src: url("/fonts/fira-sans-condensed-600-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@theme {
+  --font-sans: "Fira Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-smal: "Fira Sans Condensed", "Fira Sans", -apple-system, sans-serif;
+
+  /* =====================================================================
+   * NY PALETT — hentet fra merkevareguiden. Definert her, men ennå ikke
+   * tatt i bruk noe sted. Skjermene flyttes over én om gangen, med Elever
+   * først, slik at det er mulig å se hva hvert steg gjør.
+   * ===================================================================== */
+
+  /* Blekk. Nøytralene har et kjølig fiolett stikk framfor å være rent grå. */
+  --color-blekk: #241f33;
+  --color-blekk-dempet: #645d7a;
+  --color-blekk-svak: #9a90b8;
+  --color-blekk-svakest: #b4abd0;
+
+  /* Flater */
+  --color-bord: #eceaf1;
+  --color-ark: #ffffff;
+  --color-flate: #f4f2f9;
+  --color-flate-svak: #f0eef6;
+  --color-valgt: #e3ddf0;
+
+  /* Linjer. Referansen er linjert papir, så disse bærer mye av uttrykket. */
+  --color-linje-svak: #f0eef6;
+  --color-linje: #d9d4e8;
+  --color-linje-medium: #e5e2ee;
+  --color-linje-sterk: #c9c2dd;
+
+  /* Aksent */
+  --color-aksent: #4a3d7d;
+  --color-aksent-mork: #3b3066;
+  --color-aksent-dyp: #332b52;
+  --color-aksent-dypere: #3f3563;
+
+  /*
+   * Trafikklyset, varianten guiden kaller «roligere» — dempet mot dagens
+   * #2dc937/#cc3232. Fortsatt det eneste stedet i appen med mettet farge (§13).
+   * Formen bærer betydningen sammen med fargen: fylt, halvfylt, ring, tynn ring.
+   */
+  --color-lys-gronn: #3f9d49;
+  --color-lys-gul: #d9a92f;
+  --color-lys-oransje: #cf7a35;
+  --color-lys-rod: #c04a3d;
+  --color-lys-borte: #b6bcc4;
+
+  --color-feil: #b3261e;
+  --color-feil-mork: #7a1a14;
+
+  /* Typeskala */
+  --text-mikro: 10px;
+  --text-etikett: 11px;
+  --text-liten: 12px;
+  --text-brod: 13px;
+  --text-medium: 14px;
+  --text-tittel: 15px;
+  --tracking-etikett: 0.05em;
+
+  /* Radier. Skarpt, ikke avrundet — dette er et skjema, ikke et kort. */
+  --radius-liten: 3px;
+  --radius-vanlig: 4px;
+  --radius-stor: 6px;
+
+  /*
+   * Bevegelse. Guiden bruker to kurver: én inn, én ut, og en egen for
+   * markøren. MERK at markørflyttingen slås AV når du skårer med talltast —
+   * bare pilnavigering animeres. Skåringen skal ta under 20 sekunder for
+   * hele klassen (§1), og da kan ikke markøren henge etter fingeren.
+   */
+  --ease-inn: cubic-bezier(0.2, 0.9, 0.25, 1);
+  --ease-ut: cubic-bezier(0.4, 0, 0.9, 0.4);
+  --ease-markor: cubic-bezier(0.45, 0, 0.55, 1);
+  --tid-inn: 180ms;
+  --tid-ut: 130ms;
+  --tid-markor: 90ms;
+
+  /* Radhøyde: 30 elever a 28px = 840px, som er kravet i §13. */
+  --hoyde-rad: 28px;
+
+  --shadow-panel: 0 1px 3px rgba(36, 31, 51, 0.14), 0 4px 14px rgba(36, 31, 51, 0.07);
+  --shadow-ark: 0 4px 10px rgba(36, 31, 51, 0.16), 0 12px 32px rgba(36, 31, 51, 0.12);
+  --shadow-dyp: 0 8px 20px rgba(36, 31, 51, 0.22), 0 24px 60px rgba(36, 31, 51, 0.18);
+
+  /* =====================================================================
+   * DAGENS VERDIER — uendret. Disse er de samme hex-kodene som lå strødd
+   * i komponentene, bare samlet og navngitt. Ingenting skal se annerledes
+   * ut av at de flyttet hit. `na-` betyr nåværende, og gruppa tømmes
+   * etter hvert som skjermene går over til paletten over.
+   * ===================================================================== */
+  --color-na-blaa: #1d4e7c;
+  --color-na-blaa-mork: #194365;
+  --color-na-blaa-flate: #eaf0f6;
+  --color-na-blaa-svak: #f4f7fa;
+  --color-na-periode: #e8eff6;
+  --color-na-periode-kant: #c3d2e0;
+  --color-na-varsel: #8a5a00;
+  --color-na-ok: #2e7d32;
+  --color-na-konflikt: #fdf0ef;
+  --color-na-helligdag: #fbf3f3;
+  --color-na-fri: #f6f4f0;
+  --color-na-fagstrek: #c9c9c9;
+  --color-na-fagmerke: #6b6b6b;
+  --color-na-kant: #d4d4d4;
+  --color-na-kant-svak: #e5e5e5;
+}
+
 html {
   background: #fff;
+  font-family: var(--font-sans);
 }
 
 /*

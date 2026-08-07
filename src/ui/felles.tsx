@@ -23,7 +23,7 @@ export function Knapp({
     vanlig:
       "border border-neutral-300 bg-white text-neutral-800 hover:bg-neutral-50",
     primar:
-      "border border-[#1d4e7c] bg-[#1d4e7c] text-white hover:bg-[#194365]",
+      "border border-na-blaa bg-na-blaa text-white hover:bg-na-blaa-mork",
     stille:
       "border border-transparent text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100",
   }[variant];
@@ -78,7 +78,7 @@ export function Felt({
             onEnter();
           }
         }}
-        className="w-full rounded border border-neutral-300 bg-white px-2 py-1.5 text-[13px] tabular-nums outline-none focus:border-[#1d4e7c] focus:ring-1 focus:ring-[#1d4e7c]"
+        className="w-full rounded border border-neutral-300 bg-white px-2 py-1.5 text-[13px] tabular-nums outline-none focus:border-na-blaa focus:ring-1 focus:ring-na-blaa"
       />
     </label>
   );
@@ -104,7 +104,7 @@ export function Fagstrek({ farge }: { farge: string | null }) {
     <span
       aria-hidden
       className="inline-block h-3.5 w-[3px] shrink-0 rounded-full align-middle"
-      style={{ background: farge ?? "#c9c9c9" }}
+      style={{ background: farge ?? "var(--color-na-fagstrek)" }}
     />
   );
 }
@@ -124,6 +124,8 @@ export function Fagmerke({
   farge: string | null;
   liten?: boolean;
 }) {
+  // Blir stående som hex, ikke token: linja under limer "1f" bakpå for å få
+  // fargen med alfa, og `var(--color-…)1f` er ikke en gyldig verdi.
   const f = farge ?? "#6b6b6b";
   return (
     <span

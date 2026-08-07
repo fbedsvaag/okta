@@ -156,7 +156,7 @@ function FagRad({
     return (
       <tr
         className={`cursor-pointer border-b border-neutral-100 ${
-          valgt ? "bg-[#eaf0f6]" : "hover:bg-[#f4f7fa]"
+          valgt ? "bg-na-blaa-flate" : "hover:bg-na-blaa-svak"
         }`}
         onClick={onApne}
       >
@@ -164,7 +164,7 @@ function FagRad({
           <span
             aria-hidden
             className="block h-4 w-[3px] rounded-full"
-            style={{ background: fag.farge ?? "#c9c9c9" }}
+            style={{ background: fag.farge ?? "var(--color-na-fagstrek)" }}
           />
         </td>
         <td className="py-1.5 font-medium">{fag.kode}</td>
@@ -192,7 +192,7 @@ function FagRad({
             onClick={() => setVisFarger((v) => !v)}
             title="Bytt farge"
             className="block h-4 w-[3px] rounded-full"
-            style={{ background: fag.farge ?? "#c9c9c9" }}
+            style={{ background: fag.farge ?? "var(--color-na-fagstrek)" }}
           />
           {visFarger && (
             <div className="absolute left-0 top-full z-20 mt-1 w-52 rounded border border-neutral-300 bg-white p-2 shadow-lg">
@@ -217,6 +217,8 @@ function FagRad({
               <label className="mt-2 flex items-center gap-2 border-t border-neutral-200 pt-2 text-[12px] text-neutral-500">
                 <input
                   type="color"
+                  // Hex, ikke token: <input type="color"> godtar bare en
+                  // bokstavelig hex-verdi, ikke en CSS-variabel.
                   value={fag.farge ?? "#2f5d8a"}
                   onChange={async (e) => {
                     await endreFag(fag.fagId, { farge: e.target.value });
@@ -342,7 +344,7 @@ function Innfelt({
           e.currentTarget.blur();
         }
       }}
-      className={`w-full rounded border border-transparent px-1 py-0.5 tabular-nums outline-none placeholder:text-neutral-400 hover:border-neutral-300 focus:border-[#1d4e7c] ${
+      className={`w-full rounded border border-transparent px-1 py-0.5 tabular-nums outline-none placeholder:text-neutral-400 hover:border-neutral-300 focus:border-na-blaa ${
         hoyre ? "text-right" : ""
       } ${klasser}`}
     />

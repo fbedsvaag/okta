@@ -149,7 +149,7 @@ export function LimInn({
         onChange={(e) => setTekst(e.target.value)}
         rows={14}
         placeholder={"Tony Soprano\nCarmela Soprano\nAdriana La Cerva"}
-        className="mt-3 w-full rounded border border-neutral-300 px-2 py-2 font-mono text-[12px] outline-none focus:border-[#1d4e7c]"
+        className="mt-3 w-full rounded border border-neutral-300 px-2 py-2 font-mono text-[12px] outline-none focus:border-na-blaa"
       />
 
       <div className="mt-3 flex gap-2">
@@ -173,9 +173,9 @@ function ForhandsvisRad({
 }) {
   const merke = {
     ny: { tekst: "Ny elev", stil: "text-neutral-500" },
-    samme: { tekst: "Finnes fra før", stil: "text-[#1d4e7c]" },
+    samme: { tekst: "Finnes fra før", stil: "text-na-blaa" },
     allerede: { tekst: "Står alt i faget", stil: "text-neutral-400" },
-    spor: { tekst: "Usikker", stil: "text-[#8a5a00]" },
+    spor: { tekst: "Usikker", stil: "text-na-varsel" },
   }[rad.status];
 
   const forklaring = {
@@ -198,7 +198,7 @@ function ForhandsvisRad({
         <input
           value={rad.klasse}
           onChange={(e) => onEndre({ klasse: e.target.value })}
-          className="w-20 rounded border border-transparent px-1 py-0.5 tabular-nums hover:border-neutral-300 focus:border-[#1d4e7c] focus:outline-none"
+          className="w-20 rounded border border-transparent px-1 py-0.5 tabular-nums hover:border-neutral-300 focus:border-na-blaa focus:outline-none"
         />
       </td>
       <td className={`py-1.5 ${merke.stil}`}>

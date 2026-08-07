@@ -136,7 +136,7 @@ export function OktPanel({
         <span
           aria-hidden
           className="h-3.5 w-[3px] rounded-full"
-          style={{ background: okt.farge ?? "#c9c9c9" }}
+          style={{ background: okt.farge ?? "var(--color-na-fagstrek)" }}
         />
         <span className="text-[13px] font-semibold">{okt.fagKode}</span>
         <span className="text-[13px] text-neutral-600">{langDato(okt.dato)}</span>
@@ -249,17 +249,17 @@ function ElevRad({
     <div
       onClick={onKlikk}
       className={`flex cursor-default items-center gap-2 border-b border-neutral-100 px-5 py-1 ${
-        markert ? "bg-[#eaf0f6]" : "hover:bg-neutral-50"
+        markert ? "bg-na-blaa-flate" : "hover:bg-neutral-50"
       }`}
     >
-      <span className="w-3 text-[11px] text-[#1d4e7c]">{markert ? "▸" : ""}</span>
+      <span className="w-3 text-[11px] text-na-blaa">{markert ? "▸" : ""}</span>
       <button
         onClick={(e) => {
           e.stopPropagation();
           onApneElev();
         }}
         title="Åpne eleven"
-        className={`w-44 shrink-0 truncate text-left text-[13px] hover:text-[#1d4e7c] hover:underline ${
+        className={`w-44 shrink-0 truncate text-left text-[13px] hover:text-na-blaa hover:underline ${
           eksplisitt ? "" : "text-neutral-500"
         }`}
       >
@@ -328,7 +328,7 @@ function Merke({
       <span
         className="block h-3 w-3 rounded-full border-2"
         style={{
-          borderColor: valgt ? farge : "#d4d4d4",
+          borderColor: valgt ? farge : "var(--color-na-kant)",
           background: valgt ? (eksplisitt ? farge : "transparent") : "transparent",
           borderStyle: verdi.teller_ikke === 1 ? "dashed" : "solid",
         }}
@@ -519,7 +519,7 @@ function Notat({
 }
 
 const feltStil =
-  "w-full rounded border border-neutral-300 bg-white px-2 py-1 text-[13px] tabular-nums outline-none placeholder:text-neutral-400 focus:border-[#1d4e7c]";
+  "w-full rounded border border-neutral-300 bg-white px-2 py-1 text-[13px] tabular-nums outline-none placeholder:text-neutral-400 focus:border-na-blaa";
 
 function Linje({
   etikett,

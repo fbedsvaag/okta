@@ -84,7 +84,7 @@ export function Perioder({
               {" · "}
               <span
                 className={
-                  planlagt > valgtFag.arstimetall ? "text-[#b3261e]" : ""
+                  planlagt > valgtFag.arstimetall ? "text-feil" : ""
                 }
               >
                 {avvik(planlagt, valgtFag.arstimetall)}
@@ -101,7 +101,7 @@ export function Perioder({
       </div>
 
       {kolliderer.length > 0 && (
-        <p className="mb-3 text-[12px] text-[#b3261e]">
+        <p className="mb-3 text-[12px] text-feil">
           ! {kolliderer.map(([a, b]) => `${a.navn} og ${b.navn}`).join(", ")}{" "}
           overlapper i tid. Øktene i overlappet havner i den første av dem.
         </p>
@@ -188,13 +188,13 @@ function Tidslinje({
             <div
               key={b.periode!.id}
               title={`${b.periode!.navn} · ${b.okter.length} økter · ${timer(b.minutter)} t`}
-              className="absolute top-1 flex h-7 items-center overflow-hidden rounded-sm border border-[#c3d2e0] bg-[#e8eff6] px-1.5"
+              className="absolute top-1 flex h-7 items-center overflow-hidden rounded-sm border border-na-periode-kant bg-na-periode px-1.5"
               style={{
                 left: `${Math.max(0, v) * 100}%`,
                 width: `${Math.max(0.02, h) * 100}%`,
               }}
             >
-              <span className="truncate text-[11px] text-[#1d4e7c]">
+              <span className="truncate text-[11px] text-na-blaa">
                 {b.periode!.navn}
               </span>
             </div>
@@ -239,7 +239,7 @@ function Bunke({
                   onEndret();
                 }
               }}
-              className="rounded border border-transparent px-1 py-0.5 text-[14px] font-semibold hover:border-neutral-300 focus:border-[#1d4e7c] focus:outline-none"
+              className="rounded border border-transparent px-1 py-0.5 text-[14px] font-semibold hover:border-neutral-300 focus:border-na-blaa focus:outline-none"
             />
             <Spennfelt
               verdi={p.start}
@@ -338,7 +338,7 @@ function Spennfelt({
       onBlur={(e) => {
         if (e.target.value !== (verdi ?? "")) onLagre(e.target.value || null);
       }}
-      className="rounded border border-transparent px-1 py-0.5 text-[12px] tabular-nums text-neutral-600 hover:border-neutral-300 focus:border-[#1d4e7c] focus:outline-none"
+      className="rounded border border-transparent px-1 py-0.5 text-[12px] tabular-nums text-neutral-600 hover:border-neutral-300 focus:border-na-blaa focus:outline-none"
     />
   );
 }

@@ -122,7 +122,7 @@ function OktLinje({ okt, onApne }: { okt: Okt; onApne: (id: string) => void }) {
       <span
         aria-hidden
         className="h-3.5 w-[3px] shrink-0 rounded-full"
-        style={{ background: okt.farge ?? "#c9c9c9" }}
+        style={{ background: okt.farge ?? "var(--color-na-fagstrek)" }}
       />
       <span className="w-12 shrink-0 font-medium">{okt.fagKode}</span>
       <span className="w-12 shrink-0 tabular-nums text-neutral-500">

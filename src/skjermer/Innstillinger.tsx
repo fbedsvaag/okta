@@ -107,7 +107,7 @@ export function Innstillinger() {
           >
             Lagre
           </Knapp>
-          {lagret && <span className="pb-2 text-[12px] text-[#1d4e7c]">✓ lagret</span>}
+          {lagret && <span className="pb-2 text-[12px] text-na-blaa">✓ lagret</span>}
         </div>
         <p className="mt-2 text-[12px] text-neutral-500">
           Varighet arves i tre ledd: denne verdien → fagets egen standard →
@@ -211,7 +211,7 @@ export function Innstillinger() {
                   <td className="w-24 py-1 text-right">
                     <button
                       onClick={() => void gjenopprett(`${kopimappe}/${k.navn}`, k.navn)}
-                      className="text-[12px] text-neutral-500 hover:text-[#1d4e7c]"
+                      className="text-[12px] text-neutral-500 hover:text-na-blaa"
                     >
                       Gjenopprett
                     </button>
