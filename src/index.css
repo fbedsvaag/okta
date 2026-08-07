@@ -235,6 +235,36 @@ html {
 }
 
 /*
+ * Sidepanelene som glir inn fra høyre, med kurvene fra merkevareguiden.
+ * Inn er roligere enn ut: 180 ms mot 130 ms. Det er den vanlige asymmetrien —
+ * noe som kommer skal rekke å bli sett, noe som går skal komme seg vekk.
+ */
+.panel {
+  transition: transform var(--tid-inn) var(--ease-inn);
+}
+
+.panel-ute {
+  transform: translateX(calc(100% + 40px));
+  transition: transform var(--tid-ut) var(--ease-ut);
+}
+
+.liste-bredde {
+  transition: width var(--tid-inn) var(--ease-inn);
+}
+
+/*
+ * Slår av all bevegelse for de som har bedt om det i systeminnstillingene.
+ * Layouten er den samme, den skjer bare umiddelbart.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .panel,
+  .panel-ute,
+  .liste-bredde {
+    transition: none !important;
+  }
+}
+
+/*
  * Utskrift, SPEC §4.9. Skjermen skjules helt og utskriftsvisningen tar over,
  * så Cmd+P gir et ark laget for papir — ikke et bilde av vinduet.
  */

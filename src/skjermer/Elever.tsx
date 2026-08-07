@@ -17,6 +17,7 @@ import { hentInnstilling, settInnstilling } from "../data/skolear";
 import { delNavn } from "../import/parser";
 import { Fagmerke, Felt, Knapp, Kolonnevelger, Tomtilstand } from "../ui/felles";
 import { ElevPanel } from "./ElevPanel";
+import { useGlidende } from "../ui/bevegelse";
 
 /**
  * Kolonner som kan slås av og på. Fornavn står alltid — uten navn er raden
@@ -87,8 +88,12 @@ export function Elever({
     });
   }
 
+  // Panelet beholder siste elev mens det glir ut, ellers blir det tomt
+  // midt i animasjonen.
+  const { vist: visElev, apen: apentPanel } = useGlidende(valgtElev);
+
   // Panelet tar to tredeler av bredden, så da vises bare navnet.
-  const vis: ReadonlySet<Synlig> = valgtElev ? new Set<Synlig>() : synligeKolonner;
+  const vis: ReadonlySet<Synlig> = apentPanel ? new Set<Synlig>() : synligeKolonner;
 
   const synlige = useMemo(() => {
     const s = sok.trim().toLocaleLowerCase("nb-NO");
@@ -122,8 +127,12 @@ export function Elever({
   }
 
   return (
-    <div className="flex h-full">
-      <div className={`min-w-0 overflow-y-auto ${valgtElev ? "hidden w-full pr-4 lg:block lg:w-1/3" : "w-full"}`}>
+    <div className="flex h-full overflow-hidden">
+      <div
+        className={`liste-bredde min-w-0 overflow-y-auto ${
+          apentPanel ? "hidden w-full pr-4 lg:block lg:w-1/3" : "w-full"
+        }`}
+      >
       <div className="mb-3 flex flex-wrap items-end gap-3">
         <Felt verdi={sok} settVerdi={setSok} plassholder="Søk etter navn" bredde="w-56" />
 
@@ -250,11 +259,13 @@ export function Elever({
       </p>
       </div>
 
-      {valgtElev && (
-        <div className="min-w-0 w-full lg:w-2/3">
+      {visElev && (
+        <div
+          className={`panel min-w-0 w-full lg:w-2/3 ${apentPanel ? "" : "panel-ute"}`}
+        >
           <ElevPanel
-            key={valgtElev}
-            elevId={valgtElev}
+            key={visElev}
+            elevId={visElev}
             aktivtSkolearId={skolearId}
             onLukk={() => setValgtElev(null)}
             onApneOkt={onApneOkt}

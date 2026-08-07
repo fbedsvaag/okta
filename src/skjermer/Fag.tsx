@@ -11,6 +11,7 @@ import { FAGFARGER } from "../ui/farger";
 import { Felt, Knapp, Tomtilstand } from "../ui/felles";
 import { FagPanel } from "./FagPanel";
 import { ElevPanel } from "./ElevPanel";
+import { useGlidende } from "../ui/bevegelse";
 
 /**
  * Fagene mine i dette skoleåret, SPEC §4.8.
@@ -38,7 +39,9 @@ export function Fag({
   const [rediger, setRediger] = useState(false);
   const [valgtFag, setValgtFag] = useState<string | null>(null);
   const [valgtElev, setValgtElev] = useState<string | null>(null);
-  const apent = fag.find((f) => f.id === valgtFag) ?? null;
+  const { vist: apent, apen: glir } = useGlidende(
+    fag.find((f) => f.id === valgtFag) ?? null,
+  );
 
   useEffect(() => {
     void hentInnstilling("standard_varighet_min").then((v) =>
@@ -47,8 +50,8 @@ export function Fag({
   }, []);
 
   return (
-    <div className="flex h-full">
-      <div className={`min-w-0 overflow-y-auto ${apent ? "hidden w-full pr-4 lg:block lg:w-1/3" : "w-full max-w-4xl"}`}>
+    <div className="flex h-full overflow-hidden">
+      <div className={`liste-bredde min-w-0 overflow-y-auto ${glir ? "hidden w-full pr-4 lg:block lg:w-1/3" : "w-full max-w-4xl"}`}>
       <div className="flex items-baseline justify-between">
         <h2 className="text-[15px] font-semibold">Fag i dette skoleåret</h2>
         <label className="flex items-center gap-2 text-[12px] text-neutral-500">
@@ -107,7 +110,7 @@ export function Fag({
       </div>
 
       {apent && (
-        <div className="min-w-0 w-full lg:w-2/3">
+        <div className={`panel min-w-0 w-full lg:w-2/3 ${glir ? "" : "panel-ute"}`}>
           {valgtElev ? (
             <ElevPanel
               key={valgtElev}

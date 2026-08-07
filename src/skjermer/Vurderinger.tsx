@@ -11,6 +11,7 @@ import type { Skala } from "../skala";
 import { Felt, Knapp, Tomtilstand } from "../ui/felles";
 import { VurderingPanel } from "./VurderingPanel";
 import { ElevPanel } from "./ElevPanel";
+import { useGlidende } from "../ui/bevegelse";
 
 /**
  * Vurderinger, SPEC §4.6.
@@ -54,11 +55,13 @@ export function Vurderinger({
     });
   }, [vurderinger, filterFag, sok]);
 
-  const apen = vurderinger.find((v) => v.id === valgt) ?? null;
+  const { vist: apen, apen: glir } = useGlidende(
+    vurderinger.find((v) => v.id === valgt) ?? null,
+  );
 
   return (
-    <div className="flex h-full">
-      <div className={`min-w-0 overflow-y-auto ${apen ? "hidden w-full pr-4 lg:block lg:w-1/3" : "w-full"}`}>
+    <div className="flex h-full overflow-hidden">
+      <div className={`liste-bredde min-w-0 overflow-y-auto ${glir ? "hidden w-full pr-4 lg:block lg:w-1/3" : "w-full"}`}>
         <div className="mb-3 flex flex-wrap items-center gap-2">
           <Felt
             verdi={sok}
@@ -136,7 +139,7 @@ export function Vurderinger({
       </div>
 
       {apen && (
-        <div className="min-w-0 w-full lg:w-2/3">
+        <div className={`panel min-w-0 w-full lg:w-2/3 ${glir ? "" : "panel-ute"}`}>
           {valgtElev ? (
             // Elevportalen legger seg oppå vurderingen. Esc tar deg tilbake
             // til den du sto i, ikke helt ut.

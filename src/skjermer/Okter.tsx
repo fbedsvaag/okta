@@ -30,6 +30,7 @@ import {
   type Periode,
 } from "../data/perioder";
 import { ElevPanel } from "./ElevPanel";
+import { useGlidende } from "../ui/bevegelse";
 import type { Skolear } from "../data/skolear";
 import { NySerie } from "./NySerie";
 
@@ -157,7 +158,9 @@ export function Okter({
     return kart;
   }, [okter, perioder]);
 
-  const apen = okter.find((o) => o.id === valgt) ?? null;
+  const { vist: apen, apen: glir } = useGlidende(
+    okter.find((o) => o.id === valgt) ?? null,
+  );
 
   return (
     <>
@@ -168,8 +171,8 @@ export function Okter({
         vurderinger={vurderinger}
       />
 
-    <div className="ikkeutskrift flex h-full gap-0">
-      <div className={`min-w-0 overflow-y-auto ${apen ? "hidden w-full pr-4 lg:block lg:w-1/3" : "w-full"}`}>
+    <div className="ikkeutskrift flex h-full gap-0 overflow-hidden">
+      <div className={`liste-bredde min-w-0 overflow-y-auto ${glir ? "hidden w-full pr-4 lg:block lg:w-1/3" : "w-full"}`}>
         <div className="mb-3 flex flex-wrap items-center gap-2">
           <Felt
             verdi={sok}
@@ -276,7 +279,7 @@ export function Okter({
       </div>
 
       {apen && (
-        <div className="min-w-0 w-full lg:w-2/3">
+        <div className={`panel min-w-0 w-full lg:w-2/3 ${glir ? "" : "panel-ute"}`}>
           {valgtElev ? (
             <ElevPanel
               key={valgtElev}
