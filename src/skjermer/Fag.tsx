@@ -94,7 +94,6 @@ export function Fag({
                 globalVarighet={globalVarighet}
                 rediger={rediger}
                 valgt={valgtFag === f.id}
-                kompakt={apent !== null}
                 onApne={() => setValgtFag(f.id)}
                 onEndret={onEndret}
               />
@@ -138,7 +137,6 @@ function FagRad({
   globalVarighet,
   rediger,
   valgt,
-  kompakt,
   onApne,
   onEndret,
 }: {
@@ -146,7 +144,6 @@ function FagRad({
   globalVarighet: string;
   rediger: boolean;
   valgt: boolean;
-  kompakt: boolean;
   onApne: () => void;
   onEndret: () => void;
 }) {
@@ -169,17 +166,18 @@ function FagRad({
         </td>
         <td className="py-1.5 font-medium">{fag.kode}</td>
         <td className="py-1.5">{fag.navn}</td>
-        {!kompakt && (
-          <>
-            <td className="py-1.5 text-right tabular-nums text-neutral-500">
-              {fag.arstimetall ?? "—"}
-            </td>
-            <td className="py-1.5 text-right tabular-nums text-neutral-500">
-              {fag.standardVarighetMin ?? `${globalVarighet} (arvet)`}
-            </td>
-            <td />
-          </>
-        )}
+        {/*
+          Årstimer og varighet står alltid, også når fagkortet er åpent.
+          De ble tidligere skjult for å spare bredde, men det er nettopp
+          tallene man vil se mens man ser på faget.
+        */}
+        <td className="py-1.5 text-right tabular-nums text-neutral-500">
+          {fag.arstimetall ?? "—"}
+        </td>
+        <td className="py-1.5 text-right tabular-nums text-neutral-500">
+          {fag.standardVarighetMin ?? `${globalVarighet} (arvet)`}
+        </td>
+        <td />
       </tr>
     );
   }

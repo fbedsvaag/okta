@@ -133,8 +133,8 @@ export default function App() {
   }
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-white text-neutral-900">
-      <header className="flex shrink-0 flex-wrap items-center gap-x-1 gap-y-1 border-b border-neutral-300 px-4 py-2">
+    <div className="app-skall flex h-screen flex-col overflow-hidden bg-white text-neutral-900">
+      <header className="ikkeutskrift flex shrink-0 flex-wrap items-center gap-x-1 gap-y-1 border-b border-neutral-300 px-4 py-2">
         <Pil
           retning="tilbake"
           av={peker === 0}
@@ -183,7 +183,7 @@ export default function App() {
       </header>
 
       {(visning === "okter" || visning === "perioder") && (
-        <div className="flex shrink-0 gap-1 border-b border-neutral-200 px-6 py-1.5">
+        <div className="ikkeutskrift flex shrink-0 gap-1 border-b border-neutral-200 px-6 py-1.5">
           <Underfane
             navn="Liste"
             aktiv={visning === "okter"}
@@ -198,7 +198,7 @@ export default function App() {
       )}
 
       {erArsfane(visning) && (
-        <div className="flex shrink-0 gap-1 border-b border-neutral-200 px-6 py-1.5">
+        <div className="ikkeutskrift flex shrink-0 gap-1 border-b border-neutral-200 px-6 py-1.5">
           <Underfane
             navn="I dag"
             aktiv={visning === "idag"}
@@ -218,7 +218,7 @@ export default function App() {
       )}
 
       {melding && (
-        <div className="flex shrink-0 items-center gap-3 border-b border-neutral-200 bg-na-blaa-svak px-6 py-1.5 text-[13px] text-na-blaa">
+        <div className="ikkeutskrift flex shrink-0 items-center gap-3 border-b border-neutral-200 bg-na-blaa-svak px-6 py-1.5 text-[13px] text-na-blaa">
           <span>✓ {melding}</span>
           <Knapp variant="stille" onClick={() => setMelding(null)}>
             Lukk

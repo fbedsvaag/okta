@@ -268,6 +268,21 @@ html {
     break-after: auto;
   }
 
+  /*
+   * Skjermskallet er laget for et vindu som ikke ruller: h-screen, flex og
+   * overflow-hidden. På papiret må innholdet flyte fritt over flere sider,
+   * ellers klippes alt som ikke fikk plass i første vindushøyde.
+   */
+  .app-skall,
+  .app-skall > main,
+  .app-skall > main > div {
+    display: block !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    padding: 0 !important;
+  }
+
   /* Ingen rad skal deles på tvers av to sider. */
   tr {
     break-inside: avoid;
