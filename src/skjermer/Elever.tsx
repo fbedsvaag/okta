@@ -110,6 +110,19 @@ export function Elever({
     return sorter(filtrert, sortering);
   }, [elever, sok, filterKlasse, filterFag, sortering]);
 
+  // Bla gjennom lista slik den faktisk står — filtrert og sortert. Blar du
+  // i 1STC sortert på innsats, er det den rekkefølgen som gjelder, ikke
+  // alfabetisk på tvers av alle.
+  const [retning, setRetning] = useState<"opp" | "ned" | null>(null);
+  const nr = synlige.findIndex((e) => e.id === valgtElev);
+
+  function blaTil(steg: number) {
+    if (nr < 0 || synlige.length === 0) return;
+    const ny = (nr + steg + synlige.length) % synlige.length;
+    setRetning(steg > 0 ? "opp" : "ned");
+    setValgtElev(synlige[ny].id);
+  }
+
   function bytSortering(kolonne: Kolonne) {
     setSortering((s) =>
       s.kolonne === kolonne
@@ -292,6 +305,17 @@ export function Elever({
             aktivtSkolearId={skolearId}
             onLukk={() => setValgtElev(null)}
             onApneOkt={onApneOkt}
+            bla={
+              nr >= 0
+                ? {
+                    nr: nr + 1,
+                    av: synlige.length,
+                    retning,
+                    forrige: () => blaTil(-1),
+                    neste: () => blaTil(1),
+                  }
+                : undefined
+            }
           />
         </div>
       )}

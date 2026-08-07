@@ -78,6 +78,9 @@ export function Okter({
   const [lagerSerie, setLagerSerie] = useState(false);
   const [valgtElev, setValgtElev] = useState<string | null>(null);
   const [perioder, setPerioder] = useState<Periode[]>([]);
+  // Om årsplanen grupperes under perioder på papiret. Valget hører til
+  // brukeren og lagres i innstilling, som kolonnevalgene.
+  const [medPerioder, setMedPerioder] = useState(true);
   // Kolonnevalget ligger i innstilling, ikke i nettleseren, så det følger
   // databasen hvis du flytter den til en annen maskin.
   const [kolonner, setKolonner] = useState<Set<KolonneId>>(
@@ -103,6 +106,9 @@ export function Okter({
     void last();
     void hentInnstilling("okt_kolonner").then((v) => {
       if (v) setKolonner(new Set(JSON.parse(v) as KolonneId[]));
+    });
+    void hentInnstilling("utskrift_perioder").then((v) => {
+      if (v !== null) setMedPerioder(v === "1");
     });
   }, [skolearId]);
 
@@ -169,7 +175,7 @@ export function Okter({
         fag={fag}
         okter={synlige}
         vurderinger={vurderinger}
-        perioder={periodePerOkt}
+        perioder={medPerioder ? periodePerOkt : new Map()}
       />
 
     <div className="ikkeutskrift flex h-full gap-0 overflow-hidden">
@@ -195,6 +201,23 @@ export function Okter({
           </select>
           <div className="ml-auto flex items-center gap-2">
             <Kolonnevelger valgbare={VALGBARE} vis={kolonner} onEndre={(id, pa) => byttKolonne(id as KolonneId, pa)} />
+            <label
+              title="Grupper øktene under perioden sin på arket"
+              className="flex select-none items-center gap-1.5 text-liten text-blekk-dempet"
+            >
+              <input
+                type="checkbox"
+                checked={medPerioder}
+                onChange={(e) => {
+                  setMedPerioder(e.target.checked);
+                  void settInnstilling(
+                    "utskrift_perioder",
+                    e.target.checked ? "1" : "0",
+                  );
+                }}
+              />
+              Perioder
+            </label>
             <Knapp onClick={() => void invoke("skriv_ut")}>Skriv ut / PDF</Knapp>
             <Knapp onClick={() => setLagerSerie(true)}>+ Serie</Knapp>
             <Knapp variant="primar" onClick={() => setLagerNy(true)}>
@@ -258,7 +281,7 @@ export function Okter({
             vis={apen ? new Set<KolonneId>() : kolonner}
             blokkert={blokkert}
             vurderinger={vurderinger}
-            perioder={periodePerOkt}
+            perioder={medPerioder ? periodePerOkt : new Map()}
             onApnePerioder={onApnePerioder}
             onVelg={setValgt}
           />
