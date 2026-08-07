@@ -10,6 +10,8 @@ import {
 import { open } from "@tauri-apps/plugin-dialog";
 import { revealItemInDir } from "@tauri-apps/plugin-opener";
 import { hentSkalaer, hentVerdier, taster, type Skala, type Skalaverdi } from "../skala";
+import type { Skolear } from "../data/skolear";
+import * as kalender from "../data/kalenderfeed";
 import { Knapp } from "../ui/felles";
 
 /**
@@ -19,7 +21,11 @@ import { Knapp } from "../ui/felles";
  * rammer — datoer, ferier, planleggingsdager — ligger under skoleåret,
  * fordi de er forskjellige hvert år.
  */
-export function Innstillinger() {
+export function Innstillinger({ skolear }: { skolear: Skolear }) {
+  const [feedPa, setFeedPa] = useState(false);
+  const [feedUrl, setFeedUrl] = useState("");
+  const [feedFeil, setFeedFeil] = useState<string | null>(null);
+  const [kopiert, setKopiert] = useState(false);
   const [varighet, setVarighet] = useState("180");
   const [lagret, setLagret] = useState(false);
   const [skalaer, setSkalaer] = useState<Skala[]>([]);
@@ -59,6 +65,14 @@ export function Innstillinger() {
       await gjenopprett(valgt, valgt.split("/").pop() ?? valgt);
     }
   }
+
+  useEffect(() => {
+    void (async () => {
+      const pa = await kalender.erPa();
+      setFeedPa(pa);
+      if (pa) setFeedUrl(await kalender.hentUrl());
+    })();
+  }, []);
 
   async function lastKopier() {
     setKopier(await hentKopier());
@@ -154,6 +168,70 @@ export function Innstillinger() {
             </div>
           </div>
         ))}
+      </Bolk>
+
+      <Bolk tittel="Kalenderstrøm">
+        <p className="mb-2 text-brod text-blekk-dempet">
+          Lar kalenderen din abonnere på årsplanen, slik at den oppdaterer seg
+          selv. Strømmen serveres bare til denne maskinen, og inneholder
+          <strong className="font-medium"> fagkode, tema, dato og varighet</strong> —
+          ingen elevnavn, skåringer eller notater.
+        </p>
+
+        <label className="flex items-center gap-2 text-brod">
+          <input
+            type="checkbox"
+            checked={feedPa}
+            onChange={async (e) => {
+              const pa = e.target.checked;
+              setFeedPa(pa);
+              setFeedFeil(null);
+              await kalender.settPa(pa);
+              if (!pa) return;
+              try {
+                setFeedUrl(await kalender.start(skolear));
+              } catch (err) {
+                setFeedFeil(String(err));
+                setFeedPa(false);
+                await kalender.settPa(false);
+              }
+            }}
+          />
+          Del årsplanen som kalenderstrøm
+        </label>
+
+        {feedFeil && (
+          <p className="mt-2 text-brod text-feil">{feedFeil}</p>
+        )}
+
+        {feedPa && feedUrl && (
+          <div className="mt-3">
+            <div className="flex items-center gap-2">
+              <code className="flex-1 truncate rounded-vanlig border border-linje bg-flate px-2 py-1 text-liten">
+                {feedUrl}
+              </code>
+              <Knapp
+                onClick={async () => {
+                  await navigator.clipboard.writeText(feedUrl);
+                  setKopiert(true);
+                  setTimeout(() => setKopiert(false), 1500);
+                }}
+              >
+                {kopiert ? "Kopiert" : "Kopier"}
+              </Knapp>
+            </div>
+            <p className="mt-2 text-liten text-blekk-dempet">
+              I Kalender: <em>Arkiv → Nytt kalenderabonnement</em>, lim inn
+              adressen, og velg oppdatering hvert femte minutt.
+            </p>
+            <p className="mt-1 text-liten text-blekk-dempet">
+              Velger du <em>iCloud</em> som plassering, lastes timeplanen opp til
+              Apple og følger med til telefonen. Velger du <em>På min Mac</em>,
+              blir den her — men da bare på denne maskinen. Strømmen oppdaterer
+              seg bare mens appen kjører.
+            </p>
+          </div>
+        )}
       </Bolk>
 
       <Bolk tittel="Sikkerhetskopi">

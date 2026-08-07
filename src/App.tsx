@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { hentAktivtSkolear, type Skolear } from "./data/skolear";
 import { daglingKopi } from "./data/sikkerhetskopi";
+import { erPa as kalenderPa, start as startKalender } from "./data/kalenderfeed";
 import { hentFagIAr, type FagIAr } from "./data/fag";
 import { Veiviser } from "./skjermer/Veiviser";
 import { IDag } from "./skjermer/IDag";
@@ -98,6 +99,12 @@ export default function App() {
       const ar = await hentAktivtSkolear();
       setSkolear(ar);
       setFag(ar ? await hentFagIAr(ar.id) : []);
+
+      // Kalenderstrømmen holdes fersk ved hver innlasting, men bare hvis
+      // brukeren har slått den på. Er den av, lytter ingenting.
+      if (ar && (await kalenderPa())) {
+        await startKalender(ar).catch((e) => console.error("kalenderfeed:", e));
+      }
       setVersjon((v) => v + 1);
     } catch (e) {
       setFeil(String(e));
@@ -256,7 +263,7 @@ export default function App() {
           <Skoleruta key={versjon} skolear={skolear} onEndret={last} />
         )}
 
-        {visning === "innstillinger" && <Innstillinger />}
+        {visning === "innstillinger" && <Innstillinger skolear={skolear} />}
 
         {/*
           Ingen key={versjon} her, med vilje. Fag får faglista som prop og

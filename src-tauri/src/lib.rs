@@ -1,3 +1,4 @@
+mod kalenderfeed;
 mod sikkerhetskopi;
 
 use tauri_plugin_sql::{Migration, MigrationKind};
@@ -66,6 +67,11 @@ pub fn run() {
             sikkerhetskopi::rydd_sikkerhetskopier,
             sikkerhetskopi::sikkerhetskopimappe,
             sikkerhetskopi::gjenopprett_fra,
+            kalenderfeed::sett_kalenderfeed,
+            kalenderfeed::kalenderfeed_url,
+            kalenderfeed::kalenderfeed_kjorer,
+            kalenderfeed::start_kalenderfeed,
+            kalenderfeed::skriv_kalenderfil,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
