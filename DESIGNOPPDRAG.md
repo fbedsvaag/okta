@@ -266,8 +266,13 @@ skal se ut som et skjema.
 4. **Små steg, med forklaring på norsk underveis.**
 5. **Sjekk at du ikke har brukket noe:** `npx tsc --noEmit` og `npx vitest run`
    skal begge være rene. 73 tester skal fortsatt passere.
-6. Prosjektet er **ikke** under versjonskontroll. Det finnes ingen angreknapp,
-   så ikke gjør store, brede endringer i én omgang.
+6. **Commit for hvert steg du er fornøyd med** — ikke bare til slutt:
+   `git add -A && git commit -m "beskrivelse"`. Prosjektet ble satt under
+   versjonskontroll rett før denne runden, med `før designrunde` som
+   utgangspunkt. Hyppige commits er forskjellen på å kunne gå ett skritt
+   tilbake og å måtte gå hele veien til start.
+7. Gjør heller flere små endringer enn én bred. Utseendet vurderes med øynene,
+   og da må det være mulig å se hva som forårsaket hva.
 
 ## 8. Hva som ikke er oppdraget
 
