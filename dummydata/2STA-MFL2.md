@@ -1,0 +1,31 @@
+# Klasseliste 2STA — Markedsføring og ledelse 2
+
+- Jennifer Melfi
+- Richard La Penna
+- Elliot Kupferberg
+- Tony Blundetto
+- Phil Leotardo
+- John Sacrimoni
+- Ginny Sacrimoni
+- Carmine Lupertazzi
+- Gigi Cestone
+- Raymond Curto
+- Lawrence Barese
+- Albert Barese
+- Michele Gaeta
+- Georgie Santorelli
+- Mikey Palmice
+- Jimmy Altieri
+- Brendan Filone
+- Sean Gismonte
+- Matthew Bevilaqua
+- Dickie Moltisanti
+- Joanne Moltisanti
+- Kelli Moltisanti
+- Gloria Trillo
+- Valentina La Paz
+- Irina Peltsin
+- Svetlana Kirilenko
+- Davey Scatino
+- Eric Scatino
+- Christine Scatino

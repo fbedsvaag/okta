@@ -1,0 +1,124 @@
+import { hent, oppdater, settInn, slett } from "../db";
+
+/**
+ * Fagbanken er uavhengig av skoleår. `skolear_fag` er faget slik det ser ut i
+ * ett bestemt år, og det er den alt undervisningsnært henger på (SPEC §3.2).
+ *
+ * FagIAr er de to slått sammen til det UI-et trenger: én rad per fag du har
+ * i år, med både bank-id og års-id.
+ */
+export type FagIAr = {
+  /** skolear_fag.id — den alt annet peker på */
+  id: string;
+  /** fag.id — banken */
+  fagId: string;
+  kode: string;
+  navn: string;
+  farge: string | null;
+  arstimetall: number | null;
+  standardVarighetMin: number | null;
+};
+
+export type Fag = {
+  id: string;
+  kode: string;
+  navn: string;
+  farge: string | null;
+};
+
+/** Trafikklyset, seedet i migrasjon 002. */
+const TRAFIKKLYS = "5ca1a000-0000-4000-8000-000000000001";
+
+export async function hentFagbank(): Promise<Fag[]> {
+  return hent<Fag>(
+    "SELECT id, kode, navn, farge FROM fag WHERE slettet IS NULL ORDER BY kode",
+  );
+}
+
+export async function hentFagIAr(skolearId: string): Promise<FagIAr[]> {
+  return hent<FagIAr>(
+    `SELECT sf.id            AS id,
+            f.id             AS fagId,
+            f.kode           AS kode,
+            f.navn           AS navn,
+            f.farge          AS farge,
+            sf.arstimetall   AS arstimetall,
+            sf.standard_varighet_min AS standardVarighetMin
+       FROM skolear_fag sf
+       JOIN fag f ON f.id = sf.fag_id AND f.slettet IS NULL
+      WHERE sf.skolear_id = $1 AND sf.slettet IS NULL
+      ORDER BY f.kode`,
+    [skolearId],
+  );
+}
+
+/**
+ * Oppretter faget i banken hvis koden ikke finnes fra før, og kobler det til
+ * skoleåret. Kaller man to ganger med samme kode, gjenbrukes bankfaget.
+ */
+export async function leggFagIAr(
+  skolearId: string,
+  kode: string,
+  navn: string,
+  farge: string | null,
+): Promise<string> {
+  const fagId = await finnEllerOpprettFag(kode, navn, farge);
+
+  const finnes = await hent<{ id: string; slettet: string | null }>(
+    "SELECT id, slettet FROM skolear_fag WHERE skolear_id = $1 AND fag_id = $2",
+    [skolearId, fagId],
+  );
+
+  // En soft-slettet rad opptar fortsatt plassen i UNIQUE-indeksen, så den
+  // gjenbrukes i stedet for at vi prøver å sette inn en ny (§12).
+  if (finnes[0]) {
+    if (finnes[0].slettet) {
+      await oppdater("skolear_fag", finnes[0].id, { slettet: null });
+    }
+    return finnes[0].id;
+  }
+
+  return settInn("skolear_fag", {
+    skolear_id: skolearId,
+    fag_id: fagId,
+    skaringsskala_id: TRAFIKKLYS,
+  });
+}
+
+async function finnEllerOpprettFag(
+  kode: string,
+  navn: string,
+  farge: string | null,
+): Promise<string> {
+  const finnes = await hent<{ id: string }>(
+    "SELECT id FROM fag WHERE kode = $1 AND slettet IS NULL",
+    [kode],
+  );
+  if (finnes[0]) return finnes[0].id;
+
+  return settInn("fag", { kode, navn, farge });
+}
+
+/** Endrer faget i banken. Slår gjennom på alle skoleår faget brukes i. */
+export async function endreFag(
+  fagId: string,
+  felter: Partial<Pick<Fag, "kode" | "navn" | "farge">>,
+): Promise<void> {
+  await oppdater("fag", fagId, felter);
+}
+
+/**
+ * Endrer faget for dette skoleåret alene. Årstimetall og standard varighet
+ * kan være noe annet neste år uten at bankfaget røres.
+ */
+export async function endreFagIAr(
+  skolearFagId: string,
+  felter: { arstimetall?: number | null; standard_varighet_min?: number | null },
+): Promise<void> {
+  await oppdater("skolear_fag", skolearFagId, felter);
+}
+
+/** Fjerner faget fra skoleåret. Bankfaget og elevkoblingene blir stående. */
+export async function fjernFagFraAr(skolearFagId: string): Promise<void> {
+  await slett("skolear_fag", skolearFagId);
+}

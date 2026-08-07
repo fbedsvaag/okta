@@ -1,0 +1,49 @@
+@import "tailwindcss";
+
+html {
+  background: #fff;
+}
+
+/*
+ * Utskrift, SPEC §4.9. Skjermen skjules helt og utskriftsvisningen tar over,
+ * så Cmd+P gir et ark laget for papir — ikke et bilde av vinduet.
+ */
+.kunutskrift {
+  display: none;
+}
+
+@media print {
+  @page {
+    margin: 18mm 15mm;
+  }
+
+  body {
+    background: #fff;
+  }
+
+  .ikkeutskrift {
+    display: none !important;
+  }
+
+  .kunutskrift {
+    display: block;
+  }
+
+  /* Ett fag per side. Siste side får ikke et tomt ark etter seg. */
+  .fagside {
+    break-after: page;
+  }
+
+  .fagside:last-child {
+    break-after: auto;
+  }
+
+  /* Ingen rad skal deles på tvers av to sider. */
+  tr {
+    break-inside: avoid;
+  }
+
+  thead {
+    display: table-header-group;
+  }
+}

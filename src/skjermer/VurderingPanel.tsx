@@ -1,0 +1,483 @@
+import { useEffect, useRef, useState } from "react";
+import {
+  endreVurdering,
+  fjernResultat,
+  hentSkalaverdier,
+  hentVurderingElever,
+  hentVurderingsskalaer,
+  settKommentar,
+  settLevert,
+  settResultat,
+  slettVurdering,
+  type Vurdering,
+  type VurderingElev,
+  type Vurderingstype,
+} from "../data/vurderinger";
+import { taster, type Skala, type Skalaverdi } from "../skala";
+
+/**
+ * Det utvidede viewet for en vurdering, SPEC §4.6.
+ *
+ * Samme mønster som øktpanelet: oppgavens felter øverst, elevlista under,
+ * tastatur nedover. Alle skalaene i v1 har ti verdier eller færre, så
+ * knapperad per elev er nok — rutenettet for den findelte skalaen hører til §10.
+ */
+export function VurderingPanel({
+  vurdering,
+  onLukk,
+  onEndret,
+  onApneElev,
+}: {
+  vurdering: Vurdering;
+  onLukk: () => void;
+  onEndret: () => void;
+  onApneElev: (elevId: string) => void;
+}) {
+  const [elever, setElever] = useState<VurderingElev[]>([]);
+  const [verdier, setVerdier] = useState<Skalaverdi[]>([]);
+  const [skalaer, setSkalaer] = useState<Skala[]>([]);
+  const [markert, setMarkert] = useState(0);
+  const [kommentarFor, setKommentarFor] = useState<string | null>(null);
+  const liste = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    let avbrutt = false;
+    (async () => {
+      const [e, v, s] = await Promise.all([
+        hentVurderingElever(vurdering.id, vurdering.skolearFagId),
+        hentSkalaverdier(vurdering.skalaId),
+        hentVurderingsskalaer(),
+      ]);
+      if (avbrutt) return;
+      setElever(e);
+      setVerdier(v);
+      setSkalaer(s);
+      setMarkert(0);
+      liste.current?.focus();
+    })();
+    return () => {
+      avbrutt = true;
+    };
+  }, [vurdering.id, vurdering.skolearFagId, vurdering.skalaId]);
+
+  const tastekart = taster(verdier);
+  const fraTast = new Map(
+    verdier.map((v) => [tastekart.get(v.id) ?? "", v] as const),
+  );
+  const antallFort = elever.filter((e) => e.skalaverdiId !== null).length;
+
+  async function foer(indeks: number, verdi: Skalaverdi) {
+    const elev = elever[indeks];
+    if (!elev) return;
+
+    setElever((f) =>
+      f.map((e, i) =>
+        i === indeks
+          ? { ...e, skalaverdiId: verdi.id, levert: verdi.rang > 0 ? 1 : 0 }
+          : e,
+      ),
+    );
+    setMarkert(Math.min(indeks + 1, elever.length - 1));
+
+    await settResultat(vurdering.id, elev.elevId, verdi);
+    onEndret();
+  }
+
+  async function fjern(indeks: number) {
+    const elev = elever[indeks];
+    if (!elev) return;
+    setElever((f) =>
+      f.map((e, i) => (i === indeks ? { ...e, skalaverdiId: null } : e)),
+    );
+    await fjernResultat(vurdering.id, elev.elevId);
+    onEndret();
+  }
+
+  function tastetrykk(e: React.KeyboardEvent) {
+    if (kommentarFor !== null) return;
+
+    if (e.key === "Escape") return onLukk();
+    if (e.key === "ArrowDown" || (e.key === "Tab" && !e.shiftKey)) {
+      e.preventDefault();
+      return setMarkert((i) => Math.min(i + 1, elever.length - 1));
+    }
+    if (e.key === "ArrowUp" || (e.key === "Tab" && e.shiftKey)) {
+      e.preventDefault();
+      return setMarkert((i) => Math.max(i - 1, 0));
+    }
+    if (e.key === "Backspace" || e.key === "Delete") {
+      e.preventDefault();
+      return void fjern(markert);
+    }
+    if (e.key.toLowerCase() === "k") {
+      e.preventDefault();
+      return setKommentarFor(elever[markert]?.elevId ?? null);
+    }
+
+    const verdi = fraTast.get(e.key);
+    if (verdi) {
+      e.preventDefault();
+      void foer(markert, verdi);
+    }
+  }
+
+  return (
+    <aside className="flex h-full flex-col border-l border-neutral-300 bg-white">
+      <header className="flex items-baseline gap-3 border-b border-neutral-200 px-5 py-3">
+        <span
+          aria-hidden
+          className="h-3.5 w-[3px] rounded-full"
+          style={{ background: vurdering.farge ?? "#c9c9c9" }}
+        />
+        <span className="text-[13px] font-semibold">{vurdering.fagKode}</span>
+        <span className="truncate text-[13px] text-neutral-600">
+          {vurdering.tittel}
+        </span>
+        <button
+          onClick={onLukk}
+          className="ml-auto shrink-0 text-[12px] text-neutral-400 hover:text-neutral-900"
+        >
+          Lukk (Esc)
+        </button>
+      </header>
+
+      <div className="overflow-y-auto">
+        <Felter
+          vurdering={vurdering}
+          skalaer={skalaer}
+          onEndret={onEndret}
+        />
+
+        <div className="flex items-baseline justify-between border-y border-neutral-200 bg-neutral-50 px-5 py-1.5">
+          <span className="text-[11px] uppercase tracking-wide text-neutral-500">
+            Resultater
+          </span>
+          <span className="text-[12px] tabular-nums text-neutral-500">
+            {antallFort} av {elever.length} ført
+          </span>
+        </div>
+
+        <div ref={liste} tabIndex={0} onKeyDown={tastetrykk} className="outline-none">
+          {elever.length === 0 && (
+            <p className="px-5 py-6 text-center text-[13px] text-neutral-500">
+              Ingen elever er koblet til {vurdering.fagKode} ennå.
+            </p>
+          )}
+
+          {elever.map((elev, i) => (
+            <ElevRad
+              key={elev.elevId}
+              elev={elev}
+              verdier={verdier}
+              tastekart={tastekart}
+              markert={i === markert}
+              onKlikk={() => {
+                setMarkert(i);
+                liste.current?.focus();
+              }}
+              onVelg={(v) => foer(i, v)}
+              onLevert={async (levert) => {
+                setElever((f) =>
+                  f.map((e, j) => (j === i ? { ...e, levert: levert ? 1 : 0 } : e)),
+                );
+                await settLevert(vurdering.id, elev.elevId, levert);
+              }}
+              onKommentar={() => setKommentarFor(elev.elevId)}
+              onApneElev={() => onApneElev(elev.elevId)}
+            />
+          ))}
+        </div>
+
+        <div className="px-5 py-4">
+          <button
+            onClick={async () => {
+              if (!confirm(`Slette vurderingen «${vurdering.tittel}»?`)) return;
+              await slettVurdering(vurdering.id);
+              onLukk();
+              onEndret();
+            }}
+            className="text-[12px] text-neutral-400 hover:text-red-700"
+          >
+            Slett vurderingen
+          </button>
+        </div>
+      </div>
+
+      {kommentarFor && (
+        <Kommentar
+          key={kommentarFor}
+          elev={elever.find((e) => e.elevId === kommentarFor)!}
+          onLukk={async (tekst) => {
+            if (tekst !== null) {
+              await settKommentar(vurdering.id, kommentarFor, tekst);
+              setElever((f) =>
+                f.map((e) =>
+                  e.elevId === kommentarFor ? { ...e, kommentar: tekst } : e,
+                ),
+              );
+            }
+            setKommentarFor(null);
+            liste.current?.focus();
+          }}
+        />
+      )}
+    </aside>
+  );
+}
+
+function ElevRad({
+  elev,
+  verdier,
+  tastekart,
+  markert,
+  onKlikk,
+  onVelg,
+  onLevert,
+  onKommentar,
+  onApneElev,
+}: {
+  elev: VurderingElev;
+  verdier: Skalaverdi[];
+  tastekart: Map<string, string>;
+  markert: boolean;
+  onKlikk: () => void;
+  onVelg: (v: Skalaverdi) => void;
+  onLevert: (levert: boolean) => void;
+  onKommentar: () => void;
+  onApneElev: () => void;
+}) {
+  return (
+    <div
+      onClick={onKlikk}
+      className={`flex cursor-default items-center gap-2 border-b border-neutral-100 px-5 py-1 ${
+        markert ? "bg-[#eaf0f6]" : "hover:bg-neutral-50"
+      }`}
+    >
+      <span className="w-3 text-[11px] text-[#1d4e7c]">{markert ? "▸" : ""}</span>
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          onApneElev();
+        }}
+        title="Åpne eleven"
+        className="w-44 shrink-0 truncate text-left text-[13px] hover:text-[#1d4e7c] hover:underline"
+      >
+        {elev.fornavn} {elev.etternavn}
+      </button>
+
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          onKommentar();
+        }}
+        title={elev.kommentar ?? "Legg til kommentar (K)"}
+        className={`flex-1 truncate text-left text-[12px] italic ${
+          elev.kommentar
+            ? "text-neutral-600 hover:text-neutral-900"
+            : "text-neutral-300 hover:text-neutral-600"
+        }`}
+      >
+        {elev.kommentar ?? "+ kommentar"}
+      </button>
+
+      <label
+        onClick={(e) => e.stopPropagation()}
+        title="Levert"
+        className="flex items-center text-[11px] text-neutral-400"
+      >
+        <input
+          type="checkbox"
+          checked={elev.levert === 1}
+          onChange={(e) => onLevert(e.target.checked)}
+        />
+      </label>
+
+      <div className="flex gap-1">
+        {verdier.map((v) => (
+          <button
+            key={v.id}
+            onClick={(e) => {
+              e.stopPropagation();
+              onVelg(v);
+            }}
+            title={`${tastekart.get(v.id) ?? ""} — ${v.kode}${v.etikett ? `: ${v.etikett}` : ""}`}
+            className={`min-w-7 rounded-sm border px-1.5 py-0.5 text-[12px] tabular-nums ${
+              elev.skalaverdiId === v.id
+                ? "border-[#1d4e7c] bg-[#1d4e7c] text-white"
+                : "border-neutral-300 text-neutral-600 hover:bg-neutral-100"
+            }`}
+          >
+            {v.kode}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+const TYPER: { verdi: Vurderingstype; navn: string }[] = [
+  { verdi: "skriftlig", navn: "Skriftlig" },
+  { verdi: "muntlig", navn: "Muntlig" },
+  { verdi: "praktisk", navn: "Praktisk" },
+];
+
+function Felter({
+  vurdering,
+  skalaer,
+  onEndret,
+}: {
+  vurdering: Vurdering;
+  skalaer: Skala[];
+  onEndret: () => void;
+}) {
+  return (
+    <div className="space-y-2 px-5 py-3">
+      <Linje etikett="Tittel">
+        <input
+          defaultValue={vurdering.tittel}
+          key={vurdering.tittel}
+          onBlur={async (e) => {
+            const t = e.target.value.trim();
+            if (t && t !== vurdering.tittel) {
+              await endreVurdering(vurdering.id, { tittel: t });
+              onEndret();
+            }
+          }}
+          className={feltStil}
+        />
+      </Linje>
+
+      <div className="flex gap-2">
+        <Linje etikett="Type">
+          <select
+            value={vurdering.type ?? ""}
+            onChange={async (e) => {
+              await endreVurdering(vurdering.id, {
+                type: (e.target.value || null) as Vurderingstype | null,
+              });
+              onEndret();
+            }}
+            className={feltStil}
+          >
+            <option value="">—</option>
+            {TYPER.map((t) => (
+              <option key={t.verdi} value={t.verdi}>
+                {t.navn}
+              </option>
+            ))}
+          </select>
+        </Linje>
+
+        <Linje etikett="Frist">
+          <input
+            type="date"
+            defaultValue={vurdering.frist ?? ""}
+            key={vurdering.frist ?? ""}
+            onBlur={async (e) => {
+              await endreVurdering(vurdering.id, { frist: e.target.value || null });
+              onEndret();
+            }}
+            className={feltStil}
+          />
+        </Linje>
+
+        <Linje etikett="Skala">
+          <select
+            value={vurdering.skalaId}
+            onChange={async (e) => {
+              if (
+                !confirm(
+                  "Bytte skala? Resultater som allerede er ført peker på verdier " +
+                    "i den gamle skalaen og må føres på nytt.",
+                )
+              )
+                return;
+              await endreVurdering(vurdering.id, { skala_id: e.target.value });
+              onEndret();
+            }}
+            className={feltStil}
+          >
+            {skalaer.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.navn}
+              </option>
+            ))}
+          </select>
+        </Linje>
+      </div>
+
+      <Linje etikett="Beskrivelse">
+        <textarea
+          defaultValue={vurdering.beskrivelse ?? ""}
+          key={vurdering.beskrivelse ?? ""}
+          rows={2}
+          placeholder="Hva går oppgaven ut på?"
+          onBlur={async (e) => {
+            await endreVurdering(vurdering.id, {
+              beskrivelse: e.target.value.trim() || null,
+            });
+            onEndret();
+          }}
+          className={feltStil}
+        />
+      </Linje>
+    </div>
+  );
+}
+
+function Kommentar({
+  elev,
+  onLukk,
+}: {
+  elev: VurderingElev;
+  onLukk: (tekst: string | null) => void;
+}) {
+  const [tekst, setTekst] = useState(elev.kommentar ?? "");
+
+  return (
+    <div className="border-t border-neutral-300 bg-neutral-50 px-5 py-3">
+      <p className="mb-1 text-[11px] uppercase tracking-wide text-neutral-500">
+        Kommentar · {elev.fornavn} {elev.etternavn}
+      </p>
+      <textarea
+        autoFocus
+        value={tekst}
+        rows={3}
+        onChange={(e) => setTekst(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") onLukk(null);
+          if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) onLukk(tekst);
+        }}
+        className={feltStil}
+      />
+      <div className="mt-1 flex gap-3 text-[12px] text-neutral-500">
+        <button onClick={() => onLukk(tekst)} className="hover:text-neutral-900">
+          Lagre (⌘↵)
+        </button>
+        <button onClick={() => onLukk(null)} className="hover:text-neutral-900">
+          Avbryt (Esc)
+        </button>
+      </div>
+    </div>
+  );
+}
+
+const feltStil =
+  "w-full rounded border border-neutral-300 bg-white px-2 py-1 text-[13px] tabular-nums outline-none placeholder:text-neutral-400 focus:border-[#1d4e7c]";
+
+function Linje({
+  etikett,
+  children,
+}: {
+  etikett: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <label className="block w-full">
+      <span className="mb-0.5 block text-[11px] uppercase tracking-wide text-neutral-500">
+        {etikett}
+      </span>
+      {children}
+    </label>
+  );
+}

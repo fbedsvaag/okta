@@ -1,0 +1,31 @@
+# Klasseliste 1STA — Engelsk VG1
+
+Kevin Finnerty;1STA
+Ercole DiMeo;1STA
+Bryan Spatafore;1STA
+Jason Gervasi;1STA
+Jason Parisi;1STA
+Jason Molinaro;1STA
+Anthony Infante;1STA
+Rocco Vitale;1STA
+Nino Caruso;1STA
+Gina Marchetti;1STA
+Sal Ruggiero;1STA
+Frankie Bevilacqua;1STA
+Donna Sacco;1STA
+Vinnie Loscalzo;1STA
+Marisa Tramonti;1STA
+Joey Peluso;1STA
+Rita Corvino;1STA
+Nick Battaglia;1STA
+Lena Faranda;1STA
+Sonny Vitiello;1STA
+Concetta Rizzo;1STA
+Dante Marino;1STA
+Paola Grasso;1STA
+Enzo Cataldo;1STA
+Bella Ferrante;1STA
+Gino Tortorella;1STA
+Mona Salvati;1STA
+Aldo Pinelli;1STA
+Renata Bonanno;1STA

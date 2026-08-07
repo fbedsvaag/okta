@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(claude update:*)",
+      "Bash(brew upgrade:*)",
+      "Bash(grep -c '^```' SPEC.md)",
+      "Bash(grep -n '^```' SPEC.md)",
+      "Bash(npm -v)",
+      "Bash(cargo -V)",
+      "Bash(rustc -V)",
+      "Bash(xcode-select -p)",
+      "Bash(npm create *)"
+    ]
+  }
+}
