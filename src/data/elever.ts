@@ -23,6 +23,13 @@ export type ElevRad = {
   okter: number;
   /** dato for siste skåring, ISO. null hvis ingen. */
   siste: string | null;
+  /** når elevraden sist ble endret, lokal ISO */
+  endret: string;
+  notat: string | null;
+  /** fordelingen av skåringene som teller, til innsatskolonnen */
+  gronn: number;
+  gul: number;
+  rod: number;
 };
 
 // ------------------------------------------------------------------ klasser
@@ -76,8 +83,10 @@ export async function hentElever(skolearId: string): Promise<ElevRad[]> {
     etternavn: string;
     klasseId: string | null;
     klasseNavn: string | null;
+    endret: string;
+    notat: string | null;
   }>(
-    `SELECT e.id, e.kode, e.fornavn, e.etternavn,
+    `SELECT e.id, e.kode, e.fornavn, e.etternavn, e.endret, e.notat,
             k.id AS klasseId, k.navn AS klasseNavn
        FROM elev e
        LEFT JOIN elev_klasse ek
@@ -106,8 +115,18 @@ export async function hentElever(skolearId: string): Promise<ElevRad[]> {
 
   // Verdier med teller_ikke = 1 holdes utenfor her, i spørringslaget, slik at
   // ingen visning kan glemme det (§12).
-  const skaringer = await hent<{ elevId: string; antall: number; siste: string }>(
-    `SELECT s.elev_id AS elevId, COUNT(*) AS antall, MAX(o.dato) AS siste
+  const skaringer = await hent<{
+    elevId: string;
+    antall: number;
+    siste: string;
+    gronn: number;
+    gul: number;
+    rod: number;
+  }>(
+    `SELECT s.elev_id AS elevId, COUNT(*) AS antall, MAX(o.dato) AS siste,
+            SUM(CASE WHEN v.farge = 'gronn' THEN 1 ELSE 0 END) AS gronn,
+            SUM(CASE WHEN v.farge = 'gul'   THEN 1 ELSE 0 END) AS gul,
+            SUM(CASE WHEN v.farge = 'rod'   THEN 1 ELSE 0 END) AS rod
        FROM skaring s
        JOIN okt o ON o.id = s.okt_id AND o.slettet IS NULL
        JOIN skolear_fag sf ON sf.id = o.skolear_fag_id
@@ -134,6 +153,9 @@ export async function hentElever(skolearId: string): Promise<ElevRad[]> {
     fagKoder: fagPerElev.get(r.id)?.koder ?? [],
     okter: skaringPerElev.get(r.id)?.antall ?? 0,
     siste: skaringPerElev.get(r.id)?.siste ?? null,
+    gronn: skaringPerElev.get(r.id)?.gronn ?? 0,
+    gul: skaringPerElev.get(r.id)?.gul ?? 0,
+    rod: skaringPerElev.get(r.id)?.rod ?? 0,
   }));
 }
 

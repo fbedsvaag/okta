@@ -32,11 +32,23 @@ export function ElevPanel({
   aktivtSkolearId,
   onLukk,
   onApneOkt,
+  bla,
 }: {
   elevId: string;
   aktivtSkolearId: string;
   onLukk: () => void;
   onApneOkt: (oktId: string) => void;
+  /**
+   * Bla mellom elevene i samme fag. Utelates der det ikke gir mening — i
+   * Elever-tabellen er lista allerede synlig ved siden av.
+   */
+  bla?: {
+    nr: number;
+    av: number;
+    retning: "opp" | "ned" | null;
+    forrige: () => void;
+    neste: () => void;
+  };
 }) {
   const [elev, setElev] = useState<ElevGrunnlag | null>(null);
   const [ar, setAr] = useState<ElevAr[]>([]);
@@ -83,17 +95,29 @@ export function ElevPanel({
   useEffect(() => {
     const lukkPaEsc = (e: KeyboardEvent) => {
       if (e.key === "Escape") onLukk();
+      if (bla && e.altKey && e.key === "ArrowUp") {
+        e.preventDefault();
+        bla.forrige();
+      }
+      if (bla && e.altKey && e.key === "ArrowDown") {
+        e.preventDefault();
+        bla.neste();
+      }
     };
     window.addEventListener("keydown", lukkPaEsc);
     return () => window.removeEventListener("keydown", lukkPaEsc);
-  }, [onLukk]);
+  }, [onLukk, bla]);
 
   if (!elev) return null;
 
   const detteAret = ar.find((a) => a.skolearId === valgtAr);
 
   return (
-    <aside className="flex h-full flex-col border-l border-linje bg-ark">
+    <aside
+      className={`flex h-full flex-col border-l border-linje bg-ark ${
+        bla?.retning ? `flikk-${bla.retning}` : ""
+      }`}
+    >
       <header className="flex items-baseline gap-3 border-b border-linje-medium px-5 py-3">
         <span className="text-tittel font-semibold">
           {elev.fornavn} {elev.etternavn}
@@ -113,9 +137,32 @@ export function ElevPanel({
             setAr(await hentElevAr(elevId));
           }}
         />
+        {bla && bla.av > 1 && (
+          <span className="ml-auto flex shrink-0 items-center gap-1">
+            <button
+              onClick={bla.forrige}
+              title="Forrige elev (⌥↑)"
+              className="rounded-liten px-1.5 leading-none text-blekk-svak hover:bg-flate hover:text-blekk"
+            >
+              ↑
+            </button>
+            <span className="tabular-nums text-liten text-blekk-svak">
+              {bla.nr} av {bla.av}
+            </span>
+            <button
+              onClick={bla.neste}
+              title="Neste elev (⌥↓)"
+              className="rounded-liten px-1.5 leading-none text-blekk-svak hover:bg-flate hover:text-blekk"
+            >
+              ↓
+            </button>
+          </span>
+        )}
         <button
           onClick={onLukk}
-          className="ml-auto shrink-0 text-liten text-blekk-svak hover:text-blekk"
+          className={`shrink-0 text-liten text-blekk-svak hover:text-blekk ${
+            bla && bla.av > 1 ? "ml-3" : "ml-auto"
+          }`}
         >
           Lukk (Esc)
         </button>

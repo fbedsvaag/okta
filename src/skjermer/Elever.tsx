@@ -30,6 +30,9 @@ const VALGBARE = [
   { id: "fag", navn: "Fag" },
   { id: "okter", navn: "Økter" },
   { id: "siste", navn: "Siste" },
+  { id: "innsats", navn: "Innsats" },
+  { id: "notat", navn: "Notat" },
+  { id: "endret", navn: "Sist endret" },
 ] as const;
 
 type Synlig = (typeof VALGBARE)[number]["id"];
@@ -224,6 +227,26 @@ export function Elever({
                   Siste
                 </Overskrift>
               )}
+              {vis.has("innsats") && (
+                <Overskrift kolonne="innsats" sortering={sortering} onKlikk={bytSortering}>
+                  Innsats
+                </Overskrift>
+              )}
+              {vis.has("notat") && (
+                <Overskrift kolonne="notat" sortering={sortering} onKlikk={bytSortering}>
+                  Notat
+                </Overskrift>
+              )}
+              {vis.has("endret") && (
+                <Overskrift
+                  kolonne="endret"
+                  sortering={sortering}
+                  onKlikk={bytSortering}
+                  hoyre
+                >
+                  Sist endret
+                </Overskrift>
+              )}
               {/* Tar opp slakken, så kolonnene over hugger innholdet sitt. */}
               <th className="w-full" />
             </tr>
@@ -283,8 +306,17 @@ type Kolonne =
   | "klasse"
   | "fag"
   | "okter"
-  | "siste";
+  | "siste"
+  | "innsats"
+  | "notat"
+  | "endret";
 type Sortering = { kolonne: Kolonne; stigende: boolean };
+
+/** Andel grønt av skåringene som teller. -1 for elever uten noen. */
+function andelGronn(e: ElevRad): number {
+  const n = e.gronn + e.gul + e.rod;
+  return n === 0 ? -1 : e.gronn / n;
+}
 
 function sorter(rader: ElevRad[], { kolonne, stigende }: Sortering): ElevRad[] {
   const tekst = (v: string | null) => (v ?? "").toLocaleLowerCase("nb-NO");
@@ -314,6 +346,13 @@ function sorter(rader: ElevRad[], { kolonne, stigende }: Sortering): ElevRad[] {
       case "siste":
         if (!a.siste !== !b.siste) return a.siste ? -1 : 1;
         return tekst(a.siste).localeCompare(tekst(b.siste));
+      case "innsats":
+        // Andel grønt av det som teller. Elever uten skåringer sist.
+        return andelGronn(b) - andelGronn(a);
+      case "notat":
+        return tekst(a.notat).localeCompare(tekst(b.notat));
+      case "endret":
+        return b.endret.localeCompare(a.endret);
     }
   };
 
@@ -532,9 +571,61 @@ function Rad({
           {elev.siste ? dagerSiden(elev.siste) : "–"}
         </td>
       )}
+      {vis.has("innsats") && (
+        <td className="py-1.5 pr-5">
+          <Innsatsstripe elev={elev} />
+        </td>
+      )}
+      {vis.has("notat") && (
+        <td className="max-w-[14rem] truncate py-1.5 pr-5 text-blekk-dempet">
+          {elev.notat ?? ""}
+        </td>
+      )}
+      {vis.has("endret") && (
+        <td className="whitespace-nowrap py-1.5 pr-5 text-right tabular-nums text-blekk-dempet">
+          {kortTid(elev.endret)}
+        </td>
+      )}
       <td />
     </tr>
   );
+}
+
+/**
+ * Fordelingen av elevens skåringer som en tynn stripe. Samme fargespråk som
+ * heatmapet og årsoversikten — «ikke i økta» er allerede filtrert bort i
+ * spørringen, så stripa viser bare det som teller.
+ */
+function Innsatsstripe({ elev }: { elev: ElevRad }) {
+  const deler = [
+    { n: elev.gronn, f: "var(--color-lys-gronn)", navn: "grønn" },
+    { n: elev.gul, f: "var(--color-lys-gul)", navn: "gul" },
+    { n: elev.rod, f: "var(--color-lys-rod)", navn: "rød" },
+  ].filter((d) => d.n > 0);
+
+  if (deler.length === 0) {
+    return <span className="text-blekk-svakest">–</span>;
+  }
+
+  return (
+    <span
+      className="flex h-[6px] w-24 gap-[2px] overflow-hidden rounded-liten"
+      title={deler.map((d) => `${d.navn} ${d.n}`).join(" · ")}
+    >
+      {deler.map((d) => (
+        <span key={d.navn} style={{ background: d.f, flexGrow: d.n }} />
+      ))}
+    </span>
+  );
+}
+
+/** Dato uten klokkeslett — tidspunktet er sjelden det interessante. */
+function kortTid(iso: string): string {
+  return new Date(iso).toLocaleDateString("nb-NO", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "2-digit",
+  });
 }
 
 function dagerSiden(dato: string): string {

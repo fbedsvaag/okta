@@ -12,6 +12,7 @@ import { Felt, Knapp, Tomtilstand } from "../ui/felles";
 import { FagPanel } from "./FagPanel";
 import { ElevPanel } from "./ElevPanel";
 import { useGlidende } from "../ui/bevegelse";
+import { hentFagElever, type FagElev } from "../data/fagportal";
 
 /**
  * Fagene mine i dette skoleåret, SPEC §4.8.
@@ -42,6 +43,27 @@ export function Fag({
   const { vist: apent, apen: glir } = useGlidende(
     fag.find((f) => f.id === valgtFag) ?? null,
   );
+
+  // Elevene i det åpne faget, i samme rekkefølge som fagpanelet viser dem.
+  // Brukes bare til å bla — panelet henter sine egne data selv.
+  const [fagElever, setFagElever] = useState<FagElev[]>([]);
+  const [retning, setRetning] = useState<"opp" | "ned" | null>(null);
+
+  useEffect(() => {
+    if (!apent) return;
+    void hentFagElever(apent.id, skolearId).then(setFagElever);
+  }, [apent?.id, skolearId]);
+
+  const nr = fagElever.findIndex((e) => e.elevId === valgtElev);
+
+  function blaTil(steg: number) {
+    if (nr < 0 || fagElever.length === 0) return;
+    // Går rundt i begge ender — lista er kort nok til at det er greiere
+    // enn å stoppe, og du slipper å lure på om det er flere igjen.
+    const ny = (nr + steg + fagElever.length) % fagElever.length;
+    setRetning(steg > 0 ? "opp" : "ned");
+    setValgtElev(fagElever[ny].elevId);
+  }
 
   useEffect(() => {
     void hentInnstilling("standard_varighet_min").then((v) =>
@@ -118,6 +140,17 @@ export function Fag({
               aktivtSkolearId={skolearId}
               onLukk={() => setValgtElev(null)}
               onApneOkt={onApneOkt}
+              bla={
+                nr >= 0
+                  ? {
+                      nr: nr + 1,
+                      av: fagElever.length,
+                      retning,
+                      forrige: () => blaTil(-1),
+                      neste: () => blaTil(1),
+                    }
+                  : undefined
+              }
             />
           ) : (
             <FagPanel

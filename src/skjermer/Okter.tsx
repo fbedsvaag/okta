@@ -169,6 +169,7 @@ export function Okter({
         fag={fag}
         okter={synlige}
         vurderinger={vurderinger}
+        perioder={periodePerOkt}
       />
 
     <div className="ikkeutskrift flex h-full gap-0 overflow-hidden">

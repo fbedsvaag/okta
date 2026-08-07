@@ -265,6 +265,24 @@ html {
 }
 
 /*
+ * Bla mellom elever i fagpanelet. Elevene flikkes opp eller ned, slik at
+ * retningen du beveger deg i lista er synlig — uten den er det umulig å se
+ * om du gikk framover eller bakover.
+ */
+@keyframes flikk-opp {
+  from { transform: translateY(12px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+@keyframes flikk-ned {
+  from { transform: translateY(-12px); opacity: 0; }
+  to   { transform: translateY(0);     opacity: 1; }
+}
+
+.flikk-opp { animation: flikk-opp var(--tid-inn) var(--ease-inn); }
+.flikk-ned { animation: flikk-ned var(--tid-inn) var(--ease-inn); }
+
+/*
  * Slår av all bevegelse for de som har bedt om det i systeminnstillingene.
  * Layouten er den samme, den skjer bare umiddelbart.
  */
@@ -273,6 +291,11 @@ html {
   .panel-ute,
   .liste-bredde {
     transition: none !important;
+  }
+
+  .flikk-opp,
+  .flikk-ned {
+    animation: none !important;
   }
 }
 
