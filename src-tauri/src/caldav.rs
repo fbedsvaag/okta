@@ -18,6 +18,19 @@
 //!    til `backup/` og kan bli delt; legitimasjon hører ikke hjemme der.
 
 use keyring::Entry;
+use std::time::Duration;
+
+/// Klient med tidsgrenser.
+///
+/// Uten dem kan en tilkobling som ikke svarer henge i det uendelige. En
+/// skolelaptop bytter nett midt i dagen, og da skal publiseringen gi opp og
+/// prøve igjen senere — ikke bli stående.
+fn klient() -> ureq::Agent {
+    ureq::AgentBuilder::new()
+        .timeout_connect(Duration::from_secs(8))
+        .timeout(Duration::from_secs(20))
+        .build()
+}
 
 const TJENESTE: &str = "no.elevtracking.app";
 const KONTO: &str = "caldav";
@@ -70,10 +83,21 @@ fn samling(url: &str) -> String {
 /// Bruker `OPTIONS`, som bare returnerer hvilke metoder serveren støtter —
 /// ingen kalenderdata. Det er nok til å skille «feil passord» fra «feil
 /// adresse», uten å hente noe innhold.
+/// MERK: `async` med `spawn_blocking` er ikke pynt. Tauri kjører synkrone
+/// kommandoer på hovedtråden, og da fryser hele grensesnittet mens nettverket
+/// arbeider — brukeren får badeball. Nettverkskall skal aldri være synkrone
+/// kommandoer.
 #[tauri::command]
-pub fn caldav_test(url: String, bruker: String) -> Result<String, String> {
+pub async fn caldav_test(url: String, bruker: String) -> Result<String, String> {
+    tauri::async_runtime::spawn_blocking(move || test_blokkerende(url, bruker))
+        .await
+        .map_err(|e| format!("intern feil: {e}"))?
+}
+
+fn test_blokkerende(url: String, bruker: String) -> Result<String, String> {
     let pw = passord()?;
-    let svar = ureq::request("OPTIONS", &samling(&url))
+    let svar = klient()
+        .request("OPTIONS", &samling(&url))
         .set("Authorization", &basic(&bruker, &pw))
         .call();
 
@@ -117,6 +141,8 @@ pub struct Resultat {
     pub slettet: usize,
     /// Feil som ikke stoppet resten. Vises samlet i innstillingene.
     pub feil: Vec<String>,
+    /// Sant hvis vi ga opp fordi serveren ikke svarte i det hele tatt.
+    pub avbrutt: bool,
 }
 
 /// Skriver hendelsene og fjerner dem som er slettet.
@@ -124,36 +150,67 @@ pub struct Resultat {
 /// Frontend bestemmer hva som skal skrives og hva som skal bort — den vet
 /// hvilke økter som fantes sist. Serveren spørres aldri om hva den har.
 #[tauri::command]
-pub fn caldav_publiser(
+pub async fn caldav_publiser(
+    url: String,
+    bruker: String,
+    hendelser: Vec<Hendelse>,
+    fjern: Vec<String>,
+) -> Result<Resultat, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        publiser_blokkerende(url, bruker, hendelser, fjern)
+    })
+    .await
+    .map_err(|e| format!("intern feil: {e}"))?
+}
+
+fn publiser_blokkerende(
     url: String,
     bruker: String,
     hendelser: Vec<Hendelse>,
     fjern: Vec<String>,
 ) -> Result<Resultat, String> {
     let pw = passord()?;
+    let agent = klient();
     let auth = basic(&bruker, &pw);
     let base = samling(&url);
     let mut ut = Resultat::default();
 
     for h in hendelser {
         let mal = format!("{base}{}.ics", h.uid);
-        match ureq::put(&mal)
+        match agent
+            .put(&mal)
             .set("Authorization", &auth)
             .set("Content-Type", "text/calendar; charset=utf-8")
             .send_string(&h.ics)
         {
             Ok(_) => ut.skrevet += 1,
-            Err(e) => ut.feil.push(format!("{}: {e}", h.uid)),
+            // En statusfeil gjelder denne ene ressursen — vi går videre.
+            Err(e @ ureq::Error::Status(_, _)) => {
+                ut.feil.push(format!("{}: {e}", h.uid))
+            }
+            // En transportfeil betyr at serveren ikke er der. Da er det
+            // ingen vits i å prøve resten: 80 timeouter til er elleve
+            // minutter med nytteløst arbeid.
+            Err(e) => {
+                ut.feil.push(format!("{}: {e}", h.uid));
+                ut.avbrutt = true;
+                return Ok(ut);
+            }
         }
     }
 
     for uid in fjern {
         let mal = format!("{base}{uid}.ics");
-        match ureq::delete(&mal).set("Authorization", &auth).call() {
+        match agent.delete(&mal).set("Authorization", &auth).call() {
             Ok(_) => ut.slettet += 1,
             // Borte fra før er et greit utfall for en sletting.
             Err(ureq::Error::Status(404, _)) => ut.slettet += 1,
-            Err(e) => ut.feil.push(format!("{uid}: {e}")),
+            Err(e @ ureq::Error::Status(_, _)) => ut.feil.push(format!("{uid}: {e}")),
+            Err(e) => {
+                ut.feil.push(format!("{uid}: {e}"));
+                ut.avbrutt = true;
+                return Ok(ut);
+            }
         }
     }
 

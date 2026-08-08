@@ -70,7 +70,13 @@ export async function test(url: string, bruker: string): Promise<string> {
 }
 
 /** Det Rust-siden svarer med. */
-type Svar = { skrevet: number; slettet: number; feil: string[] };
+type Svar = {
+  skrevet: number;
+  slettet: number;
+  feil: string[];
+  /** serveren svarte ikke i det hele tatt; resten ble ikke forsøkt */
+  avbrutt: boolean;
+};
 
 export type Resultat = Svar & {
   /** hvor mange som sto uendret og derfor ikke ble sendt */
@@ -141,7 +147,13 @@ export async function publiser(skolear: Skolear): Promise<Resultat> {
 
   const forrige = lesForrige(await hentInnstilling(PUBLISERT));
   const na: Record<string, Record<string, string>> = {};
-  const samlet: Resultat = { skrevet: 0, slettet: 0, feil: [], uendret: 0 };
+  const samlet: Resultat = {
+    skrevet: 0,
+    slettet: 0,
+    feil: [],
+    uendret: 0,
+    avbrutt: false,
+  };
 
   for (const [fagId, kalender] of Object.entries(o.kalendere)) {
     if (!kalender.trim()) continue;
@@ -172,11 +184,20 @@ export async function publiser(skolear: Skolear): Promise<Resultat> {
       samlet.skrevet += r.skrevet;
       samlet.slettet += r.slettet;
       samlet.feil.push(...r.feil);
+      if (r.avbrutt) samlet.avbrutt = true;
       // Feilet noe, skal det prøves på nytt neste gang. Da må vi la være å
       // huske kontrollsummen for dem.
       for (const f of r.feil) {
         const id = f.split(":")[0];
         delete summer_na[id];
+      }
+
+      // Ga vi opp fordi serveren var utilgjengelig, vet vi ikke hva som
+      // rakk fram. Da lagrer vi ingenting for resten heller — neste
+      // forsøk skal ta alt på nytt framfor å hoppe over noe.
+      if (r.avbrutt) {
+        na[fagId] = summer_na;
+        break;
       }
     }
 
