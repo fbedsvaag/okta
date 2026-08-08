@@ -365,6 +365,15 @@ export function Innstillinger({
               setDavFeil(null);
               setDavMelding(null);
               try {
+                // Testen leser passordet fra nøkkelringen, så det du nettopp
+                // skrev må lagres først. Ellers testes en gammel verdi, og
+                // feilmeldingen peker på feil sted.
+                if (davPassord) {
+                  await caldav.lagrePassord(davPassord);
+                  setDavPassord("");
+                  setDavHarPassord(true);
+                }
+                await caldav.lagreOppsett(dav);
                 setDavMelding(await caldav.test(dav.base, dav.bruker));
               } catch (e) {
                 setDavFeil(String(e));

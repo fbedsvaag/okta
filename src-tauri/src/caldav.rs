@@ -28,8 +28,10 @@ fn nokkelring() -> Result<Entry, String> {
 
 #[tauri::command]
 pub fn caldav_lagre_passord(passord: String) -> Result<(), String> {
+    // App-passord limes ofte inn med et linjeskift eller mellomrom på slutten.
+    // Det gir 401 uten at noe ser galt ut, så vi klipper det bort her.
     nokkelring()?
-        .set_password(&passord)
+        .set_password(passord.trim())
         .map_err(|e| format!("klarte ikke lagre passordet: {e}"))
 }
 
@@ -86,13 +88,19 @@ pub fn caldav_test(url: String, bruker: String) -> Result<String, String> {
                     .into())
             }
         }
-        Err(ureq::Error::Status(401, _)) => {
-            Err("Feil brukernavn eller passord.".into())
+        Err(ureq::Error::Status(401, _)) => Err(format!(
+            "Serveren avviste innloggingen (401).\n\nPrøvde: {}\nBrukernavn: {}\n\nSjekk at brukernavnet er det du logger inn med, ikke visningsnavnet eller e-postadressen, og at app-passordet er kopiert i sin helhet.",
+            samling(&url),
+            bruker
+        )),
+        Err(ureq::Error::Status(404, _)) => Err(format!(
+            "Fant ingenting på {}.\n\nAdressen skal slutte med brukernavnet ditt, \
+             uten kalendernavn.",
+            samling(&url)
+        )),
+        Err(ureq::Error::Status(kode, _)) => {
+            Err(format!("Serveren svarte {kode} på {}.", samling(&url)))
         }
-        Err(ureq::Error::Status(404, _)) => {
-            Err("Fant ikke kalenderen på den adressen.".into())
-        }
-        Err(ureq::Error::Status(kode, _)) => Err(format!("Serveren svarte {kode}.")),
         Err(e) => Err(format!("Fikk ikke kontakt: {e}")),
     }
 }
