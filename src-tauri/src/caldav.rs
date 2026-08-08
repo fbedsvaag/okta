@@ -29,7 +29,26 @@ fn klient() -> ureq::Agent {
     ureq::AgentBuilder::new()
         .timeout_connect(Duration::from_secs(8))
         .timeout(Duration::from_secs(20))
+        .resolver(ipv4_forst)
         .build()
+}
+
+/// Slår opp verten og setter IPv4 først.
+///
+/// Mange maskiner har en IPv6-adresse uten å ha en vei ut på IPv6 — en
+/// VPN som Tailscale gir deg en, og da ser stakken ut som om IPv6 virker.
+/// Har tjeneren både A- og AAAA-oppslag, treffer et IPv6-forsøk da veggen
+/// med «No route to host», mens nettleseren ved siden av virker fint. Den
+/// prøver nemlig begge samtidig og bruker den som svarer først.
+///
+/// Vi gjør det enklere: IPv4 først, IPv6 som reserve. Det holder for en
+/// app som skriver til én server brukeren har valgt selv.
+fn ipv4_forst(netloc: &str) -> std::io::Result<Vec<std::net::SocketAddr>> {
+    use std::net::ToSocketAddrs;
+    let alle: Vec<std::net::SocketAddr> = netloc.to_socket_addrs()?.collect();
+    let mut sortert: Vec<_> = alle.iter().copied().filter(|a| a.is_ipv4()).collect();
+    sortert.extend(alle.iter().copied().filter(|a| a.is_ipv6()));
+    Ok(sortert)
 }
 
 const TJENESTE: &str = "no.elevtracking.app";
@@ -224,4 +243,28 @@ fn basic(bruker: &str, passord: &str) -> String {
         "Basic {}",
         base64::engine::general_purpose::STANDARD.encode(par)
     )
+}
+
+#[cfg(test)]
+mod tester {
+    use super::ipv4_forst;
+
+    /// localhost slår opp til både 127.0.0.1 og ::1, så den er en grei prøve
+    /// på at sorteringen faktisk skjer.
+    #[test]
+    fn setter_ipv4_forst() {
+        let adr = ipv4_forst("localhost:443").expect("oppslag");
+        let v4 = adr.iter().position(|a| a.is_ipv4());
+        let v6 = adr.iter().position(|a| a.is_ipv6());
+        if let (Some(a), Some(b)) = (v4, v6) {
+            assert!(a < b, "IPv4 skal komme før IPv6, fikk {adr:?}");
+        }
+    }
+
+    #[test]
+    fn mister_ingen_adresser() {
+        use std::net::ToSocketAddrs;
+        let fasit = "localhost:443".to_socket_addrs().unwrap().count();
+        assert_eq!(ipv4_forst("localhost:443").unwrap().len(), fasit);
+    }
 }
