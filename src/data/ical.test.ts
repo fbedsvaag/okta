@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { lagIcal } from "./ical";
+import { lagHendelse, lagIcal } from "./ical";
 import type { Okt } from "./okter";
 import type { Periode } from "./perioder";
 
@@ -69,6 +69,13 @@ describe("lagIcal", () => {
     const s = lagIcal([okt({ klokkeslett: null })], TOM, "2026/27", NA);
     expect(s).toContain("DTSTART;VALUE=DATE:20260817");
     expect(s).not.toContain("DTSTART:2026");
+  });
+
+  it("lar heldagshendelser slutte dagen etter, ikke samme dag", () => {
+    // DTEND er eksklusiv for datoverdier. Lik start og slutt er ugyldig,
+    // og Sabre svarer 415 på det.
+    const s = lagIcal([okt({ klokkeslett: null })], TOM, "x", NA);
+    expect(s).toContain("DTEND;VALUE=DATE:20260818");
   });
 
   it("skriver fag og tema i sammendraget", () => {
@@ -146,6 +153,20 @@ describe("lagIcal", () => {
 
   it("hopper over LOCATION når stedet ikke er satt", () => {
     expect(lagIcal([okt({ sted: null })], TOM, "x", NA)).not.toContain("LOCATION");
+  });
+
+  it("holder METHOD utenfor CalDAV-ressursen", () => {
+    // RFC 4791: en kalenderressurs som legges med PUT skal ikke ha METHOD.
+    // Sabre håndhever det og svarer 415. Strømmen skal derimot ha den.
+    expect(lagHendelse(okt(), null, NA)).not.toContain("METHOD");
+    expect(lagIcal([okt()], TOM, "x", NA)).toContain("METHOD:PUBLISH");
+  });
+
+  it("tar ikke med kalenderegenskaper i en enkelthendelse", () => {
+    const s = lagHendelse(okt(), null, NA);
+    expect(s).not.toContain("X-WR-CALNAME");
+    expect(s).not.toContain("REFRESH-INTERVAL");
+    expect(s).toContain("BEGIN:VEVENT");
   });
 
   it("lager én hendelse per økt", () => {

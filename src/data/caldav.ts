@@ -192,10 +192,15 @@ export async function publiser(skolear: Skolear): Promise<Resultat> {
         delete summer_na[id];
       }
 
-      // Ga vi opp fordi serveren var utilgjengelig, vet vi ikke hva som
-      // rakk fram. Da lagrer vi ingenting for resten heller — neste
-      // forsøk skal ta alt på nytt framfor å hoppe over noe.
+      // Ble publiseringen avbrutt, vet vi ikke hvilke av de forsøkte som
+      // rakk fram. Da glemmer vi kontrollsummen for alle sammen, ikke bare
+      // den som feilet — ellers bokføres økter som publisert uten å ha vært
+      // i nærheten av serveren, og de blir aldri sendt.
+      //
+      // Noen få blir da skrevet på nytt neste gang. En PUT er idempotent,
+      // så det koster ingenting utover et kall.
       if (r.avbrutt) {
+        for (const h of hendelser) delete summer_na[h.uid];
         na[fagId] = summer_na;
         break;
       }

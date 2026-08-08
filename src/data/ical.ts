@@ -72,9 +72,34 @@ export function lagHendelse(
   periode: Periode | null,
   na: Date = new Date(),
 ): string {
-  const kart = new Map<string, Periode>();
-  if (periode) kart.set(o.id, periode);
-  return lagIcal([o], kart, "", na);
+  const linjer = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    `PRODID:${PRODID}`,
+    "CALSCALE:GREGORIAN",
+    ...vevent(o, periode, na),
+    "END:VCALENDAR",
+  ];
+  return linjer.flatMap(brett).join("\r\n") + "\r\n";
+}
+
+/** Selve hendelsen. Delt mellom strømmen og CalDAV-ressursen. */
+function vevent(o: Okt, periode: Periode | null, na: Date): string[] {
+  const ut = [
+    "BEGIN:VEVENT",
+    // Øktas egen UUID (§9). Den endrer seg aldri, så en økt som flyttes
+    // blir oppdatert i kalenderen i stedet for lagt inn på nytt.
+    `UID:${o.id}@elevtracking`,
+    // Øktas egen endringstid, ikke klokka nå. Da er utdataen den samme så
+    // lenge økta er uendret, og publiseringen kan se hva som faktisk er nytt.
+    `DTSTAMP:${utc(o.endret ? new Date(o.endret) : na)}`,
+    ...tidspunkt(o),
+    `SUMMARY:${esc(sammendrag(o))}`,
+  ];
+  if (o.sted) ut.push(`LOCATION:${esc(o.sted)}`);
+  if (periode) ut.push(`DESCRIPTION:${esc(periode.navn)}`);
+  ut.push("END:VEVENT");
+  return ut;
 }
 
 function sammendrag(o: Okt): string {
@@ -91,14 +116,25 @@ function sammendrag(o: Okt): string {
  */
 function tidspunkt(o: Okt): string[] {
   if (!o.klokkeslett) {
+    // DTEND er eksklusiv for datoverdier: en heldagshendelse 17. august
+    // slutter 18. august. Lik start og slutt er ugyldig, og strenge
+    // tjenere — Sabre, som Nextcloud bygger på — avviser det.
+    const neste = new Date(`${o.dato}T00:00:00`);
+    neste.setDate(neste.getDate() + 1);
     return [
       `DTSTART;VALUE=DATE:${o.dato.replace(/-/g, "")}`,
-      `DTEND;VALUE=DATE:${o.dato.replace(/-/g, "")}`,
+      `DTEND;VALUE=DATE:${iso(neste).replace(/-/g, "")}`,
     ];
   }
   const start = new Date(`${o.dato}T${o.klokkeslett}:00`);
   const slutt = new Date(start.getTime() + o.varighetMin * 60_000);
   return [`DTSTART:${utc(start)}`, `DTEND:${utc(slutt)}`];
+}
+
+/** Lokal dato som YYYY-MM-DD, uten å gå via UTC. */
+function iso(d: Date): string {
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
 }
 
 /** 2026-08-15T09:15:00 lokal tid -> 20260815T071500Z */
