@@ -54,7 +54,8 @@ flytter seg selv.
   Rundt 40 økter per fag i året er overkommelig, og planleggingen er en del av
   jobben. Kalender- og InSchool-import står i §10.
 - Ingen synk i v1. Se §9 for hva som likevel forberedes.
-- Ingen nettverkskall overhodet i v1.
+- Ingen nettverkskall overhodet i v1, bortsett fra publisering av
+  timeplanen til brukerens egen kalenderserver (§8.1). Av som standard.
 
 ---
 
@@ -914,7 +915,9 @@ observasjoner som ligger til grunn for standpunkt. To praktiske krav følger:
 Ingenting om helse, hjemmeforhold eller andre særlige kategorier hører hjemme i
 notatfeltene. Legg en kort påminnelse i førstegangsoppsettet.
 
-Appen gjør null nettverkskall i v1. Ingen telemetri, ingen oppdateringssjekk.
+Appen gjør ingen nettverkskall utover publiseringen i §8.1, som brukeren
+selv slår på og som bare sender timeplanen. Ingen telemetri, ingen
+oppdateringssjekk.
 
 ---
 
@@ -1083,6 +1086,33 @@ Denne mappa kan legges hvor som helst, inkludert i en skytjeneste — det er van
 tekstfiler som ingenting skriver til samtidig.
 
 Eksporten er automatisk, ikke manuell. En eksport man må huske på er ikke backup.
+
+### 8.1 Publisering av timeplanen (CalDAV)
+
+Årsplanen kan publiseres til en kalenderserver brukeren selv velger, slik at
+den kan abonneres på fra telefon, nettbrett og andre maskiner — og deles med
+elever som en offentlig lenke.
+
+Dette er det **eneste** unntaket fra §1. Det er avgrenset med vilje:
+
+- **Av som standard.** Ingenting sendes før brukeren har lagt inn en adresse
+  og slått funksjonen på.
+- **Én adresse.** Én CalDAV-samling, oppgitt av brukeren. Ingen oppdagelse av
+  tjenere, ingen forhåndsvalgte leverandører.
+- **Fem felter, ikke flere:** fagkode, tittel, dato, klokkeslett og sted.
+- **Aldri:** elevnavn, skåringer, skåringsnotater, vurderinger,
+  vurderingsresultater, oppfølging, `okt.plan` eller `okt.logg`.
+- **Enveis.** Appen skriver. Den leser aldri noe tilbake fra serveren, og en
+  kompromittert server kan derfor ikke påvirke databasen.
+- **Passordet lagres i systemets nøkkelring**, ikke i databasen — basen
+  kopieres til `backup/` og skal kunne deles uten å lekke legitimasjon.
+
+Hendelsene identifiseres med øktas UUID (§9), så en økt som flyttes blir
+oppdatert framfor duplisert. Slettede økter fjernes fra serveren ved neste
+publisering.
+
+Feltlista er en del av spesifikasjonen, ikke en implementasjonsdetalj. Skal
+den utvides, er det en spec-endring.
 
 ### Rullerende kopi
 

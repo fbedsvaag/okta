@@ -14,9 +14,15 @@ ord. Kjør ikke lange sekvenser uten å si hva du gjør.
 
 ## Ufravikelige regler
 
-1. **Null nettverkskall i appen.** Ingen telemetri, ingen oppdateringssjekk,
-   ingen API-er. Databasen ligger lokalt. Dette er et personvernkrav, ikke en
-   preferanse.
+1. **Null nettverkskall i appen, med ett avgrenset unntak.** Ingen telemetri,
+   ingen oppdateringssjekk, ingen API-er. Databasen ligger lokalt. Dette er et
+   personvernkrav, ikke en preferanse.
+
+   **Unntaket (§8.1):** appen kan publisere timeplanen til én CalDAV-adresse
+   brukeren selv har lagt inn. Av som standard. Bare fem felter går ut — fag,
+   tittel, dato, klokkeslett, sted. Aldri elevnavn, skåringer, notater eller
+   vurderingsresultater. Publiseringen er **enveis**: appen skriver, og leser
+   aldri noe tilbake. Utvid aldri feltlista uten å spørre.
 2. **UUID-primærnøkler, `opprettet`/`endret`-stempler og soft delete på alt.**
    Se §3.1 og §9. Dette er dyrt å rette senere.
 3. **Ingen fagkoder, klassenavn eller skalaer hardkodet.** Alt opprettes av
