@@ -26,4 +26,10 @@ tauri-plugin-sql = { version = "2.4.0", features = ["sqlite"] }
 tauri-plugin-dialog = "2.7.2"
 # Liten, synkron HTTP-lytter til kalenderstrømmen. Bindes bare til loopback.
 tiny_http = "0.12"
+# CalDAV-publisering (SPEC §8.1). ureq er blokkerende og liten, og bruker
+# rustls — ingen OpenSSL å holde oppdatert.
+ureq = "2"
+base64 = "0.22"
+# Passordet hører hjemme i systemets nøkkelring, ikke i databasen.
+keyring = { version = "3", features = ["apple-native"] }
 

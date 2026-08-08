@@ -21,6 +21,7 @@ export type Okt = {
   klokkeslett: string | null;
   varighetMin: number;
   tema: string | null;
+  sted: string | null;
   plan: string | null;
   logg: string | null;
   /** antall skåringsrader som faktisk finnes */
@@ -55,7 +56,7 @@ export async function hentOkter(skolearId: string): Promise<Okt[]> {
             o.dato,
             o.klokkeslett,
             o.varighet_min   AS varighetMin,
-            o.tema, o.plan, o.logg,
+            o.tema, o.sted, o.plan, o.logg,
             (SELECT COUNT(*) FROM skaring s
               WHERE s.okt_id = o.id AND s.slettet IS NULL) AS skaret,
             (SELECT COUNT(*) FROM skaring s
@@ -160,6 +161,7 @@ export async function endreOkt(
     klokkeslett?: string | null;
     varighet_min?: number;
     tema?: string | null;
+    sted?: string | null;
     plan?: string | null;
     logg?: string | null;
     periode_id?: string | null;

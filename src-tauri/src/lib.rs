@@ -1,3 +1,4 @@
+mod caldav;
 mod kalenderfeed;
 mod sikkerhetskopi;
 
@@ -37,6 +38,12 @@ fn migrations() -> Vec<Migration> {
             sql: include_str!("../migrations/005_fridag.sql"),
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 6,
+            description: "sted på økta",
+            sql: include_str!("../migrations/006_okt_sted.sql"),
+            kind: MigrationKind::Up,
+        },
     ]
 }
 
@@ -72,6 +79,11 @@ pub fn run() {
             kalenderfeed::kalenderfeed_kjorer,
             kalenderfeed::start_kalenderfeed,
             kalenderfeed::skriv_kalenderfil,
+            caldav::caldav_lagre_passord,
+            caldav::caldav_har_passord,
+            caldav::caldav_glem_passord,
+            caldav::caldav_test,
+            caldav::caldav_publiser,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

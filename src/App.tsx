@@ -263,7 +263,7 @@ export default function App() {
           <Skoleruta key={versjon} skolear={skolear} onEndret={last} />
         )}
 
-        {visning === "innstillinger" && <Innstillinger skolear={skolear} />}
+        {visning === "innstillinger" && <Innstillinger skolear={skolear} fag={fag} />}
 
         {/*
           Ingen key={versjon} her, med vilje. Fag får faglista som prop og

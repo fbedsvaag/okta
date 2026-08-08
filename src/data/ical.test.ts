@@ -16,6 +16,7 @@ function okt(over: Partial<Okt> = {}): Okt {
     klokkeslett: "09:15",
     varighetMin: 180,
     tema: "Markedsanalyse",
+    sted: "R204",
     plan: "HEMMELIG PLAN",
     logg: "HEMMELIG LOGG",
     skaret: 0,
@@ -127,6 +128,14 @@ describe("lagIcal", () => {
       .join("");
     expect(sammensatt).not.toContain("�");
     expect(sammensatt).toContain("æøå".repeat(40));
+  });
+
+  it("tar med sted som LOCATION", () => {
+    expect(lagIcal([okt()], TOM, "x", NA)).toContain("LOCATION:R204");
+  });
+
+  it("hopper over LOCATION når stedet ikke er satt", () => {
+    expect(lagIcal([okt({ sted: null })], TOM, "x", NA)).not.toContain("LOCATION");
   });
 
   it("lager én hendelse per økt", () => {

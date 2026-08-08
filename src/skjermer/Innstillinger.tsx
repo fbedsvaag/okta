@@ -12,7 +12,9 @@ import { revealItemInDir } from "@tauri-apps/plugin-opener";
 import { hentSkalaer, hentVerdier, taster, type Skala, type Skalaverdi } from "../skala";
 import type { Skolear } from "../data/skolear";
 import * as kalender from "../data/kalenderfeed";
-import { Knapp } from "../ui/felles";
+import * as caldav from "../data/caldav";
+import type { FagIAr } from "../data/fag";
+import { Felt, Knapp } from "../ui/felles";
 
 /**
  * Globale innstillinger, SPEC §4.8.
@@ -21,7 +23,24 @@ import { Knapp } from "../ui/felles";
  * rammer — datoer, ferier, planleggingsdager — ligger under skoleåret,
  * fordi de er forskjellige hvert år.
  */
-export function Innstillinger({ skolear }: { skolear: Skolear }) {
+export function Innstillinger({
+  skolear,
+  fag,
+}: {
+  skolear: Skolear;
+  fag: FagIAr[];
+}) {
+  const [dav, setDav] = useState<caldav.Oppsett>({
+    base: "",
+    bruker: "",
+    pa: false,
+    kalendere: {},
+  });
+  const [davPassord, setDavPassord] = useState("");
+  const [davHarPassord, setDavHarPassord] = useState(false);
+  const [davMelding, setDavMelding] = useState<string | null>(null);
+  const [davFeil, setDavFeil] = useState<string | null>(null);
+  const [davJobber, setDavJobber] = useState(false);
   const [feedPa, setFeedPa] = useState(false);
   const [feedUrl, setFeedUrl] = useState("");
   const [feedFeil, setFeedFeil] = useState<string | null>(null);
@@ -65,6 +84,13 @@ export function Innstillinger({ skolear }: { skolear: Skolear }) {
       await gjenopprett(valgt, valgt.split("/").pop() ?? valgt);
     }
   }
+
+  useEffect(() => {
+    void (async () => {
+      setDav(await caldav.hentOppsett());
+      setDavHarPassord(await caldav.harPassord());
+    })();
+  }, []);
 
   useEffect(() => {
     void (async () => {
@@ -231,6 +257,147 @@ export function Innstillinger({ skolear }: { skolear: Skolear }) {
               seg bare mens appen kjører.
             </p>
           </div>
+        )}
+      </Bolk>
+
+      <Bolk tittel="Publiser til kalenderserver">
+        <p className="mb-3 text-brod text-blekk-dempet">
+          Skriver timeplanen til din egen CalDAV-server, ett fag per kalender,
+          så elevene kan abonnere på sitt eget fag. Dette er det eneste stedet
+          appen sender noe ut (§8.1), og det som går ut er
+          <strong className="font-medium"> fag, tittel, dato, klokkeslett og sted</strong>.
+          Aldri elevnavn, skåringer eller notater.
+        </p>
+
+        <div className="grid max-w-xl gap-3">
+          <Felt
+            etikett="Adresse til kalendermappa"
+            verdi={dav.base}
+            settVerdi={(v) => setDav((d) => ({ ...d, base: v }))}
+            plassholder="https://framagenda.org/remote.php/dav/calendars/brukernavn"
+          />
+          <Felt
+            etikett="Brukernavn"
+            verdi={dav.bruker}
+            settVerdi={(v) => setDav((d) => ({ ...d, bruker: v }))}
+          />
+          <label className="block">
+            <span className="mb-1 block text-etikett uppercase tracking-etikett text-blekk-dempet">
+              {davHarPassord ? "Passord (lagret i nøkkelringen)" : "Passord"}
+            </span>
+            <input
+              type="password"
+              value={davPassord}
+              placeholder={davHarPassord ? "••••••••" : "App-passord fra serveren"}
+              onChange={(e) => setDavPassord(e.target.value)}
+              className="w-full rounded border border-linje bg-ark px-2 py-1.5 text-brod outline-none focus:border-aksent"
+            />
+          </label>
+          <p className="text-liten text-blekk-dempet">
+            Bruk et app-passord, ikke hovedpassordet ditt — da kan du trekke
+            det tilbake uten å bytte alt annet. Passordet lagres i systemets
+            nøkkelring, aldri i databasen.
+          </p>
+        </div>
+
+        <p className="mb-1 mt-4 text-etikett uppercase tracking-etikett text-blekk-dempet">
+          Kalender per fag
+        </p>
+        <div className="grid max-w-xl gap-1.5">
+          {fag.length === 0 ? (
+            <p className="text-brod text-blekk-svak">Ingen fag i skoleåret.</p>
+          ) : (
+            fag.map((f) => (
+              <label key={f.id} className="flex items-center gap-2 text-brod">
+                <span className="w-20 shrink-0 font-medium">{f.kode}</span>
+                <input
+                  value={dav.kalendere[f.id] ?? ""}
+                  placeholder="tomt = publiseres ikke"
+                  onChange={(e) =>
+                    setDav((d) => ({
+                      ...d,
+                      kalendere: { ...d.kalendere, [f.id]: e.target.value },
+                    }))
+                  }
+                  className="flex-1 rounded border border-linje bg-ark px-2 py-1 text-brod outline-none focus:border-aksent"
+                />
+              </label>
+            ))
+          )}
+        </div>
+
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <Knapp
+            onClick={async () => {
+              setDavFeil(null);
+              setDavMelding(null);
+              await caldav.lagreOppsett(dav);
+              if (davPassord) {
+                await caldav.lagrePassord(davPassord);
+                setDavPassord("");
+                setDavHarPassord(true);
+              }
+              setDavMelding("Lagret.");
+            }}
+          >
+            Lagre
+          </Knapp>
+          <Knapp
+            disabled={!dav.base || !dav.bruker}
+            onClick={async () => {
+              setDavFeil(null);
+              setDavMelding(null);
+              try {
+                setDavMelding(await caldav.test(dav.base, dav.bruker));
+              } catch (e) {
+                setDavFeil(String(e));
+              }
+            }}
+          >
+            Test tilkoblingen
+          </Knapp>
+          <Knapp
+            variant="primar"
+            disabled={davJobber || !dav.base}
+            onClick={async () => {
+              setDavJobber(true);
+              setDavFeil(null);
+              setDavMelding(null);
+              try {
+                const r = await caldav.publiser(skolear);
+                setDavMelding(
+                  `${r.skrevet} økter skrevet, ${r.slettet} fjernet.` +
+                    (r.feil.length > 0 ? ` ${r.feil.length} feilet.` : ""),
+                );
+                if (r.feil.length > 0) setDavFeil(r.feil.slice(0, 3).join("\n"));
+              } catch (e) {
+                setDavFeil(String(e));
+              } finally {
+                setDavJobber(false);
+              }
+            }}
+          >
+            {davJobber ? "Publiserer …" : "Publiser nå"}
+          </Knapp>
+          {davHarPassord && (
+            <Knapp
+              variant="stille"
+              onClick={async () => {
+                await caldav.glemPassord();
+                setDavHarPassord(false);
+                setDavMelding("Passordet er slettet fra nøkkelringen.");
+              }}
+            >
+              Glem passordet
+            </Knapp>
+          )}
+        </div>
+
+        {davMelding && (
+          <p className="mt-2 text-brod text-lys-gronn">{davMelding}</p>
+        )}
+        {davFeil && (
+          <p className="mt-2 whitespace-pre-wrap text-brod text-feil">{davFeil}</p>
         )}
       </Bolk>
 

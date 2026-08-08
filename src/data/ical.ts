@@ -4,8 +4,8 @@ import type { Periode } from "./perioder";
 /**
  * iCalendar-strøm av øktene, til abonnement i en vanlig kalender.
  *
- * **Hva som går ut herfra:** fagkode, tema, dato, klokkeslett, varighet og
- * eventuelt periodenavn. Altså timeplanen.
+ * **Hva som går ut herfra:** fagkode, tittel, dato, klokkeslett, varighet,
+ * sted og eventuelt periodenavn. Altså timeplanen — feltlista i SPEC §8.1.
  *
  * **Hva som aldri går ut:** elevnavn, skåringer, skåringsnotater,
  * vurderingsresultater og klasselister. Heller ikke `okt.plan` eller
@@ -49,6 +49,7 @@ export function lagIcal(
       ...tidspunkt(o),
       `SUMMARY:${esc(sammendrag(o))}`,
     );
+    if (o.sted) linjer.push(`LOCATION:${esc(o.sted)}`);
     if (p) linjer.push(`DESCRIPTION:${esc(p.navn)}`);
     linjer.push("END:VEVENT");
   }
@@ -57,6 +58,23 @@ export function lagIcal(
 
   // RFC 5545 vil ha CRLF, og linjer over 75 oktetter brettes.
   return linjer.flatMap(brett).join("\r\n") + "\r\n";
+}
+
+/**
+ * Én økt som en frittstående VCALENDAR.
+ *
+ * CalDAV lagrer én hendelse per ressurs, ikke hele kalenderen i én fil, så
+ * publiseringen trenger denne formen. Innholdet er nøyaktig det samme som i
+ * `lagIcal` — samme felter, samme begrensning.
+ */
+export function lagHendelse(
+  o: Okt,
+  periode: Periode | null,
+  na: Date = new Date(),
+): string {
+  const kart = new Map<string, Periode>();
+  if (periode) kart.set(o.id, periode);
+  return lagIcal([o], kart, "", na);
 }
 
 function sammendrag(o: Okt): string {

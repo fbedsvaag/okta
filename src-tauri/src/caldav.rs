@@ -1,0 +1,162 @@
+//! Publisering av timeplanen til brukerens egen kalenderserver, SPEC §8.1.
+//!
+//! # Hvorfor dette er lov
+//!
+//! §1 sier null nettverkskall. §8.1 gjør ett avgrenset unntak, godkjent av
+//! eieren: appen kan skrive timeplanen til én CalDAV-adresse brukeren selv
+//! har lagt inn. Fem felter går ut — fag, tittel, dato, klokkeslett, sted.
+//!
+//! # Tre egenskaper som holder unntaket smalt
+//!
+//! 1. **Enveis.** Modulen har `PUT` og `DELETE`, ingen `GET` eller `REPORT`.
+//!    Den kan ikke hente kalenderdata inn i basen, uansett hva serveren
+//!    svarer. En kompromittert server kan derfor ikke påvirke databasen.
+//! 2. **Dum.** Den vet ikke hva den sender. Innholdet lages i `ical.ts`, som
+//!    er det ene stedet feltlista håndheves. Denne fila skal aldri lese fra
+//!    databasen selv.
+//! 3. **Passordet ligger i nøkkelringen**, ikke i basen. Databasen kopieres
+//!    til `backup/` og kan bli delt; legitimasjon hører ikke hjemme der.
+
+use keyring::Entry;
+
+const TJENESTE: &str = "no.elevtracking.app";
+const KONTO: &str = "caldav";
+
+fn nokkelring() -> Result<Entry, String> {
+    Entry::new(TJENESTE, KONTO).map_err(|e| format!("fikk ikke tilgang til nøkkelringen: {e}"))
+}
+
+#[tauri::command]
+pub fn caldav_lagre_passord(passord: String) -> Result<(), String> {
+    nokkelring()?
+        .set_password(&passord)
+        .map_err(|e| format!("klarte ikke lagre passordet: {e}"))
+}
+
+#[tauri::command]
+pub fn caldav_har_passord() -> bool {
+    nokkelring().and_then(|e| e.get_password().map_err(|x| x.to_string())).is_ok()
+}
+
+#[tauri::command]
+pub fn caldav_glem_passord() -> Result<(), String> {
+    match nokkelring()?.delete_credential() {
+        Ok(()) => Ok(()),
+        // Ikke en feil å glemme noe som ikke er der.
+        Err(keyring::Error::NoEntry) => Ok(()),
+        Err(e) => Err(format!("klarte ikke slette passordet: {e}")),
+    }
+}
+
+fn passord() -> Result<String, String> {
+    nokkelring()?
+        .get_password()
+        .map_err(|_| "Ingen passord lagret. Legg det inn i innstillingene.".to_string())
+}
+
+/// Samlingens URL, med skråstrek på slutten så sammenslåing blir riktig.
+fn samling(url: &str) -> String {
+    if url.ends_with('/') {
+        url.to_string()
+    } else {
+        format!("{url}/")
+    }
+}
+
+/// Sjekker at adressen svarer og at innlogingen holder.
+///
+/// Bruker `OPTIONS`, som bare returnerer hvilke metoder serveren støtter —
+/// ingen kalenderdata. Det er nok til å skille «feil passord» fra «feil
+/// adresse», uten å hente noe innhold.
+#[tauri::command]
+pub fn caldav_test(url: String, bruker: String) -> Result<String, String> {
+    let pw = passord()?;
+    let svar = ureq::request("OPTIONS", &samling(&url))
+        .set("Authorization", &basic(&bruker, &pw))
+        .call();
+
+    match svar {
+        Ok(r) => {
+            let dav = r.header("DAV").unwrap_or("").to_string();
+            if dav.contains("calendar-access") {
+                Ok("Tilkoblingen virker.".into())
+            } else {
+                Ok("Serveren svarte, men meldte ikke kalenderstøtte. Sjekk at \
+                    adressen peker på en kalender, ikke på forsiden."
+                    .into())
+            }
+        }
+        Err(ureq::Error::Status(401, _)) => {
+            Err("Feil brukernavn eller passord.".into())
+        }
+        Err(ureq::Error::Status(404, _)) => {
+            Err("Fant ikke kalenderen på den adressen.".into())
+        }
+        Err(ureq::Error::Status(kode, _)) => Err(format!("Serveren svarte {kode}.")),
+        Err(e) => Err(format!("Fikk ikke kontakt: {e}")),
+    }
+}
+
+#[derive(serde::Deserialize)]
+pub struct Hendelse {
+    pub uid: String,
+    pub ics: String,
+}
+
+#[derive(serde::Serialize, Default)]
+pub struct Resultat {
+    pub skrevet: usize,
+    pub slettet: usize,
+    /// Feil som ikke stoppet resten. Vises samlet i innstillingene.
+    pub feil: Vec<String>,
+}
+
+/// Skriver hendelsene og fjerner dem som er slettet.
+///
+/// Frontend bestemmer hva som skal skrives og hva som skal bort — den vet
+/// hvilke økter som fantes sist. Serveren spørres aldri om hva den har.
+#[tauri::command]
+pub fn caldav_publiser(
+    url: String,
+    bruker: String,
+    hendelser: Vec<Hendelse>,
+    fjern: Vec<String>,
+) -> Result<Resultat, String> {
+    let pw = passord()?;
+    let auth = basic(&bruker, &pw);
+    let base = samling(&url);
+    let mut ut = Resultat::default();
+
+    for h in hendelser {
+        let mal = format!("{base}{}.ics", h.uid);
+        match ureq::put(&mal)
+            .set("Authorization", &auth)
+            .set("Content-Type", "text/calendar; charset=utf-8")
+            .send_string(&h.ics)
+        {
+            Ok(_) => ut.skrevet += 1,
+            Err(e) => ut.feil.push(format!("{}: {e}", h.uid)),
+        }
+    }
+
+    for uid in fjern {
+        let mal = format!("{base}{uid}.ics");
+        match ureq::delete(&mal).set("Authorization", &auth).call() {
+            Ok(_) => ut.slettet += 1,
+            // Borte fra før er et greit utfall for en sletting.
+            Err(ureq::Error::Status(404, _)) => ut.slettet += 1,
+            Err(e) => ut.feil.push(format!("{uid}: {e}")),
+        }
+    }
+
+    Ok(ut)
+}
+
+fn basic(bruker: &str, passord: &str) -> String {
+    use base64::Engine;
+    let par = format!("{bruker}:{passord}");
+    format!(
+        "Basic {}",
+        base64::engine::general_purpose::STANDARD.encode(par)
+    )
+}

@@ -432,6 +432,19 @@ function OktFelter({
         />
       </Linje>
 
+      <Linje etikett="Sted">
+        <input
+          defaultValue={okt.sted ?? ""}
+          key={okt.sted ?? ""}
+          placeholder="Rom, sal, ute"
+          onBlur={async (e) => {
+            await endreOkt(okt.id, { sted: e.target.value.trim() || null });
+            onEndret();
+          }}
+          className={feltStil}
+        />
+      </Linje>
+
       <Linje etikett="Plan">
         <textarea
           defaultValue={okt.plan ?? ""}
