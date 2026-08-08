@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { hentAktivtSkolear, type Skolear } from "./data/skolear";
 import { daglingKopi } from "./data/sikkerhetskopi";
 import { erPa as kalenderPa, start as startKalender } from "./data/kalenderfeed";
+import { startAuto as startCaldav } from "./data/caldav";
 import { hentFagIAr, type FagIAr } from "./data/fag";
 import { Veiviser } from "./skjermer/Veiviser";
 import { IDag } from "./skjermer/IDag";
@@ -116,6 +117,13 @@ export default function App() {
   useEffect(() => {
     void last();
   }, [last]);
+
+  // Automatisk publisering til kalenderserveren, hvis den er slått på.
+  // Lytteren står så lenge et skoleår er lastet.
+  useEffect(() => {
+    if (!skolear) return;
+    return startCaldav(skolear);
+  }, [skolear?.id]);
 
   if (feil) {
     return (

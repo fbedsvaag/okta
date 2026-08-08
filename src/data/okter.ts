@@ -1,4 +1,5 @@
 import { hent, oppdater, settInn, slett } from "../db";
+import { varsle } from "./endringer";
 import type { Skalaverdi } from "../skala";
 
 /**
@@ -22,6 +23,8 @@ export type Okt = {
   varighetMin: number;
   tema: string | null;
   sted: string | null;
+  /** lokal ISO. Brukes som DTSTAMP og til å se hva som faktisk er endret. */
+  endret: string;
   plan: string | null;
   logg: string | null;
   /** antall skåringsrader som faktisk finnes */
@@ -56,7 +59,7 @@ export async function hentOkter(skolearId: string): Promise<Okt[]> {
             o.dato,
             o.klokkeslett,
             o.varighet_min   AS varighetMin,
-            o.tema, o.sted, o.plan, o.logg,
+            o.tema, o.sted, o.plan, o.logg, o.endret,
             (SELECT COUNT(*) FROM skaring s
               WHERE s.okt_id = o.id AND s.slettet IS NULL) AS skaret,
             (SELECT COUNT(*) FROM skaring s
@@ -145,13 +148,15 @@ export async function opprettOkt(
   klokkeslett: string | null,
   varighetMin: number,
 ): Promise<string> {
-  return settInn("okt", {
+  const id = await settInn("okt", {
     skolear_fag_id: skolearFagId,
     dato,
     klokkeslett,
     varighet_min: varighetMin,
     kode: await lagOktkode(skolearFagId, fagKode, dato),
   });
+  varsle();
+  return id;
 }
 
 export async function endreOkt(
@@ -168,10 +173,12 @@ export async function endreOkt(
   },
 ): Promise<void> {
   await oppdater("okt", id, felter);
+  varsle();
 }
 
 export async function slettOkt(id: string): Promise<void> {
   await slett("okt", id);
+  varsle();
 }
 
 /**

@@ -17,6 +17,7 @@ function okt(over: Partial<Okt> = {}): Okt {
     varighetMin: 180,
     tema: "Markedsanalyse",
     sted: "R204",
+    endret: "2026-08-07T14:03:22",
     plan: "HEMMELIG PLAN",
     logg: "HEMMELIG LOGG",
     skaret: 0,
@@ -128,6 +129,15 @@ describe("lagIcal", () => {
       .join("");
     expect(sammensatt).not.toContain("�");
     expect(sammensatt).toContain("æøå".repeat(40));
+  });
+
+  it("bruker øktas endringstid som DTSTAMP, ikke klokka nå", () => {
+    // Samme økt skal gi identisk utdata uansett når den publiseres — det er
+    // dét som lar publiseringen se hvilke økter som faktisk er endret.
+    const a = lagIcal([okt()], TOM, "x", new Date("2026-01-01T00:00:00Z"));
+    const b = lagIcal([okt()], TOM, "x", new Date("2027-06-06T00:00:00Z"));
+    expect(a).toBe(b);
+    expect(a).toContain("DTSTAMP:20260807T120322Z");
   });
 
   it("tar med sted som LOCATION", () => {

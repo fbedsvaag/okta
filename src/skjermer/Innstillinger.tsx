@@ -300,6 +300,23 @@ export function Innstillinger({
           </p>
         </div>
 
+        <label className="mt-4 flex items-center gap-2 text-brod">
+          <input
+            type="checkbox"
+            checked={dav.pa}
+            onChange={async (e) => {
+              const pa = e.target.checked;
+              setDav((d) => ({ ...d, pa }));
+              await caldav.lagreOppsett({ pa });
+            }}
+          />
+          Publiser automatisk når jeg endrer en økt
+        </label>
+        <p className="mb-3 ml-6 text-liten text-blekk-dempet">
+          Skjer noen sekunder etter siste endring, og sender bare øktene som
+          faktisk er endret.
+        </p>
+
         <p className="mb-1 mt-4 text-etikett uppercase tracking-etikett text-blekk-dempet">
           Kalender per fag
         </p>
@@ -366,7 +383,8 @@ export function Innstillinger({
               try {
                 const r = await caldav.publiser(skolear);
                 setDavMelding(
-                  `${r.skrevet} økter skrevet, ${r.slettet} fjernet.` +
+                  `${r.skrevet} skrevet, ${r.slettet} fjernet, ` +
+                    `${r.uendret} uendret.` +
                     (r.feil.length > 0 ? ` ${r.feil.length} feilet.` : ""),
                 );
                 if (r.feil.length > 0) setDavFeil(r.feil.slice(0, 3).join("\n"));

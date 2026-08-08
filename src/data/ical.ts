@@ -36,8 +36,6 @@ export function lagIcal(
     "REFRESH-INTERVAL;VALUE=DURATION:PT15M",
   ];
 
-  const stempel = utc(na);
-
   for (const o of okter) {
     const p = perioder.get(o.id);
     linjer.push(
@@ -45,7 +43,9 @@ export function lagIcal(
       // Øktas egen UUID (§9). Den endrer seg aldri, så en økt som flyttes
       // blir oppdatert i kalenderen i stedet for lagt inn på nytt.
       `UID:${o.id}@elevtracking`,
-      `DTSTAMP:${stempel}`,
+      // Øktas egen endringstid, ikke klokka nå. Da er utdataen den samme så
+      // lenge økta er uendret, og publiseringen kan se hva som faktisk er nytt.
+      `DTSTAMP:${utc(o.endret ? new Date(o.endret) : na)}`,
       ...tidspunkt(o),
       `SUMMARY:${esc(sammendrag(o))}`,
     );

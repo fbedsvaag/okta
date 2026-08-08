@@ -3,6 +3,7 @@ import { lagHendelse } from "./ical";
 import { hentOkter } from "./okter";
 import { hentAllePerioder, periodeFor, type Periode } from "./perioder";
 import { hentInnstilling, settInnstilling, type Skolear } from "./skolear";
+import { lytt } from "./endringer";
 
 /**
  * Publisering av timeplanen til brukerens kalenderserver, SPEC §8.1.
@@ -68,17 +69,57 @@ export async function test(url: string, bruker: string): Promise<string> {
   return invoke<string>("caldav_test", { url, bruker });
 }
 
-export type Resultat = { skrevet: number; slettet: number; feil: string[] };
+/** Det Rust-siden svarer med. */
+type Svar = { skrevet: number; slettet: number; feil: string[] };
+
+export type Resultat = Svar & {
+  /** hvor mange som sto uendret og derfor ikke ble sendt */
+  uendret: number;
+};
 
 /**
- * Skriver alle øktene til serveren, ett fag om gangen.
+ * Kontrollsum av hendelsen slik den ville blitt sendt.
  *
- * Vi spør aldri serveren om hva den allerede har — publiseringen er enveis
- * (§8.1). I stedet husker vi hvilke id-er vi sendte sist, og sletter dem som
- * er borte nå. Lista ligger i `innstilling`, så den følger databasen.
+ * Fungerer bare fordi `lagHendelse` er deterministisk: DTSTAMP kommer fra
+ * øktas egen endringstid, ikke fra klokka. Endres det, må dette endres med.
+ */
+async function summer(ics: string): Promise<string> {
+  const bytes = new TextEncoder().encode(ics);
+  const sum = await crypto.subtle.digest("SHA-256", bytes);
+  return [...new Uint8Array(sum)]
+    .slice(0, 12)
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+/**
+ * Hva som lå ute sist, som {fagId: {øktId: kontrollsum}}.
  *
- * Alle økter skrives hver gang. Med rundt 150 økter er det noen sekunder, og
- * det er en pris verdt å betale for å slippe å spore endringer per økt.
+ * Eldre versjoner lagret bare id-ene i en liste. Møter vi den formen, tolkes
+ * den som «kjenner ikke innholdet», og alt publiseres på nytt én gang.
+ */
+function lesForrige(rå: string | null): Record<string, Record<string, string>> {
+  if (!rå) return {};
+  const data = JSON.parse(rå) as Record<string, unknown>;
+  const ut: Record<string, Record<string, string>> = {};
+  for (const [fagId, verdi] of Object.entries(data)) {
+    ut[fagId] = Array.isArray(verdi)
+      ? Object.fromEntries((verdi as string[]).map((id) => [id, ""]))
+      : (verdi as Record<string, string>);
+  }
+  return ut;
+}
+
+/**
+ * Skriver de endrede øktene til serveren, ett fag om gangen.
+ *
+ * Vi spør aldri serveren om hva den har — publiseringen er enveis (§8.1). I
+ * stedet husker vi kontrollsummen av det vi sendte sist. Er summen den
+ * samme, står økta allerede riktig ute og hoppes over; er den borte fra
+ * basen, slettes den. Tabellen ligger i `innstilling`, så den følger
+ * databasen til en annen maskin.
+ *
+ * Endrer du én økt, går det derfor én PUT — ikke hele årsplanen.
  */
 export async function publiser(skolear: Skolear): Promise<Resultat> {
   const o = await hentOppsett();
@@ -98,37 +139,108 @@ export async function publiser(skolear: Skolear): Promise<Resultat> {
     if (p) perOkt.set(okt.id, p);
   }
 
-  const forrige: Record<string, string[]> = JSON.parse(
-    (await hentInnstilling(PUBLISERT)) ?? "{}",
-  );
-  const na: Record<string, string[]> = {};
-  const samlet: Resultat = { skrevet: 0, slettet: 0, feil: [] };
+  const forrige = lesForrige(await hentInnstilling(PUBLISERT));
+  const na: Record<string, Record<string, string>> = {};
+  const samlet: Resultat = { skrevet: 0, slettet: 0, feil: [], uendret: 0 };
 
   for (const [fagId, kalender] of Object.entries(o.kalendere)) {
     if (!kalender.trim()) continue;
 
     const egne = okter.filter((x) => x.skolearFagId === fagId);
-    const hendelser = egne.map((okt) => ({
-      uid: okt.id,
-      ics: lagHendelse(okt, perOkt.get(okt.id) ?? null),
-    }));
+    const var_ = forrige[fagId] ?? {};
+    const summer_na: Record<string, string> = {};
+    const hendelser: { uid: string; ics: string }[] = [];
 
-    const finnes = new Set(egne.map((x) => x.id));
-    const fjern = (forrige[fagId] ?? []).filter((id) => !finnes.has(id));
+    for (const okt of egne) {
+      const ics = lagHendelse(okt, perOkt.get(okt.id) ?? null);
+      const sum = await summer(ics);
+      summer_na[okt.id] = sum;
+      // Uendret siden sist? Da har serveren den alt.
+      if (var_[okt.id] === sum) samlet.uendret++;
+      else hendelser.push({ uid: okt.id, ics });
+    }
 
-    const r = await invoke<Resultat>("caldav_publiser", {
-      url: `${o.base.replace(/\/$/, "")}/${kalender.trim()}`,
-      bruker: o.bruker,
-      hendelser,
-      fjern,
-    });
+    const fjern = Object.keys(var_).filter((id) => !(id in summer_na));
 
-    samlet.skrevet += r.skrevet;
-    samlet.slettet += r.slettet;
-    samlet.feil.push(...r.feil);
-    na[fagId] = [...finnes];
+    if (hendelser.length > 0 || fjern.length > 0) {
+      const r = await invoke<Svar>("caldav_publiser", {
+        url: `${o.base.replace(/\/$/, "")}/${kalender.trim()}`,
+        bruker: o.bruker,
+        hendelser,
+        fjern,
+      });
+      samlet.skrevet += r.skrevet;
+      samlet.slettet += r.slettet;
+      samlet.feil.push(...r.feil);
+      // Feilet noe, skal det prøves på nytt neste gang. Da må vi la være å
+      // huske kontrollsummen for dem.
+      for (const f of r.feil) {
+        const id = f.split(":")[0];
+        delete summer_na[id];
+      }
+    }
+
+    na[fagId] = summer_na;
   }
 
   await settInnstilling(PUBLISERT, JSON.stringify(na));
   return samlet;
+}
+
+// ------------------------------------------------------------ automatikk
+
+const VENT_MS = 6000;
+
+let timer: ReturnType<typeof setTimeout> | null = null;
+let jobber = false;
+let igjen = false;
+
+/**
+ * Publiserer kort tid etter siste endring.
+ *
+ * Ventetiden er der fordi en redigeringsøkt gir mange små lagringer — felt
+ * lagrer når de forlates — og hver av dem skal ikke bli en tur til serveren.
+ * Timeren nullstilles ved hver ny endring, så publiseringen skjer når du har
+ * stoppet, ikke mens du holder på.
+ *
+ * Kjører det alt en publisering, settes en ny i kø i stedet for å starte
+ * parallelt. To samtidige ville skrevet hver sin kontrollsumtabell, og den
+ * siste ville vunnet — med endringer på avveie som resultat.
+ */
+export function startAuto(skolear: Skolear): () => void {
+  const kjor = async () => {
+    if (jobber) {
+      igjen = true;
+      return;
+    }
+    jobber = true;
+    try {
+      const o = await hentOppsett();
+      if (o.pa && o.base && o.bruker) await publiser(skolear);
+    } catch (e) {
+      // Nettet kan være nede, eller serveren utilgjengelig. Det skal ikke
+      // stoppe arbeidet i appen — neste endring prøver på nytt.
+      console.error("automatisk publisering:", e);
+    } finally {
+      jobber = false;
+      if (igjen) {
+        igjen = false;
+        void kjor();
+      }
+    }
+  };
+
+  const av = lytt(() => {
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(() => void kjor(), VENT_MS);
+  });
+
+  // Ett forsøk ved oppstart, som sikkerhetsnett hvis noe ble endret mens
+  // serveren var utilgjengelig.
+  void kjor();
+
+  return () => {
+    av();
+    if (timer) clearTimeout(timer);
+  };
 }
