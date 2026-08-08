@@ -47,7 +47,9 @@ export type KolonneId =
   | "periode"
   | "vurdering"
   | "logg"
-  | "innsats";
+  | "innsats"
+  | "sted"
+  | "agenda";
 
 const STANDARDKOLONNER: KolonneId[] = [
   "uke",
@@ -342,6 +344,8 @@ const VALGBARE: { id: KolonneId; navn: string }[] = [
   { id: "vurdering", navn: "Vurdering" },
   { id: "logg", navn: "Øktlogg" },
   { id: "innsats", navn: "Innsats" },
+  { id: "sted", navn: "Sted" },
+  { id: "agenda", navn: "Agenda" },
 ];
 
 function Liste({
@@ -383,6 +387,8 @@ function Liste({
         <span className="flex-1">Tema</span>
         {vis.has("periode") && <span className="w-36 shrink-0">Periode</span>}
         {vis.has("vurdering") && <span className="w-40 shrink-0">Vurdering</span>}
+        {vis.has("sted") && <span className="w-24 shrink-0">Sted</span>}
+        {vis.has("agenda") && <span className="w-48 shrink-0">Agenda</span>}
         {vis.has("logg") && <span className="w-40 shrink-0">Øktlogg</span>}
         {vis.has("innsats") && <span className="w-24 shrink-0">Innsats</span>}
         <span className="w-14 shrink-0 text-right">Skåret</span>
@@ -462,6 +468,19 @@ function Liste({
               {vis.has("vurdering") && (
                 <span className="w-40 shrink-0 truncate text-blekk-dempet">
                   {(vurderinger.get(o.id) ?? []).map((v) => v.tittel).join(", ")}
+                </span>
+              )}
+              {vis.has("sted") && (
+                <span className="w-24 shrink-0 truncate" title={o.sted ?? undefined}>
+                  {o.sted ?? ""}
+                </span>
+              )}
+              {vis.has("agenda") && (
+                <span
+                  className="w-48 shrink-0 truncate text-liten text-blekk-dempet"
+                  title={o.agenda ?? undefined}
+                >
+                  {o.agenda ?? ""}
                 </span>
               )}
               {vis.has("logg") && (

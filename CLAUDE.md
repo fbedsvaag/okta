@@ -19,8 +19,8 @@ ord. Kjør ikke lange sekvenser uten å si hva du gjør.
    personvernkrav, ikke en preferanse.
 
    **Unntaket (§8.1):** appen kan publisere timeplanen til én CalDAV-adresse
-   brukeren selv har lagt inn. Av som standard. Bare fem felter går ut — fag,
-   tittel, dato, klokkeslett, sted. Aldri elevnavn, skåringer, notater eller
+   brukeren selv har lagt inn. Av som standard. Bare seks felter går ut — fag,
+   tittel, dato, klokkeslett, sted og agenda. Aldri elevnavn, skåringer, notater eller
    vurderingsresultater. Publiseringen er **enveis**: appen skriver, og leser
    aldri noe tilbake. Utvid aldri feltlista uten å spørre.
 2. **UUID-primærnøkler, `opprettet`/`endret`-stempler og soft delete på alt.**

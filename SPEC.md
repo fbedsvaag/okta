@@ -1099,13 +1099,20 @@ Dette er det **eneste** unntaket fra §1. Det er avgrenset med vilje:
   og slått funksjonen på.
 - **Én adresse.** Én CalDAV-samling, oppgitt av brukeren. Ingen oppdagelse av
   tjenere, ingen forhåndsvalgte leverandører.
-- **Fem felter, ikke flere:** fagkode, tittel, dato, klokkeslett og sted.
+- **Seks felter, ikke flere:** fagkode, tittel, dato, klokkeslett, sted og
+  agenda.
+- **Agenda er skrevet for eleven.** Den vises som kommentar i kalenderen og
+  leses av alle som abonnerer. Den er noe annet enn `okt.plan`, som er
+  lærerens egne notater om hva som skal skje, og som aldri går ut.
 - **Aldri:** elevnavn, skåringer, skåringsnotater, vurderinger,
   vurderingsresultater, oppfølging, `okt.plan` eller `okt.logg`.
 - **Enveis.** Appen skriver. Den leser aldri noe tilbake fra serveren, og en
   kompromittert server kan derfor ikke påvirke databasen.
 - **Passordet lagres i systemets nøkkelring**, ikke i databasen — basen
   kopieres til `backup/` og skal kunne deles uten å lekke legitimasjon.
+
+Hendelsens tittel er «FAGKODE: tema», stedet blir `LOCATION` og agendaen
+`DESCRIPTION`.
 
 Hendelsene identifiseres med øktas UUID (§9), så en økt som flyttes blir
 oppdatert framfor duplisert. Slettede økter fjernes fra serveren ved neste

@@ -31,6 +31,7 @@ const okt = (id: string, dato: string, periodeId: string | null = null): Okt => 
   varighetMin: 180,
   tema: null,
     sted: null,
+    agenda: null,
     endret: "2026-08-07T00:00:00",
   plan: null,
   logg: null,

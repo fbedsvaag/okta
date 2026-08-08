@@ -1,11 +1,13 @@
 import type { Okt } from "./okter";
-import type { Periode } from "./perioder";
 
 /**
  * iCalendar-strøm av øktene, til abonnement i en vanlig kalender.
  *
  * **Hva som går ut herfra:** fagkode, tittel, dato, klokkeslett, varighet,
- * sted og eventuelt periodenavn. Altså timeplanen — feltlista i SPEC §8.1.
+ * sted og agenda. Altså timeplanen — feltlista i SPEC §8.1.
+ *
+ * Agenda er skrevet for eleven og leses av alle som abonnerer. `plan` og
+ * `logg` er lærerens egne notater og går aldri ut.
  *
  * **Hva som aldri går ut:** elevnavn, skåringer, skåringsnotater,
  * vurderingsresultater og klasselister. Heller ikke `okt.plan` eller
@@ -20,7 +22,6 @@ const PRODID = "-//elevtracking//NONSGML arsplan//NO";
 
 export function lagIcal(
   okter: Okt[],
-  perioder: Map<string, Periode>,
   kalendernavn: string,
   na: Date = new Date(),
 ): string {
@@ -36,22 +37,11 @@ export function lagIcal(
     "REFRESH-INTERVAL;VALUE=DURATION:PT15M",
   ];
 
+  // Samme hendelse som CalDAV-ressursen bruker. Den skal aldri finnes i to
+  // utgaver — da får strømmen og publiseringen ulikt innhold uten at noen
+  // oppdager det.
   for (const o of okter) {
-    const p = perioder.get(o.id);
-    linjer.push(
-      "BEGIN:VEVENT",
-      // Øktas egen UUID (§9). Den endrer seg aldri, så en økt som flyttes
-      // blir oppdatert i kalenderen i stedet for lagt inn på nytt.
-      `UID:${o.id}@elevtracking`,
-      // Øktas egen endringstid, ikke klokka nå. Da er utdataen den samme så
-      // lenge økta er uendret, og publiseringen kan se hva som faktisk er nytt.
-      `DTSTAMP:${utc(o.endret ? new Date(o.endret) : na)}`,
-      ...tidspunkt(o),
-      `SUMMARY:${esc(sammendrag(o))}`,
-    );
-    if (o.sted) linjer.push(`LOCATION:${esc(o.sted)}`);
-    if (p) linjer.push(`DESCRIPTION:${esc(p.navn)}`);
-    linjer.push("END:VEVENT");
+    linjer.push(...vevent(o, na));
   }
 
   linjer.push("END:VCALENDAR");
@@ -67,24 +57,20 @@ export function lagIcal(
  * publiseringen trenger denne formen. Innholdet er nøyaktig det samme som i
  * `lagIcal` — samme felter, samme begrensning.
  */
-export function lagHendelse(
-  o: Okt,
-  periode: Periode | null,
-  na: Date = new Date(),
-): string {
+export function lagHendelse(o: Okt, na: Date = new Date()): string {
   const linjer = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
     `PRODID:${PRODID}`,
     "CALSCALE:GREGORIAN",
-    ...vevent(o, periode, na),
+    ...vevent(o, na),
     "END:VCALENDAR",
   ];
   return linjer.flatMap(brett).join("\r\n") + "\r\n";
 }
 
 /** Selve hendelsen. Delt mellom strømmen og CalDAV-ressursen. */
-function vevent(o: Okt, periode: Periode | null, na: Date): string[] {
+function vevent(o: Okt, na: Date): string[] {
   const ut = [
     "BEGIN:VEVENT",
     // Øktas egen UUID (§9). Den endrer seg aldri, så en økt som flyttes
@@ -97,13 +83,16 @@ function vevent(o: Okt, periode: Periode | null, na: Date): string[] {
     `SUMMARY:${esc(sammendrag(o))}`,
   ];
   if (o.sted) ut.push(`LOCATION:${esc(o.sted)}`);
-  if (periode) ut.push(`DESCRIPTION:${esc(periode.navn)}`);
+  // Agenda er teksten læreren skriver for eleven. Periodenavnet sto her før,
+  // men det er agendaen som skal være kommentaren.
+  if (o.agenda) ut.push(`DESCRIPTION:${esc(o.agenda)}`);
   ut.push("END:VEVENT");
   return ut;
 }
 
+/** Tittelen på kalenderhendelsen: «FAG: Tittel». */
 function sammendrag(o: Okt): string {
-  return o.tema ? `${o.fagKode} — ${o.tema}` : o.fagKode;
+  return o.tema ? `${o.fagKode}: ${o.tema}` : o.fagKode;
 }
 
 /**

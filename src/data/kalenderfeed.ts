@@ -44,7 +44,7 @@ export async function oppdater(skolear: Skolear): Promise<string> {
     if (p) perOkt.set(o.id, p);
   }
 
-  const ics = lagIcal(okter, perOkt, `Årsplan ${skolear.navn}`);
+  const ics = lagIcal(okter, `Årsplan ${skolear.navn}`);
   await invoke("sett_kalenderfeed", { ics });
   return ics;
 }

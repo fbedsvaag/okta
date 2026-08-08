@@ -164,7 +164,7 @@ export async function publiser(skolear: Skolear): Promise<Resultat> {
     const hendelser: { uid: string; ics: string }[] = [];
 
     for (const okt of egne) {
-      const ics = lagHendelse(okt, perOkt.get(okt.id) ?? null);
+      const ics = lagHendelse(okt);
       const sum = await summer(ics);
       summer_na[okt.id] = sum;
       // Uendret siden sist? Da har serveren den alt.

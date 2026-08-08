@@ -23,6 +23,8 @@ export type Okt = {
   varighetMin: number;
   tema: string | null;
   sted: string | null;
+  /** kort beskrivelse for eleven; går ut i kalenderen */
+  agenda: string | null;
   /** lokal ISO. Brukes som DTSTAMP og til å se hva som faktisk er endret. */
   endret: string;
   plan: string | null;
@@ -59,7 +61,7 @@ export async function hentOkter(skolearId: string): Promise<Okt[]> {
             o.dato,
             o.klokkeslett,
             o.varighet_min   AS varighetMin,
-            o.tema, o.sted, o.plan, o.logg, o.endret,
+            o.tema, o.sted, o.agenda, o.plan, o.logg, o.endret,
             (SELECT COUNT(*) FROM skaring s
               WHERE s.okt_id = o.id AND s.slettet IS NULL) AS skaret,
             (SELECT COUNT(*) FROM skaring s
@@ -167,6 +169,7 @@ export async function endreOkt(
     varighet_min?: number;
     tema?: string | null;
     sted?: string | null;
+    agenda?: string | null;
     plan?: string | null;
     logg?: string | null;
     periode_id?: string | null;

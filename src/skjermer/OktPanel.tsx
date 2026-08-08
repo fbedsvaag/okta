@@ -436,9 +436,27 @@ function OktFelter({
         <input
           defaultValue={okt.sted ?? ""}
           key={okt.sted ?? ""}
-          placeholder="Rom, sal, ute"
+          placeholder="Romnummer, sal, ute"
           onBlur={async (e) => {
             await endreOkt(okt.id, { sted: e.target.value.trim() || null });
+            onEndret();
+          }}
+          className={feltStil}
+        />
+      </Linje>
+
+      {/*
+        Agenda er skrevet for eleven og går ut i kalenderen som kommentar.
+        Plan og øktlogg lenger ned er lærerens egne notater og går aldri ut.
+      */}
+      <Linje etikett="Agenda">
+        <textarea
+          defaultValue={okt.agenda ?? ""}
+          key={okt.agenda ?? ""}
+          rows={2}
+          placeholder="Kort om økta — dette ser elevene i kalenderen"
+          onBlur={async (e) => {
+            await endreOkt(okt.id, { agenda: e.target.value.trim() || null });
             onEndret();
           }}
           className={feltStil}
