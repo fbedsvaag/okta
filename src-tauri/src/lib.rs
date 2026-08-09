@@ -1,3 +1,4 @@
+mod arkiv;
 mod caldav;
 mod kalenderfeed;
 mod sikkerhetskopi;
@@ -90,6 +91,7 @@ pub fn run() {
             caldav::caldav_glem_passord,
             caldav::caldav_test,
             caldav::caldav_publiser,
+            arkiv::skriv_arkiv,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

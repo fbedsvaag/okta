@@ -3,6 +3,7 @@ import { hentAktivtSkolear, type Skolear } from "./data/skolear";
 import { daglingKopi } from "./data/sikkerhetskopi";
 import { erPa as kalenderPa, start as startKalender } from "./data/kalenderfeed";
 import { startAuto as startCaldav } from "./data/caldav";
+import { skrivArkiv } from "./data/arkiv";
 import { hentFagIAr, type FagIAr } from "./data/fag";
 import { Veiviser } from "./skjermer/Veiviser";
 import { IDag } from "./skjermer/IDag";
@@ -105,6 +106,13 @@ export default function App() {
       // brukeren har slått den på. Er den av, lytter ingenting.
       if (ar && (await kalenderPa())) {
         await startKalender(ar).catch((e) => console.error("kalenderfeed:", e));
+      }
+
+      // Arkivet (§8) skrives ved oppstart, sammen med sikkerhetskopien.
+      // En eksport man må huske på er ikke backup. Feiler den, skal ikke
+      // appen la være å starte.
+      if (ar) {
+        void skrivArkiv(ar).catch((e) => console.error("arkiv:", e));
       }
       setVersjon((v) => v + 1);
     } catch (e) {

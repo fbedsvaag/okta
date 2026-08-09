@@ -13,6 +13,8 @@ import { hentSkalaer, hentVerdier, taster, type Skala, type Skalaverdi } from ".
 import type { Skolear } from "../data/skolear";
 import * as kalender from "../data/kalenderfeed";
 import * as caldav from "../data/caldav";
+import { skrivArkiv } from "../data/arkiv";
+import { open as velgMappe } from "@tauri-apps/plugin-dialog";
 import type { FagIAr } from "../data/fag";
 import { Felt, Knapp } from "../ui/felles";
 
@@ -41,6 +43,9 @@ export function Innstillinger({
   const [davMelding, setDavMelding] = useState<string | null>(null);
   const [davFeil, setDavFeil] = useState<string | null>(null);
   const [davJobber, setDavJobber] = useState(false);
+  const [arkivmappe, setArkivmappe] = useState("");
+  const [arkivMelding, setArkivMelding] = useState<string | null>(null);
+  const [arkiverer, setArkiverer] = useState(false);
   const [feedPa, setFeedPa] = useState(false);
   const [feedUrl, setFeedUrl] = useState("");
   const [feedFeil, setFeedFeil] = useState<string | null>(null);
@@ -89,6 +94,7 @@ export function Innstillinger({
     void (async () => {
       setDav(await caldav.hentOppsett());
       setDavHarPassord(await caldav.harPassord());
+      setArkivmappe((await hentInnstilling("eksportmappe")) ?? "");
     })();
   }, []);
 
@@ -257,6 +263,61 @@ export function Innstillinger({
               seg bare mens appen kjører.
             </p>
           </div>
+        )}
+      </Bolk>
+
+      <Bolk tittel="Arkiv">
+        <p className="mb-3 text-brod text-blekk-dempet">
+          Hele basen skrevet ut som markdown og CSV — én fil per elev, én per
+          fag. Kan åpnes i Obsidian eller hva som helst annet, også om denne
+          appen ikke finnes lenger. Skrives ved hver oppstart.
+        </p>
+        <p className="mb-3 text-liten text-blekk-dempet">
+          Denne mappa <em>kan</em> ligge i en skytjeneste — det er vanlige
+          tekstfiler. Databasen selv skal aldri det.
+        </p>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <Knapp
+            onClick={async () => {
+              const valgt = await velgMappe({ directory: true });
+              if (typeof valgt !== "string") return;
+              await settInnstilling("eksportmappe", valgt);
+              setArkivmappe(valgt);
+              setArkivMelding(null);
+            }}
+          >
+            {arkivmappe ? "Bytt mappe" : "Velg mappe"}
+          </Knapp>
+          <Knapp
+            variant="primar"
+            disabled={!arkivmappe || arkiverer}
+            onClick={async () => {
+              setArkiverer(true);
+              setArkivMelding(null);
+              try {
+                const r = await skrivArkiv(skolear);
+                setArkivMelding(
+                  r === null
+                    ? "Ingen mappe valgt."
+                    : `${r.skrevet} filer skrevet.` +
+                      (r.feil.length > 0 ? ` ${r.feil.length} feilet.` : ""),
+                );
+              } catch (e) {
+                setArkivMelding(String(e));
+              } finally {
+                setArkiverer(false);
+              }
+            }}
+          >
+            {arkiverer ? "Skriver …" : "Skriv arkivet nå"}
+          </Knapp>
+          {arkivmappe && (
+            <code className="truncate text-liten text-blekk-dempet">{arkivmappe}</code>
+          )}
+        </div>
+        {arkivMelding && (
+          <p className="mt-2 text-brod text-blekk-dempet">{arkivMelding}</p>
         )}
       </Bolk>
 
