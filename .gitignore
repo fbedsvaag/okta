@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Mellomlager for hent_grep.py — hentes på nytt ved behov
+.grep-cache/

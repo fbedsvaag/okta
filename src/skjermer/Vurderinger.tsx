@@ -59,9 +59,20 @@ export function Vurderinger({
     vurderinger.find((v) => v.id === valgt) ?? null,
   );
 
+  // Hvor mange vurderinger hvert fag har. Står i fagfilteret, så man ser
+  // hvilke fag som mangler vurderinger uten å måtte klikke seg gjennom dem.
+  const antallPerFag = useMemo(() => {
+    const kart = new Map<string, number>();
+    for (const v of vurderinger) {
+      kart.set(v.skolearFagId, (kart.get(v.skolearFagId) ?? 0) + 1);
+    }
+    return kart;
+  }, [vurderinger]);
+
   return (
     <div className="flex h-full overflow-hidden">
-      <div className={`liste-bredde min-w-0 overflow-y-auto ${glir ? "hidden w-full pr-4 lg:block lg:w-1/3" : "w-full"}`}>
+      <div className={`liste-bredde flex min-w-0 flex-col ${glir ? "hidden w-full pr-4 lg:flex lg:w-1/3" : "w-full"}`}>
+        <div className="shrink-0">
         <div className="mb-3 flex flex-wrap items-center gap-2">
           <Felt
             verdi={sok}
@@ -74,10 +85,10 @@ export function Vurderinger({
             onChange={(e) => setFilterFag(e.target.value)}
             className="rounded border border-linje bg-ark px-2 py-1.5 text-brod"
           >
-            <option value="">Alle fag</option>
+            <option value="">Alle fag ({vurderinger.length})</option>
             {fag.map((f) => (
               <option key={f.id} value={f.id}>
-                {f.kode}
+                {f.kode} ({antallPerFag.get(f.id) ?? 0})
               </option>
             ))}
           </select>
@@ -88,6 +99,9 @@ export function Vurderinger({
           </div>
         </div>
 
+        </div>
+
+        <div className="min-h-0 flex-1 overflow-auto">
         {lagerNy && (
           <NyVurdering
             fag={fag}
@@ -118,15 +132,22 @@ export function Vurderinger({
             }
           />
         ) : (
-          <div className="border-t border-linje-medium">
-            {synlige.map((v) => (
-              <Rad
-                key={v.id}
-                vurdering={v}
-                valgt={valgt === v.id}
-                kompakt={apen !== null}
-                onVelg={() => setValgt(v.id)}
-              />
+          <div>
+            {perManed(synlige).map(([maned, gruppe]) => (
+              <div key={maned}>
+                <div className="sticky top-0 z-10 border-y border-linje-medium bg-flate px-2 py-1 text-etikett uppercase tracking-etikett text-blekk-dempet">
+                  {maned === "uten" ? "Uten frist" : manedsnavn(maned)}
+                </div>
+                {gruppe.map((v) => (
+                  <Rad
+                    key={v.id}
+                    vurdering={v}
+                    valgt={valgt === v.id}
+                    kompakt={apen !== null}
+                    onVelg={() => setValgt(v.id)}
+                  />
+                ))}
+              </div>
             ))}
           </div>
         )}
@@ -136,6 +157,7 @@ export function Vurderinger({
             {synlige.length} av {vurderinger.length} vurderinger
           </p>
         )}
+        </div>
       </div>
 
       {apen && (
@@ -337,6 +359,30 @@ function Etikett({ children }: { children: React.ReactNode }) {
       {children}
     </span>
   );
+}
+
+/**
+ * Vurderingene gruppert per måned etter frist.
+ *
+ * De uten frist havner i en egen bolk til slutt — de finnes, men hører ikke
+ * hjemme i noen måned, og skal ikke gjemmes bort.
+ */
+function perManed(rader: Vurdering[]): [string, Vurdering[]][] {
+  const kart = new Map<string, Vurdering[]>();
+  for (const v of rader) {
+    const m = v.frist ? v.frist.slice(0, 7) : "uten";
+    kart.set(m, [...(kart.get(m) ?? []), v]);
+  }
+  const navn = [...kart.keys()].filter((k) => k !== "uten").sort();
+  if (kart.has("uten")) navn.push("uten");
+  return navn.map((n) => [n, kart.get(n)!]);
+}
+
+function manedsnavn(maned: string): string {
+  return new Date(`${maned}-01T00:00:00`).toLocaleDateString("nb-NO", {
+    month: "long",
+    year: "numeric",
+  });
 }
 
 function iDag(): string {

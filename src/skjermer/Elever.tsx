@@ -70,6 +70,9 @@ export function Elever({
     kolonne: "fornavn",
     stigende: true,
   });
+  // Lesemodus er standard, som i Fag. Da åpner et klikk i tabellen eleven
+  // i stedet for å sette markøren i et felt.
+  const [rediger, setRediger] = useState(false);
 
   async function last() {
     setElever(await hentElever(skolearId));
@@ -168,6 +171,17 @@ export function Elever({
         />
 
         <div className="ml-auto flex items-center gap-2">
+          <label className="flex select-none items-center gap-2 text-liten text-blekk-dempet">
+            <input
+              type="checkbox"
+              checked={rediger}
+              onChange={(e) => {
+                setRediger(e.target.checked);
+                if (e.target.checked) setValgtElev(null);
+              }}
+            />
+            Rediger
+          </label>
           <Kolonnevelger
             valgbare={VALGBARE}
             vis={synligeKolonner}
@@ -272,6 +286,9 @@ export function Elever({
                 key={e.id}
                 elev={e}
                 fag={fag}
+                klasser={klasser}
+                skolearId={skolearId}
+                rediger={rediger}
                 valgt={valgtElev === e.id}
                 vis={vis}
                 onApne={() => setValgtElev(e.id)}
@@ -444,6 +461,9 @@ function Velger({
 function Rad({
   elev,
   fag,
+  klasser,
+  skolearId,
+  rediger,
   valgt,
   vis,
   onApne,
@@ -451,6 +471,9 @@ function Rad({
 }: {
   elev: ElevRad;
   fag: FagIAr[];
+  klasser: Klasse[];
+  skolearId: string;
+  rediger: boolean;
   valgt: boolean;
   vis: ReadonlySet<Synlig>;
   onApne: () => void;
@@ -459,6 +482,25 @@ function Rad({
   const [apenFag, setApenFag] = useState(false);
   // prompt() finnes ikke i Tauri-vinduet, så «Ny klasse …» gjør cellen om til
   // et skrivefelt i stedet for å åpne en dialog.
+  const [skriverKlasse, setSkriverKlasse] = useState(false);
+
+  async function byttKlasse(verdi: string) {
+    if (verdi === "__ny") {
+      setSkriverKlasse(true);
+      return;
+    }
+    await settKlasse(elev.id, skolearId, verdi === "" ? null : verdi);
+    onEndret();
+  }
+
+  async function lagKlasse(navn: string) {
+    const rent = navn.trim();
+    setSkriverKlasse(false);
+    if (rent === "") return;
+    const id = await finnEllerOpprettKlasse(skolearId, rent);
+    await settKlasse(elev.id, skolearId, id);
+    onEndret();
+  }
   return (
     <tr
       className={`h-[var(--hoyde-rad)] border-b border-linje-svak ${
@@ -493,13 +535,45 @@ function Rad({
         gjør at et klikk i tabellen like gjerne endrer noe som å åpne eleven,
         og klassen byttes sjelden. Den settes i elevpanelet i stedet.
       */}
-      <td className={`whitespace-nowrap py-1.5 pr-5 ${vis.has("klasse") ? "" : "hidden"}`}>
-        {elev.klasseNavn ?? <span className="text-blekk-svakest">—</span>}
+      <td className={`py-1.5 pr-5 ${vis.has("klasse") ? "" : "hidden"}`}>
+        {!rediger ? (
+          <span className="whitespace-nowrap">
+            {elev.klasseNavn ?? <span className="text-blekk-svakest">—</span>}
+          </span>
+        ) : skriverKlasse ? (
+          <input
+            autoFocus
+            placeholder="1STC"
+            onBlur={(e) => void lagKlasse(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") e.currentTarget.blur();
+              if (e.key === "Escape") setSkriverKlasse(false);
+            }}
+            className="w-full rounded-vanlig border border-aksent px-1 py-0.5 outline-none"
+          />
+        ) : (
+          <select
+            value={elev.klasseId ?? ""}
+            onChange={(e) => byttKlasse(e.target.value)}
+            className="w-full rounded-vanlig border border-transparent bg-transparent px-1 py-0.5 hover:border-linje focus:border-aksent focus:outline-none"
+          >
+            <option value="">Ingen klasse</option>
+            {klasser.map((k) => (
+              <option key={k.id} value={k.id}>
+                {k.navn}
+              </option>
+            ))}
+            <option value="__ny">Ny klasse …</option>
+          </select>
+        )}
       </td>
       <td className={`relative py-1.5 pr-5 ${vis.has("fag") ? "" : "hidden"}`}>
         <button
-          onClick={() => setApenFag((v) => !v)}
-          className="w-full rounded-vanlig border border-transparent px-1 py-0.5 text-left hover:border-linje"
+          onClick={() => rediger && setApenFag((v) => !v)}
+          disabled={!rediger}
+          className={`w-full rounded-vanlig border border-transparent px-1 py-0.5 text-left ${
+            rediger ? "hover:border-linje" : "cursor-default"
+          }`}
         >
           {elev.fagIder.length > 0 ? (
             <span className="flex flex-wrap gap-1">

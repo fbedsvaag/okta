@@ -45,7 +45,22 @@ export function hentGrepFag(): Promise<GrepFag[]> {
       // Gjennom unknown: formen kommer fra en fil som genereres utenfor
       // prosjektet, så typen her er en påstand, ikke noe kompilatoren kan
       // utlede. `hent_grep.py` og `Fil` må holdes i takt for hånd.
-      .then((m) => (m.default as unknown as Fil).fag)
+      .then((m) => {
+        const fag = (m.default as unknown as Fil).fag ?? [];
+        // Fila genereres utenfor prosjektet. Har den feil form — en eldre
+        // versjon av hent_grep.py, en halvskrevet fil — skal søket si fra,
+        // ikke kaste midt i en tastetrykkhåndterer.
+        const gyldig = fag.filter(
+          (x) => typeof x?.navn === "string" && typeof x?.opplaeringsfag === "string",
+        );
+        if (gyldig.length !== fag.length) {
+          console.error(
+            `grep-fag.json: ${fag.length - gyldig.length} av ${fag.length} rader ` +
+              "har feil form. Kjør hent_grep.py på nytt.",
+          );
+        }
+        return gyldig;
+      })
       .catch((e) => {
         // Fila mangler hvis noen har bygget uten å kjøre hent_grep.py.
         // Da skal fagvelgeren si det, ikke krasje.
@@ -72,7 +87,7 @@ export async function sokFag(sok: string, grense = 25): Promise<GrepFag[]> {
     (f) =>
       f.navn.toLocaleLowerCase("nb-NO").includes(q) ||
       (f.fagkode ?? "").toLocaleLowerCase("nb-NO").includes(q) ||
-      f.opplaeringsfag.toLocaleLowerCase("nb-NO").includes(q),
+      (f.opplaeringsfag ?? "").toLocaleLowerCase("nb-NO").includes(q),
   );
 
   return treff
