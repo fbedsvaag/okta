@@ -4,6 +4,7 @@ import type { FagIAr } from "../data/fag";
 import { hentOkter, type Okt } from "../data/okter";
 import { Knapp, Tomtilstand } from "../ui/felles";
 import { Arsoversikt } from "./Arsoversikt";
+import { Ukelinje } from "./Ukelinje";
 
 /**
  * I dag — startskjermen, SPEC §4.1, med årsoversikten under.
@@ -31,12 +32,12 @@ export function IDag({
   }, [skolear.id]);
 
   const idag = isoDato(new Date());
-  const { fredag } = ukesspenn(new Date());
+  const { mandag, fredag } = ukesspenn(new Date());
 
   const dagens = okter.filter((o) => o.dato === idag);
-  // Resten av uka er dagene etter i dag, ikke hele uka. En økt på mandag er
-  // avholdt når det er fredag, og hører ikke hjemme under den overskriften.
-  const uka = okter.filter((o) => o.dato > idag && o.dato <= fredag);
+  // Hele uka, ikke bare det som gjenstår. Tidslinja skal vise formen på uka,
+  // og en mandag som forsvinner på onsdag ser ut som en feil.
+  const uka = okter.filter((o) => o.dato >= mandag && o.dato <= fredag);
   const kommende = okter.filter((o) => o.dato > idag).slice(0, 3);
 
   return (
@@ -74,22 +75,16 @@ export function IDag({
         )}
       </Bolk>
 
-      {uka.length > 0 && (
-        <Bolk tittel="Resten av uka">
-          {grupperPaDag(uka).map(([dato, gruppe]) => (
-            <div key={dato}>
-              <p className="mt-2 text-liten text-blekk-dempet first-letter:uppercase">
-                {langDato(dato)}
-              </p>
-              {gruppe.map((o) => (
-                <OktLinje key={o.id} okt={o} onApne={onApneOkt} />
-              ))}
-            </div>
-          ))}
-        </Bolk>
-      )}
+      <Bolk tittel="Denne uka">
+        <Ukelinje
+          mandag={mandag}
+          okter={uka}
+          idag={idag}
+          onApneOkt={onApneOkt}
+        />
+      </Bolk>
 
-      {dagens.length === 0 && uka.length === 0 && kommende.length > 0 && (
+      {uka.length === 0 && kommende.length > 0 && (
         <Bolk tittel="Neste økter">
           {kommende.map((o) => (
             <div key={o.id}>
@@ -151,20 +146,14 @@ function OktLinje({ okt, onApne }: { okt: Okt; onApne: (id: string) => void }) {
   );
 }
 
-function grupperPaDag(okter: Okt[]): [string, Okt[]][] {
-  const kart = new Map<string, Okt[]>();
-  for (const o of okter) kart.set(o.dato, [...(kart.get(o.dato) ?? []), o]);
-  return [...kart.entries()].sort(([a], [b]) => a.localeCompare(b));
-}
-
 /** Fredag i uka som inneholder datoen. Helg vises ikke. */
-function ukesspenn(d: Date): { fredag: string } {
+function ukesspenn(d: Date): { mandag: string; fredag: string } {
   const dag = (d.getDay() + 6) % 7; // mandag = 0
-  const mandag = new Date(d);
-  mandag.setDate(d.getDate() - dag);
-  const fredag = new Date(mandag);
-  fredag.setDate(mandag.getDate() + 4);
-  return { fredag: isoDato(fredag) };
+  const man = new Date(d);
+  man.setDate(d.getDate() - dag);
+  const fre = new Date(man);
+  fre.setDate(man.getDate() + 4);
+  return { mandag: isoDato(man), fredag: isoDato(fre) };
 }
 
 function isoDato(d: Date): string {
