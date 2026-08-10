@@ -91,6 +91,7 @@ pub fn run() {
             sikkerhetskopi::sikkerhetskopier,
             sikkerhetskopi::rydd_sikkerhetskopier,
             sikkerhetskopi::sikkerhetskopimappe,
+            sikkerhetskopi::arkivmappe,
             sikkerhetskopi::gjenopprett_fra,
             kalenderfeed::sett_kalenderfeed,
             kalenderfeed::kalenderfeed_url,

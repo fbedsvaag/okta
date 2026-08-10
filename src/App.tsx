@@ -3,7 +3,7 @@ import { hentAktivtSkolear, type Skolear } from "./data/skolear";
 import { daglingKopi } from "./data/sikkerhetskopi";
 import { erPa as kalenderPa, start as startKalender } from "./data/kalenderfeed";
 import { startAuto as startCaldav } from "./data/caldav";
-import { skrivArkiv } from "./data/arkiv";
+import { skrivArkiv, skrivArkivTilBackup } from "./data/arkiv";
 import { hentFagIAr, type FagIAr } from "./data/fag";
 import { Veiviser } from "./skjermer/Veiviser";
 import { IDag } from "./skjermer/IDag";
@@ -114,6 +114,10 @@ export default function App() {
       // appen la være å starte.
       if (ar) {
         void skrivArkiv(ar).catch((e) => console.error("arkiv:", e));
+        // Og alltid ved siden av databasekopiene, som forsikring.
+        void skrivArkivTilBackup(ar).catch((e) =>
+          console.error("arkiv til backup:", e),
+        );
       }
       setVersjon((v) => v + 1);
     } catch (e) {

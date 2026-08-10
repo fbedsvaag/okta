@@ -122,3 +122,94 @@ export async function endreFagIAr(
 export async function fjernFagFraAr(skolearFagId: string): Promise<void> {
   await slett("skolear_fag", skolearFagId);
 }
+
+// --------------------------------------------------------------- opprydding
+
+export type Omfang = {
+  ar: number;
+  okter: number;
+  skaringer: number;
+  perioder: number;
+  vurderinger: number;
+  elevkoblinger: number;
+};
+
+/** Hva en sletting av faget vil ta med seg, på tvers av alle skoleår. */
+export async function tellForFag(fagId: string): Promise<Omfang> {
+  const [r] = await hent<Omfang>(
+    `WITH sf AS (
+       SELECT id FROM skolear_fag WHERE fag_id = $1 AND slettet IS NULL
+     )
+     SELECT
+       (SELECT COUNT(*) FROM sf) AS ar,
+       (SELECT COUNT(*) FROM okt WHERE skolear_fag_id IN (SELECT id FROM sf)
+          AND slettet IS NULL) AS okter,
+       (SELECT COUNT(*) FROM skaring s JOIN okt o ON o.id = s.okt_id
+         WHERE o.skolear_fag_id IN (SELECT id FROM sf)
+           AND s.slettet IS NULL AND o.slettet IS NULL) AS skaringer,
+       (SELECT COUNT(*) FROM periode WHERE skolear_fag_id IN (SELECT id FROM sf)
+          AND slettet IS NULL) AS perioder,
+       (SELECT COUNT(*) FROM vurdering WHERE skolear_fag_id IN (SELECT id FROM sf)
+          AND slettet IS NULL) AS vurderinger,
+       (SELECT COUNT(*) FROM elev_fag WHERE skolear_fag_id IN (SELECT id FROM sf)
+          AND slettet IS NULL) AS elevkoblinger`,
+    [fagId],
+  );
+  return r;
+}
+
+/**
+ * Sletter faget fra fagbanken, med alt som henger under i alle skoleår.
+ *
+ * Dette er noe annet enn `fjernFagFraAr`, som bare tar faget ut av ett år og
+ * lar øktene stå. Her forsvinner øktene, periodene, vurderingene og
+ * skåringene også.
+ *
+ * Elevene røres ikke — de lever på tvers av fag og år (§3.2).
+ */
+export async function slettFagHelt(fagId: string): Promise<void> {
+  const arene = await hent<{ id: string }>(
+    "SELECT id FROM skolear_fag WHERE fag_id = $1 AND slettet IS NULL",
+    [fagId],
+  );
+
+  for (const sf of arene) {
+    const okter = await hent<{ id: string }>(
+      "SELECT id FROM okt WHERE skolear_fag_id = $1 AND slettet IS NULL",
+      [sf.id],
+    );
+    for (const o of okter) {
+      const sk = await hent<{ id: string }>(
+        "SELECT id FROM skaring WHERE okt_id = $1 AND slettet IS NULL",
+        [o.id],
+      );
+      for (const s of sk) await slett("skaring", s.id);
+      await slett("okt", o.id);
+    }
+
+    const vurderinger = await hent<{ id: string }>(
+      "SELECT id FROM vurdering WHERE skolear_fag_id = $1 AND slettet IS NULL",
+      [sf.id],
+    );
+    for (const v of vurderinger) {
+      const res = await hent<{ id: string }>(
+        "SELECT id FROM vurderingsresultat WHERE vurdering_id = $1 AND slettet IS NULL",
+        [v.id],
+      );
+      for (const r of res) await slett("vurderingsresultat", r.id);
+      await slett("vurdering", v.id);
+    }
+
+    for (const tabell of ["periode", "elev_fag", "oppfolging"]) {
+      const rader = await hent<{ id: string }>(
+        `SELECT id FROM ${tabell} WHERE skolear_fag_id = $1 AND slettet IS NULL`,
+        [sf.id],
+      );
+      for (const r of rader) await slett(tabell, r.id);
+    }
+
+    await slett("skolear_fag", sf.id);
+  }
+
+  await slett("fag", fagId);
+}

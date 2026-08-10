@@ -16,6 +16,8 @@ import {
   finnEllerOpprettKlasse,
   hentKlasser,
   settKlasse,
+  slettElevHelt,
+  tellForElev,
   type Klasse,
 } from "../data/elever";
 import { Fagmerke } from "../ui/felles";
@@ -262,6 +264,30 @@ export function ElevPanel({
             kategorier hører ikke hjemme her.
           </p>
         </Bolk>
+
+        <button
+          onClick={async () => {
+            const n = await tellForElev(elevId);
+            const hva = [
+              n.skaringer && `${n.skaringer} skåringer`,
+              n.vurderinger && `${n.vurderinger} vurderingsresultater`,
+              n.oppfolging && `${n.oppfolging} oppfølgingspunkter`,
+            ].filter(Boolean);
+            const ok = confirm(
+              `Slette ${elev.fornavn} ${elev.etternavn}?\n\n` +
+                (hva.length > 0
+                  ? `Dette fjerner ${hva.join(", ")} — i alle skoleår, ikke bare dette.\n\n`
+                  : "Eleven har ingen skåringer eller vurderinger registrert.\n\n") +
+                "Sikkerhetskopien fra i dag er veien tilbake.",
+            );
+            if (!ok) return;
+            await slettElevHelt(elevId);
+            onLukk();
+          }}
+          className="mt-2 text-liten text-blekk-svak hover:text-feil"
+        >
+          Slett eleven
+        </button>
       </div>
     </aside>
   );

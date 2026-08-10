@@ -121,3 +121,100 @@ export async function settInnstilling(nokkel: string, verdi: string): Promise<vo
     [nokkel, verdi, naa()],
   );
 }
+
+// --------------------------------------------------------------- opprydding
+
+export type Arsomfang = {
+  fag: number;
+  okter: number;
+  skaringer: number;
+  klasser: number;
+  elevkoblinger: number;
+  vurderinger: number;
+};
+
+/** Hva en sletting av skoleåret tar med seg. */
+export async function tellForSkolear(skolearId: string): Promise<Arsomfang> {
+  const [r] = await hent<Arsomfang>(
+    `WITH sf AS (
+       SELECT id FROM skolear_fag WHERE skolear_id = $1 AND slettet IS NULL
+     )
+     SELECT
+       (SELECT COUNT(*) FROM sf) AS fag,
+       (SELECT COUNT(*) FROM okt WHERE skolear_fag_id IN (SELECT id FROM sf)
+          AND slettet IS NULL) AS okter,
+       (SELECT COUNT(*) FROM skaring s JOIN okt o ON o.id = s.okt_id
+         WHERE o.skolear_fag_id IN (SELECT id FROM sf)
+           AND s.slettet IS NULL AND o.slettet IS NULL) AS skaringer,
+       (SELECT COUNT(*) FROM klasse WHERE skolear_id = $1 AND slettet IS NULL)
+         AS klasser,
+       (SELECT COUNT(*) FROM elev_klasse WHERE skolear_id = $1 AND slettet IS NULL)
+         AS elevkoblinger,
+       (SELECT COUNT(*) FROM vurdering WHERE skolear_fag_id IN (SELECT id FROM sf)
+          AND slettet IS NULL) AS vurderinger`,
+    [skolearId],
+  );
+  return r;
+}
+
+/**
+ * Sletter et helt skoleår.
+ *
+ * Fagene i banken blir stående — de er uavhengige av år (§3.2), og skal kunne
+ * velges inn i et nytt år. Elevene blir også stående; de lever på tvers av år.
+ * Det som forsvinner er koblingene, øktene, periodene og vurderingene som
+ * hørte til nettopp dette året.
+ */
+export async function slettSkolear(skolearId: string): Promise<void> {
+  const arene = await hent<{ id: string }>(
+    "SELECT id FROM skolear_fag WHERE skolear_id = $1 AND slettet IS NULL",
+    [skolearId],
+  );
+
+  for (const sf of arene) {
+    const okter = await hent<{ id: string }>(
+      "SELECT id FROM okt WHERE skolear_fag_id = $1 AND slettet IS NULL",
+      [sf.id],
+    );
+    for (const o of okter) {
+      const sk = await hent<{ id: string }>(
+        "SELECT id FROM skaring WHERE okt_id = $1 AND slettet IS NULL",
+        [o.id],
+      );
+      for (const s of sk) await slett("skaring", s.id);
+      await slett("okt", o.id);
+    }
+
+    const vurderinger = await hent<{ id: string }>(
+      "SELECT id FROM vurdering WHERE skolear_fag_id = $1 AND slettet IS NULL",
+      [sf.id],
+    );
+    for (const v of vurderinger) {
+      const res = await hent<{ id: string }>(
+        "SELECT id FROM vurderingsresultat WHERE vurdering_id = $1 AND slettet IS NULL",
+        [v.id],
+      );
+      for (const r of res) await slett("vurderingsresultat", r.id);
+      await slett("vurdering", v.id);
+    }
+
+    for (const tabell of ["periode", "elev_fag", "oppfolging"]) {
+      const rader = await hent<{ id: string }>(
+        `SELECT id FROM ${tabell} WHERE skolear_fag_id = $1 AND slettet IS NULL`,
+        [sf.id],
+      );
+      for (const r of rader) await slett(tabell, r.id);
+    }
+    await slett("skolear_fag", sf.id);
+  }
+
+  for (const tabell of ["elev_klasse", "klasse", "fridag"]) {
+    const rader = await hent<{ id: string }>(
+      `SELECT id FROM ${tabell} WHERE skolear_id = $1 AND slettet IS NULL`,
+      [skolearId],
+    );
+    for (const r of rader) await slett(tabell, r.id);
+  }
+
+  await slett("skolear", skolearId);
+}

@@ -637,3 +637,24 @@ export async function skrivArkiv(
     filer,
   });
 }
+
+/**
+ * Skriver arkivet ved siden av databasekopiene, uansett innstillinger.
+ *
+ * Dette er forsikringen. En `.sqlite`-fil krever denne appen for å leses;
+ * markdown krever ingenting. Ligger de to sammen i `backup/`, er det ikke
+ * mulig å ha den ene uten den andre — og en bruker som aldri har valgt en
+ * eksportmappe, har den likevel.
+ *
+ * Bare én utgave, som overskrives. De daterte kopiene er historikken.
+ */
+export async function skrivArkivTilBackup(
+  skolear: Skolear,
+): Promise<{ skrevet: number; feil: string[] }> {
+  const mappe = await invoke<string>("arkivmappe");
+  const filer = await byggArkiv(skolear);
+  return invoke<{ skrevet: number; feil: string[] }>("skriv_arkiv", {
+    mappe,
+    filer,
+  });
+}

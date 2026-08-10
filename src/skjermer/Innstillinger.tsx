@@ -1,5 +1,13 @@
 import { useEffect, useState } from "react";
-import { hentInnstilling, settInnstilling } from "../data/skolear";
+import {
+  endreSkolear,
+  hentInnstilling,
+  hentSkolear,
+  settAktivtSkolear,
+  settInnstilling,
+  slettSkolear,
+  tellForSkolear,
+} from "../data/skolear";
 import {
   gjenopprettFra,
   hentKopier,
@@ -49,6 +57,7 @@ export function Innstillinger({
   const [arkivMelding, setArkivMelding] = useState<string | null>(null);
   const [arkiverer, setArkiverer] = useState(false);
   const [versjon, setVersjon] = useState("");
+  const [ar, setAr] = useState<Skolear[]>([]);
   const [feedPa, setFeedPa] = useState(false);
   const [feedUrl, setFeedUrl] = useState("");
   const [feedFeil, setFeedFeil] = useState<string | null>(null);
@@ -99,6 +108,7 @@ export function Innstillinger({
       setDavHarPassord(await caldav.harPassord());
       setArkivmappe((await hentInnstilling("eksportmappe")) ?? "");
       setVersjon(await getVersion().catch(() => ""));
+      setAr(await hentSkolear());
     })();
   }, []);
 
@@ -129,6 +139,108 @@ export function Innstillinger({
 
   return (
     <div className="max-w-2xl">
+      <Bolk tittel="Skoleår">
+        <p className="mb-3 text-brod text-blekk-dempet">
+          Ett år er aktivt om gangen. Å bytte rører ingen data — det endrer bare
+          hva appen viser.
+        </p>
+
+        {ar.length === 0 ? (
+          <p className="text-brod text-blekk-svak">Ingen skoleår ennå.</p>
+        ) : (
+          <ul className="max-w-2xl divide-y divide-linje-svak">
+            {ar.map((a) => {
+              const aktivt = a.id === skolear.id;
+              return (
+                <li key={a.id} className="flex items-center gap-3 py-1.5 text-brod">
+                  <span className={`w-24 shrink-0 tabular-nums ${aktivt ? "font-medium" : ""}`}>
+                    {a.navn}
+                  </span>
+                  <span className="tabular-nums text-liten text-blekk-dempet">
+                    {a.start} – {a.slutt}
+                  </span>
+                  <span className="ml-auto flex items-center gap-2">
+                    {aktivt ? (
+                      <span className="text-liten text-blekk-dempet">aktivt</span>
+                    ) : (
+                      <Knapp
+                        onClick={async () => {
+                          await settAktivtSkolear(a.id);
+                          // Hele appen henger på det aktive året, så alt må
+                          // leses på nytt. Enklere og sikrere enn å prøve å
+                          // oppdatere hver skjerm for seg.
+                          location.reload();
+                        }}
+                      >
+                        Gjør aktivt
+                      </Knapp>
+                    )}
+                    <button
+                      onClick={async () => {
+                        const n = await tellForSkolear(a.id);
+                        const ok = confirm(
+                          `Slette skoleåret ${a.navn}?\n\n` +
+                            `${n.fag} fag i året, ${n.okter} økter, ` +
+                            `${n.skaringer} skåringer, ${n.vurderinger} vurderinger, ` +
+                            `${n.klasser} klasser.\n\n` +
+                            "Fagene blir stående i fagbanken, og elevene blir " +
+                            "stående — de lever på tvers av år. Det som " +
+                            "forsvinner er dette årets økter og koblinger.\n\n" +
+                            "Sikkerhetskopien fra i dag er veien tilbake.",
+                        );
+                        if (!ok) return;
+                        await slettSkolear(a.id);
+                        if (aktivt) {
+                          const igjen = (await hentSkolear())[0];
+                          if (igjen) await settAktivtSkolear(igjen.id);
+                        }
+                        location.reload();
+                      }}
+                      className="text-liten text-blekk-svak hover:text-feil"
+                    >
+                      Slett
+                    </button>
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+
+        <div className="mt-4 flex flex-wrap items-end gap-3">
+          <Felt
+            etikett="Navn"
+            verdi={skolear.navn}
+            settVerdi={() => {}}
+            bredde="w-28"
+          />
+          <Felt
+            etikett="Første skoledag"
+            type="date"
+            verdi={skolear.start}
+            settVerdi={async (v) => {
+              if (v) {
+                await endreSkolear(skolear.id, { start: v });
+                setAr(await hentSkolear());
+              }
+            }}
+            bredde="w-40"
+          />
+          <Felt
+            etikett="Siste skoledag"
+            type="date"
+            verdi={skolear.slutt}
+            settVerdi={async (v) => {
+              if (v) {
+                await endreSkolear(skolear.id, { slutt: v });
+                setAr(await hentSkolear());
+              }
+            }}
+            bredde="w-40"
+          />
+        </div>
+      </Bolk>
+
       <Bolk tittel="Standardverdier">
         <div className="flex items-end gap-3">
           <label className="block">

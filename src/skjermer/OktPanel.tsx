@@ -40,6 +40,25 @@ export function OktPanel({
   const [notatFor, setNotatFor] = useState<string | null>(null);
   const [perioder, setPerioder] = useState<Periode[]>([]);
   const liste = useRef<HTMLDivElement>(null);
+  const markertRad = useRef<HTMLDivElement>(null);
+
+  /**
+   * Ruller den markerte raden inn i synsfeltet.
+   *
+   * `block: "nearest"` gjør at det bare skjer når raden faktisk er utenfor —
+   * står den midt på skjermen, rører ingenting seg. Det er forskjellen på en
+   * rolig liste og en som hopper ved hvert tastetrykk.
+   *
+   * Myk rulling med mindre systemet ber om mindre bevegelse. Skåringen kan gå
+   * fort, og en animasjon som ikke rekker å bli ferdig før neste tastetrykk
+   * skal avbrytes, ikke stables opp.
+   */
+  useEffect(() => {
+    const rad = markertRad.current;
+    if (!rad) return;
+    const rolig = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    rad.scrollIntoView({ block: "nearest", behavior: rolig ? "auto" : "smooth" });
+  }, [markert]);
 
   useEffect(() => {
     let avbrutt = false;
@@ -181,6 +200,7 @@ export function OktPanel({
               verdier={verdier}
               tastekart={tastekart}
               markert={i === markert}
+              radRef={i === markert ? markertRad : undefined}
               avholdt={avholdt}
               nullverdi={nullverdi}
               onKlikk={() => {
@@ -223,6 +243,7 @@ function ElevRad({
   verdier,
   tastekart,
   markert,
+  radRef,
   avholdt,
   nullverdi,
   onKlikk,
@@ -234,6 +255,8 @@ function ElevRad({
   verdier: Skalaverdi[];
   tastekart: Map<string, string>;
   markert: boolean;
+  /** settes bare på den markerte raden, så autoscrollen vet hvor den er */
+  radRef?: React.RefObject<HTMLDivElement | null>;
   avholdt: boolean;
   nullverdi: Skalaverdi | null;
   onKlikk: () => void;
@@ -247,6 +270,7 @@ function ElevRad({
 
   return (
     <div
+      ref={radRef}
       onClick={onKlikk}
       className={`flex cursor-default items-center gap-2 border-b border-linje-svak px-5 py-1 ${
         markert ? "bg-valgt" : "hover:bg-flate"

@@ -7,6 +7,7 @@ import {
   type FagNokkeltall,
   type FagVurdering,
 } from "../data/fagportal";
+import { slettFagHelt, tellForFag } from "../data/fag";
 import type { FagIAr } from "../data/fag";
 import { TRAFIKKLYS } from "../ui/farger";
 
@@ -177,6 +178,28 @@ export function FagPanel({
             </table>
           )}
         </Bolk>
+
+        <button
+          onClick={async () => {
+            const n = await tellForFag(fag.fagId);
+            const ok = confirm(
+              `Slette ${fag.kode} fra fagbanken?\n\n` +
+                `Dette gjelder alle ${n.ar} skoleår faget er brukt i, og ` +
+                `fjerner ${n.okter} økter, ${n.skaringer} skåringer, ` +
+                `${n.perioder} perioder og ${n.vurderinger} vurderinger.\n\n` +
+                "Elevene blir stående — de lever på tvers av fag.\n\n" +
+                "Vil du bare ta faget ut av dette året, bruk Fjern i " +
+                "redigeringsmodus i stedet. Da blir øktene liggende.",
+            );
+            if (!ok) return;
+            await slettFagHelt(fag.fagId);
+            onLukk();
+            location.reload();
+          }}
+          className="mt-2 text-liten text-blekk-svak hover:text-feil"
+        >
+          Slett faget fra fagbanken
+        </button>
       </div>
     </aside>
   );

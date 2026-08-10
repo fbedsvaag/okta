@@ -266,3 +266,55 @@ export async function frakobleFag(
     await slett("elev_fag", finnes[0].id);
   }
 }
+
+// --------------------------------------------------------------- opprydding
+
+/**
+ * Hva som forsvinner om en elev slettes.
+ *
+ * Tallene vises i bekreftelsen. En sletting man ikke vet omfanget av, er ikke
+ * en beslutning — den er et sjansespill.
+ */
+export async function tellForElev(
+  elevId: string,
+): Promise<{ skaringer: number; vurderinger: number; oppfolging: number }> {
+  const [r] = await hent<{
+    skaringer: number;
+    vurderinger: number;
+    oppfolging: number;
+  }>(
+    `SELECT
+       (SELECT COUNT(*) FROM skaring WHERE elev_id = $1 AND slettet IS NULL)
+         AS skaringer,
+       (SELECT COUNT(*) FROM vurderingsresultat WHERE elev_id = $1
+          AND slettet IS NULL) AS vurderinger,
+       (SELECT COUNT(*) FROM oppfolging WHERE elev_id = $1 AND slettet IS NULL)
+         AS oppfolging`,
+    [elevId],
+  );
+  return r;
+}
+
+/**
+ * Sletter en elev og alt som henger på hen.
+ *
+ * Soft delete hele veien (§9), så ingenting forsvinner fysisk — men det
+ * kommer ikke tilbake gjennom grensesnittet. Sikkerhetskopien fra i dag er
+ * veien tilbake hvis det var feil elev.
+ */
+export async function slettElevHelt(elevId: string): Promise<void> {
+  for (const tabell of [
+    "skaring",
+    "vurderingsresultat",
+    "oppfolging",
+    "elev_fag",
+    "elev_klasse",
+  ]) {
+    const rader = await hent<{ id: string }>(
+      `SELECT id FROM ${tabell} WHERE elev_id = $1 AND slettet IS NULL`,
+      [elevId],
+    );
+    for (const r of rader) await slett(tabell, r.id);
+  }
+  await slett("elev", elevId);
+}

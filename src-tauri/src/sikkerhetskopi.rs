@@ -105,6 +105,22 @@ pub fn rydd_sikkerhetskopier(app: AppHandle, behold: usize) -> Result<usize, Str
     Ok(slettet)
 }
 
+/// Mappa tekstarkivet legges i, ved siden av databasekopiene.
+///
+/// Arkivet skrives hit uansett om brukeren har valgt en eksportmappe. Det er
+/// forsikringen: en `.sqlite`-fil krever denne appen for å leses, mens
+/// markdown kan åpnes av hva som helst. Ligger de to sammen, er det ikke
+/// mulig å ha den ene uten den andre.
+///
+/// Bare én utgave, som overskrives. De daterte `.sqlite`-filene er
+/// historikken; dette er en lesbar utgave av nåtilstanden.
+#[tauri::command]
+pub fn arkivmappe(app: AppHandle) -> Result<String, String> {
+    let mappe = backupmappe(&app)?.join("arkiv");
+    fs::create_dir_all(&mappe).map_err(|e| format!("klarte ikke lage {mappe:?}: {e}"))?;
+    Ok(mappe.to_string_lossy().into_owned())
+}
+
 /// Mappa kopiene ligger i, til «Vis i Finder» og til visning i innstillingene.
 #[tauri::command]
 pub fn sikkerhetskopimappe(app: AppHandle) -> Result<String, String> {
