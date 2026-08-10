@@ -146,6 +146,7 @@ def les_maalsett(d):
         "tittel": tekst(d.get("kortform")) or tekst(d.get("tittel")),
         "rekkefolge": d.get("rekkefoelge"),
         "aarstrinn": [a.get("kode") for a in d.get("etter-aarstrinn", [])],
+        "etter_fag": [x.get("kode") for x in d.get("etter-fag", []) if x.get("kode")],
         "kompetansemaal": [
             {"kode": m.get("kode"), "tekst": rens(m.get("tittel", ""))}
             for m in d.get("kompetansemaal", []) if m.get("kode")
@@ -154,6 +155,20 @@ def les_maalsett(d):
 
 
 # ---------------------------------------------------------------- kjøring
+
+def les_opplaeringsfag(d):
+    """Fagkoden læreren kjenner igjen, f.eks. SAM3045."""
+    ref = d.get("fagkode-referanser") or []
+    gyldige = [r for r in ref
+               if not (r.get("gyldighet") or {}).get("gyldig-til")]
+    valgt = gyldige[0] if gyldige else (ref[0] if ref else None)
+    return {
+        "opplaeringsfag": d.get("kode"),
+        "fagkode": (valgt or {}).get("kode"),
+        "navn": tekst(d.get("tittel")),
+        "nivaa": [n.get("tittel") for n in d.get("opplaeringsnivaa", [])],
+    }
+
 
 def main():
     p = argparse.ArgumentParser(description=__doc__)
@@ -206,19 +221,57 @@ def main():
         print(f"  [{i}/{len(koder)}] {kode} — {lp['navn']} "
               f"({len(maalsett)} sett, {antall} mål)")
 
+    # Fra målsett til fag. Læreren tenker i fag — «Markedsføring og ledelse 1»
+    # med sin egen SAM-kode — ikke i læreplanen MFL01-04 som er paraplyen over
+    # både MFL1 og MFL2. Kompetansemålene er unike per fag, så det er faget
+    # som skal være oppslagsnøkkelen.
+    print("\nKobler målsett til fag …")
+    fagkart = {}
+    for lp in fag:
+        for s in lp["maalsett"]:
+            for of in s.get("etter_fag", []):
+                fagkart.setdefault(of, []).append((lp, s))
+
+    print(f"{len(fagkart)} opplæringsfag. Henter fagkodene …")
+    fagliste = []
+    for i, (ofkode, treff) in enumerate(sorted(fagkart.items()), 1):
+        try:
+            info = les_opplaeringsfag(hent(f"opplaeringsfag/{ofkode}", a.delay))
+        except Exception as e:
+            print(f"  [{i}/{len(fagkart)}] {ofkode}: FEIL — {e}", file=sys.stderr)
+            continue
+        if a.bare_vgs and not any("ideregående" in (n or "") for n in info["nivaa"]):
+            continue
+
+        maal, sett_navn = [], []
+        for lp, s in treff:
+            sett_navn.append(s["tittel"])
+            maal.extend(s["kompetansemaal"])
+        fagliste.append({
+            "fagkode": info["fagkode"],
+            "opplaeringsfag": ofkode,
+            "navn": info["navn"],
+            "laereplan": treff[0][0]["kode"],
+            "laereplannavn": treff[0][0]["navn"],
+            "beskrivelse": treff[0][0]["beskrivelse"],
+            "kompetansemaal": maal,
+        })
+        if i % 50 == 0:
+            print(f"  [{i}/{len(fagkart)}] …")
+
     ut = {
         "kilde": BASE,
         "lisens": "NLOD — https://data.norge.no/nlod/no/2.0",
         "hentet": time.strftime("%Y-%m-%d"),
-        "antall_fag": len(fag),
-        "fag": sorted(fag, key=lambda f: f["kode"]),
+        "antall_fag": len(fagliste),
+        "fag": sorted(fagliste, key=lambda f: (f["navn"] or "")),
     }
     with open(a.ut, "w", encoding="utf-8") as f:
         json.dump(ut, f, ensure_ascii=False, indent=1)
 
-    mål = sum(len(s["kompetansemaal"]) for x in fag for s in x["maalsett"])
+    mål = sum(len(x["kompetansemaal"]) for x in fagliste)
     kb = os.path.getsize(a.ut) / 1024
-    print(f"\nSkrev {a.ut}: {len(fag)} fag, {mål} kompetansemål, {kb:.0f} kB")
+    print(f"\nSkrev {a.ut}: {len(fagliste)} fag, {mål} kompetansemål, {kb:.0f} kB")
     print(f"Cache i {CACHE}/ — slett den for å hente på nytt.")
 
 

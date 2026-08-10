@@ -11,6 +11,7 @@ import { hentInnstilling } from "../data/skolear";
 import { FAGFARGER } from "../ui/farger";
 import { Felt, Knapp, Tomtilstand } from "../ui/felles";
 import { FagPanel } from "./FagPanel";
+import { Fagvelger } from "./Fagvelger";
 import { ElevPanel } from "./ElevPanel";
 import { useGlidende } from "../ui/bevegelse";
 import { hentFagElever, type FagElev } from "../data/fagportal";
@@ -398,6 +399,8 @@ function NyttFag({
 }) {
   const [kode, setKode] = useState("");
   const [navn, setNavn] = useState("");
+  const [grepKode, setGrepKode] = useState<string | null>(null);
+  const [soker, setSoker] = useState(false);
 
   async function leggTil() {
     if (kode.trim() === "") return;
@@ -406,14 +409,32 @@ function NyttFag({
       kode.trim(),
       navn.trim() || kode.trim(),
       FAGFARGER[antall % FAGFARGER.length],
+      grepKode,
     );
     setKode("");
     setNavn("");
+    setGrepKode(null);
     onLagt();
   }
 
   return (
-    <div className="mt-5 flex items-end gap-3 border-t border-linje-medium pt-4">
+    <div className="mt-5 border-t border-linje-medium pt-4">
+      {soker && (
+        <Fagvelger
+          onLukk={() => setSoker(false)}
+          onVelg={(f) => {
+            // Udirs navn og kode er et forslag. Kaller du faget MFL1, skriver
+            // du bare over — grep-koden følger med uansett, og det er den som
+            // holder på kompetansemålene.
+            setNavn(f.navn);
+            setKode(f.fagkode ?? f.opplaeringsfag);
+            setGrepKode(f.fagkode ?? f.opplaeringsfag);
+            setSoker(false);
+          }}
+        />
+      )}
+
+      <div className="flex items-end gap-3">
       <Felt
         etikett="Kode"
         verdi={kode}
@@ -431,6 +452,19 @@ function NyttFag({
         onEnter={leggTil}
       />
       <Knapp onClick={leggTil}>Legg til fag</Knapp>
+      {!soker && (
+        <Knapp variant="stille" onClick={() => setSoker(true)}>
+          Søk i Udirs fagliste
+        </Knapp>
+      )}
+      </div>
+
+      {grepKode && (
+        <p className="mt-2 text-liten text-blekk-dempet">
+          Knyttet til <span className="font-mono">{grepKode}</span> hos Udir —
+          kompetansemålene følger med. Kode og navn over er dine egne.
+        </p>
+      )}
     </div>
   );
 }

@@ -64,8 +64,13 @@ export async function leggFagIAr(
   kode: string,
   navn: string,
   farge: string | null,
+  grepKode?: string | null,
 ): Promise<string> {
   const fagId = await finnEllerOpprettFag(kode, navn, farge);
+  // Fagkoden fra Udir er nøkkelen til kompetansemålene (§10). Den settes her
+  // og ikke i finnEllerOpprettFag, som også brukes av lim-inn-veien der
+  // ingen har valgt et fag fra lista.
+  if (grepKode) await oppdater("fag", fagId, { grep_kode: grepKode });
 
   const finnes = await hent<{ id: string; slettet: string | null }>(
     "SELECT id, slettet FROM skolear_fag WHERE skolear_id = $1 AND fag_id = $2",
