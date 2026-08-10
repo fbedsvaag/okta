@@ -98,8 +98,9 @@ export function Skolekalender({
   );
 
   return (
-    <div>
-      <div className="mb-4 flex flex-wrap items-center gap-4 text-liten text-blekk-dempet">
+    <div className="flex h-full flex-col">
+      {/* Fagfargene og hjelpeteksten blir stående mens månedene ruller. */}
+      <div className="mb-4 flex shrink-0 flex-wrap items-center gap-4 text-liten text-blekk-dempet">
         <span>{okter.length} økter i året</span>
         {fag.map((f) => (
           <span key={f.id} className="flex items-center gap-1.5">
@@ -117,6 +118,7 @@ export function Skolekalender({
         </span>
       </div>
 
+      <div className="min-h-0 flex-1 overflow-auto">
       <div className="grid gap-x-6 gap-y-7 [grid-template-columns:repeat(auto-fill,minmax(17rem,1fr))]">
         {maneder.map((m) => (
           <Maned
@@ -141,6 +143,8 @@ export function Skolekalender({
             onSlettOkt={(o) => void slettOkter([o])}
           />
         ))}
+      </div>
+
       </div>
 
       {valgte.size > 0 && (

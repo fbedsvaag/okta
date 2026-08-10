@@ -40,7 +40,9 @@ export function Skoleruta({
   const rode = roddagerISpenn(skolear.start, skolear.slutt);
 
   return (
-    <div className="max-w-2xl">
+    // Skoleruta er ett skjema og én liste. Den ruller i sin helhet, men
+    // trenger sin egen rullesone nå som App-ramma ikke ruller lenger.
+    <div className="h-full max-w-2xl overflow-auto">
       <Bolk tittel="Skoleåret">
         <div className="flex gap-3">
           <Felt

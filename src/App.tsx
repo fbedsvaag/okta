@@ -260,9 +260,10 @@ export default function App() {
       <main className="min-h-0 flex-1 overflow-hidden">
         <div
           className={`${
-            medPanel(visning)
-              ? "h-full px-6 py-4"
-              : "h-full overflow-y-auto px-6 py-5 sm:px-8 sm:py-6"
+            // Skjermene styrer rullingen selv, slik at hver av dem kan ha
+            // en header som blir stående. Ruller App-ramma i tillegg, får
+            // man to rullefelt oppå hverandre og ingen sticky som virker.
+            medPanel(visning) ? "h-full px-6 py-4" : "h-full px-6 py-5 sm:px-8 sm:py-6"
           }`}
         >
         {visning === "idag" && (

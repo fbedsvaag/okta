@@ -69,7 +69,7 @@ export function LimInn({
     const over = rader.filter((r) => r.hopp || r.status === "allerede");
 
     return (
-      <div className="mx-auto max-w-4xl">
+      <div className="mx-auto h-full max-w-4xl overflow-auto">
         <h2 className="text-tittel font-semibold">Forhåndsvisning</h2>
         <p className="mt-1 text-brod text-blekk-dempet">
           {nye.length} nye · {koblet.length} kobles til faget · {over.length}{" "}

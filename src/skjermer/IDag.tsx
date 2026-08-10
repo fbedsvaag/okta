@@ -41,13 +41,18 @@ export function IDag({
   const kommende = okter.filter((o) => o.dato > idag).slice(0, 3);
 
   return (
-    <div className="max-w-6xl">
-      <h1 className="text-overskrift font-semibold first-letter:uppercase">
-        {langDato(idag)}
-      </h1>
-      <p className="mt-1 text-brod text-blekk-dempet">
-        Skoleåret {skolear.navn}
-      </p>
+    <div className="flex h-full max-w-6xl flex-col">
+      {/* Datoen blir stående mens resten ruller. */}
+      <div className="shrink-0 pb-2">
+        <h1 className="text-overskrift font-semibold first-letter:uppercase">
+          {langDato(idag)}
+        </h1>
+        <p className="mt-1 text-brod text-blekk-dempet">
+          Skoleåret {skolear.navn}
+        </p>
+      </div>
+
+      <div className="min-h-0 flex-1 overflow-auto">
 
       <Bolk tittel="I dag">
         {dagens.length > 0 ? (
@@ -102,6 +107,7 @@ export function IDag({
         onApneElev={() => onGaTil("elever")}
         onApneVurderinger={() => onGaTil("vurderinger")}
       />
+      </div>
     </div>
   );
 }

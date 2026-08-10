@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { confirm as bekreft } from "@tauri-apps/plugin-dialog";
 import {
+  endreElev,
   finnEllerOpprettKlasse,
   frakobleFag,
   giKlasseNyttNavn,
@@ -150,166 +151,171 @@ export function Elever({
   return (
     <div className="flex h-full overflow-hidden">
       <div
-        className={`liste-bredde min-w-0 overflow-y-auto ${
-          apentPanel ? "hidden w-full pr-4 lg:block lg:w-1/3" : "w-full"
+        className={`liste-bredde flex min-w-0 flex-col ${
+          apentPanel ? "hidden w-full pr-4 lg:flex lg:w-1/3" : "w-full"
         }`}
       >
-      <div className="mb-3 flex flex-wrap items-end gap-3">
-        <Felt verdi={sok} settVerdi={setSok} plassholder="Søk etter navn" bredde="w-56" />
+        {/* Søk, filtre og knapper blir stående mens lista ruller. */}
+        <div className="shrink-0">
+        <div className="mb-3 flex flex-wrap items-end gap-3">
+          <Felt verdi={sok} settVerdi={setSok} plassholder="Søk etter navn" bredde="w-56" />
 
-        <Velger
-          verdi={filterKlasse}
-          settVerdi={setFilterKlasse}
-          tom="Alle klasser"
-          valg={klasser.map((k) => ({ id: k.id, tekst: `${k.navn} (${k.antall})` }))}
-        />
-        <Velger
-          verdi={filterFag}
-          settVerdi={setFilterFag}
-          tom="Alle fag"
-          valg={fag.map((f) => ({ id: f.id, tekst: f.kode }))}
-        />
-
-        <div className="ml-auto flex items-center gap-2">
-          <label className="flex select-none items-center gap-2 text-liten text-blekk-dempet">
-            <input
-              type="checkbox"
-              checked={rediger}
-              onChange={(e) => {
-                setRediger(e.target.checked);
-                if (e.target.checked) setValgtElev(null);
-              }}
-            />
-            Rediger
-          </label>
-          <Kolonnevelger
-            valgbare={VALGBARE}
-            vis={synligeKolonner}
-            onEndre={(id, pa) => byttKolonne(id as Synlig, pa)}
+          <Velger
+            verdi={filterKlasse}
+            settVerdi={setFilterKlasse}
+            tom="Alle klasser"
+            valg={klasser.map((k) => ({ id: k.id, tekst: `${k.navn} (${k.antall})` }))}
           />
-          <Knapp onClick={() => setFane("klasser")}>
-            Klasser ({klasser.length})
-          </Knapp>
-          <Knapp onClick={onLimInn}>Lim inn liste</Knapp>
-        </div>
-      </div>
+          <Velger
+            verdi={filterFag}
+            settVerdi={setFilterFag}
+            tom="Alle fag"
+            valg={fag.map((f) => ({ id: f.id, tekst: f.kode }))}
+          />
 
-      {/* Arket lista ligger på. Skrivebordet er flata rundt (§13). */}
-      {elever.length === 0 ? (
-        <Tomtilstand
-          tekst="Ingen elever i dette skoleåret ennå."
-          handling={<Knapp variant="primar" onClick={onLimInn}>Lim inn en klasseliste</Knapp>}
-        />
-      ) : (
-        <div className="overflow-x-auto rounded-vanlig border border-linje bg-ark px-3">
-        <table className="w-full text-brod">
-          <thead>
-            <tr className="border-b border-linje text-left text-etikett uppercase tracking-etikett text-blekk-dempet">
-              <Overskrift kolonne="fornavn" sortering={sortering} onKlikk={bytSortering}>
-                Fornavn
-              </Overskrift>
-              {vis.has("etternavn") && (
-                <Overskrift
-                  kolonne="etternavn"
-                  sortering={sortering}
-                  onKlikk={bytSortering}
-                >
-                  Etternavn
-                </Overskrift>
-              )}
-              {vis.has("kode") && (
-                <Overskrift kolonne="kode" sortering={sortering} onKlikk={bytSortering}>
-                  Kode
-                </Overskrift>
-              )}
-              {vis.has("klasse") && (
-                <Overskrift
-                  kolonne="klasse"
-                  sortering={sortering}
-                  onKlikk={bytSortering}
-                >
-                  Klasse
-                </Overskrift>
-              )}
-              {vis.has("fag") && (
-                <Overskrift kolonne="fag" sortering={sortering} onKlikk={bytSortering}>
-                  Fag
-                </Overskrift>
-              )}
-              {vis.has("okter") && (
-                <Overskrift
-                  kolonne="okter"
-                  sortering={sortering}
-                  onKlikk={bytSortering}
-                  hoyre
-                >
-                  Økter
-                </Overskrift>
-              )}
-              {vis.has("siste") && (
-                <Overskrift
-                  kolonne="siste"
-                  sortering={sortering}
-                  onKlikk={bytSortering}
-                  hoyre
-                >
-                  Siste
-                </Overskrift>
-              )}
-              {vis.has("innsats") && (
-                <Overskrift kolonne="innsats" sortering={sortering} onKlikk={bytSortering}>
-                  Innsats
-                </Overskrift>
-              )}
-              {vis.has("notat") && (
-                <Overskrift kolonne="notat" sortering={sortering} onKlikk={bytSortering}>
-                  Notat
-                </Overskrift>
-              )}
-              {vis.has("endret") && (
-                <Overskrift
-                  kolonne="endret"
-                  sortering={sortering}
-                  onKlikk={bytSortering}
-                  hoyre
-                >
-                  Sist endret
-                </Overskrift>
-              )}
-              {/* Tar opp slakken, så kolonnene over hugger innholdet sitt. */}
-              <th className="w-full" />
-            </tr>
-          </thead>
-          <tbody>
-            {synlige.map((e) => (
-              <Rad
-                key={e.id}
-                elev={e}
-                fag={fag}
-                klasser={klasser}
-                skolearId={skolearId}
-                rediger={rediger}
-                valgt={valgtElev === e.id}
-                vis={vis}
-                onApne={() => setValgtElev(e.id)}
-                onEndret={last}
+          <div className="ml-auto flex items-center gap-2">
+            <label className="flex select-none items-center gap-2 text-liten text-blekk-dempet">
+              <input
+                type="checkbox"
+                checked={rediger}
+                onChange={(e) => {
+                  setRediger(e.target.checked);
+                  if (e.target.checked) setValgtElev(null);
+                }}
               />
-            ))}
-            <NyElevRad
-              kolonner={2 + vis.size}
-              skolearId={skolearId}
-              arvKlasse={filterKlasse || null}
-              arvFag={filterFag || null}
-              onLagret={last}
+              Rediger
+            </label>
+            <Kolonnevelger
+              valgbare={VALGBARE}
+              vis={synligeKolonner}
+              onEndre={(id, pa) => byttKolonne(id as Synlig, pa)}
             />
-          </tbody>
-        </table>
+            <Knapp onClick={() => setFane("klasser")}>
+              Klasser ({klasser.length})
+            </Knapp>
+            <Knapp onClick={onLimInn}>Lim inn liste</Knapp>
+          </div>
         </div>
-      )}
+        </div>
 
-      <p className="mt-3 text-liten text-blekk-dempet">
-        {synlige.length} av {elever.length} elever
-      </p>
+        <div className="min-h-0 flex-1 overflow-auto">
+        {/* Arket lista ligger på. Skrivebordet er flata rundt (§13). */}
+        {elever.length === 0 ? (
+          <Tomtilstand
+            tekst="Ingen elever i dette skoleåret ennå."
+            handling={<Knapp variant="primar" onClick={onLimInn}>Lim inn en klasseliste</Knapp>}
+          />
+        ) : (
+          <div className="overflow-x-auto rounded-vanlig border border-linje bg-ark px-3">
+          <table className="w-full text-brod">
+            <thead>
+              <tr className="border-b border-linje text-left text-etikett uppercase tracking-etikett text-blekk-dempet">
+                <Overskrift kolonne="fornavn" sortering={sortering} onKlikk={bytSortering}>
+                  Fornavn
+                </Overskrift>
+                {vis.has("etternavn") && (
+                  <Overskrift
+                    kolonne="etternavn"
+                    sortering={sortering}
+                    onKlikk={bytSortering}
+                  >
+                    Etternavn
+                  </Overskrift>
+                )}
+                {vis.has("kode") && (
+                  <Overskrift kolonne="kode" sortering={sortering} onKlikk={bytSortering}>
+                    Kode
+                  </Overskrift>
+                )}
+                {vis.has("klasse") && (
+                  <Overskrift
+                    kolonne="klasse"
+                    sortering={sortering}
+                    onKlikk={bytSortering}
+                  >
+                    Klasse
+                  </Overskrift>
+                )}
+                {vis.has("fag") && (
+                  <Overskrift kolonne="fag" sortering={sortering} onKlikk={bytSortering}>
+                    Fag
+                  </Overskrift>
+                )}
+                {vis.has("okter") && (
+                  <Overskrift
+                    kolonne="okter"
+                    sortering={sortering}
+                    onKlikk={bytSortering}
+                    hoyre
+                  >
+                    Økter
+                  </Overskrift>
+                )}
+                {vis.has("siste") && (
+                  <Overskrift
+                    kolonne="siste"
+                    sortering={sortering}
+                    onKlikk={bytSortering}
+                    hoyre
+                  >
+                    Siste
+                  </Overskrift>
+                )}
+                {vis.has("innsats") && (
+                  <Overskrift kolonne="innsats" sortering={sortering} onKlikk={bytSortering}>
+                    Innsats
+                  </Overskrift>
+                )}
+                {vis.has("notat") && (
+                  <Overskrift kolonne="notat" sortering={sortering} onKlikk={bytSortering}>
+                    Notat
+                  </Overskrift>
+                )}
+                {vis.has("endret") && (
+                  <Overskrift
+                    kolonne="endret"
+                    sortering={sortering}
+                    onKlikk={bytSortering}
+                    hoyre
+                  >
+                    Sist endret
+                  </Overskrift>
+                )}
+                {/* Tar opp slakken, så kolonnene over hugger innholdet sitt. */}
+                <th className="w-full" />
+              </tr>
+            </thead>
+            <tbody>
+              {synlige.map((e) => (
+                <Rad
+                  key={e.id}
+                  elev={e}
+                  fag={fag}
+                  klasser={klasser}
+                  skolearId={skolearId}
+                  rediger={rediger}
+                  valgt={valgtElev === e.id}
+                  vis={vis}
+                  onApne={() => setValgtElev(e.id)}
+                  onEndret={last}
+                />
+              ))}
+              <NyElevRad
+                kolonner={2 + vis.size}
+                skolearId={skolearId}
+                arvKlasse={filterKlasse || null}
+                arvFag={filterFag || null}
+                onLagret={last}
+              />
+            </tbody>
+          </table>
+          </div>
+        )}
+
+        <p className="mt-3 text-liten text-blekk-dempet">
+          {synlige.length} av {elever.length} elever
+        </p>
+        </div>
       </div>
 
       {visElev && (
@@ -508,21 +514,27 @@ function Rad({
       }`}
     >
       <td className="whitespace-nowrap py-1.5 pr-5">
-        <button
-          onClick={onApne}
-          className="text-left hover:text-aksent hover:underline"
-        >
-          {elev.fornavn}
-        </button>
+        <Navnefelt
+          verdi={elev.fornavn}
+          rediger={rediger}
+          onApne={onApne}
+          onLagre={async (v) => {
+            await endreElev(elev.id, { fornavn: v });
+            onEndret();
+          }}
+        />
       </td>
       {vis.has("etternavn") && (
         <td className="whitespace-nowrap py-1.5 pr-5">
-          <button
-            onClick={onApne}
-            className="text-left hover:text-aksent hover:underline"
-          >
-            {elev.etternavn}
-          </button>
+          <Navnefelt
+            verdi={elev.etternavn}
+            rediger={rediger}
+            onApne={onApne}
+            onLagre={async (v) => {
+              await endreElev(elev.id, { etternavn: v });
+              onEndret();
+            }}
+          />
         </td>
       )}
       {vis.has("kode") && (
@@ -662,6 +674,55 @@ function Rad({
       )}
       <td />
     </tr>
+  );
+}
+
+/**
+ * Navnet: lesbart som lenke, redigerbart i redigeringsmodus.
+ *
+ * Feltet vokser med innholdet framfor å klippe. Et navn som er klippet er
+ * verre enn en tabell som blir litt bredere — det er eleven det gjelder.
+ */
+function Navnefelt({
+  verdi,
+  rediger,
+  onApne,
+  onLagre,
+}: {
+  verdi: string;
+  rediger: boolean;
+  onApne: () => void;
+  onLagre: (v: string) => Promise<void>;
+}) {
+  if (!rediger) {
+    return (
+      <button
+        onClick={onApne}
+        className="whitespace-nowrap text-left hover:text-aksent hover:underline"
+      >
+        {verdi}
+      </button>
+    );
+  }
+
+  return (
+    <input
+      defaultValue={verdi}
+      key={verdi}
+      size={Math.max(8, verdi.length)}
+      onBlur={async (e) => {
+        const ny = e.target.value.trim();
+        if (ny && ny !== verdi) await onLagre(ny);
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") e.currentTarget.blur();
+        if (e.key === "Escape") {
+          e.currentTarget.value = verdi;
+          e.currentTarget.blur();
+        }
+      }}
+      className="rounded-vanlig border border-transparent px-1 py-0.5 outline-none hover:border-linje focus:border-aksent"
+    />
   );
 }
 

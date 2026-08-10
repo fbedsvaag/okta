@@ -75,66 +75,75 @@ export function Fag({
 
   return (
     <div className="flex h-full overflow-hidden">
-      <div className={`liste-bredde min-w-0 overflow-y-auto ${glir ? "hidden w-full pr-4 lg:block lg:w-1/3" : "w-full max-w-4xl"}`}>
-      <div className="flex items-baseline justify-between">
-        <h2 className="text-tittel font-semibold">Fag i dette skoleåret</h2>
-        <label className="flex items-center gap-2 text-liten text-blekk-dempet">
-          <input
-            type="checkbox"
-            checked={rediger}
-            onChange={(e) => {
-              setRediger(e.target.checked);
-              if (e.target.checked) setValgtFag(null);
-            }}
-          />
-          Rediger
-        </label>
-      </div>
-      <p className="mt-1 text-brod text-blekk-dempet">
-        {rediger
-          ? "Feltene lagrer når du forlater dem. Escape angrer."
-          : "Klikk på et fag for å åpne det. Slå på Rediger for å endre feltene."}
-      </p>
-
-      {fag.length === 0 ? (
-        <div className="mt-5">
-          <Tomtilstand tekst="Ingen fag i dette skoleåret ennå." />
+      <div
+        className={`liste-bredde flex min-w-0 flex-col ${
+          glir ? "hidden w-full pr-4 lg:flex lg:w-1/3" : "w-full max-w-4xl"
+        }`}
+      >
+        {/* Overskrift og Rediger-bryteren blir stående mens lista ruller. */}
+        <div className="shrink-0">
+        <div className="flex items-baseline justify-between">
+          <h2 className="text-tittel font-semibold">Fag i dette skoleåret</h2>
+          <label className="flex items-center gap-2 text-liten text-blekk-dempet">
+            <input
+              type="checkbox"
+              checked={rediger}
+              onChange={(e) => {
+                setRediger(e.target.checked);
+                if (e.target.checked) setValgtFag(null);
+              }}
+            />
+            Rediger
+          </label>
         </div>
-      ) : (
-        <div className="overflow-x-auto">
-        <table className="mt-5 w-full min-w-[38rem] text-brod">
-          <thead>
-            <tr className="border-b border-linje text-left text-etikett uppercase tracking-etikett text-blekk-dempet">
-              <th className="w-6 py-1 font-normal"></th>
-              <th className="w-28 py-1 font-normal">Kode</th>
-              <th className="py-1 font-normal">Navn</th>
-              <th className="w-28 py-1 text-right font-normal">Årstimer</th>
-              {/* Varighet vises bare i redigeringsmodus. I lesevisningen sto
-                  den med samme arvede verdi på hver rad. */}
-              {rediger && (
-                <th className="w-32 py-1 text-right font-normal">Varighet</th>
-              )}
-              <th className="w-16 py-1"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {fag.map((f) => (
-              <FagRad
-                key={f.id}
-                fag={f}
-                globalVarighet={globalVarighet}
-                rediger={rediger}
-                valgt={valgtFag === f.id}
-                onApne={() => setValgtFag(f.id)}
-                onEndret={onEndret}
-              />
-            ))}
-          </tbody>
-        </table>
+        <p className="mt-1 text-brod text-blekk-dempet">
+          {rediger
+            ? "Feltene lagrer når du forlater dem. Escape angrer."
+            : "Klikk på et fag for å åpne det. Slå på Rediger for å endre feltene."}
+        </p>
         </div>
-      )}
 
-      <NyttFag skolearId={skolearId} antall={fag.length} onLagt={onEndret} />
+        <div className="min-h-0 flex-1 overflow-auto">
+        {fag.length === 0 ? (
+          <div className="mt-5">
+            <Tomtilstand tekst="Ingen fag i dette skoleåret ennå." />
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+          <table className="mt-5 w-full min-w-[38rem] text-brod">
+            <thead>
+              <tr className="border-b border-linje text-left text-etikett uppercase tracking-etikett text-blekk-dempet">
+                <th className="w-6 py-1 font-normal"></th>
+                <th className="w-28 py-1 font-normal">Kode</th>
+                <th className="py-1 font-normal">Navn</th>
+                <th className="w-28 py-1 text-right font-normal">Årstimer</th>
+                {/* Varighet vises bare i redigeringsmodus. I lesevisningen sto
+                    den med samme arvede verdi på hver rad. */}
+                {rediger && (
+                  <th className="w-32 py-1 text-right font-normal">Varighet</th>
+                )}
+                <th className="w-16 py-1"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {fag.map((f) => (
+                <FagRad
+                  key={f.id}
+                  fag={f}
+                  globalVarighet={globalVarighet}
+                  rediger={rediger}
+                  valgt={valgtFag === f.id}
+                  onApne={() => setValgtFag(f.id)}
+                  onEndret={onEndret}
+                />
+              ))}
+            </tbody>
+          </table>
+          </div>
+        )}
+
+        <NyttFag skolearId={skolearId} antall={fag.length} onLagt={onEndret} />
+        </div>
       </div>
 
       {apent && (

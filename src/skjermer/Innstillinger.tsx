@@ -145,7 +145,7 @@ export function Innstillinger({
   }, []);
 
   return (
-    <div className="max-w-2xl">
+    <div className="h-full max-w-2xl overflow-auto">
       <Bolk tittel="Skoleår">
         <p className="mb-3 text-brod text-blekk-dempet">
           Ett år er aktivt om gangen. Å bytte rører ingen data — det endrer bare
