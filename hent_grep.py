@@ -130,10 +130,14 @@ def les_laereplan(d):
 
     return {
         "kode": d.get("kode"),
+        "utgaatt": "status_utgaatt" in (d.get("status") or ""),
         "navn": tekst(d.get("kortform")) or tekst(d.get("tittel")),
         "tittel": tekst(d.get("tittel")),
         "fagtype": [f.get("tittel") for f in d.get("fagtype", [])],
-        "nivaa": [n.get("tittel") for n in d.get("opplaeringsnivaa", [])],
+        # MERK: på opplæringsfag er dette ETT objekt, ikke en liste — i
+        # motsetning til på læreplanen, der det er en liste. Grep er ikke
+        # konsekvent, så begge former må tas høyde for.
+        "nivaa": nivaaliste(d.get("opplaeringsnivaa")),
         "beskrivelse": tekst(relevans),
         "sett_koder": sett,
     }
@@ -156,6 +160,15 @@ def les_maalsett(d):
 
 # ---------------------------------------------------------------- kjøring
 
+def nivaaliste(v):
+    """Opplæringsnivå, enten det kommer som objekt eller liste."""
+    if v is None:
+        return []
+    if isinstance(v, dict):
+        return [v.get("tittel")]
+    return [x.get("tittel") for x in v if isinstance(x, dict)]
+
+
 def les_opplaeringsfag(d):
     """Fagkoden læreren kjenner igjen, f.eks. SAM3045."""
     ref = d.get("fagkode-referanser") or []
@@ -166,7 +179,10 @@ def les_opplaeringsfag(d):
         "opplaeringsfag": d.get("kode"),
         "fagkode": (valgt or {}).get("kode"),
         "navn": tekst(d.get("tittel")),
-        "nivaa": [n.get("tittel") for n in d.get("opplaeringsnivaa", [])],
+        # MERK: på opplæringsfag er dette ETT objekt, ikke en liste — i
+        # motsetning til på læreplanen, der det er en liste. Grep er ikke
+        # konsekvent, så begge former må tas høyde for.
+        "nivaa": nivaaliste(d.get("opplaeringsnivaa")),
     }
 
 
@@ -226,8 +242,13 @@ def main():
     # både MFL1 og MFL2. Kompetansemålene er unike per fag, så det er faget
     # som skal være oppslagsnøkkelen.
     print("\nKobler målsett til fag …")
+    # Utgåtte læreplaner hoppes over. Et fag lever ofte i to versjoner —
+    # MFL01-03 og MFL01-04 for markedsføring — og tas begge med, får faget
+    # målene sine i dobbelt opp med ulike koder og lik tekst.
     fagkart = {}
     for lp in fag:
+        if lp.get("utgaatt"):
+            continue
         for s in lp["maalsett"]:
             for of in s.get("etter_fag", []):
                 fagkart.setdefault(of, []).append((lp, s))
