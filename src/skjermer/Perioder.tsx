@@ -48,6 +48,7 @@ export function Perioder({
   const [valgte, setValgte] = useState<Set<string>>(new Set());
   // Kompetansemålene per periode, og alle som er dekket i faget samlet.
   const [periodemal, setPeriodemal] = useState<Map<string, string[]>>(new Map());
+  const [lagerOkt, setLagerOkt] = useState(false);
 
   function velg(id: string, med: boolean) {
     setValgte((f) => {
@@ -100,64 +101,87 @@ export function Perioder({
   }
 
   return (
-    <div className="max-w-4xl">
-      <div className="mb-4 flex flex-wrap items-center gap-3">
-        <select
-          value={fagId}
-          onChange={(e) => setFagId(e.target.value)}
-          className="rounded border border-linje bg-ark px-2 py-1.5 text-brod"
-        >
-          {fag.map((f) => (
-            <option key={f.id} value={f.id}>
-              {f.kode} — {f.navn}
-            </option>
-          ))}
-        </select>
+    <div className="flex h-full max-w-4xl flex-col">
+      {/*
+        Fagvelger, timeregnskap og knappene blir stående mens du ruller
+        gjennom periodene — det er dem du styrer skjermen med.
+      */}
+      <div className="shrink-0">
+        <div className="mb-4 flex flex-wrap items-center gap-3">
+          <select
+            value={fagId}
+            onChange={(e) => setFagId(e.target.value)}
+            className="rounded border border-linje bg-ark px-2 py-1.5 text-brod"
+          >
+            {fag.map((f) => (
+              <option key={f.id} value={f.id}>
+                {f.kode} — {f.navn}
+              </option>
+            ))}
+          </select>
 
-        <span className="text-brod tabular-nums text-blekk-dempet">
-          {okter.length} økter · {planlagt} timer planlagt
-          {valgtFag?.arstimetall != null && (
-            <>
-              {" av "}
-              {valgtFag.arstimetall}
-              {" · "}
-              <span
-                className={
-                  planlagt > valgtFag.arstimetall ? "text-feil" : ""
-                }
-              >
-                {avvik(planlagt, valgtFag.arstimetall)}
-              </span>
-            </>
-          )}
-        </span>
+          <span className="text-brod tabular-nums text-blekk-dempet">
+            {okter.length} økter · {planlagt} timer planlagt
+            {valgtFag?.arstimetall != null && (
+              <>
+                {" av "}
+                {valgtFag.arstimetall}
+                {" · "}
+                <span
+                  className={planlagt > valgtFag.arstimetall ? "text-feil" : ""}
+                >
+                  {avvik(planlagt, valgtFag.arstimetall)}
+                </span>
+              </>
+            )}
+          </span>
 
-        <div className="ml-auto">
-          <Knapp variant="primar" onClick={() => setLagerNy(true)}>
-            + Ny periode
-          </Knapp>
+          <div className="ml-auto flex items-center gap-2">
+            {perioder.length > 0 && (
+              <Knapp onClick={() => setLagerOkt((v) => !v)}>
+                {lagerOkt ? "Avbryt" : "+ Ny økt"}
+              </Knapp>
+            )}
+            <Knapp variant="primar" onClick={() => setLagerNy(true)}>
+              + Ny periode
+            </Knapp>
+          </div>
         </div>
+
+        {kolliderer.length > 0 && (
+          <p className="mb-3 text-liten text-feil">
+            ! {kolliderer.map(([a, b]) => `${a.navn} og ${b.navn}`).join(", ")}{" "}
+            overlapper i tid. Øktene i overlappet havner i den første av dem.
+          </p>
+        )}
+
+        {lagerNy && (
+          <NyPeriode
+            skolear={skolear}
+            antall={perioder.length}
+            fagId={fagId}
+            onLagret={async () => {
+              setLagerNy(false);
+              await last();
+            }}
+            onAvbryt={() => setLagerNy(false)}
+          />
+        )}
+
+        {lagerOkt && valgtFag && (
+          <NyOktIPeriode
+            perioder={perioder}
+            fagKode={valgtFag.kode}
+            skolearFagId={fagId}
+            standardVarighet={Number(valgtFag.standardVarighetMin ?? 180)}
+            sisteDato={okter[okter.length - 1]?.dato}
+            onLagret={() => {
+              setLagerOkt(false);
+              void last();
+            }}
+          />
+        )}
       </div>
-
-      {kolliderer.length > 0 && (
-        <p className="mb-3 text-liten text-feil">
-          ! {kolliderer.map(([a, b]) => `${a.navn} og ${b.navn}`).join(", ")}{" "}
-          overlapper i tid. Øktene i overlappet havner i den første av dem.
-        </p>
-      )}
-
-      {lagerNy && (
-        <NyPeriode
-          skolear={skolear}
-          antall={perioder.length}
-          fagId={fagId}
-          onLagret={async () => {
-            setLagerNy(false);
-            await last();
-          }}
-          onAvbryt={() => setLagerNy(false)}
-        />
-      )}
 
       {perioder.length === 0 && !lagerNy ? (
         <Tomtilstand
@@ -174,35 +198,31 @@ export function Perioder({
           }
         />
       ) : (
-        <>
+        <div className="min-h-0 flex-1 overflow-auto">
           <Tidslinje bunker={bunker} skolear={skolear} />
-          <div className="mt-6">
 
-      <p className="mb-3 text-liten text-blekk-dempet">
-        Dra en økt til en annen periode for å flytte den. Hold ⌘ og klikk for å
-        plukke ut flere først. Slipper du på «Uten periode», følger økta datoen
-        sin igjen.
-      </p>
-            {bunker.map((b) => (
-              <Bunke
-                key={b.periode?.id ?? "uplassert"}
+          <p className="mb-3 mt-6 text-liten text-blekk-dempet">
+            Dra en økt til en annen periode for å flytte den. Hold ⌘ og klikk
+            for å plukke ut flere først. Slipper du på «Uten periode», følger
+            økta datoen sin igjen.
+          </p>
+
+          {bunker.map((b) => (
+            <Bunke
+              key={b.periode?.id ?? "uplassert"}
+              bunke={b}
               valgte={valgte}
               onVelg={velg}
               onSlipp={slipp}
-              fagKode={valgtFag?.kode ?? ""}
-              skolearFagId={fagId}
-              standardVarighet={Number(valgtFag?.standardVarighetMin ?? 180)}
               grepKode={valgtFag?.grepKode ?? null}
               mal={periodemal.get(b.periode?.id ?? "") ?? []}
               dekket={new Set([...periodemal.values()].flat())}
               onMalEndret={() => void lastMal(fagId)}
-                bunke={b}
-                onEndret={last}
-                onApneOkt={onApneOkt}
-              />
-            ))}
-          </div>
-        </>
+              onEndret={last}
+              onApneOkt={onApneOkt}
+            />
+          ))}
+        </div>
       )}
     </div>
   );
@@ -273,9 +293,6 @@ function Bunke({
   valgte,
   onVelg,
   onSlipp,
-  fagKode,
-  skolearFagId,
-  standardVarighet,
   grepKode,
   mal,
   dekket,
@@ -287,9 +304,6 @@ function Bunke({
   valgte: Set<string>;
   onVelg: (id: string, med: boolean) => void;
   onSlipp: (periodeId: string | null) => void;
-  fagKode: string;
-  skolearFagId: string;
-  standardVarighet: number;
   grepKode: string | null;
   /** kompetansemålkodene for denne perioden */
   mal: string[];
@@ -301,7 +315,6 @@ function Bunke({
 }) {
   const p = bunke.periode;
   const [over, setOver] = useState(false);
-  const [lagerOkt, setLagerOkt] = useState(false);
 
   return (
     <section
@@ -360,14 +373,6 @@ function Bunke({
           {bunke.okter.length} økter · {timer(bunke.minutter)} t
         </span>
 
-        {p && (
-          <button
-            onClick={() => setLagerOkt((v) => !v)}
-            className="shrink-0 text-liten text-blekk-dempet hover:text-blekk"
-          >
-            {lagerOkt ? "Avbryt" : "+ Ny økt"}
-          </button>
-        )}
 
         {p && (
           <button
@@ -388,20 +393,6 @@ function Bunke({
         )}
       </header>
 
-      {p && lagerOkt && (
-        <NyOktIPeriode
-          periode={p}
-          fagKode={fagKode}
-          skolearFagId={skolearFagId}
-          standardVarighet={standardVarighet}
-          sisteDato={bunke.okter[bunke.okter.length - 1]?.dato}
-          onLagret={() => {
-            setLagerOkt(false);
-            onEndret();
-          }}
-        />
-      )}
-
       {p && (
         <Malvelger
           grepKode={grepKode}
@@ -419,13 +410,19 @@ function Bunke({
       ) : (
         <div>
           {bunke.okter.map((o) => (
-            <button
+            <div
               key={o.id}
+              role="button"
+              tabIndex={0}
               draggable
               onDragStart={(e) => {
                 // Drar du en økt som er markert, følger hele markeringen med.
                 // Ellers gjelder draget bare den ene.
                 if (!valgte.has(o.id)) onVelg(o.id, false);
+                // MERK: setData er ikke valgfritt. WebKit — som Tauri bruker
+                // på macOS — nekter å starte draget i det hele tatt uten at
+                // det er satt. Uten denne linja skjer ingenting når du drar.
+                e.dataTransfer.setData("text/plain", o.id);
                 e.dataTransfer.effectAllowed = "move";
               }}
               onClick={(e) => {
@@ -434,7 +431,13 @@ function Bunke({
                 if (e.metaKey || e.ctrlKey) onVelg(o.id, true);
                 else onApneOkt(o.id);
               }}
-              className={`flex w-full cursor-grab items-center gap-3 border-b border-linje-svak py-1 text-left text-brod active:cursor-grabbing ${
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  onApneOkt(o.id);
+                }
+              }}
+              className={`flex w-full cursor-grab select-none items-center gap-3 border-b border-linje-svak py-1 text-left text-brod active:cursor-grabbing ${
                 valgte.has(o.id) ? "bg-valgt" : "hover:bg-flate"
               }`}
             >
@@ -450,7 +453,7 @@ function Bunke({
               <span className="flex-1 truncate">
                 {o.tema ?? <span className="text-blekk-svak">—</span>}
               </span>
-            </button>
+            </div>
           ))}
         </div>
       )}
@@ -467,25 +470,26 @@ function Bunke({
  * hjemme.
  */
 function NyOktIPeriode({
-  periode,
+  perioder,
   fagKode,
   skolearFagId,
   standardVarighet,
   sisteDato,
   onLagret,
 }: {
-  periode: Periode;
+  perioder: Periode[];
   fagKode: string;
   skolearFagId: string;
   standardVarighet: number;
   sisteDato?: string;
   onLagret: () => void;
 }) {
-  // Neste dag etter siste økt i perioden, ellers periodens start.
-  const start = sisteDato
-    ? nesteDag(sisteDato)
-    : (periode.start ?? new Date().toISOString().slice(0, 10));
-  const [dato, setDato] = useState(start);
+  const [periodeId, setPeriodeId] = useState(perioder[0]?.id ?? "");
+  // Dagen etter siste økt i faget — det er nesten alltid der neste hører
+  // hjemme når man punsjer inn en termin.
+  const [dato, setDato] = useState(
+    sisteDato ? nesteDag(sisteDato) : new Date().toISOString().slice(0, 10),
+  );
   const [klokke, setKlokke] = useState("");
   const [varighet, setVarighet] = useState(String(standardVarighet));
 
@@ -498,12 +502,31 @@ function NyOktIPeriode({
       klokke || null,
       Number(varighet) || standardVarighet,
     );
-    await endreOkt(id, { periode_id: periode.id });
+    // Tom periode betyr «la datoen bestemme» — perioden utledes da av
+    // spennet, slik den gjør for økter som aldri er plassert (§3.3).
+    if (periodeId) await endreOkt(id, { periode_id: periodeId });
     onLagret();
   }
 
   return (
-    <div className="my-2 flex flex-wrap items-end gap-3 border border-linje bg-flate p-2">
+    <div className="mb-3 flex flex-wrap items-end gap-3 border border-linje bg-flate p-2">
+      <label className="block">
+        <span className="mb-1 block text-etikett uppercase tracking-etikett text-blekk-dempet">
+          Periode
+        </span>
+        <select
+          value={periodeId}
+          onChange={(e) => setPeriodeId(e.target.value)}
+          className="rounded border border-linje bg-ark px-2 py-1.5 text-brod"
+        >
+          {perioder.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.navn}
+            </option>
+          ))}
+          <option value="">La datoen bestemme</option>
+        </select>
+      </label>
       <Felt etikett="Dato" type="date" verdi={dato} settVerdi={setDato} bredde="w-40" />
       <Felt
         etikett="Klokkeslett"
@@ -520,7 +543,7 @@ function NyOktIPeriode({
         onEnter={lagre}
       />
       <Knapp variant="primar" onClick={lagre}>
-        Legg til i {periode.navn}
+        Legg til økt
       </Knapp>
     </div>
   );
@@ -595,7 +618,7 @@ function NyPeriode({
       <Knapp variant="stille" onClick={onAvbryt}>
         Avbryt
       </Knapp>
-    </div>
+      </div>
   );
 }
 
