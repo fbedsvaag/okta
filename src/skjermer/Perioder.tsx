@@ -43,37 +43,9 @@ export function Perioder({
 
   const valgtFag = fag.find((f) => f.id === fagId);
 
-  // Hvilke økter som er plukket ut. Ligger her, ikke i hver bunke, fordi en
-  // markering skal kunne krysse periodegrensene.
-  const [valgte, setValgte] = useState<Set<string>>(new Set());
   // Kompetansemålene per periode, og alle som er dekket i faget samlet.
   const [periodemal, setPeriodemal] = useState<Map<string, string[]>>(new Map());
   const [lagerOkt, setLagerOkt] = useState(false);
-
-  function velg(id: string, med: boolean) {
-    setValgte((f) => {
-      if (!med) return new Set([id]);
-      const ny = new Set(f);
-      if (ny.has(id)) ny.delete(id);
-      else ny.add(id);
-      return ny;
-    });
-  }
-
-  /**
-   * Flytter de markerte øktene til en periode.
-   *
-   * `null` betyr ikke «ingen periode» — det betyr «følg datoen igjen».
-   * Perioden utledes av datoen når `periode_id` ikke er satt (§3.3), så en
-   * økt som slippes på «Uten periode» havner tilbake i den perioden datoen
-   * tilsier, om den finnes.
-   */
-  async function slipp(periodeId: string | null) {
-    if (valgte.size === 0) return;
-    for (const id of valgte) await endreOkt(id, { periode_id: periodeId });
-    setValgte(new Set());
-    await last();
-  }
 
   async function lastMal(skolearFagId: string | null) {
     setPeriodemal(skolearFagId ? await hentPeriodemal(skolearFagId) : new Map());
@@ -201,19 +173,11 @@ export function Perioder({
         <div className="min-h-0 flex-1 overflow-auto">
           <Tidslinje bunker={bunker} skolear={skolear} />
 
-          <p className="mb-3 mt-6 text-liten text-blekk-dempet">
-            Dra en økt til en annen periode for å flytte den. Hold ⌘ og klikk
-            for å plukke ut flere først. Slipper du på «Uten periode», følger
-            økta datoen sin igjen.
-          </p>
 
           {bunker.map((b) => (
             <Bunke
               key={b.periode?.id ?? "uplassert"}
               bunke={b}
-              valgte={valgte}
-              onVelg={velg}
-              onSlipp={slipp}
               grepKode={valgtFag?.grepKode ?? null}
               mal={periodemal.get(b.periode?.id ?? "") ?? []}
               dekket={new Set([...periodemal.values()].flat())}
@@ -290,9 +254,6 @@ function timer(minutter: number): number {
 
 function Bunke({
   bunke,
-  valgte,
-  onVelg,
-  onSlipp,
   grepKode,
   mal,
   dekket,
@@ -301,9 +262,6 @@ function Bunke({
   onApneOkt,
 }: {
   bunke: Plassering;
-  valgte: Set<string>;
-  onVelg: (id: string, med: boolean) => void;
-  onSlipp: (periodeId: string | null) => void;
   grepKode: string | null;
   /** kompetansemålkodene for denne perioden */
   mal: string[];
@@ -314,24 +272,9 @@ function Bunke({
   onApneOkt: (id: string) => void;
 }) {
   const p = bunke.periode;
-  const [over, setOver] = useState(false);
 
   return (
-    <section
-      onDragOver={(e) => {
-        e.preventDefault();
-        setOver(true);
-      }}
-      onDragLeave={() => setOver(false)}
-      onDrop={(e) => {
-        e.preventDefault();
-        setOver(false);
-        onSlipp(p?.id ?? null);
-      }}
-      className={`mb-5 rounded-vanlig ${
-        over ? "outline outline-2 -outline-offset-2 outline-aksent" : ""
-      }`}
-    >
+    <section className="mb-5">
       <header className="flex flex-wrap items-baseline gap-2 border-b border-linje pb-1">
         {p ? (
           <>
@@ -410,36 +353,10 @@ function Bunke({
       ) : (
         <div>
           {bunke.okter.map((o) => (
-            <div
+            <button
               key={o.id}
-              role="button"
-              tabIndex={0}
-              draggable
-              onDragStart={(e) => {
-                // Drar du en økt som er markert, følger hele markeringen med.
-                // Ellers gjelder draget bare den ene.
-                if (!valgte.has(o.id)) onVelg(o.id, false);
-                // MERK: setData er ikke valgfritt. WebKit — som Tauri bruker
-                // på macOS — nekter å starte draget i det hele tatt uten at
-                // det er satt. Uten denne linja skjer ingenting når du drar.
-                e.dataTransfer.setData("text/plain", o.id);
-                e.dataTransfer.effectAllowed = "move";
-              }}
-              onClick={(e) => {
-                // ⌘ eller Ctrl markerer i stedet for å åpne, så man kan
-                // plukke ut flere økter og flytte dem i én bevegelse.
-                if (e.metaKey || e.ctrlKey) onVelg(o.id, true);
-                else onApneOkt(o.id);
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  onApneOkt(o.id);
-                }
-              }}
-              className={`flex w-full cursor-grab select-none items-center gap-3 border-b border-linje-svak py-1 text-left text-brod active:cursor-grabbing ${
-                valgte.has(o.id) ? "bg-valgt" : "hover:bg-flate"
-              }`}
+              onClick={() => onApneOkt(o.id)}
+              className="flex w-full items-center gap-3 border-b border-linje-svak py-1 text-left text-brod hover:bg-flate"
             >
               <span className="w-8 shrink-0 tabular-nums text-blekk-svak">
                 {ukenummer(o.dato)}
@@ -453,7 +370,7 @@ function Bunke({
               <span className="flex-1 truncate">
                 {o.tema ?? <span className="text-blekk-svak">—</span>}
               </span>
-            </div>
+            </button>
           ))}
         </div>
       )}
