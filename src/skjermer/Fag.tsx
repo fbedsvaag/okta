@@ -74,7 +74,7 @@ export function Fag({
   }, []);
 
   return (
-    <div className="flex h-full overflow-hidden">
+    <div className="flex min-h-0 flex-1 overflow-hidden">
       <div
         className={`liste-bredde flex min-w-0 flex-col ${
           glir ? "hidden w-full pr-4 lg:flex lg:w-1/3" : "w-full max-w-4xl"

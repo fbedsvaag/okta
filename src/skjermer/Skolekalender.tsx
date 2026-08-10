@@ -98,7 +98,7 @@ export function Skolekalender({
   );
 
   return (
-    <div className="flex h-full flex-col overflow-hidden">
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
       {/* Fagfargene og hjelpeteksten blir stående mens månedene ruller. */}
       <div className="mb-4 flex shrink-0 flex-wrap items-center gap-4 text-liten text-blekk-dempet">
         <span>{okter.length} økter i året</span>

@@ -257,13 +257,20 @@ export default function App() {
         </div>
       )}
 
-      <main className="min-h-0 flex-1 overflow-hidden">
+      {/*
+        Flex hele veien ned, ingen prosenthøyder. `h-full` krever at hver
+        forelder har en definert høyde, og brister det ett sted vokser
+        innholdet forbi skallet — som da lar seg rulle med hjulet selv om
+        det er satt til overflow-hidden. Da flytter fanene på seg.
+
+        `min-h-0` er det som lar en flex-boks bli mindre enn innholdet sitt.
+        Uten den nekter den å krympe, og rullesonen under får aldri en
+        begrenset høyde å rulle innenfor.
+      */}
+      <main className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <div
-          className={`${
-            // Skjermene styrer rullingen selv, slik at hver av dem kan ha
-            // en header som blir stående. Ruller App-ramma i tillegg, får
-            // man to rullefelt oppå hverandre og ingen sticky som virker.
-            medPanel(visning) ? "h-full px-6 py-4" : "h-full px-6 py-5 sm:px-8 sm:py-6"
+          className={`flex min-h-0 flex-1 flex-col ${
+            medPanel(visning) ? "px-6 py-4" : "px-6 py-5 sm:px-8 sm:py-6"
           }`}
         >
         {visning === "idag" && (
