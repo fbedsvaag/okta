@@ -270,8 +270,6 @@ export function Elever({
                 key={e.id}
                 elev={e}
                 fag={fag}
-                klasser={klasser}
-                skolearId={skolearId}
                 valgt={valgtElev === e.id}
                 vis={vis}
                 onApne={() => setValgtElev(e.id)}
@@ -444,8 +442,6 @@ function Velger({
 function Rad({
   elev,
   fag,
-  klasser,
-  skolearId,
   valgt,
   vis,
   onApne,
@@ -453,8 +449,6 @@ function Rad({
 }: {
   elev: ElevRad;
   fag: FagIAr[];
-  klasser: Klasse[];
-  skolearId: string;
   valgt: boolean;
   vis: ReadonlySet<Synlig>;
   onApne: () => void;
@@ -463,26 +457,6 @@ function Rad({
   const [apenFag, setApenFag] = useState(false);
   // prompt() finnes ikke i Tauri-vinduet, så «Ny klasse …» gjør cellen om til
   // et skrivefelt i stedet for å åpne en dialog.
-  const [skriverKlasse, setSkriverKlasse] = useState(false);
-
-  async function byttKlasse(verdi: string) {
-    if (verdi === "__ny") {
-      setSkriverKlasse(true);
-      return;
-    }
-    await settKlasse(elev.id, skolearId, verdi === "" ? null : verdi);
-    onEndret();
-  }
-
-  async function lagKlasse(navn: string) {
-    const rent = navn.trim();
-    setSkriverKlasse(false);
-    if (rent === "") return;
-    const id = await finnEllerOpprettKlasse(skolearId, rent);
-    await settKlasse(elev.id, skolearId, id);
-    onEndret();
-  }
-
   return (
     <tr
       className={`h-[var(--hoyde-rad)] border-b border-linje-svak ${
@@ -512,33 +486,13 @@ function Rad({
           {elev.kode}
         </td>
       )}
-      <td className={`py-1.5 pr-5 ${vis.has("klasse") ? "" : "hidden"}`}>
-        {skriverKlasse ? (
-          <input
-            autoFocus
-            placeholder="1STC"
-            onBlur={(e) => void lagKlasse(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") e.currentTarget.blur();
-              if (e.key === "Escape") setSkriverKlasse(false);
-            }}
-            className="w-full rounded-vanlig border border-aksent px-1 py-0.5 outline-none"
-          />
-        ) : (
-          <select
-            value={elev.klasseId ?? ""}
-            onChange={(e) => byttKlasse(e.target.value)}
-            className="w-full rounded-vanlig border border-transparent bg-transparent px-1 py-0.5 hover:border-linje focus:border-aksent focus:outline-none"
-          >
-            <option value="">Ingen klasse</option>
-            {klasser.map((k) => (
-              <option key={k.id} value={k.id}>
-                {k.navn}
-              </option>
-            ))}
-            <option value="__ny">Ny klasse …</option>
-          </select>
-        )}
+      {/*
+        Klassen vises, men redigeres ikke her. En nedtrekksliste i hver rad
+        gjør at et klikk i tabellen like gjerne endrer noe som å åpne eleven,
+        og klassen byttes sjelden. Den settes i elevpanelet i stedet.
+      */}
+      <td className={`whitespace-nowrap py-1.5 pr-5 ${vis.has("klasse") ? "" : "hidden"}`}>
+        {elev.klasseNavn ?? <span className="text-blekk-svakest">—</span>}
       </td>
       <td className={`relative py-1.5 pr-5 ${vis.has("fag") ? "" : "hidden"}`}>
         <button

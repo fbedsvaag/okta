@@ -177,6 +177,21 @@ pub fn gjenopprett_fra(
         let trygg = backupmappe(&app)?.join(format!("for-gjenoppretting-{tidsstempel}.sqlite"));
         fs::copy(&mal, &trygg)
             .map_err(|e| format!("klarte ikke sikre den nåværende basen: {e}"))?;
+
+        // Loggfilene må følge med. Frontend lukker tilkoblingen før dette
+        // kalles, og da skal SQLite ha skrevet dem inn i hovedfila — men
+        // rekker den det ikke, ligger de siste endringene bare i WAL-en.
+        // En sikringskopi uten dem ville manglet nettopp det du gjorde sist,
+        // og det er den kopien som skal redde deg hvis gjenopprettingen var
+        // feil.
+        for etterslep in ["-wal", "-shm"] {
+            let fra = PathBuf::from(format!("{}{etterslep}", mal.display()));
+            if fra.exists() {
+                let til = PathBuf::from(format!("{}{etterslep}", trygg.display()));
+                fs::copy(&fra, &til)
+                    .map_err(|e| format!("klarte ikke sikre {fra:?}: {e}"))?;
+            }
+        }
     }
 
     for etterslep in ["elevtracking.sqlite-wal", "elevtracking.sqlite-shm"] {

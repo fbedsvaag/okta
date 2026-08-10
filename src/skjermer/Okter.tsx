@@ -402,7 +402,10 @@ function Liste({
         return (
           <div key={o.id}>
             {nyManed && (
-              <div className="border-b border-linje-medium bg-flate px-2 py-1 text-etikett uppercase tracking-etikett text-blekk-dempet">
+              // Måneden blir stående øverst mens du ruller gjennom den, og
+              // skyves opp av den neste. Uten den mister man fort oversikten
+              // over hvor i året man er, midt i en liste på hundre økter.
+              <div className="sticky top-0 z-10 border-b border-linje-medium bg-flate px-2 py-1 text-etikett uppercase tracking-etikett text-blekk-dempet">
                 {manedsnavn(o.dato)}
               </div>
             )}

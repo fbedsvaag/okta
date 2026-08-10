@@ -97,7 +97,15 @@ export async function hentElever(skolearId: string): Promise<ElevRad[]> {
              OR EXISTS (SELECT 1 FROM elev_fag ef
                           JOIN skolear_fag sf ON sf.id = ef.skolear_fag_id
                          WHERE ef.elev_id = e.id AND ef.slettet IS NULL
-                           AND sf.slettet IS NULL AND sf.skolear_id = $1))
+                           AND sf.slettet IS NULL AND sf.skolear_id = $1)
+             -- En elev uten klasse og uten fag hører ikke til noe år, men må
+             -- likevel vises: det er slik hen ser ut i sekundet etter at du
+             -- har skrevet navnet, før du har rukket å plassere hen. Uten
+             -- dette lages eleven i stillhet og forsvinner (§4.3).
+             OR (NOT EXISTS (SELECT 1 FROM elev_klasse ek2
+                              WHERE ek2.elev_id = e.id AND ek2.slettet IS NULL)
+                 AND NOT EXISTS (SELECT 1 FROM elev_fag ef2
+                                  WHERE ef2.elev_id = e.id AND ef2.slettet IS NULL)))
       ORDER BY e.fornavn COLLATE NOCASE, e.etternavn COLLATE NOCASE`,
     [skolearId],
   );
