@@ -64,3 +64,40 @@ export const FAGFARGER = [
   "#7a5a8a",
   "#3f5a3f",
 ] as const;
+
+/**
+ * Skåringen som tegn, til tekst uten farge.
+ *
+ * Markdown har ingen farge, så tekstarkivet (§8) viser skåringen med emoji.
+ * To sett, samme skille som i appen: **sirkler** der én skåring står for seg
+ * selv — en tabellcelle, en enkeltrad — og **kvadrater** i den sammenhengende
+ * stripa, der rutene skal danne en ubrutt linje. Sirkler etterlater hull og
+ * leses som prikker.
+ *
+ * Oppslaget skjer på `skalaverdi.farge`, som `skalafarge` over. Ingen visning
+ * skriver emojien selv; da ville to visninger før eller siden ment noe
+ * forskjellig med samme farge.
+ */
+const TEGN = {
+  sirkel: { gronn: "🟢", gul: "🟡", rod: "🔴", ingen: "⚪" },
+  kvadrat: { gronn: "🟩", gul: "🟨", rod: "🟥", ingen: "⬜" },
+} as const;
+
+export type Tegnsett = keyof typeof TEGN;
+
+/**
+ * Tegnet for en skalaverdis farge, eller `null` når det ikke finnes noe.
+ *
+ * `null` betyr «skriv ordet i stedet», ikke «ingen skåring». Unicode har
+ * ikke tegn for alle fargene datamodellen tillater, og å sette to emoji ved
+ * siden av hverandre er ingen tilnærming — det leses som to skåringer.
+ *
+ * En økt uten skåring har ingen rad i det hele tatt, og da skal kallstedet
+ * skrive ingenting. Det er noe annet enn «ikke i økta», som er en registrert
+ * opplysning og får ⚪.
+ */
+export function skalategn(farge: string | null, sett: Tegnsett): string | null {
+  const t: Record<string, string> = TEGN[sett];
+  if (farge === null || farge === "") return t.ingen;
+  return t[farge] ?? null;
+}
