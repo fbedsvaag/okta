@@ -367,7 +367,6 @@ function Liste({
   onApnePerioder: () => void;
   onVelg: (id: string) => void;
 }) {
-  let forrigeManed = "";
 
   return (
     <div className="min-w-[52rem]">
@@ -394,116 +393,115 @@ function Liste({
         <span className="w-14 shrink-0 text-right">Skåret</span>
       </div>
 
-      {okter.map((o) => {
-        const maned = o.dato.slice(0, 7);
-        const nyManed = maned !== forrigeManed;
-        forrigeManed = maned;
-
-        return (
-          <div key={o.id}>
-            {nyManed && (
-              // Måneden blir stående øverst mens du ruller gjennom den, og
-              // skyves opp av den neste. Uten den mister man fort oversikten
-              // over hvor i året man er, midt i en liste på hundre økter.
-              <div className="sticky top-0 z-10 border-b border-linje-medium bg-flate px-2 py-1 text-etikett uppercase tracking-etikett text-blekk-dempet">
-                {manedsnavn(o.dato)}
-              </div>
-            )}
-            <button
-              onClick={() => onVelg(o.id)}
-              className={`flex w-full items-center gap-3 border-b border-linje-svak px-2 py-1.5 text-left text-brod ${
-                valgt === o.id ? "bg-valgt" : "hover:bg-flate"
-              }`}
-            >
-              {vis.has("uke") && (
-                <span className="w-7 shrink-0 tabular-nums text-blekk-svak">
-                  {ukenummer(o.dato)}
-                </span>
-              )}
-              <span
-                aria-hidden
-                className="h-3.5 w-[3px] shrink-0 rounded-full"
-                style={{ background: o.farge ?? "var(--color-linje-sterk)" }}
-              />
-              <span className="w-12 shrink-0 font-medium">{o.fagKode}</span>
-              <span
-                className={`w-24 shrink-0 tabular-nums ${
-                  blokkert.has(o.id)
-                    ? "font-medium text-feil"
-                    : "text-blekk-dempet"
-                }`}
-                title={blokkert.get(o.id)?.navn}
-              >
-                {kortDato(o.dato)}
-                {blokkert.has(o.id) && " !"}
-              </span>
-              {vis.has("tid") && (
-                <span className="w-12 shrink-0 tabular-nums text-blekk-dempet">
-                  {o.klokkeslett ?? "–"}
-                </span>
-              )}
-              {vis.has("varighet") && (
-                <span className="w-16 shrink-0 text-right tabular-nums text-blekk-dempet">
-                  {o.varighetMin} min
-                </span>
-              )}
-              <span className="flex-1 truncate">
-                {o.tema ?? <span className="text-blekk-svak">—</span>}
-              </span>
-              {vis.has("periode") && (
-                <span className="w-36 shrink-0 truncate">
-                  {perioder.has(o.id) ? (
-                    <span
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onApnePerioder();
-                      }}
-                      title="Åpne periodevisningen"
-                      className="rounded-sm bg-flate px-1.5 py-0.5 text-liten text-blekk-dempet hover:bg-linje-medium"
-                    >
-                      {perioder.get(o.id)!.navn}
-                    </span>
-                  ) : (
-                    <span className="text-blekk-svakest">—</span>
-                  )}
-                </span>
-              )}
-              {vis.has("vurdering") && (
-                <span className="w-40 shrink-0 truncate text-blekk-dempet">
-                  {(vurderinger.get(o.id) ?? []).map((v) => v.tittel).join(", ")}
-                </span>
-              )}
-              {vis.has("sted") && (
-                <span className="w-24 shrink-0 truncate" title={o.sted ?? undefined}>
-                  {o.sted ?? ""}
-                </span>
-              )}
-              {vis.has("agenda") && (
-                <span
-                  className="w-48 shrink-0 truncate text-liten text-blekk-dempet"
-                  title={o.agenda ?? undefined}
-                >
-                  {o.agenda ?? ""}
-                </span>
-              )}
-              {vis.has("logg") && (
-                <span
-                  className="w-40 shrink-0 truncate text-liten italic text-blekk-dempet"
-                  title={o.logg ?? undefined}
-                >
-                  {o.logg ?? ""}
-                </span>
-              )}
-              {vis.has("innsats") && (
-                <span className="w-24 shrink-0">
-                  <Innsats okt={o} />
-                </span>
-              )}
-              <Status okt={o} />
-            </button>
+      {/*
+        Én bolk per måned, ikke én per økt. Overskriften kan bare feste seg
+        innenfor sin egen forelder — lå den i en boks på høyde med én rad,
+        hadde den ingenting å stå i. Nå blir august stående til september
+        skyver den opp.
+      */}
+      {perManed(okter).map(([maned, gruppe]) => (
+        <div key={maned}>
+          <div className="sticky top-0 z-10 border-y border-linje-medium bg-flate px-2 py-1 text-etikett uppercase tracking-etikett text-blekk-dempet">
+            {manedsnavn(maned + "-01")}
           </div>
-        );
-      })}
+          {gruppe.map((o) => (
+            <div key={o.id}>
+              <button
+                onClick={() => onVelg(o.id)}
+                className={`flex w-full items-center gap-3 border-b border-linje-svak px-2 py-1.5 text-left text-brod ${
+                  valgt === o.id ? "bg-valgt" : "hover:bg-flate"
+                }`}
+              >
+                {vis.has("uke") && (
+                  <span className="w-7 shrink-0 tabular-nums text-blekk-svak">
+                    {ukenummer(o.dato)}
+                  </span>
+                )}
+                <span
+                  aria-hidden
+                  className="h-3.5 w-[3px] shrink-0 rounded-full"
+                  style={{ background: o.farge ?? "var(--color-linje-sterk)" }}
+                />
+                <span className="w-12 shrink-0 font-medium">{o.fagKode}</span>
+                <span
+                  className={`w-24 shrink-0 tabular-nums ${
+                    blokkert.has(o.id)
+                      ? "font-medium text-feil"
+                      : "text-blekk-dempet"
+                  }`}
+                  title={blokkert.get(o.id)?.navn}
+                >
+                  {kortDato(o.dato)}
+                  {blokkert.has(o.id) && " !"}
+                </span>
+                {vis.has("tid") && (
+                  <span className="w-12 shrink-0 tabular-nums text-blekk-dempet">
+                    {o.klokkeslett ?? "–"}
+                  </span>
+                )}
+                {vis.has("varighet") && (
+                  <span className="w-16 shrink-0 text-right tabular-nums text-blekk-dempet">
+                    {o.varighetMin} min
+                  </span>
+                )}
+                <span className="flex-1 truncate">
+                  {o.tema ?? <span className="text-blekk-svak">—</span>}
+                </span>
+                {vis.has("periode") && (
+                  <span className="w-36 shrink-0 truncate">
+                    {perioder.has(o.id) ? (
+                      <span
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onApnePerioder();
+                        }}
+                        title="Åpne periodevisningen"
+                        className="rounded-sm bg-flate px-1.5 py-0.5 text-liten text-blekk-dempet hover:bg-linje-medium"
+                      >
+                        {perioder.get(o.id)!.navn}
+                      </span>
+                    ) : (
+                      <span className="text-blekk-svakest">—</span>
+                    )}
+                  </span>
+                )}
+                {vis.has("vurdering") && (
+                  <span className="w-40 shrink-0 truncate text-blekk-dempet">
+                    {(vurderinger.get(o.id) ?? []).map((v) => v.tittel).join(", ")}
+                  </span>
+                )}
+                {vis.has("sted") && (
+                  <span className="w-24 shrink-0 truncate" title={o.sted ?? undefined}>
+                    {o.sted ?? ""}
+                  </span>
+                )}
+                {vis.has("agenda") && (
+                  <span
+                    className="w-48 shrink-0 truncate text-liten text-blekk-dempet"
+                    title={o.agenda ?? undefined}
+                  >
+                    {o.agenda ?? ""}
+                  </span>
+                )}
+                {vis.has("logg") && (
+                  <span
+                    className="w-40 shrink-0 truncate text-liten italic text-blekk-dempet"
+                    title={o.logg ?? undefined}
+                  >
+                    {o.logg ?? ""}
+                  </span>
+                )}
+                {vis.has("innsats") && (
+                  <span className="w-24 shrink-0">
+                    <Innsats okt={o} />
+                  </span>
+                )}
+                <Status okt={o} />
+              </button>
+            </div>
+          ))}
+        </div>
+      ))}
     </div>
   );
 }
@@ -646,6 +644,16 @@ function kortDato(dato: string): string {
     day: "2-digit",
     month: "2-digit",
   });
+}
+
+/** Øktene gruppert per måned, i den rekkefølgen de kom inn. */
+function perManed(okter: Okt[]): [string, Okt[]][] {
+  const kart = new Map<string, Okt[]>();
+  for (const o of okter) {
+    const m = o.dato.slice(0, 7);
+    kart.set(m, [...(kart.get(m) ?? []), o]);
+  }
+  return [...kart.entries()];
 }
 
 function manedsnavn(dato: string): string {

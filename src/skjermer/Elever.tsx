@@ -6,6 +6,7 @@ import {
   hentElever,
   hentKlasser,
   koblePaFag,
+  tellSkaringerIFag,
   opprettElev,
   settKlasse,
   slettKlasse,
@@ -521,8 +522,28 @@ function Rad({
                   type="checkbox"
                   checked={elev.fagIder.includes(f.id)}
                   onChange={async (e) => {
-                    if (e.target.checked) await koblePaFag(elev.id, f.id);
-                    else await frakobleFag(elev.id, f.id);
+                    if (e.target.checked) {
+                      await koblePaFag(elev.id, f.id);
+                    } else {
+                      // Å hake av og på igjen er ufarlig i seg selv — raden
+                      // kommer tilbake. Men har eleven skåringer i faget,
+                      // forsvinner hen ut av heatmapet og fagoversikten, og
+                      // da er det verdt et spørsmål.
+                      const n = await tellSkaringerIFag(elev.id, f.id);
+                      if (
+                        n > 0 &&
+                        !confirm(
+                          `Koble ${elev.fornavn} fra ${f.kode}?\n\n` +
+                            `${n} skåringer blir liggende i basen, men eleven ` +
+                            "forsvinner ut av fagets lister og heatmap.\n\n" +
+                            "Du kan koble til igjen når som helst.",
+                        )
+                      ) {
+                        e.target.checked = true;
+                        return;
+                      }
+                      await frakobleFag(elev.id, f.id);
+                    }
                     onEndret();
                   }}
                 />

@@ -107,6 +107,9 @@ export function OktPanel({
     const elev = elever[indeks];
     if (!elev) return;
 
+    // Ingen bekreftelse her, med vilje. ⌫ ligger midt i skåringsflyten, og
+    // et spørsmål per tastetrykk ville ødelagt hele poenget. Handlingen er
+    // ett tastetrykk å gjenta, og raden viser med en gang hva som skjedde.
     setElever((f) =>
       f.map((e, i) => (i === indeks ? { ...e, skalaverdiId: null } : e)),
     );

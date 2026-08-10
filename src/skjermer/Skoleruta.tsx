@@ -101,6 +101,15 @@ export function Skoleruta({
                   <td className="w-16 py-1.5 text-right">
                     <button
                       onClick={async () => {
+                        if (
+                          !confirm(
+                            `Slette «${f.navn}»?\n\n` +
+                              "Dagene blir da vanlige skoledager igjen, og " +
+                              "økter som ligger der slutter å bli markert som " +
+                              "en konflikt.",
+                          )
+                        )
+                          return;
                         await slettFridag(f.id);
                         await last();
                       }}

@@ -326,3 +326,19 @@ export async function slettElevHelt(elevId: string): Promise<void> {
   }
   await slett("elev", elevId);
 }
+
+/** Hvor mange skåringer eleven har i ett fag, i året faget hører til. */
+export async function tellSkaringerIFag(
+  elevId: string,
+  skolearFagId: string,
+): Promise<number> {
+  const [r] = await hent<{ n: number }>(
+    `SELECT COUNT(*) AS n
+       FROM skaring s
+       JOIN okt o ON o.id = s.okt_id AND o.slettet IS NULL
+      WHERE s.elev_id = $1 AND s.slettet IS NULL
+        AND o.skolear_fag_id = $2`,
+    [elevId, skolearFagId],
+  );
+  return r?.n ?? 0;
+}
