@@ -10,6 +10,7 @@ import {
 } from "../data/fagportal";
 import { endreFag, endreFagIAr, slettFagHelt, tellForFag } from "../data/fag";
 import { Felt } from "../ui/felles";
+import { finnFag, type GrepFag } from "../data/grep";
 import type { FagIAr } from "../data/fag";
 import { TRAFIKKLYS } from "../ui/farger";
 
@@ -112,6 +113,8 @@ export function FagPanel({
             }}
           />
         </section>
+
+        <Kompetansemaal grepKode={fag.grepKode} />
 
         <section className="mb-6">
           <div className="flex items-baseline justify-between text-brod">
@@ -272,6 +275,76 @@ function avvik(timer: number, arstimetall: number): string {
   const diff = Math.round((timer - arstimetall) * 10) / 10;
   if (diff === 0) return "i balanse";
   return diff > 0 ? `${diff} timer over` : `${Math.abs(diff)} timer igjen å planlegge`;
+}
+
+/**
+ * Kompetansemålene fra Udir, sammenklappet.
+ *
+ * Ligger lukket fordi et fag har mellom seks og tretti mål, og de er lange.
+ * Åpnet er det en liste å lese gjennom når du planlegger — ikke noe som skal
+ * dytte resten av kortet ned resten av tiden.
+ */
+function Kompetansemaal({ grepKode }: { grepKode: string | null }) {
+  const [apen, setApen] = useState(false);
+  const [grep, setGrep] = useState<GrepFag | null>(null);
+
+  useEffect(() => {
+    if (!grepKode) return;
+    void finnFag(grepKode).then(setGrep);
+  }, [grepKode]);
+
+  if (!grepKode) {
+    return (
+      <p className="mb-6 text-liten text-blekk-svak">
+        Ingen fagkode fra Udir. Legg den inn over for å få kompetansemålene hit.
+      </p>
+    );
+  }
+
+  if (!grep) {
+    return (
+      <p className="mb-6 text-liten text-blekk-svak">
+        Fant ikke {grepKode} i faglista.
+      </p>
+    );
+  }
+
+  return (
+    <section className="mb-6">
+      <button
+        onClick={() => setApen((v) => !v)}
+        className="flex w-full items-baseline gap-2 border-b border-linje-medium pb-1 text-left"
+      >
+        <span className="text-etikett uppercase tracking-etikett text-blekk-dempet">
+          Kompetansemål
+        </span>
+        <span className="tabular-nums text-liten text-blekk-svak">
+          {grep.kompetansemaal.length}
+        </span>
+        <span className="ml-auto text-liten text-blekk-svak">
+          {apen ? "Skjul" : "Vis"}
+        </span>
+      </button>
+
+      {apen && (
+        <>
+          <p className="mt-2 text-liten text-blekk-svak">
+            {grep.navn} · {grep.laereplan}
+          </p>
+          <ul className="mt-1 space-y-1.5">
+            {grep.kompetansemaal.map((m) => (
+              <li key={m.kode} className="flex gap-2 text-brod">
+                <span className="w-16 shrink-0 font-mono text-liten tabular-nums text-blekk-svak">
+                  {m.kode}
+                </span>
+                <span className="text-blekk-dempet">{m.tekst}</span>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+    </section>
+  );
 }
 
 function Bolk({

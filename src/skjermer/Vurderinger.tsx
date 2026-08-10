@@ -153,9 +153,28 @@ export function Vurderinger({
         )}
 
         {vurderinger.length > 0 && (
-          <p className="mt-3 text-liten text-blekk-dempet">
-            {synlige.length} av {vurderinger.length} vurderinger
-          </p>
+          <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-liten text-blekk-dempet">
+            <span className="tabular-nums">
+              {synlige.length} av {vurderinger.length} vurderinger
+            </span>
+            {/*
+              Fordelingen per fag, med fagets egen farge. Da ser man hvilke
+              fag som ligger tynt an uten å bytte filter for å telle.
+            */}
+            {fag.map((f) => (
+              <span key={f.id} className="flex items-center gap-1.5">
+                <span
+                  aria-hidden
+                  className="h-2.5 w-2.5 shrink-0 rounded-full"
+                  style={{ background: f.farge ?? "var(--color-linje-sterk)" }}
+                />
+                {f.kode}
+                <span className="tabular-nums text-blekk-svak">
+                  {antallPerFag.get(f.id) ?? 0}
+                </span>
+              </span>
+            ))}
+          </div>
         )}
         </div>
       </div>
