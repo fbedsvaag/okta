@@ -49,23 +49,19 @@ describe("csv", () => {
 });
 
 describe("verdimerke", () => {
-  it("gir farget sirkel etter fargen på skalaverdien", () => {
-    expect(verdimerke("Grønn", "gronn", 0)).toBe("🟢 Grønn");
-    expect(verdimerke("Gul", "gul", 0)).toBe("🟡 Gul");
-    expect(verdimerke("Rød", "rod", 0)).toBe("🔴 Rød");
+  it("gir tegnet alene, uten ord ved siden av", () => {
+    // En kolonne som blander emoji og tekst mister justeringen. Nøkkelen i
+    // README forklarer hva tegnene betyr.
+    expect(verdimerke("Grønn", "gronn")).toBe("🟢");
+    expect(verdimerke("Rød", "rod")).toBe("🔴");
   });
 
-  it("gir hvit sirkel for verdier uten farge", () => {
-    expect(verdimerke("Ikke i økta", null, 1)).toContain("⚪");
+  it("gir eget tegn til «ikke i økta»", () => {
+    expect(verdimerke("Ikke i økta", null)).toBe("⚪");
   });
 
-  it("merker verdier som ikke teller, så de ikke leses som resultat", () => {
-    expect(verdimerke("IV", null, 1)).toContain("*(teller ikke)*");
-    expect(verdimerke("Grønn", "gronn", 0)).not.toContain("teller ikke");
-  });
-
-  it("beholder kodeteksten ved siden av, så arkivet kan søkes i", () => {
-    expect(verdimerke("Rød", "rod", 0)).toContain("Rød");
+  it("faller tilbake på ordet når fargen ikke har et tegn", () => {
+    expect(verdimerke("Grønngul", "gronngul")).toBe("Grønngul");
   });
 });
 

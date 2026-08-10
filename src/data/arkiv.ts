@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { hent } from "../db";
+import { skalategn } from "../ui/farger";
 import { hentInnstilling, type Skolear } from "./skolear";
 
 /**
@@ -79,15 +80,16 @@ type FagRad = {
   okter: number;
   minutter: number;
   elever: number;
+  /** første øktdato — sorteringen i README går eldste fag først */
+  forste: string | null;
 };
 
-type SkalaRad = {
+type SkalaverdiRad = {
   skala: string;
-  bruksomrade: string;
-  verdi: string;
+  kode: string;
   etikett: string | null;
-  rang: number;
   farge: string | null;
+  rang: number;
   tellerIkke: number;
 };
 
@@ -177,6 +179,7 @@ async function samle(skolearId: string) {
 
   const fag = await hent<FagRad>(
     `SELECT f.kode, f.navn, sf.arstimetall,
+            MIN(o.dato)                        AS forste,
             COUNT(o.id)                        AS okter,
             COALESCE(SUM(o.varighet_min), 0)   AS minutter,
             (SELECT COUNT(*) FROM elev_fag ef
@@ -190,16 +193,37 @@ async function samle(skolearId: string) {
     [skolearId],
   );
 
-  const skalaer = await hent<SkalaRad>(
-    `SELECT sk.navn AS skala, sk.bruksomrade, sv.kode AS verdi, sv.etikett,
-            sv.rang, sv.farge, sv.teller_ikke AS tellerIkke
-       FROM skalaverdi sv
-       JOIN skala sk ON sk.id = sv.skala_id AND sk.slettet IS NULL
+  // Bare skalaene fagene i år faktisk skårer med. Skåringsskalaen ligger på
+  // faget (§5.1), så en base kan ha flere enn den ene som er i bruk.
+  const skaringsskala = await hent<SkalaverdiRad>(
+    `SELECT DISTINCT sk.navn AS skala, sv.kode, sv.etikett, sv.farge, sv.rang,
+            sv.teller_ikke AS tellerIkke
+       FROM skolear_fag sf
+       JOIN skala sk ON sk.id = COALESCE(sf.skaringsskala_id,
+                                         '5ca1a000-0000-4000-8000-000000000001')
+                    AND sk.slettet IS NULL
+       JOIN skalaverdi sv ON sv.skala_id = sk.id
+      WHERE sf.slettet IS NULL AND sf.skolear_id = $1
+      ORDER BY sk.navn, sv.rang DESC`,
+    [skolearId],
+  );
+
+  const vurderingsskala = await hent<SkalaverdiRad>(
+    `SELECT DISTINCT sk.navn AS skala, sv.kode, sv.etikett, sv.farge, sv.rang,
+            sv.teller_ikke AS tellerIkke
+       FROM vurdering v
+       JOIN skolear_fag sf ON sf.id = v.skolear_fag_id
+                          AND sf.slettet IS NULL AND sf.skolear_id = $1
+       JOIN skala sk ON sk.id = v.skala_id AND sk.slettet IS NULL
+       JOIN skalaverdi sv ON sv.skala_id = sk.id
+      WHERE v.slettet IS NULL
       ORDER BY sk.navn, sv.rang`,
+    [skolearId],
   );
 
   return {
-    elever, fagPerElev, skaringer, resultater, okter, oppfolging, skalaer, fag,
+    elever, fagPerElev, skaringer, resultater, okter, oppfolging, fag,
+    skaringsskala, vurderingsskala,
   };
 }
 
@@ -221,7 +245,14 @@ export async function byggArkiv(skolear: Skolear): Promise<Fil[]> {
     fagFor.set(r.elevId, [...(fagFor.get(r.elevId) ?? []), r.fagKode]);
   }
 
-  legg("README.md", lesMeg(skolear, d.fag, d.skalaer, d.elever.length));
+  // Eldste fag først: sortert på første økt, og fag uten økter nederst.
+  const fagSortert = [...d.fag].sort((a, b) =>
+    (a.forste ?? "9999").localeCompare(b.forste ?? "9999"),
+  );
+  legg(
+    "README.md",
+    lesMeg(skolear, fagSortert, d.skaringsskala, d.vurderingsskala, d.elever.length),
+  );
 
   for (const e of d.elever) {
     legg(
@@ -291,10 +322,15 @@ export async function byggArkiv(skolear: Skolear): Promise<Fil[]> {
  * Kodeteksten står ved siden av — uten den kan man ikke søke etter «rød» i
  * arkivet, og en skjermleser leser bare «rød sirkel».
  */
-export function verdimerke(verdi: string, farge: string | null, tellerIkke: number): string {
-  const merke =
-    farge === "gronn" ? "🟢" : farge === "gul" ? "🟡" : farge === "rod" ? "🔴" : "⚪";
-  return tellerIkke ? `${merke} ${verdi} *(teller ikke)*` : `${merke} ${verdi}`;
+/**
+ * Én skåring i en tabellcelle.
+ *
+ * Tegnet alene, aldri med ord ved siden av: en kolonne som blander emoji og
+ * tekst mister justeringen, og nøkkelen i README forklarer hva tegnene betyr.
+ * Finnes det ikke noe tegn for fargen, står ordet der i stedet.
+ */
+export function verdimerke(verdi: string, farge: string | null): string {
+  return skalategn(farge, "sirkel") ?? verdi;
 }
 
 // ------------------------------------------------------------------ filene
@@ -302,65 +338,136 @@ export function verdimerke(verdi: string, farge: string | null, tellerIkke: numb
 function lesMeg(
   skolear: Skolear,
   fag: FagRad[],
-  skalaer: SkalaRad[],
+  skaringsskala: SkalaverdiRad[],
+  vurderingsskala: SkalaverdiRad[],
   antallElever: number,
 ): string {
+  const arTag = slugg(skolear.navn);
+  const koder = fag.map((f) => f.kode);
+
   const ut: string[] = [
-    `# ${skolear.navn}`,
+    "---",
+    `skolear: ${skolear.navn}`,
+    "type: arkiv",
+    `elever: ${antallElever}`,
+    `fag: [${koder.join(", ")}]`,
+    `start: ${skolear.start}`,
+    `slutt: ${skolear.slutt}`,
+    `eksportert: ${idag()}`,
+    `tags: [elevtracking, skolear/${arTag}]`,
+    "---",
     "",
-    `Arkiv fra Elevtracking · ${skolear.start} til ${skolear.slutt}`,
-    `· ${antallElever} elever · skrevet ${idag()}`,
+    `# Skoleåret ${skolear.navn}`,
     "",
-    "## Fag dette skoleåret",
+    `${antallElever} ${antallElever === 1 ? "elev" : "elever"} fordelt på ` +
+      `${fag.length} fag, fra ${langDato(skolear.start)} til ` +
+      `${langDato(skolear.slutt)}.`,
     "",
   ];
 
-  if (fag.length === 0) {
-    ut.push("*Ingen fag lagt inn.*", "");
-  } else {
-    ut.push("| Fag | Navn | Elever | Økter | Timer | Årstimer |");
-    ut.push("| --- | --- | --- | --- | --- | --- |");
+  // --- Fag ---
+  if (fag.length > 0) {
+    ut.push("## Fag", "");
+    ut.push("| Fag | Navn | Elever | Økter | Timer |");
+    ut.push("| --- | --- | ---: | ---: | --- |");
     for (const f of fag) {
-      const timer = Math.round((f.minutter / 60) * 10) / 10;
+      const timer = rund(f.minutter / 60);
+      const kolonne = f.arstimetall ? `${timer} av ${f.arstimetall}` : `${timer}`;
       ut.push(
-        `| [[${slugg(f.kode)}\|${f.kode}]] | ${tab(f.navn)} | ${f.elever} ` +
-          `| ${f.okter} | ${timer} | ${f.arstimetall ?? "—"} |`,
+        `| [[${slugg(f.kode)}\\|${f.kode}]] | ${tab(f.navn)} | ${f.elever} ` +
+          `| ${f.okter} | ${kolonne} |`,
       );
+    }
+    ut.push("");
+
+    // Bare når summen faktisk er høyere — ellers ville setningen vært usann.
+    const sum = fag.reduce((n, f) => n + f.elever, 0);
+    if (sum > antallElever) {
+      ut.push(
+        `Elevtallene summerer til mer enn ${antallElever} fordi flere elever ` +
+          "går i to eller flere fag.",
+        "",
+      );
+    }
+  }
+
+  // --- Skåring ---
+  if (skaringsskala.length > 0) {
+    ut.push("## Hva skåringen betyr", "");
+    ut.push("Fargen er **innsats i den enkelte økta**, ikke en karakter.", "");
+    for (const v of skaringsskala) {
+      const tegn = skalategn(v.farge, "sirkel");
+      const hode = tegn ? `${tegn} **${v.kode}**` : `**${v.kode}**`;
+      const bit = v.etikett ? [punktum(v.etikett)] : [];
+      if (v.tellerIkke) bit.push("Teller ikke med noe sted.");
+      ut.push(bit.length > 0 ? `- ${hode} — ${bit.join(" ")}` : `- ${hode}`);
+    }
+    ut.push("", "I sammenhengende striper brukes kvadrater i stedet: 🟩 🟨 🟥 ⬜", "");
+  }
+
+  // --- Vurderingsskalaer ---
+  const vurdering = grupper(vurderingsskala);
+  if (vurdering.size > 0) {
+    ut.push("## Brukte vurderingsskalaer", "");
+    for (const [navn, verdier] of vurdering) {
+      ut.push(`- **${navn}** — ${trinn(verdier.map((v) => v.kode))}`);
     }
     ut.push("");
   }
 
   ut.push(
-    "Dette er en tekstversjon av databasen, skrevet ut av appen. Den kan leses",
-    "i Obsidian, en teksteditor eller hva som helst annet — også om appen ikke",
-    "finnes lenger. Filene her overskrives ved hver eksport; rediger dem ikke.",
+    "## Mappene",
     "",
-    "## Hva fargene betyr",
+    "- `elever/` — én fil per elev, kronologisk",
+    "- `fag/` — årsplanen per fag, med skåringer og vurderinger som CSV",
+    "- `oppfolging.md` — oppfølgingspunkter",
     "",
-    "Skåringen er **innsats i den enkelte økta**, ikke en karakter. Verdier",
-    "merket «teller ikke» er fravær av grunnlag og skal aldri inngå i snitt",
-    "eller sammenstilling.",
+    "---",
     "",
+    `Skrevet ut av Elevtracking ${langDato(idag())}. Filene overskrives ved ` +
+      "hver eksport — rediger dem ikke. De kan leses uten appen.",
   );
 
-  let forrige = "";
-  for (const s of skalaer) {
-    if (s.skala !== forrige) {
-      ut.push("", `### ${s.skala}`, `*${s.bruksomrade}*`, "");
-      ut.push("| Verdi | Betydning | Farge | Teller |");
-      ut.push("| --- | --- | --- | --- |");
-      forrige = s.skala;
-    }
-    ut.push(
-      `| ${s.verdi} | ${s.etikett ?? ""} | ${s.farge ?? ""} | ${s.tellerIkke ? "nei" : "ja"} |`,
-    );
-  }
-
-  ut.push("", "## Mappene", "");
-  ut.push("- `elever/` — én fil per elev, kronologisk");
-  ut.push("- `fag/` — årsplanen per fag, med skåringer og vurderinger som CSV");
-  ut.push("- `oppfolging.md` — oppfølgingspunkter");
   return ut.join("\n") + "\n";
+}
+
+/** Setninger i punktlister avsluttes, så to av dem ikke løper sammen. */
+function punktum(s: string): string {
+  return /[.!?]$/.test(s.trim()) ? s.trim() : `${s.trim()}.`;
+}
+
+function grupper(verdier: SkalaverdiRad[]): Map<string, SkalaverdiRad[]> {
+  const kart = new Map<string, SkalaverdiRad[]>();
+  for (const v of verdier) kart.set(v.skala, [...(kart.get(v.skala) ?? []), v]);
+  return kart;
+}
+
+/**
+ * Trinnene i en skala som én linje.
+ *
+ * Er de sammenhengende tall, skrives «1 til 6» framfor å ramse dem opp — en
+ * liste med seks tall sier ikke mer enn spennet gjør.
+ */
+function trinn(koder: string[]): string {
+  const tall = koder.map(Number);
+  const sammenhengende =
+    koder.length > 2 &&
+    tall.every((n) => Number.isInteger(n)) &&
+    tall.every((n, i) => i === 0 || n === tall[i - 1] + 1);
+  return sammenhengende ? `${koder[0]} til ${koder[koder.length - 1]}` : koder.join(" · ");
+}
+
+function rund(n: number): string {
+  return (Math.round(n * 10) / 10).toLocaleString("nb-NO");
+}
+
+/** 2026-08-17 -> «17. august 2026». Regel 5: datoer i prosa skrives ut. */
+function langDato(dato: string): string {
+  return new Date(`${dato}T00:00:00`).toLocaleDateString("nb-NO", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
 }
 
 function elevfil(
@@ -394,7 +501,7 @@ function elevfil(
     for (const s of skaringer) {
       ut.push(
         `| ${s.dato} | ${s.fagKode} | ${tab(s.tema)} ` +
-          `| ${verdimerke(s.verdi, s.farge, s.tellerIkke)} | ${tab(s.notat)} |`,
+          `| ${verdimerke(s.verdi, s.farge)} | ${tab(s.notat)} |`,
       );
     }
     ut.push("");
