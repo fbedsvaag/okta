@@ -207,7 +207,7 @@ export function Elever({
           />
         ) : (
           <div className="rounded-vanlig border border-linje bg-ark px-3">
-          <table className="w-full text-brod">
+          <table className="tabell-fast w-full text-brod">
             <thead>
               <tr className="border-b border-linje text-left text-etikett uppercase tracking-etikett text-blekk-dempet">
                 <Overskrift kolonne="fornavn" sortering={sortering} onKlikk={bytSortering}>
@@ -421,7 +421,7 @@ function Overskrift({
 }) {
   const aktiv = sortering.kolonne === kolonne;
   return (
-    <th className="h-[var(--hoyde-rad)] whitespace-nowrap py-1 pr-5 font-normal">
+    <th className="h-[var(--hoyde-rad)] py-1 pr-5 font-normal">
       <button
         onClick={() => onKlikk(kolonne)}
         className={`flex w-full items-center gap-1 uppercase tracking-etikett hover:text-blekk ${
@@ -513,7 +513,7 @@ function Rad({
         valgt ? "bg-valgt" : "hover:bg-flate-svak"
       }`}
     >
-      <td className="whitespace-nowrap py-1.5 pr-5">
+      <td className="py-1.5 pr-5">
         <Navnefelt
           verdi={elev.fornavn}
           rediger={rediger}
@@ -525,7 +525,7 @@ function Rad({
         />
       </td>
       {vis.has("etternavn") && (
-        <td className="whitespace-nowrap py-1.5 pr-5">
+        <td className="py-1.5 pr-5">
           <Navnefelt
             verdi={elev.etternavn}
             rediger={rediger}
@@ -698,7 +698,7 @@ function Navnefelt({
     return (
       <button
         onClick={onApne}
-        className="whitespace-nowrap text-left hover:text-aksent hover:underline"
+        className="text-left hover:text-aksent hover:underline"
       >
         {verdi}
       </button>
@@ -709,7 +709,6 @@ function Navnefelt({
     <input
       defaultValue={verdi}
       key={verdi}
-      size={Math.max(8, verdi.length)}
       onBlur={async (e) => {
         const ny = e.target.value.trim();
         if (ny && ny !== verdi) await onLagre(ny);
@@ -721,7 +720,9 @@ function Navnefelt({
           e.currentTarget.blur();
         }
       }}
-      className="rounded-vanlig border border-transparent px-1 py-0.5 outline-none hover:border-linje focus:border-aksent"
+      // Full bredde av kolonnen framfor en fast `size`. Et tegnbredde-mål
+      // tvinger tabellen bredere enn vinduet så snart et navn er langt.
+      className="w-full min-w-0 rounded-vanlig border border-transparent px-1 py-0.5 outline-none hover:border-linje focus:border-aksent"
     />
   );
 }

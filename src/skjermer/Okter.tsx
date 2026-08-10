@@ -376,7 +376,7 @@ function Liste({
 }) {
 
   return (
-    <div className="min-w-[52rem]">
+    <div>
       <div className="flex items-center gap-3 border-b border-linje px-2 py-1 text-etikett uppercase tracking-etikett text-blekk-dempet">
         {vis.has("uke") && (
           <span className="w-7 shrink-0" title="Ukenummer">

@@ -366,3 +366,20 @@ html {
     display: table-header-group;
   }
 }
+
+/*
+ * Kolonneoverskriftene blir stående når lista ruller.
+ *
+ * Regelen ligger her og ikke som klasser på hver <th>, av to grunner:
+ * Tailwind setter `border-collapse: collapse` på tabeller, og da forsvinner
+ * kantlinja under en `sticky` <thead>. Og `sticky` må sitte på cellene, ikke
+ * på <thead>, for å virke i alle nettlesere. Skyggen tegner streken i stedet
+ * for `border-bottom`.
+ */
+.tabell-fast thead th {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--color-ark);
+  box-shadow: inset 0 -1px 0 var(--color-linje);
+}

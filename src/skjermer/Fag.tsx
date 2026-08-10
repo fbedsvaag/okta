@@ -109,7 +109,8 @@ export function Fag({
             <Tomtilstand tekst="Ingen fag i dette skoleåret ennå." />
           </div>
         ) : (
-          <table className="mt-5 w-full min-w-[38rem] text-brod">
+          <div className="mt-5 rounded-vanlig border border-linje bg-ark px-3">
+          <table className="tabell-fast w-full text-brod">
             <thead>
               <tr className="border-b border-linje text-left text-etikett uppercase tracking-etikett text-blekk-dempet">
                 <th className="w-6 py-1 font-normal"></th>
@@ -138,7 +139,7 @@ export function Fag({
               ))}
             </tbody>
           </table>
-          
+          </div>
         )}
 
         <NyttFag skolearId={skolearId} antall={fag.length} onLagt={onEndret} />
