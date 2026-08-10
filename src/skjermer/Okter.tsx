@@ -397,7 +397,7 @@ function Liste({
         {vis.has("agenda") && <span className="w-48 shrink-0">Agenda</span>}
         {vis.has("logg") && <span className="w-40 shrink-0">Øktlogg</span>}
         {vis.has("innsats") && <span className="w-24 shrink-0">Innsats</span>}
-        <span className="w-14 shrink-0 text-right">Skåret</span>
+        <span className="w-14 shrink-0 text-right">Oppmøte</span>
       </div>
 
       {/*
