@@ -180,11 +180,11 @@ export function Okter({
         perioder={medPerioder ? periodePerOkt : new Map()}
       />
 
+      <div className="ikkeutskrift flex h-full gap-0 overflow-hidden">
       <div className={`liste-bredde flex min-w-0 flex-col ${glir ? "hidden w-full pr-4 lg:flex lg:w-1/3" : "w-full"}`}>
         {/* Verktøylinja er header: den ruller ikke bort, og månedene
             fester seg rett under den. */}
         <div className="shrink-0">
-        <div className={`liste-bredde min-w-0 overflow-y-auto ${glir ? "hidden w-full pr-4 lg:block lg:w-1/3" : "w-full"}`}>
           <div className="mb-3 flex flex-wrap items-center gap-2">
             <Felt
               verdi={sok}
