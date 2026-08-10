@@ -251,6 +251,15 @@ html {
  * Inn er roligere enn ut: 180 ms mot 130 ms. Det er den vanlige asymmetrien —
  * noe som kommer skal rekke å bli sett, noe som går skal komme seg vekk.
  */
+/*
+ * Rulling skal ikke lekke videre til ramma når man treffer bunnen av en
+ * liste. Uten dette begynner hele skjermen å bevege seg idet lista er
+ * ferdig — og da ser det ut som headeren ikke sitter.
+ */
+.app-skall * {
+  overscroll-behavior: contain;
+}
+
 .panel {
   transition: transform var(--tid-inn) var(--ease-inn);
 }

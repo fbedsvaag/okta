@@ -73,7 +73,7 @@ export function Perioder({
   }
 
   return (
-    <div className="flex h-full max-w-4xl flex-col">
+    <div className="flex h-full max-w-4xl flex-col overflow-hidden">
       {/*
         Fagvelger, timeregnskap og knappene blir stående mens du ruller
         gjennom periodene — det er dem du styrer skjermen med.

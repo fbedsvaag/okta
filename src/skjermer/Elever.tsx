@@ -206,7 +206,7 @@ export function Elever({
             handling={<Knapp variant="primar" onClick={onLimInn}>Lim inn en klasseliste</Knapp>}
           />
         ) : (
-          <div className="overflow-x-auto rounded-vanlig border border-linje bg-ark px-3">
+          <div className="rounded-vanlig border border-linje bg-ark px-3">
           <table className="w-full text-brod">
             <thead>
               <tr className="border-b border-linje text-left text-etikett uppercase tracking-etikett text-blekk-dempet">

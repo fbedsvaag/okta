@@ -41,7 +41,7 @@ export function IDag({
   const kommende = okter.filter((o) => o.dato > idag).slice(0, 3);
 
   return (
-    <div className="flex h-full max-w-6xl flex-col">
+    <div className="flex h-full max-w-6xl flex-col overflow-hidden">
       {/* Datoen blir stående mens resten ruller. */}
       <div className="shrink-0 pb-2">
         <h1 className="text-overskrift font-semibold first-letter:uppercase">
