@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { confirm as bekreft } from "@tauri-apps/plugin-dialog";
 import {
   finnEllerOpprettKlasse,
   frakobleFag,
@@ -532,7 +533,7 @@ function Rad({
                       const n = await tellSkaringerIFag(elev.id, f.id);
                       if (
                         n > 0 &&
-                        !confirm(
+                        !await bekreft(
                           `Koble ${elev.fornavn} fra ${f.kode}?\n\n` +
                             `${n} skåringer blir liggende i basen, men eleven ` +
                             "forsvinner ut av fagets lister og heatmap.\n\n" +
@@ -735,7 +736,7 @@ function Klasser({
                 <td className="w-20 py-1.5 text-right">
                   <button
                     onClick={async () => {
-                      const svar = confirm(
+                      const svar = await bekreft(
                         k.antall > 0
                           ? `${k.navn} har ${k.antall} elever. De blir stående uten klasse — ingen elever slettes. Slette klassen?`
                           : `Slette ${k.navn}?`,

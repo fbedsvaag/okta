@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
+import { confirm as bekreft } from "@tauri-apps/plugin-dialog";
 import {
   blokkering,
   iso,
@@ -61,7 +62,7 @@ export function Skolekalender({
           `${valgte.length === 1 ? "den" : "dem"} og forsvinner fra heatmapet.`
         : "";
 
-    if (!confirm(hva + advarsel)) return;
+    if (!await bekreft(hva + advarsel)) return;
     for (const o of valgte) await slettOkt(o.id);
     await last();
   }

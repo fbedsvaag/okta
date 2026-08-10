@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { confirm as bekreft } from "@tauri-apps/plugin-dialog";
 import {
   endreOkt,
   fjernSkaring,
@@ -526,7 +527,7 @@ function Logg({ okt, onEndret }: { okt: Okt; onEndret: () => void }) {
 
       <button
         onClick={async () => {
-          if (!confirm(`Slette økta ${okt.fagKode} ${langDato(okt.dato)}?`)) return;
+          if (!await bekreft(`Slette økta ${okt.fagKode} ${langDato(okt.dato)}?`)) return;
           await slettOkt(okt.id);
           onEndret();
         }}

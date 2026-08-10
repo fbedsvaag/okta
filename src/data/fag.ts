@@ -16,6 +16,8 @@ export type FagIAr = {
   navn: string;
   farge: string | null;
   arstimetall: number | null;
+  /** offisiell fagkode fra Udir, f.eks. MFL1001. Fritekst i v1 (§10). */
+  grepKode: string | null;
   standardVarighetMin: number | null;
 };
 
@@ -42,6 +44,7 @@ export async function hentFagIAr(skolearId: string): Promise<FagIAr[]> {
             f.kode           AS kode,
             f.navn           AS navn,
             f.farge          AS farge,
+            f.grep_kode      AS grepKode,
             sf.arstimetall   AS arstimetall,
             sf.standard_varighet_min AS standardVarighetMin
        FROM skolear_fag sf
@@ -102,7 +105,9 @@ async function finnEllerOpprettFag(
 /** Endrer faget i banken. Slår gjennom på alle skoleår faget brukes i. */
 export async function endreFag(
   fagId: string,
-  felter: Partial<Pick<Fag, "kode" | "navn" | "farge">>,
+  felter: Partial<Pick<Fag, "kode" | "navn" | "farge">> & {
+    grep_kode?: string | null;
+  },
 ): Promise<void> {
   await oppdater("fag", fagId, felter);
 }

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { confirm as bekreft } from "@tauri-apps/plugin-dialog";
 import {
   endreFag,
   endreFagIAr,
@@ -107,7 +108,11 @@ export function Fag({
               <th className="w-28 py-1 font-normal">Kode</th>
               <th className="py-1 font-normal">Navn</th>
               <th className="w-28 py-1 text-right font-normal">Årstimer</th>
-              <th className="w-32 py-1 text-right font-normal">Varighet</th>
+              {/* Varighet vises bare i redigeringsmodus. I lesevisningen sto
+                  den med samme arvede verdi på hver rad. */}
+              {rediger && (
+                <th className="w-32 py-1 text-right font-normal">Varighet</th>
+              )}
               <th className="w-16 py-1"></th>
             </tr>
           </thead>
@@ -209,9 +214,6 @@ function FagRad({
         */}
         <td className="py-1.5 text-right tabular-nums text-blekk-dempet">
           {fag.arstimetall ?? "—"}
-        </td>
-        <td className="py-1.5 text-right tabular-nums text-blekk-dempet">
-          {fag.standardVarighetMin ?? `${globalVarighet} (arvet)`}
         </td>
         <td />
       </tr>
@@ -325,7 +327,7 @@ function FagRad({
         <button
           onClick={async () => {
             if (
-              !confirm(
+              !await bekreft(
                 `Fjerne ${fag.kode} fra dette skoleåret?\n\n` +
                   `Faget blir liggende i fagbanken, og øktene og elevkoblingene ` +
                   `blir stående. Du kan legge det tilbake senere.`,

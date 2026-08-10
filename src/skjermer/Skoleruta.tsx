@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { confirm as bekreft } from "@tauri-apps/plugin-dialog";
 import {
   endreSkolear,
   hentFridager,
@@ -102,7 +103,7 @@ export function Skoleruta({
                     <button
                       onClick={async () => {
                         if (
-                          !confirm(
+                          !await bekreft(
                             `Slette «${f.navn}»?\n\n` +
                               "Dagene blir da vanlige skoledager igjen, og " +
                               "økter som ligger der slutter å bli markert som " +

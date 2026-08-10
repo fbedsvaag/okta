@@ -180,128 +180,135 @@ export function Okter({
         perioder={medPerioder ? periodePerOkt : new Map()}
       />
 
-    <div className="ikkeutskrift flex h-full gap-0 overflow-hidden">
-      <div className={`liste-bredde min-w-0 overflow-y-auto ${glir ? "hidden w-full pr-4 lg:block lg:w-1/3" : "w-full"}`}>
-        <div className="mb-3 flex flex-wrap items-center gap-2">
-          <Felt
-            verdi={sok}
-            settVerdi={setSok}
-            plassholder="Søk i tema"
-            bredde={apen ? "w-full" : "w-56"}
-          />
-          <select
-            value={filterFag}
-            onChange={(e) => setFilterFag(e.target.value)}
-            className="rounded border border-linje bg-ark px-2 py-1.5 text-brod"
-          >
-            <option value="">Alle fag</option>
-            {fag.map((f) => (
-              <option key={f.id} value={f.id}>
-                {f.kode}
-              </option>
-            ))}
-          </select>
-          <div className="ml-auto flex items-center gap-2">
-            <Kolonnevelger valgbare={VALGBARE} vis={kolonner} onEndre={(id, pa) => byttKolonne(id as KolonneId, pa)} />
-            <label
-              title="Grupper øktene under perioden sin på arket"
-              className="flex select-none items-center gap-1.5 text-liten text-blekk-dempet"
+      <div className={`liste-bredde flex min-w-0 flex-col ${glir ? "hidden w-full pr-4 lg:flex lg:w-1/3" : "w-full"}`}>
+        {/* Verktøylinja er header: den ruller ikke bort, og månedene
+            fester seg rett under den. */}
+        <div className="shrink-0">
+        <div className={`liste-bredde min-w-0 overflow-y-auto ${glir ? "hidden w-full pr-4 lg:block lg:w-1/3" : "w-full"}`}>
+          <div className="mb-3 flex flex-wrap items-center gap-2">
+            <Felt
+              verdi={sok}
+              settVerdi={setSok}
+              plassholder="Søk i tema"
+              bredde={apen ? "w-full" : "w-56"}
+            />
+            <select
+              value={filterFag}
+              onChange={(e) => setFilterFag(e.target.value)}
+              className="rounded border border-linje bg-ark px-2 py-1.5 text-brod"
             >
-              <input
-                type="checkbox"
-                checked={medPerioder}
-                onChange={(e) => {
-                  setMedPerioder(e.target.checked);
-                  void settInnstilling(
-                    "utskrift_perioder",
-                    e.target.checked ? "1" : "0",
-                  );
-                }}
-              />
-              Perioder
-            </label>
-            <Knapp onClick={() => void invoke("skriv_ut")}>Skriv ut / PDF</Knapp>
-            <Knapp onClick={() => setLagerSerie(true)}>+ Serie</Knapp>
-            <Knapp variant="primar" onClick={() => setLagerNy(true)}>
-              + Ny økt
-            </Knapp>
+              <option value="">Alle fag</option>
+              {fag.map((f) => (
+                <option key={f.id} value={f.id}>
+                  {f.kode}
+                </option>
+              ))}
+            </select>
+            <div className="ml-auto flex items-center gap-2">
+              <Kolonnevelger valgbare={VALGBARE} vis={kolonner} onEndre={(id, pa) => byttKolonne(id as KolonneId, pa)} />
+              <label
+                title="Grupper øktene under perioden sin på arket"
+                className="flex select-none items-center gap-1.5 text-liten text-blekk-dempet"
+              >
+                <input
+                  type="checkbox"
+                  checked={medPerioder}
+                  onChange={(e) => {
+                    setMedPerioder(e.target.checked);
+                    void settInnstilling(
+                      "utskrift_perioder",
+                      e.target.checked ? "1" : "0",
+                    );
+                  }}
+                />
+                Perioder
+              </label>
+              <Knapp onClick={() => void invoke("skriv_ut")}>Skriv ut / PDF</Knapp>
+              <Knapp onClick={() => setLagerSerie(true)}>+ Serie</Knapp>
+              <Knapp variant="primar" onClick={() => setLagerNy(true)}>
+                + Ny økt
+              </Knapp>
+            </div>
           </div>
         </div>
 
-        {lagerNy && (
-          <NyOkt
-            fag={fag}
-            startFagId={filterFag || fag[0]?.id}
-            sisteDato={okter.length > 0 ? okter[okter.length - 1].dato : undefined}
-            onLagret={async (id) => {
-              setLagerNy(false);
-              await last();
-              setValgt(id);
-            }}
-            onAvbryt={() => setLagerNy(false)}
-          />
-        )}
+        {/* Én rullesone. Hadde lista hatt sin egen overflow-x, ville
+            månedene festet seg til DEN i stedet for til denne. */}
+        <div className="min-h-0 flex-1 overflow-auto">
 
-        {lagerSerie && (
-          <NySerie
-            skolearId={skolearId}
-            skolearStart={skolearStart}
-            skolearSlutt={skolearSlutt}
-            fag={fag}
-            startFagId={filterFag || fag[0]?.id}
-            onLagret={async () => {
-              setLagerSerie(false);
-              await last();
-            }}
-            onAvbryt={() => setLagerSerie(false)}
-          />
-        )}
+          {lagerNy && (
+            <NyOkt
+              fag={fag}
+              startFagId={filterFag || fag[0]?.id}
+              sisteDato={okter.length > 0 ? okter[okter.length - 1].dato : undefined}
+              onLagret={async (id) => {
+                setLagerNy(false);
+                await last();
+                setValgt(id);
+              }}
+              onAvbryt={() => setLagerNy(false)}
+            />
+          )}
 
-        {okter.length === 0 && !lagerNy && !lagerSerie ? (
-          <Tomtilstand
-            tekst={
-              fag.length === 0
-                ? "Legg inn fagene dine først, så kan du planlegge øktene."
-                : "Ingen økter i dette skoleåret ennå — opprett den første."
-            }
-            handling={
-              fag.length > 0 ? (
-                <div className="flex gap-2">
-                  <Knapp variant="primar" onClick={() => setLagerSerie(true)}>
-                    Legg inn en serie
-                  </Knapp>
-                  <Knapp onClick={() => setLagerNy(true)}>Én økt</Knapp>
-                </div>
-              ) : undefined
-            }
-          />
-        ) : (
-          <div className="overflow-x-auto">
-          <Liste
-            okter={synlige}
-            valgt={valgt}
-            vis={apen ? new Set<KolonneId>() : kolonner}
-            blokkert={blokkert}
-            vurderinger={vurderinger}
-            perioder={medPerioder ? periodePerOkt : new Map()}
-            onApnePerioder={onApnePerioder}
-            onVelg={setValgt}
-          />
-          </div>
-        )}
+          {lagerSerie && (
+            <NySerie
+              skolearId={skolearId}
+              skolearStart={skolearStart}
+              skolearSlutt={skolearSlutt}
+              fag={fag}
+              startFagId={filterFag || fag[0]?.id}
+              onLagret={async () => {
+                setLagerSerie(false);
+                await last();
+              }}
+              onAvbryt={() => setLagerSerie(false)}
+            />
+          )}
 
-        {okter.length > 0 && (
-          <p className="mt-3 text-liten text-blekk-dempet">
-            {synlige.length} av {okter.length} økter ·{" "}
-            {timer(synlige.reduce((sum, o) => sum + o.varighetMin, 0))}
-            {blokkert.size > 0 && (
-              <span className="ml-2 text-feil">
-                ! {blokkert.size}{" "}
-                {blokkert.size === 1 ? "økt ligger" : "økter ligger"} på en fridag
-              </span>
-            )}
-          </p>
-        )}
+          {okter.length === 0 && !lagerNy && !lagerSerie ? (
+            <Tomtilstand
+              tekst={
+                fag.length === 0
+                  ? "Legg inn fagene dine først, så kan du planlegge øktene."
+                  : "Ingen økter i dette skoleåret ennå — opprett den første."
+              }
+              handling={
+                fag.length > 0 ? (
+                  <div className="flex gap-2">
+                    <Knapp variant="primar" onClick={() => setLagerSerie(true)}>
+                      Legg inn en serie
+                    </Knapp>
+                    <Knapp onClick={() => setLagerNy(true)}>Én økt</Knapp>
+                  </div>
+                ) : undefined
+              }
+            />
+          ) : (
+            <Liste
+              okter={synlige}
+              valgt={valgt}
+              vis={apen ? new Set<KolonneId>() : kolonner}
+              blokkert={blokkert}
+              vurderinger={vurderinger}
+              perioder={medPerioder ? periodePerOkt : new Map()}
+              onApnePerioder={onApnePerioder}
+              onVelg={setValgt}
+            />
+          )}
+
+          {okter.length > 0 && (
+            <p className="mt-3 text-liten text-blekk-dempet">
+              {synlige.length} av {okter.length} økter ·{" "}
+              {timer(synlige.reduce((sum, o) => sum + o.varighetMin, 0))}
+              {blokkert.size > 0 && (
+                <span className="ml-2 text-feil">
+                  ! {blokkert.size}{" "}
+                  {blokkert.size === 1 ? "økt ligger" : "økter ligger"} på en fridag
+                </span>
+              )}
+            </p>
+          )}
+        </div>
       </div>
 
       {apen && (

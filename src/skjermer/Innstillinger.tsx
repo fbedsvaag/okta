@@ -15,7 +15,6 @@ import {
   taKopiNa,
   type Kopi,
 } from "../data/sikkerhetskopi";
-import { open } from "@tauri-apps/plugin-dialog";
 import { revealItemInDir } from "@tauri-apps/plugin-opener";
 import { hentSkalaer, hentVerdier, taster, type Skala, type Skalaverdi } from "../skala";
 import type { Skolear } from "../data/skolear";
@@ -24,7 +23,11 @@ import * as caldav from "../data/caldav";
 import { skrivArkiv } from "../data/arkiv";
 import { Merke } from "../ui/logo";
 import { getVersion } from "@tauri-apps/api/app";
-import { open as velgMappe } from "@tauri-apps/plugin-dialog";
+import {
+  open,
+  open as velgMappe,
+  confirm as bekreft,
+} from "@tauri-apps/plugin-dialog";
 import type { FagIAr } from "../data/fag";
 import { Felt, Knapp } from "../ui/felles";
 
@@ -76,7 +79,7 @@ export function Innstillinger({
    * i backup-mappa først.
    */
   async function gjenopprett(sti: string, navn: string) {
-    const svar = confirm(
+    const svar = await bekreft(
       `Gjenopprett fra ${navn}?\n\n` +
         `Alt du har lagt inn etter at denne kopien ble tatt, forsvinner fra ` +
         `arbeidsfila. Den nåværende basen legges i backup-mappa først, så du ` +
@@ -178,7 +181,7 @@ export function Innstillinger({
                     <button
                       onClick={async () => {
                         const n = await tellForSkolear(a.id);
-                        const ok = confirm(
+                        const ok = await bekreft(
                           `Slette skoleåret ${a.navn}?\n\n` +
                             `${n.fag} fag i året, ${n.okter} økter, ` +
                             `${n.skaringer} skåringer, ${n.vurderinger} vurderinger, ` +

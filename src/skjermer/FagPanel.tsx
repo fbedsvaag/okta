@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { confirm as bekreft } from "@tauri-apps/plugin-dialog";
 import {
   hentFagElever,
   hentFagVurderinger,
@@ -7,7 +8,8 @@ import {
   type FagNokkeltall,
   type FagVurdering,
 } from "../data/fagportal";
-import { slettFagHelt, tellForFag } from "../data/fag";
+import { endreFag, endreFagIAr, slettFagHelt, tellForFag } from "../data/fag";
+import { Felt } from "../ui/felles";
 import type { FagIAr } from "../data/fag";
 import { TRAFIKKLYS } from "../ui/farger";
 
@@ -82,6 +84,35 @@ export function FagPanel({
       </header>
 
       <div className="overflow-y-auto px-5 py-4">
+        {/*
+          Rammene for faget dette året: hva som er avtalt, og hvilken kode
+          det har i læreplanverket. Årstimetallet er det timeregnskapet
+          måles mot; Udir-koden er nøkkelen til kompetansemålene (§10).
+        */}
+        <section className="mb-6 grid max-w-md grid-cols-2 gap-3">
+          <Felt
+            etikett="Årstimer"
+            verdi={fag.arstimetall === null ? "" : String(fag.arstimetall)}
+            plassholder="ikke satt"
+            settVerdi={async (v) => {
+              const n = Number(v.trim());
+              await endreFagIAr(fag.id, {
+                arstimetall: v.trim() === "" || Number.isNaN(n) ? null : Math.round(n),
+              });
+              location.reload();
+            }}
+          />
+          <Felt
+            etikett="Fagkode (Udir)"
+            verdi={fag.grepKode ?? ""}
+            plassholder="MFL1001"
+            settVerdi={async (v) => {
+              await endreFag(fag.fagId, { grep_kode: v.trim() || null });
+              location.reload();
+            }}
+          />
+        </section>
+
         <section className="mb-6">
           <div className="flex items-baseline justify-between text-brod">
             <span>
@@ -182,7 +213,7 @@ export function FagPanel({
         <button
           onClick={async () => {
             const n = await tellForFag(fag.fagId);
-            const ok = confirm(
+            const ok = await bekreft(
               `Slette ${fag.kode} fra fagbanken?\n\n` +
                 `Dette gjelder alle ${n.ar} skoleår faget er brukt i, og ` +
                 `fjerner ${n.okter} økter, ${n.skaringer} skåringer, ` +

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { confirm as bekreft } from "@tauri-apps/plugin-dialog";
 import {
   hentElevAr,
   hentElevFag,
@@ -273,7 +274,7 @@ export function ElevPanel({
               n.vurderinger && `${n.vurderinger} vurderingsresultater`,
               n.oppfolging && `${n.oppfolging} oppfølgingspunkter`,
             ].filter(Boolean);
-            const ok = confirm(
+            const ok = await bekreft(
               `Slette ${elev.fornavn} ${elev.etternavn}?\n\n` +
                 (hva.length > 0
                   ? `Dette fjerner ${hva.join(", ")} — i alle skoleår, ikke bare dette.\n\n`

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { confirm as bekreft } from "@tauri-apps/plugin-dialog";
 import {
   endrePeriode,
   fordel,
@@ -335,7 +336,7 @@ function Bunke({
           <button
             onClick={async () => {
               if (
-                !confirm(
+                !await bekreft(
                   `Slette perioden «${p.navn}»?\n\nØktene blir stående — de blir bare uplasserte.`,
                 )
               )

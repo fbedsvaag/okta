@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { confirm as bekreft } from "@tauri-apps/plugin-dialog";
 import {
   endreVurdering,
   fjernResultat,
@@ -191,7 +192,7 @@ export function VurderingPanel({
         <div className="px-5 py-4">
           <button
             onClick={async () => {
-              if (!confirm(`Slette vurderingen «${vurdering.tittel}»?`)) return;
+              if (!await bekreft(`Slette vurderingen «${vurdering.tittel}»?`)) return;
               await slettVurdering(vurdering.id);
               onLukk();
               onEndret();
@@ -386,7 +387,7 @@ function Felter({
             value={vurdering.skalaId}
             onChange={async (e) => {
               if (
-                !confirm(
+                !await bekreft(
                   "Bytte skala? Resultater som allerede er ført peker på verdier " +
                     "i den gamle skalaen og må føres på nytt.",
                 )
