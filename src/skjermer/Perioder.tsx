@@ -73,7 +73,7 @@ export function Perioder({
   }
 
   return (
-    <div className="flex min-h-0 flex-1 max-w-4xl flex-col overflow-hidden">
+    <div className="flex min-h-0 flex-1 max-w-4xl flex-col overflow-clip">
       {/*
         Fagvelger, timeregnskap og knappene blir stående mens du ruller
         gjennom periodene — det er dem du styrer skjermen med.
@@ -227,7 +227,7 @@ function Tidslinje({
             <div
               key={b.periode!.id}
               title={`${b.periode!.navn} · ${b.okter.length} økter · ${timer(b.minutter)} t`}
-              className="absolute top-1 flex h-7 items-center overflow-hidden rounded-sm border border-linje-sterk bg-flate-svak px-1.5"
+              className="absolute top-1 flex h-7 items-center overflow-clip rounded-sm border border-linje-sterk bg-flate-svak px-1.5"
               style={{
                 left: `${Math.max(0, v) * 100}%`,
                 width: `${Math.max(0.02, h) * 100}%`,

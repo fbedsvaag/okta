@@ -161,7 +161,7 @@ export default function App() {
   }
 
   return (
-    <div className="app-skall flex h-screen flex-col overflow-hidden bg-bord text-blekk">
+    <div className="app-skall flex h-screen flex-col overflow-clip bg-bord text-blekk">
       <header className="ikkeutskrift flex shrink-0 flex-wrap items-center gap-x-1 gap-y-1 border-b border-linje px-4 py-2">
         <span className="mr-3">
           <Ordmerke />
@@ -261,13 +261,13 @@ export default function App() {
         Flex hele veien ned, ingen prosenthøyder. `h-full` krever at hver
         forelder har en definert høyde, og brister det ett sted vokser
         innholdet forbi skallet — som da lar seg rulle med hjulet selv om
-        det er satt til overflow-hidden. Da flytter fanene på seg.
+        det er satt til overflow-clip. Da flytter fanene på seg.
 
         `min-h-0` er det som lar en flex-boks bli mindre enn innholdet sitt.
         Uten den nekter den å krympe, og rullesonen under får aldri en
         begrenset høyde å rulle innenfor.
       */}
-      <main className="flex min-h-0 flex-1 flex-col overflow-hidden">
+      <main className="flex min-h-0 flex-1 flex-col overflow-clip">
         <div
           className={`flex min-h-0 flex-1 flex-col ${
             medPanel(visning) ? "px-6 py-4" : "px-6 py-5 sm:px-8 sm:py-6"

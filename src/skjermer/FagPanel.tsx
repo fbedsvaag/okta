@@ -131,7 +131,7 @@ export function FagPanel({
               {Math.round(andel * 100)} %
             </span>
           </div>
-          <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-linje-medium">
+          <div className="mt-1 h-1.5 w-full overflow-clip rounded-full bg-linje-medium">
             <div
               className="h-full rounded-full"
               style={{
@@ -261,7 +261,7 @@ function Fordeling({ elev }: { elev: FagElev }) {
   return (
     <span
       title={`${elev.gronn} grønne, ${elev.gul} gule, ${elev.rod} røde`}
-      className="flex h-2 w-32 overflow-hidden rounded-full bg-flate"
+      className="flex h-2 w-32 overflow-clip rounded-full bg-flate"
     >
       {deler.map((d, i) => (
         <span
@@ -439,7 +439,7 @@ function Kompetansemaal({
         hva som ennå ikke har fått plass i året.
       */}
       <div className="mt-1.5 flex items-center gap-2">
-        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-linje-medium">
+        <div className="h-1.5 flex-1 overflow-clip rounded-full bg-linje-medium">
           <div
             className="h-full rounded-full bg-aksent"
             style={{

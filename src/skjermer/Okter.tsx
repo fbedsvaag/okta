@@ -180,7 +180,7 @@ export function Okter({
         perioder={medPerioder ? periodePerOkt : new Map()}
       />
 
-      <div className="ikkeutskrift flex min-h-0 flex-1 gap-0 overflow-hidden">
+      <div className="ikkeutskrift flex min-h-0 flex-1 gap-0 overflow-clip">
       <div className={`liste-bredde flex min-w-0 flex-col ${glir ? "hidden w-full pr-4 lg:flex lg:w-1/3" : "w-full"}`}>
         {/* Verktøylinja er header: den ruller ikke bort, og månedene
             fester seg rett under den. */}
@@ -312,7 +312,7 @@ export function Okter({
       </div>
 
       {apen && (
-        <div className={`panel min-w-0 w-full lg:w-2/3 ${glir ? "" : "panel-ute"}`}>
+        <div className={`panel min-h-0 min-w-0 w-full overflow-auto lg:w-2/3 ${glir ? "" : "panel-ute"}`}>
           {valgtElev ? (
             <ElevPanel
               key={valgtElev}
@@ -530,7 +530,7 @@ function Innsats({ okt }: { okt: Okt }) {
   return (
     <span
       title={`${okt.gronn} grønne, ${okt.gul} gule, ${okt.rod} røde`}
-      className="flex h-2 w-20 overflow-hidden rounded-full bg-flate"
+      className="flex h-2 w-20 overflow-clip rounded-full bg-flate"
     >
       {deler.map((d, i) => (
         <span

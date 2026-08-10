@@ -148,7 +148,7 @@ function Blokk({
       title={`${okt.fagKode}${okt.tema ? ` — ${okt.tema}` : ""}${
         okt.klokkeslett ? ` · ${okt.klokkeslett}` : " · uten klokkeslett"
       }${okt.sted ? ` · ${okt.sted}` : ""}`}
-      className={`absolute flex h-[18px] items-center gap-1 overflow-hidden rounded-liten border bg-ark px-1 text-left text-mikro hover:brightness-95 ${
+      className={`absolute flex h-[18px] items-center gap-1 overflow-clip rounded-liten border bg-ark px-1 text-left text-mikro hover:brightness-95 ${
         utenTid ? "border-dashed border-linje-sterk" : "border-linje"
       } ${dempet ? "opacity-55" : ""}`}
       style={{

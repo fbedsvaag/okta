@@ -149,7 +149,7 @@ export function Elever({
   }
 
   return (
-    <div className="flex min-h-0 flex-1 overflow-hidden">
+    <div className="flex min-h-0 flex-1 overflow-clip">
       <div
         className={`liste-bredde flex min-w-0 flex-col ${
           apentPanel ? "hidden w-full pr-4 lg:flex lg:w-1/3" : "w-full"
@@ -320,7 +320,7 @@ export function Elever({
 
       {visElev && (
         <div
-          className={`panel min-w-0 w-full lg:w-2/3 ${apentPanel ? "" : "panel-ute"}`}
+          className={`panel min-h-0 min-w-0 w-full overflow-auto lg:w-2/3 ${apentPanel ? "" : "panel-ute"}`}
         >
           <ElevPanel
             key={visElev}
@@ -745,7 +745,7 @@ function Innsatsstripe({ elev }: { elev: ElevRad }) {
 
   return (
     <span
-      className="flex h-[6px] w-24 gap-[2px] overflow-hidden rounded-liten"
+      className="flex h-[6px] w-24 gap-[2px] overflow-clip rounded-liten"
       title={deler.map((d) => `${d.navn} ${d.n}`).join(" · ")}
     >
       {deler.map((d) => (

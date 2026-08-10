@@ -74,7 +74,7 @@ export function Fag({
   }, []);
 
   return (
-    <div className="flex min-h-0 flex-1 overflow-hidden">
+    <div className="flex min-h-0 flex-1 overflow-clip">
       <div
         className={`liste-bredde flex min-w-0 flex-col ${
           glir ? "hidden w-full pr-4 lg:flex lg:w-1/3" : "w-full max-w-4xl"
@@ -147,7 +147,7 @@ export function Fag({
       </div>
 
       {apent && (
-        <div className={`panel min-w-0 w-full lg:w-2/3 ${glir ? "" : "panel-ute"}`}>
+        <div className={`panel min-h-0 min-w-0 w-full overflow-auto lg:w-2/3 ${glir ? "" : "panel-ute"}`}>
           {valgtElev ? (
             <ElevPanel
               key={valgtElev}

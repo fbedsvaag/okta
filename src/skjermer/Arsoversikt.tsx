@@ -279,7 +279,7 @@ function Fagmaler({ fag }: { fag: Fagtimer }) {
       </div>
 
       <div className="mt-1 flex items-center gap-2">
-        <div className="h-[6px] flex-1 overflow-hidden rounded-liten bg-flate">
+        <div className="h-[6px] flex-1 overflow-clip rounded-liten bg-flate">
           {andel !== null && (
             <div
               className="h-full rounded-liten"
