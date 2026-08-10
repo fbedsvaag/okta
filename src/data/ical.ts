@@ -18,7 +18,7 @@ import type { Okt } from "./okter";
  * kalender lagres ofte i iCloud, og da forlater innholdet maskinen.
  */
 
-const PRODID = "-//elevtracking//NONSGML arsplan//NO";
+const PRODID = "-//okta//NONSGML arsplan//NO";
 
 export function lagIcal(
   okter: Okt[],

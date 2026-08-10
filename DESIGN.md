@@ -1,4 +1,4 @@
-# Elevtracking — designoppdrag og merkevareguide
+# Økta — designoppdrag og merkevareguide
 
 Denne fila erstatter både `DESIGNOPPDRAG.md` og tidligere `DESIGN.md`, og
 erstatter §13 i `SPEC.md`. Er de uenige, gjelder denne.

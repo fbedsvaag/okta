@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "elevtracking",
+  "productName": "Økta",
   "version": "0.1.0",
   "identifier": "no.elevtracking.app",
   "build": {
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "Elevtracking",
+        "title": "Økta",
         "width": 1280,
         "height": 840,
         "minWidth": 720,

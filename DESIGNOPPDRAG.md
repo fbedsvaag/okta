@@ -1,6 +1,6 @@
-# Designoppdrag — Elevtracking
+# Designoppdrag — Økta
 
-Du skal jobbe med **utseendet** til Elevtracking: farger, typografi og
+Du skal jobbe med **utseendet** til Økta: farger, typografi og
 bevegelse. Denne teksten er alt du trenger for å komme i gang uten å ha vært
 med på det som er bygget til nå.
 

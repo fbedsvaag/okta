@@ -1,4 +1,4 @@
-# Elevtracking — spesifikasjon
+# Økta — spesifikasjon
 
 Lokal desktop-app for undervisningsplanlegging og elevoppfølging.
 Bygges fra scratch. Ingen migrering, ingen eksisterende data.

@@ -14,6 +14,8 @@ import type { Skolear } from "../data/skolear";
 import * as kalender from "../data/kalenderfeed";
 import * as caldav from "../data/caldav";
 import { skrivArkiv } from "../data/arkiv";
+import { Merke } from "../ui/logo";
+import { getVersion } from "@tauri-apps/api/app";
 import { open as velgMappe } from "@tauri-apps/plugin-dialog";
 import type { FagIAr } from "../data/fag";
 import { Felt, Knapp } from "../ui/felles";
@@ -46,6 +48,7 @@ export function Innstillinger({
   const [arkivmappe, setArkivmappe] = useState("");
   const [arkivMelding, setArkivMelding] = useState<string | null>(null);
   const [arkiverer, setArkiverer] = useState(false);
+  const [versjon, setVersjon] = useState("");
   const [feedPa, setFeedPa] = useState(false);
   const [feedUrl, setFeedUrl] = useState("");
   const [feedFeil, setFeedFeil] = useState<string | null>(null);
@@ -95,6 +98,7 @@ export function Innstillinger({
       setDav(await caldav.hentOppsett());
       setDavHarPassord(await caldav.harPassord());
       setArkivmappe((await hentInnstilling("eksportmappe")) ?? "");
+      setVersjon(await getVersion().catch(() => ""));
     })();
   }, []);
 
@@ -580,6 +584,16 @@ export function Innstillinger({
           andre særlige kategorier hører ikke hjemme der.
         </p>
       </Bolk>
+
+      <footer className="mt-10 flex items-center gap-2.5 border-t border-linje pt-4 text-liten text-blekk-dempet">
+        <Merke storrelse={20} />
+        <span>
+          <span className="font-medium text-blekk">Økta</span>
+          {versjon && <span className="tabular-nums"> {versjon}</span>}
+          {" — undervisningsplanlegging og elevoppfølging."}
+        </span>
+        <span className="ml-auto">Alle data ligger lokalt på denne maskinen.</span>
+      </footer>
     </div>
   );
 }

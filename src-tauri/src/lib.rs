@@ -1,3 +1,14 @@
+//! Økta — undervisningsplanlegging og elevoppfølging.
+//!
+//! MERK at bundle-identifikatoren i tauri.conf.json fortsatt er
+//! `no.elevtracking.app`, fra før appen fikk navn. Den er med vilje ikke
+//! endret: `app_data_dir()` bygger på den, så en ny identifikator ville lagt
+//! databasen, sikkerhetskopiene og nøkkelringoppføringen et nytt sted — og
+//! alt brukeren har lagt inn ville sett ut som det var borte. Samme grunn
+//! til at databasefila fortsatt heter `elevtracking.sqlite`.
+//!
+//! Skal de endres, må dataene flyttes i samme operasjon.
+
 mod arkiv;
 mod caldav;
 mod kalenderfeed;

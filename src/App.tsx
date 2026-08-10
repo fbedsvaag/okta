@@ -17,6 +17,7 @@ import { Skolekalender } from "./skjermer/Skolekalender";
 import { Innstillinger } from "./skjermer/Innstillinger";
 import { Vurderinger } from "./skjermer/Vurderinger";
 import { Knapp } from "./ui/felles";
+import { Ordmerke } from "./ui/logo";
 
 type Sted = { visning: Visning; okt: string | null };
 
@@ -158,6 +159,9 @@ export default function App() {
   return (
     <div className="app-skall flex h-screen flex-col overflow-hidden bg-bord text-blekk">
       <header className="ikkeutskrift flex shrink-0 flex-wrap items-center gap-x-1 gap-y-1 border-b border-linje px-4 py-2">
+        <span className="mr-3">
+          <Ordmerke />
+        </span>
         <Pil
           retning="tilbake"
           av={peker === 0}

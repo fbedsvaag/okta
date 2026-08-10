@@ -1,4 +1,4 @@
-# Dummydata for Elevtracking
+# Dummydata for Økta
 
 Fire fiktive klasselister til bruk under utvikling. Ingen ekte elevdata.
 Navnene er karakterer fra The Sopranos. De siste 22 i `1STA-ENGVG1.md` er

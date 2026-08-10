@@ -1,4 +1,4 @@
-# Elevtracking
+# Økta
 
 Lokal desktop-app for undervisningsplanlegging og elevoppfølging. Tauri 2 +
 SQLite + Vite/React/TypeScript. Bygges av én lærer, til eget bruk.

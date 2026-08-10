@@ -424,7 +424,7 @@ function lesMeg(
     "",
     "---",
     "",
-    `Skrevet ut av Elevtracking ${langDato(idag())}. Filene overskrives ved ` +
+    `Skrevet ut av Økta ${langDato(idag())}. Filene overskrives ved ` +
       "hver eksport — rediger dem ikke. De kan leses uten appen.",
   );
 

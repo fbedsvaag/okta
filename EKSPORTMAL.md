@@ -154,7 +154,7 @@ I sammenhengende striper brukes kvadrater i stedet: 🟩 🟨 🟥 ⬜
 
 ---
 
-Skrevet ut av Elevtracking 10. august 2026. Filene overskrives ved hver
+Skrevet ut av Økta 10. august 2026. Filene overskrives ved hver
 eksport — rediger dem ikke. De kan leses uten appen.
 ````
 
