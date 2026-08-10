@@ -161,7 +161,7 @@ export default function App() {
   }
 
   return (
-    <div className="app-skall flex h-screen flex-col overflow-clip bg-bord text-blekk">
+    <div className="app-skall flex h-full flex-col overflow-clip bg-bord text-blekk">
       <header className="ikkeutskrift flex shrink-0 flex-wrap items-center gap-x-1 gap-y-1 border-b border-linje px-4 py-2">
         <span className="mr-3">
           <Ordmerke />

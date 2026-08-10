@@ -214,6 +214,27 @@
 
 }
 
+/*
+ * Dokumentet selv skal ikke kunne bevege seg.
+ *
+ * macOS lar deg dra hele siden med styreflata og spretter den tilbake, selv
+ * når det ikke finnes noe å rulle. Da flytter apphodet med innstillingene
+ * seg, og det ser ut som ingenting sitter fast. `overscroll-behavior: none`
+ * slår av den gummistrikken — og den må stå på html og body, ikke inne i
+ * appen, for det er dokumentet som spretter.
+ *
+ * Høyde 100 % hele veien ned til #root, slik at app-skallet kan måle seg mot
+ * en ekte høyde i stedet for 100vh. I en webview er de to ikke alltid det
+ * samme, og et avvik på noen piksler er nok til at dokumentet lar seg dra.
+ */
+html,
+body,
+#root {
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
 html {
   background: var(--color-bord);
   font-family: var(--font-sans);
