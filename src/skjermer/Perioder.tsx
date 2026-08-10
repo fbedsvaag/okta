@@ -10,7 +10,9 @@ import {
   type Periode,
   type Plassering,
 } from "../data/perioder";
-import { endreOkt, hentOkter, type Okt } from "../data/okter";
+import { endreOkt, hentOkter, opprettOkt, type Okt } from "../data/okter";
+import { hentPeriodemal } from "../data/perioder";
+import { Malvelger } from "./Malvelger";
 import { ukenummer } from "../data/kalender";
 import type { FagIAr } from "../data/fag";
 import type { Skolear } from "../data/skolear";
@@ -44,6 +46,8 @@ export function Perioder({
   // Hvilke økter som er plukket ut. Ligger her, ikke i hver bunke, fordi en
   // markering skal kunne krysse periodegrensene.
   const [valgte, setValgte] = useState<Set<string>>(new Set());
+  // Kompetansemålene per periode, og alle som er dekket i faget samlet.
+  const [periodemal, setPeriodemal] = useState<Map<string, string[]>>(new Map());
 
   function velg(id: string, med: boolean) {
     setValgte((f) => {
@@ -70,10 +74,15 @@ export function Perioder({
     await last();
   }
 
+  async function lastMal(skolearFagId: string | null) {
+    setPeriodemal(skolearFagId ? await hentPeriodemal(skolearFagId) : new Map());
+  }
+
   async function last() {
     if (!fagId) return;
     setPerioder(await hentPerioder(fagId));
     setOkter((await hentOkter(skolear.id)).filter((o) => o.skolearFagId === fagId));
+    await lastMal(fagId);
   }
 
   useEffect(() => {
@@ -180,6 +189,13 @@ export function Perioder({
               valgte={valgte}
               onVelg={velg}
               onSlipp={slipp}
+              fagKode={valgtFag?.kode ?? ""}
+              skolearFagId={fagId}
+              standardVarighet={Number(valgtFag?.standardVarighetMin ?? 180)}
+              grepKode={valgtFag?.grepKode ?? null}
+              mal={periodemal.get(b.periode?.id ?? "") ?? []}
+              dekket={new Set([...periodemal.values()].flat())}
+              onMalEndret={() => void lastMal(fagId)}
                 bunke={b}
                 onEndret={last}
                 onApneOkt={onApneOkt}
@@ -257,6 +273,13 @@ function Bunke({
   valgte,
   onVelg,
   onSlipp,
+  fagKode,
+  skolearFagId,
+  standardVarighet,
+  grepKode,
+  mal,
+  dekket,
+  onMalEndret,
   onEndret,
   onApneOkt,
 }: {
@@ -264,11 +287,21 @@ function Bunke({
   valgte: Set<string>;
   onVelg: (id: string, med: boolean) => void;
   onSlipp: (periodeId: string | null) => void;
+  fagKode: string;
+  skolearFagId: string;
+  standardVarighet: number;
+  grepKode: string | null;
+  /** kompetansemålkodene for denne perioden */
+  mal: string[];
+  /** alle koder dekket i faget, til å markere overlapp */
+  dekket: Set<string>;
+  onMalEndret: () => void;
   onEndret: () => void;
   onApneOkt: (id: string) => void;
 }) {
   const p = bunke.periode;
   const [over, setOver] = useState(false);
+  const [lagerOkt, setLagerOkt] = useState(false);
 
   return (
     <section
@@ -325,12 +358,16 @@ function Bunke({
 
         <span className="ml-auto text-liten tabular-nums text-blekk-dempet">
           {bunke.okter.length} økter · {timer(bunke.minutter)} t
-          {p && bunke.faktiskFra && (bunke.faktiskFra !== p.start || bunke.faktiskTil !== p.slutt) && (
-            <span className="ml-2 text-blekk-svak">
-              faktisk {bunke.faktiskFra} – {bunke.faktiskTil}
-            </span>
-          )}
         </span>
+
+        {p && (
+          <button
+            onClick={() => setLagerOkt((v) => !v)}
+            className="shrink-0 text-liten text-blekk-dempet hover:text-blekk"
+          >
+            {lagerOkt ? "Avbryt" : "+ Ny økt"}
+          </button>
+        )}
 
         {p && (
           <button
@@ -350,6 +387,30 @@ function Bunke({
           </button>
         )}
       </header>
+
+      {p && lagerOkt && (
+        <NyOktIPeriode
+          periode={p}
+          fagKode={fagKode}
+          skolearFagId={skolearFagId}
+          standardVarighet={standardVarighet}
+          sisteDato={bunke.okter[bunke.okter.length - 1]?.dato}
+          onLagret={() => {
+            setLagerOkt(false);
+            onEndret();
+          }}
+        />
+      )}
+
+      {p && (
+        <Malvelger
+          grepKode={grepKode}
+          periodeId={p.id}
+          valgte={mal}
+          dekketAndreSteder={dekket}
+          onEndret={onMalEndret}
+        />
+      )}
 
       {bunke.okter.length === 0 ? (
         <p className="py-4 text-center text-brod text-blekk-svak">
@@ -395,6 +456,81 @@ function Bunke({
       )}
     </section>
   );
+}
+
+/**
+ * Ny økt rett i en periode.
+ *
+ * Faget er gitt av skjermen, og perioden av bolken du står i — så det eneste
+ * som må fylles ut er dato, tid og varighet. Perioden settes uttrykkelig på
+ * økta, ikke utledet av datoen, siden du nettopp har sagt hvor den hører
+ * hjemme.
+ */
+function NyOktIPeriode({
+  periode,
+  fagKode,
+  skolearFagId,
+  standardVarighet,
+  sisteDato,
+  onLagret,
+}: {
+  periode: Periode;
+  fagKode: string;
+  skolearFagId: string;
+  standardVarighet: number;
+  sisteDato?: string;
+  onLagret: () => void;
+}) {
+  // Neste dag etter siste økt i perioden, ellers periodens start.
+  const start = sisteDato
+    ? nesteDag(sisteDato)
+    : (periode.start ?? new Date().toISOString().slice(0, 10));
+  const [dato, setDato] = useState(start);
+  const [klokke, setKlokke] = useState("");
+  const [varighet, setVarighet] = useState(String(standardVarighet));
+
+  async function lagre() {
+    if (!dato) return;
+    const id = await opprettOkt(
+      skolearFagId,
+      fagKode,
+      dato,
+      klokke || null,
+      Number(varighet) || standardVarighet,
+    );
+    await endreOkt(id, { periode_id: periode.id });
+    onLagret();
+  }
+
+  return (
+    <div className="my-2 flex flex-wrap items-end gap-3 border border-linje bg-flate p-2">
+      <Felt etikett="Dato" type="date" verdi={dato} settVerdi={setDato} bredde="w-40" />
+      <Felt
+        etikett="Klokkeslett"
+        verdi={klokke}
+        settVerdi={setKlokke}
+        plassholder="09:15"
+        bredde="w-24"
+      />
+      <Felt
+        etikett="Varighet"
+        verdi={varighet}
+        settVerdi={setVarighet}
+        bredde="w-24"
+        onEnter={lagre}
+      />
+      <Knapp variant="primar" onClick={lagre}>
+        Legg til i {periode.navn}
+      </Knapp>
+    </div>
+  );
+}
+
+function nesteDag(dato: string): string {
+  const d = new Date(`${dato}T00:00:00`);
+  d.setDate(d.getDate() + 1);
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
 }
 
 function Spennfelt({

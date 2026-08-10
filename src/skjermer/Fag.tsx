@@ -164,6 +164,7 @@ export function Fag({
               fag={apent}
               skolearId={skolearId}
               onLukk={() => setValgtFag(null)}
+              onEndret={onEndret}
               onApneElev={setValgtElev}
               onApneVurderinger={onApneVurderinger}
             />
@@ -400,6 +401,7 @@ function NyttFag({
   const [kode, setKode] = useState("");
   const [navn, setNavn] = useState("");
   const [grepKode, setGrepKode] = useState<string | null>(null);
+  const [timer, setTimer] = useState<number | null>(null);
   const [soker, setSoker] = useState(false);
 
   async function leggTil() {
@@ -410,10 +412,12 @@ function NyttFag({
       navn.trim() || kode.trim(),
       FAGFARGER[antall % FAGFARGER.length],
       grepKode,
+      timer,
     );
     setKode("");
     setNavn("");
     setGrepKode(null);
+    setTimer(null);
     onLagt();
   }
 
@@ -429,6 +433,9 @@ function NyttFag({
             setNavn(f.navn);
             setKode(f.fagkode ?? f.opplaeringsfag);
             setGrepKode(f.fagkode ?? f.opplaeringsfag);
+            // Årstimetallet fra Udir. Det er tallet timeregnskapet måles
+            // mot, og det slipper å slås opp for hånd.
+            setTimer(f.timer);
             setSoker(false);
           }}
         />
@@ -462,7 +469,14 @@ function NyttFag({
       {grepKode && (
         <p className="mt-2 text-liten text-blekk-dempet">
           Knyttet til <span className="font-mono">{grepKode}</span> hos Udir —
-          kompetansemålene følger med. Kode og navn over er dine egne.
+          kompetansemålene følger med
+          {timer !== null && (
+            <>
+              , og årstimetallet er satt til{" "}
+              <span className="tabular-nums">{timer}</span>
+            </>
+          )}
+          . Kode og navn over er dine egne.
         </p>
       )}
     </div>

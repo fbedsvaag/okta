@@ -65,6 +65,7 @@ export async function leggFagIAr(
   navn: string,
   farge: string | null,
   grepKode?: string | null,
+  arstimetall?: number | null,
 ): Promise<string> {
   const fagId = await finnEllerOpprettFag(kode, navn, farge);
   // Fagkoden fra Udir er nøkkelen til kompetansemålene (§10). Den settes her
@@ -86,10 +87,13 @@ export async function leggFagIAr(
     return finnes[0].id;
   }
 
+  // Årstimetallet hører til året, ikke til fagbanken — det kan være et annet
+  // neste gang faget undervises (§3.2).
   return settInn("skolear_fag", {
     skolear_id: skolearId,
     fag_id: fagId,
     skaringsskala_id: TRAFIKKLYS,
+    arstimetall: arstimetall ?? null,
   });
 }
 

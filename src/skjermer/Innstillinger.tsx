@@ -41,9 +41,13 @@ import { Felt, Knapp } from "../ui/felles";
 export function Innstillinger({
   skolear,
   fag,
+  onEndret,
 }: {
   skolear: Skolear;
   fag: FagIAr[];
+  /** laster skoleåret og fagene på nytt — uten å laste hele appen, som
+      ville sendt deg tilbake til startskjermen */
+  onEndret: () => void;
 }) {
   const [dav, setDav] = useState<caldav.Oppsett>({
     base: "",
@@ -170,9 +174,10 @@ export function Innstillinger({
                         onClick={async () => {
                           await settAktivtSkolear(a.id);
                           // Hele appen henger på det aktive året, så alt må
-                          // leses på nytt. Enklere og sikrere enn å prøve å
-                          // oppdatere hver skjerm for seg.
-                          location.reload();
+                          // leses på nytt — men du skal bli stående i
+                          // innstillingene, ikke kastes til startskjermen.
+                          setAr(await hentSkolear());
+                          onEndret();
                         }}
                       >
                         Gjør aktivt
@@ -197,7 +202,8 @@ export function Innstillinger({
                           const igjen = (await hentSkolear())[0];
                           if (igjen) await settAktivtSkolear(igjen.id);
                         }
-                        location.reload();
+                        setAr(await hentSkolear());
+                        onEndret();
                       }}
                       className="text-liten text-blekk-svak hover:text-feil"
                     >

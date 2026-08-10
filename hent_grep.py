@@ -118,11 +118,29 @@ def rens(s):
     return WS.sub(" ", TAG.sub(" ", s)).strip()
 
 
+def bolker(om, kapittel, liste):
+    """
+    Overskrift og beskrivelse for hvert punkt i et kapittel.
+
+    Brukes til tverrfaglige temaer og grunnleggende ferdigheter, som har
+    samme form: en overskrift og en beskrivelse per punkt.
+    """
+    kap = om.get(kapittel) or {}
+    ut = []
+    for p in kap.get(liste, []):
+        tittel = tekst((p.get("overskrift") or {}).get("tekst"))
+        beskr = rens(tekst((p.get("beskrivelse") or {}).get("tekst")) or "")
+        if tittel:
+            ut.append({"tittel": tittel, "beskrivelse": beskr or None})
+    return ut
+
+
 def les_laereplan(d):
     """Trekker ut det appen trenger fra én læreplan-detalj."""
     om = d.get("om-faget-kapittel") or {}
     verdier = om.get("fagets-relevans-og-verdier") or {}
     relevans = (verdier.get("fagets-relevans") or {}).get("beskrivelse")
+    kjerne = (om.get("kjerneelementer-i-faget") or {}).get("kjerneelementer", [])
 
     kap = d.get("kompetansemaal-kapittel") or {}
     sett = [s.get("kode") for s in kap.get("kompetansemaalsett", [])
@@ -138,7 +156,12 @@ def les_laereplan(d):
         # motsetning til på læreplanen, der det er en liste. Grep er ikke
         # konsekvent, så begge former må tas høyde for.
         "nivaa": nivaaliste(d.get("opplaeringsnivaa")),
-        "beskrivelse": tekst(relevans),
+        "beskrivelse": rens(tekst(relevans) or "") or None,
+        "kjerneelementer": [k.get("tittel") for k in kjerne if k.get("tittel")],
+        "tverrfaglige": bolker(om, "tverrfaglige-temaer-i-faget",
+                               "tverrfaglige-temaer"),
+        "ferdigheter": bolker(om, "grunnleggende-ferdigheter-i-faget",
+                              "grunnleggende-ferdigheter"),
         "sett_koder": sett,
     }
 
@@ -167,6 +190,22 @@ def nivaaliste(v):
     if isinstance(v, dict):
         return [v.get("tittel")]
     return [x.get("tittel") for x in v if isinstance(x, dict)]
+
+
+def les_fagkode(d):
+    """
+    Timetallet for faget, slik det står på fagkoden.
+
+    `omfang-totalt` er årstimetallet Udir oppgir — 140 for SAM3046. Det er
+    tallet timeregnskapet i appen måles mot, så det spares for læreren å
+    slå det opp manuelt.
+    """
+    omfang = d.get("omfang-totalt")
+    try:
+        timer = int(omfang) if omfang not in (None, "") else None
+    except (TypeError, ValueError):
+        timer = None
+    return {"timer": timer}
 
 
 def les_opplaeringsfag(d):
@@ -264,6 +303,17 @@ def main():
         if a.bare_vgs and not any("ideregående" in (n or "") for n in info["nivaa"]):
             continue
 
+        # Timetallet ligger på fagkoden, ikke på opplæringsfaget, så det
+        # koster ett kall til. Verdt det: uten det må læreren slå opp 140
+        # timer for hånd i et skjema som ellers fyller seg selv.
+        timer = None
+        if info["fagkode"]:
+            try:
+                timer = les_fagkode(
+                    hent(f"fagkoder/{info['fagkode']}", a.delay))["timer"]
+            except Exception as e:
+                print(f"      {info['fagkode']}: FEIL — {e}", file=sys.stderr)
+
         maal, sett_navn = [], []
         for lp, s in treff:
             sett_navn.append(s["tittel"])
@@ -272,9 +322,13 @@ def main():
             "fagkode": info["fagkode"],
             "opplaeringsfag": ofkode,
             "navn": info["navn"],
+            "timer": timer,
             "laereplan": treff[0][0]["kode"],
             "laereplannavn": treff[0][0]["navn"],
             "beskrivelse": treff[0][0]["beskrivelse"],
+            "kjerneelementer": treff[0][0]["kjerneelementer"],
+            "tverrfaglige": treff[0][0]["tverrfaglige"],
+            "ferdigheter": treff[0][0]["ferdigheter"],
             "kompetansemaal": maal,
         })
         if i % 50 == 0:

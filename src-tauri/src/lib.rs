@@ -68,6 +68,12 @@ fn migrations() -> Vec<Migration> {
             sql: include_str!("../migrations/008_fag_grep.sql"),
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 9,
+            description: "kompetansemål per periode",
+            sql: include_str!("../migrations/009_periode_kompetansemal.sql"),
+            kind: MigrationKind::Up,
+        },
     ]
 }
 

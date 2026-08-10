@@ -168,3 +168,64 @@ export async function hentAllePerioder(skolearId: string): Promise<Periode[]> {
     [skolearId],
   );
 }
+
+// ------------------------------------------------------- kompetansemål
+
+/**
+ * Kompetansemålene knyttet til periodene i ett fag.
+ *
+ * Returnerer koder, ikke tekst. Teksten ligger i `grep-fag.json` og slås opp
+ * der — basen skal ikke ha sin egen kopi av Udirs formuleringer.
+ */
+export async function hentPeriodemal(
+  skolearFagId: string,
+): Promise<Map<string, string[]>> {
+  const rader = await hent<{ periodeId: string; kode: string }>(
+    `SELECT pk.periode_id AS periodeId, pk.kode
+       FROM periode_kompetansemal pk
+       JOIN periode p ON p.id = pk.periode_id AND p.slettet IS NULL
+      WHERE pk.slettet IS NULL AND p.skolear_fag_id = $1
+      ORDER BY pk.kode`,
+    [skolearFagId],
+  );
+
+  const kart = new Map<string, string[]>();
+  for (const r of rader) {
+    kart.set(r.periodeId, [...(kart.get(r.periodeId) ?? []), r.kode]);
+  }
+  return kart;
+}
+
+/**
+ * Slår et kompetansemål av eller på for en periode.
+ *
+ * Soft delete og UNIQUE krangler (§12): en rad som er fjernet opptar fortsatt
+ * plassen sin i den unike indeksen. Derfor gjenbrukes den i stedet for at vi
+ * setter inn en ny.
+ */
+export async function settPeriodemal(
+  periodeId: string,
+  kode: string,
+  pa: boolean,
+): Promise<void> {
+  const [finnes] = await hent<{ id: string; slettet: string | null }>(
+    "SELECT id, slettet FROM periode_kompetansemal WHERE periode_id = $1 AND kode = $2",
+    [periodeId, kode],
+  );
+
+  if (!finnes) {
+    if (pa) await settInn("periode_kompetansemal", { periode_id: periodeId, kode });
+    return;
+  }
+  if (pa && finnes.slettet !== null) {
+    await oppdater("periode_kompetansemal", finnes.id, { slettet: null });
+  } else if (!pa && finnes.slettet === null) {
+    await slett("periode_kompetansemal", finnes.id);
+  }
+}
+
+/** Alle kodene som er dekket av minst én periode i faget. */
+export async function hentDekkedeMal(skolearFagId: string): Promise<Set<string>> {
+  const kart = await hentPeriodemal(skolearFagId);
+  return new Set([...kart.values()].flat());
+}

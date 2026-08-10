@@ -18,6 +18,11 @@ export type Kompetansemaal = {
   tekst: string;
 };
 
+export type Bolk = {
+  tittel: string;
+  beskrivelse: string | null;
+};
+
 export type GrepFag = {
   /** fagkoden på vitnemålet, f.eks. SAM3045 */
   fagkode: string | null;
@@ -27,6 +32,11 @@ export type GrepFag = {
   laereplan: string;
   laereplannavn: string;
   beskrivelse: string | null;
+  /** årstimetall fra Udirs `omfang-totalt`, f.eks. 140 */
+  timer: number | null;
+  kjerneelementer: string[];
+  tverrfaglige: Bolk[];
+  ferdigheter: Bolk[];
   kompetansemaal: Kompetansemaal[];
 };
 
