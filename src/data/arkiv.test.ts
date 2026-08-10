@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { csv, slugg, tab } from "./arkiv";
+import { csv, slugg, tab, verdimerke } from "./arkiv";
 
 describe("slugg", () => {
   it("skriver om æ, ø og å framfor å prosentkode dem", () => {
@@ -45,5 +45,33 @@ describe("csv", () => {
 
   it("lar vanlige felter stå usitert", () => {
     expect(csv(["a"], [["enkelt"]])).toBe("a\nenkelt\n");
+  });
+});
+
+describe("verdimerke", () => {
+  it("gir farget sirkel etter fargen på skalaverdien", () => {
+    expect(verdimerke("Grønn", "gronn", 0)).toBe("🟢 Grønn");
+    expect(verdimerke("Gul", "gul", 0)).toBe("🟡 Gul");
+    expect(verdimerke("Rød", "rod", 0)).toBe("🔴 Rød");
+  });
+
+  it("gir hvit sirkel for verdier uten farge", () => {
+    expect(verdimerke("Ikke i økta", null, 1)).toContain("⚪");
+  });
+
+  it("merker verdier som ikke teller, så de ikke leses som resultat", () => {
+    expect(verdimerke("IV", null, 1)).toContain("*(teller ikke)*");
+    expect(verdimerke("Grønn", "gronn", 0)).not.toContain("teller ikke");
+  });
+
+  it("beholder kodeteksten ved siden av, så arkivet kan søkes i", () => {
+    expect(verdimerke("Rød", "rod", 0)).toContain("Rød");
+  });
+});
+
+describe("skoleåret som mappenavn", () => {
+  it("gjør skråstreken i «2026/27» om, så det ikke blir en undermappe", () => {
+    expect(slugg("2026/27")).toBe("2026-27");
+    expect(slugg("2026/27")).not.toContain("/");
   });
 });

@@ -72,6 +72,15 @@ type OppfolgingRad = {
   lukket: string | null;
 };
 
+type FagRad = {
+  kode: string;
+  navn: string;
+  arstimetall: number | null;
+  okter: number;
+  minutter: number;
+  elever: number;
+};
+
 type SkalaRad = {
   skala: string;
   bruksomrade: string;
@@ -166,6 +175,21 @@ async function samle(skolearId: string) {
       ORDER BY op.lukket IS NOT NULL, op.frist`,
   );
 
+  const fag = await hent<FagRad>(
+    `SELECT f.kode, f.navn, sf.arstimetall,
+            COUNT(o.id)                        AS okter,
+            COALESCE(SUM(o.varighet_min), 0)   AS minutter,
+            (SELECT COUNT(*) FROM elev_fag ef
+              WHERE ef.skolear_fag_id = sf.id AND ef.slettet IS NULL) AS elever
+       FROM skolear_fag sf
+       JOIN fag f ON f.id = sf.fag_id
+       LEFT JOIN okt o ON o.skolear_fag_id = sf.id AND o.slettet IS NULL
+      WHERE sf.slettet IS NULL AND sf.skolear_id = $1
+      GROUP BY sf.id
+      ORDER BY f.kode`,
+    [skolearId],
+  );
+
   const skalaer = await hent<SkalaRad>(
     `SELECT sk.navn AS skala, sk.bruksomrade, sv.kode AS verdi, sv.etikett,
             sv.rang, sv.farge, sv.teller_ikke AS tellerIkke
@@ -174,7 +198,9 @@ async function samle(skolearId: string) {
       ORDER BY sk.navn, sv.rang`,
   );
 
-  return { elever, fagPerElev, skaringer, resultater, okter, oppfolging, skalaer };
+  return {
+    elever, fagPerElev, skaringer, resultater, okter, oppfolging, skalaer, fag,
+  };
 }
 
 // ----------------------------------------------------------------- bygging
@@ -183,34 +209,41 @@ export async function byggArkiv(skolear: Skolear): Promise<Fil[]> {
   const d = await samle(skolear.id);
   const filer: Fil[] = [];
 
+  // Hvert skoleår får sin egen mappe, så flere år kan ligge side om side i
+  // samme valgte mappe. MERK at navnet ofte er «2026/27» — skråstreken ville
+  // laget en undermappe, så det må gjennom slugg.
+  const ar = slugg(skolear.navn);
+  const legg = (sti: string, innhold: string) =>
+    filer.push({ sti: `${ar}/${sti}`, innhold });
+
   const fagFor = new Map<string, string[]>();
   for (const r of d.fagPerElev) {
     fagFor.set(r.elevId, [...(fagFor.get(r.elevId) ?? []), r.fagKode]);
   }
 
-  filer.push({ sti: "README.md", innhold: lesMeg(skolear, d.skalaer, d.elever.length) });
+  legg("README.md", lesMeg(skolear, d.fag, d.skalaer, d.elever.length));
 
   for (const e of d.elever) {
-    filer.push({
-      sti: `elever/${slugg(`${e.fornavn} ${e.etternavn}`)}.md`,
-      innhold: elevfil(
+    legg(
+      `elever/${slugg(`${e.fornavn} ${e.etternavn}`)}.md`,
+      elevfil(
         e,
         fagFor.get(e.elevId) ?? [],
         d.skaringer.filter((s) => s.elevId === e.elevId),
         d.resultater.filter((r) => r.elevId === e.elevId),
         skolear,
       ),
-    });
+    );
   }
 
   const fagKoder = [...new Set(d.okter.map((o) => o.fagKode))];
   for (const kode of fagKoder) {
     const egne = d.okter.filter((o) => o.fagKode === kode);
     const s = slugg(kode);
-    filer.push({ sti: `fag/${s}.md`, innhold: fagfil(kode, egne, skolear) });
-    filer.push({
-      sti: `fag/${s}-skaring.csv`,
-      innhold: csv(
+    legg(`fag/${s}.md`, fagfil(kode, egne, skolear));
+    legg(
+      `fag/${s}-skaring.csv`,
+      csv(
         ["elev", "dato", "tema", "verdi", "teller", "notat"],
         d.skaringer
           .filter((x) => x.fagKode === kode)
@@ -226,10 +259,10 @@ export async function byggArkiv(skolear: Skolear): Promise<Fil[]> {
             ];
           }),
       ),
-    });
-    filer.push({
-      sti: `fag/${s}-vurderinger.csv`,
-      innhold: csv(
+    );
+    legg(
+      `fag/${s}-vurderinger.csv`,
+      csv(
         ["elev", "vurdering", "frist", "resultat", "levert", "kommentar"],
         d.resultater
           .filter((x) => x.fagKode === kode)
@@ -245,22 +278,59 @@ export async function byggArkiv(skolear: Skolear): Promise<Fil[]> {
             ];
           }),
       ),
-    });
+    );
   }
 
-  filer.push({ sti: "oppfolging.md", innhold: oppfolgingsfil(d.oppfolging) });
+  legg("oppfolging.md", oppfolgingsfil(d.oppfolging));
   return filer;
+}
+
+/**
+ * Fargen som emoji, så en skåring er lesbar på et blikk i Obsidian.
+ *
+ * Kodeteksten står ved siden av — uten den kan man ikke søke etter «rød» i
+ * arkivet, og en skjermleser leser bare «rød sirkel».
+ */
+export function verdimerke(verdi: string, farge: string | null, tellerIkke: number): string {
+  const merke =
+    farge === "gronn" ? "🟢" : farge === "gul" ? "🟡" : farge === "rod" ? "🔴" : "⚪";
+  return tellerIkke ? `${merke} ${verdi} *(teller ikke)*` : `${merke} ${verdi}`;
 }
 
 // ------------------------------------------------------------------ filene
 
-function lesMeg(skolear: Skolear, skalaer: SkalaRad[], antallElever: number): string {
+function lesMeg(
+  skolear: Skolear,
+  fag: FagRad[],
+  skalaer: SkalaRad[],
+  antallElever: number,
+): string {
   const ut: string[] = [
-    "# Elevtracking — arkiv",
+    `# ${skolear.navn}`,
     "",
-    `Skoleår **${skolear.navn}** (${skolear.start} til ${skolear.slutt})`,
+    `Arkiv fra Elevtracking · ${skolear.start} til ${skolear.slutt}`,
     `· ${antallElever} elever · skrevet ${idag()}`,
     "",
+    "## Fag dette skoleåret",
+    "",
+  ];
+
+  if (fag.length === 0) {
+    ut.push("*Ingen fag lagt inn.*", "");
+  } else {
+    ut.push("| Fag | Navn | Elever | Økter | Timer | Årstimer |");
+    ut.push("| --- | --- | --- | --- | --- | --- |");
+    for (const f of fag) {
+      const timer = Math.round((f.minutter / 60) * 10) / 10;
+      ut.push(
+        `| [[${slugg(f.kode)}\|${f.kode}]] | ${tab(f.navn)} | ${f.elever} ` +
+          `| ${f.okter} | ${timer} | ${f.arstimetall ?? "—"} |`,
+      );
+    }
+    ut.push("");
+  }
+
+  ut.push(
     "Dette er en tekstversjon av databasen, skrevet ut av appen. Den kan leses",
     "i Obsidian, en teksteditor eller hva som helst annet — også om appen ikke",
     "finnes lenger. Filene her overskrives ved hver eksport; rediger dem ikke.",
@@ -271,7 +341,7 @@ function lesMeg(skolear: Skolear, skalaer: SkalaRad[], antallElever: number): st
     "merket «teller ikke» er fravær av grunnlag og skal aldri inngå i snitt",
     "eller sammenstilling.",
     "",
-  ];
+  );
 
   let forrige = "";
   for (const s of skalaer) {
@@ -322,9 +392,9 @@ function elevfil(
     ut.push("| Dato | Fag | Tema | Verdi | Notat |");
     ut.push("| --- | --- | --- | --- | --- |");
     for (const s of skaringer) {
-      const verdi = s.tellerIkke ? `${s.verdi} *(teller ikke)*` : s.verdi;
       ut.push(
-        `| ${s.dato} | ${s.fagKode} | ${tab(s.tema)} | ${verdi} | ${tab(s.notat)} |`,
+        `| ${s.dato} | ${s.fagKode} | ${tab(s.tema)} ` +
+          `| ${verdimerke(s.verdi, s.farge, s.tellerIkke)} | ${tab(s.notat)} |`,
       );
     }
     ut.push("");
