@@ -47,8 +47,8 @@ export function Arsoversikt({
       </div>
       <Timeregnskap fag={timer} />
       <div className="grid gap-y-7">
-        <Glipper elever={glipp} onApne={onApneElev} />
         <Vurderingsfrister rader={kommende} onApne={onApneVurderinger} />
+        <Glipper elever={glipp} onApne={onApneElev} />
       </div>
     </div>
   );

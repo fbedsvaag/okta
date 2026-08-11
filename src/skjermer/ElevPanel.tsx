@@ -36,9 +36,15 @@ export function ElevPanel({
   onLukk,
   onApneOkt,
   bla,
+  startFag = "",
 }: {
   elevId: string;
   aktivtSkolearId: string;
+  /**
+   * Faget man kom fra. Har du filtrert på SAM3045 i Elever, eller åpnet
+   * eleven fra fagkortet, er kortet allerede filtrert på det faget.
+   */
+  startFag?: string;
   onLukk: () => void;
   onApneOkt: (oktId: string) => void;
   /**
@@ -61,31 +67,22 @@ export function ElevPanel({
     { skolearFagId: string; fagKode: string; fagNavn: string; farge: string | null }[]
   >([]);
   const [vurderinger, setVurderinger] = useState<ElevVurdering[]>([]);
-  // Fagfilter for vurderingslista. Tom streng = alle fag.
-  const [vurderingsfag, setVurderingsfag] = useState("");
+  // Fagfilter for hele kortet — heatmap og vurderinger. Tom streng = alle fag.
+  const [vurderingsfag, setVurderingsfag] = useState(startFag);
 
-  // Fagene eleven har vurderinger i, med fargen fra heatmap-radene så knappen
-  // ser lik ut som faget gjør ellers i kortet.
-  const fargePerFag = new Map<string, string | null>([
-    ...fagRader.map((r) => [r.skolearFagId, r.farge] as const),
-    ...tommeFag.map((f) => [f.skolearFagId, f.farge] as const),
-  ]);
-  const vurderingsfagene = [
+  const elevensFag = [
     ...new Map(
-      vurderinger.map((v) => [
-        v.skolearFagId,
-        {
-          id: v.skolearFagId,
-          kode: v.fagKode,
-          farge: fargePerFag.get(v.skolearFagId) ?? null,
-        },
+      [...fagRader, ...tommeFag].map((f) => [
+        f.skolearFagId,
+        { id: f.skolearFagId, kode: f.fagKode, farge: f.farge },
       ]),
     ).values(),
   ].sort((a, b) => a.kode.localeCompare(b.kode, "nb-NO"));
 
-  const synligeVurderinger = vurderingsfag
-    ? vurderinger.filter((v) => v.skolearFagId === vurderingsfag)
-    : vurderinger;
+  const passer = (id: string) => !vurderingsfag || id === vurderingsfag;
+  const synligeVurderinger = vurderinger.filter((v) => passer(v.skolearFagId));
+  const synligeFagRader = fagRader.filter((r) => passer(r.skolearFagId));
+  const synligeTommeFag = tommeFag.filter((f) => passer(f.skolearFagId));
   const [klasser, setKlasser] = useState<Klasse[]>([]);
 
   useEffect(() => {
@@ -216,15 +213,33 @@ export function ElevPanel({
           </div>
         )}
 
+        {/*
+          Fagfilteret gjelder hele kortet — både heatmapet og vurderingene.
+          Har eleven bare ett fag, er det ingenting å velge mellom.
+        */}
+        {elevensFag.length > 1 && (
+          <div className="mb-4">
+            <Fagfiltre
+              fag={elevensFag}
+              valgt={vurderingsfag}
+              settValgt={setVurderingsfag}
+            />
+          </div>
+        )}
+
         <Bolk tittel="Innsats per økt">
-          {fagRader.length === 0 && tommeFag.length === 0 ? (
-            <Stille>Eleven har ingen fag dette skoleåret.</Stille>
+          {synligeFagRader.length === 0 && synligeTommeFag.length === 0 ? (
+            <Stille>
+              {fagRader.length === 0 && tommeFag.length === 0
+                ? "Eleven har ingen fag dette skoleåret."
+                : "Ingen økter i dette faget."}
+            </Stille>
           ) : (
             <>
-              {fagRader.map((rad) => (
+              {synligeFagRader.map((rad) => (
                 <Heatmap key={rad.skolearFagId} rad={rad} onApneOkt={onApneOkt} />
               ))}
-              {tommeFag.map((f) => (
+              {synligeTommeFag.map((f) => (
                 <div key={f.skolearFagId} className="flex items-center gap-2 py-1.5">
                   <span className="w-16 shrink-0">
                     <Fagmerke kode={f.fagKode} farge={f.farge} />
@@ -237,21 +252,6 @@ export function ElevPanel({
         </Bolk>
 
         <Bolk tittel="Vurderinger">
-          {/*
-            Elever med flere fag fikk alle vurderingene i én bunke. Knappene
-            er de fagene eleven faktisk har vurderinger i — et fag uten noen
-            gir en knapp som alltid viser en tom liste, og det er bare i
-            veien.
-          */}
-          {vurderingsfagene.length > 1 && (
-            <div className="mb-2">
-              <Fagfiltre
-                fag={vurderingsfagene}
-                valgt={vurderingsfag}
-                settValgt={setVurderingsfag}
-              />
-            </div>
-          )}
           {vurderinger.length === 0 ? (
             <Stille>Ingen vurderinger i fagene hens ennå.</Stille>
           ) : synligeVurderinger.length === 0 ? (

@@ -153,6 +153,7 @@ export function Fag({
               key={valgtElev}
               elevId={valgtElev}
               aktivtSkolearId={skolearId}
+              startFag={apent.id}
               onLukk={() => setValgtElev(null)}
               onApneOkt={onApneOkt}
               bla={

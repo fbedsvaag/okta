@@ -161,11 +161,11 @@ function Forrigelogg({
   return (
     <button
       onClick={() => onApne(forrige.id)}
-      className="mb-1 flex w-full gap-2 rounded-vanlig border-l-2 bg-flate-svak px-3 py-2 text-left text-brod hover:bg-flate"
+      className="mb-1 flex w-full flex-col gap-0.5 rounded-vanlig border-l-2 bg-flate-svak px-3 py-2 text-left text-brod hover:bg-flate"
       style={{ borderColor: okt.farge ?? "var(--color-linje-sterk)" }}
     >
       <span className="shrink-0 text-liten uppercase tracking-etikett text-blekk-svak">
-        Sist
+        Notat fra forrige økt
       </span>
       <span className="min-w-0 flex-1 whitespace-pre-wrap text-blekk-dempet">
         {forrige.logg}

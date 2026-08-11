@@ -101,8 +101,12 @@ export function Elever({
   // midt i animasjonen.
   const { vist: visElev, apen: apentPanel } = useGlidende(valgtElev);
 
-  // Panelet tar to tredeler av bredden, så da vises bare navnet.
-  const vis: ReadonlySet<Synlig> = apentPanel ? new Set<Synlig>() : synligeKolonner;
+  // Panelet tar to tredeler av bredden, så de brede kolonnene må vike. Men
+  // etternavnet blir stående — uten det bytter lista utseende i det du
+  // klikker, og to elever med samme fornavn blir umulige å skille.
+  const vis: ReadonlySet<Synlig> = apentPanel
+    ? new Set<Synlig>(synligeKolonner.has("etternavn") ? ["etternavn"] : [])
+    : synligeKolonner;
 
   const synlige = useMemo(() => {
     const s = sok.trim().toLocaleLowerCase("nb-NO");
@@ -321,6 +325,7 @@ export function Elever({
             key={visElev}
             elevId={visElev}
             aktivtSkolearId={skolearId}
+            startFag={filterFag}
             onLukk={() => setValgtElev(null)}
             onApneOkt={onApneOkt}
             bla={
