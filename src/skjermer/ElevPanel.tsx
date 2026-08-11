@@ -233,9 +233,9 @@ export function ElevPanel({
                     <td className="w-20 py-1.5 tabular-nums text-blekk-dempet">
                       {v.frist ?? ""}
                     </td>
-                    <td className="w-16 py-1.5 text-right">
+                    <td className="whitespace-nowrap py-1.5 text-right">
                       {v.resultat ? (
-                        <span className="rounded-liten border border-linje px-1.5 py-0.5 tabular-nums">
+                        <span className="inline-block whitespace-nowrap rounded-liten border border-linje px-1.5 py-0.5 tabular-nums">
                           {v.resultat}
                         </span>
                       ) : (

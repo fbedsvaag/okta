@@ -149,7 +149,7 @@ export function Elever({
   }
 
   return (
-    <div className="flex min-h-0 flex-1 overflow-clip">
+    <div className="mx-auto flex min-h-0 w-full max-w-6xl flex-1 overflow-clip">
       <div
         className={`liste-bredde flex min-w-0 flex-col ${
           apentPanel ? "hidden w-full pr-4 lg:flex lg:w-1/3" : "w-full"
@@ -509,9 +509,12 @@ function Rad({
   }
   return (
     <tr
+      // Hele rada åpner eleven, ikke bare navnet. I redigeringsmodus gjør den
+      // ingenting — der skal et klikk treffe feltet du sikter på.
+      onClick={rediger ? undefined : onApne}
       className={`h-[var(--hoyde-rad)] border-b border-linje-svak ${
-        valgt ? "bg-valgt" : "hover:bg-flate-svak"
-      }`}
+        rediger ? "" : "cursor-pointer"
+      } ${valgt ? "bg-valgt" : "hover:bg-flate-svak"}`}
     >
       <td className="py-1.5 pr-5">
         <Navnefelt

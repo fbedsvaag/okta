@@ -70,7 +70,7 @@ export function Vurderinger({
   }, [vurderinger]);
 
   return (
-    <div className="flex min-h-0 flex-1 overflow-clip">
+    <div className="mx-auto flex min-h-0 w-full max-w-6xl flex-1 overflow-clip">
       <div className={`liste-bredde flex min-w-0 flex-col ${glir ? "hidden w-full pr-4 lg:flex lg:w-1/3" : "w-full"}`}>
         <div className="shrink-0">
         <div className="mb-3 flex flex-wrap items-center gap-2">
