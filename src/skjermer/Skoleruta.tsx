@@ -42,7 +42,7 @@ export function Skoleruta({
   return (
     // Skoleruta er ett skjema og én liste. Den ruller i sin helhet, men
     // trenger sin egen rullesone nå som App-ramma ikke ruller lenger.
-    <div className="min-h-0 flex-1 max-w-2xl overflow-auto">
+    <div className="mx-auto min-h-0 w-full max-w-2xl flex-1 overflow-auto">
       <Bolk tittel="Skoleåret">
         <div className="flex gap-3">
           <Felt
