@@ -1,6 +1,6 @@
 [package]
 name = "okta"
-version = "0.1.1"
+version = "0.1.2"
 description = "Økta — undervisningsplanlegging og elevoppfølging"
 authors = ["you"]
 edition = "2021"
