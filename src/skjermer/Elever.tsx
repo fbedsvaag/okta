@@ -18,7 +18,7 @@ import {
 import type { FagIAr } from "../data/fag";
 import { hentInnstilling, settInnstilling } from "../data/skolear";
 import { delNavn } from "../import/parser";
-import { Fagmerke, Felt, Knapp, Kolonnevelger, Tomtilstand } from "../ui/felles";
+import { Fagfiltre, Fagmerke, Felt, Knapp, Kolonnevelger, Tomtilstand } from "../ui/felles";
 import { ElevPanel } from "./ElevPanel";
 import { useGlidende } from "../ui/bevegelse";
 
@@ -166,12 +166,7 @@ export function Elever({
             tom="Alle klasser"
             valg={klasser.map((k) => ({ id: k.id, tekst: `${k.navn} (${k.antall})` }))}
           />
-          <Velger
-            verdi={filterFag}
-            settVerdi={setFilterFag}
-            tom="Alle fag"
-            valg={fag.map((f) => ({ id: f.id, tekst: f.kode }))}
-          />
+          <Fagfiltre fag={fag} valgt={filterFag} settValgt={setFilterFag} />
 
           <div className="ml-auto flex items-center gap-2">
             <label className="flex select-none items-center gap-2 text-liten text-blekk-dempet">

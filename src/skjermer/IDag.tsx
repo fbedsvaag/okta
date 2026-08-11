@@ -56,7 +56,12 @@ export function IDag({
 
       <Bolk tittel="I dag">
         {dagens.length > 0 ? (
-          dagens.map((o) => <OktLinje key={o.id} okt={o} onApne={onApneOkt} />)
+          dagens.map((o) => (
+            <div key={o.id}>
+              <OktLinje okt={o} onApne={onApneOkt} />
+              <Forrigelogg okt={o} alle={okter} onApne={onApneOkt} />
+            </div>
+          ))
         ) : okter.length === 0 ? (
           <Tomtilstand
             tekst={
@@ -120,6 +125,52 @@ function Bolk({ tittel, children }: { tittel: string; children: React.ReactNode 
       </h2>
       {children}
     </section>
+  );
+}
+
+/**
+ * Øktloggen fra forrige gang du hadde faget.
+ *
+ * Skriver du «husk å dele ut oppgavearket» i loggen på torsdag, står det her
+ * neste torsdag — den dagen du faktisk trenger det. Uten dette må man lete
+ * seg bakover i øktlista for å finne igjen sin egen beskjed.
+ *
+ * Bare økter som er holdt teller, altså de som ligger før i tid. En logg
+ * skrevet på en økt lenger fram er ikke en beskjed til i dag.
+ */
+function Forrigelogg({
+  okt,
+  alle,
+  onApne,
+}: {
+  okt: Okt;
+  alle: Okt[];
+  onApne: (id: string) => void;
+}) {
+  const forrige = alle
+    .filter(
+      (o) =>
+        o.skolearFagId === okt.skolearFagId &&
+        o.dato < okt.dato &&
+        (o.logg ?? "").trim() !== "",
+    )
+    .sort((a, b) => b.dato.localeCompare(a.dato))[0];
+
+  if (!forrige) return null;
+
+  return (
+    <button
+      onClick={() => onApne(forrige.id)}
+      className="mb-1 flex w-full gap-2 rounded-vanlig border-l-2 bg-flate-svak px-3 py-2 text-left text-brod hover:bg-flate"
+      style={{ borderColor: okt.farge ?? "var(--color-linje-sterk)" }}
+    >
+      <span className="shrink-0 text-liten uppercase tracking-etikett text-blekk-svak">
+        Sist
+      </span>
+      <span className="min-w-0 flex-1 whitespace-pre-wrap text-blekk-dempet">
+        {forrige.logg}
+      </span>
+    </button>
   );
 }
 

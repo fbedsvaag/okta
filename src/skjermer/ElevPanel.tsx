@@ -21,7 +21,7 @@ import {
   tellForElev,
   type Klasse,
 } from "../data/elever";
-import { Fagmerke } from "../ui/felles";
+import { Fagfiltre, Fagmerke } from "../ui/felles";
 import { NOYTRAL, skalafarge } from "../ui/farger";
 
 /**
@@ -61,6 +61,31 @@ export function ElevPanel({
     { skolearFagId: string; fagKode: string; fagNavn: string; farge: string | null }[]
   >([]);
   const [vurderinger, setVurderinger] = useState<ElevVurdering[]>([]);
+  // Fagfilter for vurderingslista. Tom streng = alle fag.
+  const [vurderingsfag, setVurderingsfag] = useState("");
+
+  // Fagene eleven har vurderinger i, med fargen fra heatmap-radene så knappen
+  // ser lik ut som faget gjør ellers i kortet.
+  const fargePerFag = new Map<string, string | null>([
+    ...fagRader.map((r) => [r.skolearFagId, r.farge] as const),
+    ...tommeFag.map((f) => [f.skolearFagId, f.farge] as const),
+  ]);
+  const vurderingsfagene = [
+    ...new Map(
+      vurderinger.map((v) => [
+        v.skolearFagId,
+        {
+          id: v.skolearFagId,
+          kode: v.fagKode,
+          farge: fargePerFag.get(v.skolearFagId) ?? null,
+        },
+      ]),
+    ).values(),
+  ].sort((a, b) => a.kode.localeCompare(b.kode, "nb-NO"));
+
+  const synligeVurderinger = vurderingsfag
+    ? vurderinger.filter((v) => v.skolearFagId === vurderingsfag)
+    : vurderinger;
   const [klasser, setKlasser] = useState<Klasse[]>([]);
 
   useEffect(() => {
@@ -212,12 +237,29 @@ export function ElevPanel({
         </Bolk>
 
         <Bolk tittel="Vurderinger">
+          {/*
+            Elever med flere fag fikk alle vurderingene i én bunke. Knappene
+            er de fagene eleven faktisk har vurderinger i — et fag uten noen
+            gir en knapp som alltid viser en tom liste, og det er bare i
+            veien.
+          */}
+          {vurderingsfagene.length > 1 && (
+            <div className="mb-2">
+              <Fagfiltre
+                fag={vurderingsfagene}
+                valgt={vurderingsfag}
+                settValgt={setVurderingsfag}
+              />
+            </div>
+          )}
           {vurderinger.length === 0 ? (
             <Stille>Ingen vurderinger i fagene hens ennå.</Stille>
+          ) : synligeVurderinger.length === 0 ? (
+            <Stille>Ingen vurderinger i dette faget.</Stille>
           ) : (
             <table className="w-full text-brod">
               <tbody>
-                {vurderinger.map((v, i) => (
+                {synligeVurderinger.map((v, i) => (
                   <tr key={i} className="border-b border-linje-svak align-top">
                     <td className="w-16 py-1.5">
                       <Fagmerke kode={v.fagKode} farge={null} liten />

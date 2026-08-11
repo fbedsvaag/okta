@@ -185,3 +185,84 @@ export function Kolonnevelger({
     </div>
   );
 }
+
+/**
+ * Fagfilter som knapperad i stedet for rullegardin.
+ *
+ * En enkeltlærer har tre–fire fag. Da er en nedtrekksliste to klikk og et
+ * søk etter noe man allerede vet navnet på, mens knappene viser alle valgene
+ * samtidig — og fargen gjør at man kjenner igjen faget uten å lese koden.
+ *
+ * Tom streng betyr «alle fag», og er alltid første knapp.
+ */
+export function Fagfiltre({
+  fag,
+  valgt,
+  settValgt,
+  alleTekst = "Alle fag",
+}: {
+  fag: { id: string; kode: string; farge: string | null }[];
+  valgt: string;
+  settValgt: (id: string) => void;
+  alleTekst?: string;
+}) {
+  if (fag.length === 0) return null;
+
+  return (
+    <div className="flex flex-wrap items-center gap-1">
+      <Fagknapp aktiv={valgt === ""} farge={null} onClick={() => settValgt("")}>
+        {alleTekst}
+      </Fagknapp>
+      {fag.map((f) => (
+        <Fagknapp
+          key={f.id}
+          aktiv={valgt === f.id}
+          farge={f.farge}
+          // Et nytt klikk på det valgte faget slår filteret av igjen, så man
+          // slipper å sikte på «Alle fag» for å komme tilbake.
+          onClick={() => settValgt(valgt === f.id ? "" : f.id)}
+        >
+          {f.kode}
+        </Fagknapp>
+      ))}
+    </div>
+  );
+}
+
+function Fagknapp({
+  aktiv,
+  farge,
+  onClick,
+  children,
+}: {
+  aktiv: boolean;
+  farge: string | null;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  // Som i Fagmerke: hex med alfa limt bakpå, fordi var(--color-…)1f ikke er
+  // en gyldig fargeverdi.
+  const f = farge ?? "var(--color-blekk-dempet)";
+  const stil = aktiv
+    ? farge
+      ? { background: `${farge}1f`, color: farge, borderColor: farge }
+      : {
+          background: "var(--color-valgt)",
+          color: "var(--color-blekk)",
+          borderColor: "var(--color-linje-sterk)",
+        }
+    : { color: f };
+
+  return (
+    <button
+      onClick={onClick}
+      aria-pressed={aktiv}
+      style={stil}
+      className={`whitespace-nowrap rounded-liten border px-2 py-1 text-liten font-medium ${
+        aktiv ? "" : "border-linje hover:bg-flate"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
