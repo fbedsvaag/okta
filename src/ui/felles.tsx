@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 
 /**
  * Referansen er den norske klassejournalen: linjert, tett, uten pynt (§13).
@@ -260,6 +260,88 @@ function Fagknapp({
       style={stil}
       className={`whitespace-nowrap rounded-liten border px-2 py-1 text-liten font-medium ${
         aktiv ? "" : "border-linje hover:bg-flate"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+/**
+ * Kontekstmeny ved musepekeren.
+ *
+ * Lukkes av Escape, et klikk hvor som helst, og av rulling — en meny som blir
+ * hengende igjen mens innholdet under flytter seg, peker på feil rad.
+ *
+ * Posisjonen justeres etter måling, så menyen ikke havner utenfor vinduet når
+ * du høyreklikker nederst eller helt til høyre.
+ */
+export function Kontekstmeny({
+  x,
+  y,
+  onLukk,
+  children,
+}: {
+  x: number;
+  y: number;
+  onLukk: () => void;
+  children: ReactNode;
+}) {
+  const meny = useRef<HTMLDivElement>(null);
+  const [plass, setPlass] = useState({ venstre: x, topp: y });
+
+  useLayoutEffect(() => {
+    const el = meny.current;
+    if (!el) return;
+    const { width, height } = el.getBoundingClientRect();
+    setPlass({
+      venstre: Math.min(x, window.innerWidth - width - 8),
+      topp: Math.min(y, window.innerHeight - height - 8),
+    });
+  }, [x, y]);
+
+  useEffect(() => {
+    const lukk = () => onLukk();
+    const tast = (e: KeyboardEvent) => e.key === "Escape" && onLukk();
+    // capture på rulling: den bobler ikke fra en rullesone lenger inne.
+    window.addEventListener("click", lukk);
+    window.addEventListener("scroll", lukk, true);
+    window.addEventListener("keydown", tast);
+    return () => {
+      window.removeEventListener("click", lukk);
+      window.removeEventListener("scroll", lukk, true);
+      window.removeEventListener("keydown", tast);
+    };
+  }, [onLukk]);
+
+  return (
+    <div
+      ref={meny}
+      role="menu"
+      style={{ left: plass.venstre, top: plass.topp }}
+      className="fixed z-50 min-w-40 rounded-vanlig border border-linje bg-ark py-1 shadow-[var(--shadow-ark)]"
+    >
+      {children}
+    </div>
+  );
+}
+
+export function Menyvalg({
+  onKlikk,
+  farlig,
+  children,
+}: {
+  onKlikk: () => void;
+  /** rødt, for det som ikke kan angres med ett klikk */
+  farlig?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <button
+      role="menuitem"
+      onClick={onKlikk}
+      className={`block w-full px-3 py-1 text-left text-brod hover:bg-flate ${
+        farlig ? "text-feil" : ""
       }`}
     >
       {children}

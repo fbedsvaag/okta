@@ -22,7 +22,14 @@ import {
   type Fridag,
 } from "../data/kalender";
 import type { FagIAr } from "../data/fag";
-import { Felt, Knapp, Kolonnevelger, Tomtilstand } from "../ui/felles";
+import {
+  Felt,
+  Knapp,
+  Kolonnevelger,
+  Kontekstmeny,
+  Menyvalg,
+  Tomtilstand,
+} from "../ui/felles";
 import { invoke } from "@tauri-apps/api/core";
 import { OktPanel } from "./OktPanel";
 import { Arsplan } from "./Arsplan";
@@ -98,6 +105,9 @@ export function Okter({
   // Flervalg til sletting. Holdes atskilt fra `valgt`, som er økta panelet
   // viser — å hake av rader er noe annet enn å åpne én.
   const [merket, setMerket] = useState<Set<string>>(new Set());
+  const [meny, setMeny] = useState<{ okt: Okt; x: number; y: number } | null>(
+    null,
+  );
 
   const skolearId = skolear.id;
   const skolearStart = skolear.start;
@@ -311,7 +321,43 @@ export function Okter({
               onMerkAlle={(pa) =>
                 setMerket(pa ? new Set(synlige.map((o) => o.id)) : new Set())
               }
+              onMeny={(okt, x, y) => setMeny({ okt, x, y })}
             />
+          )}
+
+          {meny && (
+            <Kontekstmeny
+              x={meny.x}
+              y={meny.y}
+              onLukk={() => setMeny(null)}
+            >
+              <Menyvalg
+                onKlikk={() => {
+                  setValgt(meny.okt.id);
+                  setMeny(null);
+                }}
+              >
+                Rediger
+              </Menyvalg>
+              <Menyvalg
+                farlig
+                onKlikk={async () => {
+                  const okt = meny.okt;
+                  setMeny(null);
+                  if (!(await bekreft(slettetekst([okt])))) return;
+                  await slettOkter([okt.id]);
+                  if (valgt === okt.id) setValgt(null);
+                  setMerket((f) => {
+                    const ny = new Set(f);
+                    ny.delete(okt.id);
+                    return ny;
+                  });
+                  await last();
+                }}
+              >
+                Slett
+              </Menyvalg>
+            </Kontekstmeny>
           )}
 
           {/*
@@ -423,6 +469,7 @@ function Liste({
   onVelg,
   onMerk,
   onMerkAlle,
+  onMeny,
 }: {
   okter: Okt[];
   valgt: string | null;
@@ -435,6 +482,7 @@ function Liste({
   onVelg: (id: string) => void;
   onMerk: (id: string, pa: boolean) => void;
   onMerkAlle: (pa: boolean) => void;
+  onMeny: (okt: Okt, x: number, y: number) => void;
 }) {
   const alleMerket = okter.length > 0 && okter.every((o) => merket.has(o.id));
 
@@ -489,6 +537,10 @@ function Liste({
                 raden sin ramme, og knappen fyller resten av bredden.
               */}
               <div
+                onContextMenu={(e) => {
+                  e.preventDefault();
+                  onMeny(o, e.clientX, e.clientY);
+                }}
                 className={`flex w-full items-center gap-3 border-b border-linje-svak px-2 ${
                   valgt === o.id
                     ? "bg-valgt"
