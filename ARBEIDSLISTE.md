@@ -42,14 +42,22 @@ Det er forsøkt lappet mange ganger uten å løse seg.
 
 Hver av disse er under en time og fjerner daglig friksjon.
 
-- [ ] Riktig timetelling per fag, regnet ut fra øktene som faktisk ligger inne
-- [ ] Batch-slett økter
-- [ ] Batch-slett elever
-- [ ] Høyreklikk på økt: rediger, slett
-- [ ] Lim inn liste i formatet `navn; klasse`
-- [ ] Kopier-knapp til Teams
-- [ ] Generell hendelse i skoleruta med egen tag, som blokkerer undervisning
-  («eksamen i annet fag»)
+- [x] Riktig timetelling per fag. Feilen var at økter datert utenfor
+  skoleåret ble talt med — to SAM3045-økter i august ga faget 126 timer
+  der 120 hører til året. Rettet i alle tre stedene som regner timer.
+- [x] Batch-slett økter. Avkrysning per rad, «merk alle», handlingslinje
+  med antall og sum timer.
+- [x] Batch-slett elever. Bekreftelsen teller opp skåringer,
+  vurderingsresultater og oppfølging for hele utvalget, på tvers av år.
+- [x] Høyreklikk på økt: rediger, slett. Kontekstmenyen er en
+  felleskomponent, så elevtabellen og kalenderen kan bruke den senere.
+- [x] Lim inn liste i formatet `navn; klasse`. Var allerede bygget hele
+  veien — parser, forhåndsvisning og import. La til test på det siste
+  leddet, som manglet dekning.
+- [x] Kopier-knapp til Teams. Kopierer øktas elevrettede tekst: fagkode,
+  når, tema og agenda. Plan og øktlogg går aldri ut, som i §8.1.
+- [x] Generell hendelse i skoleruta med egen tag. Trengte ingen migrasjon —
+  `fridag.type` er TEXT uten CHECK, så det holdt med en fjerde verdi.
 
 ## 3. Mentorelever — grunnmur
 
