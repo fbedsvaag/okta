@@ -63,19 +63,18 @@ Hver av disse er under en time og fjerner daglig friksjon.
 
 Låser opp både Samtaletrekkeren og Klassekart. Bygges før dem.
 
-- [ ] Mentorgruppe som undergruppe av en klasse (typisk 16 av 32)
-- [ ] Elever kan legges inn som mentorelever **uten** å være i noe fag.
-  Gå gjennom import, elevoversikt, filtre, elevside og duplikatgjenkjenning
-  — flere av dem antar i dag at en elev har minst ett fag
-- [ ] Kontaktmøte med mentorelev: notater fra flere møter samlet på ett sted
-- [ ] Bygg §4.7 møtelogg. Migrer elev.notat inn som første rad
-      (dato = elev.endret, ikke dagens dato — notatet ble skrevet
-      en gang, ikke i dag). Migreringen skriver før den sletter,
-      i én transaksjon. Tomme felter skal ikke gi tomme notater.
-      Fjern feltet fra elevpanelet etterpå.
-- [ ] Rydd §3.5 og §5.4 når møteloggen er bygget — de blir
-      foreldreløse av §4.7, men vi vet ikke hvordan tabellen skal
-      se ut før den finnes.
+- [x] Mentorgruppe som undergruppe av en klasse. Flagg på elev_klasse
+  (migrasjon 010), så gruppa følger skoleåret av seg selv.
+- [x] Elever kan legges inn som mentorelever uten å være i noe fag.
+  Gjennomgangen viste at bare importen faktisk stoppet — elevoversikt,
+  filtre, elevside og duplikatgjenkjenning håndterte dem allerede.
+- [x] Kontaktmøte med mentorelev: dekkes av møteloggen under.
+- [x] Bygg §4.7 møtelogg (migrasjon 011). elev.notat migrert inn som
+      første rad, datert elev.endret. Migreringen skriver før den
+      tømmer, og tømmer bare det som faktisk ble kopiert.
+- [x] Rydd §3.5 og §5.4. §3.5 beskriver nå elevnotat, §5.4 er fjernet.
+      Tabellen oppfolging står igjen tom og uten kallsteder — kan
+      slippes i en senere migrasjon når møteloggen har vært i bruk.
 
 ## 4. Store funksjoner
 
