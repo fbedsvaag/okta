@@ -670,10 +670,35 @@ findelte karakterskalaen og bygges sammen med den — se §10.
 
 Som i §4.4 er tastene en snarvei. Verdien kan alltid også velges med musa.
 
-### 4.7 Oppfølging
+### 4.7 Notater og møtelogg
 
-Åpne punkter på tvers av fag, sortert på frist. Passert frist markeres tydelig.
-Lukking med ett klikk.
+Ikke en egen skjerm — en bolk nederst på elevsiden (§4.5), under heatmap og
+vurderinger. Samme sted dekker faglige notater og oppfølging av
+mentorelever: et notat henger alltid på en elev og et skoleår, men aldri
+nødvendigvis på et fag. En mentorsamtale har som regel ikke noe fag; en
+avtale om ekstra arbeid i MFL1 har det.
+
+Kronologisk liste, nyeste øverst. **+ Nytt notat** åpner et felt: dato (i dag
+som forvalg), fritekst, og en avkrysning «skal følges opp» som viser et
+valgfritt fristfelt når den hakes av. Fristen er valgfri også når boksen er
+hakt av — mye oppfølging har ingen dato, bare en tilstand: ikke gjort ennå.
+
+Notater merket «skal følges opp» og ikke lukket ligger fast øverst i lista,
+foran de kronologiske — uavhengig av dato. Har notatet en frist som er
+passert, markeres det som forfalt. Har det ingen frist, ligger det bare
+øverst, uten noen forfalt-markering — det er ingenting å sammenlikne mot.
+Lukking er ett klikk, og notatet synker da ned til sin naturlige plass i
+kronologien.
+
+Dette er en annen type notat enn skåringsnotatet i §4.4: skåringsnotatet
+henger på én bestemt økt og leses i heatmapet ved å holde musa over ruten.
+Møteloggen er en egen, bevisst hendelse — en samtale, en observasjon, en
+avtale — og vises aldri sammen med skåringsnotatene i samme liste.
+
+Elever med et åpent, forfalt oppfølgingspunkt får et lite merke ved navnet i
+elevtabellen (§4.3) — **merket sier bare at et punkt venter, aldri hva det
+er.** Elevtabellen vises på skjerm i klasserommet og i møter; innholdet i et
+notat skal aldri være synlig der uten at du selv åpner eleven.
 
 ### 4.8 Innstillinger
 
