@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { Skolear } from "../data/skolear";
 import type { FagIAr } from "../data/fag";
 import { hentOkter, type Okt } from "../data/okter";
@@ -137,7 +137,13 @@ function Bolk({ tittel, children }: { tittel: string; children: React.ReactNode 
  *
  * Bare økter som er holdt teller, altså de som ligger før i tid. En logg
  * skrevet på en økt lenger fram er ikke en beskjed til i dag.
+ *
+ * Loggen er fritekst uten lengdegrense, så den vises kappet til to linjer.
+ * Uten kappingen bestemmer teksten høyden på hele bolken, og alt under —
+ * årsoversikten inkludert — flytter seg etter hvor mye du skrev sist.
  */
+const LOGGLINJER = 2;
+
 function Forrigelogg({
   okt,
   alle,
@@ -147,6 +153,10 @@ function Forrigelogg({
   alle: Okt[];
   onApne: (id: string) => void;
 }) {
+  const [utvidet, setUtvidet] = useState(false);
+  const [kanUtvides, setKanUtvides] = useState(false);
+  const tekst = useRef<HTMLParagraphElement>(null);
+
   const forrige = alle
     .filter(
       (o) =>
@@ -156,21 +166,56 @@ function Forrigelogg({
     )
     .sort((a, b) => b.dato.localeCompare(a.dato))[0];
 
+  // Om teksten faktisk er lengre enn de to linjene kan bare måles, ikke
+  // gjettes — en logg på to korte linjer skal ikke få en «vis mer» som
+  // ikke viser noe. Målingen skjer på den kappede høyden, så den utløser
+  // ingen ny layout.
+  useLayoutEffect(() => {
+    const el = tekst.current;
+    if (!el || utvidet) return;
+    setKanUtvides(el.scrollHeight > el.clientHeight + 1);
+  }, [forrige?.id, forrige?.logg, utvidet]);
+
   if (!forrige) return null;
 
   return (
-    <button
-      onClick={() => onApne(forrige.id)}
-      className="mb-1 flex w-full flex-col gap-0.5 rounded-vanlig border-l-2 bg-flate-svak px-3 py-2 text-left text-brod hover:bg-flate"
+    <div
+      className="mb-1 rounded-vanlig border-l-2 bg-flate-svak px-3 py-2 text-brod"
       style={{ borderColor: okt.farge ?? "var(--color-linje-sterk)" }}
     >
-      <span className="shrink-0 text-liten uppercase tracking-etikett text-blekk-svak">
+      <button
+        onClick={() => onApne(forrige.id)}
+        className="text-liten uppercase tracking-etikett text-blekk-svak hover:text-blekk-dempet"
+      >
         Notat fra forrige økt
-      </span>
-      <span className="min-w-0 flex-1 whitespace-pre-wrap text-blekk-dempet">
+      </button>
+
+      <p
+        ref={tekst}
+        className="whitespace-pre-wrap text-blekk-dempet"
+        style={
+          utvidet
+            ? undefined
+            : {
+                display: "-webkit-box",
+                WebkitBoxOrient: "vertical",
+                WebkitLineClamp: LOGGLINJER,
+                overflow: "hidden",
+              }
+        }
+      >
         {forrige.logg}
-      </span>
-    </button>
+      </p>
+
+      {(kanUtvides || utvidet) && (
+        <button
+          onClick={() => setUtvidet((v) => !v)}
+          className="mt-0.5 text-liten text-blekk-svak hover:text-blekk"
+        >
+          {utvidet ? "Vis mindre" : "Vis mer"}
+        </button>
+      )}
+    </div>
   );
 }
 
