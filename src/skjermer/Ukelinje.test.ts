@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { fordelPaBaner, spennet } from "./Ukelinje";
+import { BANER, fordelPaBaner, kappBaner, spennet } from "./Ukelinje";
 import type { Okt } from "../data/okter";
 
 function okt(over: Partial<Okt>): Okt {
@@ -84,5 +84,40 @@ describe("fordelPaBaner", () => {
 
   it("gir ingen baner for en dag uten økter", () => {
     expect(fordelPaBaner([], 8)).toEqual([]);
+  });
+});
+
+describe("kappBaner", () => {
+  // Poenget med kappingen er at dagraden er like høy uansett uke. Blir den
+  // høyere når noe overlapper, flytter årsoversikten under seg (§4.1).
+  it("lar alt stå når det får plass", () => {
+    const baner = [[okt({})], [okt({})]];
+    expect(kappBaner(baner, 2)).toEqual({ synlige: baner, skjulte: [] });
+  });
+
+  it("kapper det som ikke får plass og teller det opp", () => {
+    const tredje = okt({ klokkeslett: "10:00" });
+    const fjerde = okt({ klokkeslett: "11:00" });
+    const { synlige, skjulte } = kappBaner(
+      [[okt({})], [okt({})], [tredje], [fjerde]],
+      2,
+    );
+    expect(synlige).toHaveLength(2);
+    expect(skjulte).toEqual([tredje, fjerde]);
+  });
+
+  it("mister ingen økter — alt er enten synlig eller talt", () => {
+    const baner = [[okt({})], [okt({})], [okt({}), okt({})], [okt({})]];
+    const { synlige, skjulte } = kappBaner(baner, 2);
+    expect(synlige.flat().length + skjulte.length).toBe(baner.flat().length);
+  });
+
+  it("tåler en dag uten økter", () => {
+    expect(kappBaner([], 2)).toEqual({ synlige: [], skjulte: [] });
+  });
+
+  it("bruker banetaket som standard", () => {
+    const baner = Array.from({ length: BANER + 1 }, () => [okt({})]);
+    expect(kappBaner(baner).skjulte).toHaveLength(1);
   });
 });

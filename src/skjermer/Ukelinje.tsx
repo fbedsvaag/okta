@@ -17,6 +17,38 @@ const SENEST = 16;
 
 const DAGER = ["man", "tir", "ons", "tor", "fre"];
 
+/** Høyden på én bane, og luft over og under blokkene. */
+const BANEHOYDE = 22;
+const LUFT = 8;
+
+/**
+ * Hvor mange baner en dagrad viser.
+ *
+ * Dette tallet er grunnen til at raden har fast høyde. Før ble høyden regnet
+ * ut fra hvor mange økter som overlappet, og da fikk uka ny høyde hver gang
+ * den endret form — noe som flyttet hele årsoversikten under (§4.1). Nå
+ * bestemmer ramma høyden, og øktene som ikke får plass telles opp i stedet.
+ *
+ * To baner, ikke én: overlappende økter er som regel en tabbe man vil se, og
+ * med bare én bane ville den første overlappen forsvunnet bak en teller. Er
+ * dashbordet for luftig, er dette tallet det eneste som skal endres.
+ */
+export const BANER = 2;
+
+/**
+ * Kapper banene til det raden har plass til.
+ *
+ * Det som ikke får plass forsvinner ikke — det telles opp og vises som
+ * «+n til», som kan klikkes.
+ */
+export function kappBaner(
+  baner: Okt[][],
+  tak: number = BANER,
+): { synlige: Okt[][]; skjulte: Okt[] } {
+  if (baner.length <= tak) return { synlige: baner, skjulte: [] };
+  return { synlige: baner.slice(0, tak), skjulte: baner.slice(tak).flat() };
+}
+
 export function Ukelinje({
   mandag,
   okter,
@@ -63,7 +95,7 @@ export function Ukelinje({
 
       {datoer.map((dato) => {
         const dagens = perDag.get(dato) ?? [];
-        const baner = fordelPaBaner(dagens, fra);
+        const { synlige, skjulte } = kappBaner(fordelPaBaner(dagens, fra));
         const erIdag = dato === idag;
         const passert = dato < idag;
 
@@ -85,9 +117,13 @@ export function Ukelinje({
               <span>{Number(dato.slice(8))}.</span>
             </div>
 
+            {/*
+              Fast høyde, ikke minstehøyde: raden skal være like høy i en uke
+              med én økt som i en uke der alt overlapper.
+            */}
             <div
               className="relative flex-1"
-              style={{ minHeight: `${Math.max(1, baner.length) * 22 + 8}px` }}
+              style={{ height: `${BANER * BANEHOYDE + LUFT}px` }}
             >
               {/* Timelinjer bak øktene, som linjene i en klassejournal. */}
               {timeliste.map((t) => (
@@ -99,18 +135,38 @@ export function Ukelinje({
                 />
               ))}
 
-              {baner.map((bane, i) =>
+              {synlige.map((bane, i) =>
                 bane.map((o) => (
                   <Blokk
                     key={o.id}
                     okt={o}
                     fra={fra}
                     spenn={spenn}
-                    topp={i * 22 + 4}
+                    topp={i * BANEHOYDE + 4}
                     dempet={passert}
                     onApne={() => onApneOkt(o.id)}
                   />
                 )),
+              )}
+
+              {skjulte.length > 0 && (
+                <button
+                  onClick={() => onApneOkt(skjulte[0].id)}
+                  title={skjulte
+                    .map(
+                      (o) =>
+                        `${o.fagKode}${o.klokkeslett ? ` · ${o.klokkeslett}` : ""}${
+                          o.tema ? ` — ${o.tema}` : ""
+                        }`,
+                    )
+                    .join("\n")}
+                  className={`absolute right-0 z-10 flex h-[18px] items-center rounded-liten border border-linje bg-flate px-1 text-mikro tabular-nums text-blekk-dempet hover:brightness-95 ${
+                    passert ? "opacity-55" : ""
+                  }`}
+                  style={{ top: (BANER - 1) * BANEHOYDE + 4 }}
+                >
+                  +{skjulte.length} til
+                </button>
               )}
             </div>
           </div>
