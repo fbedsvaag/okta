@@ -28,31 +28,54 @@ export function Arsoversikt({
   onApneElev: (elevId: string) => void;
   onApneVurderinger: () => void;
 }) {
-  const [uker, setUker] = useState<Uketall[]>([]);
-  const [timer, setTimer] = useState<Fagtimer[]>([]);
-  const [glipp, setGlipp] = useState<Glipp[]>([]);
-  const [kommende, setKommende] = useState<Kommende[]>([]);
+  // Alle fire hentes samlet og settes i én state. Før var det fire kall som
+  // hver satte sin egen, og siden hvert panel er innholdsstyrt flyttet
+  // oversikten på seg hver gang et av dem landet — fire ganger ved åpning.
+  //
+  // Avbruddsvakta hører med: bytter man skoleår mens kallene er ute, skal
+  // ikke det gamle årets tall lande i det nye.
+  const [data, setData] = useState<Oversikt | null>(null);
 
   useEffect(() => {
-    void hentInnsatsPerUke(skolearId).then(setUker);
-    void hentTimeregnskap(skolearId).then(setTimer);
-    void hentGlipp(skolearId).then(setGlipp);
-    void hentKommendeVurderinger(skolearId).then(setKommende);
+    let avbrutt = false;
+    (async () => {
+      const [uker, timer, glipp, kommende] = await Promise.all([
+        hentInnsatsPerUke(skolearId),
+        hentTimeregnskap(skolearId),
+        hentGlipp(skolearId),
+        hentKommendeVurderinger(skolearId),
+      ]);
+      if (avbrutt) return;
+      setData({ uker, timer, glipp, kommende });
+    })();
+    return () => {
+      avbrutt = true;
+    };
   }, [skolearId]);
 
   return (
     <div className="mt-8 grid gap-x-8 gap-y-7 lg:grid-cols-2">
       <div className="lg:col-span-2">
-        <Innsats uker={uker} />
+        <Innsats uker={data?.uker ?? []} />
       </div>
-      <Timeregnskap fag={timer} />
+      <Timeregnskap fag={data?.timer ?? []} />
       <div className="grid gap-y-7">
-        <Vurderingsfrister rader={kommende} onApne={onApneVurderinger} />
-        <Glipper elever={glipp} onApne={onApneElev} />
+        <Vurderingsfrister
+          rader={data?.kommende ?? []}
+          onApne={onApneVurderinger}
+        />
+        <Glipper elever={data?.glipp ?? []} onApne={onApneElev} />
       </div>
     </div>
   );
 }
+
+type Oversikt = {
+  uker: Uketall[];
+  timer: Fagtimer[];
+  glipp: Glipp[];
+  kommende: Kommende[];
+};
 
 function Panel({
   tittel,
