@@ -15,6 +15,8 @@ export type ElevRad = {
   etternavn: string;
   klasseId: string | null;
   klasseNavn: string | null;
+  /** 1 = min mentorelev dette året. Krever at eleven har en klasse (§3.2). */
+  mentor: boolean;
   /** skolear_fag-id-ene eleven er koblet til i året */
   fagIder: string[];
   /** fagkodene, til visning */
@@ -83,11 +85,13 @@ export async function hentElever(skolearId: string): Promise<ElevRad[]> {
     etternavn: string;
     klasseId: string | null;
     klasseNavn: string | null;
+    mentor: number;
     endret: string;
     notat: string | null;
   }>(
     `SELECT e.id, e.kode, e.fornavn, e.etternavn, e.endret, e.notat,
-            k.id AS klasseId, k.navn AS klasseNavn
+            k.id AS klasseId, k.navn AS klasseNavn,
+            COALESCE(ek.mentor, 0) AS mentor
        FROM elev e
        LEFT JOIN elev_klasse ek
               ON ek.elev_id = e.id AND ek.skolear_id = $1 AND ek.slettet IS NULL
@@ -157,6 +161,7 @@ export async function hentElever(skolearId: string): Promise<ElevRad[]> {
 
   return rader.map((r) => ({
     ...r,
+    mentor: r.mentor === 1,
     fagIder: fagPerElev.get(r.id)?.ider ?? [],
     fagKoder: fagPerElev.get(r.id)?.koder ?? [],
     okter: skaringPerElev.get(r.id)?.antall ?? 0,
@@ -211,6 +216,32 @@ export async function slettElev(id: string): Promise<void> {
 // ------------------------------------------------------- koblinger til år
 
 /** Én klasse per elev per skoleår. Å sette en ny bytter ut den forrige. */
+/**
+ * Merker eleven som mentorelev dette skoleåret, eller fjerner merket.
+ *
+ * Flagget ligger på klassekoblingen (§3.2), så en mentorelev må ha en klasse.
+ * Det er ikke en begrensning i praksis — mentorgruppa *er* en delmengde av en
+ * klasse — men det betyr at merket følger med når klassen fjernes.
+ *
+ * Returnerer false hvis eleven ikke har en klasse i året, så kallstedet kan
+ * si fra i stedet for at handlingen forsvinner i stillhet.
+ */
+export async function settMentor(
+  elevId: string,
+  skolearId: string,
+  pa: boolean,
+): Promise<boolean> {
+  const finnes = await hent<{ id: string }>(
+    `SELECT id FROM elev_klasse
+      WHERE elev_id = $1 AND skolear_id = $2 AND slettet IS NULL`,
+    [elevId, skolearId],
+  );
+  if (!finnes[0]) return false;
+
+  await oppdater("elev_klasse", finnes[0].id, { mentor: pa ? 1 : 0 });
+  return true;
+}
+
 export async function settKlasse(
   elevId: string,
   skolearId: string,

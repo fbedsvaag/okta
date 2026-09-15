@@ -74,6 +74,12 @@ fn migrations() -> Vec<Migration> {
             sql: include_str!("../migrations/009_periode_kompetansemal.sql"),
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 10,
+            description: "mentorgruppe som delmengde av klassen",
+            sql: include_str!("../migrations/010_mentor.sql"),
+            kind: MigrationKind::Up,
+        },
     ]
 }
 
