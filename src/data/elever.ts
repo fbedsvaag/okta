@@ -310,6 +310,65 @@ export async function tellForElev(
  * kommer ikke tilbake gjennom grensesnittet. Sikkerhetskopien fra i dag er
  * veien tilbake hvis det var feil elev.
  */
+/** Samme tall som `tellForElev`, men for flere elever under ett. */
+export async function tellForElever(
+  elevIder: string[],
+): Promise<{ skaringer: number; vurderinger: number; oppfolging: number }> {
+  if (elevIder.length === 0)
+    return { skaringer: 0, vurderinger: 0, oppfolging: 0 };
+
+  const plass = elevIder.map((_, i) => `$${i + 1}`).join(", ");
+  const [r] = await hent<{
+    skaringer: number;
+    vurderinger: number;
+    oppfolging: number;
+  }>(
+    `SELECT
+       (SELECT COUNT(*) FROM skaring WHERE elev_id IN (${plass})
+          AND slettet IS NULL) AS skaringer,
+       (SELECT COUNT(*) FROM vurderingsresultat WHERE elev_id IN (${plass})
+          AND slettet IS NULL) AS vurderinger,
+       (SELECT COUNT(*) FROM oppfolging WHERE elev_id IN (${plass})
+          AND slettet IS NULL) AS oppfolging`,
+    elevIder,
+  );
+  return r;
+}
+
+/**
+ * Spørsmålet som stilles før elever slettes.
+ *
+ * Eleven lever på tvers av skoleår (§3.2), så en sletting tar med seg alt —
+ * også det som ble ført i fjor. Det må stå i spørsmålet.
+ */
+export function slettElevtekst(
+  navn: string[],
+  n: { skaringer: number; vurderinger: number; oppfolging: number },
+): string {
+  const hvem =
+    navn.length === 1 ? `Slette ${navn[0]}?` : `Slette ${navn.length} elever?`;
+
+  const hva = [
+    n.skaringer && `${n.skaringer} skåringer`,
+    n.vurderinger && `${n.vurderinger} vurderingsresultater`,
+    n.oppfolging && `${n.oppfolging} oppfølgingspunkter`,
+  ].filter(Boolean);
+
+  const omfang =
+    hva.length > 0
+      ? `Dette fjerner ${hva.join(", ")} — i alle skoleår, ikke bare dette.`
+      : navn.length === 1
+        ? "Eleven har ingen skåringer eller vurderinger registrert."
+        : "Ingen av dem har skåringer eller vurderinger registrert.";
+
+  return `${hvem}\n\n${omfang}\n\nSikkerhetskopien fra i dag er veien tilbake.`;
+}
+
+/** Sletter flere elever under ett, med alt som henger på dem. */
+export async function slettElever(elevIder: string[]): Promise<void> {
+  for (const id of elevIder) await slettElevHelt(id);
+}
+
 export async function slettElevHelt(elevId: string): Promise<void> {
   for (const tabell of [
     "skaring",

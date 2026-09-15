@@ -9,8 +9,11 @@ import {
   hentKlasser,
   koblePaFag,
   tellSkaringerIFag,
+  tellForElever,
   opprettElev,
   settKlasse,
+  slettElever,
+  slettElevtekst,
   slettKlasse,
   type ElevRad,
   type Klasse,
@@ -74,6 +77,8 @@ export function Elever({
   // Lesemodus er standard, som i Fag. Da åpner et klikk i tabellen eleven
   // i stedet for å sette markøren i et felt.
   const [rediger, setRediger] = useState(false);
+  // Flervalg til sletting, atskilt fra `valgtElev` som er elevkortet du ser.
+  const [merket, setMerket] = useState<Set<string>>(new Set());
 
   async function last() {
     setElever(await hentElever(skolearId));
@@ -119,6 +124,9 @@ export function Elever({
     });
     return sorter(filtrert, sortering);
   }, [elever, sok, filterKlasse, filterFag, sortering]);
+
+  const alleMerket =
+    synlige.length > 0 && synlige.every((e) => merket.has(e.id));
 
   // Bla gjennom lista slik den faktisk står — filtrert og sortert. Blar du
   // i 1STC sortert på innsats, er det den rekkefølgen som gjelder, ikke
@@ -209,6 +217,20 @@ export function Elever({
           <table className="tabell-fast w-full text-brod">
             <thead>
               <tr className="border-b border-linje text-left text-etikett uppercase tracking-etikett text-blekk-dempet">
+                <th className="w-6 py-1">
+                  <input
+                    type="checkbox"
+                    checked={alleMerket}
+                    title={alleMerket ? "Fjern merkingen" : "Merk alle i lista"}
+                    onChange={(e) =>
+                      setMerket(
+                        e.target.checked
+                          ? new Set(synlige.map((s) => s.id))
+                          : new Set(),
+                      )
+                    }
+                  />
+                </th>
                 <Overskrift kolonne="fornavn" sortering={sortering} onKlikk={bytSortering}>
                   Fornavn
                 </Overskrift>
@@ -294,13 +316,22 @@ export function Elever({
                   skolearId={skolearId}
                   rediger={rediger}
                   valgt={valgtElev === e.id}
+                  merket={merket.has(e.id)}
                   vis={vis}
                   onApne={() => setValgtElev(e.id)}
+                  onMerk={(pa) =>
+                    setMerket((f) => {
+                      const ny = new Set(f);
+                      if (pa) ny.add(e.id);
+                      else ny.delete(e.id);
+                      return ny;
+                    })
+                  }
                   onEndret={last}
                 />
               ))}
               <NyElevRad
-                kolonner={2 + vis.size}
+                kolonner={3 + vis.size}
                 skolearId={skolearId}
                 arvKlasse={filterKlasse || null}
                 arvFag={filterFag || null}
@@ -308,6 +339,37 @@ export function Elever({
               />
             </tbody>
           </table>
+          </div>
+        )}
+
+        {merket.size > 0 && (
+          <div className="sticky bottom-0 mt-3 flex items-center gap-3 border border-linje bg-flate px-3 py-2 text-brod shadow-[0_-4px_12px_rgba(0,0,0,0.04)]">
+            <span className="tabular-nums">
+              {merket.size} {merket.size === 1 ? "elev" : "elever"} merket
+            </span>
+            <div className="ml-auto flex items-center gap-2">
+              <Knapp variant="stille" onClick={() => setMerket(new Set())}>
+                Nullstill
+              </Knapp>
+              <button
+                onClick={async () => {
+                  const ider = [...merket];
+                  const navn = elever
+                    .filter((e) => merket.has(e.id))
+                    .map((e) => `${e.fornavn} ${e.etternavn}`);
+                  const n = await tellForElever(ider);
+                  if (!(await bekreft(slettElevtekst(navn, n)))) return;
+                  await slettElever(ider);
+                  if (valgtElev && merket.has(valgtElev)) setValgtElev(null);
+                  setMerket(new Set());
+                  await last();
+                }}
+                className="text-brod text-feil hover:text-feil-mork"
+              >
+                Slett{" "}
+                {merket.size === 1 ? "eleven" : `de ${merket.size} elevene`}
+              </button>
+            </div>
           </div>
         )}
 
@@ -471,8 +533,10 @@ function Rad({
   skolearId,
   rediger,
   valgt,
+  merket,
   vis,
   onApne,
+  onMerk,
   onEndret,
 }: {
   elev: ElevRad;
@@ -481,8 +545,10 @@ function Rad({
   skolearId: string;
   rediger: boolean;
   valgt: boolean;
+  merket: boolean;
   vis: ReadonlySet<Synlig>;
   onApne: () => void;
+  onMerk: (pa: boolean) => void;
   onEndret: () => void;
 }) {
   const [apenFag, setApenFag] = useState(false);
@@ -514,8 +580,17 @@ function Rad({
       onClick={rediger ? undefined : onApne}
       className={`h-[var(--hoyde-rad)] border-b border-linje-svak ${
         rediger ? "" : "cursor-pointer"
-      } ${valgt ? "bg-valgt" : "hover:bg-flate-svak"}`}
+      } ${valgt ? "bg-valgt" : merket ? "bg-flate-svak" : "hover:bg-flate-svak"}`}
     >
+      {/* Klikket stoppes her, ellers ville avhukingen åpnet elevkortet. */}
+      <td className="py-1.5" onClick={(e) => e.stopPropagation()}>
+        <input
+          type="checkbox"
+          checked={merket}
+          title="Merk for sletting"
+          onChange={(e) => onMerk(e.target.checked)}
+        />
+      </td>
       <td className="py-1.5 pr-5">
         <Navnefelt
           verdi={elev.fornavn}
