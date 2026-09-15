@@ -24,12 +24,19 @@ og det finnes allerede baser med den døde pekeren i seg.
 Dashbordet som flytter seg og kalenderen som ikke er fast er samme problem.
 Det er forsøkt lappet mange ganger uten å løse seg.
 
-- [ ] **Finn årsaken før du fikser.** Hva er det som gjør at høyden varierer?
-  Rullesoner inni hverandre, prosenthøyder, innhold som bestemmer
-  containerstørrelse. Beskriv den før du rører noe.
-- [ ] Dashbordet står fast fra «dagens økt» og ned
-- [ ] Kalenderen har fast cellehøyde. Korte uker og uker med mange hendelser
-  er like høye, og hendelser tar fast plass
+- [x] **Finn årsaken før du fikser.** Årsaken var ikke rammene — flex-kjeden
+  og rullesonene var allerede riktige etter de tretten forsøkene, og det er
+  én rullesone per skjerm. Høyden ble regnet nedenfra og opp: hvert element
+  som burde vært en fast ramme brukte `min-height` (et gulv, ikke en høyde),
+  og listene inni ble rendret uten tak.
+- [x] Dashbordet står fast fra «dagens økt» og ned. Fire kilder fikset:
+  Ukelinje regnet høyde fra antall overlappende økter, Forrigelogg viste
+  fritekst uten lengdegrense, «Neste økter» dukket opp og forsvant, og
+  paddingen i App.tsx var ulik med og uten sidepanel. Årsoversikten henter
+  nå alle fire tallene samlet — én reflow ved åpning i stedet for fire.
+- [x] Kalenderen har fast cellehøyde, regnet ut fra bredden på
+  månedskortene i stedet for en hardkodet verdi. Økter som ikke får plass
+  vises som «+n til» som kan klikkes.
 
 ## 2. Billige fikser
 
