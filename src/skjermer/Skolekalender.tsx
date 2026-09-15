@@ -1,4 +1,11 @@
-import { Fragment, useEffect, useMemo, useState } from "react";
+import {
+  Fragment,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { confirm as bekreft } from "@tauri-apps/plugin-dialog";
 import {
   blokkering,
@@ -12,6 +19,90 @@ import { hentFridager, hentInnstilling, type Skolear } from "../data/skolear";
 import { hentOkter, opprettOkt, slettOkt, type Okt } from "../data/okter";
 import type { FagIAr } from "../data/fag";
 
+// --------------------------------------------------------------- cellehøyde
+
+/** Bredden på ukenummerkolonna (1.6rem) og de fem stregene mellom kolonnene. */
+const UKEKOLONNE = 25.6;
+const STREKER = 5;
+
+/**
+ * Høyden på en dagrute i forhold til bredden.
+ *
+ * Ruta er litt høyere enn den er bred. Er vinduet smalt blir rutene lave og
+ * det er plass til færre økter i hver; er det bredt, er det plass til flere.
+ * Det er dette som gjør at høyden følger plassen som finnes i stedet for å
+ * være en fast verdi som klipper på en liten skjerm.
+ */
+const FORHOLD = 1.1;
+const HOYDE_MINST = 44;
+const HOYDE_MEST = 110;
+
+/** Datolinja øverst i ruta, og høyden på én økt- eller merkelapplinje. */
+const DATOLINJE = 20;
+const LINJE = 14;
+
+/**
+ * Hvor mange linjer det er plass til under datoen.
+ *
+ * Alltid minst én: en rute som ikke viser noe som helst er verre enn en som
+ * viser «+3 til».
+ */
+export function linjerSomFarPlass(cellehoyde: number): number {
+  return Math.max(1, Math.floor((cellehoyde - DATOLINJE) / LINJE));
+}
+
+/**
+ * Kapper øktene til det ruta har plass til.
+ *
+ * Går det ikke opp, brukes den nederste linja til telleren — ellers ville
+ * «+n til» selv skjøvet en økt ut uten å si fra om det.
+ */
+export function kappOkter<T>(
+  okter: T[],
+  plass: number,
+): { synlige: T[]; skjulte: number } {
+  if (plass <= 0) return { synlige: [], skjulte: okter.length };
+  if (okter.length <= plass) return { synlige: okter, skjulte: 0 };
+  const synlige = okter.slice(0, plass - 1);
+  return { synlige, skjulte: okter.length - synlige.length };
+}
+
+/**
+ * Måler hvor brede månedskortene faktisk ble, og regner ut cellehøyden.
+ *
+ * Bredden leses av rutenettets egne kolonnespor framfor å gjettes, så tallet
+ * stemmer uansett hvor mange måneder som fikk plass ved siden av hverandre.
+ */
+function useCellehoyde(): [React.RefObject<HTMLDivElement | null>, number] {
+  const rutenett = useRef<HTMLDivElement>(null);
+  const [hoyde, setHoyde] = useState(HOYDE_MINST);
+
+  useLayoutEffect(() => {
+    const el = rutenett.current;
+    if (!el) return;
+
+    const mal = () => {
+      const spor = getComputedStyle(el)
+        .gridTemplateColumns.split(" ")
+        .map(parseFloat)
+        .filter((n) => !Number.isNaN(n));
+      const kortbredde = spor[0] ?? el.clientWidth;
+      const dagbredde = (kortbredde - UKEKOLONNE - STREKER) / 5;
+      if (dagbredde <= 0) return;
+      setHoyde(
+        Math.min(HOYDE_MEST, Math.max(HOYDE_MINST, Math.round(dagbredde * FORHOLD))),
+      );
+    };
+
+    mal();
+    const ro = new ResizeObserver(mal);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  return [rutenett, hoyde];
+}
+
 /**
  * Kalenderen over skoleåret.
  *
@@ -20,6 +111,10 @@ import type { FagIAr } from "../data/fag";
  *
  * Blokkerte dager tones og får navnet sitt. Da ser du hva du sperrer mens du
  * sperrer det, og oppdager med en gang hvis det allerede ligger økter der.
+ *
+ * Alle ruter er like høye, uansett hvor mange økter som ligger i dem. En uke
+ * i november med fem økter hver dag skal ikke gjøre resten av måneden
+ * uleselig — det som ikke får plass telles opp som «+n til».
  */
 export function Skolekalender({
   skolear,
@@ -37,6 +132,7 @@ export function Skolekalender({
   // legge inn alle på én gang er enklere enn et serieskjema, og du ser hele
   // tiden hvor de havner.
   const [valgte, setValgte] = useState<Set<string>>(new Set());
+  const [rutenett, cellehoyde] = useCellehoyde();
 
   async function last() {
     setOkter(await hentOkter(skolear.id));
@@ -119,11 +215,15 @@ export function Skolekalender({
       </div>
 
       <div className="min-h-0 flex-1 overflow-auto">
-      <div className="grid gap-x-6 gap-y-7 [grid-template-columns:repeat(auto-fill,minmax(17rem,1fr))]">
+      <div
+        ref={rutenett}
+        className="grid gap-x-6 gap-y-7 [grid-template-columns:repeat(auto-fill,minmax(17rem,1fr))]"
+      >
         {maneder.map((m) => (
           <Maned
             key={m}
             maned={m}
+            cellehoyde={cellehoyde}
             spennFra={skolear.start}
             spennTil={skolear.slutt}
             perDag={perDag}
@@ -169,6 +269,7 @@ export function Skolekalender({
 
 function Maned({
   maned,
+  cellehoyde,
   spennFra,
   spennTil,
   perDag,
@@ -181,6 +282,7 @@ function Maned({
   onSlettOkt,
 }: {
   maned: string;
+  cellehoyde: number;
   spennFra: string;
   spennTil: string;
   perDag: Map<string, Okt[]>;
@@ -213,18 +315,22 @@ function Maned({
       <div className="grid grid-cols-[1.6rem_repeat(5,1fr)] gap-px bg-linje-medium">
         {uker.map((uke, r) => (
           <Fragment key={r}>
-            <div className="flex min-h-[3.25rem] items-start justify-center bg-ark pt-1 text-mikro tabular-nums text-blekk-svak">
+            <div
+              className="flex items-start justify-center bg-ark pt-1 text-mikro tabular-nums text-blekk-svak"
+              style={{ height: cellehoyde }}
+            >
               {uke.find((d) => d !== null)
                 ? ukenummer(uke.find((d) => d !== null)!)
                 : ""}
             </div>
             {uke.map((dato, i) =>
               dato === null ? (
-                <div key={i} className="min-h-[3.25rem] bg-ark" />
+                <div key={i} className="bg-ark" style={{ height: cellehoyde }} />
               ) : (
                 <Dag
                   key={dato}
                   dato={dato}
+                  cellehoyde={cellehoyde}
                   utenfor={dato < spennFra || dato > spennTil}
                   okter={perDag.get(dato) ?? []}
                   blokkert={blokkering(dato, fridager, rode)}
@@ -245,6 +351,7 @@ function Maned({
 
 function Dag({
   dato,
+  cellehoyde,
   utenfor,
   okter,
   blokkert,
@@ -255,6 +362,7 @@ function Dag({
   onSlettOkt,
 }: {
   dato: string;
+  cellehoyde: number;
   utenfor: boolean;
   okter: Okt[];
   blokkert: Blokkering | null;
@@ -267,6 +375,14 @@ function Dag({
   const dagnr = Number(dato.slice(8));
   // Ligger det økter på en blokkert dag, er det noe å rydde opp i.
   const konflikt = blokkert !== null && okter.length > 0;
+
+  // Merkelappen for ferie eller helligdag legger beslag på en linje, så den
+  // må trekkes fra før øktene får vite hvor mye plass de har igjen.
+  const merkelapp = blokkert !== null && !utenfor;
+  const { synlige, skjulte } = kappOkter(
+    okter,
+    linjerSomFarPlass(cellehoyde) - (merkelapp ? 1 : 0),
+  );
 
   const bakgrunn = utenfor
     ? "bg-flate"
@@ -281,7 +397,8 @@ function Dag({
   return (
     <div
       onClick={utenfor ? undefined : onVelg}
-      className={`min-h-[3.25rem] px-1 py-0.5 ${bakgrunn} ${
+      style={{ height: cellehoyde }}
+      className={`overflow-hidden px-1 py-0.5 ${bakgrunn} ${
         utenfor ? "" : "cursor-pointer hover:brightness-[0.98]"
       } ${valgt ? "outline outline-2 -outline-offset-2 outline-aksent" : ""}`}
     >
@@ -307,7 +424,7 @@ function Dag({
         )}
       </div>
 
-      {blokkert && !utenfor && (
+      {merkelapp && (
         <p
           className={`truncate text-mikro ${
             konflikt ? "text-feil" : "text-blekk-svak"
@@ -323,7 +440,7 @@ function Dag({
         åpner økta. Krysset vises først når musa er over brikka, så rutene
         holder seg rolige når du bare ser på kalenderen (§13).
       */}
-      {okter.map((o) => (
+      {synlige.map((o) => (
         <div
           key={o.id}
           className="group/okt mt-0.5 flex w-full items-center gap-1 rounded-[2px] px-0.5 text-mikro hover:bg-flate"
@@ -355,6 +472,31 @@ function Dag({
           </button>
         </div>
       ))}
+
+      {/*
+        Telleren åpner den første som ikke fikk plass, så det finnes en vei
+        videre uten å gå om øktlista. Alle de skjulte ligger i tooltipen.
+      */}
+      {skjulte > 0 && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onApneOkt(okter[synlige.length].id);
+          }}
+          title={okter
+            .slice(synlige.length)
+            .map(
+              (o) =>
+                `${o.fagKode}${o.klokkeslett ? ` ${o.klokkeslett}` : ""}${
+                  o.tema ? ` — ${o.tema}` : ""
+                }`,
+            )
+            .join("\n")}
+          className="mt-0.5 w-full px-0.5 text-left text-mikro tabular-nums text-blekk-svak hover:text-blekk"
+        >
+          +{skjulte} til
+        </button>
+      )}
     </div>
   );
 }
