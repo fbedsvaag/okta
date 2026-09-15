@@ -173,3 +173,29 @@ describe("avstand", () => {
     expect(avstand("abc", "xyzxyzxyz", 2)).toBeGreaterThan(2);
   });
 });
+
+describe("import uten fag", () => {
+  const tony = elev("t", "Tony", "Soprano", "1STC", [MFL1]);
+  const utenFag: Importoppsett = { skolearFagId: null, valgtKlasse: null };
+
+  it("gjenkjenner en elev som finnes fra før, uten å lage en fagkobling", () => {
+    // Mentorgruppa limes inn uten fag. Da finnes det ingen «allerede i faget»
+    // å skille på — eleven finnes, og det er hele svaret.
+    const [v] = vurderImport([linje("Tony Soprano", "1STC")], [tony], utenFag);
+    expect(v.status).toBe("allerede");
+    expect(v.valgt).toBe("t");
+  });
+
+  it("foreslår ny elev for et navn som ikke finnes", () => {
+    const [v] = vurderImport([linje("Jennifer Melfi", "1STC")], [tony], utenFag);
+    expect(v.status).toBe("ny");
+    expect(v.valgt).toBe("ny");
+  });
+
+  it("lar klassesignalet gjelde også uten fag", () => {
+    // Ulik klasse er fortsatt det sterkeste signalet om to personer (§7.1).
+    const [v] = vurderImport([linje("Tony Soprano", "3STB")], [tony], utenFag);
+    expect(v.status).toBe("spor");
+    expect(v.valgt).toBe("ny");
+  });
+});

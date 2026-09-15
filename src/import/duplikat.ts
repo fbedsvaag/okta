@@ -57,8 +57,11 @@ export type Vurdering = {
 };
 
 export type Importoppsett = {
-  /** Faget det importeres til, i det aktive skoleåret. */
-  skolearFagId: string;
+  /**
+   * Faget det importeres til, i det aktive skoleåret. null når lista limes
+   * inn uten fag — det vanlige når det er mentorgruppa som legges inn (§7).
+   */
+  skolearFagId: string | null;
   /** Klassen som er valgt i forhåndsvisningen. Linjas egen klasse vinner. */
   valgtKlasse: string | null;
 };
@@ -141,8 +144,12 @@ function vurderLinje(
   }
 
   // Samme liste limt inn i samme fag to ganger: ingenting skal dupliseres
-  // og ingenting overskrives.
-  if (treff.skolearFagIder.includes(oppsett.skolearFagId)) {
+  // og ingenting overskrives. Uten fag finnes ikke den situasjonen — da er
+  // det ingen kobling å lage, og linja er allerede dekket.
+  if (
+    oppsett.skolearFagId === null ||
+    treff.skolearFagIder.includes(oppsett.skolearFagId)
+  ) {
     return {
       linje,
       status: "allerede",

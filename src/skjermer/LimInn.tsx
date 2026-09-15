@@ -25,6 +25,9 @@ export function LimInn({
 }) {
   const [fagId, setFagId] = useState(startFagId ?? fag[0]?.id ?? "");
   const [klasse, setKlasse] = useState("");
+  // Mentorgruppa limes inn uten fag: du er kontaktlærer for elever du ikke
+  // underviser, og da finnes det ingen fagkobling å lage (§7).
+  const [somMentor, setSomMentor] = useState(false);
   const [tekst, setTekst] = useState("");
   const [rader, setRader] = useState<Importrad[] | null>(null);
   const [hoppet, setHoppet] = useState(0);
@@ -36,7 +39,7 @@ export function LimInn({
 
     const eksisterende = await hentForDuplikatsjekk(skolearId);
     const vurderinger = vurderImport(elever, eksisterende, {
-      skolearFagId: fagId,
+      skolearFagId: fagId || null,
       valgtKlasse: klasse.trim() === "" ? null : klasse.trim(),
     });
 
@@ -48,10 +51,14 @@ export function LimInn({
     if (!rader) return;
     setJobber(true);
     try {
-      const r = await utforImport(rader, skolearId, fagId);
-      const kode = fag.find((f) => f.id === fagId)?.kode ?? "faget";
+      const r = await utforImport(rader, skolearId, fagId || null, somMentor);
+      const hvor = fagId
+        ? (fag.find((f) => f.id === fagId)?.kode ?? "faget")
+        : somMentor
+          ? "Mentorgruppa"
+          : "Uten fag";
       onFerdig(
-        `${kode}: ${r.opprettet} nye elever, ${r.koblet} koblet fra før` +
+        `${hvor}: ${r.opprettet} nye elever, ${r.koblet} fantes fra før` +
           (r.hoppet > 0 ? `, ${r.hoppet} hoppet over` : ""),
       );
     } finally {
@@ -129,6 +136,7 @@ export function LimInn({
                 {f.kode} — {f.navn}
               </option>
             ))}
+            <option value="">Uten fag — mentorelever</option>
           </select>
         </label>
         <Felt
@@ -143,6 +151,27 @@ export function LimInn({
         Klassen brukes på linjer som ikke har klasse selv. Står den tom, blir
         elevene stående uten klasse — det er lov.
       </p>
+
+      <label className="mt-2 flex select-none items-center gap-2 text-brod">
+        <input
+          type="checkbox"
+          checked={somMentor}
+          onChange={(e) => setSomMentor(e.target.checked)}
+        />
+        Merk dem som mentorelever dette året
+      </label>
+      {somMentor && klasse.trim() === "" && (
+        <p className="mt-1 text-liten text-varsel">
+          Mentormerket henger på klassen (§3.2). Linjer uten klasse blir
+          opprettet, men ikke merket.
+        </p>
+      )}
+      {fagId === "" && !somMentor && (
+        <p className="mt-1 text-liten text-blekk-dempet">
+          Uten fag opprettes elevene og plasseres i klassen, men kobles ikke
+          til noe fag. Limer du dem inn i et fag senere, blir de gjenkjent.
+        </p>
+      )}
 
       <textarea
         value={tekst}

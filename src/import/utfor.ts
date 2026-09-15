@@ -3,6 +3,7 @@ import {
   koblePaFag,
   opprettElev,
   settKlasse,
+  settMentor,
 } from "../data/elever";
 import type { Vurdering } from "./duplikat";
 
@@ -28,10 +29,19 @@ export type Resultat = {
   klasseByttet: number;
 };
 
+/**
+ * Skriver importen til databasen.
+ *
+ * `skolearFagId` kan være null: da opprettes elevene og plasseres i klassen,
+ * men ingen fagkobling lages. Det er slik mentorgruppa legges inn — du er
+ * kontaktlærer for elever du ikke underviser (§7).
+ */
 export async function utforImport(
   rader: Importrad[],
   skolearId: string,
-  skolearFagId: string,
+  skolearFagId: string | null,
+  /** Merk de importerte som mentorelever i dette året. */
+  somMentor = false,
 ): Promise<Resultat> {
   const resultat: Resultat = {
     opprettet: 0,
@@ -60,21 +70,23 @@ export async function utforImport(
       const elevId = await opprettElev(rad.linje.fornavn, rad.linje.etternavn);
       if (rad.klasse.trim() !== "") {
         await settKlasse(elevId, skolearId, await klasseId(rad.klasse.trim()));
+        if (somMentor) await settMentor(elevId, skolearId, true);
       }
-      await koblePaFag(elevId, skolearFagId);
+      if (skolearFagId) await koblePaFag(elevId, skolearFagId);
       resultat.opprettet++;
       continue;
     }
 
     // "Samme elev" legger til fag, ikke klasse. Klassen byttes bare hvis
     // brukeren uttrykkelig har sagt det (§7.1).
-    await koblePaFag(rad.valgt, skolearFagId);
+    if (skolearFagId) await koblePaFag(rad.valgt, skolearFagId);
     resultat.koblet++;
 
     if (rad.byttKlasse && rad.klasse.trim() !== "") {
       await settKlasse(rad.valgt, skolearId, await klasseId(rad.klasse.trim()));
       resultat.klasseByttet++;
     }
+    if (somMentor) await settMentor(rad.valgt, skolearId, true);
   }
 
   return resultat;
