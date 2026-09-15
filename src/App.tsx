@@ -268,11 +268,14 @@ export default function App() {
         begrenset høyde å rulle innenfor.
       */}
       <main className="flex min-h-0 flex-1 flex-col overflow-clip">
-        <div
-          className={`flex min-h-0 flex-1 flex-col ${
-            medPanel(visning) ? "px-6 py-4" : "px-6 py-5 sm:px-8 sm:py-6"
-          }`}
-        >
+        {/*
+          Samme padding på alle skjermer. Den var før avhengig av om skjermen
+          hadde sidepanel, og da hoppet innholdet 8 px både sidelengs og ned
+          hver gang man byttet fane. Skjermene med panel er de tetteste — de
+          skal ikke miste bredde — så det er den strammeste verdien som gjelder
+          for alle.
+        */}
+        <div className="flex min-h-0 flex-1 flex-col px-6 py-4">
         {visning === "idag" && (
           <IDag
             skolear={skolear}
@@ -366,14 +369,6 @@ export default function App() {
       </main>
     </div>
   );
-}
-
-/**
- * Skjermer med sidepanel har sin egen rullesone i hver kolonne, så de skal
- * ikke ligge inni en som ruller. Ellers får man to rullefelt oppå hverandre.
- */
-function medPanel(v: Visning): boolean {
-  return v === "okter" || v === "elever" || v === "vurderinger" || v === "fag";
 }
 
 function Pil({
