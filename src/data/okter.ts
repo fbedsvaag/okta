@@ -235,6 +235,31 @@ export function slettetekst(
   return hva + advarsel;
 }
 
+/**
+ * Økta som tekst å lime inn i Teams.
+ *
+ * Bare det som er skrevet for eleven blir med: fagkode, når, tema og agenda.
+ * `plan` og `logg` er lærerens egne notater og skal aldri ut — samme
+ * feltgrense som kalenderpubliseringen i §8.1, og av samme grunn.
+ *
+ * Tomme felter utelates helt framfor å stå igjen som tomme linjer.
+ */
+export function teamstekst(okt: {
+  fagKode: string;
+  dato: string;
+  klokkeslett: string | null;
+  tema: string | null;
+  agenda: string | null;
+}): string {
+  const nar = okt.klokkeslett
+    ? `${langDato(okt.dato)}, ${okt.klokkeslett}`
+    : langDato(okt.dato);
+
+  return [`${okt.fagKode} — ${nar}`, okt.tema?.trim(), okt.agenda?.trim()]
+    .filter((d) => d && d !== "")
+    .join("\n\n");
+}
+
 function langDato(dato: string): string {
   return new Date(`${dato}T00:00:00`).toLocaleDateString("nb-NO", {
     weekday: "long",

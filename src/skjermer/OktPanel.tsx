@@ -8,6 +8,7 @@ import {
   settSkaring,
   settSkaringsnotat,
   slettOkt,
+  teamstekst,
   type Okt,
   type OktElev,
 } from "../data/okter";
@@ -377,6 +378,7 @@ function OktFelter({
   // Perioden følger datoen. Velger du en uttrykkelig, skrives periode_id og
   // den vinner — også hvis du senere flytter periodegrensene.
   const automatisk = periodeFor({ ...okt, periodeId: null }, perioder);
+  const [kopiert, setKopiert] = useState(false);
 
   return (
     <div className="space-y-2 px-5 py-3">
@@ -489,6 +491,20 @@ function OktFelter({
           }}
           className={feltStil}
         />
+        {/*
+          Kopien tar med akkurat det agendaen allerede er ment for — det
+          eleven skal se. Plan og øktlogg blir igjen her.
+        */}
+        <button
+          onClick={async () => {
+            await navigator.clipboard.writeText(teamstekst(okt));
+            setKopiert(true);
+            setTimeout(() => setKopiert(false), 1500);
+          }}
+          className="mt-1 text-liten text-blekk-svak hover:text-blekk"
+        >
+          {kopiert ? "✓ Kopiert" : "Kopier til Teams"}
+        </button>
       </Linje>
 
       <Linje etikett="Plan">
