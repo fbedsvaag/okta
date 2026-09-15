@@ -197,11 +197,9 @@ export function Innstillinger({
                             "Sikkerhetskopien fra i dag er veien tilbake.",
                         );
                         if (!ok) return;
+                        // slettSkolear flytter selv pekeren til aktivt år,
+                        // også når det slettede året var det siste.
                         await slettSkolear(a.id);
-                        if (aktivt) {
-                          const igjen = (await hentSkolear())[0];
-                          if (igjen) await settAktivtSkolear(igjen.id);
-                        }
                         setAr(await hentSkolear());
                         onEndret();
                       }}

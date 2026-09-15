@@ -37,9 +37,20 @@ export async function endreSkolear(
   await oppdater("skolear", id, felter);
 }
 
+/**
+ * Id-en til det aktive skoleåret, eller null.
+ *
+ * En peker til et slettet år er det samme som ingen peker, og derfor står
+ * join-en mot `skolear` her. Uten den ble en død peker lest som «det finnes
+ * et aktivt år», og da hoppet `opprettSkolear` over å gjøre det nye året
+ * aktivt — veiviseren kunne kjøres om og om igjen uten å komme videre.
+ */
 export async function hentAktivtSkolearId(): Promise<string | null> {
   const rader = await hent<{ verdi: string }>(
-    "SELECT verdi FROM innstilling WHERE nokkel = $1",
+    `SELECT i.verdi
+       FROM innstilling i
+       JOIN skolear s ON s.id = i.verdi AND s.slettet IS NULL
+      WHERE i.nokkel = $1`,
     [AKTIVT],
   );
   return rader[0]?.verdi ?? null;
@@ -53,14 +64,41 @@ export async function settAktivtSkolear(id: string): Promise<void> {
   );
 }
 
+/**
+ * `innstilling` har ingen `slettet`-kolonne (§3.2) — den er nøkkel/verdi, og
+ * en verdi som ikke gjelder lenger skal bort, ikke merkes.
+ */
+async function fjernAktivtSkolear(): Promise<void> {
+  await (await db()).execute("DELETE FROM innstilling WHERE nokkel = $1", [
+    AKTIVT,
+  ]);
+}
+
+/**
+ * Det aktive skoleåret — og pekeren repareres hvis den ikke holder.
+ *
+ * Peker innstillingen på et år som er slettet, overtar det nyeste
+ * gjenværende. Finnes ingen år igjen, ryddes pekeren bort og appen viser
+ * veiviseren (§4.0). Oppstarten skal aldri bli stående uten en vei videre.
+ */
 export async function hentAktivtSkolear(): Promise<Skolear | null> {
   const id = await hentAktivtSkolearId();
-  if (!id) return null;
-  const rader = await hent<Skolear>(
-    "SELECT id, navn, start, slutt FROM skolear WHERE id = $1 AND slettet IS NULL",
-    [id],
-  );
-  return rader[0] ?? null;
+  if (id) {
+    const rader = await hent<Skolear>(
+      "SELECT id, navn, start, slutt FROM skolear WHERE id = $1 AND slettet IS NULL",
+      [id],
+    );
+    if (rader[0]) return rader[0];
+  }
+
+  const [nyeste] = await hentSkolear();
+  if (nyeste) {
+    await settAktivtSkolear(nyeste.id);
+    return nyeste;
+  }
+
+  await fjernAktivtSkolear();
+  return null;
 }
 
 export async function hentInnstilling(nokkel: string): Promise<string | null> {
@@ -217,4 +255,9 @@ export async function slettSkolear(skolearId: string): Promise<void> {
   }
 
   await slett("skolear", skolearId);
+
+  // Pekeren til aktivt år skal aldri bli stående på noe som er slettet.
+  // Den ryddes her, i datalaget, og ikke i hvert kallsted — et kallsted som
+  // glemmer det etterlater en base appen ikke kommer inn i.
+  await hentAktivtSkolear();
 }

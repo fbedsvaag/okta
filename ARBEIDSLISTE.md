@@ -9,11 +9,12 @@ Kryss av underveis. Legg nye punkter nederst i riktig bolk, ikke øverst.
 
 ## 0. Blokkerende
 
-- [ ] **Sletting av skoleår låser appen.** Fikses tre steder: ved sletting
-  (repek `aktivt_skolear`), ved oppstart (fall tilbake på nyeste år, ellers
-  veiviseren — aldri heng), og sletting av siste år skal gi veiviseren.
-  Gå gjennom om andre innstillinger som peker på rader har samme problem.
-  Tester for begge tilfellene.
+- [x] **Sletting av skoleår låser appen.** Fikset i datalaget: `slettSkolear`
+  flytter selv pekeren, `hentAktivtSkolear` faller tilbake på nyeste
+  gjenværende år og rydder pekeren når det ikke er noen igjen. Baser som
+  allerede har den døde pekeren repareres ved neste oppstart. `aktivt_skolear`
+  var den eneste innstillingen som peker på en rad — resten er tall, stier og
+  kolonnevalg. 8 tester i `skolear.test.ts`.
 
 Dette er ikke en irritasjon. Det er en database som kan bli utilgjengelig,
 og det finnes allerede baser med den døde pekeren i seg.
