@@ -38,7 +38,9 @@ export function IDag({
   // Hele uka, ikke bare det som gjenstår. Tidslinja skal vise formen på uka,
   // og en mandag som forsvinner på onsdag ser ut som en feil.
   const uka = okter.filter((o) => o.dato >= mandag && o.dato <= fredag);
-  const kommende = okter.filter((o) => o.dato > idag).slice(0, 3);
+  const kommende = okter
+    .filter((o) => o.dato > idag)
+    .slice(0, KOMMENDE_ANTALL);
 
   return (
     <div className="mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col overflow-clip">
@@ -94,18 +96,30 @@ export function IDag({
         />
       </Bolk>
 
-      {uka.length === 0 && kommende.length > 0 && (
-        <Bolk tittel="Neste økter">
-          {kommende.map((o) => (
-            <div key={o.id}>
-              <p className="mt-2 text-liten text-blekk-dempet first-letter:uppercase">
-                {langDato(o.dato)}
-              </p>
-              <OktLinje okt={o} onApne={onApneOkt} />
-            </div>
-          ))}
-        </Bolk>
-      )}
+      {/*
+        Bolken står alltid, også når den er tom. Før dukket den bare opp i
+        uker uten økter, og et helt avsnitt som kommer og går flytter alt
+        under seg. Plassen til tre økter er reservert av samme grunn: da er
+        høyden den samme enten det ligger én eller tre foran deg.
+      */}
+      <Bolk tittel="Neste økter">
+        <div style={{ minHeight: `${KOMMENDE_ANTALL * KOMMENDE_RADHOYDE}px` }}>
+          {kommende.length === 0 ? (
+            <p className="py-2 text-brod text-blekk-svak">
+              Ingen flere økter er lagt inn i dette skoleåret.
+            </p>
+          ) : (
+            kommende.map((o) => (
+              <div key={o.id}>
+                <p className="mt-2 text-liten text-blekk-dempet first-letter:uppercase">
+                  {langDato(o.dato)}
+                </p>
+                <OktLinje okt={o} onApne={onApneOkt} />
+              </div>
+            ))
+          )}
+        </div>
+      </Bolk>
 
       <Arsoversikt
         skolearId={skolear.id}
@@ -143,6 +157,15 @@ function Bolk({ tittel, children }: { tittel: string; children: React.ReactNode 
  * årsoversikten inkludert — flytter seg etter hvor mye du skrev sist.
  */
 const LOGGLINJER = 2;
+
+/**
+ * «Neste økter» viser tre, og plassen til tre er reservert uansett hvor mange
+ * som finnes. Radhøyden er datolinja pluss øktlinja — endres de to, må dette
+ * tallet følge etter. Det er en reservasjon, ikke et tak: er teksten høyere
+ * enn antatt, vokser boksen framfor å klippe.
+ */
+const KOMMENDE_ANTALL = 3;
+const KOMMENDE_RADHOYDE = 55;
 
 function Forrigelogg({
   okt,
