@@ -1,8 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
+import { confirm as bekreft } from "@tauri-apps/plugin-dialog";
 import {
   hentOkter,
   hentOktVurderinger,
   opprettOkt,
+  slettetekst,
+  slettOkter,
   type Okt,
   type OktVurdering,
 } from "../data/okter";
@@ -92,6 +95,9 @@ export function Okter({
   const [vurderinger, setVurderinger] = useState<Map<string, OktVurdering[]>>(
     new Map(),
   );
+  // Flervalg til sletting. Holdes atskilt fra `valgt`, som er økta panelet
+  // viser — å hake av rader er noe annet enn å åpne én.
+  const [merket, setMerket] = useState<Set<string>>(new Set());
 
   const skolearId = skolear.id;
   const skolearStart = skolear.start;
@@ -287,13 +293,63 @@ export function Okter({
             <Liste
               okter={synlige}
               valgt={valgt}
+              merket={merket}
               vis={apen ? new Set<KolonneId>() : kolonner}
               blokkert={blokkert}
               vurderinger={vurderinger}
               perioder={medPerioder ? periodePerOkt : new Map()}
               onApnePerioder={onApnePerioder}
               onVelg={setValgt}
+              onMerk={(id, pa) =>
+                setMerket((f) => {
+                  const ny = new Set(f);
+                  if (pa) ny.add(id);
+                  else ny.delete(id);
+                  return ny;
+                })
+              }
+              onMerkAlle={(pa) =>
+                setMerket(pa ? new Set(synlige.map((o) => o.id)) : new Set())
+              }
             />
+          )}
+
+          {/*
+            Handlingslinja for flervalg. Den ligger nederst i lista og ikke
+            i verktøylinja, fordi den bare finnes når noe er merket — en
+            knapp som kommer og går i toppen ville flyttet resten.
+          */}
+          {merket.size > 0 && (
+            <div className="sticky bottom-0 mt-3 flex items-center gap-3 border border-linje bg-flate px-3 py-2 text-brod shadow-[0_-4px_12px_rgba(0,0,0,0.04)]">
+              <span className="tabular-nums">
+                {merket.size} {merket.size === 1 ? "økt" : "økter"} merket
+              </span>
+              <span className="tabular-nums text-blekk-dempet">
+                {timer(
+                  okter
+                    .filter((o) => merket.has(o.id))
+                    .reduce((sum, o) => sum + o.varighetMin, 0),
+                )}
+              </span>
+              <div className="ml-auto flex items-center gap-2">
+                <Knapp variant="stille" onClick={() => setMerket(new Set())}>
+                  Nullstill
+                </Knapp>
+                <button
+                  onClick={async () => {
+                    const valgte = okter.filter((o) => merket.has(o.id));
+                    if (!(await bekreft(slettetekst(valgte)))) return;
+                    await slettOkter(valgte.map((o) => o.id));
+                    setMerket(new Set());
+                    if (valgt && merket.has(valgt)) setValgt(null);
+                    await last();
+                  }}
+                  className="text-brod text-feil hover:text-feil-mork"
+                >
+                  Slett {merket.size === 1 ? "økta" : `de ${merket.size} øktene`}
+                </button>
+              </div>
+            </div>
           )}
 
           {okter.length > 0 && (
@@ -358,26 +414,40 @@ const VALGBARE: { id: KolonneId; navn: string }[] = [
 function Liste({
   okter,
   valgt,
+  merket,
   vis,
   blokkert,
   vurderinger,
   perioder,
   onApnePerioder,
   onVelg,
+  onMerk,
+  onMerkAlle,
 }: {
   okter: Okt[];
   valgt: string | null;
+  merket: Set<string>;
   vis: Set<KolonneId>;
   blokkert: Map<string, Blokkering>;
   vurderinger: Map<string, OktVurdering[]>;
   perioder: Map<string, Periode>;
   onApnePerioder: () => void;
   onVelg: (id: string) => void;
+  onMerk: (id: string, pa: boolean) => void;
+  onMerkAlle: (pa: boolean) => void;
 }) {
+  const alleMerket = okter.length > 0 && okter.every((o) => merket.has(o.id));
 
   return (
     <div>
       <div className="flex items-center gap-3 border-b border-linje px-2 py-1 text-etikett uppercase tracking-etikett text-blekk-dempet">
+        <input
+          type="checkbox"
+          checked={alleMerket}
+          title={alleMerket ? "Fjern merkingen" : "Merk alle i lista"}
+          onChange={(e) => onMerkAlle(e.target.checked)}
+          className="shrink-0"
+        />
         {vis.has("uke") && (
           <span className="w-7 shrink-0" title="Ukenummer">
             Uke
@@ -413,11 +483,30 @@ function Liste({
           </div>
           {gruppe.map((o) => (
             <div key={o.id}>
+              {/*
+                Avkrysningsboksen ligger utenfor knappen, ikke inni: en knapp
+                kan ikke inneholde en annen kontroll. Derfor bærer wrapperen
+                raden sin ramme, og knappen fyller resten av bredden.
+              */}
+              <div
+                className={`flex w-full items-center gap-3 border-b border-linje-svak px-2 ${
+                  valgt === o.id
+                    ? "bg-valgt"
+                    : merket.has(o.id)
+                      ? "bg-flate-svak"
+                      : "hover:bg-flate"
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={merket.has(o.id)}
+                  onChange={(e) => onMerk(o.id, e.target.checked)}
+                  title="Merk for sletting"
+                  className="shrink-0"
+                />
               <button
                 onClick={() => onVelg(o.id)}
-                className={`flex w-full items-center gap-3 border-b border-linje-svak px-2 py-1.5 text-left text-brod ${
-                  valgt === o.id ? "bg-valgt" : "hover:bg-flate"
-                }`}
+                className="flex min-w-0 flex-1 items-center gap-3 py-1.5 text-left text-brod"
               >
                 {vis.has("uke") && (
                   <span className="w-7 shrink-0 tabular-nums text-blekk-svak">
@@ -505,6 +594,7 @@ function Liste({
                 )}
                 <Status okt={o} />
               </button>
+              </div>
             </div>
           ))}
         </div>

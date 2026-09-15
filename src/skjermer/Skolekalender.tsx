@@ -16,7 +16,13 @@ import {
   type Fridag,
 } from "../data/kalender";
 import { hentFridager, hentInnstilling, type Skolear } from "../data/skolear";
-import { hentOkter, opprettOkt, slettOkt, type Okt } from "../data/okter";
+import {
+  hentOkter,
+  opprettOkt,
+  slettetekst,
+  slettOkter,
+  type Okt,
+} from "../data/okter";
 import type { FagIAr } from "../data/fag";
 
 // --------------------------------------------------------------- cellehøyde
@@ -144,22 +150,10 @@ export function Skolekalender({
    * med skåringer på seg er noe annet enn en tom plan, og da sier vi fra om
    * hvor mye som forsvinner fra elevenes heatmap før vi gjør det.
    */
-  async function slettOkter(valgte: Okt[]) {
+  async function slettValgte(valgte: Okt[]) {
     if (valgte.length === 0) return;
-
-    const skaret = valgte.reduce((n, o) => n + o.skaret, 0);
-    const hva =
-      valgte.length === 1
-        ? `Slette økta ${valgte[0].fagKode} ${langDato(valgte[0].dato)}?`
-        : `Slette ${valgte.length} økter?`;
-    const advarsel =
-      skaret > 0
-        ? `\n\n${skaret} skåring${skaret === 1 ? "" : "er"} er ført på ` +
-          `${valgte.length === 1 ? "den" : "dem"} og forsvinner fra heatmapet.`
-        : "";
-
-    if (!await bekreft(hva + advarsel)) return;
-    for (const o of valgte) await slettOkt(o.id);
+    if (!(await bekreft(slettetekst(valgte)))) return;
+    await slettOkter(valgte.map((o) => o.id));
     await last();
   }
 
@@ -240,7 +234,7 @@ export function Skolekalender({
               })
             }
             onApneOkt={onApneOkt}
-            onSlettOkt={(o) => void slettOkter([o])}
+            onSlettOkt={(o) => void slettValgte([o])}
           />
         ))}
       </div>
@@ -255,7 +249,7 @@ export function Skolekalender({
           fridager={fridager}
           rode={rode}
           okter={valgteOkter}
-          onSlett={() => void slettOkter(valgteOkter)}
+          onSlett={() => void slettValgte(valgteOkter)}
           onLagret={async () => {
             setValgte(new Set());
             await last();

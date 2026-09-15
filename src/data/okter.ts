@@ -201,6 +201,49 @@ export async function slettOkt(id: string): Promise<void> {
 }
 
 /**
+ * Sletter flere økter under ett.
+ *
+ * Varselet går én gang til slutt, ikke per økt, så ingen lytter laster på
+ * nytt midt i en batch.
+ */
+export async function slettOkter(ider: string[]): Promise<void> {
+  if (ider.length === 0) return;
+  for (const id of ider) await slett("okt", id);
+  varsle();
+}
+
+/**
+ * Spørsmålet som stilles før økter slettes.
+ *
+ * Skåringene er det som gjør slettingen alvorlig: en økt kan legges inn
+ * igjen, men det elevene fikk registrert er borte fra heatmapet. Derfor
+ * står antallet i spørsmålet, ikke bare antall økter.
+ */
+export function slettetekst(
+  valgte: { fagKode: string; dato: string; skaret: number }[],
+): string {
+  const skaret = valgte.reduce((n, o) => n + o.skaret, 0);
+  const hva =
+    valgte.length === 1
+      ? `Slette økta ${valgte[0].fagKode} ${langDato(valgte[0].dato)}?`
+      : `Slette ${valgte.length} økter?`;
+  const advarsel =
+    skaret > 0
+      ? `\n\n${skaret} skåring${skaret === 1 ? "" : "er"} er ført på ` +
+        `${valgte.length === 1 ? "den" : "dem"} og forsvinner fra heatmapet.`
+      : "";
+  return hva + advarsel;
+}
+
+function langDato(dato: string): string {
+  return new Date(`${dato}T00:00:00`).toLocaleDateString("nb-NO", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
+}
+
+/**
  * Setter skåring. Én rad per elev per økt — skåres på nytt, oppdateres raden.
  *
  * UNIQUE(elev_id, okt_id) gjelder også soft-slettede rader, så en rad som er
