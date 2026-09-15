@@ -1,4 +1,4 @@
-import { hent, oppdater } from "../db";
+import { hent } from "../db";
 
 /**
  * Alt om én elev, SPEC §4.5.
@@ -184,6 +184,3 @@ export async function hentElevVurderinger(
   );
 }
 
-export async function settElevnotat(elevId: string, notat: string): Promise<void> {
-  await oppdater("elev", elevId, { notat: notat.trim() || null });
-}

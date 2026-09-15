@@ -6,7 +6,6 @@ import {
   hentElevGrunnlag,
   hentElevVurderinger,
   hentHeatmap,
-  settElevnotat,
   type ElevAr,
   type ElevGrunnlag,
   type ElevVurdering,
@@ -21,7 +20,16 @@ import {
   tellForElev,
   type Klasse,
 } from "../data/elever";
-import { Fagfiltre, Fagmerke } from "../ui/felles";
+import { Fagfiltre, Fagmerke, Knapp } from "../ui/felles";
+import {
+  erForfalt,
+  hentElevnotater,
+  opprettElevnotat,
+  settLukket,
+  slettElevnotat,
+  sorterNotater,
+  type Elevnotat,
+} from "../data/elevnotat";
 import { NOYTRAL, skalafarge } from "../ui/farger";
 
 /**
@@ -293,20 +301,7 @@ export function ElevPanel({
           )}
         </Bolk>
 
-        <Bolk tittel="Notat">
-          <textarea
-            defaultValue={elev.notat ?? ""}
-            key={elev.id}
-            rows={4}
-            placeholder="Observasjoner, avtaler, det du vil huske til elevsamtalen."
-            onBlur={(e) => void settElevnotat(elev.id, e.target.value)}
-            className="w-full rounded-vanlig border border-linje px-2 py-1.5 text-brod outline-none placeholder:text-blekk-svak focus:border-aksent"
-          />
-          <p className="mt-1 text-etikett text-blekk-svak">
-            Dette er arbeidsmateriale. Helse, hjemmeforhold og andre særlige
-            kategorier hører ikke hjemme her.
-          </p>
-        </Bolk>
+        <Motelogg elevId={elev.id} skolearId={aktivtSkolearId} />
 
         <button
           onClick={async () => {
@@ -488,4 +483,204 @@ function Bolk({ tittel, children }: { tittel: string; children: React.ReactNode 
 
 function Stille({ children }: { children: React.ReactNode }) {
   return <p className="py-1 text-brod text-blekk-svak">{children}</p>;
+}
+
+/**
+ * Notater og møtelogg, SPEC §4.7.
+ *
+ * Kronologisk liste, nyeste først, med åpne oppfølgingspunkter fast øverst.
+ * Dette er en annen type notat enn skåringsnotatet i §4.4: det henger på én
+ * bestemt økt og leses i heatmapet. Møteloggen er en bevisst hendelse — en
+ * samtale, en observasjon, en avtale.
+ */
+function Motelogg({ elevId, skolearId }: { elevId: string; skolearId: string }) {
+  const [notater, setNotater] = useState<Elevnotat[]>([]);
+  const [skriver, setSkriver] = useState(false);
+  const idag = new Date().toISOString().slice(0, 10);
+
+  async function last() {
+    setNotater(sorterNotater(await hentElevnotater(elevId)));
+  }
+
+  useEffect(() => {
+    void last();
+  }, [elevId]);
+
+  return (
+    <Bolk tittel="Notater og møtelogg">
+      {notater.length === 0 && !skriver && (
+        <Stille>
+          Ingen notater ennå. Her samles det du vil huske om eleven over tid —
+          samtaler, observasjoner, avtaler.
+        </Stille>
+      )}
+
+      {notater.map((n) => (
+        <Notatrad key={n.id} notat={n} idag={idag} onEndret={last} />
+      ))}
+
+      {skriver ? (
+        <NyttNotat
+          elevId={elevId}
+          skolearId={skolearId}
+          onLagret={async () => {
+            setSkriver(false);
+            await last();
+          }}
+          onAvbryt={() => setSkriver(false)}
+        />
+      ) : (
+        <button
+          onClick={() => setSkriver(true)}
+          className="mt-2 text-brod text-blekk-dempet hover:text-blekk"
+        >
+          + Nytt notat
+        </button>
+      )}
+
+      <p className="mt-2 text-etikett text-blekk-svak">
+        Dette er arbeidsmateriale. Helse, hjemmeforhold og andre særlige
+        kategorier hører ikke hjemme her.
+      </p>
+    </Bolk>
+  );
+}
+
+function Notatrad({
+  notat,
+  idag,
+  onEndret,
+}: {
+  notat: Elevnotat;
+  idag: string;
+  onEndret: () => void;
+}) {
+  const apent = notat.skalFolgesOpp && notat.lukket === null;
+  const forfalt = erForfalt(notat, idag);
+
+  return (
+    <div
+      className={`border-b border-linje-svak py-2 ${
+        apent ? "border-l-2 pl-2" : ""
+      }`}
+      style={apent ? { borderLeftColor: "var(--color-aksent)" } : undefined}
+    >
+      <div className="flex items-baseline gap-2 text-liten">
+        <span className="tabular-nums text-blekk-dempet">{notat.dato}</span>
+        {notat.fagKode && (
+          <span className="text-blekk-svak">{notat.fagKode}</span>
+        )}
+        {apent && (
+          <span className={forfalt ? "text-feil" : "text-blekk-dempet"}>
+            {notat.frist
+              ? `${forfalt ? "forfalt" : "frist"} ${notat.frist}`
+              : "følges opp"}
+          </span>
+        )}
+        <span className="ml-auto flex items-center gap-2">
+          {notat.skalFolgesOpp && (
+            <button
+              onClick={async () => {
+                await settLukket(notat.id, notat.lukket === null);
+                onEndret();
+              }}
+              className="text-blekk-svak hover:text-blekk"
+            >
+              {notat.lukket === null ? "Lukk" : "Åpne igjen"}
+            </button>
+          )}
+          <button
+            onClick={async () => {
+              if (!(await bekreft(`Slette notatet fra ${notat.dato}?`))) return;
+              await slettElevnotat(notat.id);
+              onEndret();
+            }}
+            className="text-blekk-svakest hover:text-feil"
+          >
+            Slett
+          </button>
+        </span>
+      </div>
+      <p className="mt-0.5 whitespace-pre-wrap text-brod">{notat.tekst}</p>
+    </div>
+  );
+}
+
+function NyttNotat({
+  elevId,
+  skolearId,
+  onLagret,
+  onAvbryt,
+}: {
+  elevId: string;
+  skolearId: string;
+  onLagret: () => void;
+  onAvbryt: () => void;
+}) {
+  const [dato, setDato] = useState(new Date().toISOString().slice(0, 10));
+  const [tekst, setTekst] = useState("");
+  const [folgesOpp, setFolgesOpp] = useState(false);
+  const [frist, setFrist] = useState("");
+
+  return (
+    <div className="mt-2 rounded-vanlig border border-linje bg-flate-svak p-2">
+      <div className="flex items-center gap-2">
+        <input
+          type="date"
+          value={dato}
+          onChange={(e) => setDato(e.target.value)}
+          className="rounded border border-linje bg-ark px-2 py-1 text-brod tabular-nums"
+        />
+        <label className="flex select-none items-center gap-1.5 text-liten text-blekk-dempet">
+          <input
+            type="checkbox"
+            checked={folgesOpp}
+            onChange={(e) => setFolgesOpp(e.target.checked)}
+          />
+          Skal følges opp
+        </label>
+        {/* Fristen er valgfri også når boksen er huket av: mye oppfølging har
+            ingen dato, den er bare der til den er gjort (§4.7). */}
+        {folgesOpp && (
+          <input
+            type="date"
+            value={frist}
+            onChange={(e) => setFrist(e.target.value)}
+            title="Frist er valgfri"
+            className="rounded border border-linje bg-ark px-2 py-1 text-brod tabular-nums"
+          />
+        )}
+      </div>
+
+      <textarea
+        autoFocus
+        value={tekst}
+        onChange={(e) => setTekst(e.target.value)}
+        rows={3}
+        placeholder="Hva skjedde, og hva ble avtalt?"
+        className="mt-2 w-full rounded-vanlig border border-linje px-2 py-1.5 text-brod outline-none placeholder:text-blekk-svak focus:border-aksent"
+      />
+
+      <div className="mt-2 flex gap-2">
+        <Knapp
+          variant="primar"
+          disabled={tekst.trim() === ""}
+          onClick={async () => {
+            await opprettElevnotat(elevId, skolearId, {
+              dato,
+              tekst: tekst.trim(),
+              skalFolgesOpp: folgesOpp,
+              frist: folgesOpp && frist !== "" ? frist : null,
+            });
+            onLagret();
+          }}
+        >
+          Lagre
+        </Knapp>
+        <Knapp variant="stille" onClick={onAvbryt}>
+          Avbryt
+        </Knapp>
+      </div>
+    </div>
+  );
 }

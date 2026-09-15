@@ -23,6 +23,7 @@ import type { FagIAr } from "../data/fag";
 import { hentInnstilling, settInnstilling } from "../data/skolear";
 import { delNavn } from "../import/parser";
 import { Fagfiltre, Fagmerke, Felt, Knapp, Kolonnevelger, Tomtilstand } from "../ui/felles";
+import { hentForfalte } from "../data/elevnotat";
 import { ElevPanel } from "./ElevPanel";
 import { useGlidende } from "../ui/bevegelse";
 
@@ -39,7 +40,6 @@ const VALGBARE = [
   { id: "okter", navn: "Økter" },
   { id: "siste", navn: "Siste" },
   { id: "innsats", navn: "Innsats" },
-  { id: "notat", navn: "Notat" },
   { id: "endret", navn: "Sist endret" },
 ] as const;
 
@@ -70,6 +70,9 @@ export function Elever({
   const [filterFag, setFilterFag] = useState("");
   // Mentorfilteret virker uavhengig av klasse- og fagfilteret (§4.3).
   const [baraMentor, setBaraMentor] = useState(false);
+  // Elever med et åpent, forfalt oppfølgingspunkt (§4.7). Merket sier bare at
+  // noe venter — aldri hva. Tabellen vises i klasserommet og i møter.
+  const [forfalte, setForfalte] = useState<Set<string>>(new Set());
   const [valgtElev, setValgtElev] = useState<string | null>(null);
   const [synligeKolonner, setSynligeKolonner] = useState<Set<Synlig>>(
     new Set(STANDARD),
@@ -87,6 +90,7 @@ export function Elever({
   async function last() {
     setElever(await hentElever(skolearId));
     setKlasser(await hentKlasser(skolearId));
+    setForfalte(await hentForfalte(skolearId));
   }
 
   useEffect(() => {
@@ -312,11 +316,6 @@ export function Elever({
                     Innsats
                   </Overskrift>
                 )}
-                {vis.has("notat") && (
-                  <Overskrift kolonne="notat" sortering={sortering} onKlikk={bytSortering}>
-                    Notat
-                  </Overskrift>
-                )}
                 {vis.has("endret") && (
                   <Overskrift
                     kolonne="endret"
@@ -342,6 +341,7 @@ export function Elever({
                   rediger={rediger}
                   valgt={valgtElev === e.id}
                   merket={merket.has(e.id)}
+                  forfalt={forfalte.has(e.id)}
                   vis={vis}
                   onApne={() => setValgtElev(e.id)}
                   onMerk={(pa) =>
@@ -443,7 +443,6 @@ type Kolonne =
   | "okter"
   | "siste"
   | "innsats"
-  | "notat"
   | "endret";
 type Sortering = { kolonne: Kolonne; stigende: boolean };
 
@@ -488,8 +487,6 @@ function sorter(rader: ElevRad[], { kolonne, stigende }: Sortering): ElevRad[] {
       case "innsats":
         // Andel grønt av det som teller. Elever uten skåringer sist.
         return andelGronn(b) - andelGronn(a);
-      case "notat":
-        return tekst(a.notat).localeCompare(tekst(b.notat));
       case "endret":
         return b.endret.localeCompare(a.endret);
     }
@@ -564,6 +561,7 @@ function Rad({
   rediger,
   valgt,
   merket,
+  forfalt,
   vis,
   onApne,
   onMerk,
@@ -576,6 +574,7 @@ function Rad({
   rediger: boolean;
   valgt: boolean;
   merket: boolean;
+  forfalt: boolean;
   vis: ReadonlySet<Synlig>;
   onApne: () => void;
   onMerk: (pa: boolean) => void;
@@ -622,6 +621,15 @@ function Rad({
         />
       </td>
       <td className="py-1.5 pr-5">
+        {forfalt && (
+          <span
+            aria-label="Har et forfalt oppfølgingspunkt"
+            title="Har et forfalt oppfølgingspunkt"
+            className="mr-1.5 inline-block align-middle text-varsel"
+          >
+            ●
+          </span>
+        )}
         <Navnefelt
           verdi={elev.fornavn}
           rediger={rediger}
@@ -792,11 +800,6 @@ function Rad({
       {vis.has("innsats") && (
         <td className="py-1.5 pr-5">
           <Innsatsstripe elev={elev} />
-        </td>
-      )}
-      {vis.has("notat") && (
-        <td className="max-w-[14rem] truncate py-1.5 pr-5 text-blekk-dempet">
-          {elev.notat ?? ""}
         </td>
       )}
       {vis.has("endret") && (
