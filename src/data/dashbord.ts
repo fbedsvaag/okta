@@ -72,6 +72,11 @@ export type Fagtimer = {
  *
  * «Avholdt» utledes av at det finnes minst én skåring på økta (§3.3) — det er
  * ikke et felt, og skal ikke bli et.
+ *
+ * Bare økter som ligger innenfor skoleårets spenn teller. En økt datert før
+ * skolestart eller etter skoleslutt vises fortsatt i kalenderen, men tonet
+ * ned som «utenfor» — og da kan den ikke samtidig telle mot årstimetallet.
+ * Ellers måles planen mot et timetall den ikke hører til.
  */
 export async function hentTimeregnskap(skolearId: string): Promise<Fagtimer[]> {
   return hent<Fagtimer>(
@@ -89,7 +94,9 @@ export async function hentTimeregnskap(skolearId: string): Promise<Fagtimer[]> {
               ) THEN 1 ELSE 0 END), 0)              AS avholdte
        FROM skolear_fag sf
        JOIN fag f ON f.id = sf.fag_id
+       JOIN skolear a ON a.id = sf.skolear_id
        LEFT JOIN okt o ON o.skolear_fag_id = sf.id AND o.slettet IS NULL
+                      AND o.dato BETWEEN a.start AND a.slutt
       WHERE sf.slettet IS NULL AND sf.skolear_id = $1
       GROUP BY sf.id
       ORDER BY f.kode`,

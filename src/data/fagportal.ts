@@ -37,16 +37,24 @@ export type FagVurdering = {
 export async function hentNokkeltall(
   skolearFagId: string,
 ): Promise<FagNokkeltall> {
+  // `innenfor` er øktene som ligger i skoleårets eget spenn. Økter datert før
+  // skolestart eller etter skoleslutt vises i kalenderen, men tonet ned som
+  // «utenfor» — og skal da ikke telle i fagets tall heller.
   const rader = await hent<FagNokkeltall>(
-    `SELECT
-       (SELECT COUNT(*) FROM okt o
-         WHERE o.skolear_fag_id = $1 AND o.slettet IS NULL) AS okter,
-       (SELECT COUNT(*) FROM okt o
-         WHERE o.skolear_fag_id = $1 AND o.slettet IS NULL
-           AND EXISTS (SELECT 1 FROM skaring s
+    `WITH innenfor AS (
+       SELECT o.id, o.varighet_min
+         FROM okt o
+         JOIN skolear_fag sf ON sf.id = o.skolear_fag_id
+         JOIN skolear a ON a.id = sf.skolear_id
+        WHERE o.skolear_fag_id = $1 AND o.slettet IS NULL
+          AND o.dato BETWEEN a.start AND a.slutt
+     )
+     SELECT
+       (SELECT COUNT(*) FROM innenfor) AS okter,
+       (SELECT COUNT(*) FROM innenfor o
+         WHERE EXISTS (SELECT 1 FROM skaring s
                         WHERE s.okt_id = o.id AND s.slettet IS NULL)) AS avholdte,
-       (SELECT COALESCE(SUM(o.varighet_min), 0) FROM okt o
-         WHERE o.skolear_fag_id = $1 AND o.slettet IS NULL) AS minutter,
+       (SELECT COALESCE(SUM(o.varighet_min), 0) FROM innenfor o) AS minutter,
        (SELECT COUNT(*) FROM elev_fag ef
           JOIN elev e ON e.id = ef.elev_id AND e.slettet IS NULL
          WHERE ef.skolear_fag_id = $1 AND ef.slettet IS NULL) AS elever,

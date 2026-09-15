@@ -10,7 +10,13 @@ import {
   type Periode,
   type Plassering,
 } from "../data/perioder";
-import { endreOkt, hentOkter, opprettOkt, type Okt } from "../data/okter";
+import {
+  endreOkt,
+  hentOkter,
+  innenforAret,
+  opprettOkt,
+  type Okt,
+} from "../data/okter";
 import { hentPeriodemal } from "../data/perioder";
 import { Malvelger } from "./Malvelger";
 import { ukenummer } from "../data/kalender";
@@ -65,7 +71,11 @@ export function Perioder({
   const bunker = useMemo(() => fordel(okter, perioder), [okter, perioder]);
   const kolliderer = useMemo(() => overlapp(perioder), [perioder]);
 
-  const totalMin = okter.reduce((s, o) => s + o.varighetMin, 0);
+  // Bare øktene inne i skoleåret teller mot årstimetallet. De utenfor står
+  // fortsatt i lista og tidslinja, så de kan oppdages og rettes.
+  const tellende = innenforAret(okter, skolear.start, skolear.slutt);
+  const utenfor = okter.length - tellende.length;
+  const totalMin = tellende.reduce((s, o) => s + o.varighetMin, 0);
   const planlagt = Math.round((totalMin / 60) * 10) / 10;
 
   if (fag.length === 0) {
@@ -93,7 +103,16 @@ export function Perioder({
           </select>
 
           <span className="text-brod tabular-nums text-blekk-dempet">
-            {okter.length} økter · {planlagt} timer planlagt
+            {tellende.length} økter · {planlagt} timer planlagt
+            {utenfor > 0 && (
+              <span
+                className="text-varsel"
+                title="Disse ligger før skolestart eller etter skoleslutt. De vises i lista, men teller ikke mot årstimetallet."
+              >
+                {" "}
+                · {utenfor} utenfor året
+              </span>
+            )}
             {valgtFag?.arstimetall != null && (
               <>
                 {" av "}

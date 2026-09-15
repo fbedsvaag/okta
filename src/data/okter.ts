@@ -49,6 +49,22 @@ export type OktElev = {
   notat: string | null;
 };
 
+/**
+ * Øktene som ligger innenfor skoleårets spenn.
+ *
+ * En økt datert før skolestart eller etter skoleslutt blir stående — den
+ * vises tonet ned i kalenderen, så du kan se den og rette den. Men den skal
+ * ikke telle i timeregnskapet, for da måles planen mot et årstimetall den
+ * ikke hører til.
+ */
+export function innenforAret<T extends { dato: string }>(
+  okter: T[],
+  start: string,
+  slutt: string,
+): T[] {
+  return okter.filter((o) => o.dato >= start && o.dato <= slutt);
+}
+
 export async function hentOkter(skolearId: string): Promise<Okt[]> {
   return hent<Okt>(
     `SELECT o.id,
