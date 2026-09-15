@@ -164,6 +164,7 @@ CREATE TABLE elev_klasse (
   elev_id    TEXT NOT NULL REFERENCES elev(id),
   klasse_id  TEXT NOT NULL REFERENCES klasse(id),
   skolear_id TEXT NOT NULL REFERENCES skolear(id),  -- = klasse.skolear_id
+  mentor     INTEGER NOT NULL DEFAULT 0,  -- 1 = min mentorelev dette året
   opprettet TEXT NOT NULL,
   endret    TEXT NOT NULL,
   slettet   TEXT,
@@ -184,6 +185,19 @@ CREATE TABLE elev_fag (
 `elev_klasse.skolear_id` gjentar det som allerede står på klassen. Det er med
 vilje: det er den som gjør «én klasse per elev per skoleår» til en regel basen
 selv håndhever, ikke noe koden må huske på.
+
+**Mentorgruppa er en delmengde av klassen, ikke en egen enhet.** Læreren er
+kontaktlærer for kanskje seksten av trettito i `1STC`. Det er `mentor` på
+koblingen som sier hvilke seksten, og siden koblingen allerede er per skoleår,
+følger gruppa året uten at noe mer trengs. Neste år er det en annen gruppe, og
+fjorårets står urørt.
+
+Fordi flagget ligger på klassekoblingen, må en mentorelev ha en klasse. Det
+stemmer med begrepet, men betyr også at merket følger med når klassen fjernes.
+
+En mentorelev trenger ikke være i noe fag. Det er det vanlige tilfellet: du er
+kontaktlærer for elever du ikke underviser. Spørringer som forutsetter minst én
+fagkobling er derfor feil — se §4.3 og §7.
 
 **Eleven lever på tvers av skoleår.** Tony Soprano går i `1STA` i 2026/27,
 `2STA` i 2027/28 og `3STA` i 2028/29 — samme elevrad hele veien, med skåringer
@@ -335,22 +349,34 @@ CREATE TABLE vurderingsresultat (
 );
 ```
 
-### 3.5 Oppfølging
+### 3.5 Notater og møtelogg
 
 ```sql
-CREATE TABLE oppfolging (
-  id        TEXT PRIMARY KEY,
-  elev_id   TEXT NOT NULL REFERENCES elev(id),
-  skolear_fag_id TEXT REFERENCES skolear_fag(id),
-  status    TEXT NOT NULL,              -- se §5
-  tekst     TEXT,
-  frist     TEXT,
-  lukket    TEXT,                       -- NULL = åpen
+CREATE TABLE elevnotat (
+  id               TEXT PRIMARY KEY,
+  elev_id          TEXT NOT NULL REFERENCES elev(id),
+  skolear_id       TEXT NOT NULL REFERENCES skolear(id),
+  skolear_fag_id   TEXT REFERENCES skolear_fag(id),  -- NULL = ikke knyttet til ett fag
+  dato             TEXT NOT NULL,        -- når møtet eller observasjonen skjedde
+  tekst            TEXT NOT NULL,        -- markdown
+  skal_folges_opp  INTEGER NOT NULL DEFAULT 0,
+  frist            TEXT,                 -- valgfri, også når skal_folges_opp = 1
+  lukket           TEXT,                 -- NULL = åpent
   opprettet TEXT NOT NULL,
   endret    TEXT NOT NULL,
   slettet   TEXT
 );
 ```
+
+Notatet henger alltid på en elev og et skoleår. Fag er valgfritt — en
+mentorsamtale har som regel ikke noe fag, en avtale om ekstra arbeid i MFL1
+har det.
+
+`dato` er når det skjedde, ikke når du skrev det. Man logger ofte i etterkant.
+
+Denne tabellen tar over for både `oppfolging` og fritekstfeltet `elev.notat`.
+Et felt som overskrives har ingen historikk å vise, og det var nettopp
+historikken som manglet. Se §4.7.
 
 ### 3.6 Indekser
 
@@ -368,7 +394,10 @@ CREATE INDEX idx_fag_elev      ON elev_fag(elev_id) WHERE slettet IS NULL;
 CREATE INDEX idx_periode_fag   ON periode(skolear_fag_id, rekkefolge) WHERE slettet IS NULL;
 CREATE INDEX idx_vurd_fag      ON vurdering(skolear_fag_id) WHERE slettet IS NULL;
 CREATE INDEX idx_res_elev      ON vurderingsresultat(elev_id) WHERE slettet IS NULL;
-CREATE INDEX idx_oppf_apen     ON oppfolging(lukket) WHERE lukket IS NULL AND slettet IS NULL;
+CREATE INDEX idx_mentor        ON elev_klasse(skolear_id) WHERE mentor = 1 AND slettet IS NULL;
+CREATE INDEX idx_elevnotat      ON elevnotat(elev_id, dato) WHERE slettet IS NULL;
+CREATE INDEX idx_elevnotat_apen ON elevnotat(skolear_id)
+  WHERE skal_folges_opp = 1 AND lukket IS NULL AND slettet IS NULL;
 ```
 
 ---
@@ -504,6 +533,11 @@ Jennifer Melfi          2STA      MFL2                 19      5 d
 - **Fagkolonnen viser flere verdier**, kommaseparert. Klikk åpner en kompakt
   flervalgsliste over opprettede fag, med «Nytt fag …» nederst. Det er slik
   `elev_fag` vedlikeholdes.
+- **Mentor** er en avkrysning per elev: er hen din mentorelev dette året?
+  Kolonnen kan slås av i kolonnevelgeren som de andre. Filteret «bare
+  mentorelever» står ved siden av klasse- og fagfilteret, og virker uavhengig
+  av dem. Avkrysningen er av for elever uten klasse — merket henger på
+  klassekoblingen (§3.2).
 - **Økter** er antall skåringer registrert, **Siste** er hvor lenge siden. Sammen
   avslører de hull: en elev med påfallende få skåringer er som regel en du har
   oversett, ikke en som har vært mye borte.
@@ -520,6 +554,9 @@ nye elever lagt i 1STC og koblet til MFL1 uten at du må sette det.
 
 Skriver du inn et navn som allerede finnes, gjelder §7.1 også her: appen spør om
 det er samme elev, i stedet for å opprette en ny i stillhet.
+
+En mentorelev uten fag er en gyldig rad. Du er kontaktlærer for elever du ikke
+underviser, og de skal stå i lista på lik linje med resten.
 
 Dette er hovedveien inn for en lærer som ikke har en liste å lime inn. Den skal
 være like rask som lim-inn: skriv, Enter, skriv, Enter. Ingen dialogvindu, ingen
@@ -648,7 +685,7 @@ resultat i skalaens egen notasjon, og kommentar. Slik ser man innsats over tid o
 faktiske prestasjoner side om side, som er nettopp det som trengs når standpunkt
 skal settes.
 
-Under igjen: notater fra skåringer, og åpne oppfølgingspunkter.
+Under igjen: notater og møtelogg (§4.7).
 
 Hele skjermen skal kunne eksporteres som én fil (§6).
 
@@ -919,12 +956,6 @@ Grunnen er at et vurderingsresultat peker på en skalaverdi. Forsvinner verdien,
 står det et resultat i basen som ikke betyr noe lenger, og det oppdages først
 når noen ser på eleven i mars.
 
-### 5.4 Oppfølgingsstatus
-
-- `folg_med` — ingen tiltak, men noe å holde øye med
-- `tiltak` — noe er satt i gang
-- `varsel` — formelt varsel er relevant eller sendt
-
 ---
 
 ## 6. Innsyn og eksport av elevdata
@@ -984,6 +1015,15 @@ Regler:
 
 Etter parsing: forhåndsvisning med redigerbare felter *før* noe skrives til
 databasen.
+
+**Faget er valgfritt ved import.** Limer du inn mentorgruppa di, er det ingen
+fagkobling å lage — elevene skal bare finnes, med klasse og mentormerke.
+Velger du «uten fag» i forhåndsvisningen, opprettes elevene og kobles til
+klassen, og `elev_fag` røres ikke.
+
+Duplikatgjenkjenningen virker som før. Den sammenlikner på navn og klasse
+(§7.1), og ingen av delene forutsetter et fag. En elev som senere limes inn i
+et fag, gjenkjennes og kobles — det er nettopp det gjenkjenningen er til for.
 
 ## 7.1 Duplikatgjenkjenning
 
@@ -1068,7 +1108,7 @@ ekstra klikk å importere en helt fersk klasse.
 ### Slå sammen etterpå
 
 §4.3 skal ha en «slå sammen»-handling: velg to elever, bekreft hvilken som er
-hovedposten, og alle skåringer, vurderinger, oppfølgingspunkter og fagkoblinger
+hovedposten, og alle skåringer, vurderinger, notater og fagkoblinger
 flyttes over. Den tapte posten soft-slettes.
 
 Dette er sikkerhetsnettet som gjør at automatikken trygt kan være forsiktig.
@@ -1096,12 +1136,11 @@ lesbare tekstfiler til en mappe brukeren velger:
 <valgt mappe>/
   README.md                  ← definisjon av trafikklys og skalaer
   elever/
-    anna-reistad.md
+    anna-reistad.md         ← med notater og møtelogg kronologisk
   fag/
     mfl1.md                  ← årsplan med alle økter
     mfl1-skaring.csv
     mfl1-vurderinger.csv
-  oppfolging.md
 ```
 
 Elevfilene har YAML-frontmatter (navn, klasse, fag) og innhold kronologisk under.
