@@ -13,9 +13,14 @@ import { Felt, Knapp } from "../ui/felles";
 /**
  * Skoleruta — skoleårets rammer.
  *
- * Her ligger start og slutt, og alle dagene det ikke er undervisning:
- * ferier, planleggingsdager og annet. Serieopprettelsen (§4.2) leser denne
- * lista, så ferieukene skrives inn én gang i august og gjelder resten av året.
+ * Her ligger start og slutt, og alle dagene det ikke blir undervisning:
+ * ferier, planleggingsdager og hendelser. Serieopprettelsen (§4.2) leser
+ * denne lista, så ferieukene skrives inn én gang i august og gjelder resten
+ * av året.
+ *
+ * «Hendelse» er dagen som ikke er fri, men likevel opptatt — eksamen i et
+ * annet fag, ekskursjon, fellesarrangement. Skolen går, men timen din blir
+ * det ikke noe av, og da skal den ikke telle som planlagt undervisning.
  *
  * Røde dager står nederst som en lesbar liste. De regnes ut og kan ikke
  * redigeres — det er ikke noe å bestemme der.
@@ -88,7 +93,8 @@ export function Skoleruta({
         {fridager.length === 0 ? (
           <p className="py-1 text-brod text-blekk-svak">
             Ingen lagt inn ennå. Høstferie, juleferie, vinterferie og
-            planleggingsdager hører hjemme her.
+            planleggingsdager hører hjemme her — det samme gjør hendelser
+            som eksamen i et annet fag.
           </p>
         ) : (
           <table className="w-full text-brod">
@@ -153,6 +159,7 @@ export function Skoleruta({
 const TYPENAVN: Record<Fridag["type"], string> = {
   ferie: "Ferie",
   planlegging: "Planlegging",
+  hendelse: "Hendelse",
   annet: "Annet",
 };
 
@@ -197,6 +204,7 @@ function NyFridag({
         >
           <option value="ferie">Ferie</option>
           <option value="planlegging">Planleggingsdag</option>
+          <option value="hendelse">Hendelse</option>
           <option value="annet">Annet</option>
         </select>
       </label>

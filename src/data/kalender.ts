@@ -9,7 +9,7 @@ export type Fridag = {
   id: string;
   skolearId: string;
   navn: string;
-  type: "ferie" | "planlegging" | "annet";
+  type: "ferie" | "planlegging" | "annet" | "hendelse";
   fra: string;
   til: string;
 };
@@ -17,7 +17,14 @@ export type Fridag = {
 export type Roddag = { dato: string; navn: string };
 
 /** Grunnen til at en dato ikke ble en økt. */
-export type Hoppgrunn = "helg" | "helligdag" | "ferie" | "planlegging" | "annet";
+export type Hoppgrunn =
+  | "helg"
+  | "helligdag"
+  | "ferie"
+  | "planlegging"
+  | "annet"
+  /** noe som opptar undervisningstida uten å være fri — «eksamen i annet fag» */
+  | "hendelse";
 
 export type Seriedag = {
   dato: string;

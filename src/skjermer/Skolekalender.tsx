@@ -385,7 +385,9 @@ function Dag({
       : blokkert
         ? blokkert.type === "helligdag"
           ? "bg-helligdag-flate"
-          : "bg-fri-flate"
+          : blokkert.type === "hendelse"
+            ? "bg-hendelse-flate"
+            : "bg-fri-flate"
         : "bg-ark";
 
   return (

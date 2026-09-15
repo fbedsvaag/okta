@@ -168,6 +168,46 @@ describe("blokkering", () => {
   it("gir null på en helt vanlig skoledag", () => {
     expect(blokkering("2026-08-18", ferier, rode)).toBeNull();
   });
+
+  it("sier fra om en hendelse, med sin egen type", () => {
+    // «Eksamen i annet fag» er ikke fri — skolen går — men timen blir det
+    // ikke noe av. Egen type, så kalenderen kan vise den for seg.
+    const eksamen: Fridag[] = [
+      {
+        id: "e",
+        skolearId: "ar",
+        navn: "Eksamen i norsk",
+        type: "hendelse",
+        fra: "2026-11-24",
+        til: "2026-11-24",
+      },
+    ];
+    expect(blokkering("2026-11-24", eksamen, rode)).toEqual({
+      navn: "Eksamen i norsk",
+      type: "hendelse",
+    });
+  });
+});
+
+describe("hendelser blokkerer undervisning", () => {
+  it("hopper over hendelsesdager i en serie, som en ferie", () => {
+    const eksamen: Fridag[] = [
+      {
+        id: "e",
+        skolearId: "ar",
+        navn: "Eksamen i norsk",
+        type: "hendelse",
+        fra: "2026-11-24",
+        til: "2026-11-24",
+      },
+    ];
+    // Tirsdager i spennet: 17., 24. november og 1. desember.
+    const serie = lagSerie(2, "2026-11-17", "2026-12-01", eksamen);
+    const valgte = serie.filter((d) => d.valgt).map((d) => d.dato);
+
+    expect(valgte).toEqual(["2026-11-17", "2026-12-01"]);
+    expect(serie.find((d) => d.dato === "2026-11-24")?.hoppet).toBe("hendelse");
+  });
 });
 
 describe("ukenummer", () => {
