@@ -12,6 +12,7 @@ import {
   tellForElever,
   opprettElev,
   settKlasse,
+  settMentor,
   slettElever,
   slettElevtekst,
   slettKlasse,
@@ -33,6 +34,7 @@ const VALGBARE = [
   { id: "etternavn", navn: "Etternavn" },
   { id: "kode", navn: "Kode" },
   { id: "klasse", navn: "Klasse" },
+  { id: "mentor", navn: "Mentor" },
   { id: "fag", navn: "Fag" },
   { id: "okter", navn: "Økter" },
   { id: "siste", navn: "Siste" },
@@ -66,6 +68,8 @@ export function Elever({
   const [sok, setSok] = useState("");
   const [filterKlasse, setFilterKlasse] = useState("");
   const [filterFag, setFilterFag] = useState("");
+  // Mentorfilteret virker uavhengig av klasse- og fagfilteret (§4.3).
+  const [baraMentor, setBaraMentor] = useState(false);
   const [valgtElev, setValgtElev] = useState<string | null>(null);
   const [synligeKolonner, setSynligeKolonner] = useState<Set<Synlig>>(
     new Set(STANDARD),
@@ -118,12 +122,13 @@ export function Elever({
     const filtrert = elever.filter((e) => {
       if (filterKlasse && e.klasseId !== filterKlasse) return false;
       if (filterFag && !e.fagIder.includes(filterFag)) return false;
+      if (baraMentor && !e.mentor) return false;
       if (s && !`${e.fornavn} ${e.etternavn}`.toLocaleLowerCase("nb-NO").includes(s))
         return false;
       return true;
     });
     return sorter(filtrert, sortering);
-  }, [elever, sok, filterKlasse, filterFag, sortering]);
+  }, [elever, sok, filterKlasse, filterFag, baraMentor, sortering]);
 
   const alleMerket =
     synlige.length > 0 && synlige.every((e) => merket.has(e.id));
@@ -179,6 +184,21 @@ export function Elever({
             valg={klasser.map((k) => ({ id: k.id, tekst: `${k.navn} (${k.antall})` }))}
           />
           <Fagfiltre fag={fag} valgt={filterFag} settValgt={setFilterFag} />
+
+          <label
+            title="Bare elevene du er kontaktlærer for i år"
+            className="flex select-none items-center gap-1.5 text-liten text-blekk-dempet"
+          >
+            <input
+              type="checkbox"
+              checked={baraMentor}
+              onChange={(e) => setBaraMentor(e.target.checked)}
+            />
+            Mentorelever
+            <span className="tabular-nums text-blekk-svak">
+              {elever.filter((e) => e.mentor).length}
+            </span>
+          </label>
 
           <div className="ml-auto flex items-center gap-2">
             <label className="flex select-none items-center gap-2 text-liten text-blekk-dempet">
@@ -255,6 +275,11 @@ export function Elever({
                     onKlikk={bytSortering}
                   >
                     Klasse
+                  </Overskrift>
+                )}
+                {vis.has("mentor") && (
+                  <Overskrift kolonne="mentor" sortering={sortering} onKlikk={bytSortering}>
+                    Mentor
                   </Overskrift>
                 )}
                 {vis.has("fag") && (
@@ -413,6 +438,7 @@ type Kolonne =
   | "etternavn"
   | "kode"
   | "klasse"
+  | "mentor"
   | "fag"
   | "okter"
   | "siste"
@@ -444,6 +470,10 @@ function sorter(rader: ElevRad[], { kolonne, stigende }: Sortering): ElevRad[] {
         );
       case "kode":
         return tekst(a.kode).localeCompare(tekst(b.kode), "nb-NO");
+      case "mentor":
+        // Mentorelevene først når man sorterer på kolonnen — det er dem man
+        // sorterer for å se.
+        return Number(b.mentor) - Number(a.mentor);
       case "klasse":
         // Elever uten klasse havner sist begge veier — de er ikke «minst».
         if (!a.klasseNavn !== !b.klasseNavn) return a.klasseNavn ? -1 : 1;
@@ -656,6 +686,30 @@ function Rad({
             <option value="__ny">Ny klasse …</option>
           </select>
         )}
+      </td>
+      {/*
+        Mentormerket henger på klassekoblingen (§3.2), så uten klasse finnes
+        det ingen rad å merke. Da vises boksen av, med forklaring, framfor at
+        klikket forsvinner i stillhet.
+      */}
+      <td
+        className={`py-1.5 pr-5 ${vis.has("mentor") ? "" : "hidden"}`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <input
+          type="checkbox"
+          checked={elev.mentor}
+          disabled={elev.klasseId === null}
+          title={
+            elev.klasseId === null
+              ? "Eleven må ha en klasse før hen kan merkes som mentorelev"
+              : "Min mentorelev dette året"
+          }
+          onChange={async (e) => {
+            await settMentor(elev.id, skolearId, e.target.checked);
+            onEndret();
+          }}
+        />
       </td>
       <td className={`relative py-1.5 pr-5 ${vis.has("fag") ? "" : "hidden"}`}>
         <button
