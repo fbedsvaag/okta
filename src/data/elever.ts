@@ -27,7 +27,6 @@ export type ElevRad = {
   siste: string | null;
   /** når elevraden sist ble endret, lokal ISO */
   endret: string;
-  notat: string | null;
   /** fordelingen av skåringene som teller, til innsatskolonnen */
   gronn: number;
   gul: number;
@@ -87,9 +86,8 @@ export async function hentElever(skolearId: string): Promise<ElevRad[]> {
     klasseNavn: string | null;
     mentor: number;
     endret: string;
-    notat: string | null;
   }>(
-    `SELECT e.id, e.kode, e.fornavn, e.etternavn, e.endret, e.notat,
+    `SELECT e.id, e.kode, e.fornavn, e.etternavn, e.endret,
             k.id AS klasseId, k.navn AS klasseNavn,
             COALESCE(ek.mentor, 0) AS mentor
        FROM elev e
@@ -316,19 +314,19 @@ export async function frakobleFag(
  */
 export async function tellForElev(
   elevId: string,
-): Promise<{ skaringer: number; vurderinger: number; oppfolging: number }> {
+): Promise<{ skaringer: number; vurderinger: number; notater: number }> {
   const [r] = await hent<{
     skaringer: number;
     vurderinger: number;
-    oppfolging: number;
+    notater: number;
   }>(
     `SELECT
        (SELECT COUNT(*) FROM skaring WHERE elev_id = $1 AND slettet IS NULL)
          AS skaringer,
        (SELECT COUNT(*) FROM vurderingsresultat WHERE elev_id = $1
           AND slettet IS NULL) AS vurderinger,
-       (SELECT COUNT(*) FROM oppfolging WHERE elev_id = $1 AND slettet IS NULL)
-         AS oppfolging`,
+       (SELECT COUNT(*) FROM elevnotat WHERE elev_id = $1 AND slettet IS NULL)
+         AS notater`,
     [elevId],
   );
   return r;
@@ -344,23 +342,23 @@ export async function tellForElev(
 /** Samme tall som `tellForElev`, men for flere elever under ett. */
 export async function tellForElever(
   elevIder: string[],
-): Promise<{ skaringer: number; vurderinger: number; oppfolging: number }> {
+): Promise<{ skaringer: number; vurderinger: number; notater: number }> {
   if (elevIder.length === 0)
-    return { skaringer: 0, vurderinger: 0, oppfolging: 0 };
+    return { skaringer: 0, vurderinger: 0, notater: 0 };
 
   const plass = elevIder.map((_, i) => `$${i + 1}`).join(", ");
   const [r] = await hent<{
     skaringer: number;
     vurderinger: number;
-    oppfolging: number;
+    notater: number;
   }>(
     `SELECT
        (SELECT COUNT(*) FROM skaring WHERE elev_id IN (${plass})
           AND slettet IS NULL) AS skaringer,
        (SELECT COUNT(*) FROM vurderingsresultat WHERE elev_id IN (${plass})
           AND slettet IS NULL) AS vurderinger,
-       (SELECT COUNT(*) FROM oppfolging WHERE elev_id IN (${plass})
-          AND slettet IS NULL) AS oppfolging`,
+       (SELECT COUNT(*) FROM elevnotat WHERE elev_id IN (${plass})
+          AND slettet IS NULL) AS notater`,
     elevIder,
   );
   return r;
@@ -374,7 +372,7 @@ export async function tellForElever(
  */
 export function slettElevtekst(
   navn: string[],
-  n: { skaringer: number; vurderinger: number; oppfolging: number },
+  n: { skaringer: number; vurderinger: number; notater: number },
 ): string {
   const hvem =
     navn.length === 1 ? `Slette ${navn[0]}?` : `Slette ${navn.length} elever?`;
@@ -382,7 +380,7 @@ export function slettElevtekst(
   const hva = [
     n.skaringer && `${n.skaringer} skåringer`,
     n.vurderinger && `${n.vurderinger} vurderingsresultater`,
-    n.oppfolging && `${n.oppfolging} oppfølgingspunkter`,
+    n.notater && `${n.notater} notater`,
   ].filter(Boolean);
 
   const omfang =
@@ -404,7 +402,7 @@ export async function slettElevHelt(elevId: string): Promise<void> {
   for (const tabell of [
     "skaring",
     "vurderingsresultat",
-    "oppfolging",
+    "elevnotat",
     "elev_fag",
     "elev_klasse",
   ]) {

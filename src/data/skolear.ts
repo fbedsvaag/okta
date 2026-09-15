@@ -236,7 +236,7 @@ export async function slettSkolear(skolearId: string): Promise<void> {
       await slett("vurdering", v.id);
     }
 
-    for (const tabell of ["periode", "elev_fag", "oppfolging"]) {
+    for (const tabell of ["periode", "elev_fag"]) {
       const rader = await hent<{ id: string }>(
         `SELECT id FROM ${tabell} WHERE skolear_fag_id = $1 AND slettet IS NULL`,
         [sf.id],
@@ -246,7 +246,9 @@ export async function slettSkolear(skolearId: string): Promise<void> {
     await slett("skolear_fag", sf.id);
   }
 
-  for (const tabell of ["elev_klasse", "klasse", "fridag"]) {
+  // elevnotat ryddes på skolear_id, ikke på faget: et notat uten fag hører
+  // til året, og ville ellers blitt stående etter at året er slettet.
+  for (const tabell of ["elev_klasse", "klasse", "fridag", "elevnotat"]) {
     const rader = await hent<{ id: string }>(
       `SELECT id FROM ${tabell} WHERE skolear_id = $1 AND slettet IS NULL`,
       [skolearId],

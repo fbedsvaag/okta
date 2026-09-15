@@ -309,7 +309,7 @@ export function ElevPanel({
             const hva = [
               n.skaringer && `${n.skaringer} skåringer`,
               n.vurderinger && `${n.vurderinger} vurderingsresultater`,
-              n.oppfolging && `${n.oppfolging} oppfølgingspunkter`,
+              n.notater && `${n.notater} notater`,
             ].filter(Boolean);
             const ok = await bekreft(
               `Slette ${elev.fornavn} ${elev.etternavn}?\n\n` +

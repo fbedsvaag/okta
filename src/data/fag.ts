@@ -214,7 +214,7 @@ export async function slettFagHelt(fagId: string): Promise<void> {
       await slett("vurdering", v.id);
     }
 
-    for (const tabell of ["periode", "elev_fag", "oppfolging"]) {
+    for (const tabell of ["periode", "elev_fag", "elevnotat"]) {
       const rader = await hent<{ id: string }>(
         `SELECT id FROM ${tabell} WHERE skolear_fag_id = $1 AND slettet IS NULL`,
         [sf.id],
