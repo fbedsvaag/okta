@@ -43,6 +43,14 @@ Byggerekkefølgen står i §11. Dag 1–4 er det brukeren trenger i august, dag 
 er det som må stå til første undervisningsuke. Skjer det en prioritering,
 gjelder den rekkefølgen.
 
+## SPEC.md og STATUS.md
+
+**Du skriver ikke i SPEC.md.** Den er brukerens fasit. Ser du at koden avviker
+fra den, foreslå en endring — bruker bestemmer om spec eller kode skal rettes.
+
+**STATUS.md eier du og kan oppdatere fritt.** Den beskriver hvor prosjektet
+faktisk står, ikke hva det skal bli.
+
 ## Testdata
 
 `dummydata/` inneholder fire fiktive klasselister med navn fra The Sopranos, i
