@@ -5,15 +5,27 @@ import { hentInnstilling, settInnstilling } from "../data/skolear";
 import type { FagIAr } from "../data/fag";
 import { hentElever, type ElevRad } from "../data/elever";
 import {
+  delPaDager,
   endreSamtaledag,
+  hentHistorikk,
   hentSamtaledager,
+  hentSamtaler,
   kapasitet,
+  lagreTrekning,
+  leggUtDagen,
+  merknad,
   opprettSamtaledag,
   slettSamtaledag,
+  stokk,
+  tildelTema,
+  tilKlokke,
+  tilMin,
   timerPaDagen,
+  vektetRekkefolge,
+  type Plassering,
   type Samtaledag,
 } from "../data/samtale";
-import { Felt, Tomtilstand } from "../ui/felles";
+import { Felt, Knapp, Tomtilstand } from "../ui/felles";
 
 /**
  * Samtaletrekkeren, SPEC §4.10.
@@ -23,6 +35,19 @@ import { Felt, Tomtilstand } from "../ui/felles";
  */
 
 export type Modus = "fag" | "mentor";
+
+/** En dag slik den vises i timeplanen. */
+type Dagplan = {
+  dag: Samtaledag;
+  rader: {
+    elevId: string;
+    navn: string;
+    tema: string | null;
+    fra: string;
+    til: string;
+    motte: boolean;
+  }[];
+};
 
 /** Standardverdier for en ny dag (§4.10). */
 const NY_DAG = { fra: "08:30", til: "15:00", lunsjFra: "11:45", lunsjMin: 30 };
@@ -52,18 +77,44 @@ export function Samtaler({
   const [elever, setElever] = useState<ElevRad[]>([]);
   const [egenListe, setEgenListe] = useState("");
   const [brukEgen, setBrukEgen] = useState(false);
+  const [historikk, setHistorikk] = useState<Map<string, Plassering[]>>(new Map());
+  // Vektingen er av som standard. Ren tilfeldighet er normaltilstanden (§4.10).
+  const [vekting, setVekting] = useState(false);
+  const [trekning, setTrekning] = useState<Dagplan[] | null>(null);
+  const [lagret, setLagret] = useState(true);
 
   const minutter = Number(samtaletid) || 20;
   const pausen = Number(pause) || 0;
 
   async function last() {
     setElever(await hentElever(skolear.id));
+    setHistorikk(await hentHistorikk(skolear.id));
+
     const alle = await hentSamtaledager(skolear.id);
-    setDager(
-      alle.filter((d) =>
-        modus === "mentor" ? d.skolearFagId === null : d.skolearFagId === fagId,
-      ),
+    const mine = alle.filter((d) =>
+      modus === "mentor" ? d.skolearFagId === null : d.skolearFagId === fagId,
     );
+    setDager(mine);
+
+    // Er det allerede trukket på disse dagene, vises det som står i basen.
+    const lagrede: Dagplan[] = [];
+    for (const dag of mine) {
+      const samtaler = await hentSamtaler(dag.id);
+      if (samtaler.length === 0) continue;
+      lagrede.push({
+        dag,
+        rader: samtaler.map((s) => ({
+          elevId: s.elevId,
+          navn: `${s.fornavn} ${s.etternavn}`,
+          tema: s.tema,
+          fra: s.klokkeslett,
+          til: tilKlokke(tilMin(s.klokkeslett) + s.varighetMin),
+          motte: s.motte,
+        })),
+      });
+    }
+    setTrekning(lagrede.length > 0 ? lagrede : null);
+    setLagret(true);
   }
 
   useEffect(() => {
@@ -101,6 +152,65 @@ export function Samtaler({
       .filter(passer)
       .map((e) => ({ id: e.id, navn: `${e.fornavn} ${e.etternavn}` }));
   }, [brukEgen, egenListe, elever, modus, fagId]);
+
+  /**
+   * Trekker og skriver.
+   *
+   * Innlimte elever finnes ikke i basen, og samtale.elev_id har fremmednøkkel
+   * til elev — da vises trekningen uten å lagres, tydelig merket. Å gjøre
+   * innlimingen ubrukelig ville vært verre.
+   */
+  async function generer() {
+    const ider = deltakere.map((d) => d.id);
+    const ordnet = vekting
+      ? vektetRekkefolge(ider, historikk)
+      : stokk(ider);
+    const perDag = delPaDager(ordnet, kapasiteter);
+    const temakart = tildelTema(ordnet, temaer.filter((t) => t.trim() !== ""));
+    const navn = new Map(deltakere.map((d) => [d.id, d.navn]));
+
+    const plan: Dagplan[] = [];
+    dager.forEach((dag, i) => {
+      const paDagen = perDag[i] ?? [];
+      if (paDagen.length === 0) return;
+
+      const slots = leggUtDagen(dag, paDagen.length, minutter, pausen).filter(
+        (s) => s.type === "samtale",
+      );
+      plan.push({
+        dag,
+        rader: slots.map((s, j) => ({
+          elevId: paDagen[j],
+          navn: navn.get(paDagen[j]) ?? "",
+          tema: temakart.get(paDagen[j]) ?? null,
+          fra: tilKlokke(s.fra),
+          til: tilKlokke(s.til),
+          motte: true,
+        })),
+      });
+    });
+
+    setTrekning(plan);
+
+    if (brukEgen) {
+      setLagret(false);
+      return;
+    }
+
+    for (const d of plan) {
+      await lagreTrekning(
+        d.dag.id,
+        d.rader.map((r) => ({
+          elevId: r.elevId,
+          klokkeslett: r.fra,
+          varighetMin: minutter,
+          tema: r.tema,
+        })),
+      );
+    }
+    setLagret(true);
+    setHistorikk(await hentHistorikk(skolear.id));
+  }
 
   const kapasiteter = dager.map((d) => kapasitet(d, minutter, pausen));
   const samletKapasitet = kapasiteter.reduce((a, b) => a + b, 0);
@@ -292,17 +402,64 @@ export function Samtaler({
               </p>
             )}
           </Bolk>
+
+          {/*
+            Historikken er synlig mens du trekker, ikke bare etterpå. Merknadene
+            vises uansett om vektingen er på — de er opplysning, ikke konsekvens
+            av en innstilling (§4.10).
+          */}
+          <Bolk tittel="Historikk">
+            <Historikkoversikt deltakere={deltakere} historikk={historikk} />
+            <label className="mt-2 flex select-none items-center gap-1.5 text-liten text-blekk-dempet">
+              <input
+                type="checkbox"
+                checked={vekting}
+                onChange={(e) => setVekting(e.target.checked)}
+              />
+              Vekt mot gjentakelse
+            </label>
+          </Bolk>
+        </div>
+
+        <div className="shrink-0 border-t border-linje-medium pt-3">
+          <Knapp
+            variant="primar"
+            disabled={deltakere.length === 0 || dager.length === 0}
+            onClick={() => void generer()}
+          >
+            {trekning ? "Trekk på nytt" : "Generer timeplan"}
+          </Knapp>
         </div>
       </div>
 
       <div className="min-h-0 flex-1 overflow-auto">
-        <Tomtilstand
-          tekst={
-            dager.length === 0
-              ? "Legg til minst én samtaledag til venstre."
-              : "Sett opp trekningen til venstre. Generering kommer i neste del."
-          }
-        />
+        {deltakere.length > samletKapasitet && dager.length > 0 && (
+          <div className="mb-4 border border-varsel bg-fri-flate px-3 py-2 text-brod text-varsel">
+            Kapasiteten ({samletKapasitet} elever) er lavere enn antall elever (
+            {deltakere.length}). Legg til flere dager, forleng øktene, eller
+            reduser pausetiden.
+          </div>
+        )}
+
+        {!lagret && (
+          <div className="mb-4 border border-linje bg-flate px-3 py-2 text-brod text-blekk-dempet">
+            Trekningen er ikke lagret. Elevene i den innlimte lista finnes ikke
+            i appen, så det er ingenting å henge samtalene på. Lim dem inn under
+            Elever først, så lagres trekningen og teller i historikken.
+          </div>
+        )}
+
+        {trekning === null ? (
+          <Tomtilstand
+            tekst={
+              dager.length === 0
+                ? "Legg til minst én samtaledag til venstre."
+                : "Sett opp trekningen til venstre og trykk Generer timeplan."
+            }
+          />
+        ) : (
+          <Timeplan plan={trekning} historikk={historikk} />
+        )}
       </div>
     </div>
   );
@@ -450,3 +607,118 @@ function Dagkort({
 
 const feltstil =
   "rounded border border-linje bg-ark px-2 py-1 text-brod tabular-nums outline-none focus:border-aksent";
+
+/**
+ * Timeplanen: én bolk per dag, én rad per samtale.
+ *
+ * Plassnummeret løper sammenhengende over alle dagene — dag 2 fortsetter der
+ * dag 1 sluttet (§4.10).
+ */
+function Timeplan({
+  plan,
+  historikk,
+}: {
+  plan: Dagplan[];
+  historikk: Map<string, Plassering[]>;
+}) {
+  let plass = 0;
+
+  return (
+    <div className="space-y-6">
+      {plan.map((d) => (
+        <section key={d.dag.id}>
+          <div className="mb-1 flex items-baseline justify-between border-b border-linje pb-1">
+            <h2 className="text-tittel font-semibold first-letter:uppercase">
+              {langDato(d.dag.dato)}
+            </h2>
+            <span className="text-liten tabular-nums text-blekk-dempet">
+              {d.dag.fra}–{d.dag.til} · {d.rader.length} elever
+            </span>
+          </div>
+
+          {d.rader.map((r) => {
+            plass++;
+            // Merknaden bygges på historikken FØR denne trekningen, så den
+            // sier noe om hva som har skjedd — ikke om det som nettopp ble
+            // trukket.
+            const notis = merknad(historikk.get(r.elevId) ?? []);
+            return (
+              <div
+                key={`${r.elevId}-${r.fra}`}
+                className={`flex items-baseline gap-3 border-b border-linje-svak py-1.5 text-brod ${
+                  r.motte ? "" : "text-blekk-svak line-through"
+                }`}
+              >
+                <span className="w-6 shrink-0 text-right tabular-nums text-blekk-svak">
+                  {plass}
+                </span>
+                <span className="w-24 shrink-0 tabular-nums text-blekk-dempet">
+                  {r.fra}–{r.til}
+                </span>
+                <span className="min-w-0 flex-1 truncate">{r.navn}</span>
+                {r.tema && (
+                  <span className="w-40 shrink-0 truncate text-blekk-dempet">
+                    {r.tema}
+                  </span>
+                )}
+                <span className="w-32 shrink-0 text-right text-liten text-blekk-svak">
+                  {r.motte ? notis : "møtte ikke"}
+                </span>
+              </div>
+            );
+          })}
+        </section>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * Hvem som hadde tidlig eller sent sist, samlet.
+ *
+ * Bare de som har noe å si står her — de fleste har ingenting, og det er
+ * nettopp derfor de som har det er verdt å se på.
+ */
+function Historikkoversikt({
+  deltakere,
+  historikk,
+}: {
+  deltakere: { id: string; navn: string }[];
+  historikk: Map<string, Plassering[]>;
+}) {
+  const grupper = new Map<string, string[]>();
+  for (const d of deltakere) {
+    const notis = merknad(historikk.get(d.id) ?? []);
+    if (!notis) continue;
+    grupper.set(notis, [...(grupper.get(notis) ?? []), d.navn.split(" ")[0]]);
+  }
+
+  if (grupper.size === 0) {
+    return (
+      <p className="text-liten text-blekk-svak">
+        Ingenting å melde ennå. Etter et par trekninger står det her hvem som
+        har hatt tidlig eller sent.
+      </p>
+    );
+  }
+
+  return (
+    <ul className="space-y-1">
+      {[...grupper].map(([notis, navn]) => (
+        <li key={notis} className="text-liten">
+          <span className="text-blekk-dempet">{notis}</span>{" "}
+          <span className="text-blekk-svak">· {navn.join(", ")}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function langDato(dato: string): string {
+  if (!dato) return "Dato ikke satt";
+  return new Date(`${dato}T00:00:00`).toLocaleDateString("nb-NO", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
+}

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  delPaDager,
   fordelPaDager,
   kapasitet,
   leggUtDagen,
@@ -293,5 +294,23 @@ describe("stokk", () => {
     const inn = [1, 2, 3];
     stokk(inn, fast([0.5]));
     expect(inn).toEqual([1, 2, 3]);
+  });
+});
+
+describe("delPaDager", () => {
+  it("beholder rekkefølgen den fikk", () => {
+    // Vektet rekkefølge skal ikke stokkes om igjen av delingen.
+    expect(delPaDager(["a", "b", "c", "d"], [2, 2])).toEqual([
+      ["a", "b"],
+      ["c", "d"],
+    ]);
+  });
+
+  it("lar de som ikke får plass bli utenfor", () => {
+    expect(delPaDager(["a", "b", "c"], [2])).toEqual([["a", "b"]]);
+  });
+
+  it("gir tomme dager når elevene tar slutt", () => {
+    expect(delPaDager(["a"], [2, 2])).toEqual([["a"], []]);
   });
 });

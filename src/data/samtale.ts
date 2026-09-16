@@ -155,22 +155,30 @@ export function tildelTema(
   return ut;
 }
 
+/**
+ * Deler en ferdig ordnet liste på dagene, etter kapasitet.
+ *
+ * Skilt fra trekningen fordi rekkefølgen kan komme to veier: stokket, eller
+ * vektet mot gjentakelse (§4.10). Delingen er den samme uansett.
+ */
+export function delPaDager(ordnet: string[], kapasiteter: number[]): string[][] {
+  const fordelt = fordelPaDager(ordnet.length, kapasiteter);
+  const ut: string[][] = [];
+  let i = 0;
+  for (const antall of fordelt) {
+    ut.push(ordnet.slice(i, i + antall));
+    i += antall;
+  }
+  return ut;
+}
+
 /** Fordeler elevene på dagene og trekker rekkefølgen innen hver dag. */
 export function trekkRekkefolge(
   elevIder: string[],
   kapasiteter: number[],
   tilfeldig: () => number = Math.random,
 ): string[][] {
-  const stokket = stokk(elevIder, tilfeldig);
-  const fordelt = fordelPaDager(stokket.length, kapasiteter);
-
-  const ut: string[][] = [];
-  let i = 0;
-  for (const antall of fordelt) {
-    ut.push(stokket.slice(i, i + antall));
-    i += antall;
-  }
-  return ut;
+  return delPaDager(stokk(elevIder, tilfeldig), kapasiteter);
 }
 
 // ----------------------------------------------------------------- historikk
