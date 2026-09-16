@@ -73,6 +73,7 @@ export function Elever({
   // Elever med et åpent, forfalt oppfølgingspunkt (§4.7). Merket sier bare at
   // noe venter — aldri hva. Tabellen vises i klasserommet og i møter.
   const [forfalte, setForfalte] = useState<Set<string>>(new Set());
+  const [feil, setFeil] = useState<string | null>(null);
   const [valgtElev, setValgtElev] = useState<string | null>(null);
   const [synligeKolonner, setSynligeKolonner] = useState<Set<Synlig>>(
     new Set(STANDARD),
@@ -353,6 +354,7 @@ export function Elever({
                     })
                   }
                   onEndret={last}
+                  onFeil={setFeil}
                 />
               ))}
               <NyElevRad
@@ -364,6 +366,18 @@ export function Elever({
               />
             </tbody>
           </table>
+          </div>
+        )}
+
+        {feil && (
+          <div className="mt-3 flex items-center gap-3 border border-feil bg-feil-flate px-3 py-2 text-brod text-feil">
+            <span>{feil}</span>
+            <button
+              onClick={() => setFeil(null)}
+              className="ml-auto text-liten hover:underline"
+            >
+              Lukk
+            </button>
           </div>
         )}
 
@@ -566,6 +580,7 @@ function Rad({
   onApne,
   onMerk,
   onEndret,
+  onFeil,
 }: {
   elev: ElevRad;
   fag: FagIAr[];
@@ -579,8 +594,13 @@ function Rad({
   onApne: () => void;
   onMerk: (pa: boolean) => void;
   onEndret: () => void;
+  onFeil: (tekst: string) => void;
 }) {
   const [apenFag, setApenFag] = useState(false);
+  // Avkrysningen viser valget med en gang. Nullstilles når lista har lastet
+  // på nytt, så basen er fasit til slutt.
+  const [onsketMentor, setOnsketMentor] = useState<boolean | null>(null);
+  useEffect(() => setOnsketMentor(null), [elev.mentor]);
   // prompt() finnes ikke i Tauri-vinduet, så «Ny klasse …» gjør cellen om til
   // et skrivefelt i stedet for å åpne en dialog.
   const [skriverKlasse, setSkriverKlasse] = useState(false);
@@ -697,27 +717,49 @@ function Rad({
       </td>
       {/*
         Mentormerket henger på klassekoblingen (§3.2), så uten klasse finnes
-        det ingen rad å merke. Da vises boksen av, med forklaring, framfor at
-        klikket forsvinner i stillhet.
+        det ingen rad å merke.
+
+        Da vises det ingen avkrysningsboks i det hele tatt. En deaktivert boks
+        ser ut som en boks, og det var nettopp problemet: den så ut som den
+        virket. En strek gjør det ikke.
       */}
       <td
         className={`py-1.5 pr-5 ${vis.has("mentor") ? "" : "hidden"}`}
         onClick={(e) => e.stopPropagation()}
       >
-        <input
-          type="checkbox"
-          checked={elev.mentor}
-          disabled={elev.klasseId === null}
-          title={
-            elev.klasseId === null
-              ? "Eleven må ha en klasse før hen kan merkes som mentorelev"
-              : "Min mentorelev dette året"
-          }
-          onChange={async (e) => {
-            await settMentor(elev.id, skolearId, e.target.checked);
-            onEndret();
-          }}
-        />
+        {elev.klasseId === null ? (
+          <span
+            title="Sett klasse først — mentormerket henger på klassen"
+            className="cursor-help select-none text-blekk-svakest"
+          >
+            —
+          </span>
+        ) : (
+          <input
+            type="checkbox"
+            checked={onsketMentor ?? elev.mentor}
+            title="Min mentorelev dette året"
+            onChange={async (e) => {
+              const pa = e.target.checked;
+              // Vis valget med en gang, og la lista bekrefte det etterpå.
+              setOnsketMentor(pa);
+              try {
+                const ok = await settMentor(elev.id, skolearId, pa);
+                if (!ok) {
+                  setOnsketMentor(null);
+                  onFeil("Eleven har ingen klasse dette året, så merket kunne ikke settes.");
+                  return;
+                }
+                onEndret();
+              } catch (feil) {
+                // Uten dette forsvinner en feil i stillhet, og boksen ser bare
+                // ut som den ikke gjorde noe.
+                setOnsketMentor(null);
+                onFeil(`Kunne ikke lagre mentormerket: ${String(feil)}`);
+              }
+            }}
+          />
+        )}
       </td>
       <td className={`relative py-1.5 pr-5 ${vis.has("fag") ? "" : "hidden"}`}>
         <button
