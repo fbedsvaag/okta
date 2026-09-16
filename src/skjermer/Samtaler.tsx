@@ -33,6 +33,12 @@ import {
   type Samtaledag,
 } from "../data/samtale";
 import { invoke } from "@tauri-apps/api/core";
+import {
+  hentNotatPerSamtale,
+  opprettElevnotat,
+  endreElevnotat,
+  type Elevnotat,
+} from "../data/elevnotat";
 import { Felt, Knapp, Tomtilstand } from "../ui/felles";
 
 /**
@@ -51,6 +57,8 @@ type Dagplan = {
   /** Utledes av hullet mellom to samtaler — lagres ikke som egen rad. */
   lunsj: { fra: string; til: string } | null;
   rader: {
+    /** raden i basen, når trekningen er lagret */
+    samtaleId: string | null;
     elevId: string;
     navn: string;
     tema: string | null;
@@ -102,6 +110,7 @@ export function Samtaler({
   const [dragmelding, setDragmelding] = useState<string | null>(null);
   const [visning, setVisning] = useState<Visning>("timeplan");
   const [kopiert, setKopiert] = useState<"teams" | "md" | null>(null);
+  const [notater, setNotater] = useState<Map<string, Elevnotat>>(new Map());
 
   const minutter = Number(samtaletid) || 20;
   const pausen = Number(pause) || 0;
@@ -129,6 +138,7 @@ export function Samtaler({
         dag,
         lunsj: finnLunsj(tider, dag),
         rader: samtaler.map((s) => ({
+          samtaleId: s.id,
           elevId: s.elevId,
           navn: `${s.fornavn} ${s.etternavn}`,
           tema: s.tema,
@@ -139,6 +149,11 @@ export function Samtaler({
       });
     }
     setTrekning(lagrede.length > 0 ? lagrede : null);
+    setNotater(
+      await hentNotatPerSamtale(
+        lagrede.flatMap((d) => d.rader.map((r) => r.samtaleId!).filter(Boolean)),
+      ),
+    );
     setLagret(true);
 
     // Én dag ligger klar med én gang, så datofeltet er fremme og ikke gjemt
@@ -214,6 +229,7 @@ export function Samtaler({
           ? { fra: tilKlokke(lunsjslot.fra), til: tilKlokke(lunsjslot.til) }
           : null,
         rader: slots.map((s, j) => ({
+          samtaleId: null,
           elevId: paDagen[j],
           navn: navn.get(paDagen[j]) ?? "",
           tema: temakart.get(paDagen[j]) ?? null,
@@ -272,6 +288,44 @@ export function Samtaler({
       for (const r of d.rader) if (r.tema) na.set(r.elevId, r.tema);
     }
     await skriv(byggPlan(perDag, na));
+  }
+
+  /**
+   * Notatet fra samtalen lagres i møteloggen (§4.7), ikke på timeplanraden.
+   *
+   * Da står det på elevsiden sammen med alt annet du har notert om hen over
+   * tid — og det finnes fortsatt bare ett sted notater om en elev bor.
+   */
+  async function lagreNotat(
+    rad: Dagplan["rader"][number],
+    dag: Samtaledag,
+    tekst: string,
+    folgesOpp: boolean,
+  ) {
+    const finnes = rad.samtaleId ? notater.get(rad.samtaleId) : undefined;
+
+    if (finnes) {
+      await endreElevnotat(finnes.id, { tekst, skalFolgesOpp: folgesOpp });
+    } else {
+      if (!rad.samtaleId) return;
+      await opprettElevnotat(rad.elevId, dag.skolearId, {
+        dato: dag.dato,
+        tekst,
+        // Fagsamtalens notat henger på faget, så det dukker opp når elevkortet
+        // filtreres på det. Mentorsamtalens står uten fag, som den skal.
+        skolearFagId: dag.skolearFagId,
+        skalFolgesOpp: folgesOpp,
+        samtaleId: rad.samtaleId,
+      });
+    }
+
+    setNotater(
+      await hentNotatPerSamtale(
+        (trekning ?? []).flatMap((d) =>
+          d.rader.map((r) => r.samtaleId!).filter(Boolean),
+        ),
+      ),
+    );
   }
 
   /** Formen eksportene arbeider på. */
@@ -694,6 +748,10 @@ export function Samtaler({
             plan={trekning}
             historikk={historikk}
             laste={lasteElever}
+            notater={notater}
+            onNotat={(rad, dag, tekst, folgesOpp) =>
+              void lagreNotat(rad, dag, tekst, folgesOpp)
+            }
             onFlytt={(dagIdx, fra, til) => void flytt(dagIdx, fra, til)}
             onFeilDrag={() => {
               setDragmelding(
@@ -869,14 +927,23 @@ function Timeplan({
   plan,
   historikk,
   laste,
+  notater,
   onLas,
+  onNotat,
   onFlytt,
   onFeilDrag,
 }: {
   plan: Dagplan[];
   historikk: Map<string, Plassering[]>;
   laste: ReadonlySet<string>;
+  notater: Map<string, Elevnotat>;
   onLas: (elevId: string) => void;
+  onNotat: (
+    rad: Dagplan["rader"][number],
+    dag: Samtaledag,
+    tekst: string,
+    folgesOpp: boolean,
+  ) => void;
   onFlytt: (dagIdx: number, fra: number, til: number) => void;
   onFeilDrag: () => void;
 }) {
@@ -977,6 +1044,15 @@ function Timeplan({
                   {erLast ? "🔒" : "🔓"}
                 </button>
               </div>
+
+              {r.samtaleId && (
+                <Notatfelt
+                  notat={notater.get(r.samtaleId) ?? null}
+                  onLagre={(tekst, folgesOpp) =>
+                    onNotat(r, d.dag, tekst, folgesOpp)
+                  }
+                />
+              )}
               </Fragment>
             );
           })}
@@ -1151,4 +1227,65 @@ function kortDato(dato: string): string {
     day: "numeric",
     month: "short",
   });
+}
+
+/**
+ * Notatet fra samtalen, skrevet der du står under dagen.
+ *
+ * Det lagres i møteloggen på elevsiden (§4.7), ikke på timeplanraden — så det
+ * står sammen med alt annet du har notert om eleven over tid. Feltet er
+ * sammenklappet til det finnes noe å vise, så en dag uten notater er rolig.
+ */
+function Notatfelt({
+  notat,
+  onLagre,
+}: {
+  notat: Elevnotat | null;
+  onLagre: (tekst: string, folgesOpp: boolean) => void;
+}) {
+  const [apent, setApent] = useState(false);
+
+  if (!apent && !notat) {
+    return (
+      <div className="border-b border-linje-svak pb-1.5 pl-[7.5rem]">
+        <button
+          onClick={() => setApent(true)}
+          className="text-liten text-blekk-svakest hover:text-blekk"
+        >
+          + notat
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="border-b border-linje-svak py-1.5 pl-[7.5rem]">
+      <textarea
+        defaultValue={notat?.tekst ?? ""}
+        key={notat?.id ?? "ny"}
+        autoFocus={apent && !notat}
+        rows={2}
+        placeholder="Hva ble sagt, og hva ble avtalt?"
+        onBlur={(e) => {
+          const tekst = e.target.value.trim();
+          if (tekst === "" || tekst === notat?.tekst) return;
+          onLagre(tekst, notat?.skalFolgesOpp ?? false);
+        }}
+        className="w-full rounded-vanlig border border-linje px-2 py-1 text-brod outline-none placeholder:text-blekk-svakest focus:border-aksent"
+      />
+      <label className="mt-1 flex select-none items-center gap-1.5 text-liten text-blekk-dempet">
+        <input
+          type="checkbox"
+          checked={notat?.skalFolgesOpp ?? false}
+          disabled={!notat}
+          title={notat ? undefined : "Skriv notatet først"}
+          onChange={(e) => notat && onLagre(notat.tekst, e.target.checked)}
+        />
+        Skal følges opp
+        <span className="ml-auto text-blekk-svakest">
+          {notat ? "lagret i møteloggen" : ""}
+        </span>
+      </label>
+    </div>
+  );
 }

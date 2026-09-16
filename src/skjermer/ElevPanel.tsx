@@ -680,6 +680,16 @@ function Notatrad({
     >
       <div className="flex items-baseline gap-2 text-liten">
         <span className="tabular-nums text-blekk-dempet">{notat.dato}</span>
+        {/*
+          Herkomsten leses av notatets egne felter, ikke av at samtalen
+          fortsatt finnes: en ny trekning erstatter samtaleradene, og notatet
+          skal stå like fullt.
+        */}
+        {notat.samtaleId && (
+          <span className="rounded-liten bg-flate px-1.5 text-blekk-dempet">
+            {notat.skolearFagId ? "Fagsamtale" : "Mentorsamtale"}
+          </span>
+        )}
         {notat.fagKode && (
           <span className="text-blekk-svak">{notat.fagKode}</span>
         )}

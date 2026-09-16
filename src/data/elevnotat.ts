@@ -24,6 +24,14 @@ export type Elevnotat = {
   skalFolgesOpp: boolean;
   frist: string | null;
   lukket: string | null;
+  /**
+   * Samtalen notatet ble skrevet i, når det kom derfra.
+   *
+   * Lenken er svak: en ny trekning erstatter samtaleradene, og da peker den
+   * på noe slettet. Visningen bygger derfor på notatets egne felter — at det
+   * kom fra en samtale, og hvilket fag det eventuelt hører til.
+   */
+  samtaleId: string | null;
 };
 
 type Rad = Omit<Elevnotat, "skalFolgesOpp"> & { skalFolgesOpp: number };
@@ -42,6 +50,7 @@ export async function hentElevnotater(elevId: string): Promise<Elevnotat[]> {
             n.skolear_fag_id   AS skolearFagId,
             f.kode             AS fagKode,
             n.dato, n.tekst, n.frist, n.lukket,
+            n.samtale_id       AS samtaleId,
             n.skal_folges_opp  AS skalFolgesOpp
        FROM elevnotat n
        LEFT JOIN skolear_fag sf ON sf.id = n.skolear_fag_id AND sf.slettet IS NULL
@@ -62,6 +71,7 @@ export async function opprettElevnotat(
     skolearFagId?: string | null;
     skalFolgesOpp?: boolean;
     frist?: string | null;
+    samtaleId?: string | null;
   },
 ): Promise<string> {
   return settInn("elevnotat", {
@@ -73,7 +83,41 @@ export async function opprettElevnotat(
     skal_folges_opp: felter.skalFolgesOpp ? 1 : 0,
     frist: felter.frist ?? null,
     lukket: null,
+    samtale_id: felter.samtaleId ?? null,
   });
+}
+
+/**
+ * Notatene som hører til en trekning, slått opp på samtale.
+ *
+ * Brukes av timeplanen, så raden kan vise det som allerede er skrevet.
+ */
+export async function hentNotatPerSamtale(
+  samtaleIder: string[],
+): Promise<Map<string, Elevnotat>> {
+  if (samtaleIder.length === 0) return new Map();
+
+  const plass = samtaleIder.map((_, i) => `$${i + 1}`).join(", ");
+  const rader = await hent<Rad>(
+    `SELECT n.id,
+            n.elev_id          AS elevId,
+            n.skolear_id       AS skolearId,
+            n.skolear_fag_id   AS skolearFagId,
+            NULL               AS fagKode,
+            n.dato, n.tekst, n.frist, n.lukket,
+            n.samtale_id       AS samtaleId,
+            n.skal_folges_opp  AS skalFolgesOpp
+       FROM elevnotat n
+      WHERE n.samtale_id IN (${plass}) AND n.slettet IS NULL`,
+    samtaleIder,
+  );
+
+  return new Map(
+    rader.map((r) => [
+      r.samtaleId!,
+      { ...r, skalFolgesOpp: r.skalFolgesOpp === 1 },
+    ]),
+  );
 }
 
 export async function endreElevnotat(

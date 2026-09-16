@@ -13,8 +13,10 @@ const {
   hentForfalte,
   opprettElevnotat,
   settLukket,
+  hentNotatPerSamtale,
   sorterNotater,
 } = await import("./elevnotat");
+const { opprettSamtaledag, lagreTrekning, hentSamtaler } = await import("./samtale");
 const { opprettElev } = await import("./elever");
 const { opprettSkolear } = await import("./skolear");
 
@@ -32,6 +34,7 @@ function notat(over: Partial<Elevnotat>): Elevnotat {
     skalFolgesOpp: false,
     frist: null,
     lukket: null,
+    samtaleId: null,
     ...over,
   };
 }
@@ -173,5 +176,87 @@ describe("møteloggen i basen", () => {
       frist: "2020-01-01",
     });
     expect(await hentForfalte(skolearId)).toEqual(new Set([elevId]));
+  });
+});
+
+describe("notat fra en samtale", () => {
+  let elevId = "";
+  let skolearId = "";
+  let samtaleId = "";
+
+  beforeEach(async () => {
+    base.nullstill();
+    skolearId = await opprettSkolear("2026/27", "2026-08-17", "2027-06-20");
+    elevId = await opprettElev("Tony", "Soprano");
+
+    const dagId = await opprettSamtaledag(skolearId, {
+      skolearFagId: null,
+      dato: "2026-11-24",
+      fra: "08:30",
+      til: "15:00",
+      lunsjFra: null,
+      lunsjMin: null,
+    });
+    await lagreTrekning(dagId, [
+      { elevId, klokkeslett: "10:20", varighetMin: 20, tema: null },
+    ]);
+    samtaleId = (await hentSamtaler(dagId))[0].id;
+  });
+
+  it("havner i møteloggen på elevsiden", async () => {
+    // Det er hele poenget: notatet skrives i timeplanen, men bor hos eleven.
+    const id = await opprettElevnotat(elevId, skolearId, {
+      dato: "2026-11-24",
+      tekst: "Vil bytte fra MFL2 til EBU1.",
+      samtaleId,
+    });
+
+    const [n] = await hentElevnotater(elevId);
+    expect(n.id).toBe(id);
+    expect(n.samtaleId).toBe(samtaleId);
+    expect(n.tekst).toBe("Vil bytte fra MFL2 til EBU1.");
+  });
+
+  it("står uten fag når det kom fra en mentorsamtale", async () => {
+    await opprettElevnotat(elevId, skolearId, {
+      dato: "2026-11-24",
+      tekst: "Kontaktmøte.",
+      samtaleId,
+      skolearFagId: null,
+    });
+    const [n] = await hentElevnotater(elevId);
+    expect(n.skolearFagId).toBeNull();
+  });
+
+  it("blir stående når samtalen trekkes om", async () => {
+    // Lenken er svak med vilje. Notatet er om eleven, ikke om timeplanraden.
+    await opprettElevnotat(elevId, skolearId, {
+      dato: "2026-11-24",
+      tekst: "Noe viktig.",
+      samtaleId,
+    });
+    await base.execute("UPDATE samtale SET slettet = $1 WHERE id = $2", [
+      "2026-11-25T00:00:00",
+      samtaleId,
+    ]);
+
+    const [n] = await hentElevnotater(elevId);
+    expect(n.tekst).toBe("Noe viktig.");
+  });
+
+  it("slås opp på samtale, til timeplanen", async () => {
+    await opprettElevnotat(elevId, skolearId, {
+      dato: "2026-11-24",
+      tekst: "Skrevet i timeplanen.",
+      samtaleId,
+    });
+
+    const kart = await hentNotatPerSamtale([samtaleId, "finnes-ikke"]);
+    expect(kart.get(samtaleId)?.tekst).toBe("Skrevet i timeplanen.");
+    expect(kart.has("finnes-ikke")).toBe(false);
+  });
+
+  it("gir et tomt oppslag for en tom liste", async () => {
+    expect((await hentNotatPerSamtale([])).size).toBe(0);
   });
 });
