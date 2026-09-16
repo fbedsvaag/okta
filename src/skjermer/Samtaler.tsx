@@ -9,6 +9,7 @@ import {
   endreSamtaledag,
   finnLunsj,
   flyttInnenDagen,
+  grupperTrekninger,
   somMarkdown,
   somTeamsHtml,
   hentHistorikk,
@@ -31,6 +32,7 @@ import {
   type Eksportdag,
   type Plassering,
   type Samtaledag,
+  type Trekning,
 } from "../data/samtale";
 import { invoke } from "@tauri-apps/api/core";
 import {
@@ -111,6 +113,9 @@ export function Samtaler({
   const [visning, setVisning] = useState<Visning>("timeplan");
   const [kopiert, setKopiert] = useState<"teams" | "md" | null>(null);
   const [notater, setNotater] = useState<Map<string, Elevnotat>>(new Map());
+  // Alle samtaledagene i året, ikke bare de som hører til valget nå — det er
+  // dem oversikten øverst er til for.
+  const [alleDager, setAlleDager] = useState<Samtaledag[]>([]);
 
   const minutter = Number(samtaletid) || 20;
   const pausen = Number(pause) || 0;
@@ -120,6 +125,7 @@ export function Samtaler({
     setHistorikk(await hentHistorikk(skolear.id));
 
     const alle = await hentSamtaledager(skolear.id);
+    setAlleDager(alle);
     const mine = alle.filter((d) =>
       modus === "mentor" ? d.skolearFagId === null : d.skolearFagId === fagId,
     );
@@ -164,8 +170,10 @@ export function Samtaler({
         dato: "",
         ...NY_DAG,
       });
+      const etter = await hentSamtaledager(skolear.id);
+      setAlleDager(etter);
       setDager(
-        (await hentSamtaledager(skolear.id)).filter((d) =>
+        etter.filter((d) =>
           modus === "mentor" ? d.skolearFagId === null : d.skolearFagId === fagId,
         ),
       );
@@ -422,6 +430,23 @@ export function Samtaler({
       */}
       <div className="flex w-80 shrink-0 flex-col overflow-clip">
         <div className="min-h-0 flex-1 space-y-5 overflow-auto pr-1">
+          {/*
+            Oversikten står øverst fordi den er inngangen: kommer du tilbake
+            til skjermen, er det den planlagte trekningen du leter etter — ikke
+            innstillingene til en ny.
+          */}
+          <Bolk tittel="Planlagte samtaler">
+            <Trekningsliste
+              trekninger={grupperTrekninger(alleDager)}
+              aktiv={modus === "mentor" ? null : fagId}
+              erMentor={modus === "mentor"}
+              onVelg={(skolearFagId) => {
+                setModus(skolearFagId === null ? "mentor" : "fag");
+                if (skolearFagId !== null) setFagId(skolearFagId);
+              }}
+            />
+          </Bolk>
+
           <Bolk tittel="Modus">
             <div className="flex gap-1">
               <Modusknapp
@@ -1288,4 +1313,67 @@ function Notatfelt({
       </label>
     </div>
   );
+}
+
+/**
+ * Trekningene som finnes i året, med den du står i markert.
+ *
+ * Uten denne er en trekning bare synlig hvis man tilfeldigvis står på riktig
+ * modus og fag når skjermen åpnes — og en mentortrekning er da usynlig, siden
+ * skjermen alltid begynner på fagsamtale.
+ */
+function Trekningsliste({
+  trekninger,
+  aktiv,
+  erMentor,
+  onVelg,
+}: {
+  trekninger: Trekning[];
+  /** skolear_fag-id-en man står i, eller null for mentormodus */
+  aktiv: string | null;
+  erMentor: boolean;
+  onVelg: (skolearFagId: string | null) => void;
+}) {
+  if (trekninger.length === 0) {
+    return (
+      <p className="text-liten text-blekk-svak">
+        Ingen samtaler planlagt ennå. Sett opp dagene under, så står de her.
+      </p>
+    );
+  }
+
+  return (
+    <ul className="space-y-0.5">
+      {trekninger.map((t) => {
+        const valgt = erMentor ? t.skolearFagId === null : t.skolearFagId === aktiv;
+        return (
+          <li key={t.skolearFagId ?? "mentor"}>
+            <button
+              onClick={() => onVelg(t.skolearFagId)}
+              className={`flex w-full items-baseline gap-2 rounded-vanlig px-2 py-1 text-left text-brod ${
+                valgt ? "bg-valgt text-aksent" : "hover:bg-flate"
+              }`}
+            >
+              <span className="min-w-0 flex-1 truncate font-medium">
+                {t.fagKode ?? "Mentorsamtale"}
+              </span>
+              <span className="shrink-0 text-liten tabular-nums text-blekk-dempet">
+                {spenn(t)}
+              </span>
+              <span className="w-14 shrink-0 text-right text-liten tabular-nums text-blekk-svak">
+                {t.antall > 0 ? `${t.antall} stk` : "ikke trukket"}
+              </span>
+            </button>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+/** «24. nov» for én dag, «2.–3. des» for flere. */
+function spenn(t: Trekning): string {
+  if (!t.forste) return "dato mangler";
+  if (t.forste === t.siste) return kortDato(t.forste);
+  return `${kortDato(t.forste)}–${kortDato(t.siste)}`;
 }

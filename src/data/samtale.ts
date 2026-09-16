@@ -331,6 +331,45 @@ export function vektetRekkefolge(
     .map((x) => x.id);
 }
 
+/**
+ * Samtaledagene samlet i trekninger, så de kan finnes igjen.
+ *
+ * En trekning er dagene som deler fag — eller mangelen på fag, som er
+ * mentorsamtalen. Uten dette er en trekning bare synlig hvis man tilfeldigvis
+ * står på riktig modus og fag når skjermen åpnes.
+ */
+export type Trekning = {
+  skolearFagId: string | null;
+  fagKode: string | null;
+  dager: Samtaledag[];
+  antall: number;
+  forste: string;
+  siste: string;
+};
+
+export function grupperTrekninger(dager: Samtaledag[]): Trekning[] {
+  const kart = new Map<string, Samtaledag[]>();
+  for (const d of dager) {
+    const nokkel = d.skolearFagId ?? "";
+    kart.set(nokkel, [...(kart.get(nokkel) ?? []), d]);
+  }
+
+  return [...kart.values()]
+    .map((gruppe) => {
+      const sortert = [...gruppe].sort((a, b) => a.dato.localeCompare(b.dato));
+      const medDato = sortert.filter((d) => d.dato !== "");
+      return {
+        skolearFagId: sortert[0].skolearFagId,
+        fagKode: sortert[0].fagKode,
+        dager: sortert,
+        antall: sortert.reduce((n, d) => n + d.antall, 0),
+        forste: medDato[0]?.dato ?? "",
+        siste: medDato[medDato.length - 1]?.dato ?? "",
+      };
+    })
+    .sort((a, b) => (b.forste || "").localeCompare(a.forste || ""));
+}
+
 // ------------------------------------------------------------------ eksport
 
 export type Eksportdag = {
@@ -449,6 +488,8 @@ export type Samtaledag = {
   til: string;
   lunsjFra: string | null;
   lunsjMin: number | null;
+  /** hvor mange samtaler som er trukket på dagen */
+  antall: number;
 };
 
 export type Samtale = {
@@ -472,7 +513,9 @@ export async function hentSamtaledager(skolearId: string): Promise<Samtaledag[]>
             d.vurdering_id   AS vurderingId,
             d.dato, d.fra, d.til,
             d.lunsj_fra      AS lunsjFra,
-            d.lunsj_min      AS lunsjMin
+            d.lunsj_min      AS lunsjMin,
+            (SELECT COUNT(*) FROM samtale s
+              WHERE s.samtaledag_id = d.id AND s.slettet IS NULL) AS antall
        FROM samtaledag d
        LEFT JOIN skolear_fag sf ON sf.id = d.skolear_fag_id AND sf.slettet IS NULL
        LEFT JOIN fag f ON f.id = sf.fag_id AND f.slettet IS NULL

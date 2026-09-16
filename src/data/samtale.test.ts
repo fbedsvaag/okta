@@ -4,6 +4,7 @@ import {
   finnLunsj,
   flyttInnenDagen,
   fordelPaDager,
+  grupperTrekninger,
   medLunsj,
   somMarkdown,
   somTeamsHtml,
@@ -23,6 +24,7 @@ import {
   type Dagoppsett,
   type Eksportdag,
   type Plassering,
+  type Samtaledag,
 } from "./samtale";
 
 /** Tilfeldighet som ikke er tilfeldig, så trekningen kan prøves. */
@@ -487,5 +489,61 @@ describe("eksport", () => {
       rader: [{ ...dag.rader[0], navn: "Tony <b>Soprano</b>" }],
     };
     expect(somTeamsHtml([med], false)).toContain("&lt;b&gt;");
+  });
+});
+
+describe("grupperTrekninger", () => {
+  const dag = (over: Partial<Samtaledag>): Samtaledag => ({
+    id: Math.random().toString(36).slice(2),
+    skolearId: "ar",
+    skolearFagId: null,
+    fagKode: null,
+    vurderingId: null,
+    dato: "2026-11-24",
+    fra: "08:30",
+    til: "15:00",
+    lunsjFra: null,
+    lunsjMin: null,
+    antall: 0,
+    ...over,
+  });
+
+  it("samler dagene som deler fag til én trekning", () => {
+    const ut = grupperTrekninger([
+      dag({ skolearFagId: "sf1", fagKode: "MFL1", dato: "2026-12-02", antall: 12 }),
+      dag({ skolearFagId: "sf1", fagKode: "MFL1", dato: "2026-12-03", antall: 12 }),
+    ]);
+    expect(ut).toHaveLength(1);
+    expect(ut[0].antall).toBe(24);
+    expect(ut[0].forste).toBe("2026-12-02");
+    expect(ut[0].siste).toBe("2026-12-03");
+  });
+
+  it("holder mentorsamtalen for seg — den har ikke noe fag", () => {
+    const ut = grupperTrekninger([
+      dag({ skolearFagId: "sf1", fagKode: "MFL1" }),
+      dag({ skolearFagId: null }),
+    ]);
+    expect(ut).toHaveLength(2);
+    expect(ut.some((t) => t.skolearFagId === null)).toBe(true);
+  });
+
+  it("setter nyeste trekning først", () => {
+    const ut = grupperTrekninger([
+      dag({ skolearFagId: "a", dato: "2026-09-01" }),
+      dag({ skolearFagId: "b", dato: "2026-12-01" }),
+    ]);
+    expect(ut[0].skolearFagId).toBe("b");
+  });
+
+  it("tåler dager uten dato", () => {
+    // En dag som nettopp er lagt til har ingen dato ennå.
+    const ut = grupperTrekninger([dag({ dato: "" })]);
+    expect(ut[0].forste).toBe("");
+    expect(ut[0].dager).toHaveLength(1);
+  });
+
+  it("gir ingenting for en tom liste", () => {
+    expect(grupperTrekninger([])).toEqual([]);
   });
 });
