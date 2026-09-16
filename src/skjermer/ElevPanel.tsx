@@ -13,9 +13,11 @@ import {
   type HeatmapRute,
 } from "../data/elevportal";
 import {
+  endreElev,
   finnEllerOpprettKlasse,
   hentKlasser,
   settKlasse,
+  settMentor,
   slettElevHelt,
   tellForElev,
   type Klasse,
@@ -152,9 +154,28 @@ export function ElevPanel({
       }`}
     >
       <header className="flex items-baseline gap-3 border-b border-linje-medium px-5 py-3">
-        <span className="text-tittel font-semibold">
-          {elev.fornavn} {elev.etternavn}
-        </span>
+        {/*
+          Navnet redigeres der det står. Samme mønster som resten av appen:
+          skriv, og feltet lagrer når det forlates. Enter bekrefter, Escape
+          angrer.
+        */}
+        <Navnefelt
+          verdi={elev.fornavn}
+          plassholder="Fornavn"
+          onLagre={async (v) => {
+            await endreElev(elevId, { fornavn: v });
+            setElev(await hentElevGrunnlag(elevId));
+          }}
+        />
+        <Navnefelt
+          verdi={elev.etternavn}
+          plassholder="Etternavn"
+          manglerTekst="Mangler etternavn"
+          onLagre={async (v) => {
+            await endreElev(elevId, { etternavn: v });
+            setElev(await hentElevGrunnlag(elevId));
+          }}
+        />
         <span className="font-mono text-etikett text-blekk-svak">{elev.kode}</span>
         <Klassevelger
           klasser={klasser}
@@ -170,6 +191,33 @@ export function ElevPanel({
             setAr(await hentElevAr(elevId));
           }}
         />
+
+        {/*
+          Mentormerket hører hjemme her: det er når man står og ser på eleven
+          man vet at hen er mentoreleven sin. Uten klasse finnes ingen rad å
+          merke (§3.2), og da er boksen av.
+        */}
+        <label
+          title={
+            detteAret?.klasse
+              ? "Min mentorelev dette året"
+              : "Sett klasse først — mentormerket henger på klassen"
+          }
+          className={`flex shrink-0 select-none items-center gap-1.5 text-liten ${
+            detteAret?.klasse ? "text-blekk-dempet" : "text-blekk-svakest"
+          }`}
+        >
+          <input
+            type="checkbox"
+            checked={detteAret?.mentor ?? false}
+            disabled={!detteAret?.klasse}
+            onChange={async (e) => {
+              const ok = await settMentor(elevId, valgtAr, e.target.checked);
+              if (ok) setAr(await hentElevAr(elevId));
+            }}
+          />
+          Mentor
+        </label>
         {bla && bla.av > 1 && (
           <span className="ml-auto flex shrink-0 items-center gap-1">
             <button
@@ -682,5 +730,61 @@ function NyttNotat({
         </Knapp>
       </div>
     </div>
+  );
+}
+
+/**
+ * Navnet i overskriften, redigerbart der det står.
+ *
+ * `defaultValue` med `key` framfor en kontrollert verdi: feltet skal la seg
+ * skrive i uten at hvert tastetrykk går gjennom databasen, og hentes friskt
+ * når navnet faktisk er endret.
+ *
+ * Et tomt etternavn får en synlig advarsel. Det er slik halvferdige elever
+ * har blitt liggende — de så ferdige ut.
+ */
+function Navnefelt({
+  verdi,
+  plassholder,
+  manglerTekst,
+  onLagre,
+}: {
+  verdi: string;
+  plassholder: string;
+  /** vises når feltet er tomt — utelates der tomt er greit */
+  manglerTekst?: string;
+  onLagre: (v: string) => Promise<void>;
+}) {
+  const mangler = manglerTekst !== undefined && verdi.trim() === "";
+
+  return (
+    <span className="flex shrink-0 items-baseline gap-1.5">
+      <input
+        defaultValue={verdi}
+        key={verdi}
+        placeholder={plassholder}
+        title={plassholder}
+        onBlur={async (e) => {
+          const ny = e.target.value.trim();
+          if (ny !== verdi.trim()) await onLagre(ny);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") e.currentTarget.blur();
+          if (e.key === "Escape") {
+            e.currentTarget.value = verdi;
+            e.currentTarget.blur();
+          }
+        }}
+        size={Math.max(plassholder.length, verdi.length + 1)}
+        className={`rounded-vanlig border border-transparent px-1 py-0.5 text-tittel font-semibold outline-none hover:border-linje focus:border-aksent ${
+          mangler ? "border-varsel" : ""
+        }`}
+      />
+      {mangler && (
+        <span className="whitespace-nowrap text-liten text-varsel">
+          {manglerTekst}
+        </span>
+      )}
+    </span>
   );
 }

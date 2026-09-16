@@ -14,13 +14,14 @@ export type ElevGrunnlag = {
   kode: string | null;
   fornavn: string;
   etternavn: string;
-  notat: string | null;
 };
 
 export type ElevAr = {
   skolearId: string;
   navn: string;
   klasse: string | null;
+  /** om eleven er mentorelev det året (§3.2) */
+  mentor: boolean;
 };
 
 export type HeatmapRute = {
@@ -57,7 +58,7 @@ export type ElevVurdering = {
 
 export async function hentElevGrunnlag(elevId: string): Promise<ElevGrunnlag | null> {
   const rader = await hent<ElevGrunnlag>(
-    "SELECT id, kode, fornavn, etternavn, notat FROM elev WHERE id = $1 AND slettet IS NULL",
+    "SELECT id, kode, fornavn, etternavn FROM elev WHERE id = $1 AND slettet IS NULL",
     [elevId],
   );
   return rader[0] ?? null;
@@ -65,8 +66,9 @@ export async function hentElevGrunnlag(elevId: string): Promise<ElevGrunnlag | n
 
 /** Skoleårene eleven har vært i, nyeste først. Klassen kan mangle. */
 export async function hentElevAr(elevId: string): Promise<ElevAr[]> {
-  return hent<ElevAr>(
-    `SELECT sa.id AS skolearId, sa.navn, k.navn AS klasse
+  const rader = await hent<Omit<ElevAr, "mentor"> & { mentor: number }>(
+    `SELECT sa.id AS skolearId, sa.navn, k.navn AS klasse,
+            COALESCE(ek.mentor, 0) AS mentor
        FROM skolear sa
        LEFT JOIN elev_klasse ek
               ON ek.skolear_id = sa.id AND ek.elev_id = $1 AND ek.slettet IS NULL
@@ -80,6 +82,7 @@ export async function hentElevAr(elevId: string): Promise<ElevAr[]> {
       ORDER BY sa.start DESC`,
     [elevId],
   );
+  return rader.map((r) => ({ ...r, mentor: r.mentor === 1 }));
 }
 
 export async function hentHeatmap(
