@@ -91,9 +91,10 @@ integreres senere.
 
 Tas én om gangen, etter at 0–3 er gjort.
 
-- [ ] **Samtaletrekkeren.** Spec-seksjonen er skrevet (§4.10, med
-  samtaledager i §3.6 og timeregnskap i §4.2). Gjenstår å bygge.
-  Trenger migrasjon for `samtaledag` og `samtale`.
+- [x] **Samtaletrekkeren.** Bygget i seks deler, §4.10. Migrasjon 012,
+  datalag med 79 tester, egen fane pluss inngang fra muntlige
+  vurderinger. Gjenstår: å vise hvilken oppgave eleven fikk under
+  vurderingen — samtaledagen kobles ikke til vurderingen ennå.
 - [ ] **Klassekart.** Bygges standalone først, integreres senere.
   Spec-seksjon før integrasjonen. Rom må kunne lages enkelt, ellers
   blir den ubrukt
