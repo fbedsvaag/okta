@@ -28,11 +28,14 @@ export function VurderingPanel({
   onLukk,
   onEndret,
   onApneElev,
+  onApneSamtaler,
 }: {
   vurdering: Vurdering;
   onLukk: () => void;
   onEndret: () => void;
   onApneElev: (elevId: string) => void;
+  /** Åpner Samtaler med faget valgt. Utelates der det ikke gir mening. */
+  onApneSamtaler?: (skolearFagId: string) => void;
 }) {
   const [elever, setElever] = useState<VurderingElev[]>([]);
   const [verdier, setVerdier] = useState<Skalaverdi[]>([]);
@@ -147,6 +150,7 @@ export function VurderingPanel({
           vurdering={vurdering}
           skalaer={skalaer}
           onEndret={onEndret}
+          onApneSamtaler={onApneSamtaler}
         />
 
         <div className="flex items-baseline justify-between border-y border-linje-medium bg-flate px-5 py-1.5">
@@ -326,10 +330,12 @@ function Felter({
   vurdering,
   skalaer,
   onEndret,
+  onApneSamtaler,
 }: {
   vurdering: Vurdering;
   skalaer: Skala[];
   onEndret: () => void;
+  onApneSamtaler?: (skolearFagId: string) => void;
 }) {
   return (
     <div className="space-y-2 px-5 py-3">
@@ -367,6 +373,18 @@ function Felter({
               </option>
             ))}
           </select>
+          {/*
+            En muntlig vurdering trekkes i Samtaler. Inngangen står her, der
+            man er når man vet at den skal trekkes (§4.10).
+          */}
+          {vurdering.type === "muntlig" && onApneSamtaler && (
+            <button
+              onClick={() => onApneSamtaler(vurdering.skolearFagId)}
+              className="mt-1 text-liten text-blekk-dempet hover:text-blekk"
+            >
+              Trekk rekkefølge og tema →
+            </button>
+          )}
         </Linje>
 
         <Linje etikett="Frist">

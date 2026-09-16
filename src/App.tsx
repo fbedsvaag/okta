@@ -307,7 +307,12 @@ export default function App() {
         )}
 
         {visning === "samtaler" && (
-          <Samtaler key={versjon} skolear={skolear} fag={fag} />
+          <Samtaler
+            key={versjon}
+            skolear={skolear}
+            fag={fag}
+            startFagId={apneOkt ?? undefined}
+          />
         )}
 
         {visning === "innstillinger" && <Innstillinger skolear={skolear} fag={fag} onEndret={last} />}
@@ -374,6 +379,7 @@ export default function App() {
             key={versjon}
             skolearId={skolear.id}
             fag={fag}
+            onApneSamtaler={(fagId) => ga("samtaler", fagId)}
             onApneOkt={(id) => ga("okter", id)}
           />
         )}

@@ -24,10 +24,12 @@ export function Vurderinger({
   skolearId,
   fag,
   onApneOkt,
+  onApneSamtaler,
 }: {
   skolearId: string;
   fag: FagIAr[];
   onApneOkt: (oktId: string) => void;
+  onApneSamtaler: (skolearFagId: string) => void;
 }) {
   const [vurderinger, setVurderinger] = useState<Vurdering[]>([]);
   const [skalaer, setSkalaer] = useState<Skala[]>([]);
@@ -197,6 +199,7 @@ export function Vurderinger({
               onLukk={() => setValgt(null)}
               onEndret={last}
               onApneElev={setValgtElev}
+              onApneSamtaler={onApneSamtaler}
             />
           )}
         </div>
