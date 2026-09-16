@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   delPaDager,
+  flyttInnenDagen,
   fordelPaDager,
   kapasitet,
   leggUtDagen,
@@ -364,5 +365,43 @@ describe("trekk på nytt", () => {
   it("gir ingen temaer i mentormodus", () => {
     const ut = trekkOmTema(["a"], new Map(), new Set(), [], fast([0.5]));
     expect(ut.size).toBe(0);
+  });
+});
+
+describe("flyttInnenDagen", () => {
+  it("skyver de mellomliggende én vei, ikke bytter parvis", () => {
+    // Drar man den første til tredjeplass, skal de to andre rykke opp —
+    // ikke at to elever bytter plass med hverandre.
+    expect(flyttInnenDagen(["a", "b", "c", "d"], 0, 2)).toEqual([
+      "b",
+      "c",
+      "a",
+      "d",
+    ]);
+  });
+
+  it("virker bakover også", () => {
+    expect(flyttInnenDagen(["a", "b", "c", "d"], 3, 1)).toEqual([
+      "a",
+      "d",
+      "b",
+      "c",
+    ]);
+  });
+
+  it("lar lista stå når den slippes der den var", () => {
+    const inn = ["a", "b", "c"];
+    expect(flyttInnenDagen(inn, 1, 1)).toEqual(inn);
+  });
+
+  it("tåler plasser utenfor lista", () => {
+    const inn = ["a", "b"];
+    expect(flyttInnenDagen(inn, 0, 9)).toEqual(inn);
+    expect(flyttInnenDagen(inn, -1, 1)).toEqual(inn);
+  });
+
+  it("mister ingen", () => {
+    const ut = flyttInnenDagen(["a", "b", "c", "d", "e"], 4, 0);
+    expect(new Set(ut)).toEqual(new Set(["a", "b", "c", "d", "e"]));
   });
 });

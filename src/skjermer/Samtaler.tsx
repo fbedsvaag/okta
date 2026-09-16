@@ -7,6 +7,7 @@ import { hentElever, type ElevRad } from "../data/elever";
 import {
   delPaDager,
   endreSamtaledag,
+  flyttInnenDagen,
   hentHistorikk,
   hentSamtaledager,
   hentSamtaler,
@@ -90,6 +91,7 @@ export function Samtaler({
   const [lastTema, setLastTema] = useState(false);
   const [lastRekkefolge, setLastRekkefolge] = useState(false);
   const [lasteElever, setLasteElever] = useState<Set<string>>(new Set());
+  const [dragmelding, setDragmelding] = useState<string | null>(null);
 
   const minutter = Number(samtaletid) || 20;
   const pausen = Number(pause) || 0;
@@ -234,6 +236,24 @@ export function Samtaler({
     }
     setLagret(true);
     setHistorikk(await hentHistorikk(skolear.id));
+  }
+
+  /**
+   * Flytter en rad innen dagen.
+   *
+   * Klokkeslettene står der de står — det er elevene som flyttes mellom dem.
+   */
+  async function flytt(dagIdx: number, fra: number, til: number) {
+    if (!trekning) return;
+
+    const perDag = trekning.map((d) => d.rader.map((r) => r.elevId));
+    perDag[dagIdx] = flyttInnenDagen(perDag[dagIdx], fra, til);
+
+    const na = new Map<string, string>();
+    for (const d of trekning) {
+      for (const r of d.rader) if (r.tema) na.set(r.elevId, r.tema);
+    }
+    await skriv(byggPlan(perDag, na));
   }
 
   /** Helt ny trekning. Fordeler på nytt over dagene, og løser opp elevlåsene. */
@@ -549,6 +569,12 @@ export function Samtaler({
           </div>
         )}
 
+        {dragmelding && (
+          <div className="mb-4 border border-linje bg-flate px-3 py-2 text-brod text-blekk-dempet">
+            {dragmelding}
+          </div>
+        )}
+
         {!lagret && (
           <div className="mb-4 border border-linje bg-flate px-3 py-2 text-brod text-blekk-dempet">
             Trekningen er ikke lagret. Elevene i den innlimte lista finnes ikke
@@ -570,6 +596,13 @@ export function Samtaler({
             plan={trekning}
             historikk={historikk}
             laste={lasteElever}
+            onFlytt={(dagIdx, fra, til) => void flytt(dagIdx, fra, til)}
+            onFeilDrag={() => {
+              setDragmelding(
+                "Flytting mellom dager gjøres ikke ved å dra. Dagene har hver sin kapasitet, og et slikt drag ville stilt spørsmål om hvem som må ut. Endre dagene til venstre, eller generer på nytt.",
+              );
+              setTimeout(() => setDragmelding(null), 6000);
+            }}
             onLas={(elevId) =>
               setLasteElever((f) => {
                 const ny = new Set(f);
@@ -739,17 +772,21 @@ function Timeplan({
   historikk,
   laste,
   onLas,
+  onFlytt,
+  onFeilDrag,
 }: {
   plan: Dagplan[];
   historikk: Map<string, Plassering[]>;
   laste: ReadonlySet<string>;
   onLas: (elevId: string) => void;
+  onFlytt: (dagIdx: number, fra: number, til: number) => void;
+  onFeilDrag: () => void;
 }) {
   let plass = 0;
 
   return (
     <div className="space-y-6">
-      {plan.map((d) => (
+      {plan.map((d, dagIdx) => (
         <section key={d.dag.id}>
           <div className="mb-1 flex items-baseline justify-between border-b border-linje pb-1">
             <h2 className="text-tittel font-semibold first-letter:uppercase">
@@ -760,7 +797,7 @@ function Timeplan({
             </span>
           </div>
 
-          {d.rader.map((r) => {
+          {d.rader.map((r, radIdx) => {
             plass++;
             // Merknaden bygges på historikken FØR denne trekningen, så den
             // sier noe om hva som har skjedd — ikke om det som nettopp ble
@@ -770,9 +807,31 @@ function Timeplan({
             return (
               <div
                 key={`${r.elevId}-${r.fra}`}
+                draggable={!erLast}
+                onDragStart={(e) => {
+                  e.dataTransfer.setData(
+                    "text/plain",
+                    JSON.stringify({ dagIdx, radIdx }),
+                  );
+                  e.dataTransfer.effectAllowed = "move";
+                }}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  const data = e.dataTransfer.getData("text/plain");
+                  if (!data) return;
+                  const kilde = JSON.parse(data) as {
+                    dagIdx: number;
+                    radIdx: number;
+                  };
+                  // Et drag som stille ruller tilbake ser ut som at musa
+                  // glapp. Derfor sier vi fra om hvorfor (§4.10).
+                  if (kilde.dagIdx !== dagIdx) return onFeilDrag();
+                  onFlytt(dagIdx, kilde.radIdx, radIdx);
+                }}
                 className={`flex items-baseline gap-3 border-b border-linje-svak py-1.5 text-brod ${
                   r.motte ? "" : "text-blekk-svak line-through"
-                } ${erLast ? "bg-flate-svak" : ""}`}
+                } ${erLast ? "bg-flate-svak" : "cursor-grab"}`}
               >
                 <span className="w-6 shrink-0 text-right tabular-nums text-blekk-svak">
                   {plass}

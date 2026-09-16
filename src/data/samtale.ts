@@ -228,6 +228,23 @@ export function trekkOmTema(
   return ut;
 }
 
+/**
+ * Flytter en rad innen dagen.
+ *
+ * Tar raden ut og setter den inn igjen på ny plass, så de mellomliggende
+ * skyves én vei — ikke bytter plass parvis, som ville flyttet to elever når
+ * man dro én.
+ */
+export function flyttInnenDagen<T>(rader: T[], fra: number, til: number): T[] {
+  if (fra === til || fra < 0 || til < 0) return rader;
+  if (fra >= rader.length || til >= rader.length) return rader;
+
+  const ut = [...rader];
+  const [flyttet] = ut.splice(fra, 1);
+  ut.splice(til, 0, flyttet);
+  return ut;
+}
+
 // ----------------------------------------------------------------- historikk
 
 export type Plassering = "tidlig" | "midt" | "sent";
