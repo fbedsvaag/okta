@@ -16,6 +16,7 @@ import { Skoleruta } from "./skjermer/Skoleruta";
 import { Skolekalender } from "./skjermer/Skolekalender";
 import { Innstillinger } from "./skjermer/Innstillinger";
 import { Vurderinger } from "./skjermer/Vurderinger";
+import { Samtaler } from "./skjermer/Samtaler";
 import { Knapp } from "./ui/felles";
 import { Ordmerke } from "./ui/logo";
 
@@ -30,6 +31,7 @@ type Visning =
   | "okter"
   | "perioder"
   | "vurderinger"
+  | "samtaler"
   | "innstillinger"
   | "liminn";
 
@@ -205,6 +207,12 @@ export default function App() {
           aktiv={visning === "vurderinger"}
           onKlikk={() => ga("vurderinger")}
         />
+        <Skille />
+        <Fane
+          navn="Samtaler"
+          aktiv={visning === "samtaler"}
+          onKlikk={() => ga("samtaler")}
+        />
         <span className="grow" />
         <Fane
           navn="Innstillinger"
@@ -296,6 +304,10 @@ export default function App() {
 
         {visning === "skoleruta" && (
           <Skoleruta key={versjon} skolear={skolear} onEndret={last} />
+        )}
+
+        {visning === "samtaler" && (
+          <Samtaler key={versjon} skolear={skolear} fag={fag} />
         )}
 
         {visning === "innstillinger" && <Innstillinger skolear={skolear} fag={fag} onEndret={last} />}
