@@ -360,9 +360,13 @@ export function Elever({
               <NyElevRad
                 kolonner={3 + vis.size}
                 skolearId={skolearId}
+                klasser={klasser}
+                fag={fag}
                 arvKlasse={filterKlasse || null}
                 arvFag={filterFag || null}
+                arvMentor={baraMentor}
                 onLagret={last}
+                onFeil={setFeil}
               />
             </tbody>
           </table>
@@ -954,52 +958,212 @@ function dagerSiden(dato: string): string {
 function NyElevRad({
   kolonner,
   skolearId,
+  klasser,
+  fag,
   arvKlasse,
   arvFag,
+  arvMentor,
   onLagret,
+  onFeil,
 }: {
   kolonner: number;
   skolearId: string;
+  klasser: Klasse[];
+  fag: FagIAr[];
   arvKlasse: string | null;
   arvFag: string | null;
+  arvMentor: boolean;
   onLagret: () => void;
+  onFeil: (tekst: string) => void;
 }) {
-  const [navn, setNavn] = useState("");
-  const felt = useRef<HTMLInputElement>(null);
+  const [fornavn, setFornavn] = useState("");
+  const [etternavn, setEtternavn] = useState("");
+  const [klasseId, setKlasseId] = useState(arvKlasse ?? "");
+  const [nyKlasse, setNyKlasse] = useState("");
+  const [mentor, setMentor] = useState(arvMentor);
+  const [valgteFag, setValgteFag] = useState<Set<string>>(
+    new Set(arvFag ? [arvFag] : []),
+  );
+  const [jobber, setJobber] = useState(false);
+  const forste = useRef<HTMLInputElement>(null);
+
+  // Mentormerket henger på klassen (§3.2), så uten klasse er det ingenting
+  // å merke — og da skal boksen ikke gå an å hake av.
+  const harKlasse = klasseId === "__ny" ? nyKlasse.trim() !== "" : klasseId !== "";
+  const kanLagre =
+    fornavn.trim() !== "" && etternavn.trim() !== "" && !jobber;
+
+  function nullstill() {
+    setFornavn("");
+    setEtternavn("");
+    setNyKlasse("");
+    // Klasse, fag og mentor beholdes: skriver man inn en klasse, er det som
+    // regel flere på rad fra samme klasse.
+    forste.current?.focus();
+  }
+
+  /**
+   * Skriver man hele navnet i første felt, deles det når man går videre —
+   * «Kåre Kålrabi» skal ikke kreve to tastetrykk ekstra.
+   */
+  function delOpp() {
+    if (etternavn.trim() !== "" || !fornavn.includes(" ")) return;
+    const delt = delNavn(fornavn);
+    if (delt.etternavn !== "") {
+      setFornavn(delt.fornavn);
+      setEtternavn(delt.etternavn);
+    }
+  }
 
   async function lagre() {
-    const { fornavn, etternavn } = delNavn(navn);
-    if (fornavn.trim() === "") return;
+    if (!kanLagre) return;
+    setJobber(true);
+    try {
+      const id = await opprettElev(fornavn.trim(), etternavn.trim());
 
-    const id = await opprettElev(fornavn, etternavn);
-    if (arvKlasse) await settKlasse(id, skolearId, arvKlasse);
-    if (arvFag) await koblePaFag(id, arvFag);
+      const valgtKlasse =
+        klasseId === "__ny"
+          ? nyKlasse.trim() === ""
+            ? null
+            : await finnEllerOpprettKlasse(skolearId, nyKlasse.trim())
+          : klasseId || null;
 
-    setNavn("");
-    onLagret();
-    felt.current?.focus();
+      if (valgtKlasse) {
+        await settKlasse(id, skolearId, valgtKlasse);
+        if (mentor) await settMentor(id, skolearId, true);
+      }
+      for (const f of valgteFag) await koblePaFag(id, f);
+
+      nullstill();
+      onLagret();
+    } catch (feil) {
+      onFeil(`Kunne ikke opprette eleven: ${String(feil)}`);
+    } finally {
+      setJobber(false);
+    }
+  }
+
+  function tast(e: React.KeyboardEvent) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      void lagre();
+    }
+    if (e.key === "Escape") {
+      e.preventDefault();
+      setFornavn("");
+      setEtternavn("");
+    }
   }
 
   return (
     <tr>
-      <td colSpan={kolonner} className="py-1.5">
-        <input
-          ref={felt}
-          value={navn}
-          onChange={(e) => setNavn(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              void lagre();
+      {/*
+        Alle feltene i én operasjon (§4.3). Raden spenner over hele tabellen
+        framfor å følge kolonnene, så den er den samme uansett hvilke kolonner
+        som er slått på — og eleven blir aldri lagret halvferdig.
+      */}
+      <td colSpan={kolonner} className="py-2">
+        <div className="flex flex-wrap items-center gap-2" onKeyDown={tast}>
+          <input
+            ref={forste}
+            value={fornavn}
+            onChange={(e) => setFornavn(e.target.value)}
+            onBlur={delOpp}
+            placeholder="Fornavn"
+            className={feltstil}
+          />
+          <input
+            value={etternavn}
+            onChange={(e) => setEtternavn(e.target.value)}
+            placeholder="Etternavn"
+            className={feltstil}
+          />
+
+          <select
+            value={klasseId}
+            onChange={(e) => setKlasseId(e.target.value)}
+            className={feltstil}
+          >
+            <option value="">Ingen klasse</option>
+            {klasser.map((k) => (
+              <option key={k.id} value={k.id}>
+                {k.navn}
+              </option>
+            ))}
+            <option value="__ny">Ny klasse …</option>
+          </select>
+          {klasseId === "__ny" && (
+            <input
+              autoFocus
+              value={nyKlasse}
+              onChange={(e) => setNyKlasse(e.target.value)}
+              placeholder="1STC"
+              className={`${feltstil} w-24`}
+            />
+          )}
+
+          <label
+            title={
+              harKlasse
+                ? "Min mentorelev dette året"
+                : "Velg klasse først — mentormerket henger på klassen"
             }
-          }}
-          placeholder="+ Legg til elev …"
-          className="w-full rounded-vanlig border border-transparent px-1 py-0.5 text-blekk-dempet outline-none placeholder:text-blekk-svak hover:border-linje focus:border-aksent"
-        />
+            className={`flex select-none items-center gap-1.5 text-liten ${
+              harKlasse ? "text-blekk-dempet" : "text-blekk-svakest"
+            }`}
+          >
+            <input
+              type="checkbox"
+              checked={mentor && harKlasse}
+              disabled={!harKlasse}
+              onChange={(e) => setMentor(e.target.checked)}
+            />
+            Mentor
+          </label>
+
+          {fag.length > 0 && (
+            <span className="flex flex-wrap items-center gap-1">
+              {fag.map((f) => (
+                <label
+                  key={f.id}
+                  className="flex cursor-pointer select-none items-center gap-1"
+                >
+                  <input
+                    type="checkbox"
+                    checked={valgteFag.has(f.id)}
+                    onChange={(e) =>
+                      setValgteFag((v) => {
+                        const ny = new Set(v);
+                        if (e.target.checked) ny.add(f.id);
+                        else ny.delete(f.id);
+                        return ny;
+                      })
+                    }
+                  />
+                  <Fagmerke kode={f.kode} farge={f.farge} liten />
+                </label>
+              ))}
+            </span>
+          )}
+
+          <span className="ml-auto flex items-center gap-2">
+            {fornavn.trim() !== "" && etternavn.trim() === "" && (
+              <span className="text-liten text-varsel">
+                Etternavn må fylles ut
+              </span>
+            )}
+            <Knapp variant="primar" disabled={!kanLagre} onClick={() => void lagre()}>
+              {jobber ? "Lagrer …" : "Lagre"}
+            </Knapp>
+          </span>
+        </div>
       </td>
     </tr>
   );
 }
+
+const feltstil =
+  "rounded-vanlig border border-linje bg-ark px-2 py-1 text-brod outline-none focus:border-aksent";
 
 function Klasser({
   skolearId,
