@@ -58,6 +58,11 @@ Hver av disse er under en time og fjerner daglig friksjon.
   når, tema og agenda. Plan og øktlogg går aldri ut, som i §8.1.
 - [x] Generell hendelse i skoleruta med egen tag. Trengte ingen migrasjon —
   `fridag.type` er TEXT uten CHECK, så det holdt med en fjerde verdi.
+- [ ] **Knytt en vurdering til økta den ble holdt i.** `vurdering.okt_id`
+  finnes og leses av øktlistas Vurdering-kolonne, men ingenting skriver
+  den — alle vurderinger i basen har den tom. I dag virker koblingen bare
+  implisitt, ved at fristen tilfeldigvis er samme dato som økta. Trengs
+  for «prøve i en vanlig time».
 
 ## 3. Mentorelever — grunnmur ✱ ferdig
 
@@ -86,8 +91,11 @@ integreres senere.
 
 Tas én om gangen, etter at 0–3 er gjort.
 
-- [ ] **Samtaletrekkeren.** Spec-seksjon først, bygging etterpå
-- [ ] **Klassekart.** Spec-seksjon først. Rom må kunne lages enkelt, ellers
+- [ ] **Samtaletrekkeren.** Spec-seksjonen er skrevet (§4.10, med
+  samtaledager i §3.6 og timeregnskap i §4.2). Gjenstår å bygge.
+  Trenger migrasjon for `samtaledag` og `samtale`.
+- [ ] **Klassekart.** Bygges standalone først, integreres senere.
+  Spec-seksjon før integrasjonen. Rom må kunne lages enkelt, ellers
   blir den ubrukt
 - [ ] Ukesvisning av økter
 - [ ] AND/OR i filtrering av elever, for å finne hvem som har flere like fag
