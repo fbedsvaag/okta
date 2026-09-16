@@ -1,0 +1,431 @@
+import { hent, oppdater, settInn, slett } from "../db";
+
+/**
+ * Samtaler, SPEC §3.6 og §4.10.
+ *
+ * Den rene logikken ligger øverst og kjenner ingen database: å legge ut en
+ * dag, regne kapasitet, trekke rekkefølge og lese historikk er regnestykker
+ * som skal kunne prøves uten å skrive noe.
+ */
+
+// --------------------------------------------------------------------- tid
+
+export function tilMin(klokke: string): number {
+  const [t, m] = klokke.split(":").map(Number);
+  return (t || 0) * 60 + (m || 0);
+}
+
+export function tilKlokke(min: number): string {
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${p(Math.floor(min / 60))}:${p(min % 60)}`;
+}
+
+// ------------------------------------------------------------ dagen lagt ut
+
+export type Dagoppsett = {
+  fra: string;
+  til: string;
+  /** NULL = ingen lunsj */
+  lunsjFra: string | null;
+  lunsjMin: number | null;
+};
+
+export type Slot =
+  | { type: "samtale"; plass: number; fra: number; til: number }
+  | { type: "lunsj"; fra: number; til: number };
+
+/**
+ * Legger ut dagen slot for slot.
+ *
+ * Lunsjen legges inn ved første samtalegrense på eller etter tidspunktet —
+ * en samtale deles aldri i to. Derfor kan en pause satt til 11:45 i praksis
+ * begynne 11:55, og timeplanen viser det faktiske tidspunktet.
+ *
+ * Rekker dagen aldri fram til lunsjen, legges det ingen lunsj inn. En pause
+ * etter siste samtale er ikke en pause — det er en feil HTML-verktøyet gjorde,
+ * og den videreføres ikke.
+ */
+export function leggUtDagen(
+  dag: Dagoppsett,
+  antall: number,
+  samtaletid: number,
+  pause: number,
+): Slot[] {
+  if (samtaletid <= 0 || antall <= 0) return [];
+
+  const slutt = tilMin(dag.til);
+  const lunsjFra = dag.lunsjFra ? tilMin(dag.lunsjFra) : null;
+  const lunsjMin = dag.lunsjMin ?? 0;
+
+  const slots: Slot[] = [];
+  let na = tilMin(dag.fra);
+  let lunsjLagt = false;
+
+  for (let i = 0; i < antall; i++) {
+    // Lunsjen først, men bare når det faktisk kommer en samtale etter den.
+    if (!lunsjLagt && lunsjFra !== null && lunsjMin > 0 && na >= lunsjFra) {
+      if (na + lunsjMin + samtaletid > slutt) break;
+      slots.push({ type: "lunsj", fra: na, til: na + lunsjMin });
+      na += lunsjMin;
+      lunsjLagt = true;
+    }
+
+    if (na + samtaletid > slutt) break;
+
+    slots.push({ type: "samtale", plass: i, fra: na, til: na + samtaletid });
+    na += samtaletid + pause;
+  }
+
+  return slots;
+}
+
+/**
+ * Hvor mange samtaler dagen har plass til.
+ *
+ * Regnet ved å legge ut dagen, ikke med en formel. Om lunsjen nås avhenger av
+ * hvor mange samtaler som får plass, som er det vi skal finne — en formel
+ * måtte gjettet på sin egen forutsetning.
+ */
+export function kapasitet(
+  dag: Dagoppsett,
+  samtaletid: number,
+  pause: number,
+): number {
+  const tak = Math.max(0, Math.ceil((tilMin(dag.til) - tilMin(dag.fra)) / Math.max(1, samtaletid)) + 2);
+  return leggUtDagen(dag, tak, samtaletid, pause).filter(
+    (s) => s.type === "samtale",
+  ).length;
+}
+
+/**
+ * Timene dagen legger beslag på, til timeregnskapet (§4.2).
+ *
+ * Her holder en enklere regel enn i kapasiteten: lunsjen trekkes fra når den
+ * ligger innenfor dagens spenn. Regnskapet handler om dagen som er satt av,
+ * ikke om hvordan samtalene falt.
+ */
+export function timerPaDagen(dag: Dagoppsett): number {
+  const fra = tilMin(dag.fra);
+  const til = tilMin(dag.til);
+  if (til <= fra) return 0;
+
+  const lunsj =
+    dag.lunsjFra && dag.lunsjMin && tilMin(dag.lunsjFra) >= fra && tilMin(dag.lunsjFra) < til
+      ? dag.lunsjMin
+      : 0;
+
+  return Math.round(((til - fra - lunsj) / 60) * 10) / 10;
+}
+
+/** Fordeler elevene på dagene i rekkefølge, så langt kapasiteten rekker. */
+export function fordelPaDager(antall: number, kapasiteter: number[]): number[] {
+  const ut: number[] = [];
+  let igjen = antall;
+  for (const kap of kapasiteter) {
+    const p = Math.max(0, Math.min(igjen, kap));
+    ut.push(p);
+    igjen -= p;
+  }
+  return ut;
+}
+
+// ------------------------------------------------------------------ trekning
+
+/** Stokker en liste. Tilfeldigheten sendes inn, så trekningen kan prøves. */
+export function stokk<T>(liste: T[], tilfeldig: () => number = Math.random): T[] {
+  const a = [...liste];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(tilfeldig() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+/** Temaene fordeles jevnt og tilfeldig — like mange av hvert, så langt det går. */
+export function tildelTema(
+  elevIder: string[],
+  temaer: string[],
+  tilfeldig: () => number = Math.random,
+): Map<string, string> {
+  const ut = new Map<string, string>();
+  if (temaer.length === 0) return ut;
+
+  const stokket = stokk(temaer, tilfeldig);
+  elevIder.forEach((id, i) => ut.set(id, stokket[i % stokket.length]));
+  return ut;
+}
+
+/** Fordeler elevene på dagene og trekker rekkefølgen innen hver dag. */
+export function trekkRekkefolge(
+  elevIder: string[],
+  kapasiteter: number[],
+  tilfeldig: () => number = Math.random,
+): string[][] {
+  const stokket = stokk(elevIder, tilfeldig);
+  const fordelt = fordelPaDager(stokket.length, kapasiteter);
+
+  const ut: string[][] = [];
+  let i = 0;
+  for (const antall of fordelt) {
+    ut.push(stokket.slice(i, i + antall));
+    i += antall;
+  }
+  return ut;
+}
+
+// ----------------------------------------------------------------- historikk
+
+export type Plassering = "tidlig" | "midt" | "sent";
+
+/**
+ * Hvor i dagen en plass ligger, regnet i tredjedeler av dagens egen rekke.
+ *
+ * Et fast antall ville betydd ulike ting på en dag med seks og en med tolv.
+ * Under tre elever gir null — der er det ingenting å sammenlikne.
+ */
+export function plassering(indeks: number, antall: number): Plassering | null {
+  if (antall < 3 || indeks < 0 || indeks >= antall) return null;
+  if (indeks < antall / 3) return "tidlig";
+  if (indeks >= (antall * 2) / 3) return "sent";
+  return "midt";
+}
+
+/**
+ * Merknaden som står ved navnet, eller null når det ikke er noe å si.
+ *
+ * `nyesteForst` er elevens plasseringer, nyeste først. De fleste har ingenting
+ * stående — og det er nettopp derfor de som har det er verdt å se på.
+ */
+export function merknad(nyesteForst: Plassering[]): string | null {
+  const nyeste = nyesteForst[0];
+  if (!nyeste || nyeste === "midt") return null;
+
+  let antall = 1;
+  while (nyesteForst[antall] === nyeste) antall++;
+
+  return antall === 1 ? `${nyeste} sist` : `${nyeste} ${antall}× på rad`;
+}
+
+/**
+ * Rekkefølge vektet mot gjentakelse. Av som standard i UI-et (§4.10).
+ *
+ * En tyngde, ikke en rotasjon: elever med nylig «tidlig» skyves mot senere
+ * plasser og omvendt, men tilfeldigheten dominerer fortsatt. Uten det blir
+ * køen forutsigbar på en annen måte enn den var.
+ */
+export function vektetRekkefolge(
+  elevIder: string[],
+  historikk: Map<string, Plassering[]>,
+  tilfeldig: () => number = Math.random,
+): string[] {
+  const vekt = (id: string) => {
+    const nyeste = historikk.get(id) ?? [];
+    let sum = 0;
+    // Bare de tre siste teller, og det nyeste tyngst.
+    for (let i = 0; i < Math.min(3, nyeste.length); i++) {
+      const styrke = 1 / (i + 1);
+      if (nyeste[i] === "tidlig") sum += styrke;
+      if (nyeste[i] === "sent") sum -= styrke;
+    }
+    return sum;
+  };
+
+  return [...elevIder]
+    .map((id) => ({ id, tall: vekt(id) + tilfeldig() * 2 }))
+    .sort((a, b) => a.tall - b.tall)
+    .map((x) => x.id);
+}
+
+// ------------------------------------------------------------------ databasen
+
+export type Samtaledag = {
+  id: string;
+  skolearId: string;
+  skolearFagId: string | null;
+  fagKode: string | null;
+  vurderingId: string | null;
+  dato: string;
+  fra: string;
+  til: string;
+  lunsjFra: string | null;
+  lunsjMin: number | null;
+};
+
+export type Samtale = {
+  id: string;
+  samtaledagId: string;
+  elevId: string;
+  fornavn: string;
+  etternavn: string;
+  klokkeslett: string;
+  varighetMin: number;
+  tema: string | null;
+  motte: boolean;
+};
+
+export async function hentSamtaledager(skolearId: string): Promise<Samtaledag[]> {
+  return hent<Samtaledag>(
+    `SELECT d.id,
+            d.skolear_id     AS skolearId,
+            d.skolear_fag_id AS skolearFagId,
+            f.kode           AS fagKode,
+            d.vurdering_id   AS vurderingId,
+            d.dato, d.fra, d.til,
+            d.lunsj_fra      AS lunsjFra,
+            d.lunsj_min      AS lunsjMin
+       FROM samtaledag d
+       LEFT JOIN skolear_fag sf ON sf.id = d.skolear_fag_id AND sf.slettet IS NULL
+       LEFT JOIN fag f ON f.id = sf.fag_id AND f.slettet IS NULL
+      WHERE d.skolear_id = $1 AND d.slettet IS NULL
+      ORDER BY d.dato, d.fra`,
+    [skolearId],
+  );
+}
+
+export async function hentSamtaler(samtaledagId: string): Promise<Samtale[]> {
+  const rader = await hent<Omit<Samtale, "motte"> & { motte: number }>(
+    `SELECT s.id,
+            s.samtaledag_id AS samtaledagId,
+            s.elev_id       AS elevId,
+            e.fornavn, e.etternavn,
+            s.klokkeslett,
+            s.varighet_min  AS varighetMin,
+            s.tema, s.motte
+       FROM samtale s
+       JOIN elev e ON e.id = s.elev_id AND e.slettet IS NULL
+      WHERE s.samtaledag_id = $1 AND s.slettet IS NULL
+      ORDER BY s.klokkeslett`,
+    [samtaledagId],
+  );
+  return rader.map((r) => ({ ...r, motte: r.motte === 1 }));
+}
+
+export async function opprettSamtaledag(
+  skolearId: string,
+  felter: {
+    skolearFagId: string | null;
+    vurderingId?: string | null;
+    dato: string;
+    fra: string;
+    til: string;
+    lunsjFra: string | null;
+    lunsjMin: number | null;
+  },
+): Promise<string> {
+  return settInn("samtaledag", {
+    skolear_id: skolearId,
+    skolear_fag_id: felter.skolearFagId,
+    vurdering_id: felter.vurderingId ?? null,
+    dato: felter.dato,
+    fra: felter.fra,
+    til: felter.til,
+    lunsj_fra: felter.lunsjFra,
+    lunsj_min: felter.lunsjMin,
+  });
+}
+
+export async function endreSamtaledag(
+  id: string,
+  felter: Record<string, unknown>,
+): Promise<void> {
+  await oppdater("samtaledag", id, felter);
+}
+
+export async function slettSamtaledag(id: string): Promise<void> {
+  const rader = await hent<{ id: string }>(
+    "SELECT id FROM samtale WHERE samtaledag_id = $1 AND slettet IS NULL",
+    [id],
+  );
+  for (const r of rader) await slett("samtale", r.id);
+  await slett("samtaledag", id);
+}
+
+/**
+ * Skriver en trekning til en dag.
+ *
+ * Tidligere samtaler på dagen fjernes først — en ny trekning erstatter den
+ * forrige. Samtaler der eleven ikke møtte blir stående: de er en opplysning om
+ * hva som skjedde, ikke en del av planen som trekkes om.
+ */
+export async function lagreTrekning(
+  samtaledagId: string,
+  samtaler: {
+    elevId: string;
+    klokkeslett: string;
+    varighetMin: number;
+    tema: string | null;
+  }[],
+): Promise<void> {
+  const gamle = await hent<{ id: string; motte: number }>(
+    "SELECT id, motte FROM samtale WHERE samtaledag_id = $1 AND slettet IS NULL",
+    [samtaledagId],
+  );
+  for (const g of gamle) {
+    if (g.motte === 1) await slett("samtale", g.id);
+  }
+
+  for (const s of samtaler) {
+    await settInn("samtale", {
+      samtaledag_id: samtaledagId,
+      elev_id: s.elevId,
+      klokkeslett: s.klokkeslett,
+      varighet_min: s.varighetMin,
+      tema: s.tema,
+      motte: 1,
+    });
+  }
+}
+
+/** Markerer at eleven ikke møtte, uten at noe annet flyttes (§4.10). */
+export async function settMotte(id: string, motte: boolean): Promise<void> {
+  await oppdater("samtale", id, { motte: motte ? 1 : 0 });
+}
+
+/**
+ * Historikken per elev i året, nyeste først.
+ *
+ * Samtaler der eleven ikke møtte teller ikke: hen var ikke der, og
+ * plasseringen sier da ingenting om når hen faktisk måtte møte — samme
+ * prinsipp som `teller_ikke` i §5.1.
+ */
+export async function hentHistorikk(
+  skolearId: string,
+): Promise<Map<string, Plassering[]>> {
+  const rader = await hent<{
+    elevId: string;
+    dagId: string;
+    dato: string;
+    klokkeslett: string;
+  }>(
+    `SELECT s.elev_id AS elevId, d.id AS dagId, d.dato, s.klokkeslett
+       FROM samtale s
+       JOIN samtaledag d ON d.id = s.samtaledag_id AND d.slettet IS NULL
+      WHERE d.skolear_id = $1 AND s.slettet IS NULL AND s.motte = 1
+      ORDER BY d.dato DESC, s.klokkeslett`,
+    [skolearId],
+  );
+
+  // Plasseringen regnes innen dagen, så radene grupperes per dag først.
+  const perDag = new Map<string, { elevId: string; klokkeslett: string }[]>();
+  const rekkefolge: string[] = [];
+  for (const r of rader) {
+    if (!perDag.has(r.dagId)) {
+      perDag.set(r.dagId, []);
+      rekkefolge.push(r.dagId);
+    }
+    perDag.get(r.dagId)!.push({ elevId: r.elevId, klokkeslett: r.klokkeslett });
+  }
+
+  const ut = new Map<string, Plassering[]>();
+  for (const dagId of rekkefolge) {
+    const dagens = perDag
+      .get(dagId)!
+      .sort((a, b) => a.klokkeslett.localeCompare(b.klokkeslett));
+    dagens.forEach((s, i) => {
+      const p = plassering(i, dagens.length);
+      if (!p) return;
+      ut.set(s.elevId, [...(ut.get(s.elevId) ?? []), p]);
+    });
+  }
+  return ut;
+}
