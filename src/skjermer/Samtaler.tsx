@@ -38,6 +38,7 @@ import { Felt, Knapp, Tomtilstand } from "../ui/felles";
  */
 
 export type Modus = "fag" | "mentor";
+type Visning = "timeplan" | "fordeling" | "alfabetisk";
 
 /** En dag slik den vises i timeplanen. */
 type Dagplan = {
@@ -92,6 +93,7 @@ export function Samtaler({
   const [lastRekkefolge, setLastRekkefolge] = useState(false);
   const [lasteElever, setLasteElever] = useState<Set<string>>(new Set());
   const [dragmelding, setDragmelding] = useState<string | null>(null);
+  const [visning, setVisning] = useState<Visning>("timeplan");
 
   const minutter = Number(samtaletid) || 20;
   const pausen = Number(pause) || 0;
@@ -583,6 +585,34 @@ export function Samtaler({
           </div>
         )}
 
+        {trekning !== null && (
+          <div className="mb-4 flex gap-1">
+            {(
+              [
+                ["timeplan", "Timeplan"],
+                ["fordeling", "Fordeling"],
+                ["alfabetisk", "Alfabetisk"],
+              ] as [Visning, string][]
+            )
+              // Fordelingen handler om temaene, og mentorsamtalen har ingen.
+              .filter(([id]) => !(id === "fordeling" && modus === "mentor"))
+              .map(([id, navn]) => (
+                <button
+                  key={id}
+                  onClick={() => setVisning(id)}
+                  aria-pressed={visning === id}
+                  className={`rounded-vanlig px-2.5 py-1 text-liten ${
+                    visning === id
+                      ? "bg-valgt font-medium text-aksent"
+                      : "text-blekk-dempet hover:bg-flate"
+                  }`}
+                >
+                  {navn}
+                </button>
+              ))}
+          </div>
+        )}
+
         {trekning === null ? (
           <Tomtilstand
             tekst={
@@ -591,6 +621,10 @@ export function Samtaler({
                 : "Sett opp trekningen til venstre og trykk Generer timeplan."
             }
           />
+        ) : visning === "fordeling" ? (
+          <Fordeling plan={trekning} />
+        ) : visning === "alfabetisk" ? (
+          <Alfabetisk plan={trekning} medTema={modus === "fag"} />
         ) : (
           <Timeplan
             plan={trekning}
@@ -950,5 +984,89 @@ function langDato(dato: string): string {
     weekday: "long",
     day: "numeric",
     month: "long",
+  });
+}
+
+/**
+ * Fordeling — ett kort per elev i tidsrekkefølge på tvers av alle dagene.
+ *
+ * Plassnummeret er posisjonen i køen denne trekningen, ikke en fast id.
+ */
+function Fordeling({ plan }: { plan: Dagplan[] }) {
+  const alle = plan.flatMap((d) => d.rader);
+
+  return (
+    <div className="grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(11rem,1fr))]">
+      {alle.map((r, i) => (
+        <div
+          key={`${r.elevId}-${r.fra}`}
+          className={`rounded-vanlig border border-linje bg-ark px-3 py-2 ${
+            r.motte ? "" : "opacity-50"
+          }`}
+        >
+          <span className="text-liten tabular-nums text-blekk-svak">{i + 1}</span>
+          <p className="truncate text-brod font-medium">{r.navn}</p>
+          {r.tema && (
+            <p className="truncate text-liten text-blekk-dempet">{r.tema}</p>
+          )}
+          <p className="text-liten tabular-nums text-blekk-svak">{r.fra}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** Alfabetisk — lista sortert på navn, med tidspunkt og dag. */
+function Alfabetisk({
+  plan,
+  medTema,
+}: {
+  plan: Dagplan[];
+  medTema: boolean;
+}) {
+  const rader = plan
+    .flatMap((d) => d.rader.map((r) => ({ ...r, dato: d.dag.dato })))
+    .sort((a, b) => a.navn.localeCompare(b.navn, "nb-NO"));
+
+  return (
+    <table className="w-full text-brod">
+      <thead>
+        <tr className="border-b border-linje text-left text-etikett uppercase tracking-etikett text-blekk-dempet">
+          <th className="py-1">Navn</th>
+          {medTema && <th className="py-1">Oppgave</th>}
+          <th className="py-1">Tid</th>
+          <th className="py-1">Dag</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rader.map((r) => (
+          <tr
+            key={`${r.elevId}-${r.fra}`}
+            className={`border-b border-linje-svak ${
+              r.motte ? "" : "text-blekk-svak line-through"
+            }`}
+          >
+            <td className="py-1.5">{r.navn}</td>
+            {medTema && (
+              <td className="py-1.5 text-blekk-dempet">{r.tema ?? ""}</td>
+            )}
+            <td className="py-1.5 tabular-nums text-blekk-dempet">
+              {r.fra}–{r.til}
+            </td>
+            <td className="py-1.5 tabular-nums text-blekk-dempet">
+              {kortDato(r.dato)}
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+function kortDato(dato: string): string {
+  if (!dato) return "—";
+  return new Date(`${dato}T00:00:00`).toLocaleDateString("nb-NO", {
+    day: "numeric",
+    month: "short",
   });
 }
