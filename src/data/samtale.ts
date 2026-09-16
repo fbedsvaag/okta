@@ -181,6 +181,53 @@ export function trekkRekkefolge(
   return delPaDager(stokk(elevIder, tilfeldig), kapasiteter);
 }
 
+/**
+ * Trekker rekkefølgen om igjen, med låste elever stående.
+ *
+ * Omtrekningen skjer innen hver dag: dagene har hver sin kapasitet, og å
+ * flytte noen mellom dem ville stilt spørsmål om hvem som må ut. En låst elev
+ * blir i sin plass, og de andre stokkes rundt hen.
+ */
+export function trekkOmRekkefolge(
+  perDag: string[][],
+  laste: ReadonlySet<string>,
+  tilfeldig: () => number = Math.random,
+): string[][] {
+  return perDag.map((dagen) => {
+    const losse = stokk(
+      dagen.filter((id) => !laste.has(id)),
+      tilfeldig,
+    );
+    let i = 0;
+    return dagen.map((id) => (laste.has(id) ? id : losse[i++]));
+  });
+}
+
+/**
+ * Fordeler temaene om igjen, med låste elever på sitt.
+ *
+ * De låste holder temaet de har; resten får en ny runde av temalista.
+ */
+export function trekkOmTema(
+  ider: string[],
+  gjeldende: Map<string, string>,
+  laste: ReadonlySet<string>,
+  temaer: string[],
+  tilfeldig: () => number = Math.random,
+): Map<string, string> {
+  if (temaer.length === 0) return new Map();
+
+  const losse = ider.filter((id) => !laste.has(id));
+  const nye = tildelTema(losse, temaer, tilfeldig);
+
+  const ut = new Map<string, string>();
+  for (const id of ider) {
+    const verdi = laste.has(id) ? gjeldende.get(id) : nye.get(id);
+    if (verdi !== undefined) ut.set(id, verdi);
+  }
+  return ut;
+}
+
 // ----------------------------------------------------------------- historikk
 
 export type Plassering = "tidlig" | "midt" | "sent";

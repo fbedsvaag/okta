@@ -10,6 +10,8 @@ import {
   tildelTema,
   tilKlokke,
   tilMin,
+  trekkOmRekkefolge,
+  trekkOmTema,
   timerPaDagen,
   trekkRekkefolge,
   vektetRekkefolge,
@@ -312,5 +314,55 @@ describe("delPaDager", () => {
 
   it("gir tomme dager når elevene tar slutt", () => {
     expect(delPaDager(["a"], [2, 2])).toEqual([["a"], []]);
+  });
+});
+
+describe("trekk på nytt", () => {
+  it("lar en låst elev bli i sin plass", () => {
+    const perDag = [["a", "b", "c", "d"]];
+    const ut = trekkOmRekkefolge(perDag, new Set(["b"]), fast([0.1, 0.8, 0.4]));
+    expect(ut[0][1]).toBe("b");
+  });
+
+  it("stokker de andre rundt den låste", () => {
+    const perDag = [["a", "b", "c", "d"]];
+    const ut = trekkOmRekkefolge(perDag, new Set(["b"]), fast([0.9, 0.1, 0.5]));
+    expect(new Set(ut[0])).toEqual(new Set(["a", "b", "c", "d"]));
+    expect(ut[0]).toHaveLength(4);
+  });
+
+  it("flytter ingen mellom dager", () => {
+    // Dagene har hver sin kapasitet — en omtrekning skal ikke stille
+    // spørsmål om hvem som må ut.
+    const perDag = [["a", "b"], ["c", "d"]];
+    const ut = trekkOmRekkefolge(perDag, new Set(), fast([0.7, 0.2]));
+    expect(new Set(ut[0])).toEqual(new Set(["a", "b"]));
+    expect(new Set(ut[1])).toEqual(new Set(["c", "d"]));
+  });
+
+  it("lar alt stå når alle er låst", () => {
+    const perDag = [["a", "b", "c"]];
+    const ut = trekkOmRekkefolge(perDag, new Set(["a", "b", "c"]), fast([0.5]));
+    expect(ut).toEqual(perDag);
+  });
+
+  it("holder låste elever på temaet sitt", () => {
+    const na = new Map([
+      ["a", "T1"],
+      ["b", "T2"],
+    ]);
+    const ut = trekkOmTema(["a", "b"], na, new Set(["a"]), ["T1", "T2"], fast([0.9]));
+    expect(ut.get("a")).toBe("T1");
+  });
+
+  it("gir alle et tema, også etter omtrekning", () => {
+    const na = new Map([["a", "T1"]]);
+    const ut = trekkOmTema(["a", "b", "c"], na, new Set(["a"]), ["T1", "T2"], fast([0.3]));
+    expect(ut.size).toBe(3);
+  });
+
+  it("gir ingen temaer i mentormodus", () => {
+    const ut = trekkOmTema(["a"], new Map(), new Set(), [], fast([0.5]));
+    expect(ut.size).toBe(0);
   });
 });

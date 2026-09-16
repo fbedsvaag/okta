@@ -18,6 +18,8 @@ import {
   slettSamtaledag,
   stokk,
   tildelTema,
+  trekkOmRekkefolge,
+  trekkOmTema,
   tilKlokke,
   tilMin,
   timerPaDagen,
@@ -82,6 +84,12 @@ export function Samtaler({
   const [vekting, setVekting] = useState(false);
   const [trekning, setTrekning] = useState<Dagplan[] | null>(null);
   const [lagret, setLagret] = useState(true);
+  // De to hovedlåsene overlever en ny generering — de er en arbeidsmåte man
+  // har valgt. Elevlåsene nullstilles, siden en ny trekning er en ny start
+  // for enkeltvalgene (§4.10).
+  const [lastTema, setLastTema] = useState(false);
+  const [lastRekkefolge, setLastRekkefolge] = useState(false);
+  const [lasteElever, setLasteElever] = useState<Set<string>>(new Set());
 
   const minutter = Number(samtaletid) || 20;
   const pausen = Number(pause) || 0;
@@ -115,6 +123,21 @@ export function Samtaler({
     }
     setTrekning(lagrede.length > 0 ? lagrede : null);
     setLagret(true);
+
+    // Én dag ligger klar med én gang, så datofeltet er fremme og ikke gjemt
+    // bak en «legg til»-lenke.
+    if (mine.length === 0) {
+      await opprettSamtaledag(skolear.id, {
+        skolearFagId: modus === "mentor" ? null : fagId,
+        dato: "",
+        ...NY_DAG,
+      });
+      setDager(
+        (await hentSamtaledager(skolear.id)).filter((d) =>
+          modus === "mentor" ? d.skolearFagId === null : d.skolearFagId === fagId,
+        ),
+      );
+    }
   }
 
   useEffect(() => {
@@ -153,23 +176,14 @@ export function Samtaler({
       .map((e) => ({ id: e.id, navn: `${e.fornavn} ${e.etternavn}` }));
   }, [brukEgen, egenListe, elever, modus, fagId]);
 
-  /**
-   * Trekker og skriver.
-   *
-   * Innlimte elever finnes ikke i basen, og samtale.elev_id har fremmednøkkel
-   * til elev — da vises trekningen uten å lagres, tydelig merket. Å gjøre
-   * innlimingen ubrukelig ville vært verre.
-   */
-  async function generer() {
-    const ider = deltakere.map((d) => d.id);
-    const ordnet = vekting
-      ? vektetRekkefolge(ider, historikk)
-      : stokk(ider);
-    const perDag = delPaDager(ordnet, kapasiteter);
-    const temakart = tildelTema(ordnet, temaer.filter((t) => t.trim() !== ""));
+  /** Legger ut dagene og bygger radene som vises. */
+  function byggPlan(
+    perDag: string[][],
+    temakart: Map<string, string>,
+  ): Dagplan[] {
     const navn = new Map(deltakere.map((d) => [d.id, d.navn]));
-
     const plan: Dagplan[] = [];
+
     dager.forEach((dag, i) => {
       const paDagen = perDag[i] ?? [];
       if (paDagen.length === 0) return;
@@ -189,7 +203,17 @@ export function Samtaler({
         })),
       });
     });
+    return plan;
+  }
 
+  /**
+   * Skriver trekningen.
+   *
+   * Innlimte elever finnes ikke i basen, og samtale.elev_id har fremmednøkkel
+   * til elev — da vises trekningen uten å lagres, tydelig merket. Å gjøre
+   * innlimingen ubrukelig ville vært verre.
+   */
+  async function skriv(plan: Dagplan[]) {
     setTrekning(plan);
 
     if (brukEgen) {
@@ -210,6 +234,52 @@ export function Samtaler({
     }
     setLagret(true);
     setHistorikk(await hentHistorikk(skolear.id));
+  }
+
+  /** Helt ny trekning. Fordeler på nytt over dagene, og løser opp elevlåsene. */
+  async function generer() {
+    if (
+      trekning &&
+      !(await bekreft(
+        "Generer ny trekning?\n\nDen som ligger nå blir erstattet, og låsene på enkeltelever løses opp.",
+      ))
+    )
+      return;
+
+    const ider = deltakere.map((d) => d.id);
+    const ordnet = vekting ? vektetRekkefolge(ider, historikk) : stokk(ider);
+    const rene = temaer.filter((t) => t.trim() !== "");
+
+    setLasteElever(new Set());
+    await skriv(byggPlan(delPaDager(ordnet, kapasiteter), tildelTema(ordnet, rene)));
+  }
+
+  /**
+   * Trekker om innenfor den fordelingen som allerede er gjort.
+   *
+   * Låsene bestemmer hva som faktisk endres. Er begge på, skjer ingenting —
+   * og da sier hjelpeteksten det, framfor at knappen ser ut til å virke.
+   */
+  async function trekkPaNytt() {
+    if (!trekning) return generer();
+    if (lastTema && lastRekkefolge) return;
+
+    const perDag = trekning.map((d) => d.rader.map((r) => r.elevId));
+    const na = new Map<string, string>();
+    for (const d of trekning) {
+      for (const r of d.rader) if (r.tema) na.set(r.elevId, r.tema);
+    }
+
+    const nyPerDag = lastRekkefolge
+      ? perDag
+      : trekkOmRekkefolge(perDag, lasteElever);
+
+    const rene = temaer.filter((t) => t.trim() !== "");
+    const nyttTema = lastTema
+      ? na
+      : trekkOmTema(perDag.flat(), na, lasteElever, rene);
+
+    await skriv(byggPlan(nyPerDag, nyttTema));
   }
 
   const kapasiteter = dager.map((d) => kapasitet(d, minutter, pausen));
@@ -421,14 +491,52 @@ export function Samtaler({
           </Bolk>
         </div>
 
-        <div className="shrink-0 border-t border-linje-medium pt-3">
+        {/* Generer, og under den Trekk på nytt med de to låsene (§4.10). */}
+        <div className="shrink-0 space-y-3 border-t border-linje-medium pt-3">
           <Knapp
             variant="primar"
             disabled={deltakere.length === 0 || dager.length === 0}
             onClick={() => void generer()}
           >
-            {trekning ? "Trekk på nytt" : "Generer timeplan"}
+            Generer timeplan
           </Knapp>
+
+          {trekning && (
+            <div>
+              <h2 className="mb-2 text-etikett uppercase tracking-etikett text-blekk-dempet">
+                Trekk på nytt
+              </h2>
+              <div className="flex gap-1">
+                <Lasknapp
+                  last={lastTema}
+                  onKlikk={() => setLastTema((v) => !v)}
+                >
+                  Tema
+                </Lasknapp>
+                <Lasknapp
+                  last={lastRekkefolge}
+                  onKlikk={() => setLastRekkefolge((v) => !v)}
+                >
+                  Rekkefølge
+                </Lasknapp>
+              </div>
+              <p className="mt-1 min-h-4 text-liten text-blekk-svak">
+                {lashint(lastTema, lastRekkefolge)}
+              </p>
+              <button
+                onClick={() => void trekkPaNytt()}
+                disabled={lastTema && lastRekkefolge}
+                className="mt-1 w-full rounded border border-linje bg-ark px-3 py-1.5 text-brod hover:bg-flate disabled:opacity-40 disabled:hover:bg-ark"
+              >
+                Trekk på nytt
+              </button>
+              {lasteElever.size > 0 && (
+                <p className="mt-1 text-liten text-blekk-svak">
+                  {lasteElever.size} {lasteElever.size === 1 ? "elev" : "elever"} låst
+                </p>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -458,7 +566,19 @@ export function Samtaler({
             }
           />
         ) : (
-          <Timeplan plan={trekning} historikk={historikk} />
+          <Timeplan
+            plan={trekning}
+            historikk={historikk}
+            laste={lasteElever}
+            onLas={(elevId) =>
+              setLasteElever((f) => {
+                const ny = new Set(f);
+                if (ny.has(elevId)) ny.delete(elevId);
+                else ny.add(elevId);
+                return ny;
+              })
+            }
+          />
         )}
       </div>
     </div>
@@ -617,9 +737,13 @@ const feltstil =
 function Timeplan({
   plan,
   historikk,
+  laste,
+  onLas,
 }: {
   plan: Dagplan[];
   historikk: Map<string, Plassering[]>;
+  laste: ReadonlySet<string>;
+  onLas: (elevId: string) => void;
 }) {
   let plass = 0;
 
@@ -642,12 +766,13 @@ function Timeplan({
             // sier noe om hva som har skjedd — ikke om det som nettopp ble
             // trukket.
             const notis = merknad(historikk.get(r.elevId) ?? []);
+            const erLast = laste.has(r.elevId);
             return (
               <div
                 key={`${r.elevId}-${r.fra}`}
                 className={`flex items-baseline gap-3 border-b border-linje-svak py-1.5 text-brod ${
                   r.motte ? "" : "text-blekk-svak line-through"
-                }`}
+                } ${erLast ? "bg-flate-svak" : ""}`}
               >
                 <span className="w-6 shrink-0 text-right tabular-nums text-blekk-svak">
                   {plass}
@@ -664,6 +789,19 @@ function Timeplan({
                 <span className="w-32 shrink-0 text-right text-liten text-blekk-svak">
                   {r.motte ? notis : "møtte ikke"}
                 </span>
+                <button
+                  onClick={() => onLas(r.elevId)}
+                  title={
+                    erLast
+                      ? "Lås opp — eleven trekkes om igjen"
+                      : "Lås — eleven beholder plass og tema"
+                  }
+                  className={`w-5 shrink-0 text-liten ${
+                    erLast ? "text-aksent" : "text-blekk-svakest hover:text-blekk"
+                  }`}
+                >
+                  {erLast ? "🔒" : "🔓"}
+                </button>
               </div>
             );
           })}
@@ -711,6 +849,39 @@ function Historikkoversikt({
         </li>
       ))}
     </ul>
+  );
+}
+
+/** Ordlyden fra §4.10 — den sier hva «Trekk på nytt» faktisk gjør. */
+function lashint(tema: boolean, rekkefolge: boolean): string {
+  if (tema && rekkefolge) return "Begge er låst — ingenting endres.";
+  if (tema) return "Temaer holdes — kun rekkefølge trekkes.";
+  if (rekkefolge) return "Rekkefølge holdes — kun tema trekkes.";
+  return "";
+}
+
+function Lasknapp({
+  last,
+  onKlikk,
+  children,
+}: {
+  last: boolean;
+  onKlikk: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      onClick={onKlikk}
+      aria-pressed={last}
+      className={`flex flex-1 items-center justify-center gap-1.5 rounded-vanlig border px-2 py-1 text-liten ${
+        last
+          ? "border-aksent bg-valgt text-aksent"
+          : "border-linje text-blekk-dempet hover:bg-flate"
+      }`}
+    >
+      <span aria-hidden>{last ? "🔒" : "🔓"}</span>
+      {children}
+    </button>
   );
 }
 
