@@ -15,13 +15,18 @@ import {
 import {
   endreElev,
   finnEllerOpprettKlasse,
+  frakobleFag,
+  frakobletekst,
   hentKlasser,
+  koblePaFag,
   settKlasse,
   settMentor,
   slettElevHelt,
   tellForElev,
+  tellSkaringerIFag,
   type Klasse,
 } from "../data/elever";
+import { hentFagIAr, type FagIAr } from "../data/fag";
 import { Fagfiltre, Fagmerke, Knapp } from "../ui/felles";
 import {
   erForfalt,
@@ -89,11 +94,14 @@ export function ElevPanel({
     ).values(),
   ].sort((a, b) => a.kode.localeCompare(b.kode, "nb-NO"));
 
+  const elevensFagIder = new Set(elevensFag.map((f) => f.id));
   const passer = (id: string) => !vurderingsfag || id === vurderingsfag;
   const synligeVurderinger = vurderinger.filter((v) => passer(v.skolearFagId));
   const synligeFagRader = fagRader.filter((r) => passer(r.skolearFagId));
   const synligeTommeFag = tommeFag.filter((f) => passer(f.skolearFagId));
   const [klasser, setKlasser] = useState<Klasse[]>([]);
+  // Alle fagene i året, ikke bare elevens — man må kunne koble til et nytt.
+  const [arsFag, setArsFag] = useState<FagIAr[]>([]);
 
   useEffect(() => {
     let avbrutt = false;
@@ -108,6 +116,17 @@ export function ElevPanel({
     };
   }, [elevId]);
 
+  async function lastFag() {
+    const [h, f, v] = await Promise.all([
+      hentHeatmap(elevId, valgtAr),
+      hentElevFag(elevId, valgtAr),
+      hentElevVurderinger(elevId, valgtAr),
+    ]);
+    setFagRader(h);
+    setTommeFag(f.filter((x) => !h.some((r) => r.skolearFagId === x.skolearFagId)));
+    setVurderinger(v);
+  }
+
   useEffect(() => {
     let avbrutt = false;
     (async () => {
@@ -121,6 +140,7 @@ export function ElevPanel({
       setTommeFag(f.filter((x) => !h.some((r) => r.skolearFagId === x.skolearFagId)));
       setVurderinger(v);
       setKlasser(await hentKlasser(valgtAr));
+      setArsFag(await hentFagIAr(valgtAr));
     })();
     return () => {
       avbrutt = true;
@@ -153,7 +173,7 @@ export function ElevPanel({
         bla?.retning ? `flikk-${bla.retning}` : ""
       }`}
     >
-      <header className="flex items-baseline gap-3 border-b border-linje-medium px-5 py-3">
+      <header className="flex flex-wrap items-baseline gap-x-3 gap-y-2 border-b border-linje-medium px-5 py-3">
         {/*
           Navnet redigeres der det står. Samme mønster som resten av appen:
           skriv, og feltet lagrer når det forlates. Enter bekrefter, Escape
@@ -216,8 +236,53 @@ export function ElevPanel({
               if (ok) setAr(await hentElevAr(elevId));
             }}
           />
-          Mentor
+          Mentorelev
         </label>
+
+        {/*
+          Fagene eleven har i året. Frakobling rører aldri skåringene — de
+          blir liggende, og kobler du til igjen kommer de tilbake i heatmapet.
+          Derfor er dette trygt å rette i, og spørsmålet stilles bare når det
+          faktisk finnes skåringer å forsvinne ut av lista med.
+        */}
+        {arsFag.length > 0 && (
+          <span className="flex flex-wrap items-center gap-1.5">
+            {arsFag.map((f) => {
+              const har = elevensFagIder.has(f.id);
+              return (
+                <label
+                  key={f.id}
+                  title={har ? `Koble fra ${f.kode}` : `Koble til ${f.kode}`}
+                  className="flex cursor-pointer select-none items-center gap-1"
+                >
+                  <input
+                    type="checkbox"
+                    checked={har}
+                    onChange={async (e) => {
+                      if (e.target.checked) {
+                        await koblePaFag(elevId, f.id);
+                      } else {
+                        const n = await tellSkaringerIFag(elevId, f.id);
+                        if (
+                          n > 0 &&
+                          !(await bekreft(
+                            frakobletekst(elev.fornavn, f.kode, n),
+                          ))
+                        ) {
+                          e.target.checked = true;
+                          return;
+                        }
+                        await frakobleFag(elevId, f.id);
+                      }
+                      await lastFag();
+                    }}
+                  />
+                  <Fagmerke kode={f.kode} farge={f.farge} liten />
+                </label>
+              );
+            })}
+          </span>
+        )}
         {bla && bla.av > 1 && (
           <span className="ml-auto flex shrink-0 items-center gap-1">
             <button

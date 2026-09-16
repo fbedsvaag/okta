@@ -10,9 +10,14 @@ const {
   finnEllerOpprettKlasse,
   hentElever,
   opprettElev,
+  frakobleFag,
+  koblePaFag,
   settKlasse,
   settMentor,
+  tellSkaringerIFag,
 } = await import("./elever");
+const { leggFagIAr } = await import("./fag");
+const { opprettOkt, settSkaring } = await import("./okter");
 const { opprettSkolear } = await import("./skolear");
 
 let skolearId = "";
@@ -97,5 +102,45 @@ describe("elever uten fag", () => {
 
     expect(elever).toHaveLength(1);
     expect(elever[0].fagKoder).toEqual([]);
+  });
+});
+
+describe("frakobling av fag", () => {
+  it("lar skåringene ligge, og henter dem fram igjen ved ny kobling", async () => {
+    // Dette er garantien som gjør at en feilkobling kan rettes uten frykt:
+    // frakobling rører ikke skåringene, og elev_fag-raden gjenbrukes (§12),
+    // så heatmapet er uendret etter en runde ut og inn.
+    const elevId = await opprettElev("Tony", "Soprano");
+    const fagId = await leggFagIAr(skolearId, "MFL1", "Markedsføring", null);
+    await koblePaFag(elevId, fagId);
+
+    const oktId = await opprettOkt(fagId, "MFL1", "2026-09-01", null, 180);
+    const gronn = "5ca1ade1-0001-4000-8000-000000000004";
+    await settSkaring(elevId, oktId, gronn);
+
+    expect(await tellSkaringerIFag(elevId, fagId)).toBe(1);
+
+    await frakobleFag(elevId, fagId);
+    expect(await tellSkaringerIFag(elevId, fagId)).toBe(1);
+    expect((await hentElever(skolearId))[0].fagKoder).toEqual([]);
+
+    await koblePaFag(elevId, fagId);
+    expect((await hentElever(skolearId))[0].fagKoder).toEqual(["MFL1"]);
+    expect(await tellSkaringerIFag(elevId, fagId)).toBe(1);
+  });
+
+  it("lager ikke en ny rad når eleven kobles til igjen", async () => {
+    const elevId = await opprettElev("Carmela", "Soprano");
+    const fagId = await leggFagIAr(skolearId, "ENG1", "Engelsk", null);
+
+    await koblePaFag(elevId, fagId);
+    await frakobleFag(elevId, fagId);
+    await koblePaFag(elevId, fagId);
+
+    const rader = await base.select<{ n: number }[]>(
+      "SELECT COUNT(*) AS n FROM elev_fag WHERE elev_id = $1",
+      [elevId],
+    );
+    expect(rader[0].n).toBe(1);
   });
 });

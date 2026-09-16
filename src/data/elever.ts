@@ -291,6 +291,26 @@ export async function koblePaFag(
   await settInn("elev_fag", { elev_id: elevId, skolear_fag_id: skolearFagId });
 }
 
+/**
+ * Spørsmålet som stilles før en elev kobles fra et fag.
+ *
+ * Frakoblingen rører aldri skåringene — de blir liggende, og kobler du til
+ * igjen, kommer de tilbake i heatmapet. Men eleven forsvinner ut av fagets
+ * lister i mellomtiden, og det er verdt å si fra om.
+ */
+export function frakobletekst(
+  fornavn: string,
+  fagKode: string,
+  skaringer: number,
+): string {
+  return (
+    `Koble ${fornavn} fra ${fagKode}?\n\n` +
+    `${skaringer} skåringer blir liggende i basen, men eleven forsvinner ` +
+    "ut av fagets lister og heatmap.\n\n" +
+    "Du kan koble til igjen når som helst — da kommer de tilbake."
+  );
+}
+
 export async function frakobleFag(
   elevId: string,
   skolearFagId: string,

@@ -4,6 +4,7 @@ import {
   endreElev,
   finnEllerOpprettKlasse,
   frakobleFag,
+  frakobletekst,
   giKlasseNyttNavn,
   hentElever,
   hentKlasser,
@@ -35,7 +36,7 @@ const VALGBARE = [
   { id: "etternavn", navn: "Etternavn" },
   { id: "kode", navn: "Kode" },
   { id: "klasse", navn: "Klasse" },
-  { id: "mentor", navn: "Mentor" },
+  { id: "mentor", navn: "Mentorelev" },
   { id: "fag", navn: "Fag" },
   { id: "okter", navn: "Økter" },
   { id: "siste", navn: "Siste" },
@@ -284,7 +285,7 @@ export function Elever({
                 )}
                 {vis.has("mentor") && (
                   <Overskrift kolonne="mentor" sortering={sortering} onKlikk={bytSortering}>
-                    Mentor
+                    Mentorelev
                   </Overskrift>
                 )}
                 {vis.has("fag") && (
@@ -805,12 +806,7 @@ function Rad({
                       const n = await tellSkaringerIFag(elev.id, f.id);
                       if (
                         n > 0 &&
-                        !await bekreft(
-                          `Koble ${elev.fornavn} fra ${f.kode}?\n\n` +
-                            `${n} skåringer blir liggende i basen, men eleven ` +
-                            "forsvinner ut av fagets lister og heatmap.\n\n" +
-                            "Du kan koble til igjen når som helst.",
-                        )
+                        !(await bekreft(frakobletekst(elev.fornavn, f.kode, n)))
                       ) {
                         e.target.checked = true;
                         return;
@@ -1118,7 +1114,7 @@ function NyElevRad({
               disabled={!harKlasse}
               onChange={(e) => setMentor(e.target.checked)}
             />
-            Mentor
+            Mentorelev
           </label>
 
           {fag.length > 0 && (
