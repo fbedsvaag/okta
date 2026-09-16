@@ -378,7 +378,62 @@ Denne tabellen tar over for både `oppfolging` og fritekstfeltet `elev.notat`.
 Et felt som overskrives har ingen historikk å vise, og det var nettopp
 historikken som manglet. Se §4.7.
 
-### 3.6 Indekser
+### 3.6 Samtaler
+
+Muntlige samtaler med klokkeslett per elev — fagsamtaler og mentorsamtaler.
+Se §4.10.
+
+```sql
+CREATE TABLE samtaledag (
+  id             TEXT PRIMARY KEY,
+  skolear_id     TEXT NOT NULL REFERENCES skolear(id),
+  skolear_fag_id TEXT REFERENCES skolear_fag(id),  -- NULL = mentorsamtale
+  vurdering_id   TEXT REFERENCES vurdering(id),    -- flere dager, samme vurdering
+  dato           TEXT NOT NULL,
+  fra            TEXT NOT NULL,        -- "08:30"
+  til            TEXT NOT NULL,        -- "15:00", overstyrbar
+  lunsj_fra      TEXT,                 -- "11:45". NULL = ingen lunsj
+  lunsj_min      INTEGER,              -- 30
+  opprettet TEXT NOT NULL,
+  endret    TEXT NOT NULL,
+  slettet   TEXT
+);
+
+CREATE TABLE samtale (
+  id             TEXT PRIMARY KEY,
+  samtaledag_id  TEXT NOT NULL REFERENCES samtaledag(id),
+  elev_id        TEXT NOT NULL REFERENCES elev(id),
+  klokkeslett    TEXT NOT NULL,        -- "09:30"
+  varighet_min   INTEGER NOT NULL,
+  tema           TEXT,                 -- "Oppgave 4 · Markedsanalyse"
+  motte          INTEGER NOT NULL DEFAULT 1,  -- 0 = eleven møtte ikke
+  opprettet TEXT NOT NULL,
+  endret    TEXT NOT NULL,
+  slettet   TEXT,
+  UNIQUE(samtaledag_id, elev_id, klokkeslett)
+);
+```
+
+**Samtaledagen er ikke en økt.** Den likner — samme dato, samme fag, samme
+elever — men den har klokkeslett per elev, og i mentormodus har den ikke noe
+fag. `okt.skolear_fag_id` er `NOT NULL` og bærer timeregnskapet, kalenderen og
+publiseringen; å gjøre den nullbar for denne ene tingens skyld ville berørt
+hver spørring som antar at et fag finnes.
+
+Prisen er at samtaledager må kobles inn i kalenderen (§4.2) og i det som
+blokkerer undervisning med vilje. Det er en kjent kostnad, ikke en glipp.
+
+**`til` foreslås fra siste samtale, men kan overstyres.** Noen ganger settes
+dagen av lenger enn samtalene varer, og da er det den avsatte tida som gjelder.
+
+**Plasseringen i dagen lagres ikke.** Den utledes av `klokkeslett` sortert
+innen dagen. Ett sted å skrive, ingen verdi som kan komme i utakt med klokka.
+
+Nøkkelen er `(samtaledag_id, elev_id, klokkeslett)` og ikke bare de to første:
+en elev som ikke møtte kan settes opp igjen senere samme dag, og da finnes hen
+to ganger. Se §4.10.
+
+### 3.7 Indekser
 
 ```sql
 CREATE INDEX idx_skaring_okt   ON skaring(okt_id)   WHERE slettet IS NULL;
@@ -398,6 +453,9 @@ CREATE INDEX idx_mentor        ON elev_klasse(skolear_id) WHERE mentor = 1 AND s
 CREATE INDEX idx_elevnotat      ON elevnotat(elev_id, dato) WHERE slettet IS NULL;
 CREATE INDEX idx_elevnotat_apen ON elevnotat(skolear_id)
   WHERE skal_folges_opp = 1 AND lukket IS NULL AND slettet IS NULL;
+CREATE INDEX idx_samtaledag_ar ON samtaledag(skolear_id, dato) WHERE slettet IS NULL;
+CREATE INDEX idx_samtale_dag   ON samtale(samtaledag_id)       WHERE slettet IS NULL;
+CREATE INDEX idx_samtale_elev  ON samtale(elev_id)             WHERE slettet IS NULL;
 ```
 
 ---
@@ -512,6 +570,30 @@ Alltid synlig øverst i faget: antall planlagte økter, sum timer, og sum per
 periode. Er årstimetall lagt inn på faget (§4.8), vises differansen.
 
 Det svarer på om en periode er overbooket mens det ennå er tid til å endre den.
+
+Bare økter som ligger innenfor skoleårets spenn teller. En økt datert før
+skolestart eller etter skoleslutt vises fortsatt i kalenderen, men tonet ned
+som «utenfor» — og da kan den ikke samtidig telle mot årstimetallet.
+
+**Samtaledager teller med, i faktiske timer.** Regnskapet svarer på om det er
+tid nok til å komme gjennom det som skal gjennom, og en dag med muntlige
+samtaler er en dag uten undervisning. Holdes de utenfor, planlegger man for
+mye.
+
+Timene regnes fra `fra` til `til`, **minus lunsjen**. 08:30–15:30 med 30
+minutters lunsj er 6,5 timer. Går vurderingen over flere dager, summeres hver
+dag for seg. Lunsjen trekkes bare fra når dagen faktisk er lang nok til å nå
+den — ellers regnes kapasiteten for lavt.
+
+Vist som egen linje, ikke blandet inn i samme sum:
+
+```
+SAM3045   123 av 140 timer, hvorav 6,5 til vurdering
+```
+
+Økter og samtaledager regnes dermed ulikt — økter i faste blokker,
+samtaledager i faktisk tid. Det er greit så lenge de vises hver for seg.
+Summen skjuler ikke at de to er ulike størrelser.
 
 ### 4.3 Elever — alle elever, klasser og fag
 
@@ -779,6 +861,187 @@ skjermbildet, laget som en print-stylesheet slik at Cmd+P gir riktig resultat.
 Ett fag per side. Fagnavn og skoleår i topptekst. Perioder som overskrifter med
 spenn og timetall. Øktene i en tabell under: dato, ukedag, varighet, tema.
 Lesbar i svart-hvitt.
+
+### 4.10 Samtaletrekkeren
+
+Trekker tema og rekkefølge for muntlige samtaler og legger dem ut som en
+timeplan med klokkeslett per elev.
+
+**Formen er én sammenhengende kolonne til venstre og resultatet til høyre.**
+Ingen faner, ingen steg, ingen veiviser i oppsettet. Alt som styrer trekningen
+er synlig samtidig, og resultatet oppdateres ved siden av.
+
+#### Oppsettskolonnen, i rekkefølge
+
+1. **Modus** — Fagsamtale eller Mentorsamtale, som to knapper.
+2. **Grunninnstillinger** — antall elever, minutter per samtale, pause mellom
+   samtaler. Antallet fylles ut fra elevlista, men kan overstyres.
+3. **Elever** — hentes fra faget (`elev_fag`) i fagsamtale, fra mentorelevene
+   (§3.2) i mentorsamtale. Kan overstyres ved å lime inn en liste, for grupper
+   som ikke er i appen.
+4. **Oppgavenummer og tema** — bare i fagsamtale. Skjules helt i mentormodus;
+   en mentorsamtale har ikke oppgavenummer. Ingen øvre grense på antall temaer.
+5. **Samtaledager** — ett kort per dag med dato, start, slutt og lunsj. Hvert
+   kort viser sin egen kapasitet fortløpende: «Maks 15 elever».
+6. **Generer**, og under den **Trekk på nytt** med de to låsene.
+
+#### Kapasitet
+
+Tilgjengelig tid er `til − fra`, minus lunsjen **når dagen er lang nok til å nå
+den**. Antallet som får plass er
+
+```
+floor((tilgjengelige minutter + pause) / (samtaletid + pause))
+```
+
+Pausen legges til i telleren fordi det ikke er pause etter siste samtale.
+08:30–15:00 uten lunsj, 20 minutters samtaler og 5 minutters pause gir 15
+elever.
+
+Er samlet kapasitet lavere enn antall elever, står det over resultatet:
+
+> Kapasiteten (14 elever) er lavere enn antall elever (24). Legg til flere
+> dager, forleng øktene, eller reduser pausetiden.
+
+Varselet oppdateres mens du endrer innstillingene, ikke bare ved generering.
+
+#### Lunsj
+
+**Foreslås på, 11:45 i 30 minutter.** Den vanlige dagen har lunsj, og
+standardverdien er der for at den ikke skal måtte fylles inn hver gang. Ett
+klikk slår den av.
+
+**Lunsjen reserveres i trekningen, ikke bare i regnskapet.** Ingen elev
+tildeles et tidspunkt i pausen. Den legges inn ved første samtalegrense på
+eller etter det oppgitte tidspunktet — en samtale deles aldri i to — så en
+pause satt til 11:45 kan i praksis begynne 11:55. Timeplanen viser det
+faktiske tidspunktet.
+
+Rekker dagen aldri fram til lunsjtidspunktet, legges det **ingen** lunsj inn.
+En pause etter siste samtale er ikke en pause.
+
+#### Trekningen
+
+Temaene fordeles jevnt og tilfeldig, elevene fordeles på dagene etter
+kapasitet, og rekkefølgen innen hver dag trekkes. **Plassnummeret løper
+sammenhengende over alle dagene** — dag 2 fortsetter der dag 1 sluttet.
+
+#### De to låsene
+
+**Tema** og **Rekkefølge**, hver med av/på. Hva som skjer ved «Trekk på nytt»
+står under knappene:
+
+| Låst | Tekst |
+|---|---|
+| Ingen | *(ingenting)* |
+| Tema | Temaer holdes — kun rekkefølge trekkes. |
+| Rekkefølge | Rekkefølge holdes — kun tema trekkes. |
+| Begge | Begge er låst — ingenting endres. |
+
+#### Låsing av enkeltelever
+
+Hver rad i timeplanen har sin egen lås. En låst elev **beholder både plassen og
+temaet sitt** ved ny trekning, mens de andre trekkes om rundt hen. Låste rader
+kan ikke dras.
+
+Samspillet med de to hovedlåsene: elevlåsene virker innenfor det som faktisk
+trekkes om. Er Tema låst globalt, endrer en elevlås ingenting for temaet — det
+ligger fast for alle uansett.
+
+**Generer nullstiller elevlåsene, men ikke de to hovedlåsene.** En ny trekning
+er en ny start for enkeltvalgene, mens hovedlåsene er en arbeidsmåte man har
+valgt og som skal stå til man selv slår den av.
+
+#### Manuell justering
+
+Rader kan dras om **innenfor en dag**. Å flytte en elev til en annen dag gjøres
+ikke ved å dra — dagene har hver sin kapasitet, og et slikt drag ville stille
+et spørsmål om hvem som skal ut.
+
+**Draget skal si fra om hvorfor det ikke gikk.** Slipper man en rad på en annen
+dag, står det at flytting mellom dager ikke gjøres her, og hvorfor. Et drag som
+stille ruller tilbake ser ut som at musa glapp.
+
+#### Når en elev ikke møter
+
+Det vanligste som skjer på en samtaledag. Eleven som står 10:20 dukker ikke
+opp, og de andre står på sine klokkeslett — ingenting kan flyttes.
+
+Samtalen **markeres som ikke gjennomført**, og ingenting annet rører seg.
+Raden blir stående med sitt klokkeslett, tonet ned og merket «møtte ikke». Tida
+blir ubrukt, og det er riktig: de andre skal møte når de har fått beskjed om.
+
+Samtalen kan **settes opp på nytt** senere — samme dag eller en annen. Da
+lages en ny rad; den gamle blir stående som det den er, en avtale som ikke ble
+noe av. Det er derfor nøkkelen i §3.6 også rommer klokkeslettet.
+
+En samtale som ikke ble gjennomført **teller ikke i historikken** under. Eleven
+var ikke der, og plasseringen sier da ingenting om når hen faktisk måtte møte —
+samme prinsipp som `teller_ikke` i §5.1.
+
+#### Historikk
+
+Appen husker hvem som hadde hvilken plass sist, og hvilket tema. Det er dette
+den kan som et løsrevet verktøy ikke kan. **Gjelder begge modus** — en elev som
+alltid havner først, havner først i alle sammenhenger.
+
+**Plassering regnes i tredjedeler av dagens egen rekke** — tidlig, midt, sent.
+Et fast antall ville betydd ulike ting på en dag med seks og en med tolv. Dager
+med under tre elever markeres ikke; der er det ingenting å sammenlikne.
+
+**Plasseringen gjelder innen dagen, ikke i hele rekka.** En elev som er først
+på dag tre møtte like tidlig som en som var først på dag én. Å alltid havne på
+siste dag er noe annet, og hører eventuelt hjemme senere.
+
+Merknaden står ved navnet i resultatet, og bare når det er noe å si:
+
+```
+09:30  Tony Soprano        Oppgave 4     tidlig 2× på rad
+09:55  Carmela Soprano     Oppgave 1
+10:20  Adriana La Cerva    Oppgave 7     sent sist
+```
+
+Ingen legende å lære, ingen farger å tolke. De fleste har ingenting stående, og
+det er nettopp derfor de som har det er verdt å se på. Den samme oversikten
+ligger i oppsettet, over Generer, så den er synlig mens du trekker og ikke bare
+etterpå.
+
+**Vektingen er av som standard.** Ren tilfeldighet er normaltilstanden. Slås
+den på, skyves elever med nylig «tidlig» mot senere plasser og omvendt — som en
+tyngde i trekningen, ikke som en fast rotasjon. Tilfeldigheten skal fortsatt
+dominere, ellers blir køen forutsigbar på en annen måte.
+
+**Merknadene vises uansett om vektingen er på.** De er opplysning om hva som
+har skjedd, ikke en konsekvens av en innstilling.
+
+#### De tre visningene
+
+**Fordeling** — ett kort per elev i tidsrekkefølge på tvers av alle dagene, med
+plassnummer, navn, oppgavenummer og temanavn. Over kortene en tegnforklaring
+over temaene. Skjules i mentormodus.
+
+**Timeplan** — én bolk per dag med ukedag, dato, `fra–til` og antall elever.
+Under: én rad per samtale med plassnummer, oppgave, navn, temanavn,
+klokkeslett og lås. Lunsjen står som egen rad: «Lunsj (30 min) 11:55–12:25».
+
+**Alfabetisk** — tabell sortert på navn, med oppgave, klokkeslett og dag.
+Oppgavekolonnene skjules i mentormodus.
+
+#### Eksport
+
+**Til Teams** kopieres en tabell per dag som formatert HTML, med ukedag og dato
+som overskrift. Kolonnene er `#`, `Navn`, `Oppgave`, `Tid` i fagsamtale og `#`,
+`Navn`, `Tid` i mentorsamtale. Lunsjen står som egen rad.
+
+**Som markdown** samme innhold som ren tekst, med tabell per dag. **Markdown
+følger modus på samme måte som Teams-eksporten** — oppgavekolonnen utelates i
+mentorsamtale.
+
+**Utskrift** velger mellom alle tre visningene, én av dem, eller den
+alfabetiske lista alene.
+
+Ingen av eksportene tar med skåringer eller vurderingsresultater — samme
+feltgrense som §8.1.
 
 ---
 
