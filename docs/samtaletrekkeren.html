@@ -1,0 +1,2179 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BPG Samtaletrekkeren</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    /* BPG-fargepalett — fra bergenprivategymnas.no
+       Primær:   #1C5738  (dyp skoggrønn)
+       Lys:      #D5EDBA  (lys sagegreen)
+       Bakgrunn: #EBEBEA  (lys grånøytral) */
+    --bg: #EBEBEA;
+    --surface: #FFFFFF;
+    --surface2: #E2EEE6;
+    --border: #C2D8C8;
+    --border-strong: #96B89E;
+    --text: #142E1E;
+    --text-muted: #375240;
+    --text-hint: #789E80;
+    --accent: #1C5738;
+    --accent-light: #D5EDBA;
+    --accent-text: #134027;
+    --danger: #7A2B1C;
+    --danger-light: #FAEEEC;
+    --success: #1C5738;
+    --success-light: #D5EDBA;
+    /* Tema-farger inspirert av Metis+BPG logo-paletten */
+    --t1: #C8EAD8; --t1t: #0D4025;   /* BPG skoggrønn */
+    --t2: #B8E0E8; --t2t: #0A303C;   /* teal (Metis logo) */
+    --t3: #FAE0C0; --t3t: #5C2E00;   /* oransje (Metis logo) */
+    --t4: #FAD0C8; --t4t: #5C1A12;   /* korall/rød (Metis logo) */
+    --t5: #D8E8F8; --t5t: #103060;   /* blå */
+    --t6: #F8EAC0; --t6t: #503A00;   /* gylden/amber */
+    --t7: #E8D0E8; --t7t: #401840;   /* lilla/aubergine */
+    --t8: #D8F0E0; --t8t: #0A3A1E;   /* mint-grønn */
+    --radius: 8px;
+    --radius-lg: 12px;
+    --shadow: 0 1px 3px rgba(20,46,30,0.08), 0 1px 2px rgba(20,46,30,0.04);
+  }
+
+  body {
+    font-family: 'DM Sans', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 15px;
+    line-height: 1.5;
+  }
+
+  /* ---- LAYOUT ---- */
+  .app-header {
+    background: var(--accent);
+    border-bottom: none;
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 56px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .app-header h1 {
+    font-size: 15px;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    color: #FFFFFF;
+  }
+  .app-header .sub {
+    font-size: 13px;
+    color: rgba(255,255,255,0.65);
+    margin-left: 12px;
+    font-weight: 300;
+  }
+  .header-left { display: flex; align-items: baseline; gap: 0; }
+  
+  .layout {
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    min-height: calc(100vh - 56px);
+  }
+
+  /* ---- SIDEBAR ---- */
+  .sidebar-logo {
+    display: block;
+    width: 100%;
+    max-width: 320px;
+    margin: 0 auto 1.5rem;
+    padding: 0 0.5rem;
+  }
+  .sidebar {
+    background: #F8FAF8;
+    border-right: 1px solid var(--border);
+    padding: 1.5rem 1.5rem 0;
+    overflow-y: auto;
+    max-height: calc(100vh - 56px);
+    position: sticky;
+    top: 56px;
+    font-size: 16px;
+    display: flex;
+    flex-direction: column;
+  }
+  .sidebar-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding-bottom: 1rem;
+  }
+  .generer-section {
+    position: sticky;
+    bottom: 0;
+    background: #F8FAF8;
+    border-top: 1px solid var(--border);
+    padding: 1rem 0 1.25rem;
+    margin: 0 -0;
+    z-index: 10;
+  }
+
+  .section {
+    margin-bottom: 2rem;
+  }
+  .section-title {
+    font-size: 12px;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* ---- FORM ELEMENTS ---- */
+  label {
+    display: block;
+    font-size: 14px;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+  }
+  input[type="text"],
+  input[type="number"],
+  input[type="date"],
+  input[type="time"],
+  select {
+    width: 100%;
+    height: 36px;
+    padding: 0 10px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 15px;
+    outline: none;
+    transition: border-color 0.15s;
+    -webkit-appearance: none;
+  }
+  input:focus, select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-light);
+  }
+  input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .form-row.triple {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+  .form-field {
+    margin-bottom: 10px;
+  }
+
+  /* ---- BUTTONS ---- */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 14px;
+    height: 34px;
+    border-radius: var(--radius);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 0.12s;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+    width: 100%;
+    height: 42px;
+    font-size: 14px;
+    justify-content: center;
+    font-weight: 500;
+  }
+  .btn-primary:hover { background: #134027; }
+  .btn-ghost {
+    background: transparent;
+    color: var(--text-muted);
+    border-color: var(--border-strong);
+  }
+  .btn-ghost:hover { background: var(--surface2); }
+  .btn-danger-ghost {
+    background: transparent;
+    color: var(--danger);
+    border-color: transparent;
+    padding: 0 8px;
+    height: 28px;
+    font-size: 12px;
+  }
+  .btn-danger-ghost:hover { background: var(--danger-light); }
+  .btn-sm {
+    height: 28px;
+    font-size: 12px;
+    padding: 0 10px;
+  }
+  .btn-add {
+    background: var(--accent-light);
+    color: var(--accent-text);
+    border-color: transparent;
+    font-size: 12px;
+    height: 30px;
+    padding: 0 10px;
+  }
+  .btn-add:hover { background: #C8E4A8; }
+
+  .btn-group {
+    display: flex;
+    gap: 8px;
+    margin-top: 6px;
+  }
+
+  /* ---- ØKTER (sessions) ---- */
+  .okt-kort {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 12px;
+    margin-bottom: 10px;
+  }
+  .okt-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  .okt-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+  }
+  .okt-kapasitet {
+    font-size: 11px;
+    color: var(--text-hint);
+    font-family: 'DM Mono', monospace;
+    margin-top: 2px;
+  }
+  .modus-bryter {
+    display: flex;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 3px;
+    margin-bottom: 1.5rem;
+    gap: 3px;
+  }
+  .modus-btn {
+    flex: 1;
+    padding: 7px 10px;
+    border: none;
+    border-radius: calc(var(--radius-lg) - 2px);
+    background: transparent;
+    color: var(--text-muted);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .modus-btn.active {
+    background: var(--accent);
+    color: #fff;
+    box-shadow: 0 1px 3px rgba(20,46,30,0.2);
+  }
+  .modus-btn:not(.active):hover {
+    background: var(--border);
+    color: var(--text);
+  }
+
+  .mentor-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+  }
+
+  .lunsj-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border);
+  }
+  .lunsj-row label {
+    margin: 0;
+    font-size: 12px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .lunsj-fields {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 6px;
+  }
+
+  /* ---- TEMAER ---- */
+  .tema-list { display: flex; flex-direction: column; gap: 6px; }
+  .tema-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .tema-nr {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 500;
+    flex-shrink: 0;
+  }
+  .tema-item input[type="text"] {
+    flex: 1;
+    height: 32px;
+    font-size: 13px;
+  }
+
+  /* ---- MAIN AREA ---- */
+  .main {
+    padding: 2rem;
+    overflow-y: auto;
+  }
+
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+    text-align: center;
+    color: var(--text-hint);
+  }
+  .empty-state .icon {
+    font-size: 48px;
+    margin-bottom: 1rem;
+    opacity: 0.4;
+  }
+  .empty-state p { font-size: 14px; line-height: 1.6; max-width: 320px; }
+
+  /* ---- TABS ---- */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0;
+  }
+  .tab {
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    font-family: inherit;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: all 0.12s;
+  }
+  .tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+  .tab:hover:not(.active) { color: var(--text); }
+
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* ---- TEMA-FORDELING GRID ---- */
+  .fordeling-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 8px;
+  }
+  .elev-kort {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    box-shadow: var(--shadow);
+  }
+  .elev-nr {
+    font-size: 22px;
+    font-weight: 300;
+    font-family: 'DM Mono', monospace;
+    color: var(--text);
+    line-height: 1;
+  }
+  .tema-pill {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 500;
+    padding: 2px 7px;
+    border-radius: 20px;
+    margin-top: 2px;
+  }
+  .tema-navn {
+    font-size: 11px;
+    color: var(--text-muted);
+    line-height: 1.3;
+  }
+
+  /* ---- TIMEPLAN ---- */
+  .dag-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+  }
+  .dag-block {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+  .dag-header {
+    padding: 14px 16px 12px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+  }
+  .dag-dato {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text);
+  }
+  .dag-meta {
+    font-size: 12px;
+    color: var(--text-hint);
+    margin-top: 2px;
+    font-family: 'DM Mono', monospace;
+  }
+  .slot-list { padding: 0; }
+  .slot {
+    display: grid;
+    grid-template-columns: 18px 28px auto 1fr auto 24px;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 12px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    transition: background 0.1s;
+  }
+  .student-lock-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 13px;
+    padding: 0;
+    line-height: 1;
+    opacity: 0.25;
+    transition: opacity 0.15s;
+    justify-self: end;
+  }
+  .slot:hover .student-lock-btn { opacity: 0.7; }
+  .student-lock-btn.lased { opacity: 1; }
+  .slot-lased {
+    background: #F0F8F2 !important;
+  }
+  .slot-lased .slot-nr { color: var(--accent); }
+
+  .drag-handle {
+    color: var(--border-strong);
+    font-size: 12px;
+    cursor: grab;
+    user-select: none;
+    line-height: 1;
+  }
+  .slot[draggable="true"]:hover .drag-handle { color: var(--accent); }
+  .slot.dragging { opacity: 0.35; background: var(--surface2); }
+  .slot.drag-over {
+    background: var(--accent-light);
+    border-top: 2px solid var(--accent);
+  }
+  .slot:last-child { border-bottom: none; }
+  .slot.lunsj-slot {
+    background: #F2EDDC;
+    color: var(--text-muted);
+    font-style: italic;
+    font-size: 12px;
+    grid-template-columns: 18px 1fr auto;
+    cursor: default;
+  }
+  .slot-nr {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+  }
+  .slot-tid {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--text-hint);
+    text-align: right;
+  }
+  .slot-tema-pill {
+    font-size: 10px;
+    font-weight: 500;
+    padding: 2px 7px;
+    border-radius: 20px;
+    white-space: nowrap;
+  }
+  .slot-navn {
+    font-size: 12px;
+    color: var(--text-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* ---- LEGEND ---- */
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 1.5rem;
+  }
+  .leg-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+  .leg-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* ---- SUMMARY BAR ---- */
+  .summary-bar {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+  }
+  .summary-pill {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 8px 14px;
+    font-size: 13px;
+    color: var(--text-muted);
+    box-shadow: var(--shadow);
+  }
+  .summary-pill strong {
+    color: var(--text);
+    font-weight: 500;
+  }
+
+  /* ---- WARN ---- */
+  .warn-box {
+    background: var(--danger-light);
+    border: 1px solid #DDB0A0;
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    font-size: 13px;
+    color: var(--danger);
+    margin-bottom: 1rem;
+  }
+
+  /* ---- PRINT ---- */
+  .print-btn {
+    background: transparent;
+    color: var(--text-muted);
+    border: 1px solid var(--border-strong);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 6px 14px;
+    border-radius: var(--radius);
+    cursor: pointer;
+  }
+  .print-btn:hover { background: var(--surface2); }
+
+  .results-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+
+  /* ---- KLASSELISTE ---- */
+  .klasseliste-drop {
+    border: 1.5px dashed var(--border-strong);
+    border-radius: var(--radius);
+    padding: 12px;
+    text-align: center;
+    font-size: 12px;
+    color: var(--text-hint);
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-bottom: 8px;
+    background: var(--surface);
+  }
+  .klasseliste-drop:hover, .klasseliste-drop.drag-over {
+    border-color: var(--accent);
+    background: var(--accent-light);
+    color: var(--accent-text);
+  }
+  .klasseliste-drop input[type="file"] { display: none; }
+  .klasse-textarea {
+    width: 100%;
+    height: 100px;
+    padding: 8px 10px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius);
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--text);
+    background: var(--surface);
+    resize: vertical;
+    outline: none;
+    line-height: 1.6;
+  }
+  .klasse-textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-light); }
+  .klasse-status {
+    font-size: 11px;
+    color: var(--accent-text);
+    background: var(--accent-light);
+    border-radius: var(--radius);
+    padding: 4px 8px;
+    margin-top: 6px;
+    display: none;
+  }
+  .klasse-status.active { display: block; }
+  .elev-kort.med-navn { min-height: 90px; }
+  .elev-navn-stor {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text);
+    line-height: 1.3;
+    margin-top: 2px;
+    word-break: break-word;
+  }
+  .slot-navn-elev {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text);
+  }
+  .slot-navn-tema {
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  /* ---- SHUFFLE LOCKS ---- */
+  .shuffle-section { margin-top: 0; }
+  .lock-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 6px;
+  }
+  .lock-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 6px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border-strong);
+    background: var(--surface);
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+  }
+  .lock-btn:hover { background: var(--surface2); }
+  .lock-btn.locked {
+    background: var(--accent-light);
+    border-color: var(--accent);
+  }
+  .lock-icon { font-size: 15px; line-height: 1; }
+  .lock-label {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-muted);
+  }
+  .lock-btn.locked .lock-label { color: var(--accent-text); }
+  .lock-hint {
+    font-size: 11px;
+    color: var(--text-hint);
+    margin-top: 5px;
+    text-align: center;
+    min-height: 14px;
+  }
+
+  /* ---- BEKREFTELSESMODAL ---- */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(20,46,30,0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 0;
+    animation: fadeIn 0.15s forwards;
+  }
+  @keyframes fadeIn { to { opacity: 1; } }
+  .modal-box {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    max-width: 360px;
+    width: 90%;
+    box-shadow: 0 8px 32px rgba(20,46,30,0.18);
+  }
+  .modal-title {
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 8px;
+  }
+  .modal-body {
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.6;
+    margin-bottom: 1.25rem;
+  }
+  .print-choice-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 12px 8px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border-strong);
+    background: var(--surface);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-muted);
+    transition: all 0.15s;
+  }
+  .print-choice-btn:hover {
+    background: var(--accent-light);
+    border-color: var(--accent);
+    color: var(--accent-text);
+  }
+  .print-choice-icon {
+    font-size: 20px;
+    line-height: 1;
+  }
+  .modal-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  /* ---- PDF / EKSPORT ---- */
+  .export-bar {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  /* ---- ALFABETISK LISTE ---- */
+  .alfa-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+  .alfa-table {
+    table-layout: fixed;
+  }
+  .alfa-table th {
+    text-align: left;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-hint);
+    padding: 8px 14px;
+    border-bottom: 2px solid var(--border);
+    vertical-align: bottom;
+  }
+  .alfa-table td {
+    padding: 9px 14px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+    vertical-align: middle;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .alfa-table tr:last-child td { border-bottom: none; }
+  .alfa-table tr:nth-child(even) td { background: var(--surface2); }
+  .alfa-table .alfa-navn {
+    font-weight: 500;
+    width: 20%;
+  }
+  .alfa-table th:nth-child(1),
+  .alfa-table td:nth-child(1) { width: 22%; }   /* Navn */
+  .alfa-table th:nth-child(2),
+  .alfa-table td:nth-child(2) { width: 16%; }   /* Oppgave */
+  .alfa-table th:nth-child(3),
+  .alfa-table td:nth-child(3) { width: 20%; }   /* Tema */
+  .alfa-table th:nth-child(4),
+  .alfa-table td:nth-child(4) { width: 18%; }   /* Dato (hvis synlig) */
+  .alfa-table th:nth-child(5),
+  .alfa-table td:nth-child(5) { width: 16%; }   /* Tid */
+  .alfa-table th:nth-child(6),
+  .alfa-table td:nth-child(6) { width: 8%; text-align: right; } /* Fagsamtalenr */
+  .alfa-table .alfa-tid {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--text-hint);
+  }
+  .alfa-table .alfa-dag {
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+  /* Pill i tabell skal ikke påvirke kolonnehøyde */
+  .alfa-table .slot-tema-pill {
+    display: inline-block;
+    vertical-align: middle;
+  }
+
+  /* Mentormodus — skjuler oppgave-piller og tema-navn */
+  body.mentor-modus .tema-pill,
+  body.mentor-modus .slot-tema-pill { display: none !important; }
+  body.mentor-modus .tema-navn { display: none !important; }
+  body.mentor-modus .slot-navn-tema { display: none !important; }
+  body.mentor-modus #legend { display: none !important; }
+  /* Skjul tema-kolonner i alfabetisk tabell */
+  body.mentor-modus .alfa-table th:nth-child(2),
+  body.mentor-modus .alfa-table td:nth-child(2),
+  body.mentor-modus .alfa-table th:nth-child(3),
+  body.mentor-modus .alfa-table td:nth-child(3) { display: none !important; }
+
+  .app-footer {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 1rem;
+    font-size: 12px;
+    color: var(--text-hint);
+    border-top: 1px solid var(--border);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .app-footer a {
+    color: var(--text-hint);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  .app-footer a:hover { color: var(--accent); }
+
+  /* Print-logo: skjult i normal visning, synlig på alle sider ved utskrift */
+  #print-logo {
+    display: none;
+  }
+
+  @media print {
+    * {
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+    #print-logo {
+      display: block;
+      position: fixed;
+      top: 0;
+      right: 0;
+      z-index: 9999;
+    }
+    #print-logo img {
+      height: 28px;
+      width: auto;
+    }
+    .sidebar, .app-header, .print-btn, .tabs, .btn-group,
+    .export-bar, .summary-bar, .legend, .results-header,
+    .modal-overlay, .drag-handle { display: none !important; }
+    .layout { display: block; }
+    .main { padding: 0.5rem; }
+    .view { display: block !important; }
+    .dag-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .dag-block { break-inside: avoid; page-break-inside: avoid; }
+    .dag-header {
+      background: #E2EEE6 !important;
+      -webkit-print-color-adjust: exact !important;
+    }
+    .fordeling-grid { grid-template-columns: repeat(4, 1fr); }
+    .elev-kort { break-inside: avoid; }
+    body { font-size: 13px; background: white; }
+
+    /* Rettes: grid uten drag-handle-kolonne i print */
+    .slot {
+      grid-template-columns: 28px auto 1fr auto !important;
+      padding: 5px 10px;
+    }
+    .slot-lased { background: transparent !important; }
+    .slot.lunsj-slot {
+      grid-template-columns: 1fr auto !important;
+      background: #F2EDDC !important;
+    }
+    .slot-tema-pill, .tema-pill {
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+    .slot:nth-child(even) { background: #F4F8F5 !important; }
+
+    @page {
+      margin: 1.5cm;
+      size: A4;
+    }
+    body.print-berre-liste #view-fordeling { display: none !important; }
+    body.print-berre-liste #view-alfabetisk { display: none !important; }
+    body.print-berre-fordeling #view-timeplan { display: none !important; }
+    body.print-berre-fordeling #view-alfabetisk { display: none !important; }
+    body.print-berre-alfa #view-fordeling { display: none !important; }
+    body.print-berre-alfa #view-timeplan { display: none !important; }
+
+    /* Sideskift mellom visninger ved "Begge" */
+    #view-fordeling { page-break-after: always; break-after: page; }
+    #view-timeplan { page-break-after: always; break-after: page; }
+
+    /* Overskrifter per seksjon */
+    #view-fordeling::before {
+      content: "1  Kort";
+      display: block;
+      font-size: 18px;
+      font-weight: 500;
+      color: #142E1E;
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid #C2D8C8;
+      font-family: 'DM Sans', sans-serif;
+    }
+    #view-timeplan::before {
+      content: "2  Tidsplan";
+      display: block;
+      font-size: 18px;
+      font-weight: 500;
+      color: #142E1E;
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid #C2D8C8;
+      font-family: 'DM Sans', sans-serif;
+    }
+    #view-alfabetisk::before {
+      content: "3  Alfabetisk rekkefølge";
+      display: block;
+      font-size: 18px;
+      font-weight: 500;
+      color: #142E1E;
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid #C2D8C8;
+      font-family: 'DM Sans', sans-serif;
+    }
+
+    /* Skjul overskrift når kun én seksjon skrives ut */
+    body.print-berre-fordeling #view-fordeling::before,
+    body.print-berre-liste #view-timeplan::before,
+    body.print-berre-alfa #view-alfabetisk::before { content: none; }
+
+    /* Hver seksjon på sin egen side ved "Alle" */
+    #view-fordeling {
+      page-break-after: always;
+      break-after: page;
+    }
+    #view-timeplan {
+      page-break-after: always;
+      break-after: page;
+    }
+  }
+
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; }
+    .sidebar { position: static; max-height: none; }
+    .dag-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="header-left">
+    <h1>BPG Samtaletrekkeren</h1>
+  </div>
+</header>
+
+<div class="layout">
+
+<!-- ===== SIDEBAR ===== -->
+<aside class="sidebar">
+
+
+  <!-- BPG logo -->
+  <img src="data:image/webp;base64,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ZWF0ZWQ+CiAgICAgPEF0dHJpYjpEYXRhPnsmcXVvdDtkb2MmcXVvdDs6JnF1b3Q7REFIQzRIbXJZVkUmcXVvdDssJnF1b3Q7dXNlciZxdW90OzomcXVvdDtVQUY2T1Q5NXh3byZxdW90OywmcXVvdDticmFuZCZxdW90OzomcXVvdDtNZXRpcyBVdGRhbm5pbmcmcXVvdDt9PC9BdHRyaWI6RGF0YT4KICAgICA8QXR0cmliOkV4dElkPjJmZTFkMDQxLTZlYWEtNDc1OS04MGY2LTY2YzAxMjllMTdhNTwvQXR0cmliOkV4dElkPgogICAgIDxBdHRyaWI6RmJJZD41MjUyNjU5MTQxNzk1ODA8L0F0dHJpYjpGYklkPgogICAgIDxBdHRyaWI6VG91Y2hUeXBlPjI8L0F0dHJpYjpUb3VjaFR5cGU+CiAgICA8L3JkZjpsaT4KICAgPC9yZGY6U2VxPgogIDwvQXR0cmliOkFkcz4KIDwvcmRmOkRlc2NyaXB0aW9uPgoKIDxyZGY6RGVzY3JpcHRpb24gcmRmOmFib3V0PScnCiAgeG1sbnM6ZGM9J2h0dHA6Ly9wdXJsLm9yZy9kYy9lbGVtZW50cy8xLjEvJz4KICA8ZGM6dGl0bGU+CiAgIDxyZGY6QWx0PgogICAgPHJkZjpsaSB4bWw6bGFuZz0neC1kZWZhdWx0Jz5EZXNpZ24gdXRlbiBuYXZuIC0gMTwvcmRmOmxpPgogICA8L3JkZjpBbHQ+CiAgPC9kYzp0aXRsZT4KIDwvcmRmOkRlc2NyaXB0aW9uPgoKIDxyZGY6RGVzY3JpcHRpb24gcmRmOmFib3V0PScnCiAgeG1sbnM6cGRmPSdodHRwOi8vbnMuYWRvYmUuY29tL3BkZi8xLjMvJz4KICA8cGRmOkF1dGhvcj5DaHJpc3RpYW4gRnVydTwvcGRmOkF1dGhvcj4KIDwvcmRmOkRlc2NyaXB0aW9uPgoKIDxyZGY6RGVzY3JpcHRpb24gcmRmOmFib3V0PScnCiAgeG1sbnM6eG1wPSdodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvJz4KICA8eG1wOkNyZWF0b3JUb29sPkNhbnZhIGRvYz1EQUhDNEhtcllWRSB1c2VyPVVBRjZPVDk1eHdvIGJyYW5kPU1ldGlzIFV0ZGFubmluZzwveG1wOkNyZWF0b3JUb29sPgogPC9yZGY6RGVzY3JpcHRpb24+CjwvcmRmOlJERj4KPC94OnhtcG1ldGE+Cjw/eHBhY2tldCBlbmQ9J3InPz4=" alt="Bergen Private Gymnas" class="sidebar-logo">
+
+  <!-- Modus-bryter -->
+  <div class="modus-bryter">
+    <button class="modus-btn active" id="btn-fagsamtale" onclick="setModus('fagsamtale')">Fagsamtale</button>
+    <button class="modus-btn" id="btn-mentor" onclick="setModus('mentor')">Mentorsamtale</button>
+  </div>
+
+  <!-- Elever og tid -->
+  <div class="section">
+    <div class="section-title">Grunninnstillinger</div>
+    <div class="form-row">
+      <div class="form-field">
+        <label>Antall elever</label>
+        <input type="number" id="antall" min="1" max="60" value="24">
+      </div>
+      <div class="form-field">
+        <label>Minutter per samtale</label>
+        <input type="number" id="samtaletid" min="5" max="60" value="20" oninput="oppdaterEtterInnstillingsendring()">
+      </div>
+    </div>
+    <p style="font-size:11px;color:var(--text-hint);margin-top:-4px;margin-bottom:10px;">Antall fylles ut automatisk fra klasseliste.</p>
+    <div class="form-row">
+      <div class="form-field">
+        <label>Pause mellom samtaler (min)</label>
+        <input type="number" id="pause" min="0" max="30" value="5" oninput="oppdaterEtterInnstillingsendring()">
+      </div>
+    </div>
+  </div>
+
+  <!-- Klasseliste -->
+  <div class="section">
+    <div class="section-title">Klasseliste (valgfritt)</div>
+    <div id="klasse-innhold">
+    <div class="klasseliste-drop" id="csv-drop"
+         onclick="document.getElementById('csv-input').click()"
+         ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="dropFil(event)">
+      <input type="file" id="csv-input" accept=".csv,.txt" onchange="lastOppFil(this.files[0])">
+      Last opp .csv eller .txt
+    </div>
+    <label style="margin-bottom:4px;">Eller lim inn navn (ett per linje)</label>
+    <textarea class="klasse-textarea" id="klasse-textarea"
+      placeholder="Ola Nordmann&#10;Kari Hansen&#10;Per Olsen&#10;..."
+      oninput="oppdaterKlasseliste()"></textarea>
+    <div class="klasse-status" id="klasse-status"></div>
+    <div style="margin-top:6px;">
+      <button class="btn btn-ghost btn-sm" onclick="nullstillKlasseliste()">Fjern klasseliste</button>
+    </div>
+  </div>
+
+
+  <!-- Temaer -->
+  <div class="section" id="tema-section">
+    <div class="section-title">Oppgavenummer og tema</div>
+    <div class="tema-list" id="tema-list"></div>
+    <div class="btn-group" style="margin-top:10px;">
+      <button class="btn btn-add" onclick="leggTilTema()">+ Legg til tema</button>
+      <button class="btn btn-ghost btn-sm" onclick="nullstillTemaer()">Nullstill</button>
+    </div>
+  </div>
+
+  <!-- Øktdager -->
+  <div class="section">
+    <div class="section-title">Vurderingsdager</div>
+    <div id="okt-liste"></div>
+    <button class="btn btn-add" onclick="leggTilOkt()" style="margin-top:4px;">+ Legg til dag</button>
+  </div>
+
+</div><!-- /sidebar-scroll -->
+
+  <!-- Generer -->
+  <div class="section generer-section">
+    <button class="btn btn-primary" onclick="generer()">Generer timeplan</button>
+    <div class="shuffle-section">
+      <div class="section-title" style="margin-top:1rem;">Trekk på nytt</div>
+      <div class="lock-row">
+        <button class="lock-btn" id="lock-tema" onclick="toggleLock('tema')" title="Lås tema">
+          <span class="lock-icon">&#x1F513;</span>
+          <span class="lock-label">Tema</span>
+        </button>
+        <button class="lock-btn" id="lock-rekkefolge" onclick="toggleLock('rekkefolge')" title="Lås rekkefølge">
+          <span class="lock-icon">&#x1F513;</span>
+          <span class="lock-label">Rekkefølge</span>
+        </button>
+      </div>
+      <div class="lock-hint" id="lock-hint"></div>
+      <button class="btn btn-ghost" style="width:100%;justify-content:center;margin-top:4px;" onclick="trekkPaaNytt()">Trekk på nytt</button>
+    </div>
+  </div>
+
+</aside>
+
+<!-- ===== MAIN ===== -->
+<main class="main" id="main-area">
+  <div class="empty-state" id="empty-state">
+    <div class="icon">&#x25A1;</div>
+    <p>Fyll ut innstillingene til venstre og trykk <strong>Generer timeplan</strong> for å lage trekningsliste og samtaleplan.</p>
+  </div>
+
+  <div id="results" style="display:none;">
+    <div class="results-header">
+      <div class="tabs" style="margin:0;border:none;padding:0;">
+        <button class="tab active" onclick="visTab('fordeling',this)">Tema-fordeling</button>
+        <button class="tab" onclick="visTab('timeplan',this)">Timeplan</button>
+        <button class="tab" onclick="visTab('alfabetisk',this)">Alfabetisk</button>
+      </div>
+      <div class="export-bar">
+        <button class="print-btn" id="btn-teams" onclick="eksporterTeams()">Kopier til Teams</button>
+        <button class="print-btn" id="btn-markdown" onclick="eksporterMarkdown()">Kopier som Markdown</button>
+        <button class="print-btn" onclick="visPrintModal()">Skriv ut / PDF</button>
+      </div>
+    </div>
+
+    <div id="warn-container"></div>
+
+    <div class="summary-bar" id="summary-bar"></div>
+
+    <!-- Tema-fordeling -->
+    <div class="view active" id="view-fordeling">
+      <div class="legend" id="legend"></div>
+      <div class="fordeling-grid" id="fordeling-grid"></div>
+    </div>
+
+    <!-- Timeplan -->
+    <div class="view" id="view-timeplan">
+      <div class="dag-grid" id="dag-grid"></div>
+    </div>
+
+    <!-- Alfabetisk -->
+    <div class="view" id="view-alfabetisk">
+      <div id="alfa-grid"></div>
+    </div>
+  </div>
+</main>
+
+</div>
+
+<!-- Print-logo (kun synlig ved utskrift) -->
+<div id="print-logo">
+  <img src="data:image/webp;base64,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ZWF0ZWQ+CiAgICAgPEF0dHJpYjpEYXRhPnsmcXVvdDtkb2MmcXVvdDs6JnF1b3Q7REFIQzRIbXJZVkUmcXVvdDssJnF1b3Q7dXNlciZxdW90OzomcXVvdDtVQUY2T1Q5NXh3byZxdW90OywmcXVvdDticmFuZCZxdW90OzomcXVvdDtNZXRpcyBVdGRhbm5pbmcmcXVvdDt9PC9BdHRyaWI6RGF0YT4KICAgICA8QXR0cmliOkV4dElkPjJmZTFkMDQxLTZlYWEtNDc1OS04MGY2LTY2YzAxMjllMTdhNTwvQXR0cmliOkV4dElkPgogICAgIDxBdHRyaWI6RmJJZD41MjUyNjU5MTQxNzk1ODA8L0F0dHJpYjpGYklkPgogICAgIDxBdHRyaWI6VG91Y2hUeXBlPjI8L0F0dHJpYjpUb3VjaFR5cGU+CiAgICA8L3JkZjpsaT4KICAgPC9yZGY6U2VxPgogIDwvQXR0cmliOkFkcz4KIDwvcmRmOkRlc2NyaXB0aW9uPgoKIDxyZGY6RGVzY3JpcHRpb24gcmRmOmFib3V0PScnCiAgeG1sbnM6ZGM9J2h0dHA6Ly9wdXJsLm9yZy9kYy9lbGVtZW50cy8xLjEvJz4KICA8ZGM6dGl0bGU+CiAgIDxyZGY6QWx0PgogICAgPHJkZjpsaSB4bWw6bGFuZz0neC1kZWZhdWx0Jz5EZXNpZ24gdXRlbiBuYXZuIC0gMTwvcmRmOmxpPgogICA8L3JkZjpBbHQ+CiAgPC9kYzp0aXRsZT4KIDwvcmRmOkRlc2NyaXB0aW9uPgoKIDxyZGY6RGVzY3JpcHRpb24gcmRmOmFib3V0PScnCiAgeG1sbnM6cGRmPSdodHRwOi8vbnMuYWRvYmUuY29tL3BkZi8xLjMvJz4KICA8cGRmOkF1dGhvcj5DaHJpc3RpYW4gRnVydTwvcGRmOkF1dGhvcj4KIDwvcmRmOkRlc2NyaXB0aW9uPgoKIDxyZGY6RGVzY3JpcHRpb24gcmRmOmFib3V0PScnCiAgeG1sbnM6eG1wPSdodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvJz4KICA8eG1wOkNyZWF0b3JUb29sPkNhbnZhIGRvYz1EQUhDNEhtcllWRSB1c2VyPVVBRjZPVDk1eHdvIGJyYW5kPU1ldGlzIFV0ZGFubmluZzwveG1wOkNyZWF0b3JUb29sPgogPC9yZGY6RGVzY3JpcHRpb24+CjwvcmRmOlJERj4KPC94OnhtcG1ldGE+Cjw/eHBhY2tldCBlbmQ9J3InPz4=" alt="Bergen Private Gymnas">
+</div>
+
+<!-- Bekreftelsesmodal -->
+<div id="modal-overlay" class="modal-overlay" style="display:none;" onclick="lukkModal(event)">
+  <div class="modal-box">
+    <div class="modal-title" id="modal-title"></div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="lukkModal()">Avbryt</button>
+      <button class="btn btn-primary" id="modal-confirm">Fortsett</button>
+    </div>
+  </div>
+</div>
+
+<!-- Utskriftsmodal -->
+<div id="print-modal-overlay" class="modal-overlay" style="display:none;" onclick="lukkPrintModal(event)">
+  <div class="modal-box">
+    <div class="modal-title">Velg hva som skal skrives ut</div>
+    <div class="modal-body">Vil du ha tema-fordelingskortene, timeplanen, eller begge deler?</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:1rem;">
+      <button class="print-choice-btn" onclick="skrivUt('begge')">
+        <span class="print-choice-icon">&#x25A4;</span>
+        <span>Alle</span>
+      </button>
+      <button class="print-choice-btn" onclick="skrivUt('fordeling')">
+        <span class="print-choice-icon">&#x22F6;</span>
+        <span>Kun kort</span>
+      </button>
+      <button class="print-choice-btn" onclick="skrivUt('liste')">
+        <span class="print-choice-icon">&#x2630;</span>
+        <span>Kun liste</span>
+      </button>
+      <button class="print-choice-btn" onclick="skrivUt('alfabetisk')">
+        <span class="print-choice-icon">&#x1D538;</span>
+        <span>Alfabetisk</span>
+      </button>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" style="grid-column:1/-1;" onclick="lukkPrintModal()">Avbryt</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// FARGEPAR per tema (maks 8)
+// ============================================================
+const TEMA_FARGER = [
+  { bg: 'var(--t1)', color: 'var(--t1t)' },
+  { bg: 'var(--t2)', color: 'var(--t2t)' },
+  { bg: 'var(--t3)', color: 'var(--t3t)' },
+  { bg: 'var(--t4)', color: 'var(--t4t)' },
+  { bg: 'var(--t5)', color: 'var(--t5t)' },
+  { bg: 'var(--t6)', color: 'var(--t6t)' },
+  { bg: 'var(--t7)', color: 'var(--t7t)' },
+  { bg: 'var(--t8)', color: 'var(--t8t)' },
+];
+
+const DEFAULT_TEMAER = [
+  'Tema 1',
+  'Tema 2',
+  'Tema 3',
+  'Tema 4',
+  'Tema 5',
+  'Tema 6',
+];
+
+let temaer = [...DEFAULT_TEMAER];
+let okter = [];
+let elevnavn = [];     // elevnavn[i] = navn til student i (0-basert)
+let studentTema = [];  // studentTema[i] = temaIdx for student i (0-basert)
+let dagOrdre = [];     // dagOrdre[dagIdx] = [studentIdx,...] i tidrekkefølge
+let lockTema = false;
+let lockRekkefolge = false;
+let lockedStudents = new Set(); // studentIdx-er som er låst
+
+// ============================================================
+// KLASSELISTE
+// ============================================================
+function oppdaterKlasseliste() {
+  const raw = document.getElementById('klasse-textarea').value;
+  elevnavn = raw.split('\n')
+    .map(n => n.trim())
+    .filter(n => n.length > 0);
+  oppdaterKlasseStatus();
+  // Synk antall-feltet automatisk — alltid åpent for redigering,
+  // men oppdateres automatisk når navn limes inn
+  if (elevnavn.length > 0) {
+    document.getElementById('antall').value = elevnavn.length;
+  }
+  document.getElementById('antall').readOnly = false;
+  document.getElementById('antall').style.opacity = '1';
+}
+
+function oppdaterKlasseStatus() {
+  const el = document.getElementById('klasse-status');
+  if (elevnavn.length > 0) {
+    el.textContent = elevnavn.length + ' elever lastet inn';
+    el.classList.add('active');
+
+  } else {
+    el.classList.remove('active');
+  }
+}
+
+function nullstillKlasseliste() {
+  elevnavn = [];
+  document.getElementById('klasse-textarea').value = '';
+  document.getElementById('antall').readOnly = false;
+  document.getElementById('antall').style.opacity = '1';
+  oppdaterKlasseStatus();
+}
+
+function lastOppFil(fil) {
+  if (!fil) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const tekst = e.target.result;
+    // Prøv å tolke som CSV — ta første kolonne per rad
+    const linjer = tekst.split(/\r?\n/);
+    const navn = linjer
+      .map(l => l.split(/[,;\t]/)[0].trim().replace(/^"+|"+$/g, ''))
+      .filter(n => n.length > 0 && !/^(navn|name|elev|student)/i.test(n));
+    document.getElementById('klasse-textarea').value = navn.join('\n');
+    oppdaterKlasseliste();
+  };
+  reader.readAsText(fil);
+}
+
+function dragOver(e) {
+  e.preventDefault();
+  document.getElementById('csv-drop').classList.add('drag-over');
+}
+function dragLeave(e) {
+  document.getElementById('csv-drop').classList.remove('drag-over');
+}
+function dropFil(e) {
+  e.preventDefault();
+  document.getElementById('csv-drop').classList.remove('drag-over');
+  const fil = e.dataTransfer.files[0];
+  if (fil) lastOppFil(fil);
+}
+
+// ============================================================
+// INIT
+// ============================================================
+function init() {
+  renderTemaListe();
+  leggTilOkt({ dato: '', fra: '08:30', til: '15:00' });
+}
+
+// ============================================================
+// TEMAER
+// ============================================================
+function renderTemaListe() {
+  const el = document.getElementById('tema-list');
+  el.innerHTML = temaer.map((t, i) => {
+    const f = TEMA_FARGER[i % TEMA_FARGER.length];
+    return `<div class="tema-item">
+      <div class="tema-nr" style="background:${f.bg};color:${f.color};">${i+1}</div>
+      <input type="text" value="${t.startsWith('Tema ') ? '' : escHtml(t)}" onchange="temaer[${i}]=this.value" placeholder="Oppgave ${i+1}">
+      <button class="btn btn-danger-ghost" onclick="fjernTema(${i})" title="Fjern">&#x2715;</button>
+    </div>`;
+  }).join('');
+}
+
+function leggTilTema() {
+  if (temaer.length >= 8) return alert('Maks 8 temaer støttes.');
+  temaer.push('Nytt tema');
+  renderTemaListe();
+}
+
+function fjernTema(i) {
+  if (temaer.length <= 1) return;
+  temaer.splice(i, 1);
+  renderTemaListe();
+}
+
+function nullstillTemaer() {
+  temaer = [...DEFAULT_TEMAER];
+  renderTemaListe();
+}
+
+// ============================================================
+// ØKTDAGER
+// ============================================================
+let oktId = 0;
+
+function leggTilOkt(defaults = {}) {
+  const id = ++oktId;
+  const okt = {
+    id,
+    dato: defaults.dato || '',
+    fra: defaults.fra || '08:30',
+    til: defaults.til || '15:00',
+    lunsj: false,
+    lunsjFra: '11:30',
+    lunsjMin: 30,
+  };
+  okter.push(okt);
+  renderOktListe();
+}
+
+function fjernOkt(id) {
+  okter = okter.filter(o => o.id !== id);
+  renderOktListe();
+}
+
+function renderOktListe() {
+  const el = document.getElementById('okt-liste');
+  el.innerHTML = okter.map((o, idx) => `
+    <div class="okt-kort" id="okt-${o.id}">
+      <div class="okt-header">
+        <div>
+          <div class="okt-label">Dag ${idx+1}</div>
+          <div class="okt-kapasitet" id="kap-${o.id}">${beregnKapasitetLabel(o)}</div>
+        </div>
+        <button class="btn btn-danger-ghost" onclick="fjernOkt(${o.id})">&#x2715;</button>
+      </div>
+      <div class="form-row">
+        <div class="form-field">
+          <label>Dato</label>
+          <input type="date" value="${o.dato}" onchange="oppdaterOkt(${o.id},'dato',this.value)">
+        </div>
+        <div></div>
+      </div>
+      <div class="form-row">
+        <div class="form-field">
+          <label>Start</label>
+          <input type="time" value="${o.fra}" onchange="oppdaterOkt(${o.id},'fra',this.value)">
+        </div>
+        <div class="form-field">
+          <label>Slutt</label>
+          <input type="time" value="${o.til}" onchange="oppdaterOkt(${o.id},'til',this.value)">
+        </div>
+      </div>
+      <div class="lunsj-row">
+        <input type="checkbox" id="lunsj-${o.id}" ${o.lunsj?'checked':''} onchange="oppdaterOkt(${o.id},'lunsj',this.checked)">
+        <label for="lunsj-${o.id}">Lunsjpause</label>
+      </div>
+      ${o.lunsj ? `<div class="lunsj-fields">
+        <div class="form-field"><label>Lunsj kl.</label>
+          <input type="time" value="${o.lunsjFra}" onchange="oppdaterOkt(${o.id},'lunsjFra',this.value)"></div>
+        <div class="form-field"><label>Varighet (min)</label>
+          <input type="number" min="5" max="120" value="${o.lunsjMin}" onchange="oppdaterOkt(${o.id},'lunsjMin',parseInt(this.value)||30)"></div>
+      </div>` : ''}
+    </div>
+  `).join('');
+}
+
+function oppdaterOkt(id, felt, verdi) {
+  const o = okter.find(x => x.id === id);
+  if (!o) return;
+  o[felt] = verdi;
+  // Re-render kun for lunsj-toggle (som viser/skjuler felt)
+  if (felt === 'lunsj') renderOktListe();
+  else {
+    const kap = document.getElementById('kap-' + id);
+    if (kap) kap.textContent = beregnKapasitetLabel(o);
+  }
+}
+
+function beregnKapasitetLabel(o) {
+  const pause = parseInt(document.getElementById('pause')?.value) || 5;
+  const samtaletid = parseInt(document.getElementById('samtaletid')?.value) || 20;
+  const { min: totalMin } = tilgjeneligMin(o, pause, samtaletid);
+  const maks = maxElever(totalMin, samtaletid, pause);
+  return maks > 0 ? `Maks ${maks} elever` : '–';
+}
+
+// ============================================================
+// TIDSBEREGNING
+// ============================================================
+function tidTilMin(str) {
+  if (!str) return 0;
+  const [h, m] = str.split(':').map(Number);
+  return h * 60 + m;
+}
+
+function minTilTid(min) {
+  return String(Math.floor(min / 60)).padStart(2, '0') + ':' + String(min % 60).padStart(2, '0');
+}
+
+function tilgjeneligMin(o, pause, samtaletid) {
+  let total = tidTilMin(o.til) - tidTilMin(o.fra);
+  let lunsjFraMin = o.lunsj ? tidTilMin(o.lunsjFra) : null;
+  if (o.lunsj) total -= o.lunsjMin;
+  return { min: Math.max(0, total), lunsjFraMin, lunsjMin: o.lunsj ? o.lunsjMin : 0 };
+}
+
+function maxElever(tilgMin, samtaletid, pause) {
+  if (tilgMin <= 0) return 0;
+  return Math.floor((tilgMin + pause) / (samtaletid + pause));
+}
+
+// ============================================================
+// SHUFFLE
+// ============================================================
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// ============================================================
+// LESBAR DATO (norsk)
+// ============================================================
+function formatDato(datoStr) {
+  if (!datoStr) return 'Dato ikke satt';
+  const [y, m, d] = datoStr.split('-');
+  const mnd = ['jan','feb','mar','apr','mai','jun','jul','aug','sep','okt','nov','des'];
+  return `${parseInt(d)}. ${mnd[parseInt(m)-1]} ${y}`;
+}
+
+function dagNavn(datoStr) {
+  if (!datoStr) return '';
+  const dager = ['søndag','mandag','tirsdag','onsdag','torsdag','fredag','lørdag'];
+  const d = new Date(datoStr);
+  return dager[d.getDay()];
+}
+
+// ============================================================
+// GENERER
+// ============================================================
+function generer(skipBekreftelse = false) {
+  if (!skipBekreftelse && studentTema.length > 0) {
+    visBekreftelseModal(
+      'Generer ny trekking?',
+      'Den nåværende fordelingen vil bli slettet og erstattet med en helt ny trekking.',
+      () => generer(true)
+    );
+    return;
+  }
+  syncTemaerFraDOM();
+  lockedStudents = new Set(); // nullstill låser ved ny generering
+  const n = parseInt(document.getElementById('antall').value) || 24;
+  const pause = parseInt(document.getElementById('pause').value) || 5;
+  const samtaletid = parseInt(document.getElementById('samtaletid').value) || 20;
+
+  // Kapasitet per dag
+  const kapasiteter = okter.map(o => {
+    const { min } = tilgjeneligMin(o, pause, samtaletid);
+    return maxElever(min, samtaletid, pause);
+  });
+  const totKap = kapasiteter.reduce((a, b) => a + b, 0);
+
+  oppdaterAdvarsel(n, totKap);
+
+  // Tildel tema til hver student (0-basert studentIdx)
+  // studentTema[i] = temaIdx for student i
+  const antallTemaer = temaer.length;
+  const shuffledTema = shuffle([...Array(antallTemaer).keys()]);
+  studentTema = Array.from({ length: n }, (_, i) => shuffledTema[i % antallTemaer]);
+
+  // Fordel studenter på dager
+  const fordeltPerDag = [];
+  let plassert = 0;
+  for (let i = 0; i < okter.length; i++) {
+    const ant = Math.min(n - plassert, kapasiteter[i]);
+    fordeltPerDag.push(ant);
+    plassert += ant;
+    if (plassert >= n) break;
+  }
+
+  // dagOrdre: shufflet rekkefølge av studentIdx per dag
+  dagOrdre = [];
+  let offset = 0;
+  fordeltPerDag.forEach(ant => {
+    const idxer = Array.from({ length: ant }, (_, i) => offset + i);
+    dagOrdre.push(shuffle(idxer));
+    offset += ant;
+  });
+
+  renderSummary(n, pause, samtaletid, fordeltPerDag);
+  renderLegend();
+  renderFordeling();
+  renderTimeplan(pause, samtaletid);
+
+  document.getElementById('empty-state').style.display = 'none';
+  document.getElementById('results').style.display = 'block';
+}
+
+function trekkPaaNytt() {
+  if (studentTema.length === 0) return generer();
+  syncTemaerFraDOM();
+  const pause = parseInt(document.getElementById('pause').value) || 5;
+  const samtaletid = parseInt(document.getElementById('samtaletid').value) || 20;
+
+  if (!lockTema) {
+    // Ny tema-tildeling — låste studenter beholder sitt tema
+    const n = studentTema.length;
+    const antallTemaer = temaer.length;
+    const ulaste = Array.from({ length: n }, (_, i) => i).filter(i => !lockedStudents.has(i));
+    const shuffledTema = shuffle([...Array(antallTemaer).keys()]);
+    ulaste.forEach((studentIdx, i) => {
+      studentTema[studentIdx] = shuffledTema[i % antallTemaer];
+    });
+  }
+
+  if (!lockRekkefolge) {
+    // Ny rekkefølge — låste studenter blir i sin slot, ulåste shuffles rundt dem
+    dagOrdre = dagOrdre.map(ordre => {
+      const lastePosisjoner = {}; // posisjon → studentIdx for låste
+      const ulaste = [];
+      ordre.forEach((studentIdx, pos) => {
+        if (lockedStudents.has(studentIdx)) {
+          lastePosisjoner[pos] = studentIdx;
+        } else {
+          ulaste.push(studentIdx);
+        }
+      });
+      const shuffledUlaste = shuffle(ulaste);
+      let ulasteIdx = 0;
+      return ordre.map((_, pos) => {
+        if (lastePosisjoner[pos] !== undefined) return lastePosisjoner[pos];
+        return shuffledUlaste[ulasteIdx++];
+      });
+    });
+  }
+
+  renderLegend();
+  renderFordeling();
+  renderTimeplan(pause, samtaletid);
+  oppdaterLockHint();
+}
+
+function toggleLock(type) {
+  if (type === 'tema') {
+    lockTema = !lockTema;
+    const btn = document.getElementById('lock-tema');
+    btn.classList.toggle('locked', lockTema);
+    btn.querySelector('.lock-icon').textContent = lockTema ? '\uD83D\uDD12' : '\uD83D\uDD13';
+  } else {
+    lockRekkefolge = !lockRekkefolge;
+    const btn = document.getElementById('lock-rekkefolge');
+    btn.classList.toggle('locked', lockRekkefolge);
+    btn.querySelector('.lock-icon').textContent = lockRekkefolge ? '\uD83D\uDD12' : '\uD83D\uDD13';
+  }
+  oppdaterLockHint();
+}
+
+function oppdaterLockHint() {
+  const hint = document.getElementById('lock-hint');
+  if (!hint) return;
+  if (lockTema && lockRekkefolge) {
+    hint.textContent = 'Begge er låst — ingenting endres.';
+  } else if (lockTema) {
+    hint.textContent = 'Temaer holdes — kun rekkefølge trekkes.';
+  } else if (lockRekkefolge) {
+    hint.textContent = 'Rekkefølge holdes — kun tema trekkes.';
+  } else {
+    hint.textContent = '';
+  }
+}
+
+// ============================================================
+// RENDER LEGEND
+// ============================================================
+function renderLegend() {
+  const el = document.getElementById('legend');
+  el.innerHTML = temaer.map((t, i) => {
+    const f = TEMA_FARGER[i % TEMA_FARGER.length];
+    return `<div class="leg-item">
+      <div class="leg-dot" style="background:${f.bg};border:1px solid ${f.color}20;"></div>
+      <span>${i+1} · ${escHtml(visningsnavn(i))}</span>
+    </div>`;
+  }).join('');
+}
+
+// ============================================================
+// RENDER SUMMARY
+// ============================================================
+function renderSummary(n, pause, samtaletid, fordelt) {
+  const el = document.getElementById('summary-bar');
+  const dagInfo = fordelt.map((ant, i) => {
+    const o = okter[i];
+    return `<div class="summary-pill">${formatDato(o?.dato)}: <strong>${ant} elever</strong></div>`;
+  }).join('');
+  el.innerHTML = `
+    <div class="summary-pill">Totalt: <strong>${n} elever</strong></div>
+    <div class="summary-pill">Samtale: <strong>${samtaletid} min</strong></div>
+    <div class="summary-pill">Pause: <strong>${pause} min</strong></div>
+    ${dagInfo}
+  `;
+}
+
+// ============================================================
+// RENDER TEMA-FORDELING
+// ============================================================
+function renderFordeling() {
+  const el = document.getElementById('fordeling-grid');
+  const harNavn = elevnavn.length > 0;
+
+  // Kortene vises i tidspunktrekkefølge (dagOrdre).
+  // Tallet øverst er SLOT-nummeret (plass 1, 2, 3...) — IKKE en fast student-ID.
+  // Navn og tema følger studenten; slot-nummeret er posisjonen i køen denne trekninga.
+  let slots = [];
+  dagOrdre.forEach(ordre => {
+    ordre.forEach(studentIdx => slots.push(studentIdx));
+  });
+
+  el.innerHTML = slots.map((studentIdx, slotNr) => {
+    const temaIdx = studentTema[studentIdx];
+    const t = visningsnavn(temaIdx);
+    const f = TEMA_FARGER[temaIdx % TEMA_FARGER.length];
+    const navn = harNavn ? (elevnavn[studentIdx] || '') : '';
+    return `<div class="elev-kort${harNavn ? ' med-navn' : ''}">
+      <span class="elev-nr">${slotNr + 1}</span>
+      ${harNavn && navn ? `<span class="elev-navn-stor">${escHtml(navn)}</span>` : ''}
+      <span class="tema-pill" style="background:${f.bg};color:${f.color};">Oppgave ${temaIdx+1}</span>
+      <span class="tema-navn">${escHtml(t)}</span>
+    </div>`;
+  }).join('');
+}
+
+// ============================================================
+// BYGG SLOTS (brukes av render og drag-drop)
+// ============================================================
+function byggSlots(dagIdx, pause, samtaletid) {
+  const o = okter[dagIdx];
+  const ordre = dagOrdre[dagIdx]; // ordre = [studentIdx, ...]
+  const startMin = tidTilMin(o.fra);
+  const lunsjFraMin = o.lunsj ? tidTilMin(o.lunsjFra) : null;
+
+  // globalSlotOffset: antall samtaler i tidligere dager, for riktig slot-nr
+  let globalSlotOffset = 0;
+  for (let d = 0; d < dagIdx; d++) globalSlotOffset += (dagOrdre[d] || []).length;
+
+  let slots = [], currentMin = startMin, lunsjInnlagt = false;
+  for (let i = 0; i < ordre.length; i++) {
+    const studentIdx = ordre[i];
+    const temaIdx = studentTema[studentIdx];
+
+    if (o.lunsj && !lunsjInnlagt && lunsjFraMin !== null && currentMin >= lunsjFraMin) {
+      slots.push({ type: 'lunsj', fra: currentMin, varighet: o.lunsjMin });
+      currentMin += o.lunsjMin;
+      lunsjInnlagt = true;
+    }
+    slots.push({
+      type: 'samtale',
+      studentIdx,
+      ordreIdx: i,
+      slotNr: globalSlotOffset + i + 1,  // 1-basert slot-nummer globalt
+      temaIdx,
+      fra: currentMin,
+      til: currentMin + samtaletid
+    });
+    currentMin += samtaletid;
+    if (i < ordre.length - 1) currentMin += pause;
+  }
+  if (o.lunsj && !lunsjInnlagt) slots.push({ type: 'lunsj', fra: currentMin, varighet: o.lunsjMin });
+  return slots;
+}
+
+function slotsHTML(slots, dagIdx, pause, samtaletid) {
+  return slots.map(s => {
+    if (s.type === 'lunsj') {
+      return `<div class="slot lunsj-slot">
+        <span></span>
+        <span>Lunsj (${s.varighet} min)</span>
+        <span class="slot-tid">${minTilTid(s.fra)}–${minTilTid(s.fra + s.varighet)}</span>
+      </div>`;
+    }
+    const f = TEMA_FARGER[s.temaIdx % TEMA_FARGER.length];
+    const navn = elevnavn.length > 0 ? (elevnavn[s.studentIdx] || '') : '';
+    const navnHTML = elevnavn.length > 0
+      ? `<span class="slot-navn"><span class="slot-navn-elev">${escHtml(navn)}</span><br><span class="slot-navn-tema">${escHtml(visningsnavn(s.temaIdx))}</span></span>`
+      : `<span class="slot-navn">${escHtml(visningsnavn(s.temaIdx))}</span>`;
+    const erLastet = lockedStudents.has(s.studentIdx);
+    return `<div class="slot${erLastet ? ' slot-lased' : ''}" draggable="${!erLastet}"
+        data-dag="${dagIdx}" data-ordre="${s.ordreIdx}"
+        ondragstart="${erLastet ? '' : 'dragStart(event)'}"
+        ondragover="dragOver(event)"
+        ondragleave="dragLeave(event)"
+        ondrop="dragDrop(event)"
+        ondragend="dragEnd(event)">
+      <span class="drag-handle" style="${erLastet ? 'opacity:0.2;cursor:default;' : ''}">&#x2630;</span>
+      <span class="slot-nr">${s.slotNr}</span>
+      <span class="slot-tema-pill" style="background:${f.bg};color:${f.color};">Oppgave ${s.temaIdx+1}</span>
+      ${navnHTML}
+      <span class="slot-tid">${minTilTid(s.fra)}–${minTilTid(s.til)}</span>
+      <button class="student-lock-btn${erLastet ? ' lased' : ''}"
+        onclick="toggleStudentLock(${s.studentIdx}, ${dagIdx}, ${s.ordreIdx})"
+        title="${erLastet ? 'Lås opp' : 'Lås elev'}">
+        ${erLastet ? '&#x1F512;' : '&#x1F513;'}
+      </button>
+    </div>`;
+  }).join('');
+}
+
+// ============================================================
+// RENDER TIMEPLAN
+// ============================================================
+function renderTimeplan(pause, samtaletid) {
+  const el = document.getElementById('dag-grid');
+  el.innerHTML = '';
+  dagOrdre.forEach((ordre, dagIdx) => {
+    if (!ordre || ordre.length === 0) return;
+    const o = okter[dagIdx];
+    const slots = byggSlots(dagIdx, pause, samtaletid);
+    const tittel = `${dagNavn(o.dato).charAt(0).toUpperCase() + dagNavn(o.dato).slice(1)} ${formatDato(o.dato)}`;
+    const meta = `${o.fra}–${o.til} · ${ordre.length} elever`;
+    el.innerHTML += `<div class="dag-block">
+      <div class="dag-header">
+        <div class="dag-dato">${tittel}</div>
+        <div class="dag-meta">${meta}</div>
+      </div>
+      <div class="slot-list" id="slot-list-${dagIdx}">${slotsHTML(slots, dagIdx, pause, samtaletid)}</div>
+    </div>`;
+  });
+}
+
+function rerenderDag(dagIdx) {
+  const pause = parseInt(document.getElementById('pause').value) || 5;
+  const samtaletid = parseInt(document.getElementById('samtaletid').value) || 20;
+  const listEl = document.getElementById('slot-list-' + dagIdx);
+  if (!listEl) return;
+  const slots = byggSlots(dagIdx, pause, samtaletid);
+  listEl.innerHTML = slotsHTML(slots, dagIdx, pause, samtaletid);
+}
+
+// ============================================================
+// DRAG AND DROP
+// ============================================================
+let dragSrc = null;
+
+function dragStart(e) {
+  dragSrc = e.currentTarget;
+  dragSrc.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', '');
+}
+
+function dragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  const tgt = e.currentTarget;
+  if (tgt !== dragSrc) tgt.classList.add('drag-over');
+}
+
+function dragLeave(e) {
+  e.currentTarget.classList.remove('drag-over');
+}
+
+function dragEnd(e) {
+  document.querySelectorAll('.slot.dragging').forEach(el => el.classList.remove('dragging'));
+  document.querySelectorAll('.slot.drag-over').forEach(el => el.classList.remove('drag-over'));
+  dragSrc = null;
+}
+
+function dragDrop(e) {
+  e.preventDefault();
+  const tgt = e.currentTarget;
+  tgt.classList.remove('drag-over');
+  if (!dragSrc || dragSrc === tgt) return;
+
+  const fromDag = parseInt(dragSrc.dataset.dag);
+  const toDag = parseInt(tgt.dataset.dag);
+  if (fromDag !== toDag) return;
+
+  const fromIdx = parseInt(dragSrc.dataset.ordre);
+  const toIdx = parseInt(tgt.dataset.ordre);
+
+  // Flytt studentIdx fra fromIdx til toIdx i dagOrdre
+  const ordre = dagOrdre[fromDag];
+  const [moved] = ordre.splice(fromIdx, 1);
+  ordre.splice(toIdx, 0, moved);
+
+  // Re-render hele timeplanen (slot-numre kan endre seg på tvers av dager)
+  const pause = parseInt(document.getElementById('pause').value) || 5;
+  const samtaletid = parseInt(document.getElementById('samtaletid').value) || 20;
+  renderTimeplan(pause, samtaletid);
+  renderFordeling();
+}
+
+// ============================================================
+// HJELP
+// ============================================================
+function syncTemaerFraDOM() {
+  const inputs = document.querySelectorAll('#tema-list input[type="text"]');
+  inputs.forEach((inp, i) => { temaer[i] = inp.value.trim() || `Tema ${i+1}`; });
+}
+
+function visningsnavn(temaIdx) {
+  const t = temaer[temaIdx];
+  return (t && t.trim()) ? t : `Tema ${temaIdx+1}`;
+}
+
+function escHtml(str) {
+  return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ============================================================
+// BEKREFTELSESMODAL
+// ============================================================
+function visBekreftelseModal(tittel, tekst, onBekreft) {
+  document.getElementById('modal-title').textContent = tittel;
+  document.getElementById('modal-body').textContent = tekst;
+  const confirmBtn = document.getElementById('modal-confirm');
+  confirmBtn.onclick = () => { lukkModal(); onBekreft(); };
+  const overlay = document.getElementById('modal-overlay');
+  overlay.style.display = 'flex';
+}
+
+function lukkModal(e) {
+  if (e && e.target !== document.getElementById('modal-overlay')) return;
+  document.getElementById('modal-overlay').style.display = 'none';
+}
+
+// ============================================================
+// EKSPORT
+// ============================================================
+function eksporterMarkdown() {
+  const pause = parseInt(document.getElementById('pause').value) || 5;
+  const samtaletid = parseInt(document.getElementById('samtaletid').value) || 20;
+  let md = '# BPG Samtaletrekkeren\n\n';
+
+  dagOrdre.forEach((ordre, dagIdx) => {
+    if (!ordre || ordre.length === 0) return;
+    const o = okter[dagIdx];
+    const slots = byggSlots(dagIdx, pause, samtaletid);
+    md += `## ${dagNavn(o.dato).charAt(0).toUpperCase() + dagNavn(o.dato).slice(1)} ${formatDato(o.dato)}\n\n`;
+    md += '| # | Navn | Oppgave | Tid |\n';
+    md += '|---|------|---------|-----|\n';
+    slots.forEach(s => {
+      if (s.type === 'lunsj') {
+        md += `| — | *Lunsj* | — | ${minTilTid(s.fra)}–${minTilTid(s.fra + s.varighet)} |\n`;
+      } else {
+        const navn = elevnavn.length > 0 ? (elevnavn[s.studentIdx] || `Elev ${s.slotNr}`) : `Elev ${s.slotNr}`;
+        md += `| ${s.slotNr} | ${navn} | Oppgave ${s.temaIdx+1} · ${visningsnavn(s.temaIdx)} | ${minTilTid(s.fra)}–${minTilTid(s.til)} |\n`;
+      }
+    });
+    md += '\n';
+  });
+
+  // Kopier til utklippstavle
+  navigator.clipboard.writeText(md).then(() => {
+    const btn = document.getElementById('btn-markdown');
+    const orig = btn.textContent;
+    btn.textContent = 'Kopiert!';
+    setTimeout(() => btn.textContent = orig, 2000);
+  }).catch(() => {
+    // Fallback: åpne i nytt vindu
+    const w = window.open('', '_blank');
+    w.document.write('<pre>' + md.replace(/</g,'&lt;') + '</pre>');
+  });
+}
+
+function eksporterTeams() {
+  const pause = parseInt(document.getElementById('pause').value) || 5;
+  const samtaletid = parseInt(document.getElementById('samtaletid').value) || 20;
+
+  let html = `<meta charset="utf-8">`;
+  html += `<style>
+    table { border-collapse: collapse; font-family: Segoe UI, sans-serif; font-size: 14px; }
+    th { background: #1C5738; color: #fff; padding: 6px 12px; text-align: left; }
+    td { padding: 6px 12px; border-bottom: 1px solid #D0DDD4; }
+    tr:nth-child(even) td { background: #F4F8F5; }
+    .lunsj td { color: #888; font-style: italic; }
+  </style>`;
+
+  const erMentor = document.body.classList.contains('mentor-modus');
+
+  dagOrdre.forEach((ordre, dagIdx) => {
+    if (!ordre || ordre.length === 0) return;
+    const o = okter[dagIdx];
+    const slots = byggSlots(dagIdx, pause, samtaletid);
+    const tittel = `${dagNavn(o.dato).charAt(0).toUpperCase() + dagNavn(o.dato).slice(1)} ${formatDato(o.dato)}`;
+    html += `<p><strong>${tittel}</strong></p>`;
+
+    if (erMentor) {
+      // Mentormodus: kun #, Navn, Tid
+      html += `<table><thead><tr><th>#</th>`;
+      if (elevnavn.length > 0) html += `<th>Navn</th>`;
+      html += `<th>Tid</th></tr></thead><tbody>`;
+      slots.forEach(s => {
+        if (s.type === 'lunsj') {
+          html += `<tr class="lunsj"><td>—</td>`;
+          if (elevnavn.length > 0) html += `<td><em>Lunsj</em></td>`;
+          html += `<td>${minTilTid(s.fra)}–${minTilTid(s.fra + s.varighet)}</td></tr>`;
+        } else {
+          const navn = elevnavn.length > 0 ? (elevnavn[s.studentIdx] || '') : '';
+          html += `<tr><td>${s.slotNr}</td>`;
+          if (elevnavn.length > 0) html += `<td>${navn}</td>`;
+          html += `<td>${minTilTid(s.fra)}–${minTilTid(s.til)}</td></tr>`;
+        }
+      });
+    } else {
+      // Fagsamtale: #, Navn, Oppgave, Tid
+      html += `<table><thead><tr><th>#</th>`;
+      if (elevnavn.length > 0) html += `<th>Navn</th>`;
+      html += `<th>Oppgave</th><th>Tid</th></tr></thead><tbody>`;
+      slots.forEach(s => {
+        if (s.type === 'lunsj') {
+          html += `<tr class="lunsj"><td>—</td>`;
+          if (elevnavn.length > 0) html += `<td><em>Lunsj</em></td>`;
+          html += `<td>—</td><td>${minTilTid(s.fra)}–${minTilTid(s.fra + s.varighet)}</td></tr>`;
+        } else {
+          const navn = elevnavn.length > 0 ? (elevnavn[s.studentIdx] || '') : '';
+          html += `<tr><td>${s.slotNr}</td>`;
+          if (elevnavn.length > 0) html += `<td>${navn}</td>`;
+          html += `<td>Oppgave ${s.temaIdx+1} · ${escHtml(visningsnavn(s.temaIdx))}</td>`;
+          html += `<td>${minTilTid(s.fra)}–${minTilTid(s.til)}</td></tr>`;
+        }
+      });
+    }
+    html += `</tbody></table><br>`;
+  });
+
+  // Kopier som text/html til utklippstavlen
+  const blob = new Blob([html], { type: 'text/html' });
+  const clipItem = new ClipboardItem({ 'text/html': blob });
+  navigator.clipboard.write([clipItem]).then(() => {
+    const btn = document.getElementById('btn-teams');
+    const orig = btn.textContent;
+    btn.textContent = 'Kopiert!';
+    setTimeout(() => btn.textContent = orig, 2000);
+  }).catch(err => {
+    alert('Kopiering feilet: ' + err.message + '\nPrøv i Chrome eller Edge.');
+  });
+}
+
+function visPrintModal() {
+  document.getElementById('print-modal-overlay').style.display = 'flex';
+}
+
+function lukkPrintModal(e) {
+  if (e && e.target !== document.getElementById('print-modal-overlay')) return;
+  document.getElementById('print-modal-overlay').style.display = 'none';
+}
+
+function skrivUt(modus) {
+  document.getElementById('print-modal-overlay').style.display = 'none';
+  document.body.classList.remove('print-berre-liste', 'print-berre-fordeling', 'print-berre-alfa');
+
+  // Sørg for at alfabetisk alltid er rendret
+  renderAlfabetisk();
+
+  if (modus === 'liste') document.body.classList.add('print-berre-liste');
+  if (modus === 'fordeling') document.body.classList.add('print-berre-fordeling');
+  if (modus === 'alfabetisk') document.body.classList.add('print-berre-alfa');
+  // 'begge' = ingen klasse → alle tre vises
+
+  document.querySelectorAll('.view').forEach(v => v.classList.add('active'));
+  setTimeout(() => {
+    window.print();
+    setTimeout(() => {
+      document.body.classList.remove('print-berre-liste', 'print-berre-fordeling', 'print-berre-alfa');
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      document.querySelector('.tab.active')?.click();
+    }, 500);
+  }, 100);
+}
+
+// ============================================================
+// ALFABETISK LISTE
+// ============================================================
+function renderAlfabetisk() {
+  const el = document.getElementById('alfa-grid');
+  if (!el) return;
+
+  const pause = parseInt(document.getElementById('pause').value) || 5;
+  const samtaletid = parseInt(document.getElementById('samtaletid').value) || 20;
+
+  // Bygg opp fullstendig liste: { studentIdx, navn, temaIdx, slotNr, fra, til, dag }
+  let rader = [];
+  dagOrdre.forEach((ordre, dagIdx) => {
+    const o = okter[dagIdx];
+    const slots = byggSlots(dagIdx, pause, samtaletid);
+    slots.forEach(s => {
+      if (s.type === 'lunsj') return;
+      const navn = elevnavn.length > 0 ? (elevnavn[s.studentIdx] || `Elev ${s.slotNr}`) : `Elev ${s.slotNr}`;
+      rader.push({
+        navn,
+        temaIdx: s.temaIdx,
+        slotNr: s.slotNr,
+        fra: s.fra,
+        til: s.til,
+        dag: formatDato(o.dato),
+        dagNavn: dagNavn(o.dato)
+      });
+    });
+  });
+
+  // Sorter alfabetisk på navn
+  rader.sort((a, b) => a.navn.localeCompare(b.navn, 'no'));
+
+  if (rader.length === 0) {
+    el.innerHTML = '<p style="color:var(--text-hint);font-size:14px;">Generer en plan først.</p>';
+    return;
+  }
+
+  const harDato = okter.some(o => o.dato);
+  const rows = rader.map((r, i) => {
+    const f = TEMA_FARGER[r.temaIdx % TEMA_FARGER.length];
+    return `<tr>
+      <td class="alfa-navn">${escHtml(r.navn)}</td>
+      <td><span class="slot-tema-pill" style="background:${f.bg};color:${f.color};">Oppgave ${r.temaIdx+1}</span></td>
+      <td>${escHtml(visningsnavn(r.temaIdx))}</td>
+      ${harDato ? `<td class="alfa-dag">${r.dagNavn ? r.dagNavn.charAt(0).toUpperCase() + r.dagNavn.slice(1) + ' ' : ''}${r.dag}</td>` : ''}
+      <td class="alfa-tid">${minTilTid(r.fra)}–${minTilTid(r.til)}</td>
+      <td class="alfa-tid" style="color:var(--text-muted);">${r.slotNr}</td>
+    </tr>`;
+  }).join('');
+
+  el.innerHTML = `<table class="alfa-table">
+    <thead><tr>
+      <th>Navn</th>
+      <th>Oppgave</th>
+      <th>Tema</th>
+      ${harDato ? '<th>Dato</th>' : ''}
+      <th>Tid</th>
+      <th>Fagsamtalenr.</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+}
+
+function toggleStudentLock(studentIdx, dagIdx, ordreIdx) {
+  if (lockedStudents.has(studentIdx)) {
+    lockedStudents.delete(studentIdx);
+  } else {
+    lockedStudents.add(studentIdx);
+  }
+  const pause = parseInt(document.getElementById('pause').value) || 5;
+  const samtaletid = parseInt(document.getElementById('samtaletid').value) || 20;
+  rerenderDag(dagIdx);
+  renderFordeling();
+}
+
+// ============================================================
+// FAGSAMTALE / MENTORSAMTALE
+// ============================================================
+function setModus(modus) {
+  const erMentor = modus === 'mentor';
+
+  document.getElementById('btn-fagsamtale').classList.toggle('active', !erMentor);
+  document.getElementById('btn-mentor').classList.toggle('active', erMentor);
+
+  const temaSection = document.getElementById('tema-section');
+  if (temaSection) temaSection.style.display = erMentor ? 'none' : '';
+
+  document.body.classList.toggle('mentor-modus', erMentor);
+
+  if (document.getElementById('view-alfabetisk')?.classList.contains('active')) {
+    renderAlfabetisk();
+  }
+}
+
+function visTab(id, btn) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('view-' + id).classList.add('active');
+  btn.classList.add('active');
+  if (id === 'alfabetisk') renderAlfabetisk();
+}
+
+// ============================================================
+// ADVARSEL OG LIVE-OPPDATERING
+// ============================================================
+function oppdaterAdvarsel(n, totKap) {
+  const warnEl = document.getElementById('warn-container');
+  if (!warnEl) return;
+  warnEl.innerHTML = totKap < n
+    ? `<div class="warn-box">Kapasiteten (${totKap} elever) er lavere enn antall elever (${n}). Legg til flere dager, forleng øktene, eller reduser pausetiden.</div>`
+    : '';
+}
+
+function oppdaterEtterInnstillingsendring() {
+  // Kalles når samtaletid eller pause endres etter at plan er generert
+  if (studentTema.length === 0) return;
+  const n = parseInt(document.getElementById('antall').value) || 24;
+  const pause = parseInt(document.getElementById('pause').value) || 5;
+  const samtaletid = parseInt(document.getElementById('samtaletid').value) || 20;
+
+  const kapasiteter = okter.map(o => {
+    const { min } = tilgjeneligMin(o, pause, samtaletid);
+    return maxElever(min, samtaletid, pause);
+  });
+  const totKap = kapasiteter.reduce((a, b) => a + b, 0);
+  oppdaterAdvarsel(n, totKap);
+  renderTimeplan(pause, samtaletid);
+  renderFordeling();
+}
+
+// ============================================================
+// START
+// ============================================================
+init();
+</script>
+<footer class="app-footer">
+  Vibe-codet av Fredrik Bedsvaag med god hjelp av Claude
+  &nbsp;·&nbsp;
+  <a href="mailto:fredbeds@metis.no">fredbeds@metis.no</a>
+  &nbsp;·&nbsp;
+  Sist oppdatert: 24. mars 2026
+</footer>
+</body>
+</html>
