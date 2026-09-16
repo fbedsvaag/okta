@@ -245,6 +245,29 @@ export function flyttInnenDagen<T>(rader: T[], fra: number, til: number): T[] {
   return ut;
 }
 
+/**
+ * Finner lunsjen i en ferdig lagret dag.
+ *
+ * Pausen lagres ikke som en rad — den utledes av hullet mellom to samtaler.
+ * Ett sted å skrive, og ingen verdi som kan komme i utakt med klokkeslettene.
+ */
+export function finnLunsj(
+  rader: { fra: string; til: string }[],
+  dag: Dagoppsett,
+): { fra: string; til: string } | null {
+  if (!dag.lunsjFra || !dag.lunsjMin) return null;
+
+  const sortert = [...rader].sort((a, b) => a.fra.localeCompare(b.fra));
+  for (let i = 0; i < sortert.length - 1; i++) {
+    const slutt = tilMin(sortert[i].til);
+    const neste = tilMin(sortert[i + 1].fra);
+    if (neste - slutt >= dag.lunsjMin) {
+      return { fra: tilKlokke(slutt), til: tilKlokke(slutt + dag.lunsjMin) };
+    }
+  }
+  return null;
+}
+
 // ----------------------------------------------------------------- historikk
 
 export type Plassering = "tidlig" | "midt" | "sent";
@@ -306,6 +329,111 @@ export function vektetRekkefolge(
     .map((id) => ({ id, tall: vekt(id) + tilfeldig() * 2 }))
     .sort((a, b) => a.tall - b.tall)
     .map((x) => x.id);
+}
+
+// ------------------------------------------------------------------ eksport
+
+export type Eksportdag = {
+  dato: string;
+  lunsj: { fra: string; til: string } | null;
+  rader: {
+    navn: string;
+    tema: string | null;
+    fra: string;
+    til: string;
+    motte: boolean;
+  }[];
+};
+
+function langDato(dato: string): string {
+  if (!dato) return "Dato ikke satt";
+  const d = new Date(`${dato}T00:00:00`).toLocaleDateString("nb-NO", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
+  return d.charAt(0).toUpperCase() + d.slice(1);
+}
+
+/**
+ * Trekningen som markdown.
+ *
+ * Følger modus på samme måte som Teams-eksporten: oppgavekolonnen utelates i
+ * mentorsamtale. HTML-verktøyet skrev den ut uansett, og det var en
+ * inkonsekvens, ikke et valg.
+ */
+export function somMarkdown(dager: Eksportdag[], medTema: boolean): string {
+  const ut: string[] = [];
+
+  for (const dag of dager) {
+    ut.push(`## ${langDato(dag.dato)}`, "");
+    ut.push(medTema ? "| # | Navn | Oppgave | Tid |" : "| # | Navn | Tid |");
+    ut.push(medTema ? "|---|------|---------|-----|" : "|---|------|-----|");
+
+    let nr = 0;
+    for (const rad of medLunsj(dag)) {
+      if (rad.type === "lunsj") {
+        ut.push(
+          medTema
+            ? `| — | *Lunsj* | — | ${rad.fra}–${rad.til} |`
+            : `| — | *Lunsj* | ${rad.fra}–${rad.til} |`,
+        );
+        continue;
+      }
+      nr++;
+      const navn = rad.motte ? rad.navn : `${rad.navn} (møtte ikke)`;
+      ut.push(
+        medTema
+          ? `| ${nr} | ${navn} | ${rad.tema ?? ""} | ${rad.fra}–${rad.til} |`
+          : `| ${nr} | ${navn} | ${rad.fra}–${rad.til} |`,
+      );
+    }
+    ut.push("");
+  }
+  return ut.join("\n");
+}
+
+/** Trekningen som tabell-HTML, til å lime inn i Teams. */
+export function somTeamsHtml(dager: Eksportdag[], medTema: boolean): string {
+  const rom = (s: string) =>
+    s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+  let ut = '<meta charset="utf-8">';
+  for (const dag of dager) {
+    ut += `<p><strong>${rom(langDato(dag.dato))}</strong></p><table><thead><tr><th>#</th><th>Navn</th>`;
+    if (medTema) ut += "<th>Oppgave</th>";
+    ut += "<th>Tid</th></tr></thead><tbody>";
+
+    let nr = 0;
+    for (const rad of medLunsj(dag)) {
+      if (rad.type === "lunsj") {
+        ut += `<tr><td>—</td><td><em>Lunsj</em></td>${medTema ? "<td>—</td>" : ""}<td>${rad.fra}–${rad.til}</td></tr>`;
+        continue;
+      }
+      nr++;
+      const navn = rad.motte ? rad.navn : `${rad.navn} (møtte ikke)`;
+      ut += `<tr><td>${nr}</td><td>${rom(navn)}</td>`;
+      if (medTema) ut += `<td>${rom(rad.tema ?? "")}</td>`;
+      ut += `<td>${rad.fra}–${rad.til}</td></tr>`;
+    }
+    ut += "</tbody></table><br>";
+  }
+  return ut;
+}
+
+export type Eksportrad =
+  | ({ type: "samtale" } & Eksportdag["rader"][number])
+  | { type: "lunsj"; fra: string; til: string };
+
+/** Radene med lunsjen satt inn på sin plass. */
+export function medLunsj(dag: Eksportdag): Eksportrad[] {
+  const rader = dag.rader.map((r) => ({ type: "samtale" as const, ...r }));
+  if (!dag.lunsj) return rader;
+
+  const etter = rader.findIndex((r) => r.fra >= dag.lunsj!.til);
+  const lunsj = { type: "lunsj" as const, ...dag.lunsj };
+  if (etter < 0) return [...rader, lunsj];
+  return [...rader.slice(0, etter), lunsj, ...rader.slice(etter)];
 }
 
 // ------------------------------------------------------------------ databasen

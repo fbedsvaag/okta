@@ -1,8 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
   delPaDager,
+  finnLunsj,
   flyttInnenDagen,
   fordelPaDager,
+  medLunsj,
+  somMarkdown,
+  somTeamsHtml,
   kapasitet,
   leggUtDagen,
   merknad,
@@ -17,6 +21,7 @@ import {
   trekkRekkefolge,
   vektetRekkefolge,
   type Dagoppsett,
+  type Eksportdag,
   type Plassering,
 } from "./samtale";
 
@@ -33,7 +38,7 @@ const heldag: Dagoppsett = {
   lunsjMin: null,
 };
 
-const medLunsj: Dagoppsett = {
+const lunsjdag: Dagoppsett = {
   fra: "08:30",
   til: "15:00",
   lunsjFra: "11:45",
@@ -56,13 +61,13 @@ describe("kapasitet", () => {
   });
 
   it("gir plass til færre når lunsjen ligger midt i", () => {
-    expect(kapasitet(medLunsj, 20, 5)).toBeLessThan(kapasitet(heldag, 20, 5));
+    expect(kapasitet(lunsjdag, 20, 5)).toBeLessThan(kapasitet(heldag, 20, 5));
   });
 
   it("trekker ikke fra lunsj på en dag som aldri når den", () => {
     // Dagen er over før 11:45, så lunsjen skal ikke spise av kapasiteten.
     // HTML-verktøyet trakk den fra uansett og regnet for lavt.
-    const kort: Dagoppsett = { ...medLunsj, til: "10:30" };
+    const kort: Dagoppsett = { ...lunsjdag, til: "10:30" };
     const utenLunsj: Dagoppsett = { ...kort, lunsjFra: null, lunsjMin: null };
     expect(kapasitet(kort, 20, 5)).toBe(kapasitet(utenLunsj, 20, 5));
   });
@@ -88,14 +93,14 @@ describe("leggUtDagen", () => {
 
   it("legger lunsjen ved første samtalegrense etter tidspunktet", () => {
     // En samtale deles aldri i to, så pausen kan begynne senere enn satt.
-    const slots = leggUtDagen(medLunsj, 20, 20, 5);
+    const slots = leggUtDagen(lunsjdag, 20, 20, 5);
     const lunsj = slots.find((s) => s.type === "lunsj")!;
     expect(lunsj).toBeDefined();
     expect(tilMin(tilKlokke(lunsj.fra))).toBeGreaterThanOrEqual(tilMin("11:45"));
   });
 
   it("gir ingen elev et tidspunkt inne i lunsjen", () => {
-    const slots = leggUtDagen(medLunsj, 20, 20, 5);
+    const slots = leggUtDagen(lunsjdag, 20, 20, 5);
     const lunsj = slots.find((s) => s.type === "lunsj")!;
     const kolliderer = slots.filter(
       (s) => s.type === "samtale" && s.fra < lunsj.til && s.til > lunsj.fra,
@@ -104,19 +109,19 @@ describe("leggUtDagen", () => {
   });
 
   it("fortsetter samtalene etter lunsjen", () => {
-    const slots = leggUtDagen(medLunsj, 20, 20, 5);
+    const slots = leggUtDagen(lunsjdag, 20, 20, 5);
     const lunsj = slots.findIndex((s) => s.type === "lunsj");
     expect(slots.slice(lunsj + 1).some((s) => s.type === "samtale")).toBe(true);
   });
 
   it("legger ingen lunsj når dagen tar slutt før den", () => {
     // «En pause etter siste samtale er ikke en pause» (§4.10).
-    const slots = leggUtDagen({ ...medLunsj, til: "10:30" }, 20, 20, 5);
+    const slots = leggUtDagen({ ...lunsjdag, til: "10:30" }, 20, 20, 5);
     expect(slots.some((s) => s.type === "lunsj")).toBe(false);
   });
 
   it("legger ingen lunsj når det ikke er plass til en samtale etter den", () => {
-    const slots = leggUtDagen({ ...medLunsj, til: "12:05" }, 20, 20, 5);
+    const slots = leggUtDagen({ ...lunsjdag, til: "12:05" }, 20, 20, 5);
     expect(slots.some((s) => s.type === "lunsj")).toBe(false);
   });
 
@@ -403,5 +408,84 @@ describe("flyttInnenDagen", () => {
   it("mister ingen", () => {
     const ut = flyttInnenDagen(["a", "b", "c", "d", "e"], 4, 0);
     expect(new Set(ut)).toEqual(new Set(["a", "b", "c", "d", "e"]));
+  });
+});
+
+describe("finnLunsj", () => {
+  const dag: Dagoppsett = { fra: "08:30", til: "15:00", lunsjFra: "11:45", lunsjMin: 30 };
+
+  it("finner pausen i hullet mellom to samtaler", () => {
+    const rader = [
+      { fra: "11:25", til: "11:45" },
+      { fra: "12:15", til: "12:35" },
+    ];
+    expect(finnLunsj(rader, dag)).toEqual({ fra: "11:45", til: "12:15" });
+  });
+
+  it("gir null når dagen ikke har lunsj", () => {
+    const rader = [{ fra: "09:00", til: "09:20" }];
+    expect(finnLunsj(rader, { ...dag, lunsjFra: null, lunsjMin: null })).toBeNull();
+  });
+
+  it("gir null når det ikke finnes noe hull", () => {
+    const rader = [
+      { fra: "09:00", til: "09:20" },
+      { fra: "09:25", til: "09:45" },
+    ];
+    expect(finnLunsj(rader, dag)).toBeNull();
+  });
+});
+
+describe("eksport", () => {
+  const dag: Eksportdag = {
+    dato: "2026-11-24",
+    lunsj: { fra: "11:45", til: "12:15" },
+    rader: [
+      { navn: "Tony Soprano", tema: "Oppgave 4", fra: "11:25", til: "11:45", motte: true },
+      { navn: "Carmela Soprano", tema: "Oppgave 1", fra: "12:15", til: "12:35", motte: true },
+    ],
+  };
+
+  it("setter lunsjen inn på sin plass", () => {
+    const rader = medLunsj(dag);
+    expect(rader.map((r) => r.type)).toEqual(["samtale", "lunsj", "samtale"]);
+  });
+
+  it("skriver markdown med oppgavekolonne i fagsamtale", () => {
+    const md = somMarkdown([dag], true);
+    expect(md).toContain("| # | Navn | Oppgave | Tid |");
+    expect(md).toContain("Oppgave 4");
+    expect(md).toContain("*Lunsj*");
+  });
+
+  it("utelater oppgavekolonnen i mentorsamtale", () => {
+    // HTML-verktøyet skrev den ut uansett modus. Det var en inkonsekvens.
+    const md = somMarkdown([dag], false);
+    expect(md).toContain("| # | Navn | Tid |");
+    expect(md).not.toContain("Oppgave");
+  });
+
+  it("nummererer bare samtalene, ikke lunsjen", () => {
+    const md = somMarkdown([dag], false);
+    expect(md).toContain("| 1 | Tony Soprano");
+    expect(md).toContain("| 2 | Carmela Soprano");
+  });
+
+  it("merker den som ikke møtte", () => {
+    const med = { ...dag, rader: [{ ...dag.rader[0], motte: false }] };
+    expect(somMarkdown([med], false)).toContain("Tony Soprano (møtte ikke)");
+  });
+
+  it("skriver Teams-tabell som følger modus", () => {
+    expect(somTeamsHtml([dag], true)).toContain("<th>Oppgave</th>");
+    expect(somTeamsHtml([dag], false)).not.toContain("<th>Oppgave</th>");
+  });
+
+  it("rømmer tegn som ellers ville brutt tabellen", () => {
+    const med = {
+      ...dag,
+      rader: [{ ...dag.rader[0], navn: "Tony <b>Soprano</b>" }],
+    };
+    expect(somTeamsHtml([med], false)).toContain("&lt;b&gt;");
   });
 });

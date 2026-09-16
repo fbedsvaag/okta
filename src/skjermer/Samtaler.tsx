@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { confirm as bekreft } from "@tauri-apps/plugin-dialog";
 import type { Skolear } from "../data/skolear";
 import { hentInnstilling, settInnstilling } from "../data/skolear";
@@ -7,7 +7,10 @@ import { hentElever, type ElevRad } from "../data/elever";
 import {
   delPaDager,
   endreSamtaledag,
+  finnLunsj,
   flyttInnenDagen,
+  somMarkdown,
+  somTeamsHtml,
   hentHistorikk,
   hentSamtaledager,
   hentSamtaler,
@@ -25,9 +28,11 @@ import {
   tilMin,
   timerPaDagen,
   vektetRekkefolge,
+  type Eksportdag,
   type Plassering,
   type Samtaledag,
 } from "../data/samtale";
+import { invoke } from "@tauri-apps/api/core";
 import { Felt, Knapp, Tomtilstand } from "../ui/felles";
 
 /**
@@ -43,6 +48,8 @@ type Visning = "timeplan" | "fordeling" | "alfabetisk";
 /** En dag slik den vises i timeplanen. */
 type Dagplan = {
   dag: Samtaledag;
+  /** Utledes av hullet mellom to samtaler — lagres ikke som egen rad. */
+  lunsj: { fra: string; til: string } | null;
   rader: {
     elevId: string;
     navn: string;
@@ -94,6 +101,7 @@ export function Samtaler({
   const [lasteElever, setLasteElever] = useState<Set<string>>(new Set());
   const [dragmelding, setDragmelding] = useState<string | null>(null);
   const [visning, setVisning] = useState<Visning>("timeplan");
+  const [kopiert, setKopiert] = useState<"teams" | "md" | null>(null);
 
   const minutter = Number(samtaletid) || 20;
   const pausen = Number(pause) || 0;
@@ -113,8 +121,13 @@ export function Samtaler({
     for (const dag of mine) {
       const samtaler = await hentSamtaler(dag.id);
       if (samtaler.length === 0) continue;
+      const tider = samtaler.map((s) => ({
+        fra: s.klokkeslett,
+        til: tilKlokke(tilMin(s.klokkeslett) + s.varighetMin),
+      }));
       lagrede.push({
         dag,
+        lunsj: finnLunsj(tider, dag),
         rader: samtaler.map((s) => ({
           elevId: s.elevId,
           navn: `${s.fornavn} ${s.etternavn}`,
@@ -192,11 +205,14 @@ export function Samtaler({
       const paDagen = perDag[i] ?? [];
       if (paDagen.length === 0) return;
 
-      const slots = leggUtDagen(dag, paDagen.length, minutter, pausen).filter(
-        (s) => s.type === "samtale",
-      );
+      const alle = leggUtDagen(dag, paDagen.length, minutter, pausen);
+      const lunsjslot = alle.find((s) => s.type === "lunsj");
+      const slots = alle.filter((s) => s.type === "samtale");
       plan.push({
         dag,
+        lunsj: lunsjslot
+          ? { fra: tilKlokke(lunsjslot.fra), til: tilKlokke(lunsjslot.til) }
+          : null,
         rader: slots.map((s, j) => ({
           elevId: paDagen[j],
           navn: navn.get(paDagen[j]) ?? "",
@@ -256,6 +272,42 @@ export function Samtaler({
       for (const r of d.rader) if (r.tema) na.set(r.elevId, r.tema);
     }
     await skriv(byggPlan(perDag, na));
+  }
+
+  /** Formen eksportene arbeider på. */
+  function tilEksport(): Eksportdag[] {
+    return (trekning ?? []).map((d) => ({
+      dato: d.dag.dato,
+      lunsj: d.lunsj,
+      rader: d.rader.map((r) => ({
+        navn: r.navn,
+        tema: r.tema,
+        fra: r.fra,
+        til: r.til,
+        motte: r.motte,
+      })),
+    }));
+  }
+
+  async function tilMarkdown() {
+    await navigator.clipboard.writeText(somMarkdown(tilEksport(), modus === "fag"));
+    setKopiert("md");
+    setTimeout(() => setKopiert(null), 1500);
+  }
+
+  async function tilTeams() {
+    const html = somTeamsHtml(tilEksport(), modus === "fag");
+    // Teams tar imot formatert tabell når den limes som text/html.
+    await navigator.clipboard.write([
+      new ClipboardItem({
+        "text/html": new Blob([html], { type: "text/html" }),
+        "text/plain": new Blob([somMarkdown(tilEksport(), modus === "fag")], {
+          type: "text/plain",
+        }),
+      }),
+    ]);
+    setKopiert("teams");
+    setTimeout(() => setKopiert(null), 1500);
   }
 
   /** Helt ny trekning. Fordeler på nytt over dagene, og løser opp elevlåsene. */
@@ -586,6 +638,18 @@ export function Samtaler({
         )}
 
         {trekning !== null && (
+          <div className="mb-4 flex items-center gap-2">
+            <Knapp onClick={() => void tilTeams()}>
+              {kopiert === "teams" ? "✓ Kopiert" : "Kopier til Teams"}
+            </Knapp>
+            <Knapp onClick={() => void tilMarkdown()}>
+              {kopiert === "md" ? "✓ Kopiert" : "Kopier som markdown"}
+            </Knapp>
+            <Knapp onClick={() => void invoke("skriv_ut")}>Skriv ut</Knapp>
+          </div>
+        )}
+
+        {trekning !== null && (
           <div className="mb-4 flex gap-1">
             {(
               [
@@ -833,14 +897,31 @@ function Timeplan({
 
           {d.rader.map((r, radIdx) => {
             plass++;
+            // Lunsjen står på sin plass i rekka: rett før den første samtalen
+            // som begynner etter at pausen er over.
+            const lunsjHer =
+              d.lunsj !== null &&
+              r.fra >= d.lunsj.til &&
+              (radIdx === 0 || d.rader[radIdx - 1].fra < d.lunsj.fra);
             // Merknaden bygges på historikken FØR denne trekningen, så den
             // sier noe om hva som har skjedd — ikke om det som nettopp ble
             // trukket.
             const notis = merknad(historikk.get(r.elevId) ?? []);
             const erLast = laste.has(r.elevId);
             return (
+              <Fragment key={`${r.elevId}-${r.fra}`}>
+              {lunsjHer && d.lunsj && (
+                <div className="flex items-baseline gap-3 border-b border-linje-svak py-1.5 text-brod italic text-blekk-svak">
+                  <span className="w-6 shrink-0 text-right">—</span>
+                  <span className="w-24 shrink-0 tabular-nums">
+                    {d.lunsj.fra}–{d.lunsj.til}
+                  </span>
+                  <span className="flex-1">
+                    Lunsj ({tilMin(d.lunsj.til) - tilMin(d.lunsj.fra)} min)
+                  </span>
+                </div>
+              )}
               <div
-                key={`${r.elevId}-${r.fra}`}
                 draggable={!erLast}
                 onDragStart={(e) => {
                   e.dataTransfer.setData(
@@ -896,6 +977,7 @@ function Timeplan({
                   {erLast ? "🔒" : "🔓"}
                 </button>
               </div>
+              </Fragment>
             );
           })}
         </section>
