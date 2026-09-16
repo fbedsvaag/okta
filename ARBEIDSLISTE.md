@@ -59,9 +59,10 @@ Hver av disse er under en time og fjerner daglig friksjon.
 - [x] Generell hendelse i skoleruta med egen tag. Trengte ingen migrasjon —
   `fridag.type` er TEXT uten CHECK, så det holdt med en fjerde verdi.
 
-## 3. Mentorelever — grunnmur
+## 3. Mentorelever — grunnmur ✱ ferdig
 
-Låser opp både Samtaletrekkeren og Klassekart. Bygges før dem.
+Låste opp Samtaletrekkeren. Klassekart bygges standalone først, og
+integreres senere.
 
 - [x] Mentorgruppe som undergruppe av en klasse. Flagg på elev_klasse
   (migrasjon 010), så gruppa følger skoleåret av seg selv.
@@ -75,6 +76,11 @@ Låser opp både Samtaletrekkeren og Klassekart. Bygges før dem.
 - [x] Rydd §3.5 og §5.4. §3.5 beskriver nå elevnotat, §5.4 er fjernet.
       Tabellen oppfolging står igjen tom og uten kallsteder — kan
       slippes i en senere migrasjon når møteloggen har vært i bruk.
+- [x] Elevpanelet er redigerbart: navn, klasse, mentorelev og fag.
+      Heatmap, vurderingsresultater og elevkode er bevisst lesevisning —
+      de føres der de hører hjemme.
+- [x] «+ Legg til elev» tar alle feltene i én operasjon, og lagrer ikke
+      før både fornavn og etternavn er fylt.
 
 ## 4. Store funksjoner
 
