@@ -1,6 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
-import { lagHendelse } from "./ical";
+import { lagHendelse, lagSamtaleHendelse } from "./ical";
 import { hentOkter } from "./okter";
+import { hentSamtaledager, hentSamtaler } from "./samtale";
 import { hentAllePerioder, periodeFor, type Periode } from "./perioder";
 import { hentInnstilling, settInnstilling, type Skolear } from "./skolear";
 import { lytt } from "./endringer";
@@ -20,6 +21,16 @@ const URL_BASE = "caldav_base";
 const BRUKER = "caldav_bruker";
 const PA = "caldav_pa";
 const KALENDERE = "caldav_kalendere";
+/**
+ * Mentorsamtalene publiseres bare når dette er uttrykkelig slått på.
+ *
+ * Egen bryter, ikke en del av `caldav_pa`: et hakk man satte i august skal
+ * ikke begynne å sende elevfornavn i november. Se §8.1.
+ */
+const MENTOR_PA = "caldav_mentor_pa";
+const MENTOR_KALENDER = "caldav_mentor_kalender";
+/** Nøkkelen mentorsamtalenes kontrollsummer ligger under. Ikke en fag-id. */
+const MENTORNOKKEL = "__mentor";
 const PUBLISERT = "caldav_publisert";
 
 export type Oppsett = {
@@ -28,20 +39,27 @@ export type Oppsett = {
   pa: boolean;
   /** skolearFagId -> kalendernavn på serveren. Mangler = publiseres ikke. */
   kalendere: Record<string, string>;
+  /** av som standard — se MENTOR_PA */
+  mentorPa: boolean;
+  mentorKalender: string;
 };
 
 export async function hentOppsett(): Promise<Oppsett> {
-  const [base, bruker, pa, kal] = await Promise.all([
+  const [base, bruker, pa, kal, mPa, mKal] = await Promise.all([
     hentInnstilling(URL_BASE),
     hentInnstilling(BRUKER),
     hentInnstilling(PA),
     hentInnstilling(KALENDERE),
+    hentInnstilling(MENTOR_PA),
+    hentInnstilling(MENTOR_KALENDER),
   ]);
   return {
     base: base ?? "",
     bruker: bruker ?? "",
     pa: pa === "1",
     kalendere: kal ? (JSON.parse(kal) as Record<string, string>) : {},
+    mentorPa: mPa === "1",
+    mentorKalender: mKal ?? "",
   };
 }
 
@@ -51,6 +69,10 @@ export async function lagreOppsett(o: Partial<Oppsett>): Promise<void> {
   if (o.pa !== undefined) await settInnstilling(PA, o.pa ? "1" : "0");
   if (o.kalendere !== undefined)
     await settInnstilling(KALENDERE, JSON.stringify(o.kalendere));
+  if (o.mentorPa !== undefined)
+    await settInnstilling(MENTOR_PA, o.mentorPa ? "1" : "0");
+  if (o.mentorKalender !== undefined)
+    await settInnstilling(MENTOR_KALENDER, o.mentorKalender.trim());
 }
 
 export async function lagrePassord(passord: string): Promise<void> {
@@ -207,6 +229,57 @@ export async function publiser(skolear: Skolear): Promise<Resultat> {
     }
 
     na[fagId] = summer_na;
+  }
+
+  /*
+   * Mentorsamtalene, hvis de er uttrykkelig slått på.
+   *
+   * Én hendelse per samtale, og det eneste som går ut er fornavn og
+   * klokkeslett — se `lagSamtaleHendelse`, der feltgrensen håndheves.
+   * Fagsamtaler publiseres ikke slik: de hører til en vurdering, og
+   * oppgavefordelingen er ikke noe som skal ligge i en kalender.
+   */
+  if (o.mentorPa && o.mentorKalender.trim()) {
+    const dager = await hentSamtaledager(skolear.id);
+    const var_ = forrige[MENTORNOKKEL] ?? {};
+    const summer_na: Record<string, string> = {};
+    const hendelser: { uid: string; ics: string }[] = [];
+
+    for (const dag of dager.filter((d) => d.skolearFagId === null && d.dato)) {
+      for (const samtale of await hentSamtaler(dag.id)) {
+        if (!samtale.motte) continue;
+        const ics = lagSamtaleHendelse({
+          id: samtale.id,
+          fornavn: samtale.fornavn,
+          dato: dag.dato,
+          klokkeslett: samtale.klokkeslett,
+          varighetMin: samtale.varighetMin,
+        });
+        const sum = await summer(ics);
+        summer_na[samtale.id] = sum;
+        if (var_[samtale.id] === sum) samlet.uendret++;
+        else hendelser.push({ uid: samtale.id, ics });
+      }
+    }
+
+    const fjern = Object.keys(var_).filter((id) => !(id in summer_na));
+
+    if (hendelser.length > 0 || fjern.length > 0) {
+      const r = await invoke<Svar>("caldav_publiser", {
+        url: `${o.base.replace(/\/$/, "")}/${o.mentorKalender.trim()}`,
+        bruker: o.bruker,
+        hendelser,
+        fjern,
+      });
+      samlet.skrevet += r.skrevet;
+      samlet.slettet += r.slettet;
+      samlet.feil.push(...r.feil);
+      if (r.avbrutt) samlet.avbrutt = true;
+      for (const f of r.feil) delete summer_na[f.split(":")[0]];
+      if (r.avbrutt) for (const h of hendelser) delete summer_na[h.uid];
+    }
+
+    na[MENTORNOKKEL] = summer_na;
   }
 
   await settInnstilling(PUBLISERT, JSON.stringify(na));

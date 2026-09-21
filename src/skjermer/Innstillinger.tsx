@@ -54,6 +54,8 @@ export function Innstillinger({
     bruker: "",
     pa: false,
     kalendere: {},
+    mentorPa: false,
+    mentorKalender: "",
   });
   const [davPassord, setDavPassord] = useState("");
   const [davHarPassord, setDavHarPassord] = useState(false);
@@ -501,7 +503,50 @@ export function Innstillinger({
           faktisk er endret.
         </p>
 
-        <p className="mb-1 mt-4 text-etikett uppercase tracking-etikett text-blekk-dempet">
+        {/*
+          Mentorsamtalene har sin egen bryter, ikke en del av den over: et
+          hakk man satte i august skal ikke begynne å sende elevfornavn i
+          november (§8.1).
+        */}
+        <p className="mb-1 mt-5 text-etikett uppercase tracking-etikett text-blekk-dempet">
+          Mentorsamtaler
+        </p>
+        <label className="flex items-center gap-2 text-brod">
+          <input
+            type="checkbox"
+            checked={dav.mentorPa}
+            onChange={async (e) => {
+              const mentorPa = e.target.checked;
+              setDav((d) => ({ ...d, mentorPa }));
+              await caldav.lagreOppsett({ mentorPa });
+            }}
+          />
+          Publiser mentorsamtalene, én hendelse per samtale
+        </label>
+        <p className="ml-6 text-liten text-blekk-dempet">
+          Det eneste som går ut er{" "}
+          <strong className="font-medium">fornavn og klokkeslett</strong> —
+          «Vera kl. 08:30–08:45». Ikke etternavn, ikke klasse, ikke fag, ingen
+          beskrivelse. Denne kalenderen bør ikke deles med andre.
+        </p>
+        {dav.mentorPa && (
+          <label className="ml-6 mt-2 flex items-center gap-2 text-brod">
+            <span className="w-20 shrink-0 font-medium">Kalender</span>
+            <input
+              value={dav.mentorKalender}
+              placeholder="tomt = publiseres ikke"
+              onChange={(e) =>
+                setDav((d) => ({ ...d, mentorKalender: e.target.value }))
+              }
+              onBlur={async (e) =>
+                await caldav.lagreOppsett({ mentorKalender: e.target.value })
+              }
+              className="w-56 rounded border border-linje bg-ark px-2 py-1 text-brod outline-none focus:border-aksent"
+            />
+          </label>
+        )}
+
+        <p className="mb-1 mt-5 text-etikett uppercase tracking-etikett text-blekk-dempet">
           Kalender per fag
         </p>
         <div className="grid max-w-xl gap-1.5">

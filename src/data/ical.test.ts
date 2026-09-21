@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { lagHendelse, lagIcal } from "./ical";
+import {
+  lagHendelse,
+  lagIcal,
+  lagSamtaleHendelse,
+  samtaletittel,
+} from "./ical";
 import type { Okt } from "./okter";
 
 function okt(over: Partial<Okt> = {}): Okt {
@@ -167,5 +172,55 @@ describe("lagIcal", () => {
       NA,
     );
     expect(s.match(/BEGIN:VEVENT/g)).toHaveLength(2);
+  });
+});
+
+describe("mentorsamtale som kalenderhendelse", () => {
+  const vera = {
+    id: "s1",
+    fornavn: "Vera",
+    dato: "2026-11-24",
+    klokkeslett: "08:30",
+    varighetMin: 15,
+    endret: "2026-11-01T00:00:00",
+  };
+
+  it("har fornavn og klokkeslett i tittelen", () => {
+    expect(samtaletittel("Vera", "08:30", "08:45")).toBe("Vera kl. 08:30–08:45");
+    expect(lagSamtaleHendelse(vera)).toContain("SUMMARY:Vera kl. 08:30–08:45");
+  });
+
+  it("sender aldri etternavnet", () => {
+    // Feltgrensen i §8.1: fornavn og klokkeslett, ikke mer. En kalender kan
+    // bli synkronisert videre eller delt.
+    const ics = lagSamtaleHendelse({ ...vera, fornavn: "Vera" });
+    expect(ics).not.toContain("Soprano");
+    expect(ics).not.toContain("Moltisanti");
+  });
+
+  it("har ingen DESCRIPTION i det hele tatt", () => {
+    expect(lagSamtaleHendelse(vera)).not.toContain("DESCRIPTION");
+  });
+
+  it("har ingen LOCATION, klasse eller fagkode", () => {
+    const ics = lagSamtaleHendelse(vera);
+    expect(ics).not.toContain("LOCATION");
+    expect(ics).not.toContain("MFL1");
+    expect(ics).not.toContain("1STC");
+  });
+
+  it("bruker samtalens egen id, så en flyttet samtale oppdateres", () => {
+    expect(lagSamtaleHendelse(vera)).toContain("UID:s1@elevtracking");
+  });
+
+  it("gir samme utdata så lenge samtalen er uendret", () => {
+    expect(lagSamtaleHendelse(vera, new Date("2026-01-01"))).toBe(
+      lagSamtaleHendelse(vera, new Date("2027-06-01")),
+    );
+  });
+
+  it("setter slutt etter varigheten", () => {
+    const ics = lagSamtaleHendelse({ ...vera, varighetMin: 30 });
+    expect(ics).toContain("Vera kl. 08:30–09:00");
   });
 });

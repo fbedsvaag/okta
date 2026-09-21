@@ -90,6 +90,64 @@ function vevent(o: Okt, na: Date): string[] {
   return ut;
 }
 
+/**
+ * Én mentorsamtale som kalenderhendelse.
+ *
+ * **Feltgrensen håndheves her, og bare her.** Det eneste som går ut er
+ * fornavn og klokkeslett: «Vera kl. 08:30–08:45». Ikke etternavn, ikke
+ * klasse, ikke fag, ikke notat, og ingen DESCRIPTION i det hele tatt.
+ *
+ * Grunnen til at det er fornavn og ikke fullt navn: en kalender kan bli
+ * synkronisert videre eller delt, og et fornavn alene identifiserer langt
+ * færre enn et fullt navn gjør. Se §8.1.
+ *
+ * Skal listen utvides, er det en spec-endring — ikke en kodeendring.
+ */
+export function lagSamtaleHendelse(
+  s: {
+    id: string;
+    fornavn: string;
+    dato: string;
+    klokkeslett: string;
+    varighetMin: number;
+    endret?: string;
+  },
+  na: Date = new Date(),
+): string {
+  const start = new Date(`${s.dato}T${s.klokkeslett}:00`);
+  const slutt = new Date(start.getTime() + s.varighetMin * 60_000);
+
+  const linjer = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    `PRODID:${PRODID}`,
+    "CALSCALE:GREGORIAN",
+    "BEGIN:VEVENT",
+    `UID:${s.id}@elevtracking`,
+    `DTSTAMP:${utc(s.endret ? new Date(s.endret) : na)}`,
+    `DTSTART:${utc(start)}`,
+    `DTEND:${utc(slutt)}`,
+    `SUMMARY:${esc(samtaletittel(s.fornavn, s.klokkeslett, klokke(slutt)))}`,
+    "END:VEVENT",
+    "END:VCALENDAR",
+  ];
+  return linjer.flatMap(brett).join("\r\n") + "\r\n";
+}
+
+/** «Vera kl. 08:30–08:45». Alt som står i hendelsen. */
+export function samtaletittel(
+  fornavn: string,
+  fra: string,
+  til: string,
+): string {
+  return `${fornavn} kl. ${fra}–${til}`;
+}
+
+function klokke(d: Date): string {
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
 /** Tittelen på kalenderhendelsen: «FAG: Tittel». */
 function sammendrag(o: Okt): string {
   return o.tema ? `${o.fagKode}: ${o.tema}` : o.fagKode;
