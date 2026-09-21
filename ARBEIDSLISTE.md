@@ -91,10 +91,13 @@ integreres senere.
 
 Tas én om gangen, etter at 0–3 er gjort.
 
-- [x] **Samtaletrekkeren.** Bygget i seks deler, §4.10. Migrasjon 012,
-  datalag med 79 tester, egen fane pluss inngang fra muntlige
-  vurderinger. Gjenstår: å vise hvilken oppgave eleven fikk under
-  vurderingen — samtaledagen kobles ikke til vurderingen ennå.
+- [x] **Samtaletrekkeren.** Bygget i seks deler, §4.10. Migrasjon 012 og
+  013, egen fane pluss inngang fra muntlige vurderinger. Notater fra
+  samtalen havner i elevens møtelogg og ses begge veier. Samtaledager
+  vises i kalenderen, på «I dag» og i timeregnskapet — mentorsamtaler
+  som egen linje uten måltall. Gjenstår: å vise hvilken oppgave eleven
+  fikk under selve vurderingen; samtaledagen kobles ikke til
+  vurderingen ennå.
 - [ ] **Klassekart.** Bygges standalone først, integreres senere.
   Spec-seksjon før integrasjonen. Rom må kunne lages enkelt, ellers
   blir den ubrukt
