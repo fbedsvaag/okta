@@ -655,8 +655,13 @@ export async function slettSamtaledag(id: string): Promise<void> {
 /**
  * Skriver en trekning til en dag.
  *
- * Tidligere samtaler på dagen fjernes først — en ny trekning erstatter den
- * forrige. Samtaler der eleven ikke møtte blir stående: de er en opplysning om
+ * **Raden gjenbrukes når eleven er med videre.** En elev som bare bytter
+ * klokkeslett beholder sin `samtale.id`, og da oppdateres kalenderhendelsen
+ * i stedet for å bli slettet og lagt inn på nytt (§8.1) — ellers ville en
+ * omstokking fått hendelser til å forsvinne og dukke opp igjen i kalenderen
+ * til alle som abonnerer.
+ *
+ * Samtaler der eleven ikke møtte blir stående urørt: de er en opplysning om
  * hva som skjedde, ikke en del av planen som trekkes om.
  */
 export async function lagreTrekning(
@@ -668,15 +673,29 @@ export async function lagreTrekning(
     tema: string | null;
   }[],
 ): Promise<void> {
-  const gamle = await hent<{ id: string; motte: number }>(
-    "SELECT id, motte FROM samtale WHERE samtaledag_id = $1 AND slettet IS NULL",
+  const gamle = await hent<{ id: string; elevId: string; motte: number }>(
+    `SELECT id, elev_id AS elevId, motte
+       FROM samtale WHERE samtaledag_id = $1 AND slettet IS NULL`,
     [samtaledagId],
   );
+
+  const ledige = new Map<string, string>();
   for (const g of gamle) {
-    if (g.motte === 1) await slett("samtale", g.id);
+    if (g.motte === 1 && !ledige.has(g.elevId)) ledige.set(g.elevId, g.id);
   }
 
+  const brukt = new Set<string>();
   for (const s of samtaler) {
+    const finnes = ledige.get(s.elevId);
+    if (finnes) {
+      brukt.add(finnes);
+      await oppdater("samtale", finnes, {
+        klokkeslett: s.klokkeslett,
+        varighet_min: s.varighetMin,
+        tema: s.tema,
+      });
+      continue;
+    }
     await settInn("samtale", {
       samtaledag_id: samtaledagId,
       elev_id: s.elevId,
@@ -685,6 +704,11 @@ export async function lagreTrekning(
       tema: s.tema,
       motte: 1,
     });
+  }
+
+  // Elever som ikke er med i den nye trekningen faller ut.
+  for (const g of gamle) {
+    if (g.motte === 1 && !brukt.has(g.id)) await slett("samtale", g.id);
   }
 }
 

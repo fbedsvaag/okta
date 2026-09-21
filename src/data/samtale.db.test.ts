@@ -237,3 +237,62 @@ describe("mentorsamtalen har ingen oppgave", () => {
     expect(s.tema).toBe("Oppgave 4");
   });
 });
+
+describe("id-er holder seg gjennom en omtrekning", () => {
+  it("lar eleven beholde sin samtale-id når hen bare bytter klokkeslett", async () => {
+    // Kalenderhendelsen bruker samtale.id som UID (§8.1). Byttes id-en, blir
+    // hendelsen slettet og lagt inn på nytt i stedet for å oppdateres — og
+    // da forsvinner og dukker den opp igjen hos alle som abonnerer.
+    const dagId = await dagMed("2026-11-24");
+    await lagreTrekning(dagId, [
+      { elevId: elever[0], klokkeslett: "09:00", varighetMin: 20, tema: null },
+    ]);
+    const forst = (await hentSamtaler(dagId))[0];
+
+    await lagreTrekning(dagId, [
+      { elevId: elever[0], klokkeslett: "11:00", varighetMin: 20, tema: null },
+    ]);
+    const etter = (await hentSamtaler(dagId))[0];
+
+    expect(etter.id).toBe(forst.id);
+    expect(etter.klokkeslett).toBe("11:00");
+  });
+
+  it("lager ikke en dublett av eleven", async () => {
+    const dagId = await dagMed("2026-11-24");
+    await lagreTrekning(dagId, [
+      { elevId: elever[0], klokkeslett: "09:00", varighetMin: 20, tema: null },
+    ]);
+    await lagreTrekning(dagId, [
+      { elevId: elever[0], klokkeslett: "11:00", varighetMin: 20, tema: null },
+    ]);
+
+    expect(await hentSamtaler(dagId)).toHaveLength(1);
+  });
+
+  it("lar den som faller ut av trekningen gå", async () => {
+    const dagId = await dagMed("2026-11-24");
+    await trekning(dagId, elever.slice(0, 3));
+    await lagreTrekning(dagId, [
+      { elevId: elever[0], klokkeslett: "09:00", varighetMin: 20, tema: null },
+    ]);
+
+    const igjen = await hentSamtaler(dagId);
+    expect(igjen).toHaveLength(1);
+    expect(igjen[0].elevId).toBe(elever[0]);
+  });
+
+  it("rører ikke den som ikke møtte", async () => {
+    const dagId = await dagMed("2026-11-24");
+    await trekning(dagId, elever.slice(0, 3));
+    const [forste] = await hentSamtaler(dagId);
+    await settMotte(forste.id, false);
+
+    await lagreTrekning(dagId, [
+      { elevId: elever[3], klokkeslett: "09:00", varighetMin: 20, tema: null },
+    ]);
+
+    const samtaler = await hentSamtaler(dagId);
+    expect(samtaler.find((s) => s.id === forste.id)?.motte).toBe(false);
+  });
+});

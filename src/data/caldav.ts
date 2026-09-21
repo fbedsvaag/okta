@@ -231,58 +231,139 @@ export async function publiser(skolear: Skolear): Promise<Resultat> {
     na[fagId] = summer_na;
   }
 
-  /*
-   * Mentorsamtalene, hvis de er uttrykkelig slått på.
-   *
-   * Én hendelse per samtale, og det eneste som går ut er fornavn og
-   * klokkeslett — se `lagSamtaleHendelse`, der feltgrensen håndheves.
-   * Fagsamtaler publiseres ikke slik: de hører til en vurdering, og
-   * oppgavefordelingen er ikke noe som skal ligge i en kalender.
-   */
-  if (o.mentorPa && o.mentorKalender.trim()) {
-    const dager = await hentSamtaledager(skolear.id);
-    const var_ = forrige[MENTORNOKKEL] ?? {};
-    const summer_na: Record<string, string> = {};
-    const hendelser: { uid: string; ics: string }[] = [];
-
-    for (const dag of dager.filter((d) => d.skolearFagId === null && d.dato)) {
-      for (const samtale of await hentSamtaler(dag.id)) {
-        if (!samtale.motte) continue;
-        const ics = lagSamtaleHendelse({
-          id: samtale.id,
-          fornavn: samtale.fornavn,
-          dato: dag.dato,
-          klokkeslett: samtale.klokkeslett,
-          varighetMin: samtale.varighetMin,
-        });
-        const sum = await summer(ics);
-        summer_na[samtale.id] = sum;
-        if (var_[samtale.id] === sum) samlet.uendret++;
-        else hendelser.push({ uid: samtale.id, ics });
-      }
-    }
-
-    const fjern = Object.keys(var_).filter((id) => !(id in summer_na));
-
-    if (hendelser.length > 0 || fjern.length > 0) {
-      const r = await invoke<Svar>("caldav_publiser", {
-        url: `${o.base.replace(/\/$/, "")}/${o.mentorKalender.trim()}`,
-        bruker: o.bruker,
-        hendelser,
-        fjern,
-      });
-      samlet.skrevet += r.skrevet;
-      samlet.slettet += r.slettet;
-      samlet.feil.push(...r.feil);
-      if (r.avbrutt) samlet.avbrutt = true;
-      for (const f of r.feil) delete summer_na[f.split(":")[0]];
-      if (r.avbrutt) for (const h of hendelser) delete summer_na[h.uid];
-    }
-
-    na[MENTORNOKKEL] = summer_na;
+  if (o.mentorPa) {
+    Object.assign(na, await mentorKart(skolear, o, forrige, samlet));
   }
 
   await settInnstilling(PUBLISERT, JSON.stringify(na));
+  return samlet;
+}
+
+/**
+ * Mentorsamtalene, som egne hendelser.
+ *
+ * Én per samtale, og det eneste som går ut er fornavn og klokkeslett — se
+ * `lagSamtaleHendelse`, der feltgrensen håndheves. Fagsamtaler publiseres
+ * ikke slik: de hører til en vurdering, og oppgavefordelingen er ikke noe som
+ * skal ligge i en kalender.
+ */
+async function mentorKart(
+  skolear: Skolear,
+  o: Oppsett,
+  forrige: Record<string, Record<string, string>>,
+  samlet: Resultat,
+): Promise<Record<string, Record<string, string>>> {
+  if (!o.mentorKalender.trim()) return {};
+
+  const var_ = forrige[MENTORNOKKEL] ?? {};
+  const { summer: summer_na, hendelser } = await mentorHendelser(skolear, var_);
+  const fjern = Object.keys(var_).filter((id) => !(id in summer_na));
+  samlet.uendret += Object.keys(summer_na).length - hendelser.length;
+
+  if (hendelser.length > 0 || fjern.length > 0) {
+    const r = await invoke<Svar>("caldav_publiser", {
+      url: `${o.base.replace(/\/$/, "")}/${o.mentorKalender.trim()}`,
+      bruker: o.bruker,
+      hendelser,
+      fjern,
+    });
+    samlet.skrevet += r.skrevet;
+    samlet.slettet += r.slettet;
+    samlet.feil.push(...r.feil);
+    if (r.avbrutt) samlet.avbrutt = true;
+    for (const f of r.feil) delete summer_na[f.split(":")[0]];
+    if (r.avbrutt) for (const h of hendelser) delete summer_na[h.uid];
+  }
+
+  return { [MENTORNOKKEL]: summer_na };
+}
+
+/** Hendelsene for mentorsamtalene, og hvilke av dem som er endret. */
+async function mentorHendelser(
+  skolear: Skolear,
+  publisert: Record<string, string>,
+): Promise<{
+  summer: Record<string, string>;
+  hendelser: { uid: string; ics: string }[];
+}> {
+  const dager = await hentSamtaledager(skolear.id);
+  const kontroll: Record<string, string> = {};
+  const hendelser: { uid: string; ics: string }[] = [];
+
+  for (const dag of dager.filter((d) => d.skolearFagId === null && d.dato)) {
+    for (const samtale of await hentSamtaler(dag.id)) {
+      if (!samtale.motte) continue;
+      const ics = lagSamtaleHendelse({
+        id: samtale.id,
+        fornavn: samtale.fornavn,
+        dato: dag.dato,
+        klokkeslett: samtale.klokkeslett,
+        varighetMin: samtale.varighetMin,
+      });
+      const sum = await summer(ics);
+      kontroll[samtale.id] = sum;
+      if (publisert[samtale.id] !== sum) hendelser.push({ uid: samtale.id, ics });
+    }
+  }
+  return { summer: kontroll, hendelser };
+}
+
+/**
+ * Hvor mye som ikke er sendt ut ennå.
+ *
+ * Skjermen bruker den til å vise om trekningen er publisert, endret siden
+ * sist, eller aldri sendt. Den rører ikke nettet — den sammenlikner bare mot
+ * kontrollsummene som allerede ligger lagret.
+ */
+export async function mentorStatus(skolear: Skolear): Promise<{
+  pa: boolean;
+  kalender: string;
+  publiserte: number;
+  uendret: number;
+  endrede: number;
+  fjernes: number;
+}> {
+  const o = await hentOppsett();
+  const var_ = (lesForrige(await hentInnstilling(PUBLISERT)))[MENTORNOKKEL] ?? {};
+  const { summer, hendelser } = await mentorHendelser(skolear, var_);
+
+  return {
+    pa: o.mentorPa,
+    kalender: o.mentorKalender,
+    publiserte: Object.keys(var_).length,
+    uendret: Object.keys(summer).length - hendelser.length,
+    endrede: hendelser.length,
+    fjernes: Object.keys(var_).filter((id) => !(id in summer)).length,
+  };
+}
+
+/**
+ * Publiserer bare mentorsamtalene, uten å røre fagkalenderne.
+ *
+ * Knappen i samtaleskjermen bruker denne: en trekning er en bevisst handling,
+ * og da skal den sendes når du sier fra — ikke som en bivirkning av at du dro
+ * en rad.
+ */
+export async function publiserMentor(skolear: Skolear): Promise<Resultat> {
+  const o = await hentOppsett();
+  if (!o.base || !o.bruker) {
+    throw new Error("Adresse og brukernavn må være satt.");
+  }
+  if (!o.mentorKalender.trim()) {
+    throw new Error("Ingen kalender er satt for mentorsamtaler.");
+  }
+
+  const forrige = lesForrige(await hentInnstilling(PUBLISERT));
+  const samlet: Resultat = {
+    skrevet: 0,
+    slettet: 0,
+    feil: [],
+    uendret: 0,
+    avbrutt: false,
+  };
+
+  const kart = await mentorKart(skolear, o, forrige, samlet);
+  await settInnstilling(PUBLISERT, JSON.stringify({ ...forrige, ...kart }));
   return samlet;
 }
 

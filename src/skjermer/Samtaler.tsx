@@ -35,6 +35,7 @@ import {
   type Trekning,
 } from "../data/samtale";
 import { invoke } from "@tauri-apps/api/core";
+import { mentorStatus, publiserMentor } from "../data/caldav";
 import {
   hentNotatPerElev,
   opprettElevnotat,
@@ -116,6 +117,10 @@ export function Samtaler({
   // Alle samtaledagene i året, ikke bare de som hører til valget nå — det er
   // dem oversikten øverst er til for.
   const [alleDager, setAlleDager] = useState<Samtaledag[]>([]);
+  const [kalender, setKalender] = useState<Awaited<
+    ReturnType<typeof mentorStatus>
+  > | null>(null);
+  const [publiserer, setPubliserer] = useState(false);
 
   const minutter = Number(samtaletid) || 20;
   const pausen = Number(pause) || 0;
@@ -169,6 +174,7 @@ export function Samtaler({
     }
     setTrekning(lagrede.length > 0 ? lagrede : null);
     setNotater(await notaterFor(lagrede));
+    setKalender(await mentorStatus(skolear));
     setLagret(true);
 
     // Én dag ligger klar med én gang, så datofeltet er fremme og ikke gjemt
@@ -286,7 +292,10 @@ export function Samtaler({
       );
     }
     setLagret(true);
-    setHistorikk(await hentHistorikk(skolear.id));
+    // Les tilbake fra basen: da får radene sine ekte id-er, og oversikten
+    // over planlagte samtaler får riktig antall. Uten dette sto den igjen
+    // med «ikke trukket» etter en trekning.
+    await last();
   }
 
   /**
@@ -355,6 +364,18 @@ export function Samtaler({
     }
 
     setNotater(await notaterFor(trekning ?? []));
+  }
+
+  async function publiser() {
+    setPubliserer(true);
+    try {
+      await publiserMentor(skolear);
+      setKalender(await mentorStatus(skolear));
+    } catch (feil) {
+      setDragmelding(`Publiseringen feilet: ${String(feil)}`);
+    } finally {
+      setPubliserer(false);
+    }
   }
 
   /** Formen eksportene arbeider på. */
@@ -749,6 +770,30 @@ export function Samtaler({
               {kopiert === "md" ? "✓ Kopiert" : "Kopier som markdown"}
             </Knapp>
             <Knapp onClick={() => void invoke("skriv_ut")}>Skriv ut</Knapp>
+
+            {/*
+              Publiseringen er en bevisst handling, ikke en bivirkning av at
+              du dro en rad. Knappen sier hva som venter — og at noe er endret
+              siden sist, så du vet at kalenderen er i utakt (§8.1).
+            */}
+            {modus === "mentor" && kalender?.pa && (
+              <span className="ml-auto flex items-center gap-2">
+                <span className="text-liten text-blekk-dempet">
+                  {kalendertekst(kalender)}
+                </span>
+                <Knapp
+                  variant={
+                    kalender.endrede + kalender.fjernes > 0 ? "primar" : "vanlig"
+                  }
+                  disabled={
+                    publiserer || kalender.endrede + kalender.fjernes === 0
+                  }
+                  onClick={() => void publiser()}
+                >
+                  {publiserer ? "Publiserer …" : "Publiser til kalender"}
+                </Knapp>
+              </span>
+            )}
           </div>
         )}
 
@@ -1400,4 +1445,29 @@ function spenn(t: Trekning): string {
   if (!t.forste) return "dato mangler";
   if (t.forste === t.siste) return kortDato(t.forste);
   return `${kortDato(t.forste)}–${kortDato(t.siste)}`;
+}
+
+/**
+ * Hva kalenderen vet om trekningen.
+ *
+ * Sier om den er i utakt, ikke bare om publiseringen er slått på — en
+ * omstokking etter publisering skal være synlig som noe som må sendes.
+ */
+function kalendertekst(k: {
+  kalender: string;
+  publiserte: number;
+  uendret: number;
+  endrede: number;
+  fjernes: number;
+}): string {
+  if (!k.kalender.trim()) return "Ingen kalender satt i innstillingene";
+
+  const utakt = k.endrede + k.fjernes;
+  if (utakt === 0) {
+    return k.uendret === 0
+      ? "Ingenting å publisere"
+      : `${k.uendret} publisert, ingen endringer`;
+  }
+  if (k.publiserte === 0) return `${k.endrede} samtaler ikke publisert ennå`;
+  return `${utakt} endret siden publisering`;
 }
