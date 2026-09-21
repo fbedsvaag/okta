@@ -25,6 +25,8 @@ export function IDag({
   fag: FagIAr[];
   onGaTil: (
     visning: "fag" | "elever" | "okter" | "vurderinger" | "samtaler",
+    /** tingen skjermen skal åpne — f.eks. eleven du klikket på */
+    id?: string,
   ) => void;
   onApneOkt: (id: string) => void;
 }) {
@@ -156,7 +158,7 @@ export function IDag({
 
       <Arsoversikt
         skolearId={skolear.id}
-        onApneElev={() => onGaTil("elever")}
+        onApneElev={(elevId) => onGaTil("elever", elevId)}
         onApneVurderinger={() => onGaTil("vurderinger")}
       />
       </div>

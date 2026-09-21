@@ -63,10 +63,13 @@ const STANDARD: Synlig[] = ["etternavn", "klasse", "fag", "okter", "siste"];
 export function Elever({
   skolearId,
   fag,
+  startElev = null,
   onLimInn,
   onApneOkt,
 }: {
   skolearId: string;
+  /** Elev som skal stå åpen med en gang, f.eks. klikket fra forsiden. */
+  startElev?: string | null;
   fag: FagIAr[];
   onLimInn: () => void;
   onApneOkt: (oktId: string) => void;
@@ -86,7 +89,7 @@ export function Elever({
   // noe venter — aldri hva. Tabellen vises i klasserommet og i møter.
   const [forfalte, setForfalte] = useState<Set<string>>(new Set());
   const [feil, setFeil] = useState<string | null>(null);
-  const [valgtElev, setValgtElev] = useState<string | null>(null);
+  const [valgtElev, setValgtElev] = useState<string | null>(startElev);
   const [synligeKolonner, setSynligeKolonner] = useState<Set<Synlig>>(
     new Set(STANDARD),
   );
@@ -99,6 +102,12 @@ export function Elever({
   const [rediger, setRediger] = useState(false);
   // Flervalg til sletting, atskilt fra `valgtElev` som er elevkortet du ser.
   const [merket, setMerket] = useState<Set<string>>(new Set());
+
+  // Kommer man hit med en elev i sikte — fra forsiden eller et heatmap —
+  // skal hen åpne seg, også når panelet allerede står på en annen.
+  useEffect(() => {
+    if (startElev) setValgtElev(startElev);
+  }, [startElev]);
 
   async function last() {
     setElever(await hentElever(skolearId));

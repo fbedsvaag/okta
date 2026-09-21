@@ -124,6 +124,23 @@ export function foreslatteDatoer(navn: string): { start: string; slutt: string }
   return { start: `${startAr}-08-17`, slutt: `${startAr + 1}-06-20` };
 }
 
+/**
+ * Tekststørrelsen, som et tall typeskalaen ganges med (§4.8).
+ *
+ * Settes på dokumentroten, ikke i en komponent: hele skalaen henger på den,
+ * og den skal gjelde før noe er tegnet.
+ */
+export const TEKSTSKALA = "tekst_skala";
+
+export async function brukTekstskala(): Promise<void> {
+  const v = await hentInnstilling(TEKSTSKALA);
+  settTekstskala(v ?? "0.93");
+}
+
+export function settTekstskala(verdi: string): void {
+  document.documentElement.style.setProperty("--tekst-skala", verdi);
+}
+
 // ------------------------------------------------------------------ fridager
 
 /**

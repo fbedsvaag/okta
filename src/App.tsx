@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
-import { hentAktivtSkolear, type Skolear } from "./data/skolear";
+import {
+  brukTekstskala,
+  hentAktivtSkolear,
+  type Skolear,
+} from "./data/skolear";
 import { daglingKopi } from "./data/sikkerhetskopi";
 import { erPa as kalenderPa, start as startKalender } from "./data/kalenderfeed";
 import { startAuto as startCaldav } from "./data/caldav";
@@ -20,7 +24,13 @@ import { Samtaler } from "./skjermer/Samtaler";
 import { Knapp } from "./ui/felles";
 import { Ordmerke } from "./ui/logo";
 
-type Sted = { visning: Visning; okt: string | null };
+/**
+ * Et sted i historikken.
+ *
+ * `id` er tingen visningen skal åpne — en økt, et fag eller en elev, alt
+ * etter hvilken skjerm det er. Feltet het `okt` da det bare fantes økter.
+ */
+type Sted = { visning: Visning; id: string | null };
 
 type Visning =
   | "idag"
@@ -49,19 +59,19 @@ export default function App() {
   //
   // Lista og markøren ligger i samme state fordi de alltid endres sammen.
   const [historikk, setHistorikk] = useState<{ steder: Sted[]; peker: number }>({
-    steder: [{ visning: "idag", okt: null }],
+    steder: [{ visning: "idag", id: null }],
     peker: 0,
   });
 
   const { steder, peker } = historikk;
-  const { visning, okt: apneOkt } = steder[peker];
+  const { visning, id: apneId } = steder[peker];
 
-  const ga = useCallback((visning: Visning, okt: string | null = null) => {
+  const ga = useCallback((visning: Visning, id: string | null = null) => {
     setHistorikk((h) => {
       const na = h.steder[h.peker];
       // Samme sted to ganger på rad gir ingenting å gå tilbake gjennom.
-      if (na.visning === visning && na.okt === okt) return h;
-      const steder = [...h.steder.slice(0, h.peker + 1), { visning, okt }];
+      if (na.visning === visning && na.id === id) return h;
+      const steder = [...h.steder.slice(0, h.peker + 1), { visning, id }];
       return { steder, peker: steder.length - 1 };
     });
   }, []);
@@ -98,7 +108,11 @@ export default function App() {
 
   const last = useCallback(async () => {
     try {
-      // Sikkerhetskopi først, før noe rekker å endres i denne økta.
+      // Tekststørrelsen først: den gjelder hele skjermen, og skal være på
+      // plass før noe tegnes.
+      await brukTekstskala().catch((e) => console.error("tekstskala:", e));
+
+      // Sikkerhetskopi, før noe rekker å endres i denne økta.
       await daglingKopi().catch((e) => console.error("sikkerhetskopi:", e));
 
       const ar = await hentAktivtSkolear();
@@ -288,7 +302,7 @@ export default function App() {
           <IDag
             skolear={skolear}
             fag={fag}
-            onGaTil={(v) => ga(v)}
+            onGaTil={(v, id) => ga(v, id ?? null)}
             onApneOkt={(id) => ga("okter", id)}
           />
         )}
@@ -311,7 +325,7 @@ export default function App() {
             key={versjon}
             skolear={skolear}
             fag={fag}
-            startFagId={apneOkt ?? undefined}
+            startFagId={apneId ?? undefined}
           />
         )}
 
@@ -335,6 +349,7 @@ export default function App() {
         {visning === "elever" && (
           <Elever
             key={versjon}
+            startElev={apneId}
             skolearId={skolear.id}
             fag={fag}
             onLimInn={() => ga("liminn")}
@@ -360,7 +375,7 @@ export default function App() {
             key={versjon}
             skolear={skolear}
             fag={fag}
-            startValgt={apneOkt}
+            startValgt={apneId}
             onApnePerioder={() => ga("perioder")}
           />
         )}

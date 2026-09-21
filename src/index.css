@@ -199,13 +199,13 @@
    * MERK at `liten` nå er 13px, altså det brødteksten var. Skjermer som må
    * holde på tettheten — skåringslista i §4.4 — bruker den framfor `brod`.
    */
-  --text-mikro: 11px;
-  --text-etikett: 12px;
-  --text-liten: 13px;
-  --text-brod: 15px;
-  --text-medium: 16px;
-  --text-tittel: 19px;
-  --text-overskrift: 24px;
+  --text-mikro: calc(11px * var(--tekst-skala));
+  --text-etikett: calc(12px * var(--tekst-skala));
+  --text-liten: calc(13px * var(--tekst-skala));
+  --text-brod: calc(15px * var(--tekst-skala));
+  --text-medium: calc(16px * var(--tekst-skala));
+  --text-tittel: calc(19px * var(--tekst-skala));
+  --text-overskrift: calc(24px * var(--tekst-skala));
   --tracking-etikett: 0.06em;
 
   /* Radier. Skarpt, ikke avrundet — dette er et skjema, ikke et kort. */
@@ -255,6 +255,21 @@
  * en ekte høyde i stedet for 100vh. I en webview er de to ikke alltid det
  * samme, og et avvik på noen piksler er nok til at dokumentet lar seg dra.
  */
+/*
+ * Tekststørrelsen kan justeres i innstillingene (§4.8).
+ *
+ * Hele typeskalaen er ganget med denne, så forholdet mellom gradene holder
+ * seg uansett hva man velger — det er hierarkiet som bærer, ikke de absolutte
+ * tallene. 0.93 gir 14px brødtekst, som er standard.
+ *
+ * MERK at skåringslista bruker `text-liten` for å holde 28px rader. Skrur man
+ * skalaen helt opp, vokser også den, og da får færre enn tretti elever plass.
+ * Det er et bevisst valg: den som trenger større tekst trenger den der også.
+ */
+:root {
+  --tekst-skala: 0.93;
+}
+
 html,
 body,
 #root {

@@ -5,8 +5,10 @@ import {
   hentSkolear,
   settAktivtSkolear,
   settInnstilling,
+  settTekstskala,
   slettSkolear,
   tellForSkolear,
+  TEKSTSKALA,
 } from "../data/skolear";
 import {
   gjenopprettFra,
@@ -60,6 +62,7 @@ export function Innstillinger({
   const [davPassord, setDavPassord] = useState("");
   const [davHarPassord, setDavHarPassord] = useState(false);
   const [davMelding, setDavMelding] = useState<string | null>(null);
+  const [tekstskala, setTekstskala] = useState("0.93");
   const [davFeil, setDavFeil] = useState<string | null>(null);
   const [davJobber, setDavJobber] = useState(false);
   const [arkivmappe, setArkivmappe] = useState("");
@@ -110,6 +113,10 @@ export function Innstillinger({
       await gjenopprett(valgt, valgt.split("/").pop() ?? valgt);
     }
   }
+
+  useEffect(() => {
+    void hentInnstilling(TEKSTSKALA).then((v) => setTekstskala(v ?? "0.93"));
+  }, []);
 
   useEffect(() => {
     void (async () => {
@@ -248,6 +255,37 @@ export function Innstillinger({
             bredde="w-40"
           />
         </div>
+      </Bolk>
+
+      <Bolk tittel="Utseende">
+        {/*
+          Hele typeskalaen ganges med dette tallet, så forholdet mellom
+          gradene holder seg uansett valg — det er hierarkiet som bærer, ikke
+          de absolutte tallene.
+        */}
+        <label className="block max-w-sm">
+          <Etikett>Tekststørrelse</Etikett>
+          <select
+            value={tekstskala}
+            onChange={async (e) => {
+              const v = e.target.value;
+              setTekstskala(v);
+              settTekstskala(v);
+              await settInnstilling(TEKSTSKALA, v);
+            }}
+            className="w-full rounded border border-linje bg-ark px-2 py-1.5 text-brod"
+          >
+            <option value="0.87">Liten — 13 px brødtekst</option>
+            <option value="0.93">Normal — 14 px</option>
+            <option value="1">Stor — 15 px</option>
+            <option value="1.07">Større — 16 px</option>
+          </select>
+          <p className="mt-1 text-liten text-blekk-dempet">
+            Endringen gjelder med en gang. Skåringslista er den tetteste
+            skjermen — skrur du helt opp, får færre enn tretti elever plass
+            uten å rulle.
+          </p>
+        </label>
       </Bolk>
 
       <Bolk tittel="Standardverdier">
