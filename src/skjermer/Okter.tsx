@@ -29,6 +29,7 @@ import {
   Kontekstmeny,
   Menyvalg,
   Tomtilstand,
+  Velger,
 } from "../ui/felles";
 import { invoke } from "@tauri-apps/api/core";
 import { OktPanel } from "./OktPanel";
@@ -208,23 +209,19 @@ export function Okter({
               plassholder="Søk i tema"
               bredde={apen ? "w-full" : "w-56"}
             />
-            <select
-              value={filterFag}
-              onChange={(e) => setFilterFag(e.target.value)}
-              className="rounded border border-linje bg-ark px-2 py-1.5 text-brod"
-            >
+            <Velger verdi={filterFag} settVerdi={setFilterFag}>
               <option value="">Alle fag</option>
               {fag.map((f) => (
                 <option key={f.id} value={f.id}>
                   {f.kode}
                 </option>
               ))}
-            </select>
+            </Velger>
             <div className="ml-auto flex items-center gap-2">
               <Kolonnevelger valgbare={VALGBARE} vis={kolonner} onEndre={(id, pa) => byttKolonne(id as KolonneId, pa)} />
               <label
                 title="Grupper øktene under perioden sin på arket"
-                className="flex select-none items-center gap-1.5 text-liten text-blekk-dempet"
+                className="flex select-none items-center gap-1.5 text-brod text-blekk-dempet"
               >
                 <input
                   type="checkbox"

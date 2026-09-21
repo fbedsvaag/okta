@@ -6,6 +6,43 @@ import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "re
  * appen med mettet farge.
  */
 
+/**
+ * Felles høyde på alt som står på en verktøylinje.
+ *
+ * Knapper, søkefelt og nedtrekkslister sto før med hver sin padding, og da
+ * flukter de ikke — det var en stor del av det som leste som hjemmesnekra.
+ * Høyden er satt i `em` så den følger tekststørrelsen (§4.8).
+ */
+export const KONTROLL = "h-[2.2em] leading-none";
+
+/**
+ * Nedtrekksliste med samme form som knapper og felter.
+ *
+ * Fantes som en håndskrevet klasse i åtte filer før, med små forskjeller i
+ * padding hvert sted.
+ */
+export function Velger({
+  verdi,
+  settVerdi,
+  bredde = "",
+  children,
+}: {
+  verdi: string;
+  settVerdi: (v: string) => void;
+  bredde?: string;
+  children: ReactNode;
+}) {
+  return (
+    <select
+      value={verdi}
+      onChange={(e) => settVerdi(e.target.value)}
+      className={`${KONTROLL} ${bredde} rounded border border-linje bg-ark px-2 text-brod`}
+    >
+      {children}
+    </select>
+  );
+}
+
 export function Knapp({
   children,
   onClick,
@@ -33,7 +70,7 @@ export function Knapp({
       type={type}
       onClick={onClick}
       disabled={disabled}
-      className={`rounded px-3 py-1.5 text-brod transition-colors disabled:opacity-40 disabled:hover:bg-inherit ${stil}`}
+      className={`${KONTROLL} rounded px-3 text-brod transition-colors disabled:opacity-40 disabled:hover:bg-inherit ${stil}`}
     >
       {children}
     </button>
@@ -78,7 +115,7 @@ export function Felt({
             onEnter();
           }
         }}
-        className="w-full rounded border border-linje bg-ark px-2 py-1.5 text-brod tabular-nums outline-none focus:border-aksent focus:ring-1 focus:ring-aksent"
+        className={`${KONTROLL} w-full rounded border border-linje bg-ark px-2 text-brod tabular-nums outline-none focus:border-aksent`}
       />
     </label>
   );
