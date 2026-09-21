@@ -200,3 +200,40 @@ describe("hentHistorikk", () => {
     expect((await hentHistorikk(skolearId)).size).toBe(0);
   });
 });
+
+describe("mentorsamtalen har ingen oppgave", () => {
+  it("lagrer tema som null når dagen ikke har fag", async () => {
+    // Bug: temalista lastes bare i fagmodus, så den ble stående med forrige
+    // fags verdier ved modusbytte — og trekningen delte dem ut likevel.
+    const dagId = await opprettSamtaledag(skolearId, {
+      skolearFagId: null,
+      dato: "2026-11-24",
+      fra: "08:30",
+      til: "15:00",
+      lunsjFra: null,
+      lunsjMin: null,
+    });
+
+    await lagreTrekning(dagId, [
+      { elevId: elever[0], klokkeslett: "09:00", varighetMin: 20, tema: null },
+    ]);
+
+    const [s] = await hentSamtaler(dagId);
+    expect(s.tema).toBeNull();
+  });
+
+  it("lar fagsamtalen beholde sin oppgave", async () => {
+    const dagId = await dagMed("2026-11-24");
+    await lagreTrekning(dagId, [
+      {
+        elevId: elever[0],
+        klokkeslett: "09:00",
+        varighetMin: 20,
+        tema: "Oppgave 4",
+      },
+    ]);
+
+    const [s] = await hentSamtaler(dagId);
+    expect(s.tema).toBe("Oppgave 4");
+  });
+});

@@ -120,6 +120,17 @@ export function Samtaler({
   const minutter = Number(samtaletid) || 20;
   const pausen = Number(pause) || 0;
 
+  /**
+   * Temaene som faktisk gjelder.
+   *
+   * Mentorsamtalen har ikke oppgavenummer (§4.10). Lista over temaer lastes
+   * bare i fagmodus, så den blir stående med forrige fags verdier når man
+   * bytter — og da delte trekningen dem ut i mentormodus også. Modus leses
+   * derfor ut her, ett sted, så de to trekningsveiene ikke kan komme i utakt.
+   */
+  const aktiveTemaer =
+    modus === "fag" ? temaer.filter((t) => t.trim() !== "") : [];
+
   async function last() {
     setElever(await hentElever(skolear.id));
     setHistorikk(await hentHistorikk(skolear.id));
@@ -147,7 +158,9 @@ export function Samtaler({
           samtaleId: s.id,
           elevId: s.elevId,
           navn: `${s.fornavn} ${s.etternavn}`,
-          tema: s.tema,
+          // En dag uten fag har ingen oppgave. Sto det likevel noe der fra
+          // før, er det spor etter feilen over, og det skal ikke vises.
+          tema: dag.skolearFagId === null ? null : s.tema,
           fra: s.klokkeslett,
           til: tilKlokke(tilMin(s.klokkeslett) + s.varighetMin),
           motte: s.motte,
@@ -392,10 +405,14 @@ export function Samtaler({
 
     const ider = deltakere.map((d) => d.id);
     const ordnet = vekting ? vektetRekkefolge(ider, historikk) : stokk(ider);
-    const rene = temaer.filter((t) => t.trim() !== "");
 
     setLasteElever(new Set());
-    await skriv(byggPlan(delPaDager(ordnet, kapasiteter), tildelTema(ordnet, rene)));
+    await skriv(
+      byggPlan(
+        delPaDager(ordnet, kapasiteter),
+        tildelTema(ordnet, aktiveTemaer),
+      ),
+    );
   }
 
   /**
@@ -418,10 +435,9 @@ export function Samtaler({
       ? perDag
       : trekkOmRekkefolge(perDag, lasteElever);
 
-    const rene = temaer.filter((t) => t.trim() !== "");
     const nyttTema = lastTema
       ? na
-      : trekkOmTema(perDag.flat(), na, lasteElever, rene);
+      : trekkOmTema(perDag.flat(), na, lasteElever, aktiveTemaer);
 
     await skriv(byggPlan(nyPerDag, nyttTema));
   }
