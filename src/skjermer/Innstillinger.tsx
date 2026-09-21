@@ -529,22 +529,35 @@ export function Innstillinger({
           «Vera kl. 08:30–08:45». Ikke etternavn, ikke klasse, ikke fag, ingen
           beskrivelse. Denne kalenderen bør ikke deles med andre.
         </p>
-        {dav.mentorPa && (
-          <label className="ml-6 mt-2 flex items-center gap-2 text-brod">
-            <span className="w-20 shrink-0 font-medium">Kalender</span>
-            <input
-              value={dav.mentorKalender}
-              placeholder="tomt = publiseres ikke"
-              onChange={(e) =>
-                setDav((d) => ({ ...d, mentorKalender: e.target.value }))
-              }
-              onBlur={async (e) =>
-                await caldav.lagreOppsett({ mentorKalender: e.target.value })
-              }
-              className="w-56 rounded border border-linje bg-ark px-2 py-1 text-brod outline-none focus:border-aksent"
-            />
-          </label>
+        {/*
+          Feltet står alltid framme, som fagkalenderne — ikke gjemt bak
+          avkrysningen over. Man må kunne se hvor noe ville gått før man
+          bestemmer seg for å slå det på.
+        */}
+        <label className="ml-6 mt-2 flex items-center gap-2 text-brod">
+          <span className="w-20 shrink-0 font-medium">Kalender</span>
+          <input
+            value={dav.mentorKalender}
+            placeholder="f.eks. mentorsamtaler"
+            onChange={(e) =>
+              setDav((d) => ({ ...d, mentorKalender: e.target.value }))
+            }
+            onBlur={async (e) =>
+              await caldav.lagreOppsett({ mentorKalender: e.target.value })
+            }
+            className="w-56 rounded border border-linje bg-ark px-2 py-1 text-brod outline-none focus:border-aksent"
+          />
+        </label>
+        {dav.mentorPa && !dav.mentorKalender.trim() && (
+          <p className="ml-6 mt-1 text-liten text-varsel">
+            Publiseringen er på, men ingen kalender er satt — ingenting sendes.
+          </p>
         )}
+        <p className="ml-6 mt-1 text-liten text-blekk-svak">
+          Navnet på samlingen slik den heter på serveren, det som står sist i
+          adressen. Den må finnes fra før — appen oppretter ikke kalendere, og
+          leser aldri noe tilbake (§8.1).
+        </p>
 
         <p className="mb-1 mt-5 text-etikett uppercase tracking-etikett text-blekk-dempet">
           Kalender per fag
