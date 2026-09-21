@@ -10,6 +10,7 @@ const {
   finnEllerOpprettKlasse,
   hentElever,
   opprettElev,
+  passerFagfilter,
   frakobleFag,
   koblePaFag,
   settKlasse,
@@ -142,5 +143,37 @@ describe("frakobling av fag", () => {
       [elevId],
     );
     expect(rader[0].n).toBe(1);
+  });
+});
+
+describe("passerFagfilter", () => {
+  const eleven = ["mfl1", "eng1", "kro"];
+
+  it("slipper alle gjennom når ingenting er valgt", () => {
+    expect(passerFagfilter([], new Set(), "alle")).toBe(true);
+    expect(passerFagfilter(eleven, new Set(), "minstEtt")).toBe(true);
+  });
+
+  it("krever samtlige fag i «alle»", () => {
+    // Det er dette spørsmålet filteret finnes for: hvem har både MFL1 og ENG1.
+    expect(passerFagfilter(eleven, new Set(["mfl1", "eng1"]), "alle")).toBe(true);
+    expect(passerFagfilter(eleven, new Set(["mfl1", "ebu1"]), "alle")).toBe(false);
+  });
+
+  it("krever bare ett fag i «minst ett»", () => {
+    expect(passerFagfilter(eleven, new Set(["mfl1", "ebu1"]), "minstEtt")).toBe(true);
+    expect(passerFagfilter(eleven, new Set(["ebu1", "sam1"]), "minstEtt")).toBe(false);
+  });
+
+  it("betyr det samme for begge modus når ett fag er valgt", () => {
+    for (const modus of ["alle", "minstEtt"] as const) {
+      expect(passerFagfilter(eleven, new Set(["mfl1"]), modus)).toBe(true);
+      expect(passerFagfilter(eleven, new Set(["ebu1"]), modus)).toBe(false);
+    }
+  });
+
+  it("holder en elev uten fag utenfor når noe er valgt", () => {
+    expect(passerFagfilter([], new Set(["mfl1"]), "alle")).toBe(false);
+    expect(passerFagfilter([], new Set(["mfl1"]), "minstEtt")).toBe(false);
   });
 });

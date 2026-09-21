@@ -229,6 +229,85 @@ export function Fagfiltre({
   );
 }
 
+/**
+ * Fagfilter med flere valg, og AND/OR mellom dem.
+ *
+ * Deler knappene med `Fagfiltre` over. Bryteren vises først når to fag er
+ * valgt — med ett fag betyr «alle» og «minst ett» det samme, og et valg som
+ * ikke gjør noe er verre enn ingen.
+ */
+export function Fagflervalg({
+  fag,
+  valgte,
+  settValgte,
+  modus,
+  settModus,
+}: {
+  fag: { id: string; kode: string; farge: string | null }[];
+  valgte: ReadonlySet<string>;
+  settValgte: (v: Set<string>) => void;
+  modus: "alle" | "minstEtt";
+  settModus: (m: "alle" | "minstEtt") => void;
+}) {
+  if (fag.length === 0) return null;
+
+  return (
+    <div className="flex flex-wrap items-center gap-1">
+      <Fagknapp
+        aktiv={valgte.size === 0}
+        farge={null}
+        onClick={() => settValgte(new Set())}
+      >
+        Alle fag
+      </Fagknapp>
+      {fag.map((f) => (
+        <Fagknapp
+          key={f.id}
+          aktiv={valgte.has(f.id)}
+          farge={f.farge}
+          onClick={() => {
+            const ny = new Set(valgte);
+            if (ny.has(f.id)) ny.delete(f.id);
+            else ny.add(f.id);
+            settValgte(ny);
+          }}
+        >
+          {f.kode}
+        </Fagknapp>
+      ))}
+
+      {valgte.size > 1 && (
+        <span className="ml-1 flex items-center gap-1 text-liten text-blekk-dempet">
+          <button
+            onClick={() => settModus("alle")}
+            aria-pressed={modus === "alle"}
+            title="Eleven må ha samtlige valgte fag"
+            className={`rounded-liten px-1.5 py-0.5 ${
+              modus === "alle"
+                ? "bg-valgt font-medium text-aksent"
+                : "hover:bg-flate"
+            }`}
+          >
+            har alle
+          </button>
+          <button
+            onClick={() => settModus("minstEtt")}
+            aria-pressed={modus === "minstEtt"}
+            title="Eleven må ha minst ett av de valgte fagene"
+            className={`rounded-liten px-1.5 py-0.5 ${
+              modus === "minstEtt"
+                ? "bg-valgt font-medium text-aksent"
+                : "hover:bg-flate"
+            }`}
+          >
+            minst ett
+          </button>
+        </span>
+      )}
+    </div>
+  );
+}
+
 function Fagknapp({
   aktiv,
   farge,

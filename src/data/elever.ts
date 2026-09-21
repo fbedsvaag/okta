@@ -74,6 +74,28 @@ export async function slettKlasse(id: string): Promise<void> {
   await slett("klasse", id);
 }
 
+/**
+ * Om en elev passerer fagfilteret.
+ *
+ * `alle` er AND: eleven må ha samtlige valgte fag. Det er den som svarer på
+ * «hvem har både MFL1 og ENG1». `minstEtt` er OR, som er nyttig når man leter
+ * etter en elev man ikke husker hvilket fag man har hen i.
+ *
+ * Ingen valgte fag slipper alle gjennom — et tomt filter er ikke et filter.
+ */
+export function passerFagfilter(
+  fagIder: string[],
+  valgte: ReadonlySet<string>,
+  modus: "alle" | "minstEtt",
+): boolean {
+  if (valgte.size === 0) return true;
+
+  let treff = 0;
+  for (const id of valgte) if (fagIder.includes(id)) treff++;
+
+  return modus === "alle" ? treff === valgte.size : treff > 0;
+}
+
 // ------------------------------------------------------------------ elever
 
 export async function hentElever(skolearId: string): Promise<ElevRad[]> {

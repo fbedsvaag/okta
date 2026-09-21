@@ -16,6 +16,7 @@ import {
   settMentor,
   slettElever,
   slettElevtekst,
+  passerFagfilter,
   slettKlasse,
   type ElevRad,
   type Klasse,
@@ -23,7 +24,14 @@ import {
 import type { FagIAr } from "../data/fag";
 import { hentInnstilling, settInnstilling } from "../data/skolear";
 import { delNavn } from "../import/parser";
-import { Fagfiltre, Fagmerke, Felt, Knapp, Kolonnevelger, Tomtilstand } from "../ui/felles";
+import {
+  Fagflervalg,
+  Fagmerke,
+  Felt,
+  Knapp,
+  Kolonnevelger,
+  Tomtilstand,
+} from "../ui/felles";
 import { hentForfalte } from "../data/elevnotat";
 import { ElevPanel } from "./ElevPanel";
 import { useGlidende } from "../ui/bevegelse";
@@ -68,7 +76,10 @@ export function Elever({
   const [fane, setFane] = useState<"elever" | "klasser">("elever");
   const [sok, setSok] = useState("");
   const [filterKlasse, setFilterKlasse] = useState("");
-  const [filterFag, setFilterFag] = useState("");
+  // Flere fag kan velges, med AND eller OR mellom dem: «hvem har både MFL1
+  // og ENG1» er et annet spørsmål enn «hvem har ett av dem».
+  const [filterFag, setFilterFag] = useState<Set<string>>(new Set());
+  const [fagModus, setFagModus] = useState<"alle" | "minstEtt">("alle");
   // Mentorfilteret virker uavhengig av klasse- og fagfilteret (§4.3).
   const [baraMentor, setBaraMentor] = useState(false);
   // Elever med et åpent, forfalt oppfølgingspunkt (§4.7). Merket sier bare at
@@ -127,14 +138,14 @@ export function Elever({
     const s = sok.trim().toLocaleLowerCase("nb-NO");
     const filtrert = elever.filter((e) => {
       if (filterKlasse && e.klasseId !== filterKlasse) return false;
-      if (filterFag && !e.fagIder.includes(filterFag)) return false;
+      if (!passerFagfilter(e.fagIder, filterFag, fagModus)) return false;
       if (baraMentor && !e.mentor) return false;
       if (s && !`${e.fornavn} ${e.etternavn}`.toLocaleLowerCase("nb-NO").includes(s))
         return false;
       return true;
     });
     return sorter(filtrert, sortering);
-  }, [elever, sok, filterKlasse, filterFag, baraMentor, sortering]);
+  }, [elever, sok, filterKlasse, filterFag, fagModus, baraMentor, sortering]);
 
   const alleMerket =
     synlige.length > 0 && synlige.every((e) => merket.has(e.id));
@@ -189,7 +200,13 @@ export function Elever({
             tom="Alle klasser"
             valg={klasser.map((k) => ({ id: k.id, tekst: `${k.navn} (${k.antall})` }))}
           />
-          <Fagfiltre fag={fag} valgt={filterFag} settValgt={setFilterFag} />
+          <Fagflervalg
+            fag={fag}
+            valgte={filterFag}
+            settValgte={setFilterFag}
+            modus={fagModus}
+            settModus={setFagModus}
+          />
 
           <label
             title="Bare elevene du er kontaktlærer for i år"
@@ -364,7 +381,7 @@ export function Elever({
                 klasser={klasser}
                 fag={fag}
                 arvKlasse={filterKlasse || null}
-                arvFag={filterFag || null}
+                arvFag={filterFag.size === 1 ? [...filterFag][0] : null}
                 arvMentor={baraMentor}
                 onLagret={last}
                 onFeil={setFeil}
@@ -431,7 +448,7 @@ export function Elever({
             key={visElev}
             elevId={visElev}
             aktivtSkolearId={skolearId}
-            startFag={filterFag}
+            startFag={filterFag.size === 1 ? [...filterFag][0] : ""}
             onLukk={() => setValgtElev(null)}
             onApneOkt={onApneOkt}
             bla={
