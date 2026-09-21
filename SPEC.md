@@ -1427,12 +1427,12 @@ Dette er det **eneste** unntaket fra §1. Det er avgrenset med vilje:
 - **Én adresse.** Én CalDAV-samling, oppgitt av brukeren. Ingen oppdagelse av
   tjenere, ingen forhåndsvalgte leverandører.
 - **Seks felter, ikke flere:** fagkode, tittel, dato, klokkeslett, sted og
-  agenda.
+  agenda. Mentorsamtaler er det ene unntaket — se under.
 - **Agenda er skrevet for eleven.** Den vises som kommentar i kalenderen og
   leses av alle som abonnerer. Den er noe annet enn `okt.plan`, som er
   lærerens egne notater om hva som skal skje, og som aldri går ut.
-- **Aldri:** elevnavn, skåringer, skåringsnotater, vurderinger,
-  vurderingsresultater, oppfølging, `okt.plan` eller `okt.logg`.
+- **Aldri:** etternavn, klasse, skåringer, skåringsnotater, vurderinger,
+  vurderingsresultater, notater, oppfølging, `okt.plan` eller `okt.logg`.
 - **Enveis.** Appen skriver. Den leser aldri noe tilbake fra serveren, og en
   kompromittert server kan derfor ikke påvirke databasen.
 - **Passordet lagres i systemets nøkkelring**, ikke i databasen — basen
@@ -1440,6 +1440,39 @@ Dette er det **eneste** unntaket fra §1. Det er avgrenset med vilje:
 
 Hendelsens tittel er «FAGKODE: tema», stedet blir `LOCATION` og agendaen
 `DESCRIPTION`.
+
+### Mentorsamtaler — det ene unntaket fra feltlista
+
+Mentorsamtalene kan publiseres som egne hendelser, én per samtale. Da er det
+**fornavn og klokkeslett** som går ut, og ingenting annet:
+
+```
+SUMMARY:Vera kl. 08:30–08:45
+```
+
+Ingen `DESCRIPTION`, ingen `LOCATION`, intet etternavn, ingen klasse, ingen
+fagkode. Feltgrensen håndheves ett sted i koden, i `lagSamtaleHendelse`, med
+tester som slår ut hvis noe mer sniker seg inn.
+
+**Fornavn og ikke fullt navn**, fordi et fornavn alene identifiserer langt
+færre — og en kalender kan bli synkronisert videre til en telefon eller en
+skytjeneste uten at man tenker over det.
+
+**Egen bryter, av som standard.** Ikke en del av `caldav_pa`: et hakk man satte
+i august skal ikke begynne å sende elevfornavn i november. Kalenderen oppgis
+for seg, og er den tom sendes ingenting.
+
+**En kalender med mentorsamtaler skal ikke deles.** Den er til eget bruk på
+egne enheter. Den offentlige lenka over gjelder fagkalenderne.
+
+**Fagsamtaler publiseres ikke slik.** De hører til en vurdering, og
+oppgavefordelingen er ikke noe som skal ligge i en kalender.
+
+Trekningen sendes når læreren sier fra, ikke automatisk ved hver endring —
+en omstokking er ikke det samme som en beslutning om å publisere. Samtalens
+UUID er hendelsens `UID`, og raden gjenbrukes når eleven bare bytter
+klokkeslett, slik at hendelsen oppdateres framfor å bli slettet og lagt inn
+på nytt.
 
 Hendelsene identifiseres med øktas UUID (§9), så en økt som flyttes blir
 oppdatert framfor duplisert. Slettede økter fjernes fra serveren ved neste
