@@ -8,7 +8,7 @@ import {
 } from "../data/vurderinger";
 import type { FagIAr } from "../data/fag";
 import type { Skala } from "../skala";
-import { Felt, Knapp, Tomtilstand } from "../ui/felles";
+import { Felt, Knapp, Tomtilstand, Ikon } from "../ui/felles";
 import { VurderingPanel } from "./VurderingPanel";
 import { ElevPanel } from "./ElevPanel";
 import { useGlidende } from "../ui/bevegelse";
@@ -73,116 +73,121 @@ export function Vurderinger({
 
   return (
     <div className="mx-auto flex min-h-0 w-full max-w-6xl flex-1 overflow-clip">
-      <div className={`liste-bredde flex min-w-0 flex-col ${glir ? "hidden w-full pr-4 lg:flex lg:w-1/3" : "w-full"}`}>
+      <div
+        className={`liste-bredde flex min-w-0 flex-col ${glir ? "hidden w-full pr-4 lg:flex lg:w-1/3" : "w-full"}`}
+      >
         <div className="shrink-0">
-        <div className="mb-3 flex flex-wrap items-center gap-2">
-          <Felt
-            verdi={sok}
-            settVerdi={setSok}
-            plassholder="Søk i tittel"
-            bredde={apen ? "w-full" : "w-56"}
-          />
-          <select
-            value={filterFag}
-            onChange={(e) => setFilterFag(e.target.value)}
-            className="rounded border border-linje bg-ark px-2 py-1.5 text-brod"
-          >
-            <option value="">Alle fag ({vurderinger.length})</option>
-            {fag.map((f) => (
-              <option key={f.id} value={f.id}>
-                {f.kode} ({antallPerFag.get(f.id) ?? 0})
-              </option>
-            ))}
-          </select>
-          <div className="ml-auto">
-            <Knapp variant="primar" onClick={() => setLagerNy(true)}>
-              + Ny vurdering
-            </Knapp>
+          <div className="mb-3 flex flex-wrap items-center gap-2">
+            <Felt
+              verdi={sok}
+              settVerdi={setSok}
+              plassholder="Søk i tittel"
+              bredde={apen ? "w-full" : "w-56"}
+            />
+            <select
+              value={filterFag}
+              onChange={(e) => setFilterFag(e.target.value)}
+              className="rounded border border-linje bg-ark px-2 py-1.5 text-brod"
+            >
+              <option value="">Alle fag ({vurderinger.length})</option>
+              {fag.map((f) => (
+                <option key={f.id} value={f.id}>
+                  {f.kode} ({antallPerFag.get(f.id) ?? 0})
+                </option>
+              ))}
+            </select>
+            <div className="ml-auto">
+              <Knapp variant="primar" onClick={() => setLagerNy(true)}>
+                + Ny vurdering
+              </Knapp>
+            </div>
           </div>
-        </div>
-
         </div>
 
         <div className="min-h-0 flex-1 overflow-auto">
-        {lagerNy && (
-          <NyVurdering
-            fag={fag}
-            skalaer={skalaer}
-            startFagId={filterFag || fag[0]?.id}
-            onLagret={async (id) => {
-              setLagerNy(false);
-              await last();
-              setValgt(id);
-            }}
-            onAvbryt={() => setLagerNy(false)}
-          />
-        )}
+          {lagerNy && (
+            <NyVurdering
+              fag={fag}
+              skalaer={skalaer}
+              startFagId={filterFag || fag[0]?.id}
+              onLagret={async (id) => {
+                setLagerNy(false);
+                await last();
+                setValgt(id);
+              }}
+              onAvbryt={() => setLagerNy(false)}
+            />
+          )}
 
-        {vurderinger.length === 0 && !lagerNy ? (
-          <Tomtilstand
-            tekst={
-              fag.length === 0
-                ? "Legg inn fagene dine først."
-                : "Ingen vurderinger ennå — prøver, innleveringer og framlegg legges inn her."
-            }
-            handling={
-              fag.length > 0 ? (
-                <Knapp variant="primar" onClick={() => setLagerNy(true)}>
-                  Ny vurdering
-                </Knapp>
-              ) : undefined
-            }
-          />
-        ) : (
-          <div>
-            {perManed(synlige).map(([maned, gruppe]) => (
-              <div key={maned}>
-                <div className="sticky top-0 z-10 border-y border-linje-medium bg-flate px-2 py-1 text-etikett uppercase tracking-etikett text-blekk-dempet">
-                  {maned === "uten" ? "Uten frist" : manedsnavn(maned)}
+          {vurderinger.length === 0 && !lagerNy ? (
+            <Tomtilstand
+              tekst={
+                fag.length === 0
+                  ? "Legg inn fagene dine først."
+                  : "Ingen vurderinger ennå — prøver, innleveringer og framlegg legges inn her."
+              }
+              handling={
+                fag.length > 0 ? (
+                  <Knapp variant="primar" onClick={() => setLagerNy(true)}>
+                    Ny vurdering
+                  </Knapp>
+                ) : undefined
+              }
+            />
+          ) : (
+            <div>
+              {perManed(synlige).map(([maned, gruppe]) => (
+                <div key={maned}>
+                  <div className="sticky top-0 z-10 border-y border-linje-medium bg-flate px-2 py-1 text-etikett uppercase tracking-etikett text-blekk-dempet">
+                    {maned === "uten" ? "Uten frist" : manedsnavn(maned)}
+                  </div>
+                  {gruppe.map((v) => (
+                    <Rad
+                      key={v.id}
+                      vurdering={v}
+                      valgt={valgt === v.id}
+                      kompakt={apen !== null}
+                      onVelg={() => setValgt(v.id)}
+                    />
+                  ))}
                 </div>
-                {gruppe.map((v) => (
-                  <Rad
-                    key={v.id}
-                    vurdering={v}
-                    valgt={valgt === v.id}
-                    kompakt={apen !== null}
-                    onVelg={() => setValgt(v.id)}
-                  />
-                ))}
-              </div>
-            ))}
-          </div>
-        )}
+              ))}
+            </div>
+          )}
 
-        {vurderinger.length > 0 && (
-          <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-liten text-blekk-dempet">
-            <span className="tabular-nums">
-              {synlige.length} av {vurderinger.length} vurderinger
-            </span>
-            {/*
+          {vurderinger.length > 0 && (
+            <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-liten text-blekk-dempet">
+              <span className="tabular-nums">
+                {synlige.length} av {vurderinger.length} vurderinger
+              </span>
+              {/*
               Fordelingen per fag, med fagets egen farge. Da ser man hvilke
               fag som ligger tynt an uten å bytte filter for å telle.
             */}
-            {fag.map((f) => (
-              <span key={f.id} className="flex items-center gap-1.5">
-                <span
-                  aria-hidden
-                  className="h-2.5 w-2.5 shrink-0 rounded-full"
-                  style={{ background: f.farge ?? "var(--color-linje-sterk)" }}
-                />
-                {f.kode}
-                <span className="tabular-nums text-blekk-svak">
-                  {antallPerFag.get(f.id) ?? 0}
+              {fag.map((f) => (
+                <span key={f.id} className="flex items-center gap-1.5">
+                  <span
+                    aria-hidden
+                    className="h-2.5 w-2.5 shrink-0 rounded-full"
+                    style={{
+                      background: f.farge ?? "var(--color-linje-sterk)",
+                    }}
+                  />
+                  {f.kode}
+                  <span className="tabular-nums text-blekk-svak">
+                    {antallPerFag.get(f.id) ?? 0}
+                  </span>
                 </span>
-              </span>
-            ))}
-          </div>
-        )}
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
       {apen && (
-        <div className={`panel min-h-0 min-w-0 w-full overflow-auto lg:w-2/3 ${glir ? "" : "panel-ute"}`}>
+        <div
+          className={`panel min-h-0 min-w-0 w-full overflow-auto lg:w-2/3 ${glir ? "" : "panel-ute"}`}
+        >
           {valgtElev ? (
             // Elevportalen legger seg oppå vurderingen. Esc tar deg tilbake
             // til den du sto i, ikke helt ut.
@@ -226,7 +231,9 @@ function Rad({
   onVelg: () => void;
 }) {
   const passert =
-    vurdering.frist !== null && vurdering.frist < iDag() && vurdering.fort === 0;
+    vurdering.frist !== null &&
+    vurdering.frist < iDag() &&
+    vurdering.fort === 0;
 
   return (
     <button
@@ -260,11 +267,13 @@ function Rad({
         </>
       )}
       <span className="w-14 shrink-0 text-right tabular-nums text-blekk-dempet">
-        {vurdering.fort === 0
-          ? "·"
-          : vurdering.fort >= vurdering.elever
-            ? "✓"
-            : `${vurdering.fort}/${vurdering.elever}`}
+        {vurdering.fort === 0 ? (
+          "·"
+        ) : vurdering.fort >= vurdering.elever ? (
+          <Ikon navn="hake" />
+        ) : (
+          `${vurdering.fort}/${vurdering.elever}`
+        )}
       </span>
     </button>
   );
@@ -345,7 +354,13 @@ function NyVurdering({
         </select>
       </label>
 
-      <Felt etikett="Frist" verdi={frist} settVerdi={setFrist} type="date" bredde="w-40" />
+      <Felt
+        etikett="Frist"
+        verdi={frist}
+        settVerdi={setFrist}
+        type="date"
+        bredde="w-40"
+      />
 
       <label className="block">
         <Etikett>Skala</Etikett>
@@ -362,7 +377,11 @@ function NyVurdering({
         </select>
       </label>
 
-      <Knapp variant="primar" onClick={lagre} disabled={!fagId || tittel.trim() === ""}>
+      <Knapp
+        variant="primar"
+        onClick={lagre}
+        disabled={!fagId || tittel.trim() === ""}
+      >
         Opprett
       </Knapp>
       <Knapp variant="stille" onClick={onAvbryt}>
@@ -372,8 +391,7 @@ function NyVurdering({
   );
 }
 
-const velgerStil =
-  "rounded border border-linje bg-ark px-2 py-1.5 text-brod";
+const velgerStil = "rounded border border-linje bg-ark px-2 py-1.5 text-brod";
 
 function Etikett({ children }: { children: React.ReactNode }) {
   return (

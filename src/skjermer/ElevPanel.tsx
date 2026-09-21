@@ -27,7 +27,14 @@ import {
   type Klasse,
 } from "../data/elever";
 import { hentFagIAr, type FagIAr } from "../data/fag";
-import { Fagfiltre, Fagmerke, Knapp } from "../ui/felles";
+import {
+  Bryter,
+  Fagfiltre,
+  Fagmerke,
+  Ikon,
+  Ikonknapp,
+  Knapp,
+} from "../ui/felles";
 import {
   erForfalt,
   hentElevnotater,
@@ -79,7 +86,12 @@ export function ElevPanel({
   const [valgtAr, setValgtAr] = useState(aktivtSkolearId);
   const [fagRader, setFagRader] = useState<FagRad[]>([]);
   const [tommeFag, setTommeFag] = useState<
-    { skolearFagId: string; fagKode: string; fagNavn: string; farge: string | null }[]
+    {
+      skolearFagId: string;
+      fagKode: string;
+      fagNavn: string;
+      farge: string | null;
+    }[]
   >([]);
   const [vurderinger, setVurderinger] = useState<ElevVurdering[]>([]);
   // Fagfilter for hele kortet — heatmap og vurderinger. Tom streng = alle fag.
@@ -106,7 +118,10 @@ export function ElevPanel({
   useEffect(() => {
     let avbrutt = false;
     (async () => {
-      const [g, a] = await Promise.all([hentElevGrunnlag(elevId), hentElevAr(elevId)]);
+      const [g, a] = await Promise.all([
+        hentElevGrunnlag(elevId),
+        hentElevAr(elevId),
+      ]);
       if (avbrutt) return;
       setElev(g);
       setAr(a);
@@ -123,7 +138,9 @@ export function ElevPanel({
       hentElevVurderinger(elevId, valgtAr),
     ]);
     setFagRader(h);
-    setTommeFag(f.filter((x) => !h.some((r) => r.skolearFagId === x.skolearFagId)));
+    setTommeFag(
+      f.filter((x) => !h.some((r) => r.skolearFagId === x.skolearFagId)),
+    );
     setVurderinger(v);
   }
 
@@ -137,7 +154,9 @@ export function ElevPanel({
       ]);
       if (avbrutt) return;
       setFagRader(h);
-      setTommeFag(f.filter((x) => !h.some((r) => r.skolearFagId === x.skolearFagId)));
+      setTommeFag(
+        f.filter((x) => !h.some((r) => r.skolearFagId === x.skolearFagId)),
+      );
       setVurderinger(v);
       setKlasser(await hentKlasser(valgtAr));
       setArsFag(await hentFagIAr(valgtAr));
@@ -196,7 +215,9 @@ export function ElevPanel({
             setElev(await hentElevGrunnlag(elevId));
           }}
         />
-        <span className="font-mono text-etikett text-blekk-svak">{elev.kode}</span>
+        <span className="font-mono text-etikett text-blekk-svak">
+          {elev.kode}
+        </span>
         <Klassevelger
           klasser={klasser}
           valgt={detteAret?.klasse ?? null}
@@ -285,23 +306,15 @@ export function ElevPanel({
         )}
         {bla && bla.av > 1 && (
           <span className="ml-auto flex shrink-0 items-center gap-1">
-            <button
-              onClick={bla.forrige}
-              title="Forrige elev (⌥↑)"
-              className="rounded-liten px-1.5 leading-none text-blekk-svak hover:bg-flate hover:text-blekk"
-            >
-              ↑
-            </button>
+            <Ikonknapp onClick={bla.forrige} tittel="Forrige elev (⌥↑)">
+              <Ikon navn="opp" />
+            </Ikonknapp>
             <span className="tabular-nums text-liten text-blekk-svak">
               {bla.nr} av {bla.av}
             </span>
-            <button
-              onClick={bla.neste}
-              title="Neste elev (⌥↓)"
-              className="rounded-liten px-1.5 leading-none text-blekk-svak hover:bg-flate hover:text-blekk"
-            >
-              ↓
-            </button>
+            <Ikonknapp onClick={bla.neste} tittel="Neste elev (⌥↓)">
+              <Ikon navn="ned" />
+            </Ikonknapp>
           </span>
         )}
         <button
@@ -316,21 +329,16 @@ export function ElevPanel({
 
       <div className="overflow-y-auto px-5 py-4">
         {ar.length > 1 && (
-          <div className="mb-4 flex gap-1">
-            {ar.map((a) => (
-              <button
-                key={a.skolearId}
-                onClick={() => setValgtAr(a.skolearId)}
-                className={`rounded-vanlig px-2 py-0.5 text-liten tabular-nums ${
-                  a.skolearId === valgtAr
-                    ? "bg-valgt font-medium text-aksent"
-                    : "text-blekk-dempet hover:text-blekk"
-                }`}
-              >
-                {a.navn}
-                {a.klasse ? ` · ${a.klasse}` : ""}
-              </button>
-            ))}
+          <div className="mb-4">
+            <Bryter
+              storrelse="liten"
+              verdi={valgtAr}
+              settVerdi={setValgtAr}
+              valg={ar.map((a) => ({
+                id: a.skolearId,
+                navn: `${a.navn}${a.klasse ? ` · ${a.klasse}` : ""}`,
+              }))}
+            />
           </div>
         )}
 
@@ -358,10 +366,17 @@ export function ElevPanel({
           ) : (
             <>
               {synligeFagRader.map((rad) => (
-                <Heatmap key={rad.skolearFagId} rad={rad} onApneOkt={onApneOkt} />
+                <Heatmap
+                  key={rad.skolearFagId}
+                  rad={rad}
+                  onApneOkt={onApneOkt}
+                />
               ))}
               {synligeTommeFag.map((f) => (
-                <div key={f.skolearFagId} className="flex items-center gap-2 py-1.5">
+                <div
+                  key={f.skolearFagId}
+                  className="flex items-center gap-2 py-1.5"
+                >
                   <span className="w-16 shrink-0">
                     <Fagmerke kode={f.fagKode} farge={f.farge} />
                   </span>
@@ -519,13 +534,17 @@ function Heatmap({
         </span>
         <div className="flex flex-wrap gap-[3px]">
           {rad.ruter.map((rute, i) => (
-            <Rute key={rute.oktId + i} rute={rute} onKlikk={() => onApneOkt(rute.oktId)} />
+            <Rute
+              key={rute.oktId + i}
+              rute={rute}
+              onKlikk={() => onApneOkt(rute.oktId)}
+            />
           ))}
         </div>
       </div>
       <p className="ml-[4.5rem] mt-1 text-liten tabular-nums text-blekk-dempet">
-        {rad.ruter.length} økter · {talt.gronn} grønne, {talt.gul} gule, {talt.rod}{" "}
-        røde
+        {rad.ruter.length} økter · {talt.gronn} grønne, {talt.gul} gule,{" "}
+        {talt.rod} røde
         {talt.ikke > 0 && `, ${talt.ikke} ikke i økta`}
         {talt.uavholdt > 0 && ` · ${talt.uavholdt} ikke avholdt`}
       </p>
@@ -539,7 +558,8 @@ function Heatmap({
  */
 function Rute({ rute, onKlikk }: { rute: HeatmapRute; onKlikk: () => void }) {
   const avholdt = rute.avholdt > 0;
-  const ikkeIOkta = rute.tellerIkke === 1 || (avholdt && rute.verdiKode === null);
+  const ikkeIOkta =
+    rute.tellerIkke === 1 || (avholdt && rute.verdiKode === null);
   const farge = rute.verdiFarge ? skalafarge(rute.verdiFarge) : null;
 
   const tittel = [
@@ -562,10 +582,21 @@ function Rute({ rute, onKlikk }: { rute: HeatmapRute; onKlikk: () => void }) {
       className="h-3.5 w-3.5 rounded-[2px] border"
       style={
         !avholdt
-          ? { borderColor: "var(--color-linje-medium)", borderStyle: "dotted", background: "transparent" }
+          ? {
+              borderColor: "var(--color-linje-medium)",
+              borderStyle: "dotted",
+              background: "transparent",
+            }
           : ikkeIOkta
-            ? { borderColor: NOYTRAL, borderStyle: "dashed", background: "transparent" }
-            : { borderColor: farge ?? NOYTRAL, background: farge ?? "transparent" }
+            ? {
+                borderColor: NOYTRAL,
+                borderStyle: "dashed",
+                background: "transparent",
+              }
+            : {
+                borderColor: farge ?? NOYTRAL,
+                background: farge ?? "transparent",
+              }
       }
     />
   );
@@ -583,7 +614,13 @@ function tell(ruter: HeatmapRute[]) {
   return t;
 }
 
-function Bolk({ tittel, children }: { tittel: string; children: React.ReactNode }) {
+function Bolk({
+  tittel,
+  children,
+}: {
+  tittel: string;
+  children: React.ReactNode;
+}) {
   return (
     <section className="mb-6">
       <h3 className="mb-2 border-b border-linje-medium pb-1 text-etikett uppercase tracking-etikett text-blekk-dempet">
@@ -606,7 +643,13 @@ function Stille({ children }: { children: React.ReactNode }) {
  * bestemt økt og leses i heatmapet. Møteloggen er en bevisst hendelse — en
  * samtale, en observasjon, en avtale.
  */
-function Motelogg({ elevId, skolearId }: { elevId: string; skolearId: string }) {
+function Motelogg({
+  elevId,
+  skolearId,
+}: {
+  elevId: string;
+  skolearId: string;
+}) {
   const [notater, setNotater] = useState<Elevnotat[]>([]);
   const [skriver, setSkriver] = useState(false);
   const idag = new Date().toISOString().slice(0, 10);

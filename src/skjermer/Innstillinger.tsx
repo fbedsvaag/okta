@@ -18,7 +18,13 @@ import {
   type Kopi,
 } from "../data/sikkerhetskopi";
 import { revealItemInDir } from "@tauri-apps/plugin-opener";
-import { hentSkalaer, hentVerdier, taster, type Skala, type Skalaverdi } from "../skala";
+import {
+  hentSkalaer,
+  hentVerdier,
+  taster,
+  type Skala,
+  type Skalaverdi,
+} from "../skala";
 import type { Skolear } from "../data/skolear";
 import * as kalender from "../data/kalenderfeed";
 import * as caldav from "../data/caldav";
@@ -31,7 +37,7 @@ import {
   confirm as bekreft,
 } from "@tauri-apps/plugin-dialog";
 import type { FagIAr } from "../data/fag";
-import { Felt, Knapp } from "../ui/felles";
+import { Felt, Knapp, Ikon } from "../ui/felles";
 
 /**
  * Globale innstillinger, SPEC §4.8.
@@ -143,7 +149,9 @@ export function Innstillinger({
 
   useEffect(() => {
     void lastKopier();
-    void hentInnstilling("standard_varighet_min").then((v) => setVarighet(v ?? "180"));
+    void hentInnstilling("standard_varighet_min").then((v) =>
+      setVarighet(v ?? "180"),
+    );
     void (async () => {
       const s = await hentSkalaer();
       const v: Record<string, Skalaverdi[]> = {};
@@ -168,8 +176,13 @@ export function Innstillinger({
             {ar.map((a) => {
               const aktivt = a.id === skolear.id;
               return (
-                <li key={a.id} className="flex items-center gap-3 py-1.5 text-brod">
-                  <span className={`w-24 shrink-0 tabular-nums ${aktivt ? "font-medium" : ""}`}>
+                <li
+                  key={a.id}
+                  className="flex items-center gap-3 py-1.5 text-brod"
+                >
+                  <span
+                    className={`w-24 shrink-0 tabular-nums ${aktivt ? "font-medium" : ""}`}
+                  >
                     {a.navn}
                   </span>
                   <span className="tabular-nums text-liten text-blekk-dempet">
@@ -177,7 +190,9 @@ export function Innstillinger({
                   </span>
                   <span className="ml-auto flex items-center gap-2">
                     {aktivt ? (
-                      <span className="text-liten text-blekk-dempet">aktivt</span>
+                      <span className="text-liten text-blekk-dempet">
+                        aktivt
+                      </span>
                     ) : (
                       <Knapp
                         onClick={async () => {
@@ -282,8 +297,8 @@ export function Innstillinger({
           </select>
           <p className="mt-1 text-liten text-blekk-dempet">
             Endringen gjelder med en gang. Skåringslista er den tetteste
-            skjermen — skrur du helt opp, får færre enn tretti elever plass
-            uten å rulle.
+            skjermen — skrur du helt opp, får færre enn tretti elever plass uten
+            å rulle.
           </p>
         </label>
       </Bolk>
@@ -316,7 +331,11 @@ export function Innstillinger({
           >
             Lagre
           </Knapp>
-          {lagret && <span className="pb-2 text-liten text-aksent">✓ lagret</span>}
+          {lagret && (
+            <span className="inline-flex items-center gap-1 pb-2 text-liten text-aksent">
+              <Ikon navn="hake" /> lagret
+            </span>
+          )}
         </div>
         <p className="mt-2 text-liten text-blekk-dempet">
           Varighet arves i tre ledd: denne verdien → fagets egen standard →
@@ -369,8 +388,11 @@ export function Innstillinger({
         <p className="mb-2 text-brod text-blekk-dempet">
           Lar kalenderen din abonnere på årsplanen, slik at den oppdaterer seg
           selv. Strømmen serveres bare til denne maskinen, og inneholder
-          <strong className="font-medium"> fagkode, tema, dato og varighet</strong> —
-          ingen elevnavn, skåringer eller notater.
+          <strong className="font-medium">
+            {" "}
+            fagkode, tema, dato og varighet
+          </strong>{" "}
+          — ingen elevnavn, skåringer eller notater.
         </p>
 
         <label className="flex items-center gap-2 text-brod">
@@ -395,9 +417,7 @@ export function Innstillinger({
           Del årsplanen som kalenderstrøm
         </label>
 
-        {feedFeil && (
-          <p className="mt-2 text-brod text-feil">{feedFeil}</p>
-        )}
+        {feedFeil && <p className="mt-2 text-brod text-feil">{feedFeil}</p>}
 
         {feedPa && feedUrl && (
           <div className="mt-3">
@@ -420,10 +440,10 @@ export function Innstillinger({
               adressen, og velg oppdatering hvert femte minutt.
             </p>
             <p className="mt-1 text-liten text-blekk-dempet">
-              Velger du <em>iCloud</em> som plassering, lastes timeplanen opp til
-              Apple og følger med til telefonen. Velger du <em>På min Mac</em>,
-              blir den her — men da bare på denne maskinen. Strømmen oppdaterer
-              seg bare mens appen kjører.
+              Velger du <em>iCloud</em> som plassering, lastes timeplanen opp
+              til Apple og følger med til telefonen. Velger du{" "}
+              <em>På min Mac</em>, blir den her — men da bare på denne maskinen.
+              Strømmen oppdaterer seg bare mens appen kjører.
             </p>
           </div>
         )}
@@ -464,7 +484,7 @@ export function Innstillinger({
                   r === null
                     ? "Ingen mappe valgt."
                     : `${r.skrevet} filer skrevet.` +
-                      (r.feil.length > 0 ? ` ${r.feil.length} feilet.` : ""),
+                        (r.feil.length > 0 ? ` ${r.feil.length} feilet.` : ""),
                 );
               } catch (e) {
                 setArkivMelding(String(e));
@@ -476,7 +496,9 @@ export function Innstillinger({
             {arkiverer ? "Skriver …" : "Skriv arkivet nå"}
           </Knapp>
           {arkivmappe && (
-            <code className="truncate text-liten text-blekk-dempet">{arkivmappe}</code>
+            <code className="truncate text-liten text-blekk-dempet">
+              {arkivmappe}
+            </code>
           )}
         </div>
         {arkivMelding && (
@@ -489,8 +511,11 @@ export function Innstillinger({
           Skriver timeplanen til din egen CalDAV-server, ett fag per kalender,
           så elevene kan abonnere på sitt eget fag. Dette er det eneste stedet
           appen sender noe ut (§8.1), og det som går ut er
-          <strong className="font-medium"> fag, tittel, dato, klokkeslett og sted</strong>.
-          Aldri elevnavn, skåringer eller notater.
+          <strong className="font-medium">
+            {" "}
+            fag, tittel, dato, klokkeslett og sted
+          </strong>
+          . Aldri elevnavn, skåringer eller notater.
         </p>
 
         <div className="grid max-w-xl gap-3">
@@ -512,14 +537,16 @@ export function Innstillinger({
             <input
               type="password"
               value={davPassord}
-              placeholder={davHarPassord ? "••••••••" : "App-passord fra serveren"}
+              placeholder={
+                davHarPassord ? "••••••••" : "App-passord fra serveren"
+              }
               onChange={(e) => setDavPassord(e.target.value)}
               className="w-full rounded border border-linje bg-ark px-2 py-1.5 text-brod outline-none focus:border-aksent"
             />
           </label>
           <p className="text-liten text-blekk-dempet">
-            Bruk et app-passord, ikke hovedpassordet ditt — da kan du trekke
-            det tilbake uten å bytte alt annet. Passordet lagres i systemets
+            Bruk et app-passord, ikke hovedpassordet ditt — da kan du trekke det
+            tilbake uten å bytte alt annet. Passordet lagres i systemets
             nøkkelring, aldri i databasen.
           </p>
         </div>
@@ -676,7 +703,8 @@ export function Innstillinger({
                     `${r.uendret} uendret.` +
                     (r.feil.length > 0 ? ` ${r.feil.length} feilet.` : ""),
                 );
-                if (r.feil.length > 0) setDavFeil(r.feil.slice(0, 3).join("\n"));
+                if (r.feil.length > 0)
+                  setDavFeil(r.feil.slice(0, 3).join("\n"));
               } catch (e) {
                 setDavFeil(String(e));
               } finally {
@@ -704,7 +732,9 @@ export function Innstillinger({
           <p className="mt-2 text-brod text-lys-gronn">{davMelding}</p>
         )}
         {davFeil && (
-          <p className="mt-2 whitespace-pre-wrap text-brod text-feil">{davFeil}</p>
+          <p className="mt-2 whitespace-pre-wrap text-brod text-feil">
+            {davFeil}
+          </p>
         )}
       </Bolk>
 
@@ -762,7 +792,9 @@ export function Innstillinger({
                   </td>
                   <td className="w-24 py-1 text-right">
                     <button
-                      onClick={() => void gjenopprett(`${kopimappe}/${k.navn}`, k.navn)}
+                      onClick={() =>
+                        void gjenopprett(`${kopimappe}/${k.navn}`, k.navn)
+                      }
                       className="text-liten text-blekk-dempet hover:text-aksent"
                     >
                       Gjenopprett
@@ -781,8 +813,8 @@ export function Innstillinger({
 
         <p className="mt-3 text-liten text-blekk-dempet">
           Mappa skal aldri legges i iCloud, Dropbox eller annen synktjeneste.
-          Synk kan skrive delvis tilbake i ei åpen SQLite-fil, og da blir
-          den ødelagt uten forvarsel.
+          Synk kan skrive delvis tilbake i ei åpen SQLite-fil, og da blir den
+          ødelagt uten forvarsel.
         </p>
       </Bolk>
 
@@ -807,7 +839,9 @@ export function Innstillinger({
           {versjon && <span className="tabular-nums"> {versjon}</span>}
           {" — undervisningsplanlegging og elevoppfølging."}
         </span>
-        <span className="ml-auto">Alle data ligger lokalt på denne maskinen.</span>
+        <span className="ml-auto">
+          Alle data ligger lokalt på denne maskinen.
+        </span>
       </footer>
     </div>
   );
@@ -821,7 +855,13 @@ function Etikett({ children }: { children: React.ReactNode }) {
   );
 }
 
-function Bolk({ tittel, children }: { tittel: string; children: React.ReactNode }) {
+function Bolk({
+  tittel,
+  children,
+}: {
+  tittel: string;
+  children: React.ReactNode;
+}) {
   return (
     <section className="mb-7">
       <h2 className="mb-2 border-b border-linje-medium pb-1 text-etikett uppercase tracking-etikett text-blekk-dempet">

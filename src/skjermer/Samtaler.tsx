@@ -43,7 +43,7 @@ import {
   endreElevnotat,
   type Elevnotat,
 } from "../data/elevnotat";
-import { Felt, Knapp, Tomtilstand } from "../ui/felles";
+import { Bryter, Felt, Ikon, Knapp, Tomtilstand } from "../ui/felles";
 
 /**
  * Samtaletrekkeren, SPEC §4.10.
@@ -100,7 +100,9 @@ export function Samtaler({
   const [elever, setElever] = useState<ElevRad[]>([]);
   const [egenListe, setEgenListe] = useState("");
   const [brukEgen, setBrukEgen] = useState(false);
-  const [historikk, setHistorikk] = useState<Map<string, Plassering[]>>(new Map());
+  const [historikk, setHistorikk] = useState<Map<string, Plassering[]>>(
+    new Map(),
+  );
   // Vektingen er av som standard. Ren tilfeldighet er normaltilstanden (§4.10).
   const [vekting, setVekting] = useState(false);
   const [trekning, setTrekning] = useState<Dagplan[] | null>(null);
@@ -192,7 +194,9 @@ export function Samtaler({
       setAlleDager(etter);
       setDager(
         etter.filter((d) =>
-          modus === "mentor" ? d.skolearFagId === null : d.skolearFagId === fagId,
+          modus === "mentor"
+            ? d.skolearFagId === null
+            : d.skolearFagId === fagId,
         ),
       );
     }
@@ -374,7 +378,7 @@ export function Samtaler({
     try {
       await publiserMentor(skolear);
       setKalender(await mentorStatus(skolear));
-    setVurderinger(await hentVurderinger(skolear.id));
+      setVurderinger(await hentVurderinger(skolear.id));
     } catch (feil) {
       setDragmelding(`Publiseringen feilet: ${String(feil)}`);
     } finally {
@@ -398,7 +402,9 @@ export function Samtaler({
   }
 
   async function tilMarkdown() {
-    await navigator.clipboard.writeText(somMarkdown(tilEksport(), modus === "fag"));
+    await navigator.clipboard.writeText(
+      somMarkdown(tilEksport(), modus === "fag"),
+    );
     setKopiert("md");
     setTimeout(() => setKopiert(null), 1500);
   }
@@ -526,8 +532,8 @@ export function Samtaler({
             )}
             {modus === "mentor" && (
               <p className="mt-2 text-liten text-blekk-dempet">
-                Mentorsamtalen hører ikke til noe fag. Elevene er
-                mentorelevene dine i år.
+                Mentorsamtalen hører ikke til noe fag. Elevene er mentorelevene
+                dine i år.
               </p>
             )}
           </Bolk>
@@ -609,17 +615,21 @@ export function Samtaler({
                   <input
                     value={t}
                     onChange={(e) =>
-                      lagreTemaer(temaer.map((x, j) => (j === i ? e.target.value : x)))
+                      lagreTemaer(
+                        temaer.map((x, j) => (j === i ? e.target.value : x)),
+                      )
                     }
                     placeholder={`Oppgave ${i + 1}`}
                     className="min-w-0 flex-1 rounded border border-linje bg-ark px-2 py-1 text-brod outline-none focus:border-aksent"
                   />
                   <button
-                    onClick={() => lagreTemaer(temaer.filter((_, j) => j !== i))}
+                    onClick={() =>
+                      lagreTemaer(temaer.filter((_, j) => j !== i))
+                    }
                     className="shrink-0 px-1 text-blekk-svakest hover:text-feil"
                     title="Fjern"
                   >
-                    ✕
+                    <Ikon navn="kryss" />
                   </button>
                 </div>
               ))}
@@ -771,7 +781,8 @@ export function Samtaler({
               </button>
               {lasteElever.size > 0 && (
                 <p className="mt-1 text-liten text-blekk-svak">
-                  {lasteElever.size} {lasteElever.size === 1 ? "elev" : "elever"} låst
+                  {lasteElever.size}{" "}
+                  {lasteElever.size === 1 ? "elev" : "elever"} låst
                 </p>
               )}
             </div>
@@ -805,10 +816,22 @@ export function Samtaler({
         {trekning !== null && (
           <div className="mb-4 flex items-center gap-2">
             <Knapp onClick={() => void tilTeams()}>
-              {kopiert === "teams" ? "✓ Kopiert" : "Kopier til Teams"}
+              {kopiert === "teams" ? (
+                <>
+                  <Ikon navn="hake" /> Kopiert
+                </>
+              ) : (
+                "Kopier til Teams"
+              )}
             </Knapp>
             <Knapp onClick={() => void tilMarkdown()}>
-              {kopiert === "md" ? "✓ Kopiert" : "Kopier som markdown"}
+              {kopiert === "md" ? (
+                <>
+                  <Ikon navn="hake" /> Kopiert
+                </>
+              ) : (
+                "Kopier som markdown"
+              )}
             </Knapp>
             <Knapp onClick={() => void invoke("skriv_ut")}>Skriv ut</Knapp>
 
@@ -824,7 +847,9 @@ export function Samtaler({
                 </span>
                 <Knapp
                   variant={
-                    kalender.endrede + kalender.fjernes > 0 ? "primar" : "vanlig"
+                    kalender.endrede + kalender.fjernes > 0
+                      ? "primar"
+                      : "vanlig"
                   }
                   disabled={
                     publiserer || kalender.endrede + kalender.fjernes === 0
@@ -840,29 +865,17 @@ export function Samtaler({
 
         {trekning !== null && (
           <div className="mb-4 flex gap-1">
-            {(
-              [
-                ["timeplan", "Timeplan"],
-                ["fordeling", "Fordeling"],
-                ["alfabetisk", "Alfabetisk"],
-              ] as [Visning, string][]
-            )
-              // Fordelingen handler om temaene, og mentorsamtalen har ingen.
-              .filter(([id]) => !(id === "fordeling" && modus === "mentor"))
-              .map(([id, navn]) => (
-                <button
-                  key={id}
-                  onClick={() => setVisning(id)}
-                  aria-pressed={visning === id}
-                  className={`rounded-vanlig px-2.5 py-1 text-liten ${
-                    visning === id
-                      ? "bg-valgt font-medium text-aksent"
-                      : "text-blekk-dempet hover:bg-flate"
-                  }`}
-                >
-                  {navn}
-                </button>
-              ))}
+            <Bryter
+              storrelse="liten"
+              verdi={visning}
+              settVerdi={(v) => setVisning(v as Visning)}
+              valg={[
+                { id: "timeplan", navn: "Timeplan" },
+                { id: "fordeling", navn: "Fordeling" },
+                { id: "alfabetisk", navn: "Alfabetisk" },
+                // Fordelingen handler om temaene, og mentorsamtalen har ingen.
+              ].filter((v) => !(v.id === "fordeling" && modus === "mentor"))}
+            />
           </div>
         )}
 
@@ -911,7 +924,13 @@ export function Samtaler({
 
 // ------------------------------------------------------------------ deler
 
-function Bolk({ tittel, children }: { tittel: string; children: React.ReactNode }) {
+function Bolk({
+  tittel,
+  children,
+}: {
+  tittel: string;
+  children: React.ReactNode;
+}) {
   return (
     <section>
       <h2 className="mb-2 border-b border-linje-medium pb-1 text-etikett uppercase tracking-etikett text-blekk-dempet">
@@ -980,7 +999,7 @@ function Dagkort({
             className="text-blekk-svakest hover:text-feil"
             title="Fjern dagen"
           >
-            ✕
+            <Ikon navn="kryss" />
           </button>
         </span>
       </div>
@@ -1040,7 +1059,9 @@ function Dagkort({
             max={120}
             defaultValue={dag.lunsjMin ?? 30}
             key={`lm${dag.lunsjMin}`}
-            onBlur={(e) => void onEndre({ lunsj_min: Number(e.target.value) || 30 })}
+            onBlur={(e) =>
+              void onEndre({ lunsj_min: Number(e.target.value) || 30 })
+            }
             className={feltstil + " w-1/2"}
           />
         </div>
@@ -1112,82 +1133,84 @@ function Timeplan({
             const erLast = laste.has(r.elevId);
             return (
               <Fragment key={`${r.elevId}-${r.fra}`}>
-              {lunsjHer && d.lunsj && (
-                <div className="flex items-baseline gap-3 border-b border-linje-svak py-1.5 text-brod italic text-blekk-svak">
-                  <span className="w-6 shrink-0 text-right">—</span>
-                  <span className="w-24 shrink-0 tabular-nums">
-                    {d.lunsj.fra}–{d.lunsj.til}
-                  </span>
-                  <span className="flex-1">
-                    Lunsj ({tilMin(d.lunsj.til) - tilMin(d.lunsj.fra)} min)
-                  </span>
-                </div>
-              )}
-              <div
-                draggable={!erLast}
-                onDragStart={(e) => {
-                  e.dataTransfer.setData(
-                    "text/plain",
-                    JSON.stringify({ dagIdx, radIdx }),
-                  );
-                  e.dataTransfer.effectAllowed = "move";
-                }}
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  const data = e.dataTransfer.getData("text/plain");
-                  if (!data) return;
-                  const kilde = JSON.parse(data) as {
-                    dagIdx: number;
-                    radIdx: number;
-                  };
-                  // Et drag som stille ruller tilbake ser ut som at musa
-                  // glapp. Derfor sier vi fra om hvorfor (§4.10).
-                  if (kilde.dagIdx !== dagIdx) return onFeilDrag();
-                  onFlytt(dagIdx, kilde.radIdx, radIdx);
-                }}
-                className={`flex items-baseline gap-3 border-b border-linje-svak py-1.5 text-brod ${
-                  r.motte ? "" : "text-blekk-svak line-through"
-                } ${erLast ? "bg-flate-svak" : "cursor-grab"}`}
-              >
-                <span className="w-6 shrink-0 text-right tabular-nums text-blekk-svak">
-                  {plass}
-                </span>
-                <span className="w-24 shrink-0 tabular-nums text-blekk-dempet">
-                  {r.fra}–{r.til}
-                </span>
-                <span className="min-w-0 flex-1 truncate">{r.navn}</span>
-                {r.tema && (
-                  <span className="w-40 shrink-0 truncate text-blekk-dempet">
-                    {r.tema}
-                  </span>
+                {lunsjHer && d.lunsj && (
+                  <div className="flex items-baseline gap-3 border-b border-linje-svak py-1.5 text-brod italic text-blekk-svak">
+                    <span className="w-6 shrink-0 text-right">—</span>
+                    <span className="w-24 shrink-0 tabular-nums">
+                      {d.lunsj.fra}–{d.lunsj.til}
+                    </span>
+                    <span className="flex-1">
+                      Lunsj ({tilMin(d.lunsj.til) - tilMin(d.lunsj.fra)} min)
+                    </span>
+                  </div>
                 )}
-                <span className="w-32 shrink-0 text-right text-liten text-blekk-svak">
-                  {r.motte ? notis : "møtte ikke"}
-                </span>
-                <button
-                  onClick={() => onLas(r.elevId)}
-                  title={
-                    erLast
-                      ? "Lås opp — eleven trekkes om igjen"
-                      : "Lås — eleven beholder plass og tema"
-                  }
-                  className={`w-5 shrink-0 text-liten ${
-                    erLast ? "text-aksent" : "text-blekk-svakest hover:text-blekk"
-                  }`}
+                <div
+                  draggable={!erLast}
+                  onDragStart={(e) => {
+                    e.dataTransfer.setData(
+                      "text/plain",
+                      JSON.stringify({ dagIdx, radIdx }),
+                    );
+                    e.dataTransfer.effectAllowed = "move";
+                  }}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    const data = e.dataTransfer.getData("text/plain");
+                    if (!data) return;
+                    const kilde = JSON.parse(data) as {
+                      dagIdx: number;
+                      radIdx: number;
+                    };
+                    // Et drag som stille ruller tilbake ser ut som at musa
+                    // glapp. Derfor sier vi fra om hvorfor (§4.10).
+                    if (kilde.dagIdx !== dagIdx) return onFeilDrag();
+                    onFlytt(dagIdx, kilde.radIdx, radIdx);
+                  }}
+                  className={`flex items-baseline gap-3 border-b border-linje-svak py-1.5 text-brod ${
+                    r.motte ? "" : "text-blekk-svak line-through"
+                  } ${erLast ? "bg-flate-svak" : "cursor-grab"}`}
                 >
-                  {erLast ? "🔒" : "🔓"}
-                </button>
-              </div>
+                  <span className="w-6 shrink-0 text-right tabular-nums text-blekk-svak">
+                    {plass}
+                  </span>
+                  <span className="w-24 shrink-0 tabular-nums text-blekk-dempet">
+                    {r.fra}–{r.til}
+                  </span>
+                  <span className="min-w-0 flex-1 truncate">{r.navn}</span>
+                  {r.tema && (
+                    <span className="w-40 shrink-0 truncate text-blekk-dempet">
+                      {r.tema}
+                    </span>
+                  )}
+                  <span className="w-32 shrink-0 text-right text-liten text-blekk-svak">
+                    {r.motte ? notis : "møtte ikke"}
+                  </span>
+                  <button
+                    onClick={() => onLas(r.elevId)}
+                    title={
+                      erLast
+                        ? "Lås opp — eleven trekkes om igjen"
+                        : "Lås — eleven beholder plass og tema"
+                    }
+                    className={`w-5 shrink-0 text-liten ${
+                      erLast
+                        ? "text-aksent"
+                        : "text-blekk-svakest hover:text-blekk"
+                    }`}
+                  >
+                    <Ikon navn={erLast ? "las" : "apen-las"} />
+                  </button>
+                </div>
 
-              {r.samtaleId && (
-                <Notatfelt
-                  notat={notater.get(r.elevId) ?? null}
-                  onLagre={(tekst, folgesOpp) =>
-                    onNotat(r, d.dag, tekst, folgesOpp)
-                  }
-                />
-              )}
+                {r.samtaleId && (
+                  <Notatfelt
+                    notat={notater.get(r.elevId) ?? null}
+                    onLagre={(tekst, folgesOpp) =>
+                      onNotat(r, d.dag, tekst, folgesOpp)
+                    }
+                  />
+                )}
               </Fragment>
             );
           })}
@@ -1265,7 +1288,7 @@ function Lasknapp({
           : "border-linje text-blekk-dempet hover:bg-flate"
       }`}
     >
-      <span aria-hidden>{last ? "🔒" : "🔓"}</span>
+      <Ikon navn={last ? "las" : "apen-las"} />
       {children}
     </button>
   );
@@ -1297,7 +1320,9 @@ function Fordeling({ plan }: { plan: Dagplan[] }) {
             r.motte ? "" : "opacity-50"
           }`}
         >
-          <span className="text-liten tabular-nums text-blekk-svak">{i + 1}</span>
+          <span className="text-liten tabular-nums text-blekk-svak">
+            {i + 1}
+          </span>
           <p className="truncate text-brod font-medium">{r.navn}</p>
           {r.tema && (
             <p className="truncate text-liten text-blekk-dempet">{r.tema}</p>
@@ -1310,13 +1335,7 @@ function Fordeling({ plan }: { plan: Dagplan[] }) {
 }
 
 /** Alfabetisk — lista sortert på navn, med tidspunkt og dag. */
-function Alfabetisk({
-  plan,
-  medTema,
-}: {
-  plan: Dagplan[];
-  medTema: boolean;
-}) {
+function Alfabetisk({ plan, medTema }: { plan: Dagplan[]; medTema: boolean }) {
   const rader = plan
     .flatMap((d) => d.rader.map((r) => ({ ...r, dato: d.dag.dato })))
     .sort((a, b) => a.navn.localeCompare(b.navn, "nb-NO"));
@@ -1455,7 +1474,9 @@ function Trekningsliste({
   return (
     <ul className="space-y-0.5">
       {trekninger.map((t) => {
-        const valgt = erMentor ? t.skolearFagId === null : t.skolearFagId === aktiv;
+        const valgt = erMentor
+          ? t.skolearFagId === null
+          : t.skolearFagId === aktiv;
         return (
           <li key={t.skolearFagId ?? "mentor"}>
             <button

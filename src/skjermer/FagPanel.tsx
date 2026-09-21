@@ -102,7 +102,8 @@ export function FagPanel({
             settVerdi={async (v) => {
               const n = Number(v.trim());
               await endreFagIAr(fag.id, {
-                arstimetall: v.trim() === "" || Number.isNaN(n) ? null : Math.round(n),
+                arstimetall:
+                  v.trim() === "" || Number.isNaN(n) ? null : Math.round(n),
               });
               onEndret();
             }}
@@ -172,7 +173,9 @@ export function FagPanel({
                 {vurderinger.map((v) => (
                   <tr key={v.id} className="border-b border-linje-svak">
                     <td className="py-1.5">{v.tittel}</td>
-                    <td className="w-20 py-1.5 text-blekk-dempet">{v.type ?? ""}</td>
+                    <td className="w-20 py-1.5 text-blekk-dempet">
+                      {v.type ?? ""}
+                    </td>
                     <td className="w-28 py-1.5 tabular-nums text-blekk-dempet">
                       {v.frist ? kort(v.frist) : "ingen frist"}
                     </td>
@@ -250,7 +253,9 @@ export function FagPanel({
  */
 function Fordeling({ elev }: { elev: FagElev }) {
   if (elev.talt === 0)
-    return <span className="text-liten text-blekk-svakest">ingen skåringer</span>;
+    return (
+      <span className="text-liten text-blekk-svakest">ingen skåringer</span>
+    );
 
   const deler = [
     { antall: elev.gronn, farge: TRAFIKKLYS.gronn },
@@ -279,7 +284,9 @@ function Fordeling({ elev }: { elev: FagElev }) {
 function avvik(timer: number, arstimetall: number): string {
   const diff = Math.round((timer - arstimetall) * 10) / 10;
   if (diff === 0) return "i balanse";
-  return diff > 0 ? `${diff} timer over` : `${Math.abs(diff)} timer igjen å planlegge`;
+  return diff > 0
+    ? `${diff} timer over`
+    : `${Math.abs(diff)} timer igjen å planlegge`;
 }
 
 /**
@@ -413,7 +420,9 @@ function Kompetansemaal({
     );
   }
 
-  const antallDekket = grep.kompetansemaal.filter((m) => dekket.has(m.kode)).length;
+  const antallDekket = grep.kompetansemaal.filter((m) =>
+    dekket.has(m.kode),
+  ).length;
   const mangler = grep.kompetansemaal.length - antallDekket;
 
   return (
@@ -462,7 +471,11 @@ function Kompetansemaal({
               <li key={m.kode} className="flex gap-2 text-brod">
                 <span
                   aria-hidden
-                  title={dekket.has(m.kode) ? "Plassert i en periode" : "Ikke plassert"}
+                  title={
+                    dekket.has(m.kode)
+                      ? "Plassert i en periode"
+                      : "Ikke plassert"
+                  }
                   className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${
                     dekket.has(m.kode) ? "bg-aksent" : "bg-linje-sterk"
                   }`}

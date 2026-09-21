@@ -67,12 +67,19 @@ export function LimInn({
   }
 
   function endre(i: number, felter: Partial<Importrad>) {
-    setRader((r) => r?.map((rad, j) => (j === i ? { ...rad, ...felter } : rad)) ?? null);
+    setRader(
+      (r) =>
+        r?.map((rad, j) => (j === i ? { ...rad, ...felter } : rad)) ?? null,
+    );
   }
 
   if (rader) {
-    const nye = rader.filter((r) => !r.hopp && r.status !== "allerede" && r.valgt === "ny");
-    const koblet = rader.filter((r) => !r.hopp && r.status !== "allerede" && r.valgt !== "ny");
+    const nye = rader.filter(
+      (r) => !r.hopp && r.status !== "allerede" && r.valgt === "ny",
+    );
+    const koblet = rader.filter(
+      (r) => !r.hopp && r.status !== "allerede" && r.valgt !== "ny",
+    );
     const over = rader.filter((r) => r.hopp || r.status === "allerede");
 
     return (
@@ -95,14 +102,20 @@ export function LimInn({
           </thead>
           <tbody>
             {rader.map((rad, i) => (
-              <ForhandsvisRad key={rad.linje.linjenr} rad={rad} onEndre={(f) => endre(i, f)} />
+              <ForhandsvisRad
+                key={rad.linje.linjenr}
+                rad={rad}
+                onEndre={(f) => endre(i, f)}
+              />
             ))}
           </tbody>
         </table>
 
         <div className="mt-5 flex gap-2">
           <Knapp variant="primar" onClick={importer} disabled={jobber}>
-            {jobber ? "Importerer …" : `Importer ${nye.length + koblet.length} elever`}
+            {jobber
+              ? "Importerer …"
+              : `Importer ${nye.length + koblet.length} elever`}
           </Knapp>
           <Knapp variant="stille" onClick={() => setRader(null)}>
             Tilbake til teksten
@@ -168,8 +181,8 @@ export function LimInn({
       )}
       {fagId === "" && !somMentor && (
         <p className="mt-1 text-liten text-blekk-dempet">
-          Uten fag opprettes elevene og plasseres i klassen, men kobles ikke
-          til noe fag. Limer du dem inn i et fag senere, blir de gjenkjent.
+          Uten fag opprettes elevene og plasseres i klassen, men kobles ikke til
+          noe fag. Limer du dem inn i et fag senere, blir de gjenkjent.
         </p>
       )}
 
@@ -182,7 +195,11 @@ export function LimInn({
       />
 
       <div className="mt-3 flex gap-2">
-        <Knapp variant="primar" onClick={forhandsvis} disabled={tekst.trim() === "" || !fagId}>
+        <Knapp
+          variant="primar"
+          onClick={forhandsvis}
+          disabled={tekst.trim() === "" || !fagId}
+        >
           Forhåndsvis
         </Knapp>
         <Knapp variant="stille" onClick={onAvbryt}>
@@ -219,7 +236,9 @@ function ForhandsvisRad({
   }[rad.grunn];
 
   return (
-    <tr className={`border-b border-linje-svak ${rad.hopp ? "opacity-40" : ""}`}>
+    <tr
+      className={`border-b border-linje-svak ${rad.hopp ? "opacity-40" : ""}`}
+    >
       <td className="py-1.5">
         {rad.linje.fornavn} {rad.linje.etternavn}
       </td>

@@ -77,77 +77,89 @@ export function Fag({
     <div className="mx-auto flex min-h-0 w-full max-w-6xl flex-1 overflow-clip">
       <div
         className={`liste-bredde flex min-w-0 flex-col ${
-          glir ? "hidden w-full pr-4 lg:flex lg:w-1/3" : "mx-auto w-full max-w-4xl"
+          glir
+            ? "hidden w-full pr-4 lg:flex lg:w-1/3"
+            : "mx-auto w-full max-w-4xl"
         }`}
       >
         {/* Overskrift og Rediger-bryteren blir stående mens lista ruller. */}
         <div className="shrink-0">
-        <div className="flex items-baseline justify-between">
-          <h2 className="font-display text-tittel">Fag i dette skoleåret</h2>
-          <label className="flex items-center gap-2 text-liten text-blekk-dempet">
-            <input
-              type="checkbox"
-              checked={rediger}
-              onChange={(e) => {
-                setRediger(e.target.checked);
-                if (e.target.checked) setValgtFag(null);
-              }}
-            />
-            Rediger
-          </label>
-        </div>
-        <p className="mt-1 text-brod text-blekk-dempet">
-          {rediger
-            ? "Feltene lagrer når du forlater dem. Escape angrer."
-            : "Klikk på et fag for å åpne det. Slå på Rediger for å endre feltene."}
-        </p>
+          <div className="flex items-baseline justify-between">
+            <h2 className="font-display text-tittel">Fag i dette skoleåret</h2>
+            <label className="flex items-center gap-2 text-liten text-blekk-dempet">
+              <input
+                type="checkbox"
+                checked={rediger}
+                onChange={(e) => {
+                  setRediger(e.target.checked);
+                  if (e.target.checked) setValgtFag(null);
+                }}
+              />
+              Rediger
+            </label>
+          </div>
+          <p className="mt-1 text-brod text-blekk-dempet">
+            {rediger
+              ? "Feltene lagrer når du forlater dem. Escape angrer."
+              : "Klikk på et fag for å åpne det. Slå på Rediger for å endre feltene."}
+          </p>
         </div>
 
         <div className="min-h-0 flex-1 overflow-auto">
-        {fag.length === 0 ? (
-          <div className="mt-5">
-            <Tomtilstand tekst="Ingen fag i dette skoleåret ennå." />
-          </div>
-        ) : (
-          <div className="mt-5 rounded-vanlig border border-linje bg-ark px-3">
-          <table className="tabell-fast w-full text-brod">
-            <thead>
-              <tr className="border-b border-linje text-left text-etikett uppercase tracking-etikett text-blekk-dempet">
-                <th className="w-6 py-1 font-normal"></th>
-                <th className="w-28 py-1 font-normal">Kode</th>
-                <th className="py-1 font-normal">Navn</th>
-                <th className="w-28 py-1 text-right font-normal">Årstimer</th>
-                {/* Varighet vises bare i redigeringsmodus. I lesevisningen sto
+          {fag.length === 0 ? (
+            <div className="mt-5">
+              <Tomtilstand tekst="Ingen fag i dette skoleåret ennå." />
+            </div>
+          ) : (
+            <div className="mt-5 rounded-vanlig border border-linje bg-ark px-3">
+              <table className="tabell-fast w-full text-brod">
+                <thead>
+                  <tr className="border-b border-linje text-left text-etikett uppercase tracking-etikett text-blekk-dempet">
+                    <th className="w-6 py-1 font-normal"></th>
+                    <th className="w-28 py-1 font-normal">Kode</th>
+                    <th className="py-1 font-normal">Navn</th>
+                    <th className="w-28 py-1 text-right font-normal">
+                      Årstimer
+                    </th>
+                    {/* Varighet vises bare i redigeringsmodus. I lesevisningen sto
                     den med samme arvede verdi på hver rad. */}
-                {rediger && (
-                  <th className="w-32 py-1 text-right font-normal">Varighet</th>
-                )}
-                <th className="w-16 py-1"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {fag.map((f) => (
-                <FagRad
-                  key={f.id}
-                  fag={f}
-                  globalVarighet={globalVarighet}
-                  rediger={rediger}
-                  valgt={valgtFag === f.id}
-                  onApne={() => setValgtFag(f.id)}
-                  onEndret={onEndret}
-                />
-              ))}
-            </tbody>
-          </table>
-          </div>
-        )}
+                    {rediger && (
+                      <th className="w-32 py-1 text-right font-normal">
+                        Varighet
+                      </th>
+                    )}
+                    <th className="w-16 py-1"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {fag.map((f) => (
+                    <FagRad
+                      key={f.id}
+                      fag={f}
+                      globalVarighet={globalVarighet}
+                      rediger={rediger}
+                      valgt={valgtFag === f.id}
+                      onApne={() => setValgtFag(f.id)}
+                      onEndret={onEndret}
+                    />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
 
-        <NyttFag skolearId={skolearId} antall={fag.length} onLagt={onEndret} />
+          <NyttFag
+            skolearId={skolearId}
+            antall={fag.length}
+            onLagt={onEndret}
+          />
         </div>
       </div>
 
       {apent && (
-        <div className={`panel min-h-0 min-w-0 w-full overflow-auto lg:w-2/3 ${glir ? "" : "panel-ute"}`}>
+        <div
+          className={`panel min-h-0 min-w-0 w-full overflow-auto lg:w-2/3 ${glir ? "" : "panel-ute"}`}
+        >
           {valgtElev ? (
             <ElevPanel
               key={valgtElev}
@@ -324,12 +336,16 @@ function FagRad({
       <td className="py-1.5 text-right">
         <Innfelt
           verdi={
-            fag.standardVarighetMin === null ? "" : String(fag.standardVarighetMin)
+            fag.standardVarighetMin === null
+              ? ""
+              : String(fag.standardVarighetMin)
           }
           plassholder={`${globalVarighet} (arvet)`}
           hoyre
           lagre={async (v) => {
-            await endreFagIAr(fag.id, { standard_varighet_min: taltEllerNull(v) });
+            await endreFagIAr(fag.id, {
+              standard_varighet_min: taltEllerNull(v),
+            });
             onEndret();
           }}
         />
@@ -339,11 +355,11 @@ function FagRad({
         <button
           onClick={async () => {
             if (
-              !await bekreft(
+              !(await bekreft(
                 `Fjerne ${fag.kode} fra dette skoleåret?\n\n` +
                   `Faget blir liggende i fagbanken, og øktene og elevkoblingene ` +
                   `blir stående. Du kan legge det tilbake senere.`,
-              )
+              ))
             )
               return;
             await fjernFagFraAr(fag.id);
@@ -452,28 +468,28 @@ function NyttFag({
       )}
 
       <div className="flex items-end gap-3">
-      <Felt
-        etikett="Kode"
-        verdi={kode}
-        settVerdi={setKode}
-        plassholder="MFL1"
-        bredde="w-32"
-        onEnter={leggTil}
-      />
-      <Felt
-        etikett="Navn"
-        verdi={navn}
-        settVerdi={setNavn}
-        plassholder="Markedsføring og ledelse 1"
-        bredde="w-80"
-        onEnter={leggTil}
-      />
-      <Knapp onClick={leggTil}>Legg til fag</Knapp>
-      {!soker && (
-        <Knapp variant="stille" onClick={() => setSoker(true)}>
-          Søk i Udirs fagliste
-        </Knapp>
-      )}
+        <Felt
+          etikett="Kode"
+          verdi={kode}
+          settVerdi={setKode}
+          plassholder="MFL1"
+          bredde="w-32"
+          onEnter={leggTil}
+        />
+        <Felt
+          etikett="Navn"
+          verdi={navn}
+          settVerdi={setNavn}
+          plassholder="Markedsføring og ledelse 1"
+          bredde="w-80"
+          onEnter={leggTil}
+        />
+        <Knapp onClick={leggTil}>Legg til fag</Knapp>
+        {!soker && (
+          <Knapp variant="stille" onClick={() => setSoker(true)}>
+            Søk i Udirs fagliste
+          </Knapp>
+        )}
       </div>
 
       {grepKode && (

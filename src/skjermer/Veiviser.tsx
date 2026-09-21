@@ -6,7 +6,7 @@ import {
 } from "../data/skolear";
 import { hentFagIAr, leggFagIAr, type FagIAr } from "../data/fag";
 import { FAGFARGER } from "../ui/farger";
-import { Felt, Knapp, Fagstrek } from "../ui/felles";
+import { Felt, Knapp, Fagstrek, Ikon } from "../ui/felles";
 import { LimInn } from "./LimInn";
 
 /**
@@ -69,7 +69,8 @@ function StegSkolear({ onFerdig }: { onFerdig: (id: string) => void }) {
   const [start, setStart] = useState(foreslatt.start);
   const [slutt, setSlutt] = useState(foreslatt.slutt);
 
-  const gyldig = navn.trim() !== "" && start !== "" && slutt !== "" && start < slutt;
+  const gyldig =
+    navn.trim() !== "" && start !== "" && slutt !== "" && start < slutt;
 
   return (
     <section>
@@ -81,8 +82,18 @@ function StegSkolear({ onFerdig }: { onFerdig: (id: string) => void }) {
       <div className="mt-6 space-y-4">
         <Felt etikett="Navn" verdi={navn} settVerdi={setNavn} autoFocus />
         <div className="flex gap-3">
-          <Felt etikett="Første skoledag" verdi={start} settVerdi={setStart} type="date" />
-          <Felt etikett="Siste skoledag" verdi={slutt} settVerdi={setSlutt} type="date" />
+          <Felt
+            etikett="Første skoledag"
+            verdi={start}
+            settVerdi={setStart}
+            type="date"
+          />
+          <Felt
+            etikett="Siste skoledag"
+            verdi={slutt}
+            settVerdi={setSlutt}
+            type="date"
+          />
         </div>
       </div>
 
@@ -90,7 +101,9 @@ function StegSkolear({ onFerdig }: { onFerdig: (id: string) => void }) {
         <Knapp
           variant="primar"
           disabled={!gyldig}
-          onClick={async () => onFerdig(await opprettSkolear(navn.trim(), start, slutt))}
+          onClick={async () =>
+            onFerdig(await opprettSkolear(navn.trim(), start, slutt))
+          }
         >
           Videre
         </Knapp>
@@ -201,15 +214,18 @@ function StegElever({
       <h1 className="font-display text-overskrift">Legg inn klasselistene</h1>
       <p className="mt-1 text-brod text-blekk-dempet">
         Ett fag om gangen. Kjenner appen igjen et navn fra et fag du allerede
-        har fylt, spør den om det er samme elev. Svarer du ja, blir eleven
-        lagt til i dette faget også — koblet til den som finnes, i stedet for
+        har fylt, spør den om det er samme elev. Svarer du ja, blir eleven lagt
+        til i dette faget også — koblet til den som finnes, i stedet for
         opprettet på nytt. Eleven havner i faget uansett.
       </p>
 
       {meldinger.length > 0 && (
         <ul className="mt-5 space-y-1 border-y border-linje-medium py-2 text-brod text-blekk-dempet">
           {meldinger.map((m, i) => (
-            <li key={i}>✓ {m}</li>
+            <li key={i} className="flex items-center gap-1.5">
+              <Ikon navn="hake" />
+              {m}
+            </li>
           ))}
         </ul>
       )}

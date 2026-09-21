@@ -149,7 +149,10 @@ export function Elever({
       if (filterKlasse && e.klasseId !== filterKlasse) return false;
       if (!passerFagfilter(e.fagIder, filterFag, fagModus)) return false;
       if (baraMentor && !e.mentor) return false;
-      if (s && !`${e.fornavn} ${e.etternavn}`.toLocaleLowerCase("nb-NO").includes(s))
+      if (
+        s &&
+        !`${e.fornavn} ${e.etternavn}`.toLocaleLowerCase("nb-NO").includes(s)
+      )
         return false;
       return true;
     });
@@ -200,252 +203,286 @@ export function Elever({
       >
         {/* Søk, filtre og knapper blir stående mens lista ruller. */}
         <div className="shrink-0">
-        <div className="mb-3 flex flex-wrap items-end gap-3">
-          <Felt verdi={sok} settVerdi={setSok} plassholder="Søk etter navn" bredde="w-56" />
-
-          <Velger
-            verdi={filterKlasse}
-            settVerdi={setFilterKlasse}
-            tom="Alle klasser"
-            valg={klasser.map((k) => ({ id: k.id, tekst: `${k.navn} (${k.antall})` }))}
-          />
-          <Fagflervalg
-            fag={fag}
-            valgte={filterFag}
-            settValgte={setFilterFag}
-            modus={fagModus}
-            settModus={setFagModus}
-          />
-
-          <label
-            title="Bare elevene du er kontaktlærer for i år"
-            className="flex select-none items-center gap-1.5 text-liten text-blekk-dempet"
-          >
-            <input
-              type="checkbox"
-              checked={baraMentor}
-              onChange={(e) => setBaraMentor(e.target.checked)}
+          <div className="mb-3 flex flex-wrap items-end gap-3">
+            <Felt
+              verdi={sok}
+              settVerdi={setSok}
+              plassholder="Søk etter navn"
+              bredde="w-56"
             />
-            Mentorelever
-            <span className="tabular-nums text-blekk-svak">
-              {elever.filter((e) => e.mentor).length}
-            </span>
-          </label>
 
-          <div className="ml-auto flex items-center gap-2">
-            <label className="flex select-none items-center gap-2 text-liten text-blekk-dempet">
+            <Velger
+              verdi={filterKlasse}
+              settVerdi={setFilterKlasse}
+              tom="Alle klasser"
+              valg={klasser.map((k) => ({
+                id: k.id,
+                tekst: `${k.navn} (${k.antall})`,
+              }))}
+            />
+            <Fagflervalg
+              fag={fag}
+              valgte={filterFag}
+              settValgte={setFilterFag}
+              modus={fagModus}
+              settModus={setFagModus}
+            />
+
+            <label
+              title="Bare elevene du er kontaktlærer for i år"
+              className="flex select-none items-center gap-1.5 text-liten text-blekk-dempet"
+            >
               <input
                 type="checkbox"
-                checked={rediger}
-                onChange={(e) => {
-                  setRediger(e.target.checked);
-                  if (e.target.checked) setValgtElev(null);
-                }}
+                checked={baraMentor}
+                onChange={(e) => setBaraMentor(e.target.checked)}
               />
-              Rediger
+              Mentorelever
+              <span className="tabular-nums text-blekk-svak">
+                {elever.filter((e) => e.mentor).length}
+              </span>
             </label>
-            <Kolonnevelger
-              valgbare={VALGBARE}
-              vis={synligeKolonner}
-              onEndre={(id, pa) => byttKolonne(id as Synlig, pa)}
-            />
-            <Knapp onClick={() => setFane("klasser")}>
-              Klasser ({klasser.length})
-            </Knapp>
-            <Knapp onClick={onLimInn}>Lim inn liste</Knapp>
+
+            <div className="ml-auto flex items-center gap-2">
+              <label className="flex select-none items-center gap-2 text-liten text-blekk-dempet">
+                <input
+                  type="checkbox"
+                  checked={rediger}
+                  onChange={(e) => {
+                    setRediger(e.target.checked);
+                    if (e.target.checked) setValgtElev(null);
+                  }}
+                />
+                Rediger
+              </label>
+              <Kolonnevelger
+                valgbare={VALGBARE}
+                vis={synligeKolonner}
+                onEndre={(id, pa) => byttKolonne(id as Synlig, pa)}
+              />
+              <Knapp onClick={() => setFane("klasser")}>
+                Klasser ({klasser.length})
+              </Knapp>
+              <Knapp onClick={onLimInn}>Lim inn liste</Knapp>
+            </div>
           </div>
-        </div>
         </div>
 
         <div className="min-h-0 flex-1 overflow-auto">
-        {/* Arket lista ligger på. Skrivebordet er flata rundt (§13). */}
-        {elever.length === 0 ? (
-          <Tomtilstand
-            tekst="Ingen elever i dette skoleåret ennå."
-            handling={<Knapp variant="primar" onClick={onLimInn}>Lim inn en klasseliste</Knapp>}
-          />
-        ) : (
-          <div className="rounded-vanlig border border-linje bg-ark px-3">
-          <table className="tabell-fast w-full text-brod">
-            <thead>
-              <tr className="border-b border-linje text-left text-etikett uppercase tracking-etikett text-blekk-dempet">
-                <th className="w-6 py-1">
-                  <input
-                    type="checkbox"
-                    checked={alleMerket}
-                    title={alleMerket ? "Fjern merkingen" : "Merk alle i lista"}
-                    onChange={(e) =>
-                      setMerket(
-                        e.target.checked
-                          ? new Set(synlige.map((s) => s.id))
-                          : new Set(),
-                      )
-                    }
+          {/* Arket lista ligger på. Skrivebordet er flata rundt (§13). */}
+          {elever.length === 0 ? (
+            <Tomtilstand
+              tekst="Ingen elever i dette skoleåret ennå."
+              handling={
+                <Knapp variant="primar" onClick={onLimInn}>
+                  Lim inn en klasseliste
+                </Knapp>
+              }
+            />
+          ) : (
+            <div className="rounded-vanlig border border-linje bg-ark px-3">
+              <table className="tabell-fast w-full text-brod">
+                <thead>
+                  <tr className="border-b border-linje text-left text-etikett uppercase tracking-etikett text-blekk-dempet">
+                    <th className="w-6 py-1">
+                      <input
+                        type="checkbox"
+                        checked={alleMerket}
+                        title={
+                          alleMerket ? "Fjern merkingen" : "Merk alle i lista"
+                        }
+                        onChange={(e) =>
+                          setMerket(
+                            e.target.checked
+                              ? new Set(synlige.map((s) => s.id))
+                              : new Set(),
+                          )
+                        }
+                      />
+                    </th>
+                    <Overskrift
+                      kolonne="fornavn"
+                      sortering={sortering}
+                      onKlikk={bytSortering}
+                    >
+                      Fornavn
+                    </Overskrift>
+                    {vis.has("etternavn") && (
+                      <Overskrift
+                        kolonne="etternavn"
+                        sortering={sortering}
+                        onKlikk={bytSortering}
+                      >
+                        Etternavn
+                      </Overskrift>
+                    )}
+                    {vis.has("kode") && (
+                      <Overskrift
+                        kolonne="kode"
+                        sortering={sortering}
+                        onKlikk={bytSortering}
+                      >
+                        Kode
+                      </Overskrift>
+                    )}
+                    {vis.has("klasse") && (
+                      <Overskrift
+                        kolonne="klasse"
+                        sortering={sortering}
+                        onKlikk={bytSortering}
+                      >
+                        Klasse
+                      </Overskrift>
+                    )}
+                    {vis.has("mentor") && (
+                      <Overskrift
+                        kolonne="mentor"
+                        sortering={sortering}
+                        onKlikk={bytSortering}
+                      >
+                        Mentorelev
+                      </Overskrift>
+                    )}
+                    {vis.has("fag") && (
+                      <Overskrift
+                        kolonne="fag"
+                        sortering={sortering}
+                        onKlikk={bytSortering}
+                      >
+                        Fag
+                      </Overskrift>
+                    )}
+                    {vis.has("okter") && (
+                      <Overskrift
+                        kolonne="okter"
+                        sortering={sortering}
+                        onKlikk={bytSortering}
+                        hoyre
+                      >
+                        Økter
+                      </Overskrift>
+                    )}
+                    {vis.has("siste") && (
+                      <Overskrift
+                        kolonne="siste"
+                        sortering={sortering}
+                        onKlikk={bytSortering}
+                        hoyre
+                      >
+                        Siste
+                      </Overskrift>
+                    )}
+                    {vis.has("innsats") && (
+                      <Overskrift
+                        kolonne="innsats"
+                        sortering={sortering}
+                        onKlikk={bytSortering}
+                      >
+                        Innsats
+                      </Overskrift>
+                    )}
+                    {vis.has("endret") && (
+                      <Overskrift
+                        kolonne="endret"
+                        sortering={sortering}
+                        onKlikk={bytSortering}
+                        hoyre
+                      >
+                        Sist endret
+                      </Overskrift>
+                    )}
+                    {/* Tar opp slakken, så kolonnene over hugger innholdet sitt. */}
+                    <th className="w-full" />
+                  </tr>
+                </thead>
+                <tbody>
+                  {synlige.map((e) => (
+                    <Rad
+                      key={e.id}
+                      elev={e}
+                      fag={fag}
+                      klasser={klasser}
+                      skolearId={skolearId}
+                      rediger={rediger}
+                      valgt={valgtElev === e.id}
+                      merket={merket.has(e.id)}
+                      forfalt={forfalte.has(e.id)}
+                      vis={vis}
+                      onApne={() => setValgtElev(e.id)}
+                      onMerk={(pa) =>
+                        setMerket((f) => {
+                          const ny = new Set(f);
+                          if (pa) ny.add(e.id);
+                          else ny.delete(e.id);
+                          return ny;
+                        })
+                      }
+                      onEndret={last}
+                      onFeil={setFeil}
+                    />
+                  ))}
+                  <NyElevRad
+                    kolonner={3 + vis.size}
+                    skolearId={skolearId}
+                    klasser={klasser}
+                    fag={fag}
+                    arvKlasse={filterKlasse || null}
+                    arvFag={filterFag.size === 1 ? [...filterFag][0] : null}
+                    arvMentor={baraMentor}
+                    onLagret={last}
+                    onFeil={setFeil}
                   />
-                </th>
-                <Overskrift kolonne="fornavn" sortering={sortering} onKlikk={bytSortering}>
-                  Fornavn
-                </Overskrift>
-                {vis.has("etternavn") && (
-                  <Overskrift
-                    kolonne="etternavn"
-                    sortering={sortering}
-                    onKlikk={bytSortering}
-                  >
-                    Etternavn
-                  </Overskrift>
-                )}
-                {vis.has("kode") && (
-                  <Overskrift kolonne="kode" sortering={sortering} onKlikk={bytSortering}>
-                    Kode
-                  </Overskrift>
-                )}
-                {vis.has("klasse") && (
-                  <Overskrift
-                    kolonne="klasse"
-                    sortering={sortering}
-                    onKlikk={bytSortering}
-                  >
-                    Klasse
-                  </Overskrift>
-                )}
-                {vis.has("mentor") && (
-                  <Overskrift kolonne="mentor" sortering={sortering} onKlikk={bytSortering}>
-                    Mentorelev
-                  </Overskrift>
-                )}
-                {vis.has("fag") && (
-                  <Overskrift kolonne="fag" sortering={sortering} onKlikk={bytSortering}>
-                    Fag
-                  </Overskrift>
-                )}
-                {vis.has("okter") && (
-                  <Overskrift
-                    kolonne="okter"
-                    sortering={sortering}
-                    onKlikk={bytSortering}
-                    hoyre
-                  >
-                    Økter
-                  </Overskrift>
-                )}
-                {vis.has("siste") && (
-                  <Overskrift
-                    kolonne="siste"
-                    sortering={sortering}
-                    onKlikk={bytSortering}
-                    hoyre
-                  >
-                    Siste
-                  </Overskrift>
-                )}
-                {vis.has("innsats") && (
-                  <Overskrift kolonne="innsats" sortering={sortering} onKlikk={bytSortering}>
-                    Innsats
-                  </Overskrift>
-                )}
-                {vis.has("endret") && (
-                  <Overskrift
-                    kolonne="endret"
-                    sortering={sortering}
-                    onKlikk={bytSortering}
-                    hoyre
-                  >
-                    Sist endret
-                  </Overskrift>
-                )}
-                {/* Tar opp slakken, så kolonnene over hugger innholdet sitt. */}
-                <th className="w-full" />
-              </tr>
-            </thead>
-            <tbody>
-              {synlige.map((e) => (
-                <Rad
-                  key={e.id}
-                  elev={e}
-                  fag={fag}
-                  klasser={klasser}
-                  skolearId={skolearId}
-                  rediger={rediger}
-                  valgt={valgtElev === e.id}
-                  merket={merket.has(e.id)}
-                  forfalt={forfalte.has(e.id)}
-                  vis={vis}
-                  onApne={() => setValgtElev(e.id)}
-                  onMerk={(pa) =>
-                    setMerket((f) => {
-                      const ny = new Set(f);
-                      if (pa) ny.add(e.id);
-                      else ny.delete(e.id);
-                      return ny;
-                    })
-                  }
-                  onEndret={last}
-                  onFeil={setFeil}
-                />
-              ))}
-              <NyElevRad
-                kolonner={3 + vis.size}
-                skolearId={skolearId}
-                klasser={klasser}
-                fag={fag}
-                arvKlasse={filterKlasse || null}
-                arvFag={filterFag.size === 1 ? [...filterFag][0] : null}
-                arvMentor={baraMentor}
-                onLagret={last}
-                onFeil={setFeil}
-              />
-            </tbody>
-          </table>
-          </div>
-        )}
+                </tbody>
+              </table>
+            </div>
+          )}
 
-        {feil && (
-          <div className="mt-3 flex items-center gap-3 border border-feil bg-feil-flate px-3 py-2 text-brod text-feil">
-            <span>{feil}</span>
-            <button
-              onClick={() => setFeil(null)}
-              className="ml-auto text-liten hover:underline"
-            >
-              Lukk
-            </button>
-          </div>
-        )}
-
-        {merket.size > 0 && (
-          <div className="sticky bottom-0 mt-3 flex items-center gap-3 border border-linje bg-flate px-3 py-2 text-brod shadow-[0_-4px_12px_rgba(0,0,0,0.04)]">
-            <span className="tabular-nums">
-              {merket.size} {merket.size === 1 ? "elev" : "elever"} merket
-            </span>
-            <div className="ml-auto flex items-center gap-2">
-              <Knapp variant="stille" onClick={() => setMerket(new Set())}>
-                Nullstill
-              </Knapp>
+          {feil && (
+            <div className="mt-3 flex items-center gap-3 border border-feil bg-feil-flate px-3 py-2 text-brod text-feil">
+              <span>{feil}</span>
               <button
-                onClick={async () => {
-                  const ider = [...merket];
-                  const navn = elever
-                    .filter((e) => merket.has(e.id))
-                    .map((e) => `${e.fornavn} ${e.etternavn}`);
-                  const n = await tellForElever(ider);
-                  if (!(await bekreft(slettElevtekst(navn, n)))) return;
-                  await slettElever(ider);
-                  if (valgtElev && merket.has(valgtElev)) setValgtElev(null);
-                  setMerket(new Set());
-                  await last();
-                }}
-                className="text-brod text-feil hover:text-feil-mork"
+                onClick={() => setFeil(null)}
+                className="ml-auto text-liten hover:underline"
               >
-                Slett{" "}
-                {merket.size === 1 ? "eleven" : `de ${merket.size} elevene`}
+                Lukk
               </button>
             </div>
-          </div>
-        )}
+          )}
 
-        <p className="mt-3 text-liten text-blekk-dempet">
-          {synlige.length} av {elever.length} elever
-        </p>
+          {merket.size > 0 && (
+            <div className="sticky bottom-0 mt-3 flex items-center gap-3 border border-linje bg-flate px-3 py-2 text-brod shadow-[0_-4px_12px_rgba(0,0,0,0.04)]">
+              <span className="tabular-nums">
+                {merket.size} {merket.size === 1 ? "elev" : "elever"} merket
+              </span>
+              <div className="ml-auto flex items-center gap-2">
+                <Knapp variant="stille" onClick={() => setMerket(new Set())}>
+                  Nullstill
+                </Knapp>
+                <button
+                  onClick={async () => {
+                    const ider = [...merket];
+                    const navn = elever
+                      .filter((e) => merket.has(e.id))
+                      .map((e) => `${e.fornavn} ${e.etternavn}`);
+                    const n = await tellForElever(ider);
+                    if (!(await bekreft(slettElevtekst(navn, n)))) return;
+                    await slettElever(ider);
+                    if (valgtElev && merket.has(valgtElev)) setValgtElev(null);
+                    setMerket(new Set());
+                    await last();
+                  }}
+                  className="text-brod text-feil hover:text-feil-mork"
+                >
+                  Slett{" "}
+                  {merket.size === 1 ? "eleven" : `de ${merket.size} elevene`}
+                </button>
+              </div>
+            </div>
+          )}
+
+          <p className="mt-3 text-liten text-blekk-dempet">
+            {synlige.length} av {elever.length} elever
+          </p>
         </div>
       </div>
 
@@ -523,7 +560,9 @@ function sorter(rader: ElevRad[], { kolonne, stigende }: Sortering): ElevRad[] {
         if (!a.klasseNavn !== !b.klasseNavn) return a.klasseNavn ? -1 : 1;
         return tekst(a.klasseNavn).localeCompare(tekst(b.klasseNavn), "nb-NO");
       case "fag":
-        return a.fagKoder.join(",").localeCompare(b.fagKoder.join(","), "nb-NO");
+        return a.fagKoder
+          .join(",")
+          .localeCompare(b.fagKoder.join(","), "nb-NO");
       case "okter":
         return a.okter - b.okter;
       case "siste":
@@ -778,7 +817,9 @@ function Rad({
                 const ok = await settMentor(elev.id, skolearId, pa);
                 if (!ok) {
                   setOnsketMentor(null);
-                  onFeil("Eleven har ingen klasse dette året, så merket kunne ikke settes.");
+                  onFeil(
+                    "Eleven har ingen klasse dette året, så merket kunne ikke settes.",
+                  );
                   return;
                 }
                 onEndret();
@@ -804,7 +845,9 @@ function Rad({
             <span className="flex flex-wrap gap-1">
               {elev.fagIder.map((id) => {
                 const f = fag.find((x) => x.id === id);
-                return f ? <Fagmerke key={id} kode={f.kode} farge={f.farge} /> : null;
+                return f ? (
+                  <Fagmerke key={id} kode={f.kode} farge={f.farge} />
+                ) : null;
               })}
             </span>
           ) : (
@@ -968,7 +1011,9 @@ function kortTid(iso: string): string {
 }
 
 function dagerSiden(dato: string): string {
-  const dager = Math.round((Date.now() - new Date(dato).getTime()) / 86_400_000);
+  const dager = Math.round(
+    (Date.now() - new Date(dato).getTime()) / 86_400_000,
+  );
   if (dager <= 0) return "i dag";
   return `${dager} d`;
 }
@@ -1011,9 +1056,9 @@ function NyElevRad({
 
   // Mentormerket henger på klassen (§3.2), så uten klasse er det ingenting
   // å merke — og da skal boksen ikke gå an å hake av.
-  const harKlasse = klasseId === "__ny" ? nyKlasse.trim() !== "" : klasseId !== "";
-  const kanLagre =
-    fornavn.trim() !== "" && etternavn.trim() !== "" && !jobber;
+  const harKlasse =
+    klasseId === "__ny" ? nyKlasse.trim() !== "" : klasseId !== "";
+  const kanLagre = fornavn.trim() !== "" && etternavn.trim() !== "" && !jobber;
 
   function nullstill() {
     setFornavn("");
@@ -1174,7 +1219,11 @@ function NyElevRad({
                 Etternavn må fylles ut
               </span>
             )}
-            <Knapp variant="primar" disabled={!kanLagre} onClick={() => void lagre()}>
+            <Knapp
+              variant="primar"
+              disabled={!kanLagre}
+              onClick={() => void lagre()}
+            >
               {jobber ? "Lagrer …" : "Lagre"}
             </Knapp>
           </span>

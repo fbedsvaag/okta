@@ -97,7 +97,10 @@ function useCellehoyde(): [React.RefObject<HTMLDivElement | null>, number] {
       const dagbredde = (kortbredde - UKEKOLONNE - STREKER) / 5;
       if (dagbredde <= 0) return;
       setHoyde(
-        Math.min(HOYDE_MEST, Math.max(HOYDE_MINST, Math.round(dagbredde * FORHOLD))),
+        Math.min(
+          HOYDE_MEST,
+          Math.max(HOYDE_MINST, Math.round(dagbredde * FORHOLD)),
+        ),
       );
     };
 
@@ -164,7 +167,9 @@ export function Skolekalender({
 
   useEffect(() => {
     void last();
-    void hentInnstilling("standard_varighet_min").then((v) => setGlobal(v ?? "180"));
+    void hentInnstilling("standard_varighet_min").then((v) =>
+      setGlobal(v ?? "180"),
+    );
   }, [skolear.id]);
 
   const rode = useMemo(
@@ -223,37 +228,36 @@ export function Skolekalender({
       </div>
 
       <div className="min-h-0 flex-1 overflow-auto">
-      <div
-        ref={rutenett}
-        className="grid gap-x-6 gap-y-7 [grid-template-columns:repeat(auto-fill,minmax(17rem,1fr))]"
-      >
-        {maneder.map((m) => (
-          <Maned
-            key={m}
-            maned={m}
-            cellehoyde={cellehoyde}
-            spennFra={skolear.start}
-            spennTil={skolear.slutt}
-            perDag={perDag}
-            samtalePerDag={samtalePerDag}
-            fridager={fridager}
-            rode={rode}
-            idag={idag}
-            valgte={valgte}
-            onVelgDag={(dato) =>
-              setValgte((f) => {
-                const ny = new Set(f);
-                if (ny.has(dato)) ny.delete(dato);
-                else ny.add(dato);
-                return ny;
-              })
-            }
-            onApneOkt={onApneOkt}
-            onSlettOkt={(o) => void slettValgte([o])}
-          />
-        ))}
-      </div>
-
+        <div
+          ref={rutenett}
+          className="grid gap-x-6 gap-y-7 [grid-template-columns:repeat(auto-fill,minmax(17rem,1fr))]"
+        >
+          {maneder.map((m) => (
+            <Maned
+              key={m}
+              maned={m}
+              cellehoyde={cellehoyde}
+              spennFra={skolear.start}
+              spennTil={skolear.slutt}
+              perDag={perDag}
+              samtalePerDag={samtalePerDag}
+              fridager={fridager}
+              rode={rode}
+              idag={idag}
+              valgte={valgte}
+              onVelgDag={(dato) =>
+                setValgte((f) => {
+                  const ny = new Set(f);
+                  if (ny.has(dato)) ny.delete(dato);
+                  else ny.add(dato);
+                  return ny;
+                })
+              }
+              onApneOkt={onApneOkt}
+              onSlettOkt={(o) => void slettValgte([o])}
+            />
+          ))}
+        </div>
       </div>
 
       {valgte.size > 0 && (
@@ -336,7 +340,11 @@ function Maned({
             </div>
             {uke.map((dato, i) =>
               dato === null ? (
-                <div key={i} className="bg-ark" style={{ height: cellehoyde }} />
+                <div
+                  key={i}
+                  className="bg-ark"
+                  style={{ height: cellehoyde }}
+                />
               ) : (
                 <Dag
                   key={dato}
@@ -568,7 +576,9 @@ function Valgtlinje({
   const [klokke, setKlokke] = useState("");
   const [jobber, setJobber] = useState(false);
 
-  const blokkerte = datoer.filter((d) => blokkering(d, fridager, rode) !== null);
+  const blokkerte = datoer.filter(
+    (d) => blokkering(d, fridager, rode) !== null,
+  );
 
   async function leggTil(f: FagIAr) {
     setJobber(true);
@@ -591,7 +601,9 @@ function Valgtlinje({
   return (
     <div className="sticky bottom-0 mt-4 flex flex-wrap items-center gap-2 border border-linje bg-flate px-3 py-2 text-brod shadow-[0_-4px_12px_rgba(0,0,0,0.04)]">
       <span className="font-medium tabular-nums">
-        {datoer.length === 1 ? langDato(datoer[0]) : `${datoer.length} dager valgt`}
+        {datoer.length === 1
+          ? langDato(datoer[0])
+          : `${datoer.length} dager valgt`}
       </span>
 
       {blokkerte.length > 0 && (

@@ -50,17 +50,23 @@ export function Perioder({
   const valgtFag = fag.find((f) => f.id === fagId);
 
   // Kompetansemålene per periode, og alle som er dekket i faget samlet.
-  const [periodemal, setPeriodemal] = useState<Map<string, string[]>>(new Map());
+  const [periodemal, setPeriodemal] = useState<Map<string, string[]>>(
+    new Map(),
+  );
   const [lagerOkt, setLagerOkt] = useState(false);
 
   async function lastMal(skolearFagId: string | null) {
-    setPeriodemal(skolearFagId ? await hentPeriodemal(skolearFagId) : new Map());
+    setPeriodemal(
+      skolearFagId ? await hentPeriodemal(skolearFagId) : new Map(),
+    );
   }
 
   async function last() {
     if (!fagId) return;
     setPerioder(await hentPerioder(fagId));
-    setOkter((await hentOkter(skolear.id)).filter((o) => o.skolearFagId === fagId));
+    setOkter(
+      (await hentOkter(skolear.id)).filter((o) => o.skolearFagId === fagId),
+    );
     await lastMal(fagId);
   }
 
@@ -191,7 +197,6 @@ export function Perioder({
       ) : (
         <div className="min-h-0 flex-1 overflow-auto">
           <Tidslinje bunker={bunker} skolear={skolear} />
-
 
           {bunker.map((b) => (
             <Bunke
@@ -335,14 +340,13 @@ function Bunke({
           {bunke.okter.length} økter · {timer(bunke.minutter)} t
         </span>
 
-
         {p && (
           <button
             onClick={async () => {
               if (
-                !await bekreft(
+                !(await bekreft(
                   `Slette perioden «${p.navn}»?\n\nØktene blir stående — de blir bare uplasserte.`,
-                )
+                ))
               )
                 return;
               await slettPeriode(p.id);
@@ -463,7 +467,13 @@ function NyOktIPeriode({
           <option value="">La datoen bestemme</option>
         </select>
       </label>
-      <Felt etikett="Dato" type="date" verdi={dato} settVerdi={setDato} bredde="w-40" />
+      <Felt
+        etikett="Dato"
+        type="date"
+        verdi={dato}
+        settVerdi={setDato}
+        bredde="w-40"
+      />
       <Felt
         etikett="Klokkeslett"
         verdi={klokke}
@@ -531,7 +541,13 @@ function NyPeriode({
 
   async function lagre() {
     if (navn.trim() === "") return;
-    await opprettPeriode(fagId, navn.trim(), start || null, slutt || null, antall);
+    await opprettPeriode(
+      fagId,
+      navn.trim(),
+      start || null,
+      slutt || null,
+      antall,
+    );
     onLagret();
   }
 
@@ -546,15 +562,27 @@ function NyPeriode({
         autoFocus
         onEnter={lagre}
       />
-      <Felt etikett="Fra" verdi={start} settVerdi={setStart} type="date" bredde="w-40" />
-      <Felt etikett="Til" verdi={slutt} settVerdi={setSlutt} type="date" bredde="w-40" />
+      <Felt
+        etikett="Fra"
+        verdi={start}
+        settVerdi={setStart}
+        type="date"
+        bredde="w-40"
+      />
+      <Felt
+        etikett="Til"
+        verdi={slutt}
+        settVerdi={setSlutt}
+        type="date"
+        bredde="w-40"
+      />
       <Knapp variant="primar" onClick={lagre} disabled={navn.trim() === ""}>
         Opprett
       </Knapp>
       <Knapp variant="stille" onClick={onAvbryt}>
         Avbryt
       </Knapp>
-      </div>
+    </div>
   );
 }
 

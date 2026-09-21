@@ -63,7 +63,9 @@ export function Ukelinje({
   onApneOkt: (id: string) => void;
 }) {
   const datoer = Array.from({ length: 5 }, (_, i) => leggTil(mandag, i));
-  const perDag = new Map(datoer.map((d) => [d, okter.filter((o) => o.dato === d)]));
+  const perDag = new Map(
+    datoer.map((d) => [d, okter.filter((o) => o.dato === d)]),
+  );
 
   // Spennet regnes ut fra øktene, så aksen ikke er halvtom i en uke der alt
   // ligger midt på dagen.
@@ -219,7 +221,9 @@ function Blokk({
         style={{ background: okt.farge ?? "var(--color-linje-sterk)" }}
       />
       <span className="truncate font-medium">{okt.fagKode}</span>
-      {okt.tema && <span className="truncate text-blekk-dempet">{okt.tema}</span>}
+      {okt.tema && (
+        <span className="truncate text-blekk-dempet">{okt.tema}</span>
+      )}
     </button>
   );
 }

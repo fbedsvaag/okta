@@ -51,7 +51,9 @@ export function NySerie({
 
   useEffect(() => {
     void hentFridager(skolearId).then(setFridager);
-    void hentInnstilling("standard_varighet_min").then((v) => setGlobal(v ?? "180"));
+    void hentInnstilling("standard_varighet_min").then((v) =>
+      setGlobal(v ?? "180"),
+    );
   }, [skolearId]);
 
   const valgtFag = fag.find((f) => f.id === fagId);
@@ -117,7 +119,9 @@ export function NySerie({
                 checked={dag.valgt}
                 onChange={(e) =>
                   setDager((d) =>
-                    d!.map((x, j) => (j === i ? { ...x, valgt: e.target.checked } : x)),
+                    d!.map((x, j) =>
+                      j === i ? { ...x, valgt: e.target.checked } : x,
+                    ),
                   )
                 }
               />
@@ -130,7 +134,11 @@ export function NySerie({
         </div>
 
         <div className="mt-3 flex gap-2">
-          <Knapp variant="primar" onClick={lagre} disabled={jobber || antallValgt === 0}>
+          <Knapp
+            variant="primar"
+            onClick={lagre}
+            disabled={jobber || antallValgt === 0}
+          >
             {jobber ? "Oppretter …" : `Opprett ${antallValgt} økter`}
           </Knapp>
           <Knapp variant="stille" onClick={() => setDager(null)}>
@@ -154,7 +162,11 @@ export function NySerie({
       <div className="flex flex-wrap items-end gap-3">
         <label className="block">
           <Etikett>Fag</Etikett>
-          <select value={fagId} onChange={(e) => setFagId(e.target.value)} className={velger}>
+          <select
+            value={fagId}
+            onChange={(e) => setFagId(e.target.value)}
+            className={velger}
+          >
             {fag.map((f) => (
               <option key={f.id} value={f.id}>
                 {f.kode}
@@ -178,7 +190,13 @@ export function NySerie({
           </select>
         </label>
 
-        <Felt etikett="Klokkeslett" verdi={klokke} settVerdi={setKlokke} plassholder="09:15" bredde="w-28" />
+        <Felt
+          etikett="Klokkeslett"
+          verdi={klokke}
+          settVerdi={setKlokke}
+          plassholder="09:15"
+          bredde="w-28"
+        />
         <Felt
           etikett="Varighet"
           verdi={varighet}
@@ -186,10 +204,26 @@ export function NySerie({
           plassholder={`${arvet} (arvet)`}
           bredde="w-32"
         />
-        <Felt etikett="Fra" verdi={fra} settVerdi={setFra} type="date" bredde="w-40" />
-        <Felt etikett="Til" verdi={til} settVerdi={setTil} type="date" bredde="w-40" />
+        <Felt
+          etikett="Fra"
+          verdi={fra}
+          settVerdi={setFra}
+          type="date"
+          bredde="w-40"
+        />
+        <Felt
+          etikett="Til"
+          verdi={til}
+          settVerdi={setTil}
+          type="date"
+          bredde="w-40"
+        />
 
-        <Knapp variant="primar" onClick={forhandsvis} disabled={!fagId || fra >= til}>
+        <Knapp
+          variant="primar"
+          onClick={forhandsvis}
+          disabled={!fagId || fra >= til}
+        >
           Forhåndsvis
         </Knapp>
         <Knapp variant="stille" onClick={onAvbryt}>

@@ -30,16 +30,13 @@ import {
   Menyvalg,
   Tomtilstand,
   Velger,
+  Ikon,
 } from "../ui/felles";
 import { invoke } from "@tauri-apps/api/core";
 import { OktPanel } from "./OktPanel";
 import { Arsplan } from "./Arsplan";
 import { TRAFIKKLYS } from "../ui/farger";
-import {
-  hentAllePerioder,
-  periodeFor,
-  type Periode,
-} from "../data/perioder";
+import { hentAllePerioder, periodeFor, type Periode } from "../data/perioder";
 import { ElevPanel } from "./ElevPanel";
 import { useGlidende } from "../ui/bevegelse";
 import type { Skolear } from "../data/skolear";
@@ -167,7 +164,8 @@ export function Okter({
     const s = sok.trim().toLocaleLowerCase("nb-NO");
     return okter.filter((o) => {
       if (filterFag && o.skolearFagId !== filterFag) return false;
-      if (s && !(o.tema ?? "").toLocaleLowerCase("nb-NO").includes(s)) return false;
+      if (s && !(o.tema ?? "").toLocaleLowerCase("nb-NO").includes(s))
+        return false;
       return true;
     });
   }, [okter, filterFag, sok]);
@@ -198,242 +196,254 @@ export function Okter({
       />
 
       <div className="ikkeutskrift mx-auto flex min-h-0 w-full max-w-6xl flex-1 gap-0 overflow-clip">
-      <div className={`liste-bredde flex min-w-0 flex-col ${glir ? "hidden w-full pr-4 lg:flex lg:w-1/3" : "w-full"}`}>
-        {/* Verktøylinja er header: den ruller ikke bort, og månedene
+        <div
+          className={`liste-bredde flex min-w-0 flex-col ${glir ? "hidden w-full pr-4 lg:flex lg:w-1/3" : "w-full"}`}
+        >
+          {/* Verktøylinja er header: den ruller ikke bort, og månedene
             fester seg rett under den. */}
-        <div className="shrink-0">
-          <div className="mb-3 flex flex-wrap items-center gap-2">
-            <Felt
-              verdi={sok}
-              settVerdi={setSok}
-              plassholder="Søk i tema"
-              bredde={apen ? "w-full" : "w-56"}
-            />
-            <Velger verdi={filterFag} settVerdi={setFilterFag}>
-              <option value="">Alle fag</option>
-              {fag.map((f) => (
-                <option key={f.id} value={f.id}>
-                  {f.kode}
-                </option>
-              ))}
-            </Velger>
-            <div className="ml-auto flex items-center gap-2">
-              <Kolonnevelger valgbare={VALGBARE} vis={kolonner} onEndre={(id, pa) => byttKolonne(id as KolonneId, pa)} />
-              <label
-                title="Grupper øktene under perioden sin på arket"
-                className="flex select-none items-center gap-1.5 text-brod text-blekk-dempet"
-              >
-                <input
-                  type="checkbox"
-                  checked={medPerioder}
-                  onChange={(e) => {
-                    setMedPerioder(e.target.checked);
-                    void settInnstilling(
-                      "utskrift_perioder",
-                      e.target.checked ? "1" : "0",
-                    );
-                  }}
+          <div className="shrink-0">
+            <div className="mb-3 flex flex-wrap items-center gap-2">
+              <Felt
+                verdi={sok}
+                settVerdi={setSok}
+                plassholder="Søk i tema"
+                bredde={apen ? "w-full" : "w-56"}
+              />
+              <Velger verdi={filterFag} settVerdi={setFilterFag}>
+                <option value="">Alle fag</option>
+                {fag.map((f) => (
+                  <option key={f.id} value={f.id}>
+                    {f.kode}
+                  </option>
+                ))}
+              </Velger>
+              <div className="ml-auto flex items-center gap-2">
+                <Kolonnevelger
+                  valgbare={VALGBARE}
+                  vis={kolonner}
+                  onEndre={(id, pa) => byttKolonne(id as KolonneId, pa)}
                 />
-                Perioder
-              </label>
-              <Knapp onClick={() => void invoke("skriv_ut")}>Skriv ut / PDF</Knapp>
-              <Knapp onClick={() => setLagerSerie(true)}>+ Serie</Knapp>
-              <Knapp variant="primar" onClick={() => setLagerNy(true)}>
-                + Ny økt
-              </Knapp>
+                <label
+                  title="Grupper øktene under perioden sin på arket"
+                  className="flex select-none items-center gap-1.5 text-brod text-blekk-dempet"
+                >
+                  <input
+                    type="checkbox"
+                    checked={medPerioder}
+                    onChange={(e) => {
+                      setMedPerioder(e.target.checked);
+                      void settInnstilling(
+                        "utskrift_perioder",
+                        e.target.checked ? "1" : "0",
+                      );
+                    }}
+                  />
+                  Perioder
+                </label>
+                <Knapp onClick={() => void invoke("skriv_ut")}>
+                  Skriv ut / PDF
+                </Knapp>
+                <Knapp onClick={() => setLagerSerie(true)}>+ Serie</Knapp>
+                <Knapp variant="primar" onClick={() => setLagerNy(true)}>
+                  + Ny økt
+                </Knapp>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Én rullesone. Hadde lista hatt sin egen overflow-x, ville
+          {/* Én rullesone. Hadde lista hatt sin egen overflow-x, ville
             månedene festet seg til DEN i stedet for til denne. */}
-        <div className="min-h-0 flex-1 overflow-auto">
-
-          {lagerNy && (
-            <NyOkt
-              fag={fag}
-              startFagId={filterFag || fag[0]?.id}
-              sisteDato={okter.length > 0 ? okter[okter.length - 1].dato : undefined}
-              onLagret={async (id) => {
-                setLagerNy(false);
-                await last();
-                setValgt(id);
-              }}
-              onAvbryt={() => setLagerNy(false)}
-            />
-          )}
-
-          {lagerSerie && (
-            <NySerie
-              skolearId={skolearId}
-              skolearStart={skolearStart}
-              skolearSlutt={skolearSlutt}
-              fag={fag}
-              startFagId={filterFag || fag[0]?.id}
-              onLagret={async () => {
-                setLagerSerie(false);
-                await last();
-              }}
-              onAvbryt={() => setLagerSerie(false)}
-            />
-          )}
-
-          {okter.length === 0 && !lagerNy && !lagerSerie ? (
-            <Tomtilstand
-              tekst={
-                fag.length === 0
-                  ? "Legg inn fagene dine først, så kan du planlegge øktene."
-                  : "Ingen økter i dette skoleåret ennå — opprett den første."
-              }
-              handling={
-                fag.length > 0 ? (
-                  <div className="flex gap-2">
-                    <Knapp variant="primar" onClick={() => setLagerSerie(true)}>
-                      Legg inn en serie
-                    </Knapp>
-                    <Knapp onClick={() => setLagerNy(true)}>Én økt</Knapp>
-                  </div>
-                ) : undefined
-              }
-            />
-          ) : (
-            <Liste
-              okter={synlige}
-              valgt={valgt}
-              merket={merket}
-              vis={apen ? new Set<KolonneId>() : kolonner}
-              blokkert={blokkert}
-              vurderinger={vurderinger}
-              perioder={medPerioder ? periodePerOkt : new Map()}
-              onApnePerioder={onApnePerioder}
-              onVelg={setValgt}
-              onMerk={(id, pa) =>
-                setMerket((f) => {
-                  const ny = new Set(f);
-                  if (pa) ny.add(id);
-                  else ny.delete(id);
-                  return ny;
-                })
-              }
-              onMerkAlle={(pa) =>
-                setMerket(pa ? new Set(synlige.map((o) => o.id)) : new Set())
-              }
-              onMeny={(okt, x, y) => setMeny({ okt, x, y })}
-            />
-          )}
-
-          {meny && (
-            <Kontekstmeny
-              x={meny.x}
-              y={meny.y}
-              onLukk={() => setMeny(null)}
-            >
-              <Menyvalg
-                onKlikk={() => {
-                  setValgt(meny.okt.id);
-                  setMeny(null);
+          <div className="min-h-0 flex-1 overflow-auto">
+            {lagerNy && (
+              <NyOkt
+                fag={fag}
+                startFagId={filterFag || fag[0]?.id}
+                sisteDato={
+                  okter.length > 0 ? okter[okter.length - 1].dato : undefined
+                }
+                onLagret={async (id) => {
+                  setLagerNy(false);
+                  await last();
+                  setValgt(id);
                 }}
-              >
-                Rediger
-              </Menyvalg>
-              <Menyvalg
-                farlig
-                onKlikk={async () => {
-                  const okt = meny.okt;
-                  setMeny(null);
-                  if (!(await bekreft(slettetekst([okt])))) return;
-                  await slettOkter([okt.id]);
-                  if (valgt === okt.id) setValgt(null);
-                  setMerket((f) => {
-                    const ny = new Set(f);
-                    ny.delete(okt.id);
-                    return ny;
-                  });
+                onAvbryt={() => setLagerNy(false)}
+              />
+            )}
+
+            {lagerSerie && (
+              <NySerie
+                skolearId={skolearId}
+                skolearStart={skolearStart}
+                skolearSlutt={skolearSlutt}
+                fag={fag}
+                startFagId={filterFag || fag[0]?.id}
+                onLagret={async () => {
+                  setLagerSerie(false);
                   await last();
                 }}
-              >
-                Slett
-              </Menyvalg>
-            </Kontekstmeny>
-          )}
+                onAvbryt={() => setLagerSerie(false)}
+              />
+            )}
 
-          {/*
+            {okter.length === 0 && !lagerNy && !lagerSerie ? (
+              <Tomtilstand
+                tekst={
+                  fag.length === 0
+                    ? "Legg inn fagene dine først, så kan du planlegge øktene."
+                    : "Ingen økter i dette skoleåret ennå — opprett den første."
+                }
+                handling={
+                  fag.length > 0 ? (
+                    <div className="flex gap-2">
+                      <Knapp
+                        variant="primar"
+                        onClick={() => setLagerSerie(true)}
+                      >
+                        Legg inn en serie
+                      </Knapp>
+                      <Knapp onClick={() => setLagerNy(true)}>Én økt</Knapp>
+                    </div>
+                  ) : undefined
+                }
+              />
+            ) : (
+              <Liste
+                okter={synlige}
+                valgt={valgt}
+                merket={merket}
+                vis={apen ? new Set<KolonneId>() : kolonner}
+                blokkert={blokkert}
+                vurderinger={vurderinger}
+                perioder={medPerioder ? periodePerOkt : new Map()}
+                onApnePerioder={onApnePerioder}
+                onVelg={setValgt}
+                onMerk={(id, pa) =>
+                  setMerket((f) => {
+                    const ny = new Set(f);
+                    if (pa) ny.add(id);
+                    else ny.delete(id);
+                    return ny;
+                  })
+                }
+                onMerkAlle={(pa) =>
+                  setMerket(pa ? new Set(synlige.map((o) => o.id)) : new Set())
+                }
+                onMeny={(okt, x, y) => setMeny({ okt, x, y })}
+              />
+            )}
+
+            {meny && (
+              <Kontekstmeny x={meny.x} y={meny.y} onLukk={() => setMeny(null)}>
+                <Menyvalg
+                  onKlikk={() => {
+                    setValgt(meny.okt.id);
+                    setMeny(null);
+                  }}
+                >
+                  Rediger
+                </Menyvalg>
+                <Menyvalg
+                  farlig
+                  onKlikk={async () => {
+                    const okt = meny.okt;
+                    setMeny(null);
+                    if (!(await bekreft(slettetekst([okt])))) return;
+                    await slettOkter([okt.id]);
+                    if (valgt === okt.id) setValgt(null);
+                    setMerket((f) => {
+                      const ny = new Set(f);
+                      ny.delete(okt.id);
+                      return ny;
+                    });
+                    await last();
+                  }}
+                >
+                  Slett
+                </Menyvalg>
+              </Kontekstmeny>
+            )}
+
+            {/*
             Handlingslinja for flervalg. Den ligger nederst i lista og ikke
             i verktøylinja, fordi den bare finnes når noe er merket — en
             knapp som kommer og går i toppen ville flyttet resten.
           */}
-          {merket.size > 0 && (
-            <div className="sticky bottom-0 mt-3 flex items-center gap-3 border border-linje bg-flate px-3 py-2 text-brod shadow-[0_-4px_12px_rgba(0,0,0,0.04)]">
-              <span className="tabular-nums">
-                {merket.size} {merket.size === 1 ? "økt" : "økter"} merket
-              </span>
-              <span className="tabular-nums text-blekk-dempet">
-                {timer(
-                  okter
-                    .filter((o) => merket.has(o.id))
-                    .reduce((sum, o) => sum + o.varighetMin, 0),
-                )}
-              </span>
-              <div className="ml-auto flex items-center gap-2">
-                <Knapp variant="stille" onClick={() => setMerket(new Set())}>
-                  Nullstill
-                </Knapp>
-                <button
-                  onClick={async () => {
-                    const valgte = okter.filter((o) => merket.has(o.id));
-                    if (!(await bekreft(slettetekst(valgte)))) return;
-                    await slettOkter(valgte.map((o) => o.id));
-                    setMerket(new Set());
-                    if (valgt && merket.has(valgt)) setValgt(null);
-                    await last();
-                  }}
-                  className="text-brod text-feil hover:text-feil-mork"
-                >
-                  Slett {merket.size === 1 ? "økta" : `de ${merket.size} øktene`}
-                </button>
-              </div>
-            </div>
-          )}
-
-          {okter.length > 0 && (
-            <p className="mt-3 text-liten text-blekk-dempet">
-              {synlige.length} av {okter.length} økter ·{" "}
-              {timer(synlige.reduce((sum, o) => sum + o.varighetMin, 0))}
-              {blokkert.size > 0 && (
-                <span className="ml-2 text-feil">
-                  ! {blokkert.size}{" "}
-                  {blokkert.size === 1 ? "økt ligger" : "økter ligger"} på en fridag
+            {merket.size > 0 && (
+              <div className="sticky bottom-0 mt-3 flex items-center gap-3 border border-linje bg-flate px-3 py-2 text-brod shadow-[0_-4px_12px_rgba(0,0,0,0.04)]">
+                <span className="tabular-nums">
+                  {merket.size} {merket.size === 1 ? "økt" : "økter"} merket
                 </span>
-              )}
-            </p>
-          )}
-        </div>
-      </div>
+                <span className="tabular-nums text-blekk-dempet">
+                  {timer(
+                    okter
+                      .filter((o) => merket.has(o.id))
+                      .reduce((sum, o) => sum + o.varighetMin, 0),
+                  )}
+                </span>
+                <div className="ml-auto flex items-center gap-2">
+                  <Knapp variant="stille" onClick={() => setMerket(new Set())}>
+                    Nullstill
+                  </Knapp>
+                  <button
+                    onClick={async () => {
+                      const valgte = okter.filter((o) => merket.has(o.id));
+                      if (!(await bekreft(slettetekst(valgte)))) return;
+                      await slettOkter(valgte.map((o) => o.id));
+                      setMerket(new Set());
+                      if (valgt && merket.has(valgt)) setValgt(null);
+                      await last();
+                    }}
+                    className="text-brod text-feil hover:text-feil-mork"
+                  >
+                    Slett{" "}
+                    {merket.size === 1 ? "økta" : `de ${merket.size} øktene`}
+                  </button>
+                </div>
+              </div>
+            )}
 
-      {apen && (
-        <div className={`panel min-h-0 min-w-0 w-full overflow-auto lg:w-2/3 ${glir ? "" : "panel-ute"}`}>
-          {valgtElev ? (
-            <ElevPanel
-              key={valgtElev}
-              elevId={valgtElev}
-              aktivtSkolearId={skolearId}
-              onLukk={() => setValgtElev(null)}
-              onApneOkt={(id) => {
-                setValgtElev(null);
-                setValgt(id);
-              }}
-            />
-          ) : (
-            <OktPanel
-              okt={apen}
-              onLukk={() => setValgt(null)}
-              onEndret={last}
-              onApneElev={setValgtElev}
-            />
-          )}
+            {okter.length > 0 && (
+              <p className="mt-3 text-liten text-blekk-dempet">
+                {synlige.length} av {okter.length} økter ·{" "}
+                {timer(synlige.reduce((sum, o) => sum + o.varighetMin, 0))}
+                {blokkert.size > 0 && (
+                  <span className="ml-2 text-feil">
+                    ! {blokkert.size}{" "}
+                    {blokkert.size === 1 ? "økt ligger" : "økter ligger"} på en
+                    fridag
+                  </span>
+                )}
+              </p>
+            )}
+          </div>
         </div>
-      )}
-    </div>
+
+        {apen && (
+          <div
+            className={`panel min-h-0 min-w-0 w-full overflow-auto lg:w-2/3 ${glir ? "" : "panel-ute"}`}
+          >
+            {valgtElev ? (
+              <ElevPanel
+                key={valgtElev}
+                elevId={valgtElev}
+                aktivtSkolearId={skolearId}
+                onLukk={() => setValgtElev(null)}
+                onApneOkt={(id) => {
+                  setValgtElev(null);
+                  setValgt(id);
+                }}
+              />
+            ) : (
+              <OktPanel
+                okt={apen}
+                onLukk={() => setValgt(null)}
+                onEndret={last}
+                onApneElev={setValgtElev}
+              />
+            )}
+          </div>
+        )}
+      </div>
     </>
   );
 }
@@ -507,7 +517,9 @@ function Liste({
         )}
         <span className="flex-1">Tema</span>
         {vis.has("periode") && <span className="w-36 shrink-0">Periode</span>}
-        {vis.has("vurdering") && <span className="w-40 shrink-0">Vurdering</span>}
+        {vis.has("vurdering") && (
+          <span className="w-40 shrink-0">Vurdering</span>
+        )}
         {vis.has("sted") && <span className="w-24 shrink-0">Sted</span>}
         {vis.has("agenda") && <span className="w-48 shrink-0">Agenda</span>}
         {vis.has("logg") && <span className="w-40 shrink-0">Øktlogg</span>}
@@ -553,96 +565,103 @@ function Liste({
                   title="Merk for sletting"
                   className="shrink-0"
                 />
-              <button
-                onClick={() => onVelg(o.id)}
-                className="flex min-w-0 flex-1 items-center gap-3 py-1.5 text-left text-brod"
-              >
-                {vis.has("uke") && (
-                  <span className="w-7 shrink-0 tabular-nums text-blekk-svak">
-                    {ukenummer(o.dato)}
-                  </span>
-                )}
-                <span
-                  aria-hidden
-                  className="h-3.5 w-[3px] shrink-0 rounded-full"
-                  style={{ background: o.farge ?? "var(--color-linje-sterk)" }}
-                />
-                <span className="w-12 shrink-0 font-medium">{o.fagKode}</span>
-                <span
-                  className={`w-24 shrink-0 tabular-nums ${
-                    blokkert.has(o.id)
-                      ? "font-medium text-feil"
-                      : "text-blekk-dempet"
-                  }`}
-                  title={blokkert.get(o.id)?.navn}
+                <button
+                  onClick={() => onVelg(o.id)}
+                  className="flex min-w-0 flex-1 items-center gap-3 py-1.5 text-left text-brod"
                 >
-                  {kortDato(o.dato)}
-                  {blokkert.has(o.id) && " !"}
-                </span>
-                {vis.has("tid") && (
-                  <span className="w-12 shrink-0 tabular-nums text-blekk-dempet">
-                    {o.klokkeslett ?? "–"}
-                  </span>
-                )}
-                {vis.has("varighet") && (
-                  <span className="w-16 shrink-0 text-right tabular-nums text-blekk-dempet">
-                    {o.varighetMin} min
-                  </span>
-                )}
-                <span className="flex-1 truncate">
-                  {o.tema ?? <span className="text-blekk-svak">—</span>}
-                </span>
-                {vis.has("periode") && (
-                  <span className="w-36 shrink-0 truncate">
-                    {perioder.has(o.id) ? (
-                      <span
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onApnePerioder();
-                        }}
-                        title="Åpne periodevisningen"
-                        className="rounded-sm bg-flate px-1.5 py-0.5 text-liten text-blekk-dempet hover:bg-linje-medium"
-                      >
-                        {perioder.get(o.id)!.navn}
-                      </span>
-                    ) : (
-                      <span className="text-blekk-svakest">—</span>
-                    )}
-                  </span>
-                )}
-                {vis.has("vurdering") && (
-                  <span className="w-40 shrink-0 truncate text-blekk-dempet">
-                    {(vurderinger.get(o.id) ?? []).map((v) => v.tittel).join(", ")}
-                  </span>
-                )}
-                {vis.has("sted") && (
-                  <span className="w-24 shrink-0 truncate" title={o.sted ?? undefined}>
-                    {o.sted ?? ""}
-                  </span>
-                )}
-                {vis.has("agenda") && (
+                  {vis.has("uke") && (
+                    <span className="w-7 shrink-0 tabular-nums text-blekk-svak">
+                      {ukenummer(o.dato)}
+                    </span>
+                  )}
                   <span
-                    className="w-48 shrink-0 truncate text-liten text-blekk-dempet"
-                    title={o.agenda ?? undefined}
-                  >
-                    {o.agenda ?? ""}
-                  </span>
-                )}
-                {vis.has("logg") && (
+                    aria-hidden
+                    className="h-3.5 w-[3px] shrink-0 rounded-full"
+                    style={{
+                      background: o.farge ?? "var(--color-linje-sterk)",
+                    }}
+                  />
+                  <span className="w-12 shrink-0 font-medium">{o.fagKode}</span>
                   <span
-                    className="w-40 shrink-0 truncate text-liten italic text-blekk-dempet"
-                    title={o.logg ?? undefined}
+                    className={`w-24 shrink-0 tabular-nums ${
+                      blokkert.has(o.id)
+                        ? "font-medium text-feil"
+                        : "text-blekk-dempet"
+                    }`}
+                    title={blokkert.get(o.id)?.navn}
                   >
-                    {o.logg ?? ""}
+                    {kortDato(o.dato)}
+                    {blokkert.has(o.id) && " !"}
                   </span>
-                )}
-                {vis.has("innsats") && (
-                  <span className="w-24 shrink-0">
-                    <Innsats okt={o} />
+                  {vis.has("tid") && (
+                    <span className="w-12 shrink-0 tabular-nums text-blekk-dempet">
+                      {o.klokkeslett ?? "–"}
+                    </span>
+                  )}
+                  {vis.has("varighet") && (
+                    <span className="w-16 shrink-0 text-right tabular-nums text-blekk-dempet">
+                      {o.varighetMin} min
+                    </span>
+                  )}
+                  <span className="flex-1 truncate">
+                    {o.tema ?? <span className="text-blekk-svak">—</span>}
                   </span>
-                )}
-                <Status okt={o} />
-              </button>
+                  {vis.has("periode") && (
+                    <span className="w-36 shrink-0 truncate">
+                      {perioder.has(o.id) ? (
+                        <span
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onApnePerioder();
+                          }}
+                          title="Åpne periodevisningen"
+                          className="rounded-sm bg-flate px-1.5 py-0.5 text-liten text-blekk-dempet hover:bg-linje-medium"
+                        >
+                          {perioder.get(o.id)!.navn}
+                        </span>
+                      ) : (
+                        <span className="text-blekk-svakest">—</span>
+                      )}
+                    </span>
+                  )}
+                  {vis.has("vurdering") && (
+                    <span className="w-40 shrink-0 truncate text-blekk-dempet">
+                      {(vurderinger.get(o.id) ?? [])
+                        .map((v) => v.tittel)
+                        .join(", ")}
+                    </span>
+                  )}
+                  {vis.has("sted") && (
+                    <span
+                      className="w-24 shrink-0 truncate"
+                      title={o.sted ?? undefined}
+                    >
+                      {o.sted ?? ""}
+                    </span>
+                  )}
+                  {vis.has("agenda") && (
+                    <span
+                      className="w-48 shrink-0 truncate text-liten text-blekk-dempet"
+                      title={o.agenda ?? undefined}
+                    >
+                      {o.agenda ?? ""}
+                    </span>
+                  )}
+                  {vis.has("logg") && (
+                    <span
+                      className="w-40 shrink-0 truncate text-liten italic text-blekk-dempet"
+                      title={o.logg ?? undefined}
+                    >
+                      {o.logg ?? ""}
+                    </span>
+                  )}
+                  {vis.has("innsats") && (
+                    <span className="w-24 shrink-0">
+                      <Innsats okt={o} />
+                    </span>
+                  )}
+                  <Status okt={o} />
+                </button>
               </div>
             </div>
           ))}
@@ -658,7 +677,8 @@ function Liste({
  */
 function Innsats({ okt }: { okt: Okt }) {
   const talt = okt.gronn + okt.gul + okt.rod;
-  if (talt === 0) return <span className="text-liten text-blekk-svakest">—</span>;
+  if (talt === 0)
+    return <span className="text-liten text-blekk-svakest">—</span>;
 
   const deler = [
     { antall: okt.gronn, farge: TRAFIKKLYS.gronn },
@@ -683,9 +703,15 @@ function Innsats({ okt }: { okt: Okt }) {
 
 function Status({ okt }: { okt: Okt }) {
   if (okt.skaret === 0)
-    return <span className="w-14 shrink-0 text-right text-blekk-svakest">·</span>;
+    return (
+      <span className="w-14 shrink-0 text-right text-blekk-svakest">·</span>
+    );
   if (okt.skaret >= okt.elever)
-    return <span className="w-14 shrink-0 text-right text-lys-gronn">✓</span>;
+    return (
+      <span className="w-14 shrink-0 text-right text-lys-gronn">
+        <Ikon navn="hake" />
+      </span>
+    );
   return (
     <span className="w-14 shrink-0 text-right tabular-nums text-blekk-dempet">
       {okt.skaret}/{okt.elever}
@@ -713,7 +739,9 @@ function NyOkt({
   const [global, setGlobal] = useState("180");
 
   useEffect(() => {
-    void hentInnstilling("standard_varighet_min").then((v) => setGlobal(v ?? "180"));
+    void hentInnstilling("standard_varighet_min").then((v) =>
+      setGlobal(v ?? "180"),
+    );
   }, []);
 
   const valgtFag = fag.find((f) => f.id === fagId);
@@ -750,7 +778,13 @@ function NyOkt({
         </select>
       </label>
 
-      <Felt etikett="Dato" verdi={dato} settVerdi={setDato} type="date" bredde="w-40" />
+      <Felt
+        etikett="Dato"
+        verdi={dato}
+        settVerdi={setDato}
+        type="date"
+        bredde="w-40"
+      />
       <Felt
         etikett="Klokkeslett"
         verdi={klokke}

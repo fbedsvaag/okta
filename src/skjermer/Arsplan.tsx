@@ -31,7 +31,9 @@ export function Arsplan({
   /** Perioden hver økt faller inn under, utledet av datoen */
   perioder: Map<string, Periode>;
 }) {
-  const medOkter = fag.filter((f) => okter.some((o) => o.skolearFagId === f.id));
+  const medOkter = fag.filter((f) =>
+    okter.some((o) => o.skolearFagId === f.id),
+  );
 
   return (
     <div className="kunutskrift">
@@ -46,7 +48,8 @@ export function Arsplan({
                 {f.kode} — {f.navn}
               </h1>
               <p className="text-[10pt]">
-                Årsplan {skolear.navn} · {egne.length} økter · {timer(egne)} timer
+                Årsplan {skolear.navn} · {egne.length} økter · {timer(egne)}{" "}
+                timer
               </p>
             </header>
 
@@ -55,7 +58,8 @@ export function Arsplan({
                 <h2 className="border-b border-black pb-0.5 text-[11pt] font-semibold">
                   {g.navn}
                   <span className="float-right font-normal">
-                    {spenn(g.okter)} · {g.okter.length} økter · {timer(g.okter)} t
+                    {spenn(g.okter)} · {g.okter.length} økter · {timer(g.okter)}{" "}
+                    t
                   </span>
                 </h2>
 
@@ -70,15 +74,24 @@ export function Arsplan({
                       <th className="w-[4rem] py-1 font-semibold">Dag</th>
                       <th className="w-[3.5rem] py-1 font-semibold">Tid</th>
                       <th className="py-1 font-semibold">Tema</th>
-                      <th className="w-[11rem] py-1 font-semibold">Vurdering</th>
+                      <th className="w-[11rem] py-1 font-semibold">
+                        Vurdering
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
                     {g.okter.map((o) => (
-                      <tr key={o.id} className="border-b border-linje align-top">
-                        <td className="py-1 tabular-nums">{kortDato(o.dato)}</td>
+                      <tr
+                        key={o.id}
+                        className="border-b border-linje align-top"
+                      >
+                        <td className="py-1 tabular-nums">
+                          {kortDato(o.dato)}
+                        </td>
                         <td className="py-1">{ukedag(o.dato)}</td>
-                        <td className="py-1 tabular-nums">{o.klokkeslett ?? ""}</td>
+                        <td className="py-1 tabular-nums">
+                          {o.klokkeslett ?? ""}
+                        </td>
                         <td className="py-1">{o.tema ?? ""}</td>
                         <td className="py-1">
                           {(vurderinger.get(o.id) ?? [])
@@ -126,7 +139,11 @@ function grupperPaPeriode(
     const p = perioder.get(o.id) ?? null;
     const navn = p?.navn ?? "Uten periode";
     if (!kart.has(navn)) {
-      kart.set(navn, { navn, kompetansemal: p?.kompetansemal ?? null, okter: [] });
+      kart.set(navn, {
+        navn,
+        kompetansemal: p?.kompetansemal ?? null,
+        okter: [],
+      });
       rekkefolge.push(navn);
     }
     kart.get(navn)!.okter.push(o);

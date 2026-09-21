@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Ikon } from "../ui/felles";
 import { confirm as bekreft } from "@tauri-apps/plugin-dialog";
 import {
   endreOkt,
@@ -59,7 +60,10 @@ export function OktPanel({
     const rad = markertRad.current;
     if (!rad) return;
     const rolig = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    rad.scrollIntoView({ block: "nearest", behavior: rolig ? "auto" : "smooth" });
+    rad.scrollIntoView({
+      block: "nearest",
+      behavior: rolig ? "auto" : "smooth",
+    });
   }, [markert]);
 
   useEffect(() => {
@@ -163,8 +167,12 @@ export function OktPanel({
           style={{ background: okt.farge ?? "var(--color-linje-sterk)" }}
         />
         <span className="text-brod font-semibold">{okt.fagKode}</span>
-        <span className="text-brod text-blekk-dempet">{langDato(okt.dato)}</span>
-        <span className="font-mono text-etikett text-blekk-svak">{okt.kode}</span>
+        <span className="text-brod text-blekk-dempet">
+          {langDato(okt.dato)}
+        </span>
+        <span className="font-mono text-etikett text-blekk-svak">
+          {okt.kode}
+        </span>
         <button
           onClick={onLukk}
           className="ml-auto text-liten text-blekk-svak hover:text-blekk"
@@ -194,7 +202,8 @@ export function OktPanel({
           {elever.length === 0 && (
             <p className="px-5 py-6 text-center text-brod text-blekk-dempet">
               Ingen elever er koblet til {okt.fagKode} ennå. Legg dem inn under
-              Elever, så dukker de opp her — også i økter som allerede er skåret.
+              Elever, så dukker de opp her — også i økter som allerede er
+              skåret.
             </p>
           )}
 
@@ -231,7 +240,9 @@ export function OktPanel({
             if (tekst !== null) {
               await settSkaringsnotat(notatFor, okt.id, tekst);
               setElever((f) =>
-                f.map((e) => (e.elevId === notatFor ? { ...e, notat: tekst } : e)),
+                f.map((e) =>
+                  e.elevId === notatFor ? { ...e, notat: tekst } : e,
+                ),
               );
             }
             setNotatFor(null);
@@ -270,7 +281,8 @@ function ElevRad({
   onApneElev: () => void;
 }) {
   // Er økta avholdt, har alle en verdi. De du ikke har trykket på er 0 (§3.3).
-  const visesSom = elev.skalaverdiId ?? (avholdt ? nullverdi?.id ?? null : null);
+  const visesSom =
+    elev.skalaverdiId ?? (avholdt ? (nullverdi?.id ?? null) : null);
   const eksplisitt = elev.skalaverdiId !== null;
 
   return (
@@ -283,7 +295,9 @@ function ElevRad({
         markert ? "bg-valgt" : "hover:bg-flate"
       }`}
     >
-      <span className="w-3 text-etikett text-aksent">{markert ? "▸" : ""}</span>
+      <span className="w-3 text-etikett text-aksent">
+        {markert ? <Ikon navn="markor" /> : null}
+      </span>
       <button
         onClick={(e) => {
           e.stopPropagation();
@@ -360,7 +374,11 @@ function Merke({
         className="block h-3 w-3 rounded-full border-2"
         style={{
           borderColor: valgt ? farge : "var(--color-linje)",
-          background: valgt ? (eksplisitt ? farge : "transparent") : "transparent",
+          background: valgt
+            ? eksplisitt
+              ? farge
+              : "transparent"
+            : "transparent",
           borderStyle: verdi.teller_ikke === 1 ? "dashed" : "solid",
         }}
       />
@@ -505,7 +523,13 @@ function OktFelter({
           }}
           className="mt-1 text-liten text-blekk-svak hover:text-blekk"
         >
-          {kopiert ? "✓ Kopiert" : "Kopier til Teams"}
+          {kopiert ? (
+            <>
+              <Ikon navn="hake" /> Kopiert
+            </>
+          ) : (
+            "Kopier til Teams"
+          )}
         </button>
       </Linje>
 
@@ -545,7 +569,12 @@ function Logg({ okt, onEndret }: { okt: Okt; onEndret: () => void }) {
 
       <button
         onClick={async () => {
-          if (!await bekreft(`Slette økta ${okt.fagKode} ${langDato(okt.dato)}?`)) return;
+          if (
+            !(await bekreft(
+              `Slette økta ${okt.fagKode} ${langDato(okt.dato)}?`,
+            ))
+          )
+            return;
           await slettOkt(okt.id);
           onEndret();
         }}

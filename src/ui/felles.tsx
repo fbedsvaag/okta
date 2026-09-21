@@ -1,4 +1,10 @@
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 
 /**
  * Referansen er den norske klassejournalen: linjert, tett, uten pynt (§13).
@@ -49,20 +55,26 @@ export function Knapp({
   variant = "vanlig",
   disabled,
   type = "button",
+  tittel,
 }: {
   children: ReactNode;
   onClick?: () => void;
-  variant?: "vanlig" | "primar" | "stille";
+  variant?: "vanlig" | "primar" | "stille" | "farlig";
   disabled?: boolean;
   type?: "button" | "submit";
+  tittel?: string;
 }) {
   const stil = {
+    // Kanten er `linje-sterk`, ikke `linje`. Den siste er en hårstrek laget
+    // for tabellrader, og en knapp med den kanten har ingenting å stå på.
     vanlig:
-      "border border-linje bg-ark text-blekk hover:bg-flate",
+      "border-linje-sterk bg-ark text-blekk hover:bg-flate active:bg-flate-svak",
     primar:
-      "border border-aksent bg-aksent text-white hover:bg-aksent-mork",
+      "border-aksent bg-aksent text-white hover:bg-aksent-mork active:bg-aksent-dyp",
     stille:
-      "border border-transparent text-blekk-dempet hover:text-blekk hover:bg-flate",
+      "border-transparent text-blekk-dempet hover:bg-flate hover:text-blekk active:bg-flate-svak",
+    farlig:
+      "border-transparent text-feil hover:bg-feil-flate active:bg-feil-flate",
   }[variant];
 
   return (
@@ -70,11 +82,100 @@ export function Knapp({
       type={type}
       onClick={onClick}
       disabled={disabled}
-      className={`${KONTROLL} rounded px-3 text-brod transition-colors disabled:opacity-40 disabled:hover:bg-inherit ${stil}`}
+      title={tittel}
+      /*
+       * `inline-flex` med sentrering, ikke bare en høyde: med `leading-none`
+       * og fast høyde satt teksten høyt i knappen, og det er det som leser
+       * som hjemmesnekra mer enn noe annet.
+       *
+       * `rounded-vanlig` er appens egen radius. Tailwinds `rounded` ga
+       * knappene andre hjørner enn alle andre flater.
+       */
+      className={`${KONTROLL} inline-flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-vanlig border px-3 text-brod font-medium transition-colors disabled:pointer-events-none disabled:opacity-40 ${stil}`}
     >
       {children}
     </button>
   );
+}
+
+/**
+ * Tegnede symboler, ikke emoji.
+ *
+ * Emoji tegnes av systemet i sin egen stil og farge, og bryter med alt annet
+ * på skjermen — DESIGN.md forbyr dem. Disse arver `currentColor` og
+ * tekststørrelsen, så de hører til der de står.
+ */
+export function Ikon({
+  navn,
+  klasse = "",
+}: {
+  navn:
+    "las" | "apen-las" | "kryss" | "hake" | "pil" | "markor" | "opp" | "ned";
+  klasse?: string;
+}) {
+  const felles = {
+    "aria-hidden": true,
+    viewBox: "0 0 16 16",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 1.5,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+    className: `inline-block h-[1em] w-[1em] ${klasse}`,
+  };
+
+  switch (navn) {
+    case "las":
+      return (
+        <svg {...felles}>
+          <rect x="3.5" y="7" width="9" height="6.5" rx="1.2" />
+          <path d="M5.5 7V4.8a2.5 2.5 0 0 1 5 0V7" />
+        </svg>
+      );
+    case "apen-las":
+      return (
+        <svg {...felles}>
+          <rect x="3.5" y="7" width="9" height="6.5" rx="1.2" />
+          <path d="M5.5 7V4.8a2.5 2.5 0 0 1 4.8-.9" />
+        </svg>
+      );
+    case "kryss":
+      return (
+        <svg {...felles}>
+          <path d="M4.5 4.5l7 7M11.5 4.5l-7 7" />
+        </svg>
+      );
+    case "hake":
+      return (
+        <svg {...felles}>
+          <path d="M3.5 8.5l3 3 6-7" />
+        </svg>
+      );
+    case "pil":
+      return (
+        <svg {...felles}>
+          <path d="M3 8h9M8.5 4.5L12 8l-3.5 3.5" />
+        </svg>
+      );
+    case "opp":
+      return (
+        <svg {...felles}>
+          <path d="M8 12.5v-9M4.5 7L8 3.5 11.5 7" />
+        </svg>
+      );
+    case "ned":
+      return (
+        <svg {...felles}>
+          <path d="M8 3.5v9M4.5 9L8 12.5 11.5 9" />
+        </svg>
+      );
+    case "markor":
+      return (
+        <svg {...felles} fill="currentColor" stroke="none">
+          <path d="M5.5 3.5l6 4.5-6 4.5z" />
+        </svg>
+      );
+  }
 }
 
 export function Felt({
@@ -314,34 +415,93 @@ export function Fagflervalg({
       ))}
 
       {valgte.size > 1 && (
-        <span className="ml-1 flex items-center gap-1 text-liten text-blekk-dempet">
-          <button
-            onClick={() => settModus("alle")}
-            aria-pressed={modus === "alle"}
-            title="Eleven må ha samtlige valgte fag"
-            className={`rounded-liten px-1.5 py-0.5 ${
-              modus === "alle"
-                ? "bg-valgt font-medium text-aksent"
-                : "hover:bg-flate"
-            }`}
-          >
-            har alle
-          </button>
-          <button
-            onClick={() => settModus("minstEtt")}
-            aria-pressed={modus === "minstEtt"}
-            title="Eleven må ha minst ett av de valgte fagene"
-            className={`rounded-liten px-1.5 py-0.5 ${
-              modus === "minstEtt"
-                ? "bg-valgt font-medium text-aksent"
-                : "hover:bg-flate"
-            }`}
-          >
-            minst ett
-          </button>
-        </span>
+        <Bryter
+          storrelse="liten"
+          verdi={modus}
+          settVerdi={(v) => settModus(v as typeof modus)}
+          valg={[
+            {
+              id: "alle",
+              navn: "har alle",
+              tittel: "Eleven må ha samtlige valgte fag",
+            },
+            {
+              id: "minstEtt",
+              navn: "minst ett",
+              tittel: "Eleven må ha minst ett av de valgte fagene",
+            },
+          ]}
+        />
       )}
     </div>
+  );
+}
+
+/**
+ * Segmentbryter — et valg mellom to eller flere likestilte alternativer.
+ *
+ * Fantes åtte steder håndskrevet, med seks ulike paddinger og fire ulike
+ * hjørneradier for nøyaktig samme kontroll. Det er den slags sprik som leser
+ * som hjemmesnekra, selv når hvert enkelt sted ser greit ut for seg.
+ */
+export function Bryter({
+  valg,
+  verdi,
+  settVerdi,
+  storrelse = "vanlig",
+}: {
+  valg: { id: string; navn: ReactNode; tittel?: string }[];
+  verdi: string;
+  settVerdi: (id: string) => void;
+  storrelse?: "vanlig" | "liten";
+}) {
+  const tekst = storrelse === "liten" ? "text-liten" : "text-brod";
+  return (
+    <span className="inline-flex items-center gap-0.5 rounded-vanlig bg-flate p-0.5">
+      {valg.map((v) => (
+        <button
+          key={v.id}
+          onClick={() => settVerdi(v.id)}
+          aria-pressed={verdi === v.id}
+          title={v.tittel}
+          className={`rounded-liten px-2.5 py-1 ${tekst} whitespace-nowrap transition-colors ${
+            verdi === v.id
+              ? "bg-ark font-medium text-blekk shadow-lav"
+              : "text-blekk-dempet hover:text-blekk"
+          }`}
+        >
+          {v.navn}
+        </button>
+      ))}
+    </span>
+  );
+}
+
+/**
+ * Kvadratisk ikonknapp — kryss, pluss, pil. Fantes i tre ulike størrelser og
+ * former. Treffflaten er 24px selv om symbolet er mindre.
+ */
+export function Ikonknapp({
+  onClick,
+  tittel,
+  disabled,
+  children,
+}: {
+  onClick?: () => void;
+  tittel: string;
+  disabled?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      title={tittel}
+      aria-label={tittel}
+      disabled={disabled}
+      className="grid h-6 w-6 shrink-0 place-items-center rounded-liten text-blekk-svak transition-colors hover:bg-flate hover:text-blekk disabled:pointer-events-none disabled:opacity-40"
+    >
+      {children}
+    </button>
   );
 }
 

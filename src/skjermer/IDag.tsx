@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { Skolear } from "../data/skolear";
 import type { FagIAr } from "../data/fag";
 import { hentOkter, type Okt } from "../data/okter";
-import { Knapp, Tomtilstand } from "../ui/felles";
+import { Knapp, Tomtilstand, Ikon } from "../ui/felles";
 import { Arsoversikt } from "./Arsoversikt";
 import { dagenssetning, hentSamtalerPaDato } from "../data/samtale";
 import { Ukelinje } from "./Ukelinje";
@@ -50,9 +50,7 @@ export function IDag({
   // Hele uka, ikke bare det som gjenstår. Tidslinja skal vise formen på uka,
   // og en mandag som forsvinner på onsdag ser ut som en feil.
   const uka = okter.filter((o) => o.dato >= mandag && o.dato <= fredag);
-  const kommende = okter
-    .filter((o) => o.dato > idag)
-    .slice(0, KOMMENDE_ANTALL);
+  const kommende = okter.filter((o) => o.dato > idag).slice(0, KOMMENDE_ANTALL);
 
   return (
     <div className="mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col overflow-clip">
@@ -67,106 +65,113 @@ export function IDag({
       </div>
 
       <div className="min-h-0 flex-1 overflow-auto">
-
-      {/*
+        {/*
         Samtaledagen står først: er det samtaler i dag, er det dem dagen
         handler om. Setningen sier hva som venter — hvem du begynner med, hvor
         mange som står igjen, og når du er ferdig (§4.10).
       */}
-      {samtaler.length > 0 && (
-        <Bolk tittel="Samtaler">
-          <p className="py-1 text-brod">
-            {dagenssetning(
-              samtaler,
-              new Date().toTimeString().slice(0, 5),
-              samtaler.every((s) => s.erMentor),
-            )}
-          </p>
-          <button
-            onClick={() => onGaTil("samtaler")}
-            className="text-liten text-blekk-dempet hover:text-blekk"
-          >
-            Åpne timeplanen →
-          </button>
-        </Bolk>
-      )}
-
-      <Bolk tittel="I dag">
-        {dagens.length > 0 ? (
-          dagens.map((o) => (
-            <div key={o.id}>
-              <OktLinje okt={o} onApne={onApneOkt} />
-              <Forrigelogg okt={o} alle={okter} onApne={onApneOkt} />
-            </div>
-          ))
-        ) : okter.length === 0 ? (
-          <Tomtilstand
-            tekst={
-              fag.length === 0
-                ? "Ingen fag i skoleåret ennå."
-                : "Ingen økter er lagt inn ennå."
-            }
-            handling={
-              <Knapp
-                variant="primar"
-                onClick={() => onGaTil(fag.length === 0 ? "fag" : "okter")}
-              >
-                {fag.length === 0 ? "Legg inn fagene dine" : "Legg inn økter"}
-              </Knapp>
-            }
-          />
-        ) : (
-          <p className="py-2 text-brod text-blekk-dempet">
-            Ingen økter i dag.
-          </p>
+        {samtaler.length > 0 && (
+          <Bolk tittel="Samtaler">
+            <p className="py-1 text-brod">
+              {dagenssetning(
+                samtaler,
+                new Date().toTimeString().slice(0, 5),
+                samtaler.every((s) => s.erMentor),
+              )}
+            </p>
+            <button
+              onClick={() => onGaTil("samtaler")}
+              className="text-liten text-blekk-dempet hover:text-blekk"
+            >
+              Åpne timeplanen <Ikon navn="pil" />
+            </button>
+          </Bolk>
         )}
-      </Bolk>
 
-      <Bolk tittel="Denne uka">
-        <Ukelinje
-          mandag={mandag}
-          okter={uka}
-          idag={idag}
-          onApneOkt={onApneOkt}
-        />
-      </Bolk>
+        <Bolk tittel="I dag">
+          {dagens.length > 0 ? (
+            dagens.map((o) => (
+              <div key={o.id}>
+                <OktLinje okt={o} onApne={onApneOkt} />
+                <Forrigelogg okt={o} alle={okter} onApne={onApneOkt} />
+              </div>
+            ))
+          ) : okter.length === 0 ? (
+            <Tomtilstand
+              tekst={
+                fag.length === 0
+                  ? "Ingen fag i skoleåret ennå."
+                  : "Ingen økter er lagt inn ennå."
+              }
+              handling={
+                <Knapp
+                  variant="primar"
+                  onClick={() => onGaTil(fag.length === 0 ? "fag" : "okter")}
+                >
+                  {fag.length === 0 ? "Legg inn fagene dine" : "Legg inn økter"}
+                </Knapp>
+              }
+            />
+          ) : (
+            <p className="py-2 text-brod text-blekk-dempet">
+              Ingen økter i dag.
+            </p>
+          )}
+        </Bolk>
 
-      {/*
+        <Bolk tittel="Denne uka">
+          <Ukelinje
+            mandag={mandag}
+            okter={uka}
+            idag={idag}
+            onApneOkt={onApneOkt}
+          />
+        </Bolk>
+
+        {/*
         Bolken står alltid, også når den er tom. Før dukket den bare opp i
         uker uten økter, og et helt avsnitt som kommer og går flytter alt
         under seg. Plassen til tre økter er reservert av samme grunn: da er
         høyden den samme enten det ligger én eller tre foran deg.
       */}
-      <Bolk tittel="Neste økter">
-        <div style={{ minHeight: `${KOMMENDE_ANTALL * KOMMENDE_RADHOYDE}px` }}>
-          {kommende.length === 0 ? (
-            <p className="py-2 text-brod text-blekk-svak">
-              Ingen flere økter er lagt inn i dette skoleåret.
-            </p>
-          ) : (
-            kommende.map((o) => (
-              <div key={o.id}>
-                <p className="mt-2 text-liten text-blekk-dempet first-letter:uppercase">
-                  {langDato(o.dato)}
-                </p>
-                <OktLinje okt={o} onApne={onApneOkt} />
-              </div>
-            ))
-          )}
-        </div>
-      </Bolk>
+        <Bolk tittel="Neste økter">
+          <div
+            style={{ minHeight: `${KOMMENDE_ANTALL * KOMMENDE_RADHOYDE}px` }}
+          >
+            {kommende.length === 0 ? (
+              <p className="py-2 text-brod text-blekk-svak">
+                Ingen flere økter er lagt inn i dette skoleåret.
+              </p>
+            ) : (
+              kommende.map((o) => (
+                <div key={o.id}>
+                  <p className="mt-2 text-liten text-blekk-dempet first-letter:uppercase">
+                    {langDato(o.dato)}
+                  </p>
+                  <OktLinje okt={o} onApne={onApneOkt} />
+                </div>
+              ))
+            )}
+          </div>
+        </Bolk>
 
-      <Arsoversikt
-        skolearId={skolear.id}
-        onApneElev={(elevId) => onGaTil("elever", elevId)}
-        onApneVurderinger={() => onGaTil("vurderinger")}
-      />
+        <Arsoversikt
+          skolearId={skolear.id}
+          onApneElev={(elevId) => onGaTil("elever", elevId)}
+          onApneVurderinger={() => onGaTil("vurderinger")}
+        />
       </div>
     </div>
   );
 }
 
-function Bolk({ tittel, children }: { tittel: string; children: React.ReactNode }) {
+function Bolk({
+  tittel,
+  children,
+}: {
+  tittel: string;
+  children: React.ReactNode;
+}) {
   return (
     <section className="mt-6">
       <h2 className="mb-1 border-b border-linje-medium pb-1 text-etikett uppercase tracking-etikett text-blekk-dempet">
@@ -296,11 +301,13 @@ function OktLinje({ okt, onApne }: { okt: Okt; onApne: (id: string) => void }) {
         {okt.tema ?? <span className="text-blekk-svak">—</span>}
       </span>
       <span className="shrink-0 tabular-nums text-blekk-dempet">
-        {okt.skaret === 0
-          ? ""
-          : okt.skaret >= okt.elever
-            ? "✓"
-            : `${okt.skaret}/${okt.elever}`}
+        {okt.skaret === 0 ? (
+          ""
+        ) : okt.skaret >= okt.elever ? (
+          <Ikon navn="hake" />
+        ) : (
+          `${okt.skaret}/${okt.elever}`
+        )}
       </span>
     </button>
   );

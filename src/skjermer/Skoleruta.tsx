@@ -93,8 +93,8 @@ export function Skoleruta({
         {fridager.length === 0 ? (
           <p className="py-1 text-brod text-blekk-svak">
             Ingen lagt inn ennå. Høstferie, juleferie, vinterferie og
-            planleggingsdager hører hjemme her — det samme gjør hendelser
-            som eksamen i et annet fag.
+            planleggingsdager hører hjemme her — det samme gjør hendelser som
+            eksamen i et annet fag.
           </p>
         ) : (
           <table className="w-full text-brod">
@@ -102,7 +102,9 @@ export function Skoleruta({
               {fridager.map((f) => (
                 <tr key={f.id} className="border-b border-linje-svak">
                   <td className="py-1.5">{f.navn}</td>
-                  <td className="w-24 py-1.5 text-blekk-dempet">{TYPENAVN[f.type]}</td>
+                  <td className="w-24 py-1.5 text-blekk-dempet">
+                    {TYPENAVN[f.type]}
+                  </td>
                   <td className="w-44 py-1.5 tabular-nums text-blekk-dempet">
                     {kort(f.fra)}
                     {f.til !== f.fra && ` – ${kort(f.til)}`}
@@ -111,12 +113,12 @@ export function Skoleruta({
                     <button
                       onClick={async () => {
                         if (
-                          !await bekreft(
+                          !(await bekreft(
                             `Slette «${f.navn}»?\n\n` +
                               "Dagene blir da vanlige skoledager igjen, og " +
                               "økter som ligger der slutter å bli markert som " +
                               "en konflikt.",
-                          )
+                          ))
                         )
                           return;
                         await slettFridag(f.id);
@@ -208,7 +210,13 @@ function NyFridag({
           <option value="annet">Annet</option>
         </select>
       </label>
-      <Felt etikett="Fra" verdi={fra} settVerdi={setFra} type="date" bredde="w-40" />
+      <Felt
+        etikett="Fra"
+        verdi={fra}
+        settVerdi={setFra}
+        type="date"
+        bredde="w-40"
+      />
       <Felt
         etikett="Til"
         verdi={til}
@@ -232,7 +240,13 @@ function Etikett({ children }: { children: React.ReactNode }) {
   );
 }
 
-function Bolk({ tittel, children }: { tittel: string; children: React.ReactNode }) {
+function Bolk({
+  tittel,
+  children,
+}: {
+  tittel: string;
+  children: React.ReactNode;
+}) {
   return (
     <section className="mb-7">
       <h2 className="mb-2 border-b border-linje-medium pb-1 text-etikett uppercase tracking-etikett text-blekk-dempet">

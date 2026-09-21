@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Ikon } from "../ui/felles";
 import { confirm as bekreft } from "@tauri-apps/plugin-dialog";
 import {
   endreVurdering,
@@ -162,7 +163,12 @@ export function VurderingPanel({
           </span>
         </div>
 
-        <div ref={liste} tabIndex={0} onKeyDown={tastetrykk} className="outline-none">
+        <div
+          ref={liste}
+          tabIndex={0}
+          onKeyDown={tastetrykk}
+          className="outline-none"
+        >
           {elever.length === 0 && (
             <p className="px-5 py-6 text-center text-brod text-blekk-dempet">
               Ingen elever er koblet til {vurdering.fagKode} ennå.
@@ -183,7 +189,9 @@ export function VurderingPanel({
               onVelg={(v) => foer(i, v)}
               onLevert={async (levert) => {
                 setElever((f) =>
-                  f.map((e, j) => (j === i ? { ...e, levert: levert ? 1 : 0 } : e)),
+                  f.map((e, j) =>
+                    j === i ? { ...e, levert: levert ? 1 : 0 } : e,
+                  ),
                 );
                 await settLevert(vurdering.id, elev.elevId, levert);
               }}
@@ -196,7 +204,8 @@ export function VurderingPanel({
         <div className="px-5 py-4">
           <button
             onClick={async () => {
-              if (!await bekreft(`Slette vurderingen «${vurdering.tittel}»?`)) return;
+              if (!(await bekreft(`Slette vurderingen «${vurdering.tittel}»?`)))
+                return;
               await slettVurdering(vurdering.id);
               onLukk();
               onEndret();
@@ -258,7 +267,9 @@ function ElevRad({
         markert ? "bg-valgt" : "hover:bg-flate"
       }`}
     >
-      <span className="w-3 text-etikett text-aksent">{markert ? "▸" : ""}</span>
+      <span className="w-3 text-etikett text-aksent">
+        {markert ? <Ikon navn="markor" /> : null}
+      </span>
       <button
         onClick={(e) => {
           e.stopPropagation();
@@ -395,7 +406,7 @@ function Felter({
               onClick={() => onApneSamtaler(vurdering.skolearFagId)}
               className="mt-1 text-liten text-blekk-dempet hover:text-blekk"
             >
-              Trekk rekkefølge og tema →
+              Trekk rekkefølge og tema <Ikon navn="pil" />
             </button>
           )}
         </Linje>
@@ -406,7 +417,9 @@ function Felter({
             defaultValue={vurdering.frist ?? ""}
             key={vurdering.frist ?? ""}
             onBlur={async (e) => {
-              await endreVurdering(vurdering.id, { frist: e.target.value || null });
+              await endreVurdering(vurdering.id, {
+                frist: e.target.value || null,
+              });
               onEndret();
             }}
             className={feltStil}
@@ -418,10 +431,10 @@ function Felter({
             value={vurdering.skalaId}
             onChange={async (e) => {
               if (
-                !await bekreft(
+                !(await bekreft(
                   "Bytte skala? Resultater som allerede er ført peker på verdier " +
                     "i den gamle skalaen og må føres på nytt.",
-                )
+                ))
               )
                 return;
               await endreVurdering(vurdering.id, { skala_id: e.target.value });

@@ -173,7 +173,10 @@ function Innsats({ uker }: { uker: Uketall[] }) {
           </div>
           <div className="mt-1.5 flex items-center gap-4">
             {SERIER.map((s) => (
-              <span key={s.n} className="flex items-center gap-1.5 text-liten text-blekk-dempet">
+              <span
+                key={s.n}
+                className="flex items-center gap-1.5 text-liten text-blekk-dempet"
+              >
                 <span
                   aria-hidden
                   className="h-2.5 w-2.5 rounded-liten"
@@ -203,7 +206,9 @@ function Stolpe({ uke, hoyest }: { uke: Uketall; hoyest: number }) {
 
   return (
     <div className="group/uke relative flex min-w-0 flex-1 flex-col items-center">
-      <span className="mb-1 text-mikro tabular-nums text-blekk-svak">{total}</span>
+      <span className="mb-1 text-mikro tabular-nums text-blekk-svak">
+        {total}
+      </span>
 
       <div
         className="flex w-full flex-col-reverse justify-start gap-[2px]"
@@ -230,7 +235,9 @@ function Stolpe({ uke, hoyest }: { uke: Uketall; hoyest: number }) {
         role="tooltip"
         className="pointer-events-none absolute bottom-full z-20 mb-1 hidden whitespace-nowrap rounded-liten border border-linje bg-ark px-2 py-1 text-liten shadow-[var(--shadow-panel)] group-hover/uke:block"
       >
-        <span className="font-medium tabular-nums">{norskDato(uke.forste)}</span>
+        <span className="font-medium tabular-nums">
+          {norskDato(uke.forste)}
+        </span>
         {SERIER.map((s) => (
           <span key={s.n} className="ml-2 tabular-nums text-blekk-dempet">
             {s.navn.toLowerCase()} {uke[s.n]}
@@ -413,7 +420,9 @@ function Glipper({
                   </span>
                   <span
                     className={`w-16 shrink-0 text-right text-liten tabular-nums ${
-                      dager === null || dager > 14 ? "text-varsel" : "text-blekk-svak"
+                      dager === null || dager > 14
+                        ? "text-varsel"
+                        : "text-blekk-svak"
                     }`}
                   >
                     {dager === null ? "aldri" : `${dager} d`}

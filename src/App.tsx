@@ -5,7 +5,10 @@ import {
   type Skolear,
 } from "./data/skolear";
 import { daglingKopi } from "./data/sikkerhetskopi";
-import { erPa as kalenderPa, start as startKalender } from "./data/kalenderfeed";
+import {
+  erPa as kalenderPa,
+  start as startKalender,
+} from "./data/kalenderfeed";
 import { startAuto as startCaldav } from "./data/caldav";
 import { skrivArkiv, skrivArkivTilBackup } from "./data/arkiv";
 import { hentFagIAr, type FagIAr } from "./data/fag";
@@ -21,7 +24,7 @@ import { Skolekalender } from "./skjermer/Skolekalender";
 import { Innstillinger } from "./skjermer/Innstillinger";
 import { Vurderinger } from "./skjermer/Vurderinger";
 import { Samtaler } from "./skjermer/Samtaler";
-import { Knapp } from "./ui/felles";
+import { Knapp, Ikon } from "./ui/felles";
 import { Ordmerke } from "./ui/logo";
 
 /**
@@ -58,10 +61,12 @@ export default function App() {
   // historikken, kappes det som lå foran — samme oppførsel som en nettleser.
   //
   // Lista og markøren ligger i samme state fordi de alltid endres sammen.
-  const [historikk, setHistorikk] = useState<{ steder: Sted[]; peker: number }>({
-    steder: [{ visning: "idag", id: null }],
-    peker: 0,
-  });
+  const [historikk, setHistorikk] = useState<{ steder: Sted[]; peker: number }>(
+    {
+      steder: [{ visning: "idag", id: null }],
+      peker: 0,
+    },
+  );
 
   const { steder, peker } = historikk;
   const { visning, id: apneId } = steder[peker];
@@ -272,7 +277,10 @@ export default function App() {
 
       {melding && (
         <div className="ikkeutskrift flex shrink-0 items-center gap-3 border-b border-linje-medium bg-flate-svak px-6 py-1.5 text-brod text-aksent">
-          <span>✓ {melding}</span>
+          <span className="inline-flex items-center gap-1.5">
+            <Ikon navn="hake" />
+            {melding}
+          </span>
           <Knapp variant="stille" onClick={() => setMelding(null)}>
             Lukk
           </Knapp>
@@ -298,106 +306,108 @@ export default function App() {
           for alle.
         */}
         <div className="flex min-h-0 flex-1 flex-col px-6 py-4">
-        {visning === "idag" && (
-          <IDag
-            skolear={skolear}
-            fag={fag}
-            onGaTil={(v, id) => ga(v, id ?? null)}
-            onApneOkt={(id) => ga("okter", id)}
-          />
-        )}
+          {visning === "idag" && (
+            <IDag
+              skolear={skolear}
+              fag={fag}
+              onGaTil={(v, id) => ga(v, id ?? null)}
+              onApneOkt={(id) => ga("okter", id)}
+            />
+          )}
 
-        {visning === "kalender" && (
-          <Skolekalender
-            key={versjon}
-            skolear={skolear}
-            fag={fag}
-            onApneOkt={(id) => ga("okter", id)}
-          />
-        )}
+          {visning === "kalender" && (
+            <Skolekalender
+              key={versjon}
+              skolear={skolear}
+              fag={fag}
+              onApneOkt={(id) => ga("okter", id)}
+            />
+          )}
 
-        {visning === "skoleruta" && (
-          <Skoleruta key={versjon} skolear={skolear} onEndret={last} />
-        )}
+          {visning === "skoleruta" && (
+            <Skoleruta key={versjon} skolear={skolear} onEndret={last} />
+          )}
 
-        {visning === "samtaler" && (
-          <Samtaler
-            key={versjon}
-            skolear={skolear}
-            fag={fag}
-            startFagId={apneId ?? undefined}
-          />
-        )}
+          {visning === "samtaler" && (
+            <Samtaler
+              key={versjon}
+              skolear={skolear}
+              fag={fag}
+              startFagId={apneId ?? undefined}
+            />
+          )}
 
-        {visning === "innstillinger" && <Innstillinger skolear={skolear} fag={fag} onEndret={last} />}
+          {visning === "innstillinger" && (
+            <Innstillinger skolear={skolear} fag={fag} onEndret={last} />
+          )}
 
-        {/*
+          {/*
           Ingen key={versjon} her, med vilje. Fag får faglista som prop og
           trenger ikke bygges opp på nytt for å vise ferske data — og gjør den
           det, nullstilles Rediger-bryteren hver gang et felt lagrer.
         */}
-        {visning === "fag" && (
-          <Fag
-            skolearId={skolear.id}
-            fag={fag}
-            onEndret={last}
-            onApneOkt={(id) => ga("okter", id)}
-            onApneVurderinger={() => ga("vurderinger")}
-          />
-        )}
+          {visning === "fag" && (
+            <Fag
+              skolearId={skolear.id}
+              fag={fag}
+              onEndret={last}
+              onApneOkt={(id) => ga("okter", id)}
+              onApneVurderinger={() => ga("vurderinger")}
+            />
+          )}
 
-        {visning === "elever" && (
-          <Elever
-            key={versjon}
-            startElev={apneId}
-            skolearId={skolear.id}
-            fag={fag}
-            onLimInn={() => ga("liminn")}
-            onApneOkt={(id) => ga("okter", id)}
-          />
-        )}
+          {visning === "elever" && (
+            <Elever
+              key={versjon}
+              startElev={apneId}
+              skolearId={skolear.id}
+              fag={fag}
+              onLimInn={() => ga("liminn")}
+              onApneOkt={(id) => ga("okter", id)}
+            />
+          )}
 
-        {visning === "liminn" && (
-          <LimInn
-            skolearId={skolear.id}
-            fag={fag}
-            onFerdig={(m) => {
-              setMelding(m);
-              ga("elever");
-              setVersjon((v) => v + 1);
-            }}
-            onAvbryt={() => ga("elever")}
-          />
-        )}
+          {visning === "liminn" && (
+            <LimInn
+              skolearId={skolear.id}
+              fag={fag}
+              onFerdig={(m) => {
+                setMelding(m);
+                ga("elever");
+                setVersjon((v) => v + 1);
+              }}
+              onAvbryt={() => ga("elever")}
+            />
+          )}
 
-        {visning === "okter" && (
-          <Okter
-            key={versjon}
-            skolear={skolear}
-            fag={fag}
-            startValgt={apneId}
-            onApnePerioder={() => ga("perioder")}
-          />
-        )}
+          {visning === "okter" && (
+            <Okter
+              key={versjon}
+              skolear={skolear}
+              fag={fag}
+              startValgt={apneId}
+              onApnePerioder={() => ga("perioder")}
+            />
+          )}
 
-        {visning === "perioder" && (
-          <Perioder
-            key={versjon}
-            skolear={skolear}
-            fag={fag}
-            onApneOkt={(id) => ga("okter", id)}
-          />
-        )}
+          {visning === "perioder" && (
+            <Perioder
+              key={versjon}
+              skolear={skolear}
+              fag={fag}
+              onApneOkt={(id) => ga("okter", id)}
+            />
+          )}
 
-        {visning === "vurderinger" && (
-          <Vurderinger
-            key={versjon}
-            skolearId={skolear.id}
-            fag={fag}
-            onApneSamtaler={(fagId) => ga("samtaler", fagId)}
-            onApneOkt={(id) => ga("okter", id)}
-          />
-        )}
+          {visning === "vurderinger" && (
+            <Vurderinger
+              key={versjon}
+              skolearId={skolear.id}
+              fag={fag}
+              onApneSamtaler={(fagId) => ga("samtaler", fagId)}
+              onApneOkt={(id) => ga("okter", id)}
+            />
+          )}
         </div>
       </main>
     </div>
@@ -458,7 +468,11 @@ function erArsfane(v: Visning): boolean {
 }
 
 function Skille() {
-  return <span className="hidden select-none px-0.5 text-blekk-svakest sm:inline">·</span>;
+  return (
+    <span className="hidden select-none px-0.5 text-blekk-svakest sm:inline">
+      ·
+    </span>
+  );
 }
 
 function Underfane({
