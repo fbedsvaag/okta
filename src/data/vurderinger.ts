@@ -34,6 +34,13 @@ export type VurderingElev = {
   skalaverdiId: string | null;
   levert: number;
   kommentar: string | null;
+  /**
+   * Oppgaven eleven fikk trukket, når vurderingen har en samtaletrekning
+   * knyttet til seg (§4.10). Null når den ikke har det.
+   */
+  oppgave: string | null;
+  /** «24. nov 10:20» — når samtalen var */
+  samtaletid: string | null;
 };
 
 export async function hentVurderinger(skolearId: string): Promise<Vurdering[]> {
@@ -71,7 +78,25 @@ export async function hentVurderingElever(
     `SELECT e.id AS elevId, e.fornavn, e.etternavn,
             r.skalaverdi_id AS skalaverdiId,
             COALESCE(r.levert, 0) AS levert,
-            r.kommentar
+            r.kommentar,
+            -- Oppgaven og tidspunktet fra trekningen, hvis vurderingen har
+            -- en. Hentet som delspørring og ikke som join: en elev som ikke
+            -- møtte og ble satt opp på nytt har to rader, og en join ville
+            -- gitt eleven to linjer i vurderingslista.
+            (SELECT sa.tema FROM samtale sa
+               JOIN samtaledag sd ON sd.id = sa.samtaledag_id
+                                 AND sd.slettet IS NULL
+              WHERE sd.vurdering_id = $1 AND sa.elev_id = e.id
+                AND sa.slettet IS NULL
+              ORDER BY sa.motte DESC, sd.dato DESC, sa.klokkeslett DESC
+              LIMIT 1) AS oppgave,
+            (SELECT sd.dato || ' ' || sa.klokkeslett FROM samtale sa
+               JOIN samtaledag sd ON sd.id = sa.samtaledag_id
+                                 AND sd.slettet IS NULL
+              WHERE sd.vurdering_id = $1 AND sa.elev_id = e.id
+                AND sa.slettet IS NULL
+              ORDER BY sa.motte DESC, sd.dato DESC, sa.klokkeslett DESC
+              LIMIT 1) AS samtaletid
        FROM elev_fag ef
        JOIN elev e ON e.id = ef.elev_id AND e.slettet IS NULL
        LEFT JOIN vurderingsresultat r

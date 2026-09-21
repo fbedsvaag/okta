@@ -270,6 +270,19 @@ function ElevRad({
         {elev.fornavn} {elev.etternavn}
       </button>
 
+      {/*
+        Oppgaven eleven trakk, når vurderingen har en samtaletrekning knyttet
+        til seg (§4.10). Står tom ellers — de fleste vurderinger har ingen.
+      */}
+      {elev.oppgave && (
+        <span
+          title={elev.samtaletid ? `Samtale ${elev.samtaletid}` : undefined}
+          className="w-32 shrink-0 truncate text-liten text-blekk-dempet"
+        >
+          {elev.oppgave}
+        </span>
+      )}
+
       <button
         onClick={(e) => {
           e.stopPropagation();

@@ -15,7 +15,8 @@ const {
   settMotte,
   slettSamtaledag,
 } = await import("./samtale");
-const { opprettElev } = await import("./elever");
+const { opprettElev, koblePaFag } = await import("./elever");
+const { opprettVurdering, hentVurderingElever } = await import("./vurderinger");
 const { opprettSkolear } = await import("./skolear");
 const { leggFagIAr } = await import("./fag");
 
@@ -294,5 +295,90 @@ describe("id-er holder seg gjennom en omtrekning", () => {
 
     const samtaler = await hentSamtaler(dagId);
     expect(samtaler.find((s) => s.id === forste.id)?.motte).toBe(false);
+  });
+});
+
+describe("oppgaven vises under vurderingen", () => {
+  it("finner oppgaven eleven trakk, gjennom vurderingskoblingen", async () => {
+    const vurderingId = await opprettVurdering(
+      fagId,
+      "5ca1a000-0000-4000-8000-000000000004",
+      "Muntlig framføring",
+      "muntlig",
+      null,
+    );
+    await koblePaFag(elever[0], fagId);
+
+    const dagId = await opprettSamtaledag(skolearId, {
+      skolearFagId: fagId,
+      vurderingId,
+      dato: "2026-11-24",
+      fra: "08:30",
+      til: "15:00",
+      lunsjFra: null,
+      lunsjMin: null,
+    });
+    await lagreTrekning(dagId, [
+      {
+        elevId: elever[0],
+        klokkeslett: "09:00",
+        varighetMin: 20,
+        tema: "Oppgave 4 · Markedsanalyse",
+      },
+    ]);
+
+    const [elev] = await hentVurderingElever(vurderingId, fagId);
+    expect(elev.oppgave).toBe("Oppgave 4 · Markedsanalyse");
+    expect(elev.samtaletid).toBe("2026-11-24 09:00");
+  });
+
+  it("gir null når vurderingen ikke har noen trekning", async () => {
+    const vurderingId = await opprettVurdering(
+      fagId,
+      "5ca1a000-0000-4000-8000-000000000004",
+      "Skriftlig prøve",
+      "skriftlig",
+      null,
+    );
+    await koblePaFag(elever[0], fagId);
+
+    const [elev] = await hentVurderingElever(vurderingId, fagId);
+    expect(elev.oppgave).toBeNull();
+  });
+
+  it("gir eleven én linje selv om hen ble satt opp to ganger", async () => {
+    // Den som ikke møtte og ble satt opp på nytt har to samtalerader. En
+    // join ville gitt to linjer i vurderingslista.
+    const vurderingId = await opprettVurdering(
+      fagId,
+      "5ca1a000-0000-4000-8000-000000000004",
+      "Muntlig",
+      "muntlig",
+      null,
+    );
+    await koblePaFag(elever[0], fagId);
+
+    const dagId = await opprettSamtaledag(skolearId, {
+      skolearFagId: fagId,
+      vurderingId,
+      dato: "2026-11-24",
+      fra: "08:30",
+      til: "15:00",
+      lunsjFra: null,
+      lunsjMin: null,
+    });
+    await lagreTrekning(dagId, [
+      { elevId: elever[0], klokkeslett: "09:00", varighetMin: 20, tema: "Oppgave 1" },
+    ]);
+    const [forste] = await hentSamtaler(dagId);
+    await settMotte(forste.id, false);
+    await lagreTrekning(dagId, [
+      { elevId: elever[0], klokkeslett: "14:00", varighetMin: 20, tema: "Oppgave 1" },
+    ]);
+
+    const rader = await hentVurderingElever(vurderingId, fagId);
+    expect(rader).toHaveLength(1);
+    // Den hen faktisk møtte til vinner.
+    expect(rader[0].samtaletid).toBe("2026-11-24 14:00");
   });
 });

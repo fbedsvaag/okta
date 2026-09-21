@@ -4,6 +4,7 @@ import type { Skolear } from "../data/skolear";
 import { hentInnstilling, settInnstilling } from "../data/skolear";
 import type { FagIAr } from "../data/fag";
 import { hentElever, type ElevRad } from "../data/elever";
+import { hentVurderinger, type Vurdering } from "../data/vurderinger";
 import {
   delPaDager,
   endreSamtaledag,
@@ -121,6 +122,7 @@ export function Samtaler({
     ReturnType<typeof mentorStatus>
   > | null>(null);
   const [publiserer, setPubliserer] = useState(false);
+  const [vurderinger, setVurderinger] = useState<Vurdering[]>([]);
 
   const minutter = Number(samtaletid) || 20;
   const pausen = Number(pause) || 0;
@@ -175,6 +177,7 @@ export function Samtaler({
     setTrekning(lagrede.length > 0 ? lagrede : null);
     setNotater(await notaterFor(lagrede));
     setKalender(await mentorStatus(skolear));
+    setVurderinger(await hentVurderinger(skolear.id));
     setLagret(true);
 
     // Én dag ligger klar med én gang, så datofeltet er fremme og ikke gjemt
@@ -371,6 +374,7 @@ export function Samtaler({
     try {
       await publiserMentor(skolear);
       setKalender(await mentorStatus(skolear));
+    setVurderinger(await hentVurderinger(skolear.id));
     } catch (feil) {
       setDragmelding(`Publiseringen feilet: ${String(feil)}`);
     } finally {
@@ -656,6 +660,7 @@ export function Samtaler({
                 await opprettSamtaledag(skolear.id, {
                   skolearFagId: modus === "mentor" ? null : fagId,
                   dato: "",
+                  vurderingId: dager[0]?.vurderingId ?? null,
                   ...NY_DAG,
                 });
                 await last();
@@ -664,6 +669,42 @@ export function Samtaler({
             >
               + Legg til dag
             </button>
+
+            {/*
+              Hvilken vurdering trekningen hører til. Uten den vises ikke
+              oppgaven eleven fikk under selve vurderingen (§4.6) — det er
+              denne koblingen som knytter de to sammen.
+            */}
+            {modus === "fag" && dager.length > 0 && (
+              <label className="mt-3 block">
+                <span className="mb-1 block text-etikett uppercase tracking-etikett text-blekk-dempet">
+                  Hører til vurdering
+                </span>
+                <select
+                  value={dager[0]?.vurderingId ?? ""}
+                  onChange={async (e) => {
+                    const id = e.target.value || null;
+                    for (const d of dager) {
+                      await endreSamtaledag(d.id, { vurdering_id: id });
+                    }
+                    await last();
+                  }}
+                  className="w-full rounded border border-linje bg-ark px-2 py-1.5 text-brod"
+                >
+                  <option value="">Ingen</option>
+                  {vurderinger
+                    .filter((v) => v.skolearFagId === fagId)
+                    .map((v) => (
+                      <option key={v.id} value={v.id}>
+                        {v.tittel}
+                      </option>
+                    ))}
+                </select>
+                <p className="mt-1 text-liten text-blekk-svak">
+                  Da vises oppgaven eleven fikk når du åpner vurderingen.
+                </p>
+              </label>
+            )}
             {dager.length > 0 && (
               <p className="mt-2 text-liten text-blekk-svak">
                 {timer} timer satt av til vurdering
