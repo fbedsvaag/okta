@@ -1,4 +1,5 @@
 import { hent } from "../db";
+import { hentSamtaledager, timerPaDagen } from "./samtale";
 
 /**
  * Tallene årsskjermen bygger på.
@@ -62,10 +63,44 @@ export type Fagtimer = {
   /** Årstimetallet læreren har lagt inn. null = ikke satt */
   arstimetall: number | null;
   planlagtMin: number;
+  /** timer satt av til muntlige samtaler i faget (§4.10) */
+  vurderingTimer: number;
+  vurderingAntall: number;
   antallOkter: number;
   /** Hvor mange av øktene som er avholdt, altså har minst én skåring */
   avholdte: number;
 };
+
+/**
+ * Timene som går med til samtaledager, per fag — og for mentorsamtalene, som
+ * ikke hører til noe fag.
+ *
+ * Nøkkelen er `skolear_fag_id`, der null er mentorsamtalen. Timene regnes med
+ * `timerPaDagen` framfor i SQL, så det er den samme regelen som ellers: spennet
+ * minus lunsjen når dagen er lang nok til å nå den.
+ */
+export async function hentVurderingstimer(
+  skolearId: string,
+): Promise<Map<string | null, { timer: number; antall: number }>> {
+  const dager = await hentSamtaledager(skolearId);
+  const [ar] = await hent<{ start: string; slutt: string }>(
+    "SELECT start, slutt FROM skolear WHERE id = $1",
+    [skolearId],
+  );
+
+  const ut = new Map<string | null, { timer: number; antall: number }>();
+  for (const d of dager) {
+    // Samme regel som for øktene: en dag utenfor skoleårets spenn teller ikke.
+    if (ar && (d.dato < ar.start || d.dato > ar.slutt)) continue;
+
+    const na = ut.get(d.skolearFagId) ?? { timer: 0, antall: 0 };
+    ut.set(d.skolearFagId, {
+      timer: Math.round((na.timer + timerPaDagen(d)) * 10) / 10,
+      antall: na.antall + d.antall,
+    });
+  }
+  return ut;
+}
 
 /**
  * Planlagte timer mot årstimetall, per fag.
@@ -79,7 +114,8 @@ export type Fagtimer = {
  * Ellers måles planen mot et timetall den ikke hører til.
  */
 export async function hentTimeregnskap(skolearId: string): Promise<Fagtimer[]> {
-  return hent<Fagtimer>(
+  const vurdering = await hentVurderingstimer(skolearId);
+  const rader = await hent<Omit<Fagtimer, "vurderingTimer" | "vurderingAntall">>(
     `SELECT sf.id                                   AS skolearFagId,
             f.kode                                  AS kode,
             f.navn                                  AS navn,
@@ -102,6 +138,12 @@ export async function hentTimeregnskap(skolearId: string): Promise<Fagtimer[]> {
       ORDER BY f.kode`,
     [skolearId],
   );
+
+  return rader.map((r) => ({
+    ...r,
+    vurderingTimer: vurdering.get(r.skolearFagId)?.timer ?? 0,
+    vurderingAntall: vurdering.get(r.skolearFagId)?.antall ?? 0,
+  }));
 }
 
 // ------------------------------------------------------------ elever som glipper

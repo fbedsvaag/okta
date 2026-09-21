@@ -4,6 +4,7 @@ import {
   hentInnsatsPerUke,
   hentKommendeVurderinger,
   hentTimeregnskap,
+  hentVurderingstimer,
   type Fagtimer,
   type Glipp,
   type Kommende,
@@ -39,14 +40,21 @@ export function Arsoversikt({
   useEffect(() => {
     let avbrutt = false;
     (async () => {
-      const [uker, timer, glipp, kommende] = await Promise.all([
+      const [uker, timer, glipp, kommende, vurdering] = await Promise.all([
         hentInnsatsPerUke(skolearId),
         hentTimeregnskap(skolearId),
         hentGlipp(skolearId),
         hentKommendeVurderinger(skolearId),
+        hentVurderingstimer(skolearId),
       ]);
       if (avbrutt) return;
-      setData({ uker, timer, glipp, kommende });
+      setData({
+        uker,
+        timer,
+        glipp,
+        kommende,
+        mentor: vurdering.get(null) ?? null,
+      });
     })();
     return () => {
       avbrutt = true;
@@ -58,7 +66,7 @@ export function Arsoversikt({
       <div className="lg:col-span-2">
         <Innsats uker={data?.uker ?? []} />
       </div>
-      <Timeregnskap fag={data?.timer ?? []} />
+      <Timeregnskap fag={data?.timer ?? []} mentor={data?.mentor ?? null} />
       <div className="grid gap-y-7">
         <Vurderingsfrister
           rader={data?.kommende ?? []}
@@ -73,6 +81,8 @@ export function Arsoversikt({
 type Oversikt = {
   uker: Uketall[];
   timer: Fagtimer[];
+  /** mentorsamtalene, som ikke hører til noe fag (§4.10) */
+  mentor: { timer: number; antall: number } | null;
   glipp: Glipp[];
   kommende: Kommende[];
 };
@@ -268,16 +278,41 @@ function Innsatstabell({ uker }: { uker: Uketall[] }) {
 
 // ------------------------------------------------------------- timeregnskap
 
-function Timeregnskap({ fag }: { fag: Fagtimer[] }) {
+function Timeregnskap({
+  fag,
+  mentor,
+}: {
+  fag: Fagtimer[];
+  mentor: { timer: number; antall: number } | null;
+}) {
   return (
     <Panel tittel="Timeregnskap" hjelp="planlagt mot årstimetall">
-      {fag.length === 0 ? (
+      {fag.length === 0 && !mentor ? (
         <Tomtilstand tekst="Ingen fag i skoleåret ennå." />
       ) : (
         <ul className="space-y-2.5">
           {fag.map((f) => (
             <Fagmaler key={f.skolearFagId} fag={f} />
           ))}
+
+          {/*
+            Mentorsamtalene står på egen linje uten måler: de hører ikke til
+            noe fag, og det finnes ikke noe årstimetall å måle dem mot. Linja
+            forteller bare hvor mye tid som er gått med.
+          */}
+          {mentor && mentor.timer > 0 && (
+            <li className="border-t border-linje-svak pt-2">
+              <div className="flex items-baseline gap-2 text-brod">
+                <span className="text-blekk-dempet">Mentorsamtaler</span>
+                <span className="ml-auto shrink-0 tabular-nums">
+                  {rundt(mentor.timer)} t
+                </span>
+              </div>
+              <p className="text-liten tabular-nums text-blekk-svak">
+                {mentor.antall} {mentor.antall === 1 ? "samtale" : "samtaler"}
+              </p>
+            </li>
+          )}
         </ul>
       )}
     </Panel>
@@ -298,6 +333,12 @@ function Fagmaler({ fag }: { fag: Fagtimer }) {
         <span className="ml-auto shrink-0 tabular-nums">
           {rundt(timer)}
           {mal ? <span className="text-blekk-svak"> av {mal}</span> : null} t
+          {fag.vurderingTimer > 0 && (
+            <span className="text-blekk-svak">
+              {", hvorav "}
+              {rundt(fag.vurderingTimer)} til vurdering
+            </span>
+          )}
         </span>
       </div>
 
