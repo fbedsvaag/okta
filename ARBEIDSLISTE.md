@@ -62,7 +62,8 @@ Hver av disse er under en time og fjerner daglig friksjon.
   finnes og leses av øktlistas Vurdering-kolonne, men ingenting skriver
   den — alle vurderinger i basen har den tom. I dag virker koblingen bare
   implisitt, ved at fristen tilfeldigvis er samme dato som økta. Trengs
-  for «prøve i en vanlig time».
+  for «prøve i en vanlig time». MERK at muntlige vurderinger nå er
+  dekket på en annen måte, gjennom `samtaledag.vurdering_id`.
 
 ## 3. Mentorelever — grunnmur ✱ ferdig
 
@@ -91,18 +92,23 @@ integreres senere.
 
 Tas én om gangen, etter at 0–3 er gjort.
 
+- [ ] **Visuell oppstramming.** Appen ser hjemmesnekra ut. DESIGN.md er
+  skrevet som et designoppdrag, men aldri utført — paletten er tatt i
+  bruk, resten av briefen ikke. Dette er den største åpne saken nå.
+
 - [x] **Samtaletrekkeren.** Bygget i seks deler, §4.10. Migrasjon 012 og
   013, egen fane pluss inngang fra muntlige vurderinger. Notater fra
   samtalen havner i elevens møtelogg og ses begge veier. Samtaledager
   vises i kalenderen, på «I dag» og i timeregnskapet — mentorsamtaler
   som egen linje uten måltall. Gjenstår: å vise hvilken oppgave eleven
-  fikk under selve vurderingen; samtaledagen kobles ikke til
-  vurderingen ennå.
+  fikk under selve vurderingen — gjort, gjennom en vurderingsvelger i
+  samtaleoppsettet.
 - [ ] **Klassekart.** Bygges standalone først, integreres senere.
   Spec-seksjon før integrasjonen. Rom må kunne lages enkelt, ellers
   blir den ubrukt
-- [ ] Ukesvisning av økter
-- [ ] AND/OR i filtrering av elever, for å finne hvem som har flere like fag
+- [ ] Ukesvisning av økter — uavklart hva den skal være, se med eieren
+- [x] AND/OR i filtrering av elever. Flere fag kan velges, med bryter
+  mellom «har alle» og «minst ett».
 
 ## Ikke nå
 

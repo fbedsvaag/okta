@@ -1,90 +1,86 @@
 # Status
 
-Kort status pr. 2026-09-15, versjon 0.1.2. Skrevet mot SPEC.md slik den er nå.
+Kort status pr. 2026-09-21, versjon 0.1.2. Skrevet mot SPEC.md slik den er nå.
 Denne fila eies fritt — oppdater den løpende, i motsetning til SPEC.md.
+
+**319 tester, alle grønne. `tsc --noEmit` er ren. `npm run build` går
+gjennom. 13 migrasjoner.**
 
 ## Hva som virker
 
 Skjerm for skjerm (§4), med tilstand:
 
-- **Førstegangsoppsett (§4.0)** — ferdig. Tre steg, lagrer underveis, kan avbrytes.
-- **I dag (§4.1)** — ferdig, men med ett villet avvik: en «Årsoversikt»-widget er
-  lagt til på forsiden etter eksplisitt beslutning (kommentert i koden), stikk i
-  strid med §13 («ingen grafer på forsiden») og §10 (dashbord skal komme senere).
-- **Årsplan (§4.2)** — halvferdig i den forstand at alt innhold finnes
-  (liste, kalender, perioder, timeregnskap), men strukturert annerledes enn
-  spec beskriver: spec vil ha ett fag om gangen med en liste/kalender/periode-
-  bryter; koden har i stedet globale (alle fag) liste- og kalendervisninger
-  under «Økter», periodene under egen fane, og en per-fag-portal i «Fag».
-  I tillegg er serieopprettelse av økter bygget (`NySerie.tsx`), noe spec
-  eksplisitt sier ikke skal finnes i v1.
-- **Elever (§4.3)** — halvferdig. Tabell, søk, filter, manuell innlegging og
-  lim inn virker. Klasseopprykk mangler helt — ingen kode leser klassenavn og
-  foreslår opprykk til neste år.
-- **Økt — skåring (§4.4)** — halvferdig. Tallene 0–3, autoadvansering, notat
-  og pil/tab-navigasjon virker. `⌘K`-søk (hopp til elev) fra tastetabellen i
-  spec finnes ikke.
-- **Elev — heatmap (§4.5)** — ferdig, bortsett fra at «åpne oppfølgingspunkter»
-  ikke vises (fordi §4.7 ikke har noen UI, se under).
-- **Vurderinger (§4.6)** — ferdig. Samme tastemønster som skåringsflyten.
-- **Oppfølging (§4.7)** — påbegynt kun i databasen. Tabellen finnes og telles i
-  noen slette-bekreftelser, men det finnes ingen skjerm for å opprette, se
-  eller lukke et oppfølgingspunkt.
-- **Innstillinger (§4.8)** — halvferdig. Skoleår, skalaer, kalenderpublisering
-  og sikkerhetskopi er her. Fagbank og «fag i år» — som spec plasserer i
-  Innstillinger — ligger i stedet i `Fag.tsx`.
-- **Utskrift av årsplan (§4.9)** — ferdig. Print-stylesheet med fag per side,
-  perioder som overskrifter.
-
-Datalaget (§3, §12) følger spec godt: UUID + opprettet/endret/slettet overalt,
-`PRAGMA foreign_keys = ON` håndheves i frontend, `teller_ikke=1` er filtrert
-konsekvent i spørringene, soft-slettede rader gjenbrukes riktig mot
-UNIQUE-indekser, og ingenting spør `fag_id` direkte — alt henger på
-`skolear_fag`.
+- **Førstegangsoppsett (§4.0)** — ferdig. Tre steg, lagrer underveis.
+- **I dag (§4.1)** — ferdig. Dagens økter, ukelinje, årsoversikt, og en
+  setning om dagens samtaler når det er noen. Årsoversikten er et villet
+  avvik fra §13, kommentert i koden.
+- **Årsplan (§4.2)** — ferdig, men strukturert annerledes enn spec beskriver:
+  globale liste- og kalendervisninger under «Økter», perioder som egen fane,
+  per-fag-portal under «Fag». Serieopprettelse finnes. Begge deler avviker
+  fra spec-teksten, se under.
+- **Elever (§4.3)** — ferdig, bortsett fra klasseopprykk. Batch-slett,
+  mentorkolonne og -filter, AND/OR i fagfilteret, forfalt-merke ved navnet.
+- **Økt — skåring (§4.4)** — ferdig bortsett fra `⌘K`-søk.
+- **Elev — heatmap (§4.5)** — ferdig, og redigerbar: navn, klasse, mentorelev
+  og fag endres i panelet. Møteloggen ligger nederst.
+- **Vurderinger (§4.6)** — ferdig. Viser nå også hvilken oppgave eleven trakk,
+  når vurderingen har en samtaletrekning knyttet til seg.
+- **Notater og møtelogg (§4.7)** — ferdig. Erstattet den gamle
+  oppfølgingsskjermen som aldri ble bygget.
+- **Innstillinger (§4.8)** — ferdig. Fagbank og «fag i år» ligger i Fag-fanen,
+  ikke her.
+- **Utskrift (§4.9)** — ferdig.
+- **Samtaletrekkeren (§4.10)** — ferdig. To modus, trekning med låser,
+  dra-og-slipp, tre visninger, tre eksporter, historikk på tidspunkt, og
+  publisering av mentorsamtaler til kalenderserveren.
 
 ## Hva som ikke er bygget av det SPEC.md lover
 
-- Klasseopprykk (§4.3/§4.8)
-- Oppfølging som brukbar skjerm (§4.7) — kun tabellen finnes
-- `⌘K`-søk i skåringsflyten (§4.4)
-- Findelt karakterskala med 24 verdier (§5.2) — riktig, spec sier den skal
-  vente til §10
-- Skalabygger (§5.3) — ikke sjekket i detalj i denne runden, men nevnes ikke
-  blant det som er bygget; anta ikke bygget før noen bekrefter det
+- **Klasseopprykk (§4.3/§4.8).** Datamodellen bærer det, skjermen finnes ikke.
+  Trengs første gang et nytt skoleår opprettes, altså august 2027.
+- **`⌘K`-søk i skåringsflyten (§4.4).** Står i tastetabellen, finnes ikke.
+- **Skalabygger (§5.3).** Spec sier selv at den kommer etter rammeverket.
+- **Findelt karakterskala (§5.2).** Riktig — den hører til §10.
+- **Å knytte en vurdering til økta den ble holdt i.** `vurdering.okt_id`
+  finnes og leses, men ingenting skriver den. Koblingen virker i dag bare
+  ved at fristen tilfeldigvis er samme dato som økta.
 
 ## Hva som er i stykker eller irriterer
 
-Jeg har ikke kjørt appen manuelt i denne runden, så dette er ikke en full
-feilsøk — bare det som er synlig fra koden:
-
-- Ingen tester i det hele tatt på `OktPanel.tsx`, skåringsflyten spec selv
-  kaller «den viktigste enkeltbeslutningen». Tastelogikk, autoadvansering og
-  notatlagring er kun manuelt verifisert, aldri automatisk.
-- Samme mangel på `ElevPanel.tsx` (heatmap) og `VurderingPanel.tsx`.
-- `caldav.ts` sin kjernelogikk (retry, avbrutt-håndtering, kontrollsum) er
-  utestet — kun feltbyggingen den deler med kalenderstrømmen er dekket.
+- **Appen ser hjemmesnekra ut.** Eierens ord, og det er den største åpne
+  saken nå. DESIGN.md er skrevet som et designoppdrag, men aldri utført —
+  paletten i `index.css` er tatt i bruk, resten av briefen ikke.
+- **Skjermkomponentene har ingen tester.** `OktPanel`, `ElevPanel`,
+  `VurderingPanel` og `Samtaler` er utestet på komponentnivå. Datalaget under
+  dem er godt dekket — all trekningslogikk, kapasitetsregning,
+  lunsjplassering, historikk og eksport har egne tester — men tastaturflyten
+  og selve rendringen er bare manuelt prøvd.
+- **`caldav.ts` sin nettverksdel er utestet.** Feltgrensen i
+  `lagSamtaleHendelse` og `ical.ts` er testet; retry, avbrudd og
+  kontrollsummer er det ikke.
+- **To elever mangler etternavn** i basen: «Per» fra 7. august og «Kåre» fra
+  16. september. Begge uten skåringer. Panelet advarer nå om dem.
+- **Tabellen `oppfolging` står igjen tom** og uten kallsteder, erstattet av
+  `elevnotat`. Kan slippes i en senere migrasjon.
 
 ## Hvor SPEC.md ikke stemmer med koden lenger
 
-- **§4.2-navigasjon**: spec beskriver ett fag om gangen med en visningsbryter;
-  koden har globale lister/kalender pluss en separat per-fag-skjerm.
-- **Serieopprettelse av økter** er bygget (`NySerie.tsx`), mot et eksplisitt
-  forbud i §4.2.
-- **Udir Grep-integrasjon (§10, «Senere»)** er fullt bygget og koblet inn:
-  søkbar fagvelger, 808 fag og 10 802 kompetansemål seedet, kobling mellom
-  periode og kompetansemål. Spec plasserer dette utenfor v1.
-- **§4.8s fem deler** stemmer ikke: Fagbank og «Fag i år» ligger i `Fag.tsx`,
-  ikke i Innstillinger.
-- **Årsoversikt-widgeten på §4.1** er et villet unntak fra §13, ikke reflektert
-  i spec-teksten.
+- **§4.2-navigasjon.** Spec beskriver ett fag om gangen med en visningsbryter;
+  koden har globale lister og en egen per-fag-skjerm.
+- **Serieopprettelse av økter** finnes, mot et eksplisitt forbud i §4.2.
+- **Årsoversikt-widgeten på §4.1** er et villet unntak fra §13.
+- **§4.8s fem deler** stemmer ikke: fagbank og «fag i år» ligger i Fag.
+- **§11 Byggerekkefølge** er utdatert og hører hjemme i ARBEIDSLISTE.md.
+- **§13 Visuell retning** er erstattet av DESIGN.md, men står fortsatt.
 
-Ingen av disse er rettet i denne runden — de er notert, ikke endret. Beslutning
-om spec skal oppdateres eller koden rettes tilbake, ligger hos deg.
+Disse er notert, ikke rettet. Beslutningen om spec skal oppdateres eller koden
+rettes tilbake, ligger hos eieren.
 
-## Tester og typesjekk
+## Tester
 
-10 testfiler, 123 tester, alle grønne. `tsc --noEmit` er ren, ingen feil.
+19 testfiler, 319 tester, alle grønne. `tsc` ren.
 
-Dekningen er ujevn: importparser, duplikatgjenkjenning, arkiv-eksport, iCal og
-periodelogikk er testet. De tre skjermene med mest tastaturlogikk og mest
-brukertid — skåring, heatmap, vurderingspanel — har ingen tester.
+Dekningen er tung i datalaget og tynn i skjermlaget. Migrasjonene testes ved å
+kjøre dem i to omganger med data imellom — kjørt mot en tom base ville en
+datamigrering ikke hatt noe å flytte. Testbasen er ekte SQLite i minnet med de
+ekte migrasjonene, ikke en etterlikning.
