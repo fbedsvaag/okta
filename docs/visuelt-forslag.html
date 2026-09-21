@@ -1,0 +1,1086 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<title>Økta — visuelt forslag</title>
+<style>
+/* Fira Sans fra appen selv. Stien er relativ til docs/. */
+@font-face { font-family:"Fira Sans"; font-weight:400; font-display:block;
+  src:url("../public/fonts/fira-sans-400-latin.woff2") format("woff2"); }
+@font-face { font-family:"Fira Sans"; font-weight:500; font-display:block;
+  src:url("../public/fonts/fira-sans-500-latin.woff2") format("woff2"); }
+@font-face { font-family:"Fira Sans"; font-weight:600; font-display:block;
+  src:url("../public/fonts/fira-sans-600-latin.woff2") format("woff2"); }
+@font-face { font-family:"Fira Sans Condensed"; font-weight:400; font-display:block;
+  src:url("../public/fonts/fira-sans-condensed-400-latin.woff2") format("woff2"); }
+@font-face { font-family:"Fira Sans Condensed"; font-weight:500; font-display:block;
+  src:url("../public/fonts/fira-sans-condensed-500-latin.woff2") format("woff2"); }
+
+/*
+ * EDITORIAL NEW GÅR INN HER.
+ *
+ * Legg fila i public/fonts/ og bytt ut reserven under:
+ *   @font-face { font-family:"Editorial New"; src:url("../public/fonts/editorial-new.woff2") format("woff2"); }
+ *   :root { --font-display: "Editorial New", Georgia, serif; }
+ *
+ * Lisensen må dekke å pakke fonten med en app. Appen gjør ingen
+ * nettverkskall (SPEC §1), så den kan ikke hentes fra en CDN.
+ */
+:root { --font-display: Georgia, "Times New Roman", serif; }
+
+:root{
+  --blekk:#241f33; --dempet:#645d7a; --svak:#9a90b8; --svakest:#b4abd0;
+  --bord:#eceaf1; --ark:#fff; --flate:#f4f2f9; --valgt:#e3ddf0;
+  --linje-svak:#f0eef6; --linje:#d9d4e8; --linje-medium:#e5e2ee;
+  --aksent:#4a3d7d; --gronn:#3f9d49; --gul:#d9a92f; --rod:#c04a3d;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bord);color:var(--blekk);
+  font-family:"Fira Sans",-apple-system,sans-serif;
+  font-size:15px;line-height:1.5}
+.ramme{max-width:1500px;margin:0 auto;padding:32px 24px 80px}
+
+h1{font-family:var(--font-display);font-size:40px;line-height:1.1;
+  font-weight:400;margin:0 0 8px}
+h2{font-family:var(--font-display);font-size:26px;line-height:1.2;
+  font-weight:400;margin:48px 0 4px;padding-bottom:6px;
+  border-bottom:1px solid var(--linje)}
+h3{font-size:12px;text-transform:uppercase;letter-spacing:.06em;
+  color:var(--dempet);font-weight:600;margin:20px 0 8px}
+p{max-width:64ch;color:var(--dempet);margin:0 0 12px}
+code{font-family:ui-monospace,monospace;font-size:.9em;
+  background:var(--flate);padding:1px 4px;border-radius:3px}
+
+.kort{background:var(--ark);border:1px solid var(--linje);
+  border-radius:6px;padding:20px;margin-bottom:16px}
+.to{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+@media (max-width:1100px){.to{grid-template-columns:1fr}}
+.merk{display:inline-block;font-size:12px;padding:2px 8px;border-radius:3px;
+  background:var(--flate);color:var(--dempet);margin-bottom:10px}
+.merk.ny{background:var(--valgt);color:var(--aksent);font-weight:500}
+
+/* ---------- tabellene ---------- */
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-size:11px;text-transform:uppercase;
+  letter-spacing:.05em;color:var(--dempet);font-weight:500;
+  padding-bottom:4px;border-bottom:1px solid var(--linje)}
+td{border-bottom:1px solid var(--linje-svak)}
+tr:hover td{background:var(--flate)}
+.tall{text-align:right;font-variant-numeric:tabular-nums;color:var(--dempet)}
+.klasse{font-variant-numeric:tabular-nums;color:var(--dempet)}
+.stripe{width:72px}
+.stripe span{display:block;height:6px;border-radius:3px;
+  background:linear-gradient(to right,var(--gronn) var(--a),var(--gul) var(--a),var(--gul) calc(var(--a) + 18%),var(--rod) calc(var(--a) + 18%))}
+
+/* NÅ: 13px brødtekst, 12px sekundært, py-1.5 */
+.na table{font-size:13px}
+.na th{font-size:11px}
+.na td{padding:5px 10px 5px 0;height:28px}
+.na .fag{font-size:12px;color:var(--dempet);
+  max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.na .navn{max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.na .tall,.na .klasse{font-size:12px}
+
+/* FORSLAG, romslig: 15px brødtekst, 13px sekundært */
+.ny table{font-size:15px}
+.ny th{font-size:12px}
+.ny td{padding:7px 12px 7px 0;height:34px}
+.ny .fag{font-family:"Fira Sans Condensed",sans-serif;font-size:13px;
+  color:var(--dempet);white-space:nowrap}
+.ny .navn{white-space:nowrap}
+.ny .tall,.ny .klasse{font-size:13px}
+.ny .navn:first-child{font-weight:500}
+
+/* FORSLAG, tett: skåringslista beholder 28px */
+.tett table{font-size:13px}
+.tett td{padding:5px 10px 5px 0;height:28px}
+.tett .fag{font-family:"Fira Sans Condensed",sans-serif;font-size:12px}
+
+/* ---------- typeskala ---------- */
+.skala div{margin-bottom:6px;display:flex;align-items:baseline;gap:14px}
+.skala b{font-weight:400;min-width:120px;font-size:11px;color:var(--svak);
+  font-variant-numeric:tabular-nums}
+
+/* ---------- knapper ---------- */
+.knapper{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+button{font:inherit;font-size:15px;border-radius:5px;padding:7px 14px;
+  border:1px solid var(--linje);background:var(--ark);color:var(--blekk);
+  cursor:pointer}
+button:hover{background:var(--flate)}
+button.primar{background:var(--aksent);border-color:var(--aksent);color:#fff}
+button.primar:hover{background:#3b3066}
+button.stille{border-color:transparent;color:var(--dempet)}
+button.lenke{border:0;background:0;padding:0;color:var(--aksent);
+  text-decoration:underline;text-underline-offset:3px;font-size:inherit}
+button:focus-visible,a:focus-visible{outline:2px solid var(--aksent);
+  outline-offset:2px}
+.gammel button{font-size:12px;border:0;background:0;padding:0;
+  color:var(--dempet);text-decoration:none}
+
+.klikk a{color:inherit;text-decoration:none;border-bottom:1px solid transparent}
+.klikk a:hover{color:var(--aksent);border-bottom-color:var(--aksent)}
+</style>
+</head>
+<body>
+<div class="ramme">
+
+<h1>Visuelt forslag</h1>
+<p style="font-size:17px;max-width:70ch">
+Samme data, to uttrykk. Tretti elever i begge, for det er ved tretti man ser
+om tettheten holder. Overskriftene her er satt i en reserveserif der
+<strong>Editorial New</strong> ville stått.
+</p>
+
+<h2>Typografien</h2>
+<p>
+I dag er hele appen 12–13px, og en overskrift er bare fire piksler større enn
+brødteksten. Det er derfor alt leser likt. Forslaget løfter bunnen litt og
+toppen mye.
+</p>
+
+<div class="to">
+  <div class="kort skala">
+    <span class="merk">Nå</span>
+    <div><b>overskrift 17</b><span style="font-size:17px;font-weight:600">Tirsdag 15. september</span></div>
+    <div><b>tittel 15</b><span style="font-size:15px;font-weight:600">Tony Soprano</span></div>
+    <div><b>brød 13</b><span style="font-size:13px">Jobbet med det som var planlagt</span></div>
+    <div><b>liten 12</b><span style="font-size:12px">MFL1, ENG1 · 24 økter</span></div>
+    <div><b>etikett 11</b><span style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--dempet)">Innsats per økt</span></div>
+  </div>
+  <div class="kort skala">
+    <span class="merk ny">Forslag</span>
+    <div><b>overskrift 24</b><span style="font-family:var(--font-display);font-size:24px">Tirsdag 15. september</span></div>
+    <div><b>tittel 19</b><span style="font-family:var(--font-display);font-size:19px">Tony Soprano</span></div>
+    <div><b>brød 15</b><span style="font-size:15px">Jobbet med det som var planlagt</span></div>
+    <div><b>liten 13</b><span style="font-size:13px">MFL1, ENG1 · 24 økter</span></div>
+    <div><b>etikett 12</b><span style="font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--dempet)">Innsats per økt</span></div>
+  </div>
+</div>
+
+<h2>Elevlista, tretti rader</h2>
+<p>
+Venstre er slik den er i dag: 13px, 28px rader, og fagkolonnen kuttes midt i
+et ord. Høyre er forslaget — 15px, 34px rader, og fagene satt i Fira Sans
+Condensed så de får plass uten å kuttes.
+</p>
+
+<div class="to">
+  <div class="kort na">
+    <span class="merk">Nå · 13px · 28px rader</span>
+    <table>
+      <thead><tr><th>Fornavn</th><th>Etternavn</th><th>Klasse</th><th>Fag</th><th class="tall">Økter</th><th class="tall">Siste</th><th>Innsats</th></tr></thead>
+      <tbody>
+<tr class="">
+  <td class="navn">Tony</td>
+  <td class="navn">Soprano</td>
+  <td class="klasse">1STC</td>
+  <td class="fag">MFL1, ENG1</td>
+  <td class="tall">24</td>
+  <td class="tall">2 d</td>
+  <td class="stripe"><span style="--a:60%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Carmela</td>
+  <td class="navn">Soprano</td>
+  <td class="klasse">1STC</td>
+  <td class="fag">MFL1</td>
+  <td class="tall">31</td>
+  <td class="tall">1 d</td>
+  <td class="stripe"><span style="--a:67%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Meadow</td>
+  <td class="navn">Soprano</td>
+  <td class="klasse">1STC</td>
+  <td class="fag">MFL1, ENG1, EBU1</td>
+  <td class="tall">19</td>
+  <td class="tall">5 d</td>
+  <td class="stripe"><span style="--a:74%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Anthony</td>
+  <td class="navn">Soprano</td>
+  <td class="klasse">2STB</td>
+  <td class="fag">ENG1</td>
+  <td class="tall">27</td>
+  <td class="tall">i dag</td>
+  <td class="stripe"><span style="--a:81%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Livia</td>
+  <td class="navn">Soprano</td>
+  <td class="klasse">1STC</td>
+  <td class="fag">MFL1, EBU1</td>
+  <td class="tall">22</td>
+  <td class="tall">3 d</td>
+  <td class="stripe"><span style="--a:88%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Janice</td>
+  <td class="navn">Soprano</td>
+  <td class="klasse">1STC</td>
+  <td class="fag">MFL1, ENG1</td>
+  <td class="tall">30</td>
+  <td class="tall">12 d</td>
+  <td class="stripe"><span style="--a:60%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Corrado</td>
+  <td class="navn">Soprano</td>
+  <td class="klasse">1STC</td>
+  <td class="fag">MFL1</td>
+  <td class="tall">18</td>
+  <td class="tall">1 d</td>
+  <td class="stripe"><span style="--a:67%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Barbara</td>
+  <td class="navn">Giglione</td>
+  <td class="klasse">1STC</td>
+  <td class="fag">MFL1, ENG1, EBU1</td>
+  <td class="tall">25</td>
+  <td class="tall">4 d</td>
+  <td class="stripe"><span style="--a:74%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Christopher</td>
+  <td class="navn">Moltisanti</td>
+  <td class="klasse">2STB</td>
+  <td class="fag">ENG1</td>
+  <td class="tall">24</td>
+  <td class="tall">2 d</td>
+  <td class="stripe"><span style="--a:81%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Adriana</td>
+  <td class="navn">La Cerva</td>
+  <td class="klasse">1STC</td>
+  <td class="fag">MFL1, EBU1</td>
+  <td class="tall">31</td>
+  <td class="tall">1 d</td>
+  <td class="stripe"><span style="--a:88%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Silvio</td>
+  <td class="navn">Dante</td>
+  <td class="klasse">1STC</td>
+  <td class="fag">MFL1, ENG1</td>
+  <td class="tall">19</td>
+  <td class="tall">5 d</td>
+  <td class="stripe"><span style="--a:60%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Gabriella</td>
+  <td class="navn">Dante</td>
+  <td class="klasse">1STC</td>
+  <td class="fag">MFL1</td>
+  <td class="tall">27</td>
+  <td class="tall">i dag</td>
+  <td class="stripe"><span style="--a:67%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Paulie</td>
+  <td class="navn">Gualtieri</td>
+  <td class="klasse">1STC</td>
+  <td class="fag">MFL1, ENG1, EBU1</td>
+  <td class="tall">22</td>
+  <td class="tall">3 d</td>
+  <td class="stripe"><span style="--a:74%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Salvatore</td>
+  <td class="navn">Bonpensiero</td>
+  <td class="klasse">2STB</td>
+  <td class="fag">ENG1</td>
+  <td class="tall">30</td>
+  <td class="tall">12 d</td>
+  <td class="stripe"><span style="--a:81%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Angie</td>
+  <td class="navn">Bonpensiero</td>
+  <td class="klasse">1STC</td>
+  <td class="fag">MFL1, EBU1</td>
+  <td class="tall">18</td>
+  <td class="tall">1 d</td>
+  <td class="stripe"><span style="--a:88%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Bobby</td>
+  <td class="navn">Baccalieri</td>
+  <td class="klasse">1STC</td>
+  <td class="fag">MFL1, ENG1</td>
+  <td class="tall">25</td>
+  <td class="tall">4 d</td>
+  <td class="stripe"><span style="--a:60%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Karen</td>
+  <td class="navn">Baccalieri</td>
+  <td class="klasse">1STC</td>
+  <td class="fag">MFL1</td>
+  <td class="tall">24</td>
+  <td class="tall">2 d</td>
+  <td class="stripe"><span style="--a:67%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Ralph</td>
+  <td class="navn">Cifaretto</td>
+  <td class="klasse">1STC</td>
+  <td class="fag">MFL1, ENG1, EBU1</td>
+  <td class="tall">31</td>
+  <td class="tall">1 d</td>
+  <td class="stripe"><span style="--a:74%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Vito</td>
+  <td class="navn">Spatafore</td>
+  <td class="klasse">2STB</td>
+  <td class="fag">ENG1</td>
+  <td class="tall">19</td>
+  <td class="tall">5 d</td>
+  <td class="stripe"><span style="--a:81%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Marie</td>
+  <td class="navn">Spatafore</td>
+  <td class="klasse">1STC</td>
+  <td class="fag">MFL1, EBU1</td>
+  <td class="tall">27</td>
+  <td class="tall">i dag</td>
+  <td class="stripe"><span style="--a:88%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Eugene</td>
+  <td class="navn">Pontecorvo</td>
+  <td class="klasse">1STC</td>
+  <td class="fag">MFL1, ENG1</td>
+  <td class="tall">22</td>
+  <td class="tall">3 d</td>
+  <td class="stripe"><span style="--a:60%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Patsy</td>
+  <td class="navn">Parisi</td>
+  <td class="klasse">1STC</td>
+  <td class="fag">MFL1</td>
+  <td class="tall">30</td>
+  <td class="tall">12 d</td>
+  <td class="stripe"><span style="--a:67%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Benny</td>
+  <td class="navn">Fazio</td>
+  <td class="klasse">1STC</td>
+  <td class="fag">MFL1, ENG1, EBU1</td>
+  <td class="tall">18</td>
+  <td class="tall">1 d</td>
+  <td class="stripe"><span style="--a:74%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Furio</td>
+  <td class="navn">Giunta</td>
+  <td class="klasse">2STB</td>
+  <td class="fag">ENG1</td>
+  <td class="tall">25</td>
+  <td class="tall">4 d</td>
+  <td class="stripe"><span style="--a:81%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Richie</td>
+  <td class="navn">Aprile</td>
+  <td class="klasse">1STC</td>
+  <td class="fag">MFL1, EBU1</td>
+  <td class="tall">24</td>
+  <td class="tall">2 d</td>
+  <td class="stripe"><span style="--a:88%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Jackie</td>
+  <td class="navn">Aprile</td>
+  <td class="klasse">1STC</td>
+  <td class="fag">MFL1, ENG1</td>
+  <td class="tall">31</td>
+  <td class="tall">1 d</td>
+  <td class="stripe"><span style="--a:60%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Rosalie</td>
+  <td class="navn">Aprile</td>
+  <td class="klasse">1STC</td>
+  <td class="fag">MFL1</td>
+  <td class="tall">19</td>
+  <td class="tall">5 d</td>
+  <td class="stripe"><span style="--a:67%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Artie</td>
+  <td class="navn">Bucco</td>
+  <td class="klasse">1STC</td>
+  <td class="fag">MFL1, ENG1, EBU1</td>
+  <td class="tall">27</td>
+  <td class="tall">i dag</td>
+  <td class="stripe"><span style="--a:74%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Charmaine</td>
+  <td class="navn">Bucco</td>
+  <td class="klasse">2STB</td>
+  <td class="fag">ENG1</td>
+  <td class="tall">22</td>
+  <td class="tall">3 d</td>
+  <td class="stripe"><span style="--a:81%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Hesh</td>
+  <td class="navn">Rabkin</td>
+  <td class="klasse">1STC</td>
+  <td class="fag">MFL1, EBU1</td>
+  <td class="tall">30</td>
+  <td class="tall">12 d</td>
+  <td class="stripe"><span style="--a:88%"></span></td>
+</tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="kort ny">
+    <span class="merk ny">Forslag · 15px · 34px rader</span>
+    <table>
+      <thead><tr><th>Fornavn</th><th>Etternavn</th><th>Klasse</th><th>Fag</th><th class="tall">Økter</th><th class="tall">Siste</th><th>Innsats</th></tr></thead>
+      <tbody>
+<tr class="">
+  <td class="navn">Tony</td>
+  <td class="navn">Soprano</td>
+  <td class="klasse">1STC</td>
+  <td class="fag">MFL1, ENG1</td>
+  <td class="tall">24</td>
+  <td class="tall">2 d</td>
+  <td class="stripe"><span style="--a:60%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Carmela</td>
+  <td class="navn">Soprano</td>
+  <td class="klasse">1STC</td>
+  <td class="fag">MFL1</td>
+  <td class="tall">31</td>
+  <td class="tall">1 d</td>
+  <td class="stripe"><span style="--a:67%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Meadow</td>
+  <td class="navn">Soprano</td>
+  <td class="klasse">1STC</td>
+  <td class="fag">MFL1, ENG1, EBU1</td>
+  <td class="tall">19</td>
+  <td class="tall">5 d</td>
+  <td class="stripe"><span style="--a:74%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Anthony</td>
+  <td class="navn">Soprano</td>
+  <td class="klasse">2STB</td>
+  <td class="fag">ENG1</td>
+  <td class="tall">27</td>
+  <td class="tall">i dag</td>
+  <td class="stripe"><span style="--a:81%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Livia</td>
+  <td class="navn">Soprano</td>
+  <td class="klasse">1STC</td>
+  <td class="fag">MFL1, EBU1</td>
+  <td class="tall">22</td>
+  <td class="tall">3 d</td>
+  <td class="stripe"><span style="--a:88%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Janice</td>
+  <td class="navn">Soprano</td>
+  <td class="klasse">1STC</td>
+  <td class="fag">MFL1, ENG1</td>
+  <td class="tall">30</td>
+  <td class="tall">12 d</td>
+  <td class="stripe"><span style="--a:60%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Corrado</td>
+  <td class="navn">Soprano</td>
+  <td class="klasse">1STC</td>
+  <td class="fag">MFL1</td>
+  <td class="tall">18</td>
+  <td class="tall">1 d</td>
+  <td class="stripe"><span style="--a:67%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Barbara</td>
+  <td class="navn">Giglione</td>
+  <td class="klasse">1STC</td>
+  <td class="fag">MFL1, ENG1, EBU1</td>
+  <td class="tall">25</td>
+  <td class="tall">4 d</td>
+  <td class="stripe"><span style="--a:74%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Christopher</td>
+  <td class="navn">Moltisanti</td>
+  <td class="klasse">2STB</td>
+  <td class="fag">ENG1</td>
+  <td class="tall">24</td>
+  <td class="tall">2 d</td>
+  <td class="stripe"><span style="--a:81%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Adriana</td>
+  <td class="navn">La Cerva</td>
+  <td class="klasse">1STC</td>
+  <td class="fag">MFL1, EBU1</td>
+  <td class="tall">31</td>
+  <td class="tall">1 d</td>
+  <td class="stripe"><span style="--a:88%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Silvio</td>
+  <td class="navn">Dante</td>
+  <td class="klasse">1STC</td>
+  <td class="fag">MFL1, ENG1</td>
+  <td class="tall">19</td>
+  <td class="tall">5 d</td>
+  <td class="stripe"><span style="--a:60%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Gabriella</td>
+  <td class="navn">Dante</td>
+  <td class="klasse">1STC</td>
+  <td class="fag">MFL1</td>
+  <td class="tall">27</td>
+  <td class="tall">i dag</td>
+  <td class="stripe"><span style="--a:67%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Paulie</td>
+  <td class="navn">Gualtieri</td>
+  <td class="klasse">1STC</td>
+  <td class="fag">MFL1, ENG1, EBU1</td>
+  <td class="tall">22</td>
+  <td class="tall">3 d</td>
+  <td class="stripe"><span style="--a:74%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Salvatore</td>
+  <td class="navn">Bonpensiero</td>
+  <td class="klasse">2STB</td>
+  <td class="fag">ENG1</td>
+  <td class="tall">30</td>
+  <td class="tall">12 d</td>
+  <td class="stripe"><span style="--a:81%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Angie</td>
+  <td class="navn">Bonpensiero</td>
+  <td class="klasse">1STC</td>
+  <td class="fag">MFL1, EBU1</td>
+  <td class="tall">18</td>
+  <td class="tall">1 d</td>
+  <td class="stripe"><span style="--a:88%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Bobby</td>
+  <td class="navn">Baccalieri</td>
+  <td class="klasse">1STC</td>
+  <td class="fag">MFL1, ENG1</td>
+  <td class="tall">25</td>
+  <td class="tall">4 d</td>
+  <td class="stripe"><span style="--a:60%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Karen</td>
+  <td class="navn">Baccalieri</td>
+  <td class="klasse">1STC</td>
+  <td class="fag">MFL1</td>
+  <td class="tall">24</td>
+  <td class="tall">2 d</td>
+  <td class="stripe"><span style="--a:67%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Ralph</td>
+  <td class="navn">Cifaretto</td>
+  <td class="klasse">1STC</td>
+  <td class="fag">MFL1, ENG1, EBU1</td>
+  <td class="tall">31</td>
+  <td class="tall">1 d</td>
+  <td class="stripe"><span style="--a:74%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Vito</td>
+  <td class="navn">Spatafore</td>
+  <td class="klasse">2STB</td>
+  <td class="fag">ENG1</td>
+  <td class="tall">19</td>
+  <td class="tall">5 d</td>
+  <td class="stripe"><span style="--a:81%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Marie</td>
+  <td class="navn">Spatafore</td>
+  <td class="klasse">1STC</td>
+  <td class="fag">MFL1, EBU1</td>
+  <td class="tall">27</td>
+  <td class="tall">i dag</td>
+  <td class="stripe"><span style="--a:88%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Eugene</td>
+  <td class="navn">Pontecorvo</td>
+  <td class="klasse">1STC</td>
+  <td class="fag">MFL1, ENG1</td>
+  <td class="tall">22</td>
+  <td class="tall">3 d</td>
+  <td class="stripe"><span style="--a:60%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Patsy</td>
+  <td class="navn">Parisi</td>
+  <td class="klasse">1STC</td>
+  <td class="fag">MFL1</td>
+  <td class="tall">30</td>
+  <td class="tall">12 d</td>
+  <td class="stripe"><span style="--a:67%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Benny</td>
+  <td class="navn">Fazio</td>
+  <td class="klasse">1STC</td>
+  <td class="fag">MFL1, ENG1, EBU1</td>
+  <td class="tall">18</td>
+  <td class="tall">1 d</td>
+  <td class="stripe"><span style="--a:74%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Furio</td>
+  <td class="navn">Giunta</td>
+  <td class="klasse">2STB</td>
+  <td class="fag">ENG1</td>
+  <td class="tall">25</td>
+  <td class="tall">4 d</td>
+  <td class="stripe"><span style="--a:81%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Richie</td>
+  <td class="navn">Aprile</td>
+  <td class="klasse">1STC</td>
+  <td class="fag">MFL1, EBU1</td>
+  <td class="tall">24</td>
+  <td class="tall">2 d</td>
+  <td class="stripe"><span style="--a:88%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Jackie</td>
+  <td class="navn">Aprile</td>
+  <td class="klasse">1STC</td>
+  <td class="fag">MFL1, ENG1</td>
+  <td class="tall">31</td>
+  <td class="tall">1 d</td>
+  <td class="stripe"><span style="--a:60%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Rosalie</td>
+  <td class="navn">Aprile</td>
+  <td class="klasse">1STC</td>
+  <td class="fag">MFL1</td>
+  <td class="tall">19</td>
+  <td class="tall">5 d</td>
+  <td class="stripe"><span style="--a:67%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Artie</td>
+  <td class="navn">Bucco</td>
+  <td class="klasse">1STC</td>
+  <td class="fag">MFL1, ENG1, EBU1</td>
+  <td class="tall">27</td>
+  <td class="tall">i dag</td>
+  <td class="stripe"><span style="--a:74%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Charmaine</td>
+  <td class="navn">Bucco</td>
+  <td class="klasse">2STB</td>
+  <td class="fag">ENG1</td>
+  <td class="tall">22</td>
+  <td class="tall">3 d</td>
+  <td class="stripe"><span style="--a:81%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Hesh</td>
+  <td class="navn">Rabkin</td>
+  <td class="klasse">1STC</td>
+  <td class="fag">MFL1, EBU1</td>
+  <td class="tall">30</td>
+  <td class="tall">12 d</td>
+  <td class="stripe"><span style="--a:88%"></span></td>
+</tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<h2>Skåringslista beholder tettheten</h2>
+<p>
+Kravet i DESIGN.md — tretti elever uten scrolling på en 14-tommer — gjelder
+skåringsflyten. Den beholder 28px og 13px. Det er bare de andre skjermene som
+får puste.
+</p>
+<div class="kort tett" style="max-width:520px">
+  <span class="merk ny">Forslag · tett modus · 28px rader</span>
+  <table>
+    <thead><tr><th>Fornavn</th><th>Etternavn</th><th>Klasse</th><th>Fag</th><th class="tall">Økter</th><th class="tall">Siste</th><th>Innsats</th></tr></thead>
+    <tbody>
+<tr class="">
+  <td class="navn">Tony</td>
+  <td class="navn">Soprano</td>
+  <td class="klasse">1STC</td>
+  <td class="fag">MFL1, ENG1</td>
+  <td class="tall">24</td>
+  <td class="tall">2 d</td>
+  <td class="stripe"><span style="--a:60%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Carmela</td>
+  <td class="navn">Soprano</td>
+  <td class="klasse">1STC</td>
+  <td class="fag">MFL1</td>
+  <td class="tall">31</td>
+  <td class="tall">1 d</td>
+  <td class="stripe"><span style="--a:67%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Meadow</td>
+  <td class="navn">Soprano</td>
+  <td class="klasse">1STC</td>
+  <td class="fag">MFL1, ENG1, EBU1</td>
+  <td class="tall">19</td>
+  <td class="tall">5 d</td>
+  <td class="stripe"><span style="--a:74%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Anthony</td>
+  <td class="navn">Soprano</td>
+  <td class="klasse">2STB</td>
+  <td class="fag">ENG1</td>
+  <td class="tall">27</td>
+  <td class="tall">i dag</td>
+  <td class="stripe"><span style="--a:81%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Livia</td>
+  <td class="navn">Soprano</td>
+  <td class="klasse">1STC</td>
+  <td class="fag">MFL1, EBU1</td>
+  <td class="tall">22</td>
+  <td class="tall">3 d</td>
+  <td class="stripe"><span style="--a:88%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Janice</td>
+  <td class="navn">Soprano</td>
+  <td class="klasse">1STC</td>
+  <td class="fag">MFL1, ENG1</td>
+  <td class="tall">30</td>
+  <td class="tall">12 d</td>
+  <td class="stripe"><span style="--a:60%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Corrado</td>
+  <td class="navn">Soprano</td>
+  <td class="klasse">1STC</td>
+  <td class="fag">MFL1</td>
+  <td class="tall">18</td>
+  <td class="tall">1 d</td>
+  <td class="stripe"><span style="--a:67%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Barbara</td>
+  <td class="navn">Giglione</td>
+  <td class="klasse">1STC</td>
+  <td class="fag">MFL1, ENG1, EBU1</td>
+  <td class="tall">25</td>
+  <td class="tall">4 d</td>
+  <td class="stripe"><span style="--a:74%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Christopher</td>
+  <td class="navn">Moltisanti</td>
+  <td class="klasse">2STB</td>
+  <td class="fag">ENG1</td>
+  <td class="tall">24</td>
+  <td class="tall">2 d</td>
+  <td class="stripe"><span style="--a:81%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Adriana</td>
+  <td class="navn">La Cerva</td>
+  <td class="klasse">1STC</td>
+  <td class="fag">MFL1, EBU1</td>
+  <td class="tall">31</td>
+  <td class="tall">1 d</td>
+  <td class="stripe"><span style="--a:88%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Silvio</td>
+  <td class="navn">Dante</td>
+  <td class="klasse">1STC</td>
+  <td class="fag">MFL1, ENG1</td>
+  <td class="tall">19</td>
+  <td class="tall">5 d</td>
+  <td class="stripe"><span style="--a:60%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Gabriella</td>
+  <td class="navn">Dante</td>
+  <td class="klasse">1STC</td>
+  <td class="fag">MFL1</td>
+  <td class="tall">27</td>
+  <td class="tall">i dag</td>
+  <td class="stripe"><span style="--a:67%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Paulie</td>
+  <td class="navn">Gualtieri</td>
+  <td class="klasse">1STC</td>
+  <td class="fag">MFL1, ENG1, EBU1</td>
+  <td class="tall">22</td>
+  <td class="tall">3 d</td>
+  <td class="stripe"><span style="--a:74%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Salvatore</td>
+  <td class="navn">Bonpensiero</td>
+  <td class="klasse">2STB</td>
+  <td class="fag">ENG1</td>
+  <td class="tall">30</td>
+  <td class="tall">12 d</td>
+  <td class="stripe"><span style="--a:81%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Angie</td>
+  <td class="navn">Bonpensiero</td>
+  <td class="klasse">1STC</td>
+  <td class="fag">MFL1, EBU1</td>
+  <td class="tall">18</td>
+  <td class="tall">1 d</td>
+  <td class="stripe"><span style="--a:88%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Bobby</td>
+  <td class="navn">Baccalieri</td>
+  <td class="klasse">1STC</td>
+  <td class="fag">MFL1, ENG1</td>
+  <td class="tall">25</td>
+  <td class="tall">4 d</td>
+  <td class="stripe"><span style="--a:60%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Karen</td>
+  <td class="navn">Baccalieri</td>
+  <td class="klasse">1STC</td>
+  <td class="fag">MFL1</td>
+  <td class="tall">24</td>
+  <td class="tall">2 d</td>
+  <td class="stripe"><span style="--a:67%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Ralph</td>
+  <td class="navn">Cifaretto</td>
+  <td class="klasse">1STC</td>
+  <td class="fag">MFL1, ENG1, EBU1</td>
+  <td class="tall">31</td>
+  <td class="tall">1 d</td>
+  <td class="stripe"><span style="--a:74%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Vito</td>
+  <td class="navn">Spatafore</td>
+  <td class="klasse">2STB</td>
+  <td class="fag">ENG1</td>
+  <td class="tall">19</td>
+  <td class="tall">5 d</td>
+  <td class="stripe"><span style="--a:81%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Marie</td>
+  <td class="navn">Spatafore</td>
+  <td class="klasse">1STC</td>
+  <td class="fag">MFL1, EBU1</td>
+  <td class="tall">27</td>
+  <td class="tall">i dag</td>
+  <td class="stripe"><span style="--a:88%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Eugene</td>
+  <td class="navn">Pontecorvo</td>
+  <td class="klasse">1STC</td>
+  <td class="fag">MFL1, ENG1</td>
+  <td class="tall">22</td>
+  <td class="tall">3 d</td>
+  <td class="stripe"><span style="--a:60%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Patsy</td>
+  <td class="navn">Parisi</td>
+  <td class="klasse">1STC</td>
+  <td class="fag">MFL1</td>
+  <td class="tall">30</td>
+  <td class="tall">12 d</td>
+  <td class="stripe"><span style="--a:67%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Benny</td>
+  <td class="navn">Fazio</td>
+  <td class="klasse">1STC</td>
+  <td class="fag">MFL1, ENG1, EBU1</td>
+  <td class="tall">18</td>
+  <td class="tall">1 d</td>
+  <td class="stripe"><span style="--a:74%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Furio</td>
+  <td class="navn">Giunta</td>
+  <td class="klasse">2STB</td>
+  <td class="fag">ENG1</td>
+  <td class="tall">25</td>
+  <td class="tall">4 d</td>
+  <td class="stripe"><span style="--a:81%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Richie</td>
+  <td class="navn">Aprile</td>
+  <td class="klasse">1STC</td>
+  <td class="fag">MFL1, EBU1</td>
+  <td class="tall">24</td>
+  <td class="tall">2 d</td>
+  <td class="stripe"><span style="--a:88%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Jackie</td>
+  <td class="navn">Aprile</td>
+  <td class="klasse">1STC</td>
+  <td class="fag">MFL1, ENG1</td>
+  <td class="tall">31</td>
+  <td class="tall">1 d</td>
+  <td class="stripe"><span style="--a:60%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Rosalie</td>
+  <td class="navn">Aprile</td>
+  <td class="klasse">1STC</td>
+  <td class="fag">MFL1</td>
+  <td class="tall">19</td>
+  <td class="tall">5 d</td>
+  <td class="stripe"><span style="--a:67%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Artie</td>
+  <td class="navn">Bucco</td>
+  <td class="klasse">1STC</td>
+  <td class="fag">MFL1, ENG1, EBU1</td>
+  <td class="tall">27</td>
+  <td class="tall">i dag</td>
+  <td class="stripe"><span style="--a:74%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Charmaine</td>
+  <td class="navn">Bucco</td>
+  <td class="klasse">2STB</td>
+  <td class="fag">ENG1</td>
+  <td class="tall">22</td>
+  <td class="tall">3 d</td>
+  <td class="stripe"><span style="--a:81%"></span></td>
+</tr>
+<tr class="">
+  <td class="navn">Hesh</td>
+  <td class="navn">Rabkin</td>
+  <td class="klasse">1STC</td>
+  <td class="fag">MFL1, EBU1</td>
+  <td class="tall">30</td>
+  <td class="tall">12 d</td>
+  <td class="stripe"><span style="--a:88%"></span></td>
+</tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>Knapper</h2>
+<p>
+81 håndlagde knapper i dag mot 62 som bruker komponenten. Forslaget er fire
+uttrykk, og ikke flere.
+</p>
+<div class="to">
+  <div class="kort gammel">
+    <span class="merk">Nå — et utvalg av det som finnes</span>
+    <div class="knapper" style="gap:16px">
+      <button>+ Legg til tema</button>
+      <button>Nullstill</button>
+      <button>Lim inn en egen liste</button>
+      <button>Åpne timeplanen →</button>
+      <button style="color:var(--rod)">Slett eleven</button>
+    </div>
+    <p style="font-size:12px;margin-top:12px">
+      Alle er <code>&lt;button&gt;</code> med egen klasse. Ingen felles form,
+      ingen fokusring.
+    </p>
+  </div>
+  <div class="kort">
+    <span class="merk ny">Forslag — fire roller</span>
+    <div class="knapper">
+      <button class="primar">Generer timeplan</button>
+      <button>Trekk på nytt</button>
+      <button class="stille">Nullstill</button>
+      <button class="lenke">Åpne timeplanen</button>
+    </div>
+    <p style="font-size:13px;margin-top:12px">
+      Primær, vanlig, stille, lenke. Tab deg gjennom dem — alle har samme
+      fokusring.
+    </p>
+  </div>
+</div>
+
+<h2>Alt som peker på noe, kan klikkes</h2>
+<p>
+I dag er elevnavnet klikkbart, men fagkoden ved siden av er ikke det. Heller
+ikke datoen i en øktrad. Regelen jeg foreslår: et navn, en fagkode eller en
+dato som identifiserer noe, åpner det.
+</p>
+<div class="kort klikk">
+  <table style="font-size:15px">
+    <tbody>
+      <tr>
+        <td style="padding:8px 12px 8px 0"><a href="#">Tony Soprano</a></td>
+        <td style="padding:8px 12px 8px 0"><a href="#">1STC</a></td>
+        <td style="padding:8px 12px 8px 0"><a href="#">MFL1</a></td>
+        <td style="padding:8px 12px 8px 0"><a href="#">tirsdag 15. september</a></td>
+        <td class="tall" style="padding:8px 0">24 økter</td>
+      </tr>
+    </tbody>
+  </table>
+  <p style="font-size:13px;margin:12px 0 0">
+    Hold musa over raden. Alt understreket åpner noe.
+  </p>
+</div>
+
+<h2>Om Editorial New</h2>
+<p>
+Overskriftene på denne siden står i Georgia som reserve. Slik ville det sett ut
+med en editorial-serif i toppen og Fira Sans i tabellen — parringen løser
+nettopp det flate uttrykket, uten å gjøre tabelldata vanskeligere å lese.
+</p>
+<p>
+To ting må avklares før den kan brukes: <strong>lisensen må dekke å pakke
+fonten med en app</strong>, og fila må ligge lokalt i <code>public/fonts/</code>.
+Appen gjør ingen nettverkskall (SPEC §1), så den kan ikke hentes fra en CDN.
+Er begge deler i orden, er det én <code>@font-face</code> og én variabel å
+bytte — se kommentaren øverst i kilden til denne sida.
+</p>
+
+</div>
+</body>
+</html>
