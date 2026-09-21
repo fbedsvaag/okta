@@ -24,6 +24,7 @@ import {
   type Okt,
 } from "../data/okter";
 import type { FagIAr } from "../data/fag";
+import { hentSamtaledager, type Samtaledag } from "../data/samtale";
 
 // --------------------------------------------------------------- cellehøyde
 
@@ -133,6 +134,9 @@ export function Skolekalender({
 }) {
   const [okter, setOkter] = useState<Okt[]>([]);
   const [fridager, setFridager] = useState<Fridag[]>([]);
+  // Samtaledager er ikke økter (§3.6), så de må hentes for seg og vises som
+  // sin egen slags dag. Det er den kjente kostnaden ved egen tabell.
+  const [samtaledager, setSamtaledager] = useState<Samtaledag[]>([]);
   const [global, setGlobal] = useState("180");
   // Flere dager kan være valgt samtidig. Å klikke seg gjennom tirsdagene og
   // legge inn alle på én gang er enklere enn et serieskjema, og du ser hele
@@ -143,6 +147,7 @@ export function Skolekalender({
   async function last() {
     setOkter(await hentOkter(skolear.id));
     setFridager(await hentFridager(skolear.id));
+    setSamtaledager(await hentSamtaledager(skolear.id));
   }
 
   /**
@@ -172,6 +177,15 @@ export function Skolekalender({
     for (const o of okter) kart.set(o.dato, [...(kart.get(o.dato) ?? []), o]);
     return kart;
   }, [okter]);
+
+  const samtalePerDag = useMemo(() => {
+    const kart = new Map<string, Samtaledag[]>();
+    for (const d of samtaledager) {
+      if (d.dato === "") continue;
+      kart.set(d.dato, [...(kart.get(d.dato) ?? []), d]);
+    }
+    return kart;
+  }, [samtaledager]);
 
   const maneder = useMemo(
     () => manederMellom(skolear.start, skolear.slutt),
@@ -221,6 +235,7 @@ export function Skolekalender({
             spennFra={skolear.start}
             spennTil={skolear.slutt}
             perDag={perDag}
+            samtalePerDag={samtalePerDag}
             fridager={fridager}
             rode={rode}
             idag={idag}
@@ -267,6 +282,7 @@ function Maned({
   spennFra,
   spennTil,
   perDag,
+  samtalePerDag,
   fridager,
   rode,
   idag,
@@ -280,6 +296,7 @@ function Maned({
   spennFra: string;
   spennTil: string;
   perDag: Map<string, Okt[]>;
+  samtalePerDag: Map<string, Samtaledag[]>;
   fridager: Fridag[];
   rode: Map<string, string>;
   idag: string;
@@ -327,6 +344,7 @@ function Maned({
                   cellehoyde={cellehoyde}
                   utenfor={dato < spennFra || dato > spennTil}
                   okter={perDag.get(dato) ?? []}
+                  samtaledager={samtalePerDag.get(dato) ?? []}
                   blokkert={blokkering(dato, fridager, rode)}
                   erIdag={dato === idag}
                   valgt={valgte.has(dato)}
@@ -348,6 +366,7 @@ function Dag({
   cellehoyde,
   utenfor,
   okter,
+  samtaledager,
   blokkert,
   erIdag,
   valgt,
@@ -359,6 +378,7 @@ function Dag({
   cellehoyde: number;
   utenfor: boolean;
   okter: Okt[];
+  samtaledager: Samtaledag[];
   blokkert: Blokkering | null;
   erIdag: boolean;
   valgt: boolean;
@@ -373,9 +393,10 @@ function Dag({
   // Merkelappen for ferie eller helligdag legger beslag på en linje, så den
   // må trekkes fra før øktene får vite hvor mye plass de har igjen.
   const merkelapp = blokkert !== null && !utenfor;
+  const harSamtaler = samtaledager.length > 0 && !utenfor;
   const { synlige, skjulte } = kappOkter(
     okter,
-    linjerSomFarPlass(cellehoyde) - (merkelapp ? 1 : 0),
+    linjerSomFarPlass(cellehoyde) - (merkelapp ? 1 : 0) - (harSamtaler ? 1 : 0),
   );
 
   const bakgrunn = utenfor
@@ -428,6 +449,28 @@ function Dag({
           title={blokkert.navn}
         >
           {blokkert.navn}
+        </p>
+      )}
+
+      {/*
+        Samtaledagen står over øktene: er det samtaler den dagen, er det dem
+        dagen handler om. Den er ikke en økt (§3.6), så den har sitt eget
+        uttrykk — en linje med antall, ikke en fagbrikke.
+      */}
+      {harSamtaler && (
+        <p
+          className="mt-0.5 truncate rounded-[2px] bg-valgt px-0.5 text-mikro text-aksent"
+          title={samtaledager
+            .map(
+              (d) =>
+                `${d.fagKode ?? "Mentorsamtaler"} ${d.fra}–${d.til}` +
+                (d.antall > 0 ? ` · ${d.antall} elever` : " · ikke trukket"),
+            )
+            .join("\n")}
+        >
+          {samtaledager[0].fagKode ?? "Mentorsamtaler"}
+          {samtaledager.reduce((n, d) => n + d.antall, 0) > 0 &&
+            ` · ${samtaledager.reduce((n, d) => n + d.antall, 0)}`}
         </p>
       )}
 
