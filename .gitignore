@@ -27,3 +27,6 @@ dist-ssr
 .grep-cache/
 __pycache__/
 *.pyc
+
+# Claude Codes tillatelsesliste er maskinlokal, som navnet sier.
+.claude/settings.local.json
