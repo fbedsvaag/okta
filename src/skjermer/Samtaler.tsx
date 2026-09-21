@@ -36,7 +36,7 @@ import {
 } from "../data/samtale";
 import { invoke } from "@tauri-apps/api/core";
 import {
-  hentNotatPerSamtale,
+  hentNotatPerElev,
   opprettElevnotat,
   endreElevnotat,
   type Elevnotat,
@@ -155,11 +155,7 @@ export function Samtaler({
       });
     }
     setTrekning(lagrede.length > 0 ? lagrede : null);
-    setNotater(
-      await hentNotatPerSamtale(
-        lagrede.flatMap((d) => d.rader.map((r) => r.samtaleId!).filter(Boolean)),
-      ),
-    );
+    setNotater(await notaterFor(lagrede));
     setLagret(true);
 
     // Én dag ligger klar med én gang, så datofeltet er fremme og ikke gjemt
@@ -299,6 +295,24 @@ export function Samtaler({
   }
 
   /**
+   * Notatene for en trekning, slått opp på elev per dag.
+   *
+   * Nøkkelen er `elevId` fordi en elev bare har én rad per dag i praksis, og
+   * fordi oppslaget da også finner notater skrevet på elevsiden.
+   */
+  async function notaterFor(plan: Dagplan[]): Promise<Map<string, Elevnotat>> {
+    const ut = new Map<string, Elevnotat>();
+    for (const d of plan) {
+      const funnet = await hentNotatPerElev(
+        d.rader.map((r) => r.elevId),
+        d.dag.dato,
+      );
+      for (const [elevId, notat] of funnet) ut.set(elevId, notat);
+    }
+    return ut;
+  }
+
+  /**
    * Notatet fra samtalen lagres i møteloggen (§4.7), ikke på timeplanraden.
    *
    * Da står det på elevsiden sammen med alt annet du har notert om hen over
@@ -310,7 +324,7 @@ export function Samtaler({
     tekst: string,
     folgesOpp: boolean,
   ) {
-    const finnes = rad.samtaleId ? notater.get(rad.samtaleId) : undefined;
+    const finnes = notater.get(rad.elevId);
 
     if (finnes) {
       await endreElevnotat(finnes.id, { tekst, skalFolgesOpp: folgesOpp });
@@ -327,13 +341,7 @@ export function Samtaler({
       });
     }
 
-    setNotater(
-      await hentNotatPerSamtale(
-        (trekning ?? []).flatMap((d) =>
-          d.rader.map((r) => r.samtaleId!).filter(Boolean),
-        ),
-      ),
-    );
+    setNotater(await notaterFor(trekning ?? []));
   }
 
   /** Formen eksportene arbeider på. */
@@ -1072,7 +1080,7 @@ function Timeplan({
 
               {r.samtaleId && (
                 <Notatfelt
-                  notat={notater.get(r.samtaleId) ?? null}
+                  notat={notater.get(r.elevId) ?? null}
                   onLagre={(tekst, folgesOpp) =>
                     onNotat(r, d.dag, tekst, folgesOpp)
                   }

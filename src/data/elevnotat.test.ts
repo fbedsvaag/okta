@@ -13,7 +13,7 @@ const {
   hentForfalte,
   opprettElevnotat,
   settLukket,
-  hentNotatPerSamtale,
+  hentNotatPerElev,
   sorterNotater,
 } = await import("./elevnotat");
 const { opprettSamtaledag, lagreTrekning, hentSamtaler } = await import("./samtale");
@@ -244,19 +244,53 @@ describe("notat fra en samtale", () => {
     expect(n.tekst).toBe("Noe viktig.");
   });
 
-  it("slås opp på samtale, til timeplanen", async () => {
+  it("slås opp på elev og dato, til timeplanen", async () => {
     await opprettElevnotat(elevId, skolearId, {
       dato: "2026-11-24",
       tekst: "Skrevet i timeplanen.",
       samtaleId,
     });
 
-    const kart = await hentNotatPerSamtale([samtaleId, "finnes-ikke"]);
-    expect(kart.get(samtaleId)?.tekst).toBe("Skrevet i timeplanen.");
-    expect(kart.has("finnes-ikke")).toBe(false);
+    const kart = await hentNotatPerElev([elevId], "2026-11-24");
+    expect(kart.get(elevId)?.tekst).toBe("Skrevet i timeplanen.");
   });
 
-  it("gir et tomt oppslag for en tom liste", async () => {
-    expect((await hentNotatPerSamtale([])).size).toBe(0);
+  it("finner også notatet du skrev på elevsiden samme dag", async () => {
+    // Notatet skal kunne ses begge steder, uansett hvor det ble skrevet.
+    await opprettElevnotat(elevId, skolearId, {
+      dato: "2026-11-24",
+      tekst: "Skrevet på elevsiden.",
+    });
+
+    const kart = await hentNotatPerElev([elevId], "2026-11-24");
+    expect(kart.get(elevId)?.tekst).toBe("Skrevet på elevsiden.");
+  });
+
+  it("lar notatet fra samtalen vinne når eleven har to samme dag", async () => {
+    await opprettElevnotat(elevId, skolearId, {
+      dato: "2026-11-24",
+      tekst: "Løst notat.",
+    });
+    await opprettElevnotat(elevId, skolearId, {
+      dato: "2026-11-24",
+      tekst: "Fra samtalen.",
+      samtaleId,
+    });
+
+    const kart = await hentNotatPerElev([elevId], "2026-11-24");
+    expect(kart.get(elevId)?.tekst).toBe("Fra samtalen.");
+  });
+
+  it("ser bort fra notater på andre datoer", async () => {
+    await opprettElevnotat(elevId, skolearId, {
+      dato: "2026-10-01",
+      tekst: "En annen dag.",
+    });
+    expect((await hentNotatPerElev([elevId], "2026-11-24")).size).toBe(0);
+  });
+
+  it("gir et tomt oppslag uten elever eller dato", async () => {
+    expect((await hentNotatPerElev([], "2026-11-24")).size).toBe(0);
+    expect((await hentNotatPerElev([elevId], "")).size).toBe(0);
   });
 });

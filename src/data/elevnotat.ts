@@ -88,16 +88,21 @@ export async function opprettElevnotat(
 }
 
 /**
- * Notatene som hører til en trekning, slått opp på samtale.
+ * Notatene elevene har på en gitt dato, slått opp på elev.
  *
- * Brukes av timeplanen, så raden kan vise det som allerede er skrevet.
+ * Timeplanen bruker den, og oppslaget går på dato framfor på samtale-id med
+ * vilje: da vises også et notat du skrev på elevsiden den dagen. Notatet skal
+ * kunne ses begge steder, uansett hvor det ble skrevet.
+ *
+ * Har en elev flere notater samme dag, vinner det som hører til samtalen.
  */
-export async function hentNotatPerSamtale(
-  samtaleIder: string[],
+export async function hentNotatPerElev(
+  elevIder: string[],
+  dato: string,
 ): Promise<Map<string, Elevnotat>> {
-  if (samtaleIder.length === 0) return new Map();
+  if (elevIder.length === 0 || dato === "") return new Map();
 
-  const plass = samtaleIder.map((_, i) => `$${i + 1}`).join(", ");
+  const plass = elevIder.map((_, i) => `$${i + 2}`).join(", ");
   const rader = await hent<Rad>(
     `SELECT n.id,
             n.elev_id          AS elevId,
@@ -108,16 +113,17 @@ export async function hentNotatPerSamtale(
             n.samtale_id       AS samtaleId,
             n.skal_folges_opp  AS skalFolgesOpp
        FROM elevnotat n
-      WHERE n.samtale_id IN (${plass}) AND n.slettet IS NULL`,
-    samtaleIder,
+      WHERE n.dato = $1 AND n.elev_id IN (${plass}) AND n.slettet IS NULL
+      ORDER BY (n.samtale_id IS NULL), n.opprettet DESC`,
+    [dato, ...elevIder],
   );
 
-  return new Map(
-    rader.map((r) => [
-      r.samtaleId!,
-      { ...r, skalFolgesOpp: r.skalFolgesOpp === 1 },
-    ]),
-  );
+  const ut = new Map<string, Elevnotat>();
+  for (const r of rader) {
+    if (ut.has(r.elevId)) continue;
+    ut.set(r.elevId, { ...r, skalFolgesOpp: r.skalFolgesOpp === 1 });
+  }
+  return ut;
 }
 
 export async function endreElevnotat(
