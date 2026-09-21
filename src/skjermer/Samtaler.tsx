@@ -43,7 +43,7 @@ import {
   endreElevnotat,
   type Elevnotat,
 } from "../data/elevnotat";
-import { Bryter, Felt, Ikon, Knapp, Tomtilstand } from "../ui/felles";
+import { Bryter, Felt, Ikon, Kappet, Knapp, Tomtilstand } from "../ui/felles";
 
 /**
  * Samtaletrekkeren, SPEC §4.10.
@@ -1177,11 +1177,12 @@ function Timeplan({
                   <span className="w-24 shrink-0 tabular-nums text-blekk-dempet">
                     {r.fra}–{r.til}
                   </span>
-                  <span className="min-w-0 flex-1 truncate">{r.navn}</span>
+                  <Kappet verdi={r.navn} klasse="min-w-0 flex-1" />
                   {r.tema && (
-                    <span className="w-40 shrink-0 truncate text-blekk-dempet">
-                      {r.tema}
-                    </span>
+                    <Kappet
+                      verdi={r.tema}
+                      klasse="w-40 shrink-0 text-blekk-dempet"
+                    />
                   )}
                   <span className="w-32 shrink-0 text-right text-liten text-blekk-svak">
                     {r.motte ? notis : "møtte ikke"}
@@ -1485,9 +1486,10 @@ function Trekningsliste({
                 valgt ? "bg-valgt text-aksent" : "hover:bg-flate"
               }`}
             >
-              <span className="min-w-0 flex-1 truncate font-medium">
-                {t.fagKode ?? "Mentorsamtale"}
-              </span>
+              <Kappet
+                verdi={t.fagKode ?? "Mentorsamtale"}
+                klasse="min-w-0 flex-1 font-medium"
+              />
               <span className="shrink-0 text-liten tabular-nums text-blekk-dempet">
                 {spenn(t)}
               </span>

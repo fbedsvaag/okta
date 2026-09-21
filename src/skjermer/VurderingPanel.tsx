@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Ikon } from "../ui/felles";
+import { Ikon, Kappet } from "../ui/felles";
 import { confirm as bekreft } from "@tauri-apps/plugin-dialog";
 import {
   endreVurdering,
@@ -135,9 +135,7 @@ export function VurderingPanel({
           style={{ background: vurdering.farge ?? "var(--color-linje-sterk)" }}
         />
         <span className="text-brod font-semibold">{vurdering.fagKode}</span>
-        <span className="truncate text-brod text-blekk-dempet">
-          {vurdering.tittel}
-        </span>
+        <Kappet verdi={vurdering.tittel} klasse="text-brod text-blekk-dempet" />
         <button
           onClick={onLukk}
           className="ml-auto shrink-0 text-liten text-blekk-svak hover:text-blekk"

@@ -9,7 +9,7 @@ import {
   type FagVurdering,
 } from "../data/fagportal";
 import { endreFag, endreFagIAr, slettFagHelt, tellForFag } from "../data/fag";
-import { Felt } from "../ui/felles";
+import { Felt, Kappet } from "../ui/felles";
 import { finnFag, type GrepFag } from "../data/grep";
 import { hentDekkedeMal } from "../data/perioder";
 import type { FagIAr } from "../data/fag";
@@ -79,7 +79,7 @@ export function FagPanel({
           style={{ background: fag.farge ?? "var(--color-linje-sterk)" }}
         />
         <span className="font-display text-tittel">{fag.kode}</span>
-        <span className="truncate text-brod text-blekk-dempet">{fag.navn}</span>
+        <Kappet verdi={fag.navn} klasse="text-brod text-blekk-dempet" />
         <button
           onClick={onLukk}
           className="ml-auto shrink-0 text-liten text-blekk-svak hover:text-blekk"

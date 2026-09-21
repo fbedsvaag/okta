@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { sokFag, type GrepFag } from "../data/grep";
-import { Felt, Knapp } from "../ui/felles";
+import { Felt, Kappet, Knapp } from "../ui/felles";
 
 /**
  * Søk opp et fag i Udirs fagliste.
@@ -83,7 +83,7 @@ export function Fagvelger({
                 <span className="w-24 shrink-0 font-mono text-liten tabular-nums text-blekk-dempet">
                   {f.fagkode ?? f.opplaeringsfag}
                 </span>
-                <span className="flex-1 truncate">{f.navn}</span>
+                <Kappet verdi={f.navn} klasse="flex-1" />
                 <span className="shrink-0 text-liten tabular-nums text-blekk-svak">
                   {f.kompetansemaal.length} mål
                 </span>

@@ -438,6 +438,32 @@ export function Fagflervalg({
 }
 
 /**
+ * Tekst som kuttes når plassen tar slutt — og som alltid kan leses likevel.
+ *
+ * `truncate` alene gjør teksten uleselig: «Norrøn litteratur og sagatra…» og
+ * så er resten borte for godt. Her følger hele verdien med som `title`, så
+ * den ligger ett sekunds peking unna. Poenget med komponenten er at de to
+ * tingene ikke kan skilles ad ved et uhell.
+ */
+export function Kappet({
+  verdi,
+  tom = "—",
+  klasse = "",
+}: {
+  verdi: string | null | undefined;
+  tom?: string;
+  klasse?: string;
+}) {
+  if (verdi == null || verdi === "")
+    return <span className={`truncate text-blekk-svak ${klasse}`}>{tom}</span>;
+  return (
+    <span title={verdi} className={`truncate ${klasse}`}>
+      {verdi}
+    </span>
+  );
+}
+
+/**
  * Segmentbryter — et valg mellom to eller flere likestilte alternativer.
  *
  * Fantes åtte steder håndskrevet, med seks ulike paddinger og fire ulike

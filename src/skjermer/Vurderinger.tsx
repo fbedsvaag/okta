@@ -8,7 +8,7 @@ import {
 } from "../data/vurderinger";
 import type { FagIAr } from "../data/fag";
 import type { Skala } from "../skala";
-import { Felt, Knapp, Tomtilstand, Ikon } from "../ui/felles";
+import { Felt, Ikon, Kappet, Knapp, Tomtilstand } from "../ui/felles";
 import { VurderingPanel } from "./VurderingPanel";
 import { ElevPanel } from "./ElevPanel";
 import { useGlidende } from "../ui/bevegelse";
@@ -247,7 +247,7 @@ function Rad({
         className="h-3.5 w-[3px] shrink-0 rounded-full"
         style={{ background: vurdering.farge ?? "var(--color-linje-sterk)" }}
       />
-      <span className="w-12 shrink-0 font-medium">{vurdering.fagKode}</span>
+      <Kappet verdi={vurdering.fagKode} klasse="w-20 shrink-0 font-medium" />
       <span
         className={`w-24 shrink-0 tabular-nums ${
           passert ? "font-medium text-feil" : "text-blekk-dempet"
@@ -255,15 +255,16 @@ function Rad({
       >
         {vurdering.frist ? kortDato(vurdering.frist) : "ingen frist"}
       </span>
-      <span className="flex-1 truncate">{vurdering.tittel}</span>
+      <Kappet verdi={vurdering.tittel} klasse="flex-1" />
       {!kompakt && (
         <>
           <span className="w-20 shrink-0 text-blekk-dempet">
             {vurdering.type ? TYPENAVN[vurdering.type] : ""}
           </span>
-          <span className="w-32 shrink-0 truncate text-blekk-svak">
-            {vurdering.skalaNavn}
-          </span>
+          <Kappet
+            verdi={vurdering.skalaNavn}
+            klasse="w-32 shrink-0 text-blekk-svak"
+          />
         </>
       )}
       <span className="w-14 shrink-0 text-right tabular-nums text-blekk-dempet">

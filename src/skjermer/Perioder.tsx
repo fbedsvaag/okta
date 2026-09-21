@@ -22,7 +22,7 @@ import { Malvelger } from "./Malvelger";
 import { ukenummer } from "../data/kalender";
 import type { FagIAr } from "../data/fag";
 import type { Skolear } from "../data/skolear";
-import { Felt, Knapp, Tomtilstand } from "../ui/felles";
+import { Felt, Kappet, Knapp, Tomtilstand } from "../ui/felles";
 
 /**
  * Periodevisning, SPEC §4.2.
@@ -257,9 +257,10 @@ function Tidslinje({
                 width: `${Math.max(0.02, h) * 100}%`,
               }}
             >
-              <span className="truncate text-etikett text-aksent">
-                {b.periode!.navn}
-              </span>
+              <Kappet
+                verdi={b.periode!.navn}
+                klasse="text-etikett text-aksent"
+              />
             </div>
           );
         })}
@@ -390,9 +391,7 @@ function Bunke({
               <span className="w-16 shrink-0 text-right tabular-nums text-blekk-dempet">
                 {o.varighetMin} min
               </span>
-              <span className="flex-1 truncate">
-                {o.tema ?? <span className="text-blekk-svak">—</span>}
-              </span>
+              <Kappet verdi={o.tema} klasse="flex-1" />
             </button>
           ))}
         </div>

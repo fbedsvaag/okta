@@ -28,6 +28,7 @@ import {
   Fagflervalg,
   Fagmerke,
   Felt,
+  Kappet,
   Knapp,
   Kolonnevelger,
   Tomtilstand,
@@ -886,7 +887,7 @@ function Rad({
                   }}
                 />
                 <Fagmerke kode={f.kode} farge={f.farge} />
-                <span className="truncate text-blekk-dempet">{f.navn}</span>
+                <Kappet verdi={f.navn} klasse="text-blekk-dempet" />
               </label>
             ))}
             <button

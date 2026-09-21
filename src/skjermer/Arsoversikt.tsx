@@ -10,7 +10,7 @@ import {
   type Kommende,
   type Uketall,
 } from "../data/dashbord";
-import { Fagmerke, Tomtilstand } from "../ui/felles";
+import { Fagmerke, Kappet, Tomtilstand } from "../ui/felles";
 
 /**
  * Årsoversikten på startskjermen.
@@ -336,7 +336,7 @@ function Fagmaler({ fag }: { fag: Fagtimer }) {
     <li>
       <div className="flex items-baseline gap-2 text-brod">
         <Fagmerke kode={fag.kode} farge={fag.farge} liten />
-        <span className="truncate text-blekk-dempet">{fag.navn}</span>
+        <Kappet verdi={fag.navn} klasse="text-blekk-dempet" />
         <span className="ml-auto shrink-0 tabular-nums">
           {rundt(timer)}
           {mal ? <span className="text-blekk-svak"> av {mal}</span> : null} t
@@ -407,9 +407,7 @@ function Glipper({
                   onClick={() => onApne(e.elevId)}
                   className="flex w-full items-baseline gap-2 py-1 text-left text-brod hover:text-aksent"
                 >
-                  <span className="truncate">
-                    {e.fornavn} {e.etternavn}
-                  </span>
+                  <Kappet verdi={`${e.fornavn} ${e.etternavn}`} />
                   {e.klasse && (
                     <span className="shrink-0 text-liten text-blekk-svak">
                       {e.klasse}
@@ -464,7 +462,7 @@ function Vurderingsfrister({
                   className="flex w-full items-baseline gap-2 py-1 text-left text-brod hover:text-aksent"
                 >
                   <Fagmerke kode={v.kode} farge={v.farge} liten />
-                  <span className="truncate">{v.tittel}</span>
+                  <Kappet verdi={v.tittel} />
                   <span className="ml-auto shrink-0 text-liten tabular-nums text-blekk-svak">
                     {v.fort}/{v.elever}
                   </span>

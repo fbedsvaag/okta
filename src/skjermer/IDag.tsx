@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { Skolear } from "../data/skolear";
 import type { FagIAr } from "../data/fag";
 import { hentOkter, type Okt } from "../data/okter";
-import { Knapp, Tomtilstand, Ikon } from "../ui/felles";
+import { Ikon, Kappet, Knapp, Tomtilstand } from "../ui/felles";
 import { Arsoversikt } from "./Arsoversikt";
 import { dagenssetning, hentSamtalerPaDato } from "../data/samtale";
 import { Ukelinje } from "./Ukelinje";
@@ -293,13 +293,11 @@ function OktLinje({ okt, onApne }: { okt: Okt; onApne: (id: string) => void }) {
         className="h-3.5 w-[3px] shrink-0 rounded-full"
         style={{ background: okt.farge ?? "var(--color-linje-sterk)" }}
       />
-      <span className="w-12 shrink-0 font-medium">{okt.fagKode}</span>
+      <Kappet verdi={okt.fagKode} klasse="w-20 shrink-0 font-medium" />
       <span className="w-12 shrink-0 tabular-nums text-blekk-dempet">
         {okt.klokkeslett ?? "–"}
       </span>
-      <span className="flex-1 truncate">
-        {okt.tema ?? <span className="text-blekk-svak">—</span>}
-      </span>
+      <Kappet verdi={okt.tema} klasse="flex-1" />
       <span className="shrink-0 tabular-nums text-blekk-dempet">
         {okt.skaret === 0 ? (
           ""

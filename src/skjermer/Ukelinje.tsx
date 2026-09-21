@@ -1,4 +1,5 @@
 import type { Okt } from "../data/okter";
+import { Kappet } from "../ui/felles";
 
 /**
  * Uka lagt ut vannrett: én rad per ukedag, klokka fra venstre mot høyre.
@@ -220,10 +221,8 @@ function Blokk({
         className="h-[11px] w-[3px] shrink-0 rounded-full"
         style={{ background: okt.farge ?? "var(--color-linje-sterk)" }}
       />
-      <span className="truncate font-medium">{okt.fagKode}</span>
-      {okt.tema && (
-        <span className="truncate text-blekk-dempet">{okt.tema}</span>
-      )}
+      <Kappet verdi={okt.fagKode} klasse="font-medium" />
+      {okt.tema && <Kappet verdi={okt.tema} klasse="text-blekk-dempet" />}
     </button>
   );
 }

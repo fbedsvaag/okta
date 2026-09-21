@@ -24,13 +24,14 @@ import {
 import type { FagIAr } from "../data/fag";
 import {
   Felt,
+  Ikon,
+  Kappet,
   Knapp,
   Kolonnevelger,
   Kontekstmeny,
   Menyvalg,
   Tomtilstand,
   Velger,
-  Ikon,
 } from "../ui/felles";
 import { invoke } from "@tauri-apps/api/core";
 import { OktPanel } from "./OktPanel";
@@ -509,7 +510,7 @@ function Liste({
           </span>
         )}
         <span className="w-[3px] shrink-0" />
-        <span className="w-12 shrink-0">Fag</span>
+        <span className="w-20 shrink-0">Fag</span>
         <span className="w-24 shrink-0">Dato</span>
         {vis.has("tid") && <span className="w-12 shrink-0">Tid</span>}
         {vis.has("varighet") && (
@@ -581,7 +582,10 @@ function Liste({
                       background: o.farge ?? "var(--color-linje-sterk)",
                     }}
                   />
-                  <span className="w-12 shrink-0 font-medium">{o.fagKode}</span>
+                  <Kappet
+                    verdi={o.fagKode}
+                    klasse="w-20 shrink-0 font-medium"
+                  />
                   <span
                     className={`w-24 shrink-0 tabular-nums ${
                       blokkert.has(o.id)
@@ -603,9 +607,7 @@ function Liste({
                       {o.varighetMin} min
                     </span>
                   )}
-                  <span className="flex-1 truncate">
-                    {o.tema ?? <span className="text-blekk-svak">—</span>}
-                  </span>
+                  <Kappet verdi={o.tema} klasse="flex-1" />
                   {vis.has("periode") && (
                     <span className="w-36 shrink-0 truncate">
                       {perioder.has(o.id) ? (
@@ -614,7 +616,7 @@ function Liste({
                             e.stopPropagation();
                             onApnePerioder();
                           }}
-                          title="Åpne periodevisningen"
+                          title={`${perioder.get(o.id)!.navn} — åpne periodevisningen`}
                           className="rounded-sm bg-flate px-1.5 py-0.5 text-liten text-blekk-dempet hover:bg-linje-medium"
                         >
                           {perioder.get(o.id)!.navn}
@@ -625,11 +627,13 @@ function Liste({
                     </span>
                   )}
                   {vis.has("vurdering") && (
-                    <span className="w-40 shrink-0 truncate text-blekk-dempet">
-                      {(vurderinger.get(o.id) ?? [])
+                    <Kappet
+                      verdi={(vurderinger.get(o.id) ?? [])
                         .map((v) => v.tittel)
                         .join(", ")}
-                    </span>
+                      tom=""
+                      klasse="w-40 shrink-0 text-blekk-dempet"
+                    />
                   )}
                   {vis.has("sted") && (
                     <span

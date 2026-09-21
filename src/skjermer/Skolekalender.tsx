@@ -24,6 +24,7 @@ import {
   type Okt,
 } from "../data/okter";
 import type { FagIAr } from "../data/fag";
+import { Kappet } from "../ui/felles";
 import { hentSamtaledager, type Samtaledag } from "../data/samtale";
 
 // --------------------------------------------------------------- cellehøyde
@@ -505,7 +506,7 @@ function Dag({
               className="h-2.5 w-[3px] shrink-0 rounded-full"
               style={{ background: o.farge ?? "var(--color-linje-sterk)" }}
             />
-            <span className="truncate">{o.fagKode}</span>
+            <Kappet verdi={o.fagKode} />
           </button>
           <button
             onClick={(e) => {
