@@ -4,6 +4,7 @@ import type { FagIAr } from "../data/fag";
 import { hentOkter, type Okt } from "../data/okter";
 import { Knapp, Tomtilstand } from "../ui/felles";
 import { Arsoversikt } from "./Arsoversikt";
+import { dagenssetning, hentSamtalerPaDato } from "../data/samtale";
 import { Ukelinje } from "./Ukelinje";
 
 /**
@@ -22,13 +23,22 @@ export function IDag({
 }: {
   skolear: Skolear;
   fag: FagIAr[];
-  onGaTil: (visning: "fag" | "elever" | "okter" | "vurderinger") => void;
+  onGaTil: (
+    visning: "fag" | "elever" | "okter" | "vurderinger" | "samtaler",
+  ) => void;
   onApneOkt: (id: string) => void;
 }) {
   const [okter, setOkter] = useState<Okt[]>([]);
+  const [samtaler, setSamtaler] = useState<
+    Awaited<ReturnType<typeof hentSamtalerPaDato>>
+  >([]);
 
   useEffect(() => {
     void hentOkter(skolear.id).then(setOkter);
+  }, [skolear.id]);
+
+  useEffect(() => {
+    void hentSamtalerPaDato(skolear.id, isoDato(new Date())).then(setSamtaler);
   }, [skolear.id]);
 
   const idag = isoDato(new Date());
@@ -55,6 +65,29 @@ export function IDag({
       </div>
 
       <div className="min-h-0 flex-1 overflow-auto">
+
+      {/*
+        Samtaledagen står først: er det samtaler i dag, er det dem dagen
+        handler om. Setningen sier hva som venter — hvem du begynner med, hvor
+        mange som står igjen, og når du er ferdig (§4.10).
+      */}
+      {samtaler.length > 0 && (
+        <Bolk tittel="Samtaler">
+          <p className="py-1 text-brod">
+            {dagenssetning(
+              samtaler,
+              new Date().toTimeString().slice(0, 5),
+              samtaler.every((s) => s.erMentor),
+            )}
+          </p>
+          <button
+            onClick={() => onGaTil("samtaler")}
+            className="text-liten text-blekk-dempet hover:text-blekk"
+          >
+            Åpne timeplanen →
+          </button>
+        </Bolk>
+      )}
 
       <Bolk tittel="I dag">
         {dagens.length > 0 ? (

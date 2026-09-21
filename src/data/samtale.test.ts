@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  dagenssetning,
   delPaDager,
   finnLunsj,
   flyttInnenDagen,
@@ -545,5 +546,58 @@ describe("grupperTrekninger", () => {
 
   it("gir ingenting for en tom liste", () => {
     expect(grupperTrekninger([])).toEqual([]);
+  });
+});
+
+describe("dagenssetning", () => {
+  const s = (fornavn: string, klokkeslett: string) => ({
+    fornavn,
+    klokkeslett,
+    varighetMin: 20,
+  });
+
+  it("sier hvem du begynner med, og hvor mange som står igjen", () => {
+    const ut = dagenssetning(
+      [s("Tony", "12:30"), s("Carmela", "12:55"), s("Adriana", "13:20")],
+      "08:00",
+      true,
+    );
+    expect(ut).toBe(
+      "Mentorsamtaler i dag. Du begynner med Tony kl. 12:30, før du har 2 elever fram til kl. 13:40.",
+    );
+  });
+
+  it("teller fra den neste når dagen har begynt", () => {
+    // Den første kan være unnagjort for to timer siden.
+    const ut = dagenssetning(
+      [s("Tony", "12:30"), s("Carmela", "12:55"), s("Adriana", "13:20")],
+      "13:00",
+      true,
+    );
+    expect(ut).toContain("fortsetter med Adriana kl. 13:20");
+    expect(ut).toContain("den siste");
+  });
+
+  it("sier fra når alle er unnagjort", () => {
+    const ut = dagenssetning([s("Tony", "12:30")], "15:00", true);
+    expect(ut).toBe("Mentorsamtaler i dag. Alle 1 er unnagjort.");
+  });
+
+  it("bøyer entall riktig", () => {
+    const ut = dagenssetning([s("Tony", "12:30"), s("Carmela", "12:55")], "08:00", true);
+    expect(ut).toContain("1 elev fram til");
+  });
+
+  it("kaller fagsamtaler noe annet enn mentorsamtaler", () => {
+    expect(dagenssetning([s("Tony", "09:00")], "08:00", false)).toContain(
+      "Samtaler i dag",
+    );
+    expect(dagenssetning([s("Tony", "09:00")], "08:00", true)).toContain(
+      "Mentorsamtaler i dag",
+    );
+  });
+
+  it("gir null når det ikke er samtaler", () => {
+    expect(dagenssetning([], "08:00", true)).toBeNull();
   });
 });

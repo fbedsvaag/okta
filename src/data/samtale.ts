@@ -370,6 +370,75 @@ export function grupperTrekninger(dager: Samtaledag[]): Trekning[] {
     .sort((a, b) => (b.forste || "").localeCompare(a.forste || ""));
 }
 
+/**
+ * Dagens samtaler, som en setning.
+ *
+ * Sier hva som venter deg, ikke bare at noe skjer: hvem du begynner med, når,
+ * hvor mange som står igjen og når du er ferdig. Har dagen begynt, teller den
+ * fra den neste — ikke fra den første, som kan være unnagjort for to timer
+ * siden.
+ */
+export function dagenssetning(
+  samtaler: { fornavn: string; klokkeslett: string; varighetMin: number }[],
+  na: string,
+  erMentor: boolean,
+): string | null {
+  if (samtaler.length === 0) return null;
+
+  const sortert = [...samtaler].sort((a, b) =>
+    a.klokkeslett.localeCompare(b.klokkeslett),
+  );
+  const sisteSlutt = sortert.reduce(
+    (m, s) => Math.max(m, tilMin(s.klokkeslett) + s.varighetMin),
+    0,
+  );
+  const hva = erMentor ? "Mentorsamtaler" : "Samtaler";
+
+  const igjen = sortert.filter((s) => s.klokkeslett >= na);
+  if (igjen.length === 0) {
+    return `${hva} i dag. Alle ${sortert.length} er unnagjort.`;
+  }
+
+  const neste = igjen[0];
+  const etter = igjen.length - 1;
+  const start = `${hva} i dag. Du ${
+    igjen.length === sortert.length ? "begynner" : "fortsetter"
+  } med ${neste.fornavn} kl. ${neste.klokkeslett}`;
+
+  if (etter === 0) return `${start}, og det er den siste.`;
+  return `${start}, før du har ${etter} ${
+    etter === 1 ? "elev" : "elever"
+  } fram til kl. ${tilKlokke(sisteSlutt)}.`;
+}
+
+/** Samtalene på en gitt dato, på tvers av fag og mentorgruppe. */
+export async function hentSamtalerPaDato(
+  skolearId: string,
+  dato: string,
+): Promise<
+  {
+    fornavn: string;
+    etternavn: string;
+    klokkeslett: string;
+    varighetMin: number;
+    erMentor: boolean;
+  }[]
+> {
+  return hent(
+    `SELECT e.fornavn, e.etternavn,
+            s.klokkeslett,
+            s.varighet_min AS varighetMin,
+            (d.skolear_fag_id IS NULL) AS erMentor
+       FROM samtale s
+       JOIN samtaledag d ON d.id = s.samtaledag_id AND d.slettet IS NULL
+       JOIN elev e ON e.id = s.elev_id AND e.slettet IS NULL
+      WHERE d.skolear_id = $1 AND d.dato = $2
+        AND s.slettet IS NULL AND s.motte = 1
+      ORDER BY s.klokkeslett`,
+    [skolearId, dato],
+  );
+}
+
 // ------------------------------------------------------------------ eksport
 
 export type Eksportdag = {
