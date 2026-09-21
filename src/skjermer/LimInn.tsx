@@ -77,7 +77,7 @@ export function LimInn({
 
     return (
       <div className="mx-auto min-h-0 w-full max-w-4xl flex-1 overflow-auto">
-        <h2 className="text-tittel font-semibold">Forhåndsvisning</h2>
+        <h2 className="font-display text-tittel">Forhåndsvisning</h2>
         <p className="mt-1 text-brod text-blekk-dempet">
           {nye.length} nye · {koblet.length} kobles til faget · {over.length}{" "}
           hoppes over
@@ -114,7 +114,7 @@ export function LimInn({
 
   return (
     <div className="mx-auto max-w-2xl">
-      <h2 className="text-tittel font-semibold">Lim inn klasseliste</h2>
+      <h2 className="font-display text-tittel">Lim inn klasseliste</h2>
       <p className="mt-1 text-brod text-blekk-dempet">
         Én elev per linje. Parseren tåler <code>Anna Reistad</code>,{" "}
         <code>Reistad, Anna</code>, punktlister og nummererte lister.

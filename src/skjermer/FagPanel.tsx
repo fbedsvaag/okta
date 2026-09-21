@@ -78,7 +78,7 @@ export function FagPanel({
           className="h-3.5 w-[3px] rounded-full"
           style={{ background: fag.farge ?? "var(--color-linje-sterk)" }}
         />
-        <span className="text-tittel font-semibold">{fag.kode}</span>
+        <span className="font-display text-tittel">{fag.kode}</span>
         <span className="truncate text-brod text-blekk-dempet">{fag.navn}</span>
         <button
           onClick={onLukk}

@@ -277,7 +277,9 @@ function ElevRad({
     <div
       ref={radRef}
       onClick={onKlikk}
-      className={`flex cursor-default items-center gap-2 border-b border-linje-svak px-5 py-1 ${
+      // Skåringslista holder den gamle tettheten: 13px og 28px rader, så
+      // tretti elever fortsatt får plass uten scrolling (DESIGN.md).
+      className={`flex cursor-default items-center gap-2 border-b border-linje-svak px-5 py-1 text-liten ${
         markert ? "bg-valgt" : "hover:bg-flate"
       }`}
     >
@@ -288,7 +290,7 @@ function ElevRad({
           onApneElev();
         }}
         title="Åpne eleven"
-        className={`w-44 shrink-0 truncate text-left text-brod hover:text-aksent hover:underline ${
+        className={`w-44 shrink-0 truncate text-left text-liten hover:text-aksent hover:underline ${
           eksplisitt ? "" : "text-blekk-dempet"
         }`}
       >

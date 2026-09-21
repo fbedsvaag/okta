@@ -1089,7 +1089,7 @@ function Timeplan({
       {plan.map((d, dagIdx) => (
         <section key={d.dag.id}>
           <div className="mb-1 flex items-baseline justify-between border-b border-linje pb-1">
-            <h2 className="text-tittel font-semibold first-letter:uppercase">
+            <h2 className="font-display text-tittel first-letter:uppercase">
               {langDato(d.dag.dato)}
             </h2>
             <span className="text-liten tabular-nums text-blekk-dempet">

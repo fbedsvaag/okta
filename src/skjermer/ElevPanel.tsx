@@ -851,7 +851,7 @@ function Navnefelt({
           }
         }}
         size={Math.max(plassholder.length, verdi.length + 1)}
-        className={`rounded-vanlig border border-transparent px-1 py-0.5 text-tittel font-semibold outline-none hover:border-linje focus:border-aksent ${
+        className={`rounded-vanlig border border-transparent px-1 py-0.5 font-display text-tittel outline-none hover:border-linje focus:border-aksent ${
           mangler ? "border-varsel" : ""
         }`}
       />

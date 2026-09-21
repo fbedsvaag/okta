@@ -1194,7 +1194,7 @@ function Klasser({
   return (
     <div className="max-w-lg">
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-tittel font-semibold">Klasser</h2>
+        <h2 className="font-display text-tittel">Klasser</h2>
         <Knapp variant="stille" onClick={onTilbake}>
           Tilbake til elevene
         </Knapp>
