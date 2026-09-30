@@ -416,6 +416,30 @@ html {
   animation: gli-inn var(--tid-inn) var(--ease-inn);
 }
 
+/*
+ * Ut igjen: samme bevegelse som inn, baklengs — samme varighet og kurven
+ * speilet (--ease-inn snudd). Arket fjernes først når den er ferdig.
+ * `forwards` holder det ute til det tas bort, så det ikke blinker tilbake.
+ */
+@keyframes gli-ut {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(calc(100% + 40px));
+  }
+}
+.gli-ut {
+  animation: gli-ut var(--tid-inn) cubic-bezier(0.75, 0, 0.8, 0.1) forwards;
+}
+
+/* Arket under glir tilbake på plass i samme tempo som det over glir ut. */
+.ark {
+  transition:
+    transform var(--tid-inn) var(--ease-inn),
+    filter var(--tid-inn) var(--ease-inn);
+}
+
 .flikk-opp {
   animation: flikk-opp var(--tid-inn) var(--ease-inn);
 }
@@ -436,7 +460,8 @@ html {
 
   .flikk-opp,
   .flikk-ned,
-  .gli-inn {
+  .gli-inn,
+  .gli-ut {
     animation: none !important;
   }
 }

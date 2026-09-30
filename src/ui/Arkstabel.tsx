@@ -50,6 +50,9 @@ type Api = {
 
 const Kontekst = createContext<Api | null>(null);
 
+/** Utgangen varer like lenge som inngangen (--tid-inn), bare baklengs. */
+const UT_MS = 180;
+
 /**
  * Gir App tilgang til stabelen: App ligger utenfor Arkstabel og kan ikke
  * bruke `useArk()` selv. Denne står inni og legger API-et i en ref.
@@ -89,7 +92,33 @@ export function Arkstabel({
     });
   }, []);
 
-  const lukk = useCallback(() => setStabel((s) => s.slice(0, -1)), []);
+  // Ark som er på vei ut. De blir stående mens de glir bort, og tas ut av
+  // stabelen først når animasjonen er ferdig — ellers blinker det.
+  const [lukkende, setLukkende] = useState<Set<number>>(new Set());
+  const lukkendeRef = useRef(lukkende);
+  lukkendeRef.current = lukkende;
+
+  const stabelRef = useRef(stabel);
+  stabelRef.current = stabel;
+
+  const lukk = useCallback(() => {
+    const topp = [...stabelRef.current]
+      .reverse()
+      .find((a) => !lukkendeRef.current.has(a.n));
+    if (!topp) return;
+    const n = topp.n;
+    // Merkes med en gang, så et nytt Esc midt i animasjonen tar neste ark.
+    lukkendeRef.current = new Set(lukkendeRef.current).add(n);
+    setLukkende(lukkendeRef.current);
+    setTimeout(() => {
+      setStabel((x) => x.filter((a) => a.n !== n));
+      setLukkende((l) => {
+        const ny = new Set(l);
+        ny.delete(n);
+        return ny;
+      });
+    }, UT_MS);
+  }, []);
 
   const api: Api = {
     apneOkt: (id) => legg({ type: "okt", id }),
@@ -114,23 +143,39 @@ export function Arkstabel({
     return () => window.removeEventListener("keydown", tast, true);
   }, [stabel.length, lukk]);
 
+  const aktive = stabel.filter((a) => !lukkende.has(a.n));
+
   return (
     <Kontekst.Provider value={api}>
       {children}
 
       {stabel.length > 0 && (
         <div
-          className="fixed inset-0 z-40 bg-blekk/10"
+          className={`fixed inset-0 z-40 transition-colors ${
+            aktive.length > 0 ? "bg-blekk/10" : "bg-transparent"
+          }`}
+          style={{ transitionDuration: `${UT_MS}ms` }}
           onMouseDown={(e) => e.target === e.currentTarget && lukk()}
         >
           {stabel.map((ark, i) => {
-            const dybde = stabel.length - 1 - i;
+            const paVeiUt = lukkende.has(ark.n);
+            // Dybden regnes blant arkene som blir stående, så arket under
+            // begynner å gli tilbake samtidig som det øverste glir ut.
+            const dybde = paVeiUt ? 0 : aktive.length - 1 - aktive.indexOf(ark);
             return (
               <div
                 key={ark.n}
                 aria-hidden={dybde > 0}
-                className={`absolute inset-y-0 right-0 flex w-full max-w-2xl flex-col bg-ark shadow-[var(--shadow-ark)] transition-[transform,filter] duration-[var(--tid-inn)] ${
-                  dybde === 0 ? "gli-inn" : "pointer-events-none"
+                className={`ark absolute inset-y-0 right-0 flex w-full max-w-2xl flex-col bg-ark shadow-[var(--shadow-ark)] ${
+                  paVeiUt
+                    ? "gli-ut pointer-events-none"
+                    : dybde > 0
+                      ? "pointer-events-none"
+                      : // Inngangen spilles bare for arket som nettopp ble
+                        // åpnet — ikke for det under når det blir øverst igjen.
+                        ark.n === teller.current
+                        ? "gli-inn"
+                        : ""
                 }`}
                 style={
                   dybde > 0

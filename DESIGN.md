@@ -163,9 +163,14 @@ dempes, så kanten stikker fram og lagene kan leses. Lukk, «Tilbake», Esc
 eller et klikk utenfor tar deg ett nivå tilbake — ikke helt ut. Én felles
 stabel (`src/ui/Arkstabel.tsx`) gjør dette for hele appen.
 
+**Et ark lukkes med samme bevegelse som det åpnes, baklengs:** 180 ms, kurven
+speilet (`gli-ut`), og det fjernes først når det er ute av bildet. Arket under
+glir tilbake på plass samtidig, og bakgrunnen toner ut. Et ark som forsvant
+med en gang, blinket.
+
 ```
 --tid-inn     180ms   panel inn
---tid-ut      130ms   ut — alltid raskere enn inn
+--tid-ut      130ms   sidepanel ut — raskere enn inn
 --tid-markor   90ms   markør med piltaster (aldri med talltaster)
 --ease-inn    cubic-bezier(.2, .9, .25, 1)
 --ease-ut     cubic-bezier(.4, 0, .9, .4)
