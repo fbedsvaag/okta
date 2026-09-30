@@ -29,8 +29,8 @@ export async function lesSider(doc: pdfjs.PDFDocumentProxy): Promise<Side[]> {
   const sider: Side[] = [];
   for (let p = 1; p <= doc.numPages; p++) {
     const side = await doc.getPage(p);
-    const innhold = await side.getTextContent();
-    const tekst = innhold.items.flatMap((it) =>
+    const innhold = await lesTekst(side);
+    const tekst = innhold.flatMap((it) =>
       "str" in it && it.str.trim()
         ? [{ x: it.transform[4], y: it.transform[5], str: it.str }]
         : [],
@@ -58,6 +58,26 @@ export async function lesSider(doc: pdfjs.PDFDocumentProxy): Promise<Side[]> {
     sider.push({ tekst, bilder });
   }
   return sider;
+}
+
+type Tekstelement = Awaited<
+  ReturnType<pdfjs.PDFPageProxy["getTextContent"]>
+>["items"][number];
+
+/**
+ * Teksten på en side. `getTextContent` går gjennom en strøm med
+ * `for await`, og det kan ikke Safari — som er motoren i appen. Her leses
+ * strømmen med en vanlig leser i stedet, som virker overalt.
+ */
+async function lesTekst(side: pdfjs.PDFPageProxy): Promise<Tekstelement[]> {
+  const leser = side.streamTextContent().getReader();
+  const ut: Tekstelement[] = [];
+  for (;;) {
+    const { done, value } = await leser.read();
+    if (done) break;
+    ut.push(...(value as { items: Tekstelement[] }).items);
+  }
+  return ut;
 }
 
 /** Oppløsningen siden tegnes i før bildene klippes ut. */
@@ -88,7 +108,11 @@ export async function apnePdf(data: Uint8Array): Promise<Pdf> {
           const lerret = document.createElement("canvas");
           lerret.width = Math.ceil(vp.width);
           lerret.height = Math.ceil(vp.height);
-          await side.render({ canvas: lerret, viewport: vp }).promise;
+          // «print» tegner hele siden i ett strekk. Standardvalget venter
+          // på skjermoppdateringer mellom bitene, og de kommer ikke når
+          // vinduet ikke tegnes — da blir importen hengende.
+          await side.render({ canvas: lerret, viewport: vp, intent: "print" })
+            .promise;
           return lerret;
         })(),
       );
