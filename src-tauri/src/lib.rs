@@ -128,6 +128,12 @@ fn migrations() -> Vec<Migration> {
             sql: include_str!("../migrations/018_fag_alias.sql"),
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 19,
+            description: "rydd bort data som henger igjen etter slettede elever",
+            sql: include_str!("../migrations/019_rydd_slettede_elever.sql"),
+            kind: MigrationKind::Up,
+        },
     ]
 }
 

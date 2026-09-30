@@ -453,6 +453,7 @@ export async function slettElevHelt(elevId: string): Promise<void> {
     "skaring",
     "vurderingsresultat",
     "elevnotat",
+    "samtale",
     "elev_fag",
     "elev_klasse",
   ]) {

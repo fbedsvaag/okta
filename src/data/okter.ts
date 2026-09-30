@@ -80,17 +80,22 @@ export async function hentOkter(skolearId: string): Promise<Okt[]> {
             o.klokkeslett,
             o.varighet_min   AS varighetMin,
             o.tema, o.sted, o.agenda, o.lekse, o.plan, o.logg, o.endret,
+            -- Skåringer fra slettede elever teller ikke (se migrasjon 019).
             (SELECT COUNT(*) FROM skaring s
+               JOIN elev e ON e.id = s.elev_id AND e.slettet IS NULL
               WHERE s.okt_id = o.id AND s.slettet IS NULL) AS skaret,
             (SELECT COUNT(*) FROM skaring s
+               JOIN elev e ON e.id = s.elev_id AND e.slettet IS NULL
                JOIN skalaverdi v ON v.id = s.skalaverdi_id
               WHERE s.okt_id = o.id AND s.slettet IS NULL
                 AND v.teller_ikke = 0 AND v.farge = 'gronn') AS gronn,
             (SELECT COUNT(*) FROM skaring s
+               JOIN elev e ON e.id = s.elev_id AND e.slettet IS NULL
                JOIN skalaverdi v ON v.id = s.skalaverdi_id
               WHERE s.okt_id = o.id AND s.slettet IS NULL
                 AND v.teller_ikke = 0 AND v.farge = 'gul') AS gul,
             (SELECT COUNT(*) FROM skaring s
+               JOIN elev e ON e.id = s.elev_id AND e.slettet IS NULL
                JOIN skalaverdi v ON v.id = s.skalaverdi_id
               WHERE s.okt_id = o.id AND s.slettet IS NULL
                 AND v.teller_ikke = 0 AND v.farge = 'rod') AS rod,

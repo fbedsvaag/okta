@@ -373,3 +373,39 @@ describe("migrasjon 017 — perioden står på økta", () => {
     expect(periode("utenfor")).toBeNull();
   });
 });
+
+describe("migrasjon 019 — rydd etter slettede elever", () => {
+  const T = "2026-09-01T10:00:00";
+
+  it("sletter det som henger igjen etter en slettet elev, og lar de andre være", () => {
+    const d = basenFram("018_fag_alias.sql");
+    const verdi = (
+      d.prepare("SELECT id FROM skalaverdi LIMIT 1").get() as { id: string }
+    ).id;
+    d.exec(`
+      INSERT INTO skolear (id, navn, start, slutt, opprettet, endret)
+      VALUES ('ar', '2026/27', '2026-08-17', '2027-06-20', '${T}', '${T}');
+      INSERT INTO fag (id, kode, navn, opprettet, endret) VALUES ('f', 'MFL1', 'M', '${T}', '${T}');
+      INSERT INTO skolear_fag (id, skolear_id, fag_id, opprettet, endret) VALUES ('sf', 'ar', 'f', '${T}', '${T}');
+      INSERT INTO okt (id, skolear_fag_id, dato, varighet_min, opprettet, endret)
+      VALUES ('o', 'sf', '2026-10-06', 180, '${T}', '${T}');
+      INSERT INTO elev (id, fornavn, etternavn, opprettet, endret, slettet)
+      VALUES ('borte', 'Tony', 'S', '${T}', '${T}', '${T}'),
+             ('her', 'Carmela', 'S', '${T}', '${T}', NULL);
+      INSERT INTO skaring (id, elev_id, okt_id, skalaverdi_id, opprettet, endret)
+      VALUES ('s1', 'borte', 'o', '${verdi}', '${T}', '${T}'),
+             ('s2', 'her', 'o', '${verdi}', '${T}', '${T}');
+      INSERT INTO elev_fag (id, elev_id, skolear_fag_id, opprettet, endret)
+      VALUES ('ef1', 'borte', 'sf', '${T}', '${T}'), ('ef2', 'her', 'sf', '${T}', '${T}');
+    `);
+    kjor(d, "019_rydd_slettede_elever.sql");
+    const levende = (tabell: string) =>
+      (
+        d
+          .prepare(`SELECT id FROM ${tabell} WHERE slettet IS NULL ORDER BY id`)
+          .all() as { id: string }[]
+      ).map((r) => r.id);
+    expect(levende("skaring")).toEqual(["s2"]);
+    expect(levende("elev_fag")).toEqual(["ef2"]);
+  });
+});

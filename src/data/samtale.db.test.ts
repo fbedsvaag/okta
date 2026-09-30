@@ -661,3 +661,29 @@ describe("slette en planlagt trekning", () => {
     expect(igjen[0].skolearFagId).toBeNull();
   });
 });
+
+describe("sletting av elev", () => {
+  it("tar med seg samtalene og skåringene, og de telles ikke lenger", async () => {
+    const { slettElevHelt } = await import("./elever");
+    const { opprettOkt, settSkaring, hentOkter } = await import("./okter");
+    const { koblePaFag: kobl } = await import("./elever");
+    await kobl(elever[0], fagId);
+    const okt = await opprettOkt(fagId, "MFL1", "2026-10-06", "08:30", 180);
+    const [gronn] = await base.select<{ id: string }[]>(
+      "SELECT id FROM skalaverdi WHERE farge = 'gronn' AND teller_ikke = 0 LIMIT 1",
+    );
+    await settSkaring(elever[0], okt, gronn.id);
+    const dag = await dagMed("2026-11-24");
+    await lagreTrekning(dag, [
+      { elevId: elever[0], klokkeslett: "08:30", varighetMin: 20, tema: null },
+    ]);
+    expect((await hentOkter(skolearId))[0].skaret).toBe(1);
+
+    await slettElevHelt(elever[0]);
+
+    expect(await hentSamtaler(dag)).toEqual([]);
+    const [etter] = await hentOkter(skolearId);
+    expect(etter.skaret).toBe(0);
+    expect(etter.gronn).toBe(0);
+  });
+});
