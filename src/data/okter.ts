@@ -27,6 +27,8 @@ export type Okt = {
   agenda: string | null;
   /** lekse til økta. Står på årsplanarket, går aldri ut i kalenderen. */
   lekse: string | null;
+  /** fritekst-mål for fag uten Udir-kode (de med kode ligger i okt_kompetansemal) */
+  kompetansemal?: string | null;
   /** lokal ISO. Brukes som DTSTAMP og til å se hva som faktisk er endret. */
   endret: string;
   plan: string | null;
@@ -80,6 +82,7 @@ export async function hentOkter(skolearId: string): Promise<Okt[]> {
             o.klokkeslett,
             o.varighet_min   AS varighetMin,
             o.tema, o.sted, o.agenda, o.lekse, o.plan, o.logg, o.endret,
+            o.kompetansemal,
             -- Bare elever som står i faget nå teller — samme elever som lista
             -- viser. En elev som er tatt ut av faget, har skåringene sine i
             -- behold (de kommer tilbake om hen kobles på igjen), men de skal
@@ -236,6 +239,25 @@ export async function opprettOkt(
 
   varsle();
   return id;
+}
+
+/**
+ * Økta rett før i samme fag, med loggen. Til «Notat fra forrige økt» i
+ * øktkortet. Samme regel som `forrigeOkt` i dagen.ts: den rett før, ikke
+ * den siste som har et notat.
+ */
+export async function hentForrigeOkt(
+  okt: Pick<Okt, "id" | "skolearFagId" | "dato" | "klokkeslett">,
+): Promise<{ id: string; dato: string; logg: string | null } | null> {
+  const [rad] = await hent<{ id: string; dato: string; logg: string | null }>(
+    `SELECT id, dato, logg FROM okt
+      WHERE skolear_fag_id = $1 AND slettet IS NULL AND id <> $2
+        AND dato || ' ' || COALESCE(klokkeslett, '') < $3
+      ORDER BY dato DESC, klokkeslett DESC
+      LIMIT 1`,
+    [okt.skolearFagId, okt.id, `${okt.dato} ${okt.klokkeslett ?? ""}`],
+  );
+  return rad ?? null;
 }
 
 export async function endreOkt(

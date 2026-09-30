@@ -202,7 +202,7 @@ function Feltvelger({
     };
   }, [onLukk]);
 
-  const gruppe = (g: "hode" | "kolonne", tittel: string) => (
+  const gruppe = (g: "hode" | "kolonne" | "papir", tittel: string) => (
     <div>
       <p className="mb-1 text-etikett uppercase tracking-etikett text-blekk-dempet">
         {tittel}
@@ -231,6 +231,7 @@ function Feltvelger({
       <div className="space-y-3">
         {gruppe("hode", "Øverst på arket")}
         {gruppe("kolonne", "Kolonner")}
+        {gruppe("papir", "Papir og Word")}
       </div>
       <p className="mt-2 text-liten text-blekk-svak">
         Kolonner uten innhold tas ikke med. Plan og øktlogg er dine egne notater

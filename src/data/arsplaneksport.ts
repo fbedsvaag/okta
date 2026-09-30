@@ -60,6 +60,7 @@ export const KOLONNENAVN: Record<Kolonne, string> = {
   sted: "Rom",
   agenda: "Agenda",
   lekse: "Lekse",
+  maal: "Kompetansemål",
   vurdering: "Vurdering",
 };
 
@@ -77,6 +78,7 @@ const VEKT: Record<Kolonne, number> = {
   sted: 9,
   agenda: 26,
   lekse: 22,
+  maal: 32,
   vurdering: 16,
 };
 
@@ -106,6 +108,8 @@ export function celleverdi(r: Arkrad, k: Kolonne): string {
       return r.lekse ?? "";
     case "vurdering":
       return r.vurderinger.join(", ");
+    case "maal":
+      return r.mal.join("; ");
   }
 }
 
@@ -136,6 +140,11 @@ export function somMarkdown(ark: Ark): string {
   ut.push("## Økter", "");
   for (const b of ark.bolker) {
     if (b.navn) ut.push(`### ${b.navn}`, "", bolktekst(b), "");
+    if (b.mal.length > 0) {
+      ut.push("Kompetansemål i perioden:", "");
+      for (const m of b.mal) ut.push(`- ${m}`);
+      ut.push("");
+    }
     ut.push(`| ${kol.map((k) => KOLONNENAVN[k]).join(" | ")} |`);
     ut.push(`|${kol.map(() => "---").join("|")}|`);
     for (const r of b.rader) {

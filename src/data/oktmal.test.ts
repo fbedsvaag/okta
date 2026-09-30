@@ -8,7 +8,8 @@ vi.mock("@tauri-apps/plugin-sql", () => ({
 
 const { leggFagIAr } = await import("./fag");
 const { opprettSkolear } = await import("./skolear");
-const { opprettOkt, endreOkt, slettOkt } = await import("./okter");
+const { opprettOkt, endreOkt, slettOkt, hentForrigeOkt } =
+  await import("./okter");
 const { opprettPeriode, settPeriodemal, settOktmal, hentOktmal } =
   await import("./perioder");
 
@@ -60,5 +61,26 @@ describe("kompetansemål på en økt", () => {
     await settOktmal(c, "KM4", true);
     await slettOkt(c);
     expect([...(await hentOktmal(a)).dekketAndreSteder]).toEqual(["KM3"]);
+  });
+});
+
+describe("forrige økt", () => {
+  it("er den rett før i faget, med loggen, og hopper over slettede", async () => {
+    const a = await opprettOkt(fagId, "MFL1", "2026-09-01", "08:15", 90);
+    const b = await opprettOkt(fagId, "MFL1", "2026-09-08", "08:15", 90);
+    const c = await opprettOkt(fagId, "MFL1", "2026-09-15", "08:15", 90);
+    await endreOkt(a, { logg: "Husk arket" });
+    const naa = {
+      id: c,
+      skolearFagId: fagId,
+      dato: "2026-09-15",
+      klokkeslett: "08:15",
+    };
+    expect((await hentForrigeOkt(naa))?.id).toBe(b);
+    await slettOkt(b);
+    expect(await hentForrigeOkt(naa)).toMatchObject({
+      id: a,
+      logg: "Husk arket",
+    });
   });
 });

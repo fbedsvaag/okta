@@ -25,6 +25,10 @@ import {
 export function Arsplan({ ark }: { ark: Ark[] }) {
   return (
     <div className="kunutskrift arsplanark">
+      {/* Liggende gjelder hele utskriften; @page kan ikke settes per side. */}
+      {ark[0]?.liggende && (
+        <style>{"@media print { @page { size: A4 landscape; } }"}</style>
+      )}
       {ark.map((a) => (
         <Side key={`${a.fagKode}-${a.skolearNavn}`} ark={a} />
       ))}
@@ -87,6 +91,13 @@ function Side({ ark }: { ark: Ark }) {
               </span>
             </h3>
           )}
+          {b.mal.length > 0 && (
+            <ul className="mt-0.5 list-disc pl-4 text-[8.5pt] leading-snug text-blekk-dempet">
+              {b.mal.map((m) => (
+                <li key={m}>{m}</li>
+              ))}
+            </ul>
+          )}
 
           <table className="mt-0.5 w-full table-fixed border-collapse text-[9.5pt]">
             <thead>
@@ -114,6 +125,13 @@ function Side({ ark }: { ark: Ark }) {
                         <span className="whitespace-nowrap">
                           {celleverdi(r, k)}
                         </span>
+                      ) : k === "maal" ? (
+                        // Ett mål per linje, litt mindre — de er lange.
+                        r.mal.map((m) => (
+                          <p key={m} className="text-[8.5pt] leading-snug">
+                            {m}
+                          </p>
+                        ))
                       ) : (
                         celleverdi(r, k)
                       )}

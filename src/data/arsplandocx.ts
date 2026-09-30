@@ -4,6 +4,7 @@ import {
   Document,
   Footer,
   PageNumber,
+  PageOrientation,
   Paragraph,
   Table,
   TableCell,
@@ -229,12 +230,29 @@ function seksjon(ark: Ark) {
         }),
       );
     }
+    for (const m of b.mal) {
+      innhold.push(
+        new Paragraph({
+          children: [tekst(m, { str: 9, farge: DEMPET })],
+          bullet: { level: 0 },
+          spacing: { after: 20 },
+        }),
+      );
+    }
     innhold.push(tabell(ark, b));
   }
 
   return {
     properties: {
       page: {
+        // A4; docx bytter bredde og høyde selv når arket ligger.
+        size: {
+          width: 11906,
+          height: 16838,
+          orientation: ark.liggende
+            ? PageOrientation.LANDSCAPE
+            : PageOrientation.PORTRAIT,
+        },
         // 18 mm topp/bunn, 15 mm sider — samme som utskriften.
         margin: { top: 1020, bottom: 1020, left: 850, right: 850 },
       },

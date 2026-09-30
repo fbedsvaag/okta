@@ -285,6 +285,24 @@ export async function settPeriodemal(
   await settMal("periode_kompetansemal", "periode_id", periodeId, kode, pa);
 }
 
+/** Kompetansemålkodene per økt i ett fag, til årsplanarket. */
+export async function hentOktmalForFag(
+  skolearFagId: string,
+): Promise<Map<string, string[]>> {
+  const rader = await hent<{ oktId: string; kode: string }>(
+    `SELECT om.okt_id AS oktId, om.kode
+       FROM okt_kompetansemal om
+       JOIN okt o ON o.id = om.okt_id AND o.slettet IS NULL
+      WHERE om.slettet IS NULL AND o.skolear_fag_id = $1
+      ORDER BY om.kode`,
+    [skolearFagId],
+  );
+  const kart = new Map<string, string[]>();
+  for (const r of rader)
+    kart.set(r.oktId, [...(kart.get(r.oktId) ?? []), r.kode]);
+  return kart;
+}
+
 /** Det samme for en økt. */
 export async function settOktmal(
   oktId: string,

@@ -8,6 +8,7 @@ import { Arsoversikt } from "./Arsoversikt";
 import { dagenssetning, hentSamtalerPaDato } from "../data/samtale";
 import { Ukelinje } from "./Ukelinje";
 import { lytt } from "../data/endringer";
+import { dagen } from "../data/dagen";
 
 /**
  * I dag — startskjermen, SPEC §4.1, med årsoversikten under.
@@ -61,9 +62,7 @@ export function IDag({
         <h1 className="font-display text-overskrift first-letter:uppercase">
           {langDato(idag)}
         </h1>
-        <p className="mt-1 text-brod text-blekk-dempet">
-          Skoleåret {skolear.navn}
-        </p>
+        <Dagsoppsummering okter={okter} idag={idag} onApne={apne} />
       </div>
 
       {/* Rullefeltet er skjult — man ruller med styreflata. */}
@@ -130,6 +129,55 @@ export function IDag({
           onApneVurdering={(id) => ark.apneVurdering(id)}
         />
       </div>
+    </div>
+  );
+}
+
+/**
+ * Én setning om dagen, og for hver økt det du skrev forrige gang i faget.
+ * Én linje per økt, kappet — hele notatet står i verktøytipset, og et
+ * klikk åpner økta det ble skrevet i.
+ */
+function Dagsoppsummering({
+  okter,
+  idag,
+  onApne,
+}: {
+  okter: Okt[];
+  idag: string;
+  onApne: (id: string) => void;
+}) {
+  const d = dagen(okter, idag);
+  const flere = d.linjer.length > 1;
+
+  return (
+    <div className="mt-1 text-brod text-blekk-dempet">
+      <p>{d.setning}</p>
+      {d.linjer.map(({ okt, forrige, notat }) => (
+        <p key={okt.id} className="flex min-w-0 items-baseline gap-1.5">
+          {flere && (
+            <span className="shrink-0 font-medium text-blekk">
+              {okt.fagKode}:
+            </span>
+          )}
+          {!forrige ? (
+            <span>Første økt i faget.</span>
+          ) : notat ? (
+            <button
+              onClick={() => onApne(forrige.id)}
+              title={notat}
+              className="min-w-0 truncate text-left hover:text-blekk"
+            >
+              Notatet du skrev forrige gang:{" "}
+              <span className="text-blekk">
+                «{notat.replace(/\s*\n\s*/g, " · ")}»
+              </span>
+            </button>
+          ) : (
+            <span>Du skrev ikke noe notat forrige økt.</span>
+          )}
+        </p>
+      ))}
     </div>
   );
 }

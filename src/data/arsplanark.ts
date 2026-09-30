@@ -8,7 +8,13 @@ import {
   type Okt,
   type OktVurdering,
 } from "./okter";
-import { hentAllePerioder, periodeFor, type Periode } from "./perioder";
+import {
+  hentAllePerioder,
+  hentOktmalForFag,
+  hentPeriodemal,
+  periodeFor,
+  type Periode,
+} from "./perioder";
 import { hentInnstilling, type Skolear } from "./skolear";
 
 /** Innstillingen med lærerens navn — standard faglærer i alle fag. */
@@ -40,10 +46,13 @@ export type Kolonne =
   | "sted"
   | "agenda"
   | "lekse"
+  | "maal"
   | "vurdering";
 export type Hodefelt =
   "laerer" | "rom" | "timeregnskap" | "arknotat" | "kompetansemal";
-export type Arkfelt = Kolonne | Hodefelt;
+/** Hvordan arket ligger på papiret — gjelder utskrift og Word. */
+export type Papirfelt = "liggende";
+export type Arkfelt = Kolonne | Hodefelt | Papirfelt;
 
 /**
  * Feltene som kan velges av og på, i den rekkefølgen de står på arket.
@@ -54,7 +63,7 @@ export type Arkfelt = Kolonne | Hodefelt;
 export const ARKFELT: {
   id: Arkfelt;
   navn: string;
-  gruppe: "hode" | "kolonne";
+  gruppe: "hode" | "kolonne" | "papir";
   standard: boolean;
 }[] = [
   { id: "laerer", navn: "Faglærer", gruppe: "hode", standard: true },
@@ -80,7 +89,15 @@ export const ARKFELT: {
   { id: "sted", navn: "Rom", gruppe: "kolonne", standard: false },
   { id: "agenda", navn: "Agenda", gruppe: "kolonne", standard: false },
   { id: "lekse", navn: "Lekse", gruppe: "kolonne", standard: true },
+  {
+    id: "maal",
+    navn: "Kompetansemål (økt og periode)",
+    gruppe: "kolonne",
+    standard: false,
+  },
   { id: "vurdering", navn: "Vurdering", gruppe: "kolonne", standard: true },
+  // Med mange kolonner blir arket for trangt stående.
+  { id: "liggende", navn: "Liggende ark", gruppe: "papir", standard: false },
 ];
 
 /** Innstillingen der valget huskes, som JSON-liste. */
@@ -116,6 +133,8 @@ export type Arkrad = {
   sted: string | null;
   agenda: string | null;
   vurderinger: string[];
+  /** kompetansemålene økta selv er huket av for, som tekst */
+  mal: string[];
   /** datert utenfor skoleåret; vises, men teller ikke i regnskapet */
   utenfor: boolean;
 };
@@ -125,6 +144,11 @@ export type Arkbolk = {
   navn: string | null;
   rader: Arkrad[];
   timer: number;
+  /**
+   * Målene perioden dekker. Står under periodenavnet i stedet for på hver
+   * rad — ellers ville samme mål gjentatt seg nedover hele perioden.
+   */
+  mal: string[];
 };
 
 export type Ark = {
@@ -154,6 +178,8 @@ export type Ark = {
    * valgfrie bare dem som har noe i seg. Tomme kolonner tar bare plass.
    */
   kolonner: Kolonne[];
+  /** liggende A4 på papir og i Word */
+  liggende: boolean;
 };
 
 export function byggArk(inn: {
@@ -166,11 +192,22 @@ export function byggArk(inn: {
   laererNavn: string | null;
   kompetansemal: Kompetansemaal[];
   samtaletimer: number;
+  /** kompetansemålkodene per økt og per periode (okt_/periode_kompetansemal) */
+  oktmal?: Map<string, string[]>;
+  periodemal?: Map<string, string[]>;
   /** feltene som skal med. Utelatt = standardvalget */
   felt?: ReadonlySet<Arkfelt>;
 }): Ark {
   const felt = inn.felt ?? standardFelt();
   const med = (f: Arkfelt) => felt.has(f);
+  // Koden slås opp i Udirs liste; en kode som ikke finnes der, står som den er.
+  const tekstFor = (kode: string) =>
+    inn.kompetansemal.find((m) => m.kode === kode)?.tekst ?? kode;
+  const perioderIFaget = inn.perioder.filter(
+    (p) => p.skolearFagId === inn.fag.id,
+  );
+  const periodensMal = (id: string | undefined) =>
+    id ? (inn.periodemal?.get(id) ?? []).map(tekstFor) : [];
   const { skolear, fag } = inn;
   const egne = inn.okter
     .filter((o) => o.skolearFagId === fag.id)
@@ -192,6 +229,21 @@ export function byggArk(inn: {
     sted: tom(o.sted),
     agenda: tom(o.agenda),
     vurderinger: (inn.vurderinger.get(o.id) ?? []).map((v) => v.tittel),
+    mal: med("maal")
+      ? [
+          ...(inn.oktmal?.get(o.id) ?? []).map(tekstFor),
+          // Fritekst for fag uten Udir-kode, ett mål per linje.
+          ...(o.kompetansemal ?? "")
+            .split(/\n+/)
+            .map((l) => l.trim())
+            .filter(Boolean),
+          // Uten periodeinndeling på arket er det ingen overskrift å sette
+          // periodens mål under — da står de på raden.
+          ...(inn.medPerioder
+            ? []
+            : periodensMal(periodeFor(o, perioderIFaget)?.id)),
+        ]
+      : [],
     utenfor: o.dato < skolear.start || o.dato > skolear.slutt,
   });
 
@@ -221,12 +273,10 @@ export function byggArk(inn: {
         }
       : null,
     bolker: inn.medPerioder
-      ? grupper(
-          egne,
-          rader,
-          inn.perioder.filter((p) => p.skolearFagId === fag.id),
+      ? grupper(egne, rader, perioderIFaget, (id) =>
+          med("maal") ? periodensMal(id) : [],
         )
-      : [{ navn: null, rader, timer: timer(talte) }],
+      : [{ navn: null, rader, timer: timer(talte), mal: [] }],
     kolonner: ARKFELT.filter((f) => f.gruppe === "kolonne" && med(f.id))
       .map((f) => f.id as Kolonne)
       .filter((k) => {
@@ -236,10 +286,12 @@ export function byggArk(inn: {
           agenda: (r) => r.agenda !== null,
           lekse: (r) => r.lekse !== null,
           vurdering: (r) => r.vurderinger.length > 0,
+          maal: (r) => r.mal.length > 0,
         };
         const sjekk = harInnhold[k];
         return !sjekk || rader.some(sjekk);
       }),
+    liggende: med("liggende"),
   };
 }
 
@@ -250,15 +302,25 @@ export async function hentArk(
   medPerioder: boolean,
   felt?: ReadonlySet<Arkfelt>,
 ): Promise<Ark> {
-  const [okter, vurderinger, perioder, laererNavn, grep, samtale] =
-    await Promise.all([
-      hentOkter(skolear.id),
-      hentOktVurderinger(skolear.id),
-      hentAllePerioder(skolear.id),
-      hentInnstilling(LAERERNAVN),
-      finnFag(fag.grepKode),
-      hentVurderingstimer(skolear.id),
-    ]);
+  const [
+    okter,
+    vurderinger,
+    perioder,
+    laererNavn,
+    grep,
+    samtale,
+    oktmal,
+    periodemal,
+  ] = await Promise.all([
+    hentOkter(skolear.id),
+    hentOktVurderinger(skolear.id),
+    hentAllePerioder(skolear.id),
+    hentInnstilling(LAERERNAVN),
+    finnFag(fag.grepKode),
+    hentVurderingstimer(skolear.id),
+    hentOktmalForFag(fag.id),
+    hentPeriodemal(fag.id),
+  ]);
   return byggArk({
     skolear,
     fag,
@@ -269,6 +331,8 @@ export async function hentArk(
     laererNavn,
     kompetansemal: grep?.kompetansemaal ?? [],
     samtaletimer: samtale.get(fag.id)?.timer ?? 0,
+    oktmal,
+    periodemal,
     felt,
   });
 }
@@ -284,6 +348,7 @@ function grupper(
   okter: Okt[],
   rader: Arkrad[],
   perioder: Periode[],
+  malFor: (periodeId: string | undefined) => string[],
 ): Arkbolk[] {
   const rekkefolge: (string | null)[] = [];
   const kart = new Map<
@@ -311,7 +376,12 @@ function grupper(
       .reduce((s, r) => s + r.varighetMin, 0);
     // Står alt uten periode, er det ingen inndeling å navngi.
     const navn = b.navn ?? (ordnet.length > 1 ? "Uten periode" : null);
-    return { navn, rader: b.rader, timer: minutter / 60 };
+    return {
+      navn,
+      rader: b.rader,
+      timer: minutter / 60,
+      mal: malFor(n ?? undefined),
+    };
   });
 }
 

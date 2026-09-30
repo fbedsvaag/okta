@@ -383,3 +383,62 @@ describe("lagDocx", () => {
     expect(xml).not.toContain("HEMMELIG");
   });
 });
+
+describe("kompetansemål på arket", () => {
+  const km = [
+    { kode: "KM1", tekst: "analysere et marked" },
+    { kode: "KM2", tekst: "lage en markedsplan" },
+  ];
+  const felt = new Set<Arkfelt>([...standardFelt(), "maal"]);
+
+  it("står i en egen kolonne, bare når den er valgt", () => {
+    const o = okt({ kompetansemal: "eget mål uten kode" });
+    const oktmal = new Map([[o.id, ["KM1"]]]);
+    const uten = ark({ okter: [o], kompetansemal: km, oktmal });
+    expect(uten.kolonner).not.toContain("maal");
+
+    const med = ark({ okter: [o], kompetansemal: km, oktmal, felt });
+    expect(med.kolonner).toContain("maal");
+    expect(med.bolker[0].rader[0].mal).toEqual([
+      "analysere et marked",
+      "eget mål uten kode",
+    ]);
+  });
+
+  it("setter periodens mål under periodenavnet, ikke på hver rad", () => {
+    const p = periode({ id: "p1" });
+    const okter = [
+      okt({ periodeId: "p1", dato: "2026-09-01" }),
+      okt({ periodeId: "p1", dato: "2026-09-08" }),
+    ];
+    const a = ark({
+      okter,
+      perioder: [p],
+      medPerioder: true,
+      kompetansemal: km,
+      periodemal: new Map([["p1", ["KM2"]]]),
+      felt,
+    });
+    expect(a.bolker[0].mal).toEqual(["lage en markedsplan"]);
+    expect(a.bolker[0].rader.every((r) => r.mal.length === 0)).toBe(true);
+    expect(somMarkdown(a)).toContain("- lage en markedsplan");
+  });
+
+  it("legger periodens mål på raden når arket ikke er delt i perioder", () => {
+    const a = ark({
+      okter: [okt({ periodeId: "p1" })],
+      perioder: [periode({ id: "p1" })],
+      kompetansemal: km,
+      periodemal: new Map([["p1", ["KM2"]]]),
+      felt,
+    });
+    expect(a.bolker[0].rader[0].mal).toEqual(["lage en markedsplan"]);
+  });
+});
+
+describe("liggende ark", () => {
+  it("er av som standard og følger feltvalget", () => {
+    expect(ark().liggende).toBe(false);
+    expect(ark({ felt: new Set<Arkfelt>(["liggende"]) }).liggende).toBe(true);
+  });
+});

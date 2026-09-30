@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Ikon } from "../ui/felles";
-import { Markdownfelt } from "../ui/Notattekst";
+import { Markdown, Markdownfelt } from "../ui/Notattekst";
 import { useArk } from "../ui/Arkstabel";
 import { lyttVurderinger } from "../data/endringer";
 import { hentOktmal, settOktmal, type Oktmal } from "../data/perioder";
@@ -8,6 +8,7 @@ import { Malvelger } from "./Malvelger";
 import { confirm as bekreft } from "@tauri-apps/plugin-dialog";
 import {
   endreOkt,
+  hentForrigeOkt,
   fjernSkaring,
   hentOktElever,
   hentSkaringsskala,
@@ -685,9 +686,46 @@ function Vurderingskobling({
   );
 }
 
+/**
+ * Det du skrev i loggen forrige gang i faget, rett over dagens logg — så
+ * beskjeden fra sist står der du er når timen begynner.
+ */
+function Forrigenotat({ okt }: { okt: Okt }) {
+  const [forrige, setForrige] = useState<Awaited<
+    ReturnType<typeof hentForrigeOkt>
+  > | null>(null);
+  const ark = useArk();
+  useEffect(() => {
+    void hentForrigeOkt(okt).then(setForrige);
+  }, [okt.id, okt.dato, okt.klokkeslett]);
+
+  if (!forrige) return null;
+
+  return (
+    <div className="mb-3">
+      <button
+        onClick={() => ark.apneOkt(forrige.id)}
+        className="mb-0.5 block text-etikett uppercase tracking-etikett text-blekk-dempet hover:text-blekk"
+      >
+        Notat fra forrige økt · {langDato(forrige.dato)}
+      </button>
+      {forrige.logg?.trim() ? (
+        <div className="rounded-vanlig border-l-2 border-linje-sterk bg-flate-svak px-3 py-1.5 text-blekk-dempet">
+          <Markdown tekst={forrige.logg} />
+        </div>
+      ) : (
+        <p className="text-liten text-blekk-svak">
+          Du skrev ikke noe notat forrige økt.
+        </p>
+      )}
+    </div>
+  );
+}
+
 function Logg({ okt, onEndret }: { okt: Okt; onEndret: () => void }) {
   return (
     <div className="px-5 py-3">
+      <Forrigenotat okt={okt} />
       {/* Ikke en <label>: markdown-visningen er klikkbar i seg selv. */}
       <div>
         <span className="mb-0.5 block text-etikett uppercase tracking-etikett text-blekk-dempet">
