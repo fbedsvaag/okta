@@ -604,13 +604,20 @@ export function Kontekstmeny({
 
   useEffect(() => {
     const lukk = () => onLukk();
+    // Et trykk utenfor lukker — på mousedown, ikke click. Lyttet vi på
+    // click, kunne klikket som åpnet menyen nå fram hit og lukke den i samme
+    // øyeblikk. I WebKit (appens motor) skjedde nettopp det med Årsplan-
+    // knappen: menyen åpnet og lukket seg før den ble tegnet.
+    const utenfor = (e: MouseEvent) => {
+      if (!meny.current?.contains(e.target as Node)) onLukk();
+    };
     const tast = (e: KeyboardEvent) => e.key === "Escape" && onLukk();
+    window.addEventListener("mousedown", utenfor);
     // capture på rulling: den bobler ikke fra en rullesone lenger inne.
-    window.addEventListener("click", lukk);
     window.addEventListener("scroll", lukk, true);
     window.addEventListener("keydown", tast);
     return () => {
-      window.removeEventListener("click", lukk);
+      window.removeEventListener("mousedown", utenfor);
       window.removeEventListener("scroll", lukk, true);
       window.removeEventListener("keydown", tast);
     };
@@ -620,6 +627,8 @@ export function Kontekstmeny({
     <div
       ref={meny}
       role="menu"
+      // Et valg i menyen lukker den, etter at valget selv har gjort sitt.
+      onClick={onLukk}
       style={{ left: plass.venstre, top: plass.topp }}
       className="fixed z-50 min-w-40 rounded-vanlig border border-linje bg-ark py-1 shadow-[var(--shadow-ark)]"
     >
