@@ -25,6 +25,7 @@ import { Innstillinger } from "./skjermer/Innstillinger";
 import { Vurderinger } from "./skjermer/Vurderinger";
 import { Samtaler } from "./skjermer/Samtaler";
 import { Knapp, Ikon } from "./ui/felles";
+import { Sokevindu } from "./ui/Sokevindu";
 import { Ordmerke } from "./ui/logo";
 
 /**
@@ -95,9 +96,16 @@ export default function App() {
     [],
   );
 
+  // ⌘K: søk på elev eller økt, hvor som helst i appen (§4.4).
+  const [sokApent, setSokApent] = useState(false);
+
   useEffect(() => {
     const taster = (e: KeyboardEvent) => {
       if (!(e.metaKey || e.ctrlKey)) return;
+      if (e.key === "k" || e.key === "K") {
+        e.preventDefault();
+        setSokApent(true);
+      }
       if (e.key === "[") {
         e.preventDefault();
         tilbake();
@@ -183,6 +191,15 @@ export default function App() {
 
   return (
     <div className="app-skall flex h-full flex-col overflow-clip bg-bord text-blekk">
+      {sokApent && (
+        <Sokevindu
+          skolearId={skolear.id}
+          fag={fag}
+          onApneElev={(id) => ga("elever", id)}
+          onApneOkt={(id) => ga("okter", id)}
+          onLukk={() => setSokApent(false)}
+        />
+      )}
       <header className="ikkeutskrift flex shrink-0 flex-wrap items-center gap-x-1 gap-y-1 border-b border-linje px-4 py-2">
         <span className="mr-3">
           <Ordmerke />
@@ -233,6 +250,14 @@ export default function App() {
           onKlikk={() => ga("samtaler")}
         />
         <span className="grow" />
+        {/* Synlig inngang til ⌘K, så snarveien kan oppdages. */}
+        <button
+          onClick={() => setSokApent(true)}
+          className="mr-2 flex items-center gap-2 rounded border border-linje px-2 py-0.5 text-liten text-blekk-svak hover:border-linje-sterk hover:text-blekk"
+        >
+          Søk
+          <kbd className="font-sans text-blekk-svakest">⌘K</kbd>
+        </button>
         <Fane
           navn="Innstillinger"
           aktiv={visning === "innstillinger"}

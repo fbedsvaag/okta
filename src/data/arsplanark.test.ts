@@ -29,6 +29,7 @@ const fag: FagIAr = {
   farge: null,
   arstimetall: 140,
   grepKode: null,
+  alias: null,
   standardVarighetMin: 180,
   rom: "R204",
   laerer: null,

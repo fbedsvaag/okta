@@ -110,6 +110,8 @@ export function VurderingPanel({
 
   function tastetrykk(e: React.KeyboardEvent) {
     if (kommentarFor !== null) return;
+    // ⌘-snarveiene (⌘K søk, ⌘[ tilbake) hører til appen, ikke lista.
+    if (e.metaKey || e.ctrlKey) return;
 
     if (e.key === "Escape") return onLukk();
     if (e.key === "ArrowDown" || (e.key === "Tab" && !e.shiftKey)) {

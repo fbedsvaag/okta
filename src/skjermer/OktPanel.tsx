@@ -128,6 +128,8 @@ export function OktPanel({
 
   function tastetrykk(e: React.KeyboardEvent) {
     if (notatFor !== null) return;
+    // ⌘-snarveiene (⌘K søk, ⌘[ tilbake) hører til appen, ikke lista.
+    if (e.metaKey || e.ctrlKey) return;
 
     if (e.key === "Escape") {
       onLukk();

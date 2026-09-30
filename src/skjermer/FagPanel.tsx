@@ -125,6 +125,15 @@ export function FagPanel({
             }}
           />
           <Tekstfelt
+            etikett="Alias"
+            verdi={fag.alias}
+            plassholder="Det du kaller faget, f.eks. MFL1"
+            lagre={async (v) => {
+              await endreFag(fag.fagId, { alias: v });
+              onEndret();
+            }}
+          />
+          <Tekstfelt
             etikett="Standard rom"
             verdi={fag.rom}
             plassholder="R204"

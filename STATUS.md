@@ -3,8 +3,8 @@
 Kort status pr. 2026-09-30, versjon 0.1.3. Skrevet mot SPEC.md slik den er nå.
 Denne fila eies fritt — oppdater den løpende, i motsetning til SPEC.md.
 
-**377 tester, alle grønne. `tsc --noEmit` er ren. `npm run build` går
-gjennom. 17 migrasjoner.**
+**388 tester, alle grønne. `tsc --noEmit` er ren. `npm run build` går
+gjennom. 18 migrasjoner.**
 
 ## Hva som virker
 
@@ -39,6 +39,9 @@ Skjerm for skjerm (§4), med tilstand:
 - **Vurdering knyttet til økt** — ferdig 30.09. Én vurdering kan ligge over
   flere økter (migrasjon 016, koblingstabell). Automatisk når fristen faller
   på en øktdag, og for hånd fra begge panelene.
+- **⌘K-søk** — ferdig 30.09. Globalt, ikke bare i skåringsflyten som §4.4
+  beskriver. Finner elever (navn, klasse, fag) og økter (tema, fag, alias,
+  dato i ISO og norske formater). Fag kan ha et alias (migrasjon 018).
 - **Samtaletrekkeren i økter** — ferdig 30.09. I fagmodus krysses fagets
   økter av i stedet for å legge inn datoer; øktas klokkeslett er rammen,
   uten lunsj. Vurderingen knyttes til hver økt. Egne dager utenfor øktene
@@ -51,8 +54,6 @@ Skjerm for skjerm (§4), med tilstand:
 
 - **Klasseopprykk (§4.3/§4.8).** Datamodellen bærer det, skjermen finnes ikke.
   Avventer — eieren er usikker på om det trengs.
-- **`⌘K`-søk (§4.4).** Står i tastetabellen, finnes ikke. Eieren vil ha det
-  som et globalt søk som åpner elevvisningen — prioritert opp.
 - **Skalabygger (§5.3).** Spec sier selv at den kommer etter rammeverket.
 - **Findelt karakterskala (§5.2).** Riktig — den hører til §10.
 
@@ -112,7 +113,7 @@ rettes tilbake, ligger hos eieren.
 
 ## Tester
 
-22 testfiler, 377 tester, alle grønne. `tsc` ren.
+23 testfiler, 388 tester, alle grønne. `tsc` ren.
 
 Dekningen er tung i datalaget og tynn i skjermlaget. Migrasjonene testes ved å
 kjøre dem i to omganger med data imellom — kjørt mot en tom base ville en

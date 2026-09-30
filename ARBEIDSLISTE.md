@@ -100,8 +100,7 @@ prioritering fra 30.09.
   fritekst, og uke/dato/tema/lekse/vurdering. PDF, Word, markdown og CSV.
 - [x] **Vurdering over flere økter, og trekkeren i øktene.** Gjort 30.09.
   Trekkeren fordeler elevene på avkryssede økter i faget.
-- [ ] **`⌘K` — søk på elev, hopp til elevvisningen.** Globalt, ikke bare i
-  skåringsflyten. Prioritert opp 30.09.
+- [x] **`⌘K` — søk på elev og økt.** Gjort 30.09, med alias på fag.
 
 - [ ] **Visuell oppstramming.** Steg 1 gjort 21.09. Neste: en ryddigere og
   strammere toppmeny — eieren synes det er for mange lister der. DESIGN.md

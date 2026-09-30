@@ -18,6 +18,8 @@ export type FagIAr = {
   arstimetall: number | null;
   /** offisiell fagkode fra Udir, f.eks. MFL1001. Fritekst i v1 (§10). */
   grepKode: string | null;
+  /** kallenavn, f.eks. «MFL1» for SAM3045. Brukes i søket. */
+  alias: string | null;
   standardVarighetMin: number | null;
   /** standard rom; forhåndsutfyller `okt.sted` */
   rom: string | null;
@@ -53,6 +55,7 @@ export async function hentFagIAr(skolearId: string): Promise<FagIAr[]> {
             f.navn           AS navn,
             f.farge          AS farge,
             f.grep_kode      AS grepKode,
+            f.alias          AS alias,
             sf.arstimetall   AS arstimetall,
             sf.standard_varighet_min AS standardVarighetMin,
             sf.rom, sf.laerer, sf.kompetansemal, sf.arknotat
@@ -125,6 +128,7 @@ export async function endreFag(
   fagId: string,
   felter: Partial<Pick<Fag, "kode" | "navn" | "farge">> & {
     grep_kode?: string | null;
+    alias?: string | null;
   },
 ): Promise<void> {
   await oppdater("fag", fagId, felter);
