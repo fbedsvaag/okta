@@ -1,4 +1,4 @@
-import { hent, oppdater, settInn, slett } from "../db";
+import { db, hent, naa, oppdater, settInn, slett } from "../db";
 import { varsle } from "./endringer";
 import type { Skalaverdi } from "../skala";
 
@@ -182,6 +182,24 @@ export async function opprettOkt(
     sted: fag?.rom ?? null,
     kode: await lagOktkode(skolearFagId, fagKode, dato),
   });
+
+  // En vurdering som allerede har frist denne dagen, uten økt, hører til
+  // økta som nå legges inn — så sant den er dagens eneste i faget.
+  const samme = await hent<{ n: number }>(
+    `SELECT COUNT(*) AS n FROM okt
+      WHERE skolear_fag_id = $1 AND dato = $2 AND slettet IS NULL`,
+    [skolearFagId, dato],
+  );
+  if (samme[0]?.n === 1) {
+    await (
+      await db()
+    ).execute(
+      `UPDATE vurdering SET okt_id = $1, endret = $2
+        WHERE skolear_fag_id = $3 AND frist = $4
+          AND okt_id IS NULL AND slettet IS NULL`,
+      [id, naa(), skolearFagId, dato],
+    );
+  }
   varsle();
   return id;
 }
@@ -349,11 +367,14 @@ export type OktVurdering = {
 };
 
 /**
- * Vurderingene knyttet til øktene i året, til kolonnen i §4.2.
+ * Vurderingene knyttet til øktene i året, til kolonnen i §4.2 og
+ * årsplanarket.
  *
- * En vurdering henger på ei økt på to måter: den er koblet til den direkte
- * (`okt_id`), eller fristen faller på samme dato i samme fag. Den andre er
- * den vanlige — man legger inn en innlevering med frist, ikke en kobling.
+ * Bare den direkte koblingen (`okt_id`) teller. Den skrives av seg selv når
+ * fristen faller på en dag med én økt i faget, og når en økt legges på en
+ * fristdag — så det vanlige tilfellet koster ingen klikk. Før ble koblingen
+ * gjettet ut fra datoen ved visning, og da kunne en vurdering du hadde løst
+ * fra økta dukke opp igjen der.
  */
 export async function hentOktVurderinger(
   skolearId: string,
@@ -363,28 +384,15 @@ export async function hentOktVurderinger(
             v.skolear_fag_id AS skolearFagId
        FROM vurdering v
        JOIN skolear_fag sf ON sf.id = v.skolear_fag_id AND sf.slettet IS NULL
-      WHERE v.slettet IS NULL AND sf.skolear_id = $1`,
-    [skolearId],
-  );
-
-  const okter = await hent<{ id: string; dato: string; skolearFagId: string }>(
-    `SELECT o.id, o.dato, o.skolear_fag_id AS skolearFagId
-       FROM okt o
-       JOIN skolear_fag sf ON sf.id = o.skolear_fag_id AND sf.slettet IS NULL
-      WHERE o.slettet IS NULL AND sf.skolear_id = $1`,
+       JOIN okt o ON o.id = v.okt_id AND o.slettet IS NULL
+      WHERE v.slettet IS NULL AND sf.skolear_id = $1
+      ORDER BY v.tittel`,
     [skolearId],
   );
 
   const kart = new Map<string, OktVurdering[]>();
-  for (const okt of okter) {
-    const treff = alle.filter(
-      (v) =>
-        v.oktId === okt.id ||
-        (v.oktId === null &&
-          v.frist === okt.dato &&
-          v.skolearFagId === okt.skolearFagId),
-    );
-    if (treff.length > 0) kart.set(okt.id, treff);
+  for (const v of alle) {
+    kart.set(v.oktId!, [...(kart.get(v.oktId!) ?? []), v]);
   }
   return kart;
 }

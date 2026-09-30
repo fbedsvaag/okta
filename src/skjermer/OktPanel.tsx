@@ -16,6 +16,11 @@ import {
 import { taster, type Skalaverdi } from "../skala";
 import { skalafarge } from "../ui/farger";
 import { hentPerioder, periodeFor, type Periode } from "../data/perioder";
+import {
+  hentVurderingsvalg,
+  kobleTilOkt,
+  type Vurderingsvalg,
+} from "../data/vurderinger";
 
 /**
  * Det utvidede viewet, SPEC §4.2 og §4.4.
@@ -548,6 +553,8 @@ function OktFelter({
         />
       </Linje>
 
+      <Vurderingskobling okt={okt} onEndret={onEndret} />
+
       <Linje etikett="Plan">
         <textarea
           defaultValue={okt.plan ?? ""}
@@ -561,6 +568,76 @@ function OktFelter({
           className={feltStil}
         />
       </Linje>
+    </div>
+  );
+}
+
+/**
+ * Vurderingene som holdes i økta, med mulighet til å knytte flere eller løse
+ * dem. Står på årsplanen i Vurdering-kolonnen.
+ *
+ * Ikke en <label> som de andre linjene: den har flere knapper i seg, og et
+ * klikk på en label sendes videre til første kontroll inni.
+ */
+function Vurderingskobling({
+  okt,
+  onEndret,
+}: {
+  okt: Okt;
+  onEndret: () => void;
+}) {
+  const [valg, setValg] = useState<Vurderingsvalg[]>([]);
+  const last = () => void hentVurderingsvalg(okt.skolearFagId).then(setValg);
+  useEffect(last, [okt.skolearFagId, okt.id]);
+
+  const her = valg.filter((v) => v.oktId === okt.id);
+  const andre = valg.filter((v) => v.oktId !== okt.id);
+
+  async function koble(vurderingId: string, oktId: string | null) {
+    await kobleTilOkt(vurderingId, oktId);
+    last();
+    onEndret();
+  }
+
+  return (
+    <div>
+      <span className="mb-0.5 block text-etikett uppercase tracking-etikett text-blekk-dempet">
+        Vurdering
+      </span>
+      {her.map((v) => (
+        <div key={v.id} className="flex items-baseline gap-2 text-brod">
+          <span className="min-w-0 flex-1 truncate">{v.tittel}</span>
+          <button
+            onClick={() => void koble(v.id, null)}
+            className="shrink-0 text-liten text-blekk-svak hover:text-blekk"
+          >
+            Løs fra økta
+          </button>
+        </div>
+      ))}
+      {andre.length > 0 ? (
+        <select
+          value=""
+          onChange={(e) => e.target.value && void koble(e.target.value, okt.id)}
+          className={`${feltStil} ${her.length > 0 ? "mt-1" : ""}`}
+        >
+          <option value="">
+            {her.length > 0 ? "Knytt enda en …" : "Knytt en vurdering …"}
+          </option>
+          {andre.map((v) => (
+            <option key={v.id} value={v.id}>
+              {v.tittel}
+              {v.oktId ? " (flyttes hit)" : ""}
+            </option>
+          ))}
+        </select>
+      ) : (
+        her.length === 0 && (
+          <p className="text-liten text-blekk-svak">
+            Ingen vurderinger i faget ennå.
+          </p>
+        )
+      )}
     </div>
   );
 }

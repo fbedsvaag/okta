@@ -20,6 +20,8 @@ export type Vurdering = {
   tittel: string;
   type: Vurderingstype | null;
   frist: string | null;
+  /** økta vurderingen holdes i. null = ikke knyttet til noen økt */
+  oktId: string | null;
   beskrivelse: string | null;
   /** antall resultater med en skalaverdi satt */
   fort: number;
@@ -51,7 +53,7 @@ export async function hentVurderinger(skolearId: string): Promise<Vurdering[]> {
             f.farge          AS farge,
             v.skala_id       AS skalaId,
             sk.navn          AS skalaNavn,
-            v.tittel, v.type, v.frist, v.beskrivelse,
+            v.tittel, v.type, v.frist, v.okt_id AS oktId, v.beskrivelse,
             (SELECT COUNT(*) FROM vurderingsresultat r
               WHERE r.vurdering_id = v.id AND r.slettet IS NULL
                 AND r.skalaverdi_id IS NOT NULL) AS fort,
@@ -122,6 +124,27 @@ export async function hentSkalaverdier(skalaId: string): Promise<Skalaverdi[]> {
   );
 }
 
+/**
+ * Økta faget har på en dato — bare når det er nøyaktig én. Er det to økter
+ * samme dag, vet ikke appen hvilken, og da gjettes det ikke.
+ */
+export async function oktPaDato(
+  skolearFagId: string,
+  dato: string,
+): Promise<string | null> {
+  const treff = await hent<{ id: string }>(
+    `SELECT id FROM okt
+      WHERE skolear_fag_id = $1 AND dato = $2 AND slettet IS NULL`,
+    [skolearFagId, dato],
+  );
+  return treff.length === 1 ? treff[0].id : null;
+}
+
+/**
+ * Oppretter vurderingen. Faller fristen på en dag faget har én økt, knyttes
+ * vurderingen til den økta med en gang — det er det vanlige: prøven holdes
+ * i timen, og fristen er timen.
+ */
 export async function opprettVurdering(
   skolearFagId: string,
   skalaId: string,
@@ -135,6 +158,7 @@ export async function opprettVurdering(
     tittel,
     type,
     frist,
+    okt_id: frist ? await oktPaDato(skolearFagId, frist) : null,
   });
 }
 
@@ -143,12 +167,69 @@ export async function endreVurdering(
   felter: {
     tittel?: string;
     type?: Vurderingstype | null;
-    frist?: string | null;
     beskrivelse?: string | null;
     skala_id?: string;
   },
 ): Promise<void> {
   await oppdater("vurdering", id, felter);
+}
+
+/**
+ * Flytter fristen, og økta følger med når det finnes en å følge.
+ *
+ * Koblingen flyttes bare når den var «økta på fristdagen» (eller mangler),
+ * og den nye fristdagen har én økt i faget. Har du knyttet vurderingen til
+ * en økt på en annen dag — en innlevering som gis ut i én time og leveres en
+ * uke senere — står den koblingen. Og har den nye dagen ingen økt, blir
+ * koblingen stående heller enn å forsvinne: panelet viser den, og den kan
+ * endres der.
+ */
+export async function settFrist(
+  id: string,
+  frist: string | null,
+): Promise<void> {
+  const [v] = await hent<{
+    skolearFagId: string;
+    frist: string | null;
+    oktDato: string | null;
+    oktId: string | null;
+  }>(
+    `SELECT v.skolear_fag_id AS skolearFagId, v.frist, v.okt_id AS oktId,
+            o.dato AS oktDato
+       FROM vurdering v
+       LEFT JOIN okt o ON o.id = v.okt_id AND o.slettet IS NULL
+      WHERE v.id = $1`,
+    [id],
+  );
+  if (!v) return;
+
+  const felter: Record<string, unknown> = { frist };
+  const fulgteFristen = v.oktId === null || v.oktDato === v.frist;
+  if (fulgteFristen && frist) {
+    const ny = await oktPaDato(v.skolearFagId, frist);
+    if (ny) felter.okt_id = ny;
+  }
+  await oppdater("vurdering", id, felter);
+}
+
+/**
+ * Knytter vurderingen til en økt, eller løser den (null). Mangler
+ * vurderingen frist, blir øktas dato fristen — ett valg i stedet for to.
+ */
+export async function kobleTilOkt(
+  vurderingId: string,
+  oktId: string | null,
+): Promise<void> {
+  const felter: Record<string, unknown> = { okt_id: oktId };
+  if (oktId) {
+    const [rad] = await hent<{ frist: string | null; dato: string }>(
+      `SELECT v.frist, o.dato FROM vurdering v, okt o
+        WHERE v.id = $1 AND o.id = $2`,
+      [vurderingId, oktId],
+    );
+    if (rad && rad.frist === null) felter.frist = rad.dato;
+  }
+  await oppdater("vurdering", vurderingId, felter);
 }
 
 export async function slettVurdering(id: string): Promise<void> {
@@ -232,4 +313,39 @@ export async function settKommentar(
       elev_id: elevId,
       kommentar,
     });
+}
+
+export type Oktvalg = {
+  id: string;
+  dato: string;
+  klokkeslett: string | null;
+  tema: string | null;
+};
+
+/** Øktene i faget, til «Økt»-valget på vurderingen. */
+export async function hentOktvalg(skolearFagId: string): Promise<Oktvalg[]> {
+  return hent<Oktvalg>(
+    `SELECT id, dato, klokkeslett, tema FROM okt
+      WHERE skolear_fag_id = $1 AND slettet IS NULL
+      ORDER BY dato, klokkeslett`,
+    [skolearFagId],
+  );
+}
+
+export type Vurderingsvalg = {
+  id: string;
+  tittel: string;
+  oktId: string | null;
+};
+
+/** Vurderingene i faget, til «Vurdering»-valget på økta. */
+export async function hentVurderingsvalg(
+  skolearFagId: string,
+): Promise<Vurderingsvalg[]> {
+  return hent<Vurderingsvalg>(
+    `SELECT id, tittel, okt_id AS oktId FROM vurdering
+      WHERE skolear_fag_id = $1 AND slettet IS NULL
+      ORDER BY frist IS NULL, frist, tittel`,
+    [skolearFagId],
+  );
 }

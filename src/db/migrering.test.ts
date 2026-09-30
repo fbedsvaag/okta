@@ -151,7 +151,9 @@ describe("migrasjon 012 — samtaledager og samtaler", () => {
 
     expect((d.prepare("SELECT COUNT(*) c FROM elev").get() as any).c).toBe(1);
     expect((d.prepare("SELECT COUNT(*) c FROM okt").get() as any).c).toBe(1);
-    expect((d.prepare("SELECT COUNT(*) c FROM samtaledag").get() as any).c).toBe(0);
+    expect(
+      (d.prepare("SELECT COUNT(*) c FROM samtaledag").get() as any).c,
+    ).toBe(0);
   });
 
   it("lar en samtaledag stå uten fag — det er mentorsamtalen", () => {
@@ -173,7 +175,9 @@ describe("migrasjon 012 — samtaledager og samtaler", () => {
       VALUES ('d1', 'ar', 'sf', 'v1', '2026-11-24', '08:30', '15:00', 'T', 'T'),
              ('d2', 'ar', 'sf', 'v1', '2026-11-25', '08:30', '15:00', 'T', 'T');
     `);
-    const n = d.prepare("SELECT COUNT(*) c FROM samtaledag WHERE vurdering_id = 'v1'").get() as any;
+    const n = d
+      .prepare("SELECT COUNT(*) c FROM samtaledag WHERE vurdering_id = 'v1'")
+      .get() as any;
     expect(n.c).toBe(2);
   });
 
@@ -188,7 +192,9 @@ describe("migrasjon 012 — samtaledager og samtaler", () => {
       VALUES ('s1', 'd1', 'e1', '10:20', 20, 0, 'T', 'T'),
              ('s2', 'd1', 'e1', '14:30', 20, 1, 'T', 'T');
     `);
-    const n = d.prepare("SELECT COUNT(*) c FROM samtale WHERE elev_id = 'e1'").get() as any;
+    const n = d
+      .prepare("SELECT COUNT(*) c FROM samtale WHERE elev_id = 'e1'")
+      .get() as any;
     expect(n.c).toBe(2);
   });
 
@@ -231,5 +237,67 @@ describe("migrasjon 012 — samtaledager og samtaler", () => {
     `);
     const rad = d.prepare("SELECT motte FROM samtale").get() as any;
     expect(rad.motte).toBe(1);
+  });
+});
+
+describe("migrasjon 015 — vurderinger knyttes til økta på fristdagen", () => {
+  const T = "2026-09-01T10:00:00";
+
+  function medOkterOgVurdering(
+    d: DatabaseSync,
+    datoer: string[],
+    frist: string | null,
+  ) {
+    d.exec(`
+      INSERT INTO skolear (id, navn, start, slutt, opprettet, endret)
+      VALUES ('ar', '2026/27', '2026-08-17', '2027-06-20', '${T}', '${T}');
+      INSERT INTO fag (id, kode, navn, opprettet, endret)
+      VALUES ('f', 'MFL1', 'Markedsføring', '${T}', '${T}');
+      INSERT INTO skolear_fag (id, skolear_id, fag_id, opprettet, endret)
+      VALUES ('sf', 'ar', 'f', '${T}', '${T}');
+    `);
+    datoer.forEach((dato, i) =>
+      d.exec(`
+        INSERT INTO okt (id, skolear_fag_id, dato, varighet_min, opprettet, endret)
+        VALUES ('o${i}', 'sf', '${dato}', 180, '${T}', '${T}');
+      `),
+    );
+    const skala = (
+      d.prepare("SELECT id FROM skala LIMIT 1").get() as { id: string }
+    ).id;
+    d.exec(`
+      INSERT INTO vurdering (id, skolear_fag_id, skala_id, tittel, frist, opprettet, endret)
+      VALUES ('v', 'sf', '${skala}', 'Prøve', ${frist ? `'${frist}'` : "NULL"}, '${T}', '${T}');
+    `);
+  }
+
+  const kobling = (d: DatabaseSync) =>
+    d.prepare("SELECT okt_id, endret FROM vurdering WHERE id = 'v'").get() as {
+      okt_id: string | null;
+      endret: string;
+    };
+
+  it("knytter vurderingen til den ene økta på fristdagen", () => {
+    const d = basenFram("014_arsplanark.sql");
+    medOkterOgVurdering(d, ["2026-10-06", "2026-10-13"], "2026-10-13");
+    kjor(d, "015_vurdering_okt.sql");
+    expect(kobling(d).okt_id).toBe("o1");
+    // endret stemples, så en senere synk ser at raden er rørt (§9).
+    expect(kobling(d).endret).not.toBe(T);
+  });
+
+  it("lar den stå når det er to økter samme dag", () => {
+    const d = basenFram("014_arsplanark.sql");
+    medOkterOgVurdering(d, ["2026-10-06", "2026-10-06"], "2026-10-06");
+    kjor(d, "015_vurdering_okt.sql");
+    expect(kobling(d).okt_id).toBeNull();
+    expect(kobling(d).endret).toBe(T);
+  });
+
+  it("rører ikke en vurdering uten frist", () => {
+    const d = basenFram("014_arsplanark.sql");
+    medOkterOgVurdering(d, ["2026-10-06"], null);
+    kjor(d, "015_vurdering_okt.sql");
+    expect(kobling(d).okt_id).toBeNull();
   });
 });

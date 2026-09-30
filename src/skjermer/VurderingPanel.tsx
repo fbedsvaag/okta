@@ -6,11 +6,15 @@ import {
   fjernResultat,
   hentSkalaverdier,
   hentVurderingElever,
+  hentOktvalg,
   hentVurderingsskalaer,
+  kobleTilOkt,
+  settFrist,
   settKommentar,
   settLevert,
   settResultat,
   slettVurdering,
+  type Oktvalg,
   type Vurdering,
   type VurderingElev,
   type Vurderingstype,
@@ -41,6 +45,7 @@ export function VurderingPanel({
   const [elever, setElever] = useState<VurderingElev[]>([]);
   const [verdier, setVerdier] = useState<Skalaverdi[]>([]);
   const [skalaer, setSkalaer] = useState<Skala[]>([]);
+  const [okter, setOkter] = useState<Oktvalg[]>([]);
   const [markert, setMarkert] = useState(0);
   const [kommentarFor, setKommentarFor] = useState<string | null>(null);
   const liste = useRef<HTMLDivElement>(null);
@@ -64,6 +69,10 @@ export function VurderingPanel({
       avbrutt = true;
     };
   }, [vurdering.id, vurdering.skolearFagId, vurdering.skalaId]);
+
+  useEffect(() => {
+    void hentOktvalg(vurdering.skolearFagId).then(setOkter);
+  }, [vurdering.skolearFagId]);
 
   const tastekart = taster(verdier);
   const fraTast = new Map(
@@ -146,6 +155,7 @@ export function VurderingPanel({
 
       <div className="overflow-y-auto">
         <Felter
+          okter={okter}
           vurdering={vurdering}
           skalaer={skalaer}
           onEndret={onEndret}
@@ -351,11 +361,14 @@ const TYPER: { verdi: Vurderingstype; navn: string }[] = [
 function Felter({
   vurdering,
   skalaer,
+  okter,
   onEndret,
   onApneSamtaler,
 }: {
   vurdering: Vurdering;
   skalaer: Skala[];
+  /** øktene i faget, til «Økt»-valget */
+  okter: Oktvalg[];
   onEndret: () => void;
   onApneSamtaler?: (skolearFagId: string) => void;
 }) {
@@ -415,13 +428,37 @@ function Felter({
             defaultValue={vurdering.frist ?? ""}
             key={vurdering.frist ?? ""}
             onBlur={async (e) => {
-              await endreVurdering(vurdering.id, {
-                frist: e.target.value || null,
-              });
+              const ny = e.target.value || null;
+              if (ny === vurdering.frist) return;
+              // Økta følger fristen når det finnes en økt den dagen.
+              await settFrist(vurdering.id, ny);
               onEndret();
             }}
             className={feltStil}
           />
+        </Linje>
+
+        {/*
+          Økta vurderingen holdes i. Settes av seg selv når fristen faller
+          på en øktdag; velges her når det er en annen — innleveringen som
+          gis ut i én time og leveres senere. Vises på årsplanen.
+        */}
+        <Linje etikett="Økt">
+          <select
+            value={vurdering.oktId ?? ""}
+            onChange={async (e) => {
+              await kobleTilOkt(vurdering.id, e.target.value || null);
+              onEndret();
+            }}
+            className={feltStil}
+          >
+            <option value="">Ingen økt</option>
+            {okter.map((o) => (
+              <option key={o.id} value={o.id}>
+                {oktetikett(o)}
+              </option>
+            ))}
+          </select>
         </Linje>
 
         <Linje etikett="Skala">
@@ -523,4 +560,18 @@ function Linje({
       {children}
     </label>
   );
+}
+
+/** «tir 06.10 · Markedsanalyse» */
+function oktetikett(o: Oktvalg): string {
+  const d = new Date(`${o.dato}T12:00:00`);
+  const dag = d
+    .toLocaleDateString("nb-NO", { weekday: "short" })
+    .replace(".", "");
+  const dato = d.toLocaleDateString("nb-NO", {
+    day: "2-digit",
+    month: "2-digit",
+  });
+  const tid = o.klokkeslett ? ` ${o.klokkeslett}` : "";
+  return `${dag} ${dato}${tid}${o.tema ? ` · ${o.tema}` : ""}`;
 }
