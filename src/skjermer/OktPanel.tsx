@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { Ikon } from "../ui/felles";
 import { Markdownfelt } from "../ui/Notattekst";
+import { useArk } from "../ui/Arkstabel";
+import { lyttVurderinger } from "../data/endringer";
 import { hentOktmal, settOktmal, type Oktmal } from "../data/perioder";
 import { Malvelger } from "./Malvelger";
 import { confirm as bekreft } from "@tauri-apps/plugin-dialog";
@@ -618,8 +620,10 @@ function Vurderingskobling({
   onEndret: () => void;
 }) {
   const [valg, setValg] = useState<Vurderingsvalg[]>([]);
+  const ark = useArk();
   const last = () => void hentVurderingsvalg(okt.skolearFagId).then(setValg);
   useEffect(last, [okt.skolearFagId, okt.id]);
+  useEffect(() => lyttVurderinger(last), [okt.skolearFagId, okt.id]);
 
   const her = valg.filter((v) => v.oktIder.includes(okt.id));
   const andre = valg.filter((v) => !v.oktIder.includes(okt.id));
@@ -638,7 +642,12 @@ function Vurderingskobling({
       </span>
       {her.map((v) => (
         <div key={v.id} className="flex items-baseline gap-2 text-brod">
-          <span className="min-w-0 flex-1 truncate">{v.tittel}</span>
+          <button
+            onClick={() => ark.apneVurdering(v.id)}
+            className="min-w-0 flex-1 truncate text-left hover:text-aksent hover:underline"
+          >
+            {v.tittel}
+          </button>
           <button
             onClick={() => void koble(v.id, false)}
             className="shrink-0 text-liten text-blekk-svak hover:text-blekk"

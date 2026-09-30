@@ -199,7 +199,11 @@ export default function App() {
   }
 
   return (
-    <Arkstabel skolearId={skolear.id} onVisIOkter={(id) => ga("okter", id)}>
+    <Arkstabel
+      skolearId={skolear.id}
+      onGaTil={(v, id) => ga(v, id ?? null)}
+      onFagEndret={last}
+    >
       <ArkKobling til={ark} />
       <div className="app-skall flex h-full flex-col overflow-clip bg-bord text-blekk">
         {sokApent && (
@@ -365,12 +369,7 @@ export default function App() {
           det, nullstilles Rediger-bryteren hver gang et felt lagrer.
         */}
             {visning === "fag" && (
-              <Fag
-                skolearId={skolear.id}
-                fag={fag}
-                onEndret={last}
-                onApneVurderinger={() => ga("vurderinger")}
-              />
+              <Fag skolearId={skolear.id} fag={fag} onEndret={last} />
             )}
 
             {visning === "elever" && (
@@ -380,7 +379,6 @@ export default function App() {
                 skolearId={skolear.id}
                 fag={fag}
                 onLimInn={() => ga("liminn")}
-                onApneOkt={apneOktSomArk}
               />
             )}
 
@@ -435,12 +433,7 @@ export default function App() {
             )}
 
             {visning === "vurderinger" && (
-              <Vurderinger
-                key={versjon}
-                skolearId={skolear.id}
-                fag={fag}
-                onApneSamtaler={(fagId) => ga("samtaler", fagId)}
-              />
+              <Vurderinger key={versjon} skolearId={skolear.id} fag={fag} />
             )}
           </div>
         </main>

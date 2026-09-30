@@ -7,12 +7,14 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { lytt } from "../data/endringer";
+import { lytt, varsleVurderinger } from "../data/endringer";
 import { hentOkter, type Okt } from "../data/okter";
 import { OktPanel } from "../skjermer/OktPanel";
 import { ElevPanel } from "../skjermer/ElevPanel";
 import { VurderingPanel } from "../skjermer/VurderingPanel";
 import { hentVurderinger, type Vurdering } from "../data/vurderinger";
+import { FagPanel } from "../skjermer/FagPanel";
+import { hentFagIAr, type FagIAr } from "../data/fag";
 import { Ikon } from "./felles";
 
 /**
@@ -31,6 +33,7 @@ import { Ikon } from "./felles";
 type Ark =
   | { type: "okt"; id: string; n: number }
   | { type: "vurdering"; id: string; n: number }
+  | { type: "fag"; id: string; n: number }
   | {
       type: "elev";
       id: string;
@@ -44,6 +47,7 @@ type Ark =
 type Api = {
   apneOkt: (id: string) => void;
   apneVurdering: (id: string) => void;
+  apneFag: (id: string) => void;
   apneElev: (
     id: string,
     valg?: { liste?: string[]; startFag?: string },
@@ -74,14 +78,20 @@ export function useArk(): Api {
   return api;
 }
 
+/** Skjermene et ark kan sende deg videre til. Stabelen lukkes først. */
+export type Utgang = "okter" | "samtaler" | "vurderinger";
+
 export function Arkstabel({
   skolearId,
-  onVisIOkter,
+  onGaTil,
+  onFagEndret,
   children,
 }: {
   skolearId: string;
-  /** «Vis i Økter» på et øktark: lukker stabelen og går til lista */
-  onVisIOkter: (oktId: string) => void;
+  /** «Vis i Økter», «Trekk rekkefølge» og lignende: ut av arkene, til en skjerm */
+  onGaTil: (visning: Utgang, id?: string) => void;
+  /** et fag er endret i et fagark; appen laster faglista på nytt */
+  onFagEndret: () => void;
   children: ReactNode;
 }) {
   const [stabel, setStabel] = useState<Ark[]>([]);
@@ -139,9 +149,16 @@ export function Arkstabel({
     }, UT_MS);
   }, []);
 
+  const gaTil = (visning: Utgang, id?: string) => {
+    setStabel([]);
+    setLukkende(new Set());
+    onGaTil(visning, id);
+  };
+
   const api: Api = {
     apneOkt: (id) => legg({ type: "okt", id }),
     apneVurdering: (id) => legg({ type: "vurdering", id }),
+    apneFag: (id) => legg({ type: "fag", id }),
     apneElev: (id, valg) => legg({ type: "elev", id, ...valg }),
     lukk,
   };
@@ -223,10 +240,7 @@ export function Arkstabel({
                     underst={i === 0}
                     onLukk={lukk}
                     onApneElev={(id) => api.apneElev(id)}
-                    onVisIOkter={() => {
-                      setStabel([]);
-                      onVisIOkter(ark.id);
-                    }}
+                    onVisIOkter={() => gaTil("okter", ark.id)}
                   />
                 ) : ark.type === "vurdering" ? (
                   <VurderingArk
@@ -235,6 +249,20 @@ export function Arkstabel({
                     underst={i === 0}
                     onLukk={lukk}
                     onApneElev={(id) => api.apneElev(id)}
+                    onApneSamtaler={(fagId) => gaTil("samtaler", fagId)}
+                  />
+                ) : ark.type === "fag" ? (
+                  <FagArk
+                    fagId={ark.id}
+                    skolearId={skolearId}
+                    underst={i === 0}
+                    onLukk={lukk}
+                    onEndret={onFagEndret}
+                    onApneElev={(id, liste) =>
+                      api.apneElev(id, { liste, startFag: ark.id })
+                    }
+                    onApneVurdering={api.apneVurdering}
+                    onApneVurderinger={() => gaTil("vurderinger")}
                   />
                 ) : (
                   <ElevArk
@@ -350,12 +378,14 @@ function VurderingArk({
   underst,
   onLukk,
   onApneElev,
+  onApneSamtaler,
 }: {
   vurderingId: string;
   skolearId: string;
   underst: boolean;
   onLukk: () => void;
   onApneElev: (id: string) => void;
+  onApneSamtaler: (skolearFagId: string) => void;
 }) {
   const [vurdering, setVurdering] = useState<Vurdering | null>(null);
 
@@ -377,8 +407,67 @@ function VurderingArk({
             key={vurdering.id}
             vurdering={vurdering}
             onLukk={onLukk}
-            onEndret={last}
+            onEndret={() => {
+              last();
+              // Lista under — Vurderinger eller et fagkort — skal vise det.
+              varsleVurderinger();
+            }}
             onApneElev={onApneElev}
+            onApneSamtaler={onApneSamtaler}
+          />
+        )}
+      </div>
+    </>
+  );
+}
+
+function FagArk({
+  fagId,
+  skolearId,
+  underst,
+  onLukk,
+  onEndret,
+  onApneElev,
+  onApneVurdering,
+  onApneVurderinger,
+}: {
+  fagId: string;
+  skolearId: string;
+  underst: boolean;
+  onLukk: () => void;
+  onEndret: () => void;
+  onApneElev: (id: string, liste: string[]) => void;
+  onApneVurdering: (id: string) => void;
+  onApneVurderinger: () => void;
+}) {
+  const [fag, setFag] = useState<FagIAr | null>(null);
+
+  const last = useCallback(
+    () =>
+      void hentFagIAr(skolearId).then((f) =>
+        setFag(f.find((x) => x.id === fagId) ?? null),
+      ),
+    [fagId, skolearId],
+  );
+  useEffect(last, [last]);
+
+  return (
+    <>
+      <Arkhode underst={underst} onLukk={onLukk} />
+      <div className="flex min-h-0 flex-1 flex-col overflow-auto">
+        {fag && (
+          <FagPanel
+            key={fag.id}
+            fag={fag}
+            skolearId={skolearId}
+            onLukk={onLukk}
+            onEndret={() => {
+              last();
+              onEndret();
+            }}
+            onApneElev={onApneElev}
+            onApneVurdering={onApneVurdering}
+            onApneVurderinger={onApneVurderinger}
           />
         )}
       </div>

@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import { useArk } from "../ui/Arkstabel";
 import { confirm as bekreft } from "@tauri-apps/plugin-dialog";
 import type { Skolear } from "../data/skolear";
 import { hentInnstilling, settInnstilling } from "../data/skolear";
@@ -1483,6 +1484,8 @@ function Timeplan({
   /** en elev dras fra sin gruppe over på en annen plass */
   onFlyttElev: (elevId: string, dag: number, rad: number) => void;
 }) {
+  // Et navn åpner elevkortet som et ark over timeplanen.
+  const ark = useArk();
   let plass = 0;
 
   return (
@@ -1579,15 +1582,23 @@ function Timeplan({
                             e.dataTransfer.setData(ELEVDRAG, m.id);
                             e.dataTransfer.effectAllowed = "move";
                           }}
-                          title="Dra til en annen gruppe"
-                          className={`rounded-full bg-flate px-2 py-px ${erLast ? "" : "cursor-grab hover:bg-linje-medium"}`}
+                          onClick={() => ark.apneElev(m.id)}
+                          title="Klikk for elevkortet, dra til en annen gruppe"
+                          className={`cursor-pointer rounded-full bg-flate px-2 py-px hover:bg-linje-medium ${erLast ? "" : "active:cursor-grab"}`}
                         >
                           {m.navn}
                         </span>
                       ))}
                     </span>
                   ) : (
-                    <Kappet verdi={r.navn} klasse="min-w-0 flex-1" />
+                    <button
+                      onClick={() =>
+                        r.medlemmer[0] && ark.apneElev(r.medlemmer[0].id)
+                      }
+                      className="min-w-0 flex-1 text-left hover:text-aksent"
+                    >
+                      <Kappet verdi={r.navn} />
+                    </button>
                   )}
                   {r.tema && (
                     <Kappet

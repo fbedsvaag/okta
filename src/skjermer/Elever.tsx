@@ -35,8 +35,7 @@ import {
   Tomtilstand,
 } from "../ui/felles";
 import { hentForfalte } from "../data/elevnotat";
-import { ElevPanel } from "./ElevPanel";
-import { useGlidende } from "../ui/bevegelse";
+import { useArk } from "../ui/Arkstabel";
 
 /**
  * Kolonner som kan slås av og på. Fornavn står alltid — uten navn er raden
@@ -67,15 +66,14 @@ export function Elever({
   fag,
   startElev = null,
   onLimInn,
-  onApneOkt,
 }: {
   skolearId: string;
   /** Elev som skal stå åpen med en gang, f.eks. klikket fra forsiden. */
   startElev?: string | null;
   fag: FagIAr[];
   onLimInn: () => void;
-  onApneOkt: (oktId: string) => void;
 }) {
+  const ark = useArk();
   const [elever, setElever] = useState<ElevRad[]>([]);
   const [klasser, setKlasser] = useState<Klasse[]>([]);
   const [fane, setFane] = useState<"elever" | "klasser">("elever");
@@ -109,10 +107,11 @@ export function Elever({
   // Flervalg til sletting, atskilt fra `valgtElev` som er elevkortet du ser.
   const [merket, setMerket] = useState<Set<string>>(new Set());
 
-  // Kommer man hit med en elev i sikte — fra forsiden eller et heatmap —
-  // skal hen åpne seg, også når panelet allerede står på en annen.
+  // Kommer man hit med en elev i sikte, legger kortet seg over lista.
   useEffect(() => {
-    if (startElev) setValgtElev(startElev);
+    if (!startElev) return;
+    setValgtElev(startElev);
+    ark.apneElev(startElev);
   }, [startElev]);
 
   async function last() {
@@ -142,16 +141,9 @@ export function Elever({
     });
   }
 
-  // Panelet beholder siste elev mens det glir ut, ellers blir det tomt
-  // midt i animasjonen.
-  const { vist: visElev, apen: apentPanel } = useGlidende(valgtElev);
-
-  // Panelet tar to tredeler av bredden, så de brede kolonnene må vike. Men
-  // etternavnet blir stående — uten det bytter lista utseende i det du
-  // klikker, og to elever med samme fornavn blir umulige å skille.
-  const vis: ReadonlySet<Synlig> = apentPanel
-    ? new Set<Synlig>(synligeKolonner.has("etternavn") ? ["etternavn"] : [])
-    : synligeKolonner;
+  // Elevkortet legger seg som et ark over lista (Arkstabel), så lista
+  // beholder full bredde og alle kolonnene sine mens kortet er oppe.
+  const vis: ReadonlySet<Synlig> = synligeKolonner;
 
   const synlige = useMemo(() => {
     const s = sok.trim().toLocaleLowerCase("nb-NO");
@@ -187,17 +179,15 @@ export function Elever({
   const alleMerket =
     synlige.length > 0 && synlige.every((e) => merket.has(e.id));
 
-  // Bla gjennom lista slik den faktisk står — filtrert og sortert. Blar du
-  // i 1STC sortert på innsats, er det den rekkefølgen som gjelder, ikke
-  // alfabetisk på tvers av alle.
-  const [retning, setRetning] = useState<"opp" | "ned" | null>(null);
-  const nr = synlige.findIndex((e) => e.id === valgtElev);
-
-  function blaTil(steg: number) {
-    if (nr < 0 || synlige.length === 0) return;
-    const ny = (nr + steg + synlige.length) % synlige.length;
-    setRetning(steg > 0 ? "opp" : "ned");
-    setValgtElev(synlige[ny].id);
+  // Kortet blar gjennom lista slik den faktisk står — filtrert og
+  // sortert. Blar du i 1STC sortert på innsats, er det den rekkefølgen som
+  // gjelder, ikke alfabetisk på tvers av alle.
+  function apneElev(id: string) {
+    setValgtElev(id);
+    ark.apneElev(id, {
+      liste: synlige.map((e) => e.id),
+      startFag: filterFag.size === 1 ? [...filterFag][0] : undefined,
+    });
   }
 
   function bytSortering(kolonne: Kolonne) {
@@ -221,11 +211,7 @@ export function Elever({
 
   return (
     <div className="mx-auto flex min-h-0 w-full max-w-6xl flex-1 overflow-clip">
-      <div
-        className={`liste-bredde flex min-w-0 flex-col ${
-          apentPanel ? "hidden w-full pr-4 lg:flex lg:w-1/3" : "w-full"
-        }`}
-      >
+      <div className={`liste-bredde flex min-w-0 flex-col ${"w-full"}`}>
         {/* Søk, filtre og knapper blir stående mens lista ruller. */}
         <div className="shrink-0">
           <div className="mb-3 flex flex-wrap items-end gap-3">
@@ -281,16 +267,13 @@ export function Elever({
               Knappene gjelder tabellen. Med elevkortet åpent er lista smal, og
               da brakk linja over tre rader — de skjules til kortet lukkes.
             */}
-            <div
-              className={`ml-auto flex items-center gap-2 ${apentPanel ? "hidden" : ""}`}
-            >
+            <div className="ml-auto flex items-center gap-2">
               <label className="flex select-none items-center gap-2 text-liten text-blekk-dempet">
                 <input
                   type="checkbox"
                   checked={rediger}
                   onChange={(e) => {
                     setRediger(e.target.checked);
-                    if (e.target.checked) setValgtElev(null);
                   }}
                 />
                 Rediger
@@ -446,7 +429,7 @@ export function Elever({
                       merket={merket.has(e.id)}
                       forfalt={forfalte.has(e.id)}
                       vis={vis}
-                      onApne={() => setValgtElev(e.id)}
+                      onApne={() => apneElev(e.id)}
                       onMerk={(pa) =>
                         setMerket((f) => {
                           const ny = new Set(f);
@@ -580,32 +563,6 @@ export function Elever({
           </p>
         </div>
       </div>
-
-      {visElev && (
-        <div
-          className={`panel min-h-0 min-w-0 w-full overflow-auto lg:w-2/3 ${apentPanel ? "" : "panel-ute"}`}
-        >
-          <ElevPanel
-            key={visElev}
-            elevId={visElev}
-            aktivtSkolearId={skolearId}
-            startFag={filterFag.size === 1 ? [...filterFag][0] : ""}
-            onLukk={() => setValgtElev(null)}
-            onApneOkt={onApneOkt}
-            bla={
-              nr >= 0
-                ? {
-                    nr: nr + 1,
-                    av: synlige.length,
-                    retning,
-                    forrige: () => blaTil(-1),
-                    neste: () => blaTil(1),
-                  }
-                : undefined
-            }
-          />
-        </div>
-      )}
     </div>
   );
 }

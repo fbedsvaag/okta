@@ -45,6 +45,11 @@ Skjerm for skjerm (§4), med tilstand:
 - **⌘K-søk** — ferdig 30.09. Globalt, ikke bare i skåringsflyten som §4.4
   beskriver. Finner elever (navn, klasse, fag) og økter (tema, fag, alias,
   dato i ISO og norske formater). Fag kan ha et alias (migrasjon 018).
+- **Kortlogikken overalt** — 30.09. Elev, vurdering og fag åpnes som ark
+  (`Arkstabel`) fra lister, forsiden og hverandre. Økter beholder
+  sidepanelet med vilje, se DESIGN.md §7.
+- **Klasseliste i fagkortet** — 30.09. Ta ut (kobler fra, sletter ikke),
+  legg til med søk, eller opprett ny elev rett der.
 - **Kompetansemål på økter** — ferdig 30.09 (migrasjon 020,
   `okt_kompetansemal`). Økta arver periodens mål og kan få egne. Fag uten
   Udir-kode får fritekstfeltet `okt.kompetansemal`. Periodens mål velges

@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { useArk } from "../ui/Arkstabel";
+import { lyttVurderinger } from "../data/endringer";
 import { confirm as bekreft } from "@tauri-apps/plugin-dialog";
 import {
   hentElevAr,
@@ -83,6 +85,7 @@ export function ElevPanel({
     neste: () => void;
   };
 }) {
+  const ark = useArk();
   const [elev, setElev] = useState<ElevGrunnlag | null>(null);
   const [ar, setAr] = useState<ElevAr[]>([]);
   const [valgtAr, setValgtAr] = useState(aktivtSkolearId);
@@ -132,6 +135,10 @@ export function ElevPanel({
       avbrutt = true;
     };
   }, [elevId]);
+
+  // Et resultat ført i vurderingsarket over kortet, skal stå her når arket
+  // lukkes.
+  useEffect(() => lyttVurderinger(() => void lastFag()), [elevId, valgtAr]);
 
   async function lastFag() {
     const [h, f, v] = await Promise.all([
@@ -405,13 +412,21 @@ export function ElevPanel({
           ) : (
             <table className="w-full text-brod">
               <tbody>
-                {synligeVurderinger.map((v, i) => (
-                  <tr key={i} className="border-b border-linje-svak align-top">
+                {synligeVurderinger.map((v) => (
+                  <tr
+                    key={v.vurderingId}
+                    className="border-b border-linje-svak align-top"
+                  >
                     <td className="w-16 py-1.5">
                       <Fagmerke kode={v.fagKode} farge={null} liten />
                     </td>
                     <td className="py-1.5">
-                      {v.tittel}
+                      <button
+                        onClick={() => ark.apneVurdering(v.vurderingId)}
+                        className="text-left hover:text-aksent hover:underline"
+                      >
+                        {v.tittel}
+                      </button>
                       {v.kommentar && (
                         <p className="text-liten italic text-blekk-dempet">
                           {v.kommentar}

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { lyttElever } from "../data/endringer";
+import { lyttElever, lyttVurderinger } from "../data/endringer";
 import { confirm as bekreft } from "@tauri-apps/plugin-dialog";
 import {
   hentFagElever,
@@ -10,6 +10,14 @@ import {
   type FagVurdering,
 } from "../data/fagportal";
 import { endreFag, endreFagIAr, slettFagHelt, tellForFag } from "../data/fag";
+import {
+  frakobleFag,
+  hentElever,
+  koblePaFag,
+  opprettElev,
+  tellSkaringerIFag,
+  type ElevRad,
+} from "../data/elever";
 import { Felt, Kappet, KONTROLL } from "../ui/felles";
 import { finnFag, type GrepFag } from "../data/grep";
 import { hentDekkedeMal } from "../data/perioder";
@@ -30,6 +38,7 @@ export function FagPanel({
   onLukk,
   onEndret,
   onApneElev,
+  onApneVurdering,
   onApneVurderinger,
 }: {
   fag: FagIAr;
@@ -37,7 +46,9 @@ export function FagPanel({
   onLukk: () => void;
   /** ber skjermen laste fagene på nytt, uten å laste hele appen */
   onEndret: () => void;
-  onApneElev: (elevId: string) => void;
+  /** eleven, og klasselista kortet kan bla gjennom */
+  onApneElev: (elevId: string, liste: string[]) => void;
+  onApneVurdering: (vurderingId: string) => void;
   onApneVurderinger: () => void;
 }) {
   const [tall, setTall] = useState<FagNokkeltall | null>(null);
@@ -48,6 +59,7 @@ export function FagPanel({
   const [elevversjon, setElevversjon] = useState(0);
 
   useEffect(() => lyttElever(() => setElevversjon((v) => v + 1)), []);
+  useEffect(() => lyttVurderinger(() => setElevversjon((v) => v + 1)), []);
 
   useEffect(() => {
     void hentInnstilling(LAERERNAVN).then(setLaererNavn);
@@ -101,6 +113,87 @@ export function FagPanel({
       </header>
 
       <div className="overflow-y-auto px-5 py-4">
+        <section className="mb-6">
+          <div className="flex items-baseline justify-between text-brod">
+            <span>
+              <strong className="tabular-nums">{tall.avholdte}</strong> av{" "}
+              <span className="tabular-nums">{tall.okter}</span> økter avholdt
+            </span>
+            <span className="tabular-nums text-blekk-dempet">
+              {Math.round(andel * 100)} %
+            </span>
+          </div>
+          <div className="mt-1 h-1.5 w-full overflow-clip rounded-full bg-linje-medium">
+            <div
+              className="h-full rounded-full"
+              style={{
+                width: `${andel * 100}%`,
+                background: fag.farge ?? "var(--color-aksent)",
+              }}
+            />
+          </div>
+          <p className="mt-1.5 text-liten tabular-nums text-blekk-dempet">
+            {tall.elever} elever · {timer} timer planlagt
+            {fag.arstimetall !== null && (
+              <>
+                {" "}
+                av {fag.arstimetall} · {avvik(timer, fag.arstimetall)}
+              </>
+            )}
+            {tall.okter > tall.avholdte &&
+              ` · ${tall.okter - tall.avholdte} økter igjen`}
+          </p>
+        </section>
+
+        <Klasseliste
+          fag={fag}
+          skolearId={skolearId}
+          elever={elever}
+          onApneElev={onApneElev}
+        />
+
+        <Bolk
+          tittel="Vurderinger"
+          handling={
+            <button
+              onClick={onApneVurderinger}
+              className="text-liten text-blekk-dempet hover:text-aksent"
+            >
+              Åpne Vurderinger
+            </button>
+          }
+        >
+          {vurderinger.length === 0 ? (
+            <Stille>Ingen vurderinger planlagt i {fag.kode}.</Stille>
+          ) : (
+            <table className="w-full text-brod">
+              <tbody>
+                {vurderinger.map((v) => (
+                  <tr key={v.id} className="border-b border-linje-svak">
+                    <td className="py-1.5">
+                      <button
+                        onClick={() => onApneVurdering(v.id)}
+                        className="text-left hover:text-aksent hover:underline"
+                      >
+                        {v.tittel}
+                      </button>
+                    </td>
+                    <td className="w-20 py-1.5 text-blekk-dempet">
+                      {v.type ?? ""}
+                    </td>
+                    <td className="w-28 py-1.5 tabular-nums text-blekk-dempet">
+                      {v.frist ? kort(v.frist) : "ingen frist"}
+                    </td>
+                    <td className="w-14 py-1.5 text-right tabular-nums text-blekk-dempet">
+                      {v.fort === 0 ? "·" : `${v.fort}`}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </Bolk>
+
         {/*
           Rammene for faget dette året: hva som er avtalt, og hvilken kode
           det har i læreplanverket. Årstimetallet er det timeregnskapet
@@ -191,105 +284,6 @@ export function FagPanel({
           />
         </section>
 
-        <section className="mb-6">
-          <div className="flex items-baseline justify-between text-brod">
-            <span>
-              <strong className="tabular-nums">{tall.avholdte}</strong> av{" "}
-              <span className="tabular-nums">{tall.okter}</span> økter avholdt
-            </span>
-            <span className="tabular-nums text-blekk-dempet">
-              {Math.round(andel * 100)} %
-            </span>
-          </div>
-          <div className="mt-1 h-1.5 w-full overflow-clip rounded-full bg-linje-medium">
-            <div
-              className="h-full rounded-full"
-              style={{
-                width: `${andel * 100}%`,
-                background: fag.farge ?? "var(--color-aksent)",
-              }}
-            />
-          </div>
-          <p className="mt-1.5 text-liten tabular-nums text-blekk-dempet">
-            {tall.elever} elever · {timer} timer planlagt
-            {fag.arstimetall !== null && (
-              <>
-                {" "}
-                av {fag.arstimetall} · {avvik(timer, fag.arstimetall)}
-              </>
-            )}
-            {tall.okter > tall.avholdte &&
-              ` · ${tall.okter - tall.avholdte} økter igjen`}
-          </p>
-        </section>
-
-        <Bolk
-          tittel="Vurderinger"
-          handling={
-            <button
-              onClick={onApneVurderinger}
-              className="text-liten text-blekk-dempet hover:text-aksent"
-            >
-              Åpne Vurderinger
-            </button>
-          }
-        >
-          {vurderinger.length === 0 ? (
-            <Stille>Ingen vurderinger planlagt i {fag.kode}.</Stille>
-          ) : (
-            <table className="w-full text-brod">
-              <tbody>
-                {vurderinger.map((v) => (
-                  <tr key={v.id} className="border-b border-linje-svak">
-                    <td className="py-1.5">{v.tittel}</td>
-                    <td className="w-20 py-1.5 text-blekk-dempet">
-                      {v.type ?? ""}
-                    </td>
-                    <td className="w-28 py-1.5 tabular-nums text-blekk-dempet">
-                      {v.frist ? kort(v.frist) : "ingen frist"}
-                    </td>
-                    <td className="w-14 py-1.5 text-right tabular-nums text-blekk-dempet">
-                      {v.fort === 0 ? "·" : `${v.fort}`}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </Bolk>
-
-        <Bolk tittel="Elever">
-          {elever.length === 0 ? (
-            <Stille>Ingen elever koblet til {fag.kode} ennå.</Stille>
-          ) : (
-            <table className="w-full text-brod">
-              <tbody>
-                {elever.map((e) => (
-                  <tr key={e.elevId} className="border-b border-linje-svak">
-                    <td className="py-1.5">
-                      <button
-                        onClick={() => onApneElev(e.elevId)}
-                        className="text-left hover:text-aksent hover:underline"
-                      >
-                        {e.fornavn} {e.etternavn}
-                      </button>
-                    </td>
-                    <td className="w-16 py-1.5 tabular-nums text-blekk-dempet">
-                      {e.klasse ?? ""}
-                    </td>
-                    <td className="w-40 py-1.5">
-                      <Fordeling elev={e} />
-                    </td>
-                    <td className="w-14 py-1.5 text-right tabular-nums text-blekk-dempet">
-                      {e.talt || "–"}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </Bolk>
-
         <button
           onClick={async () => {
             const n = await tellForFag(fag.fagId);
@@ -313,6 +307,193 @@ export function FagPanel({
         </button>
       </div>
     </aside>
+  );
+}
+
+/**
+ * Klasselista i faget, rett til å rette i.
+ *
+ * «Ta ut» kobler eleven fra faget — den sletter ingenting. Eleven blir
+ * stående under Elever, eventuelt uten fag, og slettes der om det er
+ * meningen. Skåringene blir liggende og kommer tilbake om eleven kobles
+ * på igjen.
+ *
+ * Feltet nederst finner elever som ikke er i faget, på navn eller klasse.
+ * Finnes ingen, kan eleven opprettes rett her.
+ */
+function Klasseliste({
+  fag,
+  skolearId,
+  elever,
+  onApneElev,
+}: {
+  fag: FagIAr;
+  skolearId: string;
+  elever: FagElev[];
+  onApneElev: (elevId: string, liste: string[]) => void;
+}) {
+  const [alle, setAlle] = useState<ElevRad[]>([]);
+  const [sok, setSok] = useState("");
+  const [markert, setMarkert] = useState(0);
+
+  useEffect(() => {
+    const last = () => void hentElever(skolearId).then(setAlle);
+    last();
+    return lyttElever(last);
+  }, [skolearId]);
+
+  const iFaget = new Set(elever.map((e) => e.elevId));
+  const ord = sok.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  const treff =
+    ord.length === 0
+      ? []
+      : alle
+          .filter((e) => !iFaget.has(e.id))
+          .filter((e) => {
+            const tekst =
+              `${e.fornavn} ${e.etternavn} ${e.klasseNavn ?? ""}`.toLowerCase();
+            return ord.every((o) => tekst.includes(o));
+          })
+          .slice(0, 6);
+  // Ny elev krever fornavn og etternavn, og at ingen allerede heter det.
+  const kanOpprette = ord.length >= 2 && treff.length === 0;
+
+  async function leggTil(elevId: string) {
+    await koblePaFag(elevId, fag.id);
+    setSok("");
+    setMarkert(0);
+  }
+
+  async function opprett() {
+    const deler = sok.trim().split(/\s+/);
+    const etternavn = deler.pop()!;
+    const id = await opprettElev(deler.join(" "), etternavn);
+    await leggTil(id);
+  }
+
+  async function taUt(e: FagElev) {
+    const n = await tellSkaringerIFag(e.elevId, fag.id);
+    const ok = await bekreft(
+      `Ta ${e.fornavn} ${e.etternavn} ut av ${fag.kode}?\n\n` +
+        "Eleven slettes ikke. Hen blir stående under Elever — uten fag, " +
+        "om dette var det eneste — og kan slettes der." +
+        (n > 0
+          ? `\n\n${n} skåringer blir liggende og kommer tilbake om eleven ` +
+            "legges i faget igjen."
+          : ""),
+    );
+    if (ok) await frakobleFag(e.elevId, fag.id);
+  }
+
+  return (
+    <Bolk tittel={`Elever · ${elever.length}`}>
+      {elever.length === 0 ? (
+        <Stille>Ingen elever i {fag.kode} ennå. Legg dem til under.</Stille>
+      ) : (
+        <table className="w-full text-brod">
+          <tbody>
+            {elever.map((e) => (
+              <tr key={e.elevId} className="group border-b border-linje-svak">
+                <td className="py-1.5">
+                  <button
+                    onClick={() =>
+                      onApneElev(
+                        e.elevId,
+                        elever.map((x) => x.elevId),
+                      )
+                    }
+                    className="text-left hover:text-aksent hover:underline"
+                  >
+                    {e.fornavn} {e.etternavn}
+                  </button>
+                </td>
+                <td className="w-16 py-1.5 tabular-nums text-blekk-dempet">
+                  {e.klasse ?? ""}
+                </td>
+                <td className="w-40 py-1.5">
+                  <Fordeling elev={e} />
+                </td>
+                <td className="w-14 py-1.5 text-right tabular-nums text-blekk-dempet">
+                  {e.talt || "–"}
+                </td>
+                <td className="w-16 py-1.5 text-right">
+                  <button
+                    onClick={() => void taUt(e)}
+                    className="text-liten text-blekk-svak opacity-0 hover:text-feil focus:opacity-100 group-hover:opacity-100"
+                  >
+                    Ta ut
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+
+      <div className="relative mt-2 max-w-md">
+        <input
+          value={sok}
+          onChange={(e) => {
+            setSok(e.target.value);
+            setMarkert(0);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "ArrowDown") {
+              e.preventDefault();
+              setMarkert((i) => Math.min(i + 1, treff.length - 1));
+            } else if (e.key === "ArrowUp") {
+              e.preventDefault();
+              setMarkert((i) => Math.max(i - 1, 0));
+            } else if (e.key === "Enter") {
+              e.preventDefault();
+              if (treff[markert]) void leggTil(treff[markert].id);
+              else if (kanOpprette) void opprett();
+            } else if (e.key === "Escape" && sok) {
+              e.stopPropagation();
+              setSok("");
+            }
+          }}
+          placeholder="+ Legg til elev — skriv navn eller klasse"
+          className={`${KONTROLL} w-full rounded border border-linje bg-ark px-2 text-brod outline-none focus:border-aksent`}
+        />
+        {(treff.length > 0 || kanOpprette) && (
+          <ul className="absolute inset-x-0 top-full z-10 mt-1 overflow-clip rounded-vanlig border border-linje bg-ark shadow-[var(--shadow-ark)]">
+            {treff.map((e, i) => (
+              <li key={e.id}>
+                <button
+                  onMouseDown={(ev) => ev.preventDefault()}
+                  onClick={() => void leggTil(e.id)}
+                  className={`flex w-full items-baseline gap-2 px-2 py-1 text-left text-brod ${
+                    i === markert ? "bg-valgt" : "hover:bg-flate"
+                  }`}
+                >
+                  <span className="min-w-0 flex-1 truncate">
+                    {e.fornavn} {e.etternavn}
+                  </span>
+                  <span className="shrink-0 text-liten text-blekk-svak">
+                    {[e.klasseNavn, ...e.fagKoder]
+                      .filter(Boolean)
+                      .join(" · ") || "uten fag"}
+                  </span>
+                </button>
+              </li>
+            ))}
+            {kanOpprette && (
+              <li>
+                <button
+                  onMouseDown={(ev) => ev.preventDefault()}
+                  onClick={() => void opprett()}
+                  className="w-full bg-valgt px-2 py-1 text-left text-brod"
+                >
+                  Ny elev «{sok.trim()}» — Enter oppretter og legger i{" "}
+                  {fag.kode}
+                </button>
+              </li>
+            )}
+          </ul>
+        )}
+      </div>
+    </Bolk>
   );
 }
 

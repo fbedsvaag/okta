@@ -90,6 +90,11 @@ export function Innstillinger({
   const [kopier, setKopier] = useState<Kopi[]>([]);
   const [kopimappe, setKopimappe] = useState("");
   const [tarKopi, setTarKopi] = useState(false);
+  // Beskjed etter «Ta kopi nå»: at det gikk, og hva fila heter.
+  const [kopimelding, setKopimelding] = useState<{
+    ok: boolean;
+    tekst: string;
+  } | null>(null);
   const [verdier, setVerdier] = useState<Record<string, Skalaverdi[]>>({});
 
   /**
@@ -760,9 +765,22 @@ export function Innstillinger({
           <Knapp
             onClick={async () => {
               setTarKopi(true);
+              setKopimelding(null);
               try {
-                await taKopiNa();
+                const sti = await taKopiNa();
                 await lastKopier();
+                const kl = new Date().toTimeString().slice(0, 5);
+                setKopimelding({
+                  ok: true,
+                  tekst: sti
+                    ? `Kopien er tatt kl. ${kl}: ${sti.split("/").pop()}`
+                    : `Kopien er tatt kl. ${kl}.`,
+                });
+              } catch (e) {
+                setKopimelding({
+                  ok: false,
+                  tekst: `Kopien ble ikke tatt: ${String(e)}`,
+                });
               } finally {
                 setTarKopi(false);
               }
@@ -781,6 +799,18 @@ export function Innstillinger({
             </button>
           )}
         </div>
+
+        {kopimelding && (
+          <p
+            role="status"
+            className={`mb-3 flex items-baseline gap-1.5 text-brod ${
+              kopimelding.ok ? "text-lys-gronn" : "text-feil"
+            }`}
+          >
+            {kopimelding.ok && <Ikon navn="hake" />}
+            {kopimelding.tekst}
+          </p>
+        )}
 
         {kopier.length === 0 ? (
           <p className="text-brod text-blekk-svak">Ingen kopier ennå.</p>

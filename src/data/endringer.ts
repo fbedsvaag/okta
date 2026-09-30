@@ -54,3 +54,26 @@ export function varsleElever(): void {
     }
   }
 }
+
+// ------------------------------------------------------------ vurderinger
+
+/**
+ * Vurderinger som endres i et ark, sier fra til lista under — ellers står
+ * den gamle tittelen eller fristen der til man går ut og inn igjen.
+ */
+const vurderingslyttere = new Set<Lytter>();
+
+export function lyttVurderinger(fn: Lytter): () => void {
+  vurderingslyttere.add(fn);
+  return () => vurderingslyttere.delete(fn);
+}
+
+export function varsleVurderinger(): void {
+  for (const fn of vurderingslyttere) {
+    try {
+      fn();
+    } catch (e) {
+      console.error("vurderingslytter:", e);
+    }
+  }
+}

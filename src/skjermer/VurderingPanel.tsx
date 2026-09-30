@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useArk } from "../ui/Arkstabel";
 import { Ikon, Kappet } from "../ui/felles";
 import { confirm as bekreft } from "@tauri-apps/plugin-dialog";
 import {
@@ -568,6 +569,7 @@ function Oktkobling({
 }) {
   const her = okter.filter((o) => vurdering.oktIder.includes(o.id));
   const andre = okter.filter((o) => !vurdering.oktIder.includes(o.id));
+  const ark = useArk();
 
   return (
     <div>
@@ -576,7 +578,12 @@ function Oktkobling({
       </span>
       {her.map((o) => (
         <div key={o.id} className="flex items-baseline gap-2 text-brod">
-          <span className="min-w-0 flex-1 truncate">{oktetikett(o)}</span>
+          <button
+            onClick={() => ark.apneOkt(o.id)}
+            className="min-w-0 flex-1 truncate text-left hover:text-aksent hover:underline"
+          >
+            {oktetikett(o)}
+          </button>
           <button
             onClick={async () => {
               await losOkt(vurdering.id, o.id);

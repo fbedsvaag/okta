@@ -11,10 +11,7 @@ import {
 import { hentInnstilling } from "../data/skolear";
 import { FAGFARGER } from "../ui/farger";
 import { Felt, Knapp, Tomtilstand } from "../ui/felles";
-import { FagPanel } from "./FagPanel";
 import { Fagvelger } from "./Fagvelger";
-import { useGlidende } from "../ui/bevegelse";
-import { hentFagElever, type FagElev } from "../data/fagportal";
 
 /**
  * Fagene mine i dette skoleåret, SPEC §4.8.
@@ -27,12 +24,10 @@ export function Fag({
   skolearId,
   fag,
   onEndret,
-  onApneVurderinger,
 }: {
   skolearId: string;
   fag: FagIAr[];
   onEndret: () => void;
-  onApneVurderinger: () => void;
 }) {
   const [globalVarighet, setGlobalVarighet] = useState("180");
   // Lesemodus er standard. Feltene låses opp med bryteren, slik at et klikk
@@ -40,18 +35,13 @@ export function Fag({
   const [rediger, setRediger] = useState(false);
   const [valgtFag, setValgtFag] = useState<string | null>(null);
   const ark = useArk();
-  const { vist: apent, apen: glir } = useGlidende(
-    fag.find((f) => f.id === valgtFag) ?? null,
-  );
 
-  // Elevene i det åpne faget, i samme rekkefølge som fagpanelet viser dem.
-  // Sendes med til elevarket, så man kan bla mellom dem der (⌥↑/⌥↓).
-  const [fagElever, setFagElever] = useState<FagElev[]>([]);
-
-  useEffect(() => {
-    if (!apent) return;
-    void hentFagElever(apent.id, skolearId).then(setFagElever);
-  }, [apent?.id, skolearId]);
+  // Fagkortet legger seg som et ark over lista (Arkstabel), som elev- og
+  // vurderingskortene. Elevene i faget åpnes som ark over det igjen.
+  function apne(id: string) {
+    setValgtFag(id);
+    ark.apneFag(id);
+  }
 
   useEffect(() => {
     void hentInnstilling("standard_varighet_min").then((v) =>
@@ -61,11 +51,7 @@ export function Fag({
 
   return (
     <div className="mx-auto flex min-h-0 w-full max-w-6xl flex-1 overflow-clip">
-      <div
-        className={`liste-bredde flex min-w-0 flex-col ${
-          glir ? "hidden w-full pr-4 lg:flex lg:w-1/3" : "w-full"
-        }`}
-      >
+      <div className="liste-bredde flex w-full min-w-0 flex-col">
         {/* Overskrift og Rediger-bryteren blir stående mens lista ruller. */}
         <div className="shrink-0">
           <div className="flex items-baseline justify-between">
@@ -76,7 +62,6 @@ export function Fag({
                 checked={rediger}
                 onChange={(e) => {
                   setRediger(e.target.checked);
-                  if (e.target.checked) setValgtFag(null);
                 }}
               />
               Rediger
@@ -123,7 +108,7 @@ export function Fag({
                       globalVarighet={globalVarighet}
                       rediger={rediger}
                       valgt={valgtFag === f.id}
-                      onApne={() => setValgtFag(f.id)}
+                      onApne={() => apne(f.id)}
                       onEndret={onEndret}
                     />
                   ))}
@@ -139,28 +124,6 @@ export function Fag({
           />
         </div>
       </div>
-
-      {apent && (
-        <div
-          className={`panel min-h-0 min-w-0 w-full overflow-auto lg:w-2/3 ${glir ? "" : "panel-ute"}`}
-        >
-          {/* En elev åpnes som et ark over fagpanelet (Arkstabel). */}
-          <FagPanel
-            key={apent.id}
-            fag={apent}
-            skolearId={skolearId}
-            onLukk={() => setValgtFag(null)}
-            onEndret={onEndret}
-            onApneElev={(id) =>
-              ark.apneElev(id, {
-                liste: fagElever.map((e) => e.elevId),
-                startFag: apent.id,
-              })
-            }
-            onApneVurderinger={onApneVurderinger}
-          />
-        </div>
-      )}
     </div>
   );
 }

@@ -9,9 +9,8 @@ import {
 import type { FagIAr } from "../data/fag";
 import type { Skala } from "../skala";
 import { Felt, Ikon, Kappet, Knapp, Tomtilstand } from "../ui/felles";
-import { VurderingPanel } from "./VurderingPanel";
 import { useArk } from "../ui/Arkstabel";
-import { useGlidende } from "../ui/bevegelse";
+import { lyttVurderinger } from "../data/endringer";
 
 /**
  * Vurderinger, SPEC §4.6.
@@ -23,11 +22,9 @@ import { useGlidende } from "../ui/bevegelse";
 export function Vurderinger({
   skolearId,
   fag,
-  onApneSamtaler,
 }: {
   skolearId: string;
   fag: FagIAr[];
-  onApneSamtaler: (skolearFagId: string) => void;
 }) {
   const [vurderinger, setVurderinger] = useState<Vurdering[]>([]);
   const [skalaer, setSkalaer] = useState<Skala[]>([]);
@@ -45,6 +42,14 @@ export function Vurderinger({
     void last();
     void hentVurderingsskalaer().then(setSkalaer);
   }, [skolearId]);
+  // Vurderingen åpnes som et ark over lista; endres den der, skal lista
+  // vise det med en gang.
+  useEffect(() => lyttVurderinger(() => void last()), [skolearId]);
+
+  function apne(id: string) {
+    setValgt(id);
+    ark.apneVurdering(id);
+  }
 
   const synlige = useMemo(() => {
     const s = sok.trim().toLocaleLowerCase("nb-NO");
@@ -54,10 +59,6 @@ export function Vurderinger({
       return true;
     });
   }, [vurderinger, filterFag, sok]);
-
-  const { vist: apen, apen: glir } = useGlidende(
-    vurderinger.find((v) => v.id === valgt) ?? null,
-  );
 
   // Hvor mange vurderinger hvert fag har. Står i fagfilteret, så man ser
   // hvilke fag som mangler vurderinger uten å måtte klikke seg gjennom dem.
@@ -71,16 +72,14 @@ export function Vurderinger({
 
   return (
     <div className="mx-auto flex min-h-0 w-full max-w-6xl flex-1 overflow-clip">
-      <div
-        className={`liste-bredde flex min-w-0 flex-col ${glir ? "hidden w-full pr-4 lg:flex lg:w-1/3" : "w-full"}`}
-      >
+      <div className="liste-bredde flex w-full min-w-0 flex-col">
         <div className="shrink-0">
           <div className="mb-3 flex flex-wrap items-center gap-2">
             <Felt
               verdi={sok}
               settVerdi={setSok}
               plassholder="Søk i tittel"
-              bredde={apen ? "w-full" : "w-56"}
+              bredde="w-56"
             />
             <select
               value={filterFag}
@@ -111,7 +110,7 @@ export function Vurderinger({
               onLagret={async (id) => {
                 setLagerNy(false);
                 await last();
-                setValgt(id);
+                apne(id);
               }}
               onAvbryt={() => setLagerNy(false)}
             />
@@ -144,8 +143,8 @@ export function Vurderinger({
                       key={v.id}
                       vurdering={v}
                       valgt={valgt === v.id}
-                      kompakt={apen !== null}
-                      onVelg={() => setValgt(v.id)}
+                      kompakt={false}
+                      onVelg={() => apne(v.id)}
                     />
                   ))}
                 </div>
@@ -181,21 +180,6 @@ export function Vurderinger({
           )}
         </div>
       </div>
-
-      {apen && (
-        <div
-          className={`panel min-h-0 min-w-0 w-full overflow-auto lg:w-2/3 ${glir ? "" : "panel-ute"}`}
-        >
-          {/* Elevkortet legger seg som et ark over vurderingen (Arkstabel). */}
-          <VurderingPanel
-            vurdering={apen}
-            onLukk={() => setValgt(null)}
-            onEndret={last}
-            onApneElev={(id) => ark.apneElev(id)}
-            onApneSamtaler={onApneSamtaler}
-          />
-        </div>
-      )}
     </div>
   );
 }

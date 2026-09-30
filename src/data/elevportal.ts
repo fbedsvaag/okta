@@ -46,6 +46,7 @@ export type FagRad = {
 };
 
 export type ElevVurdering = {
+  vurderingId: string;
   skolearFagId: string;
   fagKode: string;
   tittel: string;
@@ -181,7 +182,8 @@ export async function hentElevVurderinger(
   skolearId: string,
 ): Promise<ElevVurdering[]> {
   return hent<ElevVurdering>(
-    `SELECT sf.id AS skolearFagId,
+    `SELECT vu.id AS vurderingId,
+            sf.id AS skolearFagId,
             COALESCE(NULLIF(f.alias, ''), f.kode) AS fagKode,
             vu.tittel, vu.type, vu.frist,
             sv.kode AS resultat,

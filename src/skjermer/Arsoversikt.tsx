@@ -14,6 +14,7 @@ import {
   type Kommende,
 } from "../data/dashbord";
 import { Fagmerke, Kappet, Tomtilstand } from "../ui/felles";
+import { useArk } from "../ui/Arkstabel";
 
 /**
  * Årsoversikten på startskjermen.
@@ -277,6 +278,7 @@ function Timeregnskap({
 }
 
 function Fagmaler({ fag }: { fag: Fagtimer }) {
+  const ark = useArk();
   const timer = fag.planlagtMin / 60;
   const mal = fag.arstimetall;
   const andel = mal && mal > 0 ? timer / mal : null;
@@ -285,8 +287,13 @@ function Fagmaler({ fag }: { fag: Fagtimer }) {
   return (
     <li>
       <div className="flex items-baseline gap-2 text-brod">
-        <Fagmerke kode={fag.kode} farge={fag.farge} liten />
-        <Kappet verdi={fag.navn} klasse="text-blekk-dempet" />
+        <button
+          onClick={() => ark.apneFag(fag.skolearFagId)}
+          className="flex min-w-0 items-baseline gap-2 text-left hover:text-aksent"
+        >
+          <Fagmerke kode={fag.kode} farge={fag.farge} liten />
+          <Kappet verdi={fag.navn} klasse="text-blekk-dempet" />
+        </button>
         <span className="ml-auto shrink-0 tabular-nums">
           {rundt(timer)}
           {mal ? <span className="text-blekk-svak"> av {mal}</span> : null} t
