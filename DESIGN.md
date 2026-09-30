@@ -1,198 +1,168 @@
-# Økta — designoppdrag og merkevareguide
+# Økta — designguide
 
-Denne fila erstatter både `DESIGNOPPDRAG.md` og tidligere `DESIGN.md`, og
-erstatter §13 i `SPEC.md`. Er de uenige, gjelder denne.
+Hvordan appen ser ut og oppfører seg, slik det er valgt. Erstatter §13 i
+`SPEC.md`; er de uenige, gjelder denne. Tokenene står i `src/index.css`,
+felleskomponentene i `src/ui/felles.tsx`.
 
-Den er skrevet så den kan leses av noen som aldri har sett prosjektet.
+Guiden var til 30.09.2026 et designoppdrag («foreslå tre paletter …»). Den er
+nå skrevet om til det som faktisk er bestemt. Står noe under «Ikke bygget
+ennå», er det fortsatt retningen — ikke noe som finnes.
 
 ---
 
 ## 1. Hva appen er
 
-En lokal desktop-app for undervisningsplanlegging og elevoppfølging. Tauri 2 +
-SQLite + Vite/React/TypeScript + Tailwind 4. Bygget av én lærer i norsk
-videregående skole, til eget bruk.
+En lokal desktop-app for én lærer i norsk videregående: planlegge året, skåre
+elevene underveis, se eleven over tid. Den er lærerens eget arbeidsmateriale,
+sett på i sekunder om gangen, i et lyst klasserom, ofte stående.
 
-Den er lærerens eget arbeidsmateriale. Ikke et rapporteringssystem, ikke et
-dashbord, ikke et produkt som skal selges inn. Den blir sett på i sekunder om
-gangen, i et lyst klasserom, ofte stående.
+**Det skal se ut som et skjema — bare skarpere, og med lag som beveger seg.**
+Ikke et dashbord, ikke et produkt som selges inn.
 
-**Brukeren er ikke utvikler.** Forklar valgene dine på norsk, med vanlige ord.
+## 2. Tre prinsipper
 
-## 2. Retningen: ark som glir
+**Færrest mulig klikk.** Det som er kjent, fylles ut. Det som gjøres mange
+ganger, kan gjøres på én gang: tema skrives rett i lista, perioder males over
+mange økter, serier legges inn samlet.
 
-Appen er lag som skyves inn og ut. Velger du en elev, glir elevpanelet inn fra
-høyre og lista trekker seg sammen. Lukker du det, glir det ut og lista brer seg
-tilbake. Ingenting bytter side, ingenting blinker, ingenting lastes på nytt.
+**Bredden brukes.** Tettheten er poenget, men tett betyr ikke trangt. En
+tabell skal ikke klemme kolonnene sammen mens halve skjermen står tom til
+høyre. Kolonner får den bredden innholdet trenger; det som er til overs, går
+til den kolonnen som har mest tekst (navn, tema).
 
-Det er sant om strukturen: du er alltid i en liste og går inn i én ting av
-gangen. Navigasjonen er dybde, ikke sidebytte.
+**Navn brekker aldri.** Et elevnavn står på én linje — også dobbeltnavn som
+«Anne-Marie Holm Johansen». Er det for trangt, kuttes navnet med «…», og hele
+navnet står i verktøytipset. En rad som blir to linjer høy, ødelegger rytmen i
+hele tabellen.
 
-**Signaturen er bevegelsen.** De fleste verktøy i denne sjangeren står helt
-stille. Dette skal ikke det. Men bevegelsen er kort, retningsbestemt og alltid
-den samme veien, så den forteller deg hvor du er i stedet for å underholde.
+## 3. Ufravikelig
 
-Flatene er kort med skygge på en kjøligere grunn. Dybde kommer fra lagdeling,
-ikke fra rammer.
-
-**Én grense, og den er absolutt:** skåringsflyten animeres aldri. Se §7.
-
-## 3. Hva som allerede er bygget
-
-Appen virker. 73 tester passerer. Du bytter uttrykk, ikke funksjon.
-
-| Skjerm | Hva den er |
-|---|---|
-| `Veiviser` | Førstegangsoppsett: skoleår → fag → elevlister |
-| `IDag` | Startskjerm. Dagens økter som kort |
-| `Skolekalender` | Året som månedsrutenett, kun mandag–fredag |
-| `Skoleruta` | Ferier og fridager, toner ut dager i kalenderen |
-| `Fag` | Fagene i året, tabell + `FagPanel` |
-| `Elever` | Hovedtabellen: navn, klasse, fag, økter, siste + `ElevPanel` |
-| `LimInn` | Lim inn klasseliste, forhåndsvisning med duplikathåndtering |
-| `Okter` | Øktene kronologisk + `OktPanel` — her skåres elevene |
-| `Perioder` | Året som vannrett tidslinje |
-| `Vurderinger` | Vurderingsoppgaver per fag + `VurderingPanel` |
-| `Innstillinger` | Skoleår, fagbank, fag i år, skalaer, sikkerhetskopi |
-| `Arsplan` | Utskriftsvisning (print-stylesheet) |
-
-**Mønstre som skal respekteres:**
-
-- **Liste til venstre, panel til høyre** — `lg:w-1/3` / `lg:w-2/3`. Lista
-  komprimerer seg når panelet åpnes. Dette er layouten bevegelsen må passe.
-- **Felt lagrer når de forlates.** Ingen lagre-knapper. Enter bekrefter,
-  Escape angrer.
-- **Navigasjonshistorikk** som i en nettleser, ⌘[ og ⌘].
-- **Kolonnevelgere** i Elever og Økter.
-- **Skåringsflyten i `OktPanel`:** `0`–`3` setter verdi og flytter markøren
-  videre. Tastene utledes av skalaens rangering.
-
-Ikke bygget: oppfølging og tekstarkiv-eksport. Ikke design deg inn i et hjørne
-som gjør dem vanskelige.
-
-## 4. Ufravikelig
-
-**Null nettverkskall mens appen kjører.** Ingen Google Fonts, ingen CDN, ingen
-`@import url()` mot nett, ingen ikonpakke som hentes ved kjøring.
-
-Merk hva det *ikke* betyr: en fontfil i `public/` som lastes fra disk er like
-lokal som en PNG. Du står fritt i valg av skrift — den må bare følge med
-installasjonen.
+**Null nettverkskall mens appen kjører.** Skriftene ligger i `public/fonts/`
+og lastes fra disk. Ingen CDN, ingen `@import url()` mot nett.
 
 **Skalafarger er data.** `skalaverdi.farge` lagrer et navn (`gronn`, `gul`,
-`rod`), ikke en hex. Oppslaget skjer i `src/ui/farger.ts`. Bytt paletten der —
-aldri i den enkelte visningen, aldri i databasen.
+`rod`), ikke en hex. Oppslaget skjer i `src/ui/farger.ts`.
 
-**28px radhøyde.** Tretti elever pluss tabellhode skal få plass uten scrolling
-på en 14-tommer. Dette er den viktigste enkeltverdien i hele dokumentet. Test
-det faktisk, ikke anta. En smal skrift kjøper deg plass i kolonnene.
+**Skåringslista holder 28 px rader.** Tretti elever pluss tabellhode får
+plass uten å rulle på en 14-tommer. Den bruker `text-liten` for å holde
+tettheten; resten av appen har luftigere rader (34 px).
 
-**Utskriften må virke.** `src/index.css` har print-stylesheet med
-`.ikkeutskrift` / `.kunutskrift` og sideskift per fag. Alt skal være lesbart i
-svart-hvitt på papir.
+**Skåringen animeres aldri.** Tastetrykk → farge → neste elev er null
+millisekunder. Animer navigasjon, aldri inntasting.
 
-**Ikke rør** `src/data/`, `src/db/`, `src/import/`, `src-tauri/migrations/`,
-eller tastaturflyten. Trenger du en ny opplysning for å tegne noe, si fra.
+**Utskriften må virke.** Årsplanarket (§4.9) er lesbart i svart-hvitt og
+flyter over så mange sider som trengs. `.ikkeutskrift` og `.kunutskrift` i
+`index.css` styrer hva som kommer på papir.
 
-## 5. Farge — her skal vi prøve oss fram
+## 4. Farge
 
-Ingenting er låst. Foreslå **tre palettretninger**, og vis alle tre på samme
-skjerm så de er sammenliknbare.
+Nøytralene har et kjølig fiolett stikk framfor å være rent grå. Alt er tokens
+i `@theme` i `index.css` — aldri hex i komponentene.
 
-Rammer som gjelder alle tre:
+| Rolle | Token | Bruk |
+|---|---|---|
+| Blekk | `blekk` `#241f33` | Tekst |
+| | `blekk-dempet` `#645d7a` | Sekundærtekst, etiketter |
+| | `blekk-svak`, `blekk-svakest` | Hint, plassholdere |
+| Flater | `bord` `#eceaf1` | Grunnen appen står på |
+| | `ark` `#ffffff` | Kort, panel, felt |
+| | `flate`, `flate-svak` | Hover, merkelapper, månedsoverskrifter |
+| | `valgt` `#e3ddf0` | Valgt rad, aktiv fane |
+| Linjer | `linje`, `linje-medium`, `linje-svak`, `linje-sterk` | Referansen er linjert papir |
+| Aksent | `aksent` `#4a3d7d` (+ `-mork`, `-dyp`) | Primærknapp, fokus, aktiv fane |
+| Feil | `feil` `#b3261e`, `feil-flate` | Sletting, feilmeldinger |
 
-- **Lys grunn.** Klasserom er lyse. Mørk modus kommer til slutt, om i det hele
-  tatt.
-- **Kort på en kjøligere grunn**, med ekte skygge. Tre nivåer: liste, panel,
-  ark som legger seg over.
-- **Fag har egne, tydelige farger** — 12 dempede blekkfarger finnes i dag
-  (`#2f5d8a`, `#7a4b2a`, `#3f6b4a` og flere). De vises som 3px strek i
-  venstremarg og som prikk ved fagkoden. Aldri som flatefarge.
-- **Trafikklyset har fem trinn** i datamodellen, selv om v1 bruker tre. Dagens
-  verdier er `#2dc937 · #99c140 · #e7b416 · #db7b2b · #cc3232`, valgt for
-  lesbarhet. Grønnen er skarp — foreslå gjerne noe roligere.
-- **Kontrast er et krav.** Dette leses på avstand i et lyst rom.
+**Trafikklyset er det eneste mettede i appen**, i en roligere variant:
+grønn `#3f9d49`, gulgrønn `#8ba33e`, gul `#d9a92f`, oransje `#cf7a35`,
+rød `#c04a3d`, «borte» `#b6bcc4`. Formen bærer betydningen sammen med fargen
+(§8).
 
-Blåen som brukes i dag ligger strødd som hex i komponentene og skal samles til
-navngitte tokens: `#1d4e7c` primær, `#194365` hover, `#eaf0f6` aktiv fane,
-`#f4f7fa` radhover, `#b3261e` feil.
+**Fagfarger** — tolv dempede blekkfarger (`FAGFARGER` i `farger.ts`). Vises
+som 3 px strek i venstremarg og som prikk ved fagkoden. Aldri som flate.
 
-Forbudet mot fiolett i den forrige brief-en er opphevet. Det som gjelder er
-§9, ikke en liste over enkeltfarger.
+**Periodefarger** — åtte (`PERIODEFARGER` i `perioder.ts`), tydelig ulike
+fagfargene. Vises som en svak tone over hele raden (hex + `1f`, ca. 12 %
+dekning) og som prikk på penselen. Tonen skal leses som fargelegging, ikke
+som et varsel.
 
-## 6. Typografi
+## 5. Typografi
 
-**Skriften skal velges, ikke arves.** Appen har ingen `font-family` satt i dag —
-det er fravær av en beslutning, ikke en beslutning.
+**Fira Sans** til UI og brødtekst, **Fira Sans Condensed** der bredde er
+knapp (`font-smal`). Begge under SIL OFL, lokalt i `public/fonts/`.
+**Georgia** til overskrifter (`font-display`) — en serif i toppen mot sans i
+tabellene gir hierarki uten å gjøre tabelldata tyngre. Georgia ligger på
+maskinen og koster ingen fontfil.
 
-Ett funksjonelt krav: **tabulære sifre.** Datoer, klokkeslett, timetall og
-elevantall står i kolonner som skal flukte. En skrift uten `tnum` kan brukes til
-navn og UI, men da trengs en annen til tallene.
+**Tabulære sifre er bærende.** Fira har ulik sifferbredde som standard. Alt
+som står i kolonner — datoer, klokkeslett, timer, antall — har
+`tabular-nums`.
 
-**Stående forslag:** Archivo og Archivo Narrow. Én familie i to bredder, åpen
-lisens, laget for tetthet, med ordentlig tegnet ø, å og æ, og tabulærsifre — så
-ingen egen monofont trengs. Kondensert til elevnavn og øktrader, vanlig til
-resten.
+Skala (ganges med `--tekst-skala`, som settes i Innstillinger):
 
-Har du et bedre forslag, legg det fram. Kommersielle skrifter er i orden hvis
-lisensen dekker å pakke dem med en app — nevn det som et spørsmål, ikke en
-innvending.
+| Token | px | Bruk |
+|---|---|---|
+| `mikro` | 11 | Kalenderruter |
+| `etikett` | 12 | Kolonnehoder, seksjonsetiketter — versaler med sperring |
+| `liten` | 13 | Hjelpetekst, skåringslista |
+| `brod` | 15 | Brødtekst, tabeller |
+| `medium` | 16 | Søkefelt, fremhevet |
+| `tittel` | 19 | Paneltitler |
+| `overskrift` | 24 | Skjermoverskrifter |
 
-Dagens størrelser: 13px brødtekst i tabeller, 11–12px etiketter, 15px
-overskrifter, 10px i kalenderruter. Sett også `<title>` i `index.html` — den
-står fortsatt på «Tauri + React + Typescript».
+## 6. Form og komponenter
 
-## 7. Bevegelse
+**Radier er små:** 3 / 4 / 6 px (`liten`, `vanlig`, `stor`). Et skjema, ikke
+kort med runde hjørner.
 
-Bevegelsen er en del av uttrykket, ikke pynt.
+**Kontroller har felles høyde** (`KONTROLL`, 2,2 em): knapper, felt og
+nedtrekkslister på samme verktøylinje flukter.
+
+**Knapper, fire roller:**
+- `primar` — aksentfylt. Én per skjerm, det man er der for («+ Ny økt»).
+- `vanlig` — hvit med kant.
+- `stille` — uten kant, til det sekundære.
+- `farlig` — rød tekst, til sletting. Spør alltid før noe slettes.
+
+**Menyen** er én rad: I dag · Økter · Elever · Vurderinger · Samtaler · Fag,
+og til høyre Søk (⌘K), skoleåret, Innstillinger. Ingen underfane-rader.
+
+**Visningsbryteren** (Liste | Kalender | Perioder) er en segmentert kontroll
+først i verktøylinja. Visningene den bytter mellom har samme bredde, så den
+står på samme sted — ingenting hopper.
+
+**Merkelapper** (piller) brukes sparsomt, der noe skal kunne tas i: pensler
+for perioder, elevnavn i en gruppesamtale som kan dras. Ikke som pynt.
+
+**Kontekstmeny og søkevindu** er ark over alt annet, med `shadow-ark`. De
+lukkes med Esc eller et trykk utenfor.
+
+**Tomme tilstander** sier hva som mangler og har en knapp dit det fikses.
+
+## 7. Dybde og bevegelse
+
+Tre skyggenivåer: `shadow-lav` (kort), `shadow-panel` (panel),
+`shadow-ark` (det som legger seg over). Dybde, ikke dekorasjon.
+
+**Ark som glir.** Velger du noe i en liste, glir panelet inn fra høyre og
+lista trekker seg sammen til en tredjedel. Navigasjonen er dybde, ikke
+sidebytte. Unntak: elevkortet åpnet fra søket dekker hele bredden, uten
+lista — der er lista bare forstyrrende.
 
 ```
---tid-rask   90ms    markørflytting, hover, tilstandsbytte
---tid-inn   180ms    panel og ark som glir inn
---tid-ut    130ms    ut — alltid raskere enn inn
---kurve     cubic-bezier(.2, .9, .25, 1)
---kurve-ut  cubic-bezier(.4, 0, .9, .4)
+--tid-inn     180ms   panel inn
+--tid-ut      130ms   ut — alltid raskere enn inn
+--tid-markor   90ms   markør med piltaster (aldri med talltaster)
+--ease-inn    cubic-bezier(.2, .9, .25, 1)
+--ease-ut     cubic-bezier(.4, 0, .9, .4)
 ```
 
-**Panel inn:** glir inn fra høyre mens lista komprimerer fra full bredde til
-1/3. De to bevegelsene er samtidige og har samme varighet, så det leses som at
-lista gjør plass — ikke som at to ting skjer.
-
-**Panel ut:** motsatt vei, raskere. Lista er tilbake i full bredde før panelet
-er helt borte. Ventetid oppleves verre på vei ut enn på vei inn.
-
-**Ark over ark:** åpner du noe fra et panel, legger det nye seg over med
-`skygge-3`. Det under skaleres til 98% og dempes, så lagdelingen leses.
-
-**Liste som lastes:** 12 ms forsinkelse per rad, maks ti rader med stagger.
-Resten står ferdig. Uten det taket blir tretti elever en forestilling.
-
-**Rader som flyttes** — dra en periode, endre rekkefølge på skalaverdier —
-bruker FLIP, ikke reflow-hopp.
-
-### Grensen
-
-**Skåringsflyten animeres aldri.** Tastetrykk → farge → neste elev er null
-millisekunder. Kravet er tretti elever på under tjue sekunder. Selv 90 ms per
-trykk er tre sekunder tapt og en markør som henger etter fingeren.
-
-Animer navigasjon. Aldri inntasting.
-
-### Bryteren
-
-**I Innstillinger**, under Generelt: **Bevegelse — På / Dempet / Av**.
-
-- **På** er standard, verdiene over
-- **Dempet** halverer alle tider og fjerner stagger
-- **Av** setter alt til 0 ms
-
-`prefers-reduced-motion: reduce` setter den til Av første gang. Brukeren kan
-overstyre.
+**Rulling skal være myk og treffe riktig.** Horisontal bla (uka på «I dag»)
+bruker `scroll-snap`, så den alltid lander på en hel uke. Lister åpner der det
+er naturlig å begynne — øktlista på dagens dato.
 
 ## 8. Trafikklyset
 
-Farge alene er ikke nok — verken for fargesyn eller på avstand. Form skiller i
-tillegg til farge:
+Farge alene er ikke nok — verken for fargesyn eller på avstand:
 
 | Verdi | Form |
 |---|---|
@@ -202,51 +172,24 @@ tillegg til farge:
 | Ikke i økta | tomt omriss, tynn strek |
 | Ikke skåret | ingenting |
 
-I heatmapet er de avrundede kvadrater. «Ikke i økta» er alltid tom, aldri farge.
+I heatmapet er de avrundede kvadrater. «Ikke i økta» er alltid tom, aldri
+farge. En økt ingen er skåret i, er et hull.
 
-## 9. Det skal ikke se «Claudsk» ut
-
-Det finnes et gjenkjennelig utseende språkmodeller faller ned på med frie
-tøyler. Det er feil her — ikke fordi det er stygt, men fordi det er anonymt, og
-fordi det er dashbord-språk brukt på et arbeidsverktøy.
-
-**La være:**
+## 9. La være
 
 - Inter, `system-ui` eller Roboto som gjennomgående skrift
-- Kremhvit bakgrunn rundt `#F4F1EA` med terrakotta-aksent rundt `#D97757`
-- Gradienter, særlig i topptekst, knapper og hero-flater
-- Emoji som ikoner
-- Pill-formede merkelapper med pastellbakgrunn overalt
-- Luftig midtstilt `max-w-4xl`-layout — tettheten er poenget
-- Store tall som «stat-kort» øverst på skjermer
-- Tailwinds standardpalett (`slate-500`, `zinc-100`) som hele identiteten
-- shadcn/ui rett ut av eska
+- Kremhvit grunn med terrakotta-aksent
+- Gradienter
+- Emoji som ikoner — symbolene i `Ikon` er tegnet og arver fargen
+- Store tall som «stat-kort», grafer på forsiden
+- Tailwinds standardpalett (`slate-500`, `zinc-100`) som identitet
+- Luftig midtstilt layout der innholdet ikke bruker bredden (§2)
 
-**Testen:** ser det ut som et skjema eller som et produkt? Det skal se ut som et
-skjema — bare skarpere, og med lag som beveger seg.
+## 10. Ikke bygget ennå
 
-Skygger og kort er *tillatt* her, i motsetning til i forrige brief. Men de er
-dybde, ikke dekorasjon: tre nivåer, ikke en skygge rundt hver seksjon.
-
-## 10. Hva jeg vil ha tilbake
-
-En **merkevareguide for appen**, ikke ferdig kode:
-
-1. **Tre palettretninger**, hver vist på samme skjerm — Elever-tabellen med
-   tretti rader, ekte norske navn, panelet åpent.
-2. **Typografiforslag** med skalaen satt, vist i tett tabell.
-3. **Komponentoversikt:** knapper, tabellrad, inputfelt, nedtrekksliste,
-   trafikklys i alle fem tilstander, heatmap-rad, øktrad, tom tilstand,
-   feilmelding, bryteren for bevegelse.
-4. **Bevegelsen vist**, ikke bare beskrevet: panel inn og ut.
-5. Én setning per valg om **hvorfor**.
-
-Tretti rader, ikke fem. Fem elever ser fint ut uansett — det er ved tretti du
-ser om tettheten holder.
-
-## 11. Ikke oppdraget
-
-- Nye funksjoner eller skjermer
-- Endringer i datamodell, spørringer, migrasjoner eller tastaturflyt
-- Nye avhengigheter uten å spørre
-- Å gjøre appen om til et dashbord
+- **Bevegelsesbryter** i Innstillinger (På / Dempet / Av), med
+  `prefers-reduced-motion` som utgangspunkt.
+- **Stagger** når lister lastes (12 ms per rad, maks ti rader).
+- **FLIP** når rader flyttes.
+- **Ark over ark** — det under skaleres til 98 % og dempes.
+- **Mørk modus.** Lav prioritet; klasserom er lyse.
