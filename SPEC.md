@@ -1032,6 +1032,14 @@ Er samlet kapasitet lavere enn antall elever, står det over resultatet:
 
 Varselet oppdateres mens du endrer innstillingene, ikke bare ved generering.
 
+#### Planlagte samtaler
+
+Øverst i oppsettskolonnen står de planlagte trekningene, én per fag og én for
+mentorsamtalene. En trekning slettes med sveip til venstre på raden, eller
+med «Slett planen» over timeplanen. Appen sier hva som forsvinner og spør
+først. Dager som lå i en økt, tas ut av den, og vurderingen løses fra økta.
+Publiserte mentorsamtaler fjernes fra kalenderen ved neste publisering.
+
 #### Gruppesamtaler
 
 «Samtale» velges blant enkeltvis, i par, tre og tre, og opp til seks og seks,

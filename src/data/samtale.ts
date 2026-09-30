@@ -857,6 +857,20 @@ export async function fjernDagFraOkt(samtaledagId: string): Promise<void> {
 }
 
 /**
+ * Sletter en hel planlagt trekning: alle dagene, med samtalene på dem.
+ * Dager som lå i en økt, tas ut av økta, så vurderingen løses fra den.
+ *
+ * Soft delete (§9), som alt annet. Publiserte mentorsamtaler forsvinner fra
+ * kalenderen ved neste publisering.
+ */
+export async function slettTrekning(dager: Samtaledag[]): Promise<void> {
+  for (const d of dager) {
+    if (d.oktId) await fjernDagFraOkt(d.id);
+    else await slettSamtaledag(d.id);
+  }
+}
+
+/**
  * Bytter vurderingen trekningen hører til, for alle dagene. Dager som ligger
  * i en økt, flytter koblingen med seg: den gamle vurderingen løses fra økta,
  * den nye knyttes.

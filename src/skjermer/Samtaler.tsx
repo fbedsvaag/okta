@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { confirm as bekreft } from "@tauri-apps/plugin-dialog";
 import type { Skolear } from "../data/skolear";
 import { hentInnstilling, settInnstilling } from "../data/skolear";
@@ -23,6 +23,7 @@ import {
   fjernDagFraOkt,
   leggDagIOkt,
   settTrekningensVurdering,
+  slettTrekning,
   flyttInnenDagen,
   flyttMellomDager,
   grupperTrekninger,
@@ -551,6 +552,29 @@ export function Samtaler({
     setTimeout(() => setKopiert(null), 1500);
   }
 
+  /**
+   * Sletter en planlagt trekning — alle dagene og samtalene. Spør først, og
+   * sier hva som forsvinner.
+   */
+  async function slettPlan(dagene: Samtaledag[], navn: string) {
+    const antall = dagene.reduce((n, d) => n + d.antall, 0);
+    const iOkter = dagene.some((d) => d.oktId);
+    if (
+      !(await bekreft(
+        `Slette de planlagte samtalene i ${navn}?\n\n` +
+          `${dagene.length} ${dagene.length === 1 ? "dag" : "dager"}` +
+          (antall > 0 ? ` og ${antall} samtaler` : "") +
+          " forsvinner." +
+          (iOkter ? " Vurderingen løses fra øktene samtalene lå i." : "") +
+          "\n\nSikkerhetskopien fra i dag er veien tilbake.",
+      ))
+    )
+      return;
+    await slettTrekning(dagene);
+    setTrekning(null);
+    await last();
+  }
+
   /** Helt ny trekning. Fordeler på nytt over dagene, og løser opp elevlåsene. */
   async function generer() {
     if (
@@ -632,6 +656,9 @@ export function Samtaler({
                 setModus(skolearFagId === null ? "mentor" : "fag");
                 if (skolearFagId !== null) setFagId(skolearFagId);
               }}
+              onSlett={(t) =>
+                void slettPlan(t.dager, t.fagKode ?? "mentorsamtalene")
+              }
             />
           </Bolk>
 
@@ -1037,6 +1064,19 @@ export function Samtaler({
               )}
             </Knapp>
             <Knapp onClick={() => void invoke("skriv_ut")}>Skriv ut</Knapp>
+            <Knapp
+              variant="stille"
+              onClick={() =>
+                void slettPlan(
+                  dager,
+                  modus === "mentor"
+                    ? "mentorsamtalene"
+                    : (fag.find((f) => f.id === fagId)?.kode ?? "faget"),
+                )
+              }
+            >
+              Slett planen
+            </Knapp>
 
             {/*
               Publiseringen er en bevisst handling, ikke en bivirkning av at
@@ -1797,12 +1837,14 @@ function Trekningsliste({
   aktiv,
   erMentor,
   onVelg,
+  onSlett,
 }: {
   trekninger: Trekning[];
   /** skolear_fag-id-en man står i, eller null for mentormodus */
   aktiv: string | null;
   erMentor: boolean;
   onVelg: (skolearFagId: string | null) => void;
+  onSlett: (t: Trekning) => void;
 }) {
   if (trekninger.length === 0) {
     return (
@@ -1814,33 +1856,85 @@ function Trekningsliste({
 
   return (
     <ul className="space-y-0.5">
-      {trekninger.map((t) => {
-        const valgt = erMentor
-          ? t.skolearFagId === null
-          : t.skolearFagId === aktiv;
-        return (
-          <li key={t.skolearFagId ?? "mentor"}>
-            <button
-              onClick={() => onVelg(t.skolearFagId)}
-              className={`flex w-full items-baseline gap-2 rounded-vanlig px-2 py-1 text-left text-brod ${
-                valgt ? "bg-valgt text-aksent" : "hover:bg-flate"
-              }`}
-            >
-              <Kappet
-                verdi={t.fagKode ?? "Mentorsamtale"}
-                klasse="min-w-0 flex-1 font-medium"
-              />
-              <span className="shrink-0 text-liten tabular-nums text-blekk-dempet">
-                {spenn(t)}
-              </span>
-              <span className="w-14 shrink-0 text-right text-liten tabular-nums text-blekk-svak">
-                {t.antall > 0 ? `${t.antall} stk` : "ikke trukket"}
-              </span>
-            </button>
-          </li>
-        );
-      })}
+      {trekninger.map((t) => (
+        <Trekningsrad
+          key={t.skolearFagId ?? "mentor"}
+          t={t}
+          valgt={erMentor ? t.skolearFagId === null : t.skolearFagId === aktiv}
+          onVelg={() => onVelg(t.skolearFagId)}
+          onSlett={() => onSlett(t)}
+        />
+      ))}
     </ul>
+  );
+}
+
+/**
+ * Én planlagt trekning. Sveip til venstre med to fingre viser Slett-knappen,
+ * som i Mail; sveip tilbake skjuler den.
+ *
+ * Sveipet kommer som vannrett rulling (deltaX). Det summeres over et kort
+ * vindu, så et lite sidelengs dytt mens man ruller nedover ikke utløser noe.
+ */
+function Trekningsrad({
+  t,
+  valgt,
+  onVelg,
+  onSlett,
+}: {
+  t: Trekning;
+  valgt: boolean;
+  onVelg: () => void;
+  onSlett: () => void;
+}) {
+  const [apen, setApen] = useState(false);
+  const sum = useRef(0);
+  const nullstill = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  return (
+    <li
+      className="relative overflow-hidden rounded-vanlig"
+      onWheel={(e) => {
+        if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return;
+        sum.current += e.deltaX;
+        if (nullstill.current) clearTimeout(nullstill.current);
+        nullstill.current = setTimeout(() => (sum.current = 0), 250);
+        if (sum.current > 40) {
+          setApen(true);
+          sum.current = 0;
+        } else if (sum.current < -40) {
+          setApen(false);
+          sum.current = 0;
+        }
+      }}
+    >
+      <button
+        onClick={onSlett}
+        tabIndex={apen ? 0 : -1}
+        aria-hidden={!apen}
+        className="absolute inset-y-0 right-0 w-20 bg-feil text-liten font-medium text-white"
+      >
+        Slett
+      </button>
+      <button
+        onClick={() => (apen ? setApen(false) : onVelg())}
+        style={{ transform: apen ? "translateX(-5rem)" : undefined }}
+        className={`relative flex w-full items-baseline gap-2 rounded-vanlig px-2 py-1 text-left text-brod transition-transform duration-150 ${
+          valgt ? "bg-valgt text-aksent" : "bg-bord hover:bg-flate"
+        }`}
+      >
+        <Kappet
+          verdi={t.fagKode ?? "Mentorsamtale"}
+          klasse="min-w-0 flex-1 font-medium"
+        />
+        <span className="shrink-0 text-liten tabular-nums text-blekk-dempet">
+          {spenn(t)}
+        </span>
+        <span className="w-14 shrink-0 text-right text-liten tabular-nums text-blekk-svak">
+          {t.antall > 0 ? `${t.antall} stk` : "ikke trukket"}
+        </span>
+      </button>
+    </li>
   );
 }
 

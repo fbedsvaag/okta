@@ -610,3 +610,54 @@ describe("gruppesamtaler i basen", () => {
     for (const s of etter) expect(s.id).toBe(for_.get(s.elevId));
   });
 });
+
+describe("slette en planlagt trekning", () => {
+  it("fjerner alle dagene og samtalene, og løser vurderingen fra øktene", async () => {
+    const { opprettOkt, hentOktVurderinger } = await import("./okter");
+    const { leggDagIOkt, slettTrekning } = await import("./samtale");
+    const [skala] = await base.select<{ id: string }[]>(
+      "SELECT id FROM skala WHERE bruksomrade = 'vurdering' LIMIT 1",
+    );
+    const okt = await opprettOkt(fagId, "MFL1", "2026-11-03", "08:30", 180);
+    const v = await opprettVurdering(
+      fagId,
+      skala.id,
+      "Muntlig",
+      "muntlig",
+      null,
+    );
+    const iOkt = (await leggDagIOkt(skolearId, okt, v))!;
+    const egen = await dagMed("2026-11-10");
+    await lagreTrekning(iOkt, [
+      { elevId: elever[0], klokkeslett: "08:30", varighetMin: 20, tema: null },
+    ]);
+    await lagreTrekning(egen, [
+      { elevId: elever[1], klokkeslett: "08:30", varighetMin: 20, tema: null },
+    ]);
+
+    await slettTrekning(
+      (await hentSamtaledager(skolearId)).filter(
+        (d) => d.skolearFagId === fagId,
+      ),
+    );
+
+    expect(await hentSamtaledager(skolearId)).toEqual([]);
+    expect(await hentSamtaler(iOkt)).toEqual([]);
+    expect(await hentSamtaler(egen)).toEqual([]);
+    expect((await hentOktVurderinger(skolearId)).has(okt)).toBe(false);
+  });
+
+  it("rører ikke mentorsamtalene når faget slettes", async () => {
+    const { slettTrekning } = await import("./samtale");
+    await dagMed("2026-11-10");
+    await dagMed("2026-11-12", null);
+    await slettTrekning(
+      (await hentSamtaledager(skolearId)).filter(
+        (d) => d.skolearFagId === fagId,
+      ),
+    );
+    const igjen = await hentSamtaledager(skolearId);
+    expect(igjen).toHaveLength(1);
+    expect(igjen[0].skolearFagId).toBeNull();
+  });
+});
