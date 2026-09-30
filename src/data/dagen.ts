@@ -65,8 +65,26 @@ export function dagen<T extends Oktlik>(alle: T[], idag: string): Dagen {
     setning: `${antall} ${dagens.length === 1 ? "økt" : "økter"} i dag: ${liste}.`,
     linjer: dagens.map((o) => {
       const forrige = forrigeOkt(o, alle);
-      const notat = forrige?.logg?.trim() || null;
+      const notat = forrige?.logg ? enLinje(forrige.logg) : null;
       return { okt: o, forrige, notat };
     }),
   };
+}
+
+/**
+ * Notatet på én linje: listetegn, overskriftsmerker og avkrysningsbokser
+ * tas bort, og linjene skilles med «·». Hele teksten står i øktkortet.
+ */
+export function enLinje(tekst: string): string | null {
+  const linjer = tekst
+    .split(/\n+/)
+    .map((l) =>
+      l
+        .replace(/^\s*#{1,3}\s+/, "")
+        .replace(/^\s*([-*+]|\d+[.)])\s+/, "")
+        .replace(/^\[( |x|X)\]\s+/, "")
+        .trim(),
+    )
+    .filter(Boolean);
+  return linjer.length > 0 ? linjer.join(" · ") : null;
 }

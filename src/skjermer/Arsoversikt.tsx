@@ -13,7 +13,14 @@ import {
   type Glipp,
   type Kommende,
 } from "../data/dashbord";
-import { Fagmerke, Kappet, Tomtilstand } from "../ui/felles";
+import {
+  Fagmerke,
+  Kappet,
+  Kontekstmeny,
+  Menyvalg,
+  Tomtilstand,
+} from "../ui/felles";
+import type { Okt } from "../data/okter";
 import { useArk } from "../ui/Arkstabel";
 
 /**
@@ -27,12 +34,15 @@ import { useArk } from "../ui/Arkstabel";
 export function Arsoversikt({
   skolearId,
   skolestart,
+  okter,
   onApneElev,
   onApneVurdering,
 }: {
   skolearId: string;
   /** første skoledag — innsatslinjene begynner der */
   skolestart: string;
+  /** alle øktene i året, så en prikk kan åpne ukas økter */
+  okter: Okt[];
   onApneElev: (elevId: string) => void;
   onApneVurdering: (vurderingId: string) => void;
 }) {
@@ -71,7 +81,11 @@ export function Arsoversikt({
   return (
     <div className="mt-8 grid gap-x-8 gap-y-7 lg:grid-cols-2">
       <div className="lg:col-span-2">
-        <Innsats linjer={data?.uker ?? []} skolestart={skolestart} />
+        <Innsats
+          linjer={data?.uker ?? []}
+          skolestart={skolestart}
+          okter={okter}
+        />
       </div>
       <Timeregnskap fag={data?.timer ?? []} mentor={data?.mentor ?? null} />
       <div className="grid gap-y-7">
@@ -139,10 +153,35 @@ const PRIKKFARGE = {
 function Innsats({
   linjer,
   skolestart,
+  okter,
 }: {
   linjer: Innsatslinje[];
   skolestart: string;
+  okter: Okt[];
 }) {
+  const ark = useArk();
+  // Uka man klikket på, når den har flere økter å velge mellom.
+  const [meny, setMeny] = useState<{
+    x: number;
+    y: number;
+    okter: Okt[];
+  } | null>(null);
+
+  /** Én økt den uka åpnes rett; flere gir en liste å velge fra. */
+  function apneUke(fagId: string, mandag: string, el: HTMLElement) {
+    const ukas = okter
+      .filter((o) => o.skolearFagId === fagId && mandagFor(o.dato) === mandag)
+      .sort(
+        (a, b) =>
+          a.dato.localeCompare(b.dato) ||
+          (a.klokkeslett ?? "").localeCompare(b.klokkeslett ?? ""),
+      );
+    if (ukas.length === 1) return ark.apneOkt(ukas[0].id);
+    if (ukas.length === 0) return;
+    const r = el.getBoundingClientRect();
+    setMeny({ x: r.left, y: r.bottom + 4, okter: ukas });
+  }
+
   // Ukene fra skolestart til i dag, felles for alle fagene.
   const forste = mandagFor(skolestart);
   const siste = mandagFor(isoIdag());
@@ -187,8 +226,12 @@ function Innsats({
                       >
                         {f && (
                           <>
-                            <span
-                              className="h-2.5 w-2.5 rounded-full ring-2 ring-ark"
+                            <button
+                              aria-label={`Uke ${isoUke(m)}: åpne ukas økter`}
+                              onClick={(e) =>
+                                apneUke(l.skolearFagId, m, e.currentTarget)
+                              }
+                              className="h-2.5 w-2.5 cursor-pointer rounded-full ring-2 ring-ark transition-transform hover:scale-150"
                               style={{ background: PRIKKFARGE[f] }}
                             />
                             <span
@@ -215,6 +258,29 @@ function Innsats({
             <span>uke {isoUke(forste)}</span>
             <span className="ml-auto">uke {isoUke(siste)}</span>
           </div>
+          {meny && (
+            <Kontekstmeny x={meny.x} y={meny.y} onLukk={() => setMeny(null)}>
+              {meny.okter.map((o) => (
+                <Menyvalg
+                  key={o.id}
+                  onKlikk={() => {
+                    setMeny(null);
+                    ark.apneOkt(o.id);
+                  }}
+                >
+                  <span className="tabular-nums">{norskDato(o.dato)}</span>
+                  {o.klokkeslett && (
+                    <span className="ml-2 tabular-nums text-blekk-dempet">
+                      {o.klokkeslett}
+                    </span>
+                  )}
+                  {o.tema && (
+                    <span className="ml-2 text-blekk-dempet">{o.tema}</span>
+                  )}
+                </Menyvalg>
+              ))}
+            </Kontekstmeny>
+          )}
         </div>
       )}
     </Panel>

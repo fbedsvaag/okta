@@ -400,14 +400,27 @@ export default function App() {
 
             {visning === "liminn" && (
               <LimInn
+                key={apneId ?? ""}
                 skolearId={skolear.id}
                 fag={fag}
+                // Fra et fagkort: faget står valgt, og lista er hele faget.
+                startFagId={apneId ?? undefined}
+                erstatt={apneId !== null}
                 onFerdig={(m) => {
                   setMelding(m);
-                  ga("elever");
                   setVersjon((v) => v + 1);
+                  if (apneId) {
+                    // Tilbake til faget, med kortet oppe igjen.
+                    ga("fag");
+                    ark.current?.apneFag(apneId);
+                  } else ga("elever");
                 }}
-                onAvbryt={() => ga("elever")}
+                onAvbryt={() => {
+                  if (apneId) {
+                    ga("fag");
+                    ark.current?.apneFag(apneId);
+                  } else ga("elever");
+                }}
               />
             )}
 

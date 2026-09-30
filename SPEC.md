@@ -279,7 +279,7 @@ CREATE TABLE okt (
   varighet_min   INTEGER NOT NULL,      -- minutter; forhåndsutfylles fra §4.8
   kode           TEXT,                  -- "2608-ENG1-3", se under
   tema           TEXT,
-  kompetansemal  TEXT,
+  kompetansemal  TEXT,                  -- fritekst, for fag uten Udir-kode
   sted           TEXT,                  -- rom; forhåndsutfylt fra faget
   agenda         TEXT,                  -- skrevet for eleven; går ut i kalenderen
   lekse          TEXT,                  -- på årsplanarket; aldri i kalenderen
@@ -288,6 +288,19 @@ CREATE TABLE okt (
   opprettet TEXT NOT NULL,
   endret    TEXT NOT NULL,
   slettet   TEXT
+);
+
+-- Kompetansemål fra Udir på én økt, utover dem perioden dekker. Samme
+-- mønster som periode_kompetansemal: bare koden lagres, teksten ligger i
+-- grep-fag.json. Økta arver periodens mål; de står ikke her.
+CREATE TABLE okt_kompetansemal (
+  id         TEXT PRIMARY KEY,
+  okt_id     TEXT NOT NULL REFERENCES okt(id),
+  kode       TEXT NOT NULL,
+  opprettet  TEXT NOT NULL,
+  endret     TEXT NOT NULL,
+  slettet    TEXT,
+  UNIQUE(okt_id, kode)
 );
 
 CREATE TABLE skaring (
@@ -1700,9 +1713,10 @@ behandlingsansvarlig, uavhengig av hvor det ligger.
 
   Datamodell når det blir aktuelt: `kompetansemal(id, grep_kode, kode, tekst)`
   som egen tabell, junction mot `okt` og `periode`, og `grep_kode` som nytt felt
-  på `fag`. I v1 er `okt.kompetansemal`, `periode.kompetansemal` og
-  `fag.beskrivelse` fritekst, og migreringen er udramatisk så lenge de feltene
-  ikke struktureres på egen hånd.
+  på `fag`. `grep_kode` og koblingene mot periode (`periode_kompetansemal`) og
+  økt (`okt_kompetansemal`) finnes allerede, med bare koden lagret — teksten
+  slås opp i JSON-fila. `okt.kompetansemal`, `periode.kompetansemal` og
+  `fag.beskrivelse` er fortsatt fritekst, for fag uten Udir-kode.
 
   **Fritekst må fortsatt virke.** Presets er et hjelpemiddel, ikke et krav. Fag
   uten treff i Grep — lokale valgfag, private tilbud, noe læreren setter opp selv

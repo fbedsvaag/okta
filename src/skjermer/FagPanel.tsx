@@ -40,6 +40,7 @@ export function FagPanel({
   onApneElev,
   onApneVurdering,
   onApneVurderinger,
+  onLimInn,
 }: {
   fag: FagIAr;
   skolearId: string;
@@ -50,6 +51,8 @@ export function FagPanel({
   onApneElev: (elevId: string, liste: string[]) => void;
   onApneVurdering: (vurderingId: string) => void;
   onApneVurderinger: () => void;
+  /** lim inn en ny klasseliste for faget */
+  onLimInn: () => void;
 }) {
   const [tall, setTall] = useState<FagNokkeltall | null>(null);
   const [elever, setElever] = useState<FagElev[]>([]);
@@ -150,6 +153,7 @@ export function FagPanel({
           skolearId={skolearId}
           elever={elever}
           onApneElev={onApneElev}
+          onLimInn={onLimInn}
         />
 
         <Bolk
@@ -326,11 +330,13 @@ function Klasseliste({
   skolearId,
   elever,
   onApneElev,
+  onLimInn,
 }: {
   fag: FagIAr;
   skolearId: string;
   elever: FagElev[];
   onApneElev: (elevId: string, liste: string[]) => void;
+  onLimInn: () => void;
 }) {
   const [alle, setAlle] = useState<ElevRad[]>([]);
   const [sok, setSok] = useState("");
@@ -386,7 +392,17 @@ function Klasseliste({
   }
 
   return (
-    <Bolk tittel={`Elever · ${elever.length}`}>
+    <Bolk
+      tittel={`Elever · ${elever.length}`}
+      handling={
+        <button
+          onClick={onLimInn}
+          className="text-liten text-blekk-dempet hover:text-aksent"
+        >
+          Lim inn ny liste …
+        </button>
+      }
+    >
       {elever.length === 0 ? (
         <Stille>Ingen elever i {fag.kode} ennå. Legg dem til under.</Stille>
       ) : (

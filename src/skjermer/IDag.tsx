@@ -125,6 +125,7 @@ export function IDag({
         <Arsoversikt
           skolearId={skolear.id}
           skolestart={skolear.start}
+          okter={okter}
           onApneElev={(elevId) => ark.apneElev(elevId)}
           onApneVurdering={(id) => ark.apneVurdering(id)}
         />
@@ -169,9 +170,7 @@ function Dagsoppsummering({
               className="min-w-0 truncate text-left hover:text-blekk"
             >
               Notatet du skrev forrige gang:{" "}
-              <span className="text-blekk">
-                «{notat.replace(/\s*\n\s*/g, " · ")}»
-              </span>
+              <span className="text-blekk">«{notat}»</span>
             </button>
           ) : (
             <span>Du skrev ikke noe notat forrige økt.</span>

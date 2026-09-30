@@ -92,6 +92,17 @@ export async function utforImport(
   return resultat;
 }
 
+/**
+ * Elevene i faget som ikke står på lista — de som tas ut når lista er hele
+ * faget. En linje som hoppes over, teller ikke som «står på lista».
+ */
+export function ikkePaLista(rader: Importrad[], medlemmer: string[]): string[] {
+  const pa = new Set(
+    rader.filter((r) => !r.hopp && r.valgt !== "ny").map((r) => r.valgt),
+  );
+  return medlemmer.filter((id) => !pa.has(id));
+}
+
 /** Startverdiene for forhåndsvisningen, før brukeren har rørt noe. */
 export function tilImportrader(
   vurderinger: Vurdering[],

@@ -1,8 +1,14 @@
 import { useState } from "react";
 import { parseListe } from "../import/parser";
 import { vurderImport } from "../import/duplikat";
-import { tilImportrader, utforImport, type Importrad } from "../import/utfor";
-import { hentForDuplikatsjekk } from "../data/elever";
+import {
+  ikkePaLista,
+  tilImportrader,
+  utforImport,
+  type Importrad,
+} from "../import/utfor";
+import type { EksisterendeElev } from "../import/duplikat";
+import { frakobleFag, hentForDuplikatsjekk } from "../data/elever";
 import type { FagIAr } from "../data/fag";
 import { Felt, Knapp } from "../ui/felles";
 
@@ -14,12 +20,15 @@ export function LimInn({
   skolearId,
   fag,
   startFagId,
+  erstatt: erstattFraStart = false,
   onFerdig,
   onAvbryt,
 }: {
   skolearId: string;
   fag: FagIAr[];
   startFagId?: string;
+  /** lista er hele faget: de som ikke står på den, tas ut (slettes ikke) */
+  erstatt?: boolean;
   onFerdig: (melding: string) => void;
   onAvbryt: () => void;
 }) {
@@ -32,6 +41,11 @@ export function LimInn({
   const [rader, setRader] = useState<Importrad[] | null>(null);
   const [hoppet, setHoppet] = useState(0);
   const [jobber, setJobber] = useState(false);
+  const [erstatt, setErstatt] = useState(erstattFraStart);
+  // Elevene i faget i dag, og de av dem som skal tas ut. Forhåndsvalget er
+  // alle som ikke står på lista; hver kan krysses av igjen.
+  const [medlemmer, setMedlemmer] = useState<EksisterendeElev[]>([]);
+  const [tasUt, setTasUt] = useState<Set<string>>(new Set());
 
   async function forhandsvis() {
     const { elever, hoppetOver } = parseListe(tekst);
@@ -43,8 +57,21 @@ export function LimInn({
       valgtKlasse: klasse.trim() === "" ? null : klasse.trim(),
     });
 
-    setRader(tilImportrader(vurderinger, klasse.trim()));
+    const nye = tilImportrader(vurderinger, klasse.trim());
+    setRader(nye);
     setHoppet(hoppetOver.length);
+    const iFaget = fagId
+      ? eksisterende.filter((e) => e.skolearFagIder.includes(fagId))
+      : [];
+    setMedlemmer(iFaget);
+    setTasUt(
+      new Set(
+        ikkePaLista(
+          nye,
+          iFaget.map((e) => e.id),
+        ),
+      ),
+    );
   }
 
   async function importer() {
@@ -52,6 +79,14 @@ export function LimInn({
     setJobber(true);
     try {
       const r = await utforImport(rader, skolearId, fagId || null, somMentor);
+      const utIder =
+        erstatt && fagId
+          ? ikkePaLista(
+              rader,
+              medlemmer.map((e) => e.id),
+            ).filter((id) => tasUt.has(id))
+          : [];
+      for (const id of utIder) await frakobleFag(id, fagId);
       const hvor = fagId
         ? (fag.find((f) => f.id === fagId)?.kode ?? "faget")
         : somMentor
@@ -59,7 +94,8 @@ export function LimInn({
           : "Uten fag";
       onFerdig(
         `${hvor}: ${r.opprettet} nye elever, ${r.koblet} fantes fra før` +
-          (r.hoppet > 0 ? `, ${r.hoppet} hoppet over` : ""),
+          (r.hoppet > 0 ? `, ${r.hoppet} hoppet over` : "") +
+          (utIder.length > 0 ? `, ${utIder.length} tatt ut av faget` : ""),
       );
     } finally {
       setJobber(false);
@@ -110,6 +146,66 @@ export function LimInn({
             ))}
           </tbody>
         </table>
+
+        {/*
+          Lista er hele faget: de som står i faget, men ikke på lista, tas
+          ut. De slettes ikke — de står under Elever, uten fag om dette var
+          det eneste, og slettes der om det er meningen.
+        */}
+        {erstatt && fagId && (
+          <div className="mt-5">
+            <h3 className="text-etikett uppercase tracking-etikett text-blekk-dempet">
+              Står i faget, men ikke på lista
+            </h3>
+            {(() => {
+              const ute = ikkePaLista(
+                rader,
+                medlemmer.map((e) => e.id),
+              );
+              if (ute.length === 0)
+                return (
+                  <p className="mt-1 text-brod text-blekk-svak">
+                    Ingen — alle i faget står på lista.
+                  </p>
+                );
+              return (
+                <>
+                  <p className="mt-1 text-liten text-blekk-dempet">
+                    Krysset av = tas ut av faget. Eleven slettes ikke, og
+                    skåringene blir liggende.
+                  </p>
+                  {medlemmer
+                    .filter((e) => ute.includes(e.id))
+                    .map((e) => (
+                      <label
+                        key={e.id}
+                        className="flex items-center gap-2 py-0.5 text-brod"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={tasUt.has(e.id)}
+                          onChange={(ev) =>
+                            setTasUt((f) => {
+                              const ny = new Set(f);
+                              if (ev.target.checked) ny.add(e.id);
+                              else ny.delete(e.id);
+                              return ny;
+                            })
+                          }
+                        />
+                        {e.fornavn} {e.etternavn}
+                        {e.klasse && (
+                          <span className="text-liten text-blekk-svak">
+                            {e.klasse}
+                          </span>
+                        )}
+                      </label>
+                    ))}
+                </>
+              );
+            })()}
+          </div>
+        )}
 
         <div className="mt-5 flex gap-2">
           <Knapp variant="primar" onClick={importer} disabled={jobber}>
@@ -164,6 +260,17 @@ export function LimInn({
         Klassen brukes på linjer som ikke har klasse selv. Står den tom, blir
         elevene stående uten klasse — det er lov.
       </p>
+
+      {fagId !== "" && (
+        <label className="mt-2 flex select-none items-center gap-2 text-brod">
+          <input
+            type="checkbox"
+            checked={erstatt}
+            onChange={(e) => setErstatt(e.target.checked)}
+          />
+          Lista er hele faget — ta ut dem som ikke står på den
+        </label>
+      )}
 
       <label className="mt-2 flex select-none items-center gap-2 text-brod">
         <input

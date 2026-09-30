@@ -79,7 +79,7 @@ export function useArk(): Api {
 }
 
 /** Skjermene et ark kan sende deg videre til. Stabelen lukkes først. */
-export type Utgang = "okter" | "samtaler" | "vurderinger";
+export type Utgang = "okter" | "samtaler" | "vurderinger" | "liminn";
 
 export function Arkstabel({
   skolearId,
@@ -263,6 +263,7 @@ export function Arkstabel({
                     }
                     onApneVurdering={api.apneVurdering}
                     onApneVurderinger={() => gaTil("vurderinger")}
+                    onLimInn={() => gaTil("liminn", ark.id)}
                   />
                 ) : (
                   <ElevArk
@@ -430,6 +431,7 @@ function FagArk({
   onApneElev,
   onApneVurdering,
   onApneVurderinger,
+  onLimInn,
 }: {
   fagId: string;
   skolearId: string;
@@ -439,6 +441,7 @@ function FagArk({
   onApneElev: (id: string, liste: string[]) => void;
   onApneVurdering: (id: string) => void;
   onApneVurderinger: () => void;
+  onLimInn: () => void;
 }) {
   const [fag, setFag] = useState<FagIAr | null>(null);
 
@@ -468,6 +471,7 @@ function FagArk({
             onApneElev={onApneElev}
             onApneVurdering={onApneVurdering}
             onApneVurderinger={onApneVurderinger}
+            onLimInn={onLimInn}
           />
         )}
       </div>

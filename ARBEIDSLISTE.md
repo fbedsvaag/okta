@@ -119,6 +119,22 @@ prioritering fra 30.09.
   fikk under selve vurderingen — gjort, gjennom en vurderingsvelger i
   samtaleoppsettet.
 - [ ] Ukesvisning av økter — uavklart hva den skal være. Avventer.
+- [ ] **Elevbilder fra InSchool-PDF.** Ønsket 30.09, ikke påbegynt. Les den
+  utskrevne klasselista (én–to sider PDF med navn og bilde) lokalt i appen:
+  navnene blir klasseliste gjennom lim-inn-flyten (§7, duplikatsjekk og
+  forhåndsvisning), og bildet til hver elev klippes ut og legges på
+  elevkortet. Bildene gjøres sort-hvite med svak posterisering og lilla
+  overlegg, i Økta-looken — kornet er en del av poenget. Vurderinger før
+  bygging:
+  - PDF-lesing uten nettverk: pdf.js lagt inn i appen, ikke fra CDN.
+  - Hvis PDF-en har tekstlag: navn og bilder har posisjoner, og paret
+    finnes ved nærhet. Hvis den er et skannet bilde: krever lokal OCR
+    (tesseract, tungt) — sjekk en ekte fil først.
+  - Egen tabell `elevbilde` (UUID, stempler, soft delete), bildet som BLOB
+    eller fil i appmappa. Følger sikkerhetskopien.
+  - Personvern: bildene går aldri ut — ikke i CalDAV, eksport eller arkiv
+    (§1, §8). Sletting av elev tar bildet med.
+  - Trenger en ekte (anonymisert) InSchool-utskrift å bygge mot.
 - [x] AND/OR i filtrering av elever. Flere fag kan velges, med bryter
   mellom «har alle» og «minst ett».
 

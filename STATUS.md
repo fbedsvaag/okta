@@ -3,7 +3,7 @@
 Kort status pr. 2026-09-30, versjon 0.1.3. Skrevet mot SPEC.md slik den er nå.
 Denne fila eies fritt — oppdater den løpende, i motsetning til SPEC.md.
 
-**432 tester, alle grønne. `tsc --noEmit` er ren. `npm run build` går
+**446 tester, alle grønne. `tsc --noEmit` er ren. `npm run build` går
 gjennom. 20 migrasjoner.**
 
 ## Hva som virker
@@ -11,9 +11,11 @@ gjennom. 20 migrasjoner.**
 Skjerm for skjerm (§4), med tilstand:
 
 - **Førstegangsoppsett (§4.0)** — ferdig. Tre steg, lagrer underveis.
-- **I dag (§4.1)** — ferdig. Ukekalender, årsoversikt, og en setning om
-  dagens samtaler når det er noen. «I dag»-bolken er tatt bort 30.09 —
-  dagens økter står i uka (og «notat fra forrige økt» forsvant med den).
+- **I dag (§4.1)** — ferdig. Under datoen: hvor mange økter i dag, og
+  notatet fra forrige økt i hvert fag (eller at det ikke ble skrevet noe).
+  Så ukekalender, årsoversikt, og en setning om dagens samtaler når det er
+  noen. «Notat fra forrige økt» står også i øktkortet, over øktloggen.
+  En prikk i «Innsats over tid» åpner ukas økter.
   «Elever som glipper» viser lavest snitt først; elever og vurderinger
   åpnes som ark over forsiden. Årsoversikten er et villet avvik fra §13,
   kommentert i koden.
@@ -49,11 +51,14 @@ Skjerm for skjerm (§4), med tilstand:
   (`Arkstabel`) fra lister, forsiden og hverandre. Økter beholder
   sidepanelet med vilje, se DESIGN.md §7.
 - **Klasseliste i fagkortet** — 30.09. Ta ut (kobler fra, sletter ikke),
-  legg til med søk, eller opprett ny elev rett der.
+  legg til med søk, eller opprett ny elev rett der. «Lim inn ny liste»
+  fra fagkortet: lista er hele faget, og de som ikke står på den tas ut
+  (valgbart per elev i forhåndsvisningen).
 - **Kompetansemål på økter** — ferdig 30.09 (migrasjon 020,
   `okt_kompetansemal`). Økta arver periodens mål og kan få egne. Fag uten
   Udir-kode får fritekstfeltet `okt.kompetansemal`. Periodens mål velges
-  også under penslene i Økter. Ikke med på årsplanarket ennå.
+  også under penslene i Økter. Årsplanarket kan få en kolonne med øktas
+  mål, med periodens mål under periodenavnet, og kan skrives ut liggende.
 - **Samtaletrekkeren i økter** — ferdig 30.09. I fagmodus krysses fagets
   økter av i stedet for å legge inn datoer — lista viser bare øktene som
   er knyttet til en vurdering, til man ber om alle; øktas klokkeslett er rammen,
@@ -98,16 +103,13 @@ vurdering over flere økter, samtaledager i økter, gruppesamtaler, dra mellom
 dager, ⌘K, alias, de nye feltene). Det som står igjen:
 
 - **Årsoversikt-widgeten på §4.1** er et villet unntak fra §13.
-- **Kompetansemål på økt** er strukturert (koblingstabell), mens §3.1 og
-  §10 sier fritekst i v1. Fritekstfeltet brukes fortsatt for fag uten
-  Udir-kode.
 - **§11 Byggerekkefølge** er utdatert og hører hjemme i ARBEIDSLISTE.md.
 - **§13 Visuell retning** er erstattet av DESIGN.md, men står fortsatt — og
   DESIGN.md beskriver utgangspunktet fra august, ikke serif-overskriftene.
 
 ## Tester
 
-28 testfiler, 432 tester, alle grønne. `tsc` ren.
+29 testfiler, 446 tester, alle grønne. `tsc` ren.
 
 Dekningen er tung i datalaget og tynn i skjermlaget. Migrasjonene testes ved å
 kjøre dem i to omganger med data imellom — kjørt mot en tom base ville en

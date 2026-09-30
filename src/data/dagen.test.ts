@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { dagen, forrigeOkt } from "./dagen";
+import { dagen, enLinje, forrigeOkt } from "./dagen";
 
 const o = (
   id: string,
@@ -68,5 +68,17 @@ describe("dagen", () => {
 
   it("sier fra når det ikke er noen økter", () => {
     expect(dagen([], "2026-09-30").setning).toBe("Ingen økter i dag.");
+  });
+});
+
+describe("enLinje", () => {
+  it("tar bort listetegn og skiller linjene med prikk", () => {
+    expect(enLinje("Husk arket\n- og innleveringen\n- [x] ringt hjem")).toBe(
+      "Husk arket · og innleveringen · ringt hjem",
+    );
+  });
+
+  it("gir null for et notat med bare mellomrom", () => {
+    expect(enLinje("  \n ")).toBeNull();
   });
 });
