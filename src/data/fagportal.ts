@@ -36,13 +36,14 @@ export type FagVurdering = {
 
 export async function hentNokkeltall(
   skolearFagId: string,
+  idag: string = new Date().toLocaleDateString("sv-SE"),
 ): Promise<FagNokkeltall> {
   // `innenfor` er øktene som ligger i skoleårets eget spenn. Økter datert før
   // skolestart eller etter skoleslutt vises i kalenderen, men tonet ned som
   // «utenfor» — og skal da ikke telle i fagets tall heller.
   const rader = await hent<FagNokkeltall>(
     `WITH innenfor AS (
-       SELECT o.id, o.varighet_min
+       SELECT o.id, o.varighet_min, o.dato
          FROM okt o
          JOIN skolear_fag sf ON sf.id = o.skolear_fag_id
          JOIN skolear a ON a.id = sf.skolear_id
@@ -51,16 +52,15 @@ export async function hentNokkeltall(
      )
      SELECT
        (SELECT COUNT(*) FROM innenfor) AS okter,
-       (SELECT COUNT(*) FROM innenfor o
-         WHERE EXISTS (SELECT 1 FROM skaring s
-                        WHERE s.okt_id = o.id AND s.slettet IS NULL)) AS avholdte,
+       -- Avholdt er datoen, ikke skåringen: en økt som har vært, er holdt.
+       (SELECT COUNT(*) FROM innenfor o WHERE o.dato <= $2) AS avholdte,
        (SELECT COALESCE(SUM(o.varighet_min), 0) FROM innenfor o) AS minutter,
        (SELECT COUNT(*) FROM elev_fag ef
           JOIN elev e ON e.id = ef.elev_id AND e.slettet IS NULL
          WHERE ef.skolear_fag_id = $1 AND ef.slettet IS NULL) AS elever,
        (SELECT COUNT(*) FROM vurdering v
          WHERE v.skolear_fag_id = $1 AND v.slettet IS NULL) AS vurderinger`,
-    [skolearFagId],
+    [skolearFagId, idag],
   );
   return rader[0];
 }

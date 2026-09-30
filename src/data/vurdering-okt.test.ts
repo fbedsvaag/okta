@@ -234,3 +234,17 @@ describe("standard rom", () => {
     );
   });
 });
+
+describe("avholdte økter", () => {
+  it("regnes etter dato, ikke etter om noen er skåret", async () => {
+    const { hentTimeregnskap } = await import("./dashbord");
+    const { hentNokkeltall } = await import("./fagportal");
+    await opprettOkt(fagId, "MFL1", "2026-09-01", null, 180); // forbi, uskåret
+    await opprettOkt(fagId, "MFL1", "2026-09-30", null, 180); // i dag
+    await opprettOkt(fagId, "MFL1", "2026-10-06", null, 180); // kommer
+    const idag = "2026-09-30";
+    const [fag] = await hentTimeregnskap(skolearId, idag);
+    expect(fag.avholdte).toBe(2);
+    expect((await hentNokkeltall(fagId, idag)).avholdte).toBe(2);
+  });
+});

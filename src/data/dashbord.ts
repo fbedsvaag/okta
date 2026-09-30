@@ -67,7 +67,7 @@ export type Fagtimer = {
   vurderingTimer: number;
   vurderingAntall: number;
   antallOkter: number;
-  /** Hvor mange av øktene som er avholdt, altså har minst én skåring */
+  /** Hvor mange av øktene som er avholdt: datert i dag eller tidligere */
   avholdte: number;
 };
 
@@ -108,15 +108,18 @@ export async function hentVurderingstimer(
 /**
  * Planlagte timer mot årstimetall, per fag.
  *
- * «Avholdt» utledes av at det finnes minst én skåring på økta (§3.3) — det er
- * ikke et felt, og skal ikke bli et.
+ * «Avholdt» er datoen: en økt i dag eller tidligere er holdt, enten den er
+ * skåret eller ikke. Det er ikke et felt, og skal ikke bli et.
  *
  * Bare økter som ligger innenfor skoleårets spenn teller. En økt datert før
  * skolestart eller etter skoleslutt vises fortsatt i kalenderen, men tonet
  * ned som «utenfor» — og da kan den ikke samtidig telle mot årstimetallet.
  * Ellers måles planen mot et timetall den ikke hører til.
  */
-export async function hentTimeregnskap(skolearId: string): Promise<Fagtimer[]> {
+export async function hentTimeregnskap(
+  skolearId: string,
+  idag: string = new Date().toLocaleDateString("sv-SE"),
+): Promise<Fagtimer[]> {
   const vurdering = await hentVurderingstimer(skolearId);
   const rader = await hent<
     Omit<Fagtimer, "vurderingTimer" | "vurderingAntall">
@@ -129,10 +132,8 @@ export async function hentTimeregnskap(skolearId: string): Promise<Fagtimer[]> {
             COALESCE(SUM(o.varighet_min), 0)        AS planlagtMin,
             COUNT(o.id)                             AS antallOkter,
             COALESCE(SUM(
-              CASE WHEN EXISTS (
-                SELECT 1 FROM skaring s
-                 WHERE s.okt_id = o.id AND s.slettet IS NULL
-              ) THEN 1 ELSE 0 END), 0)              AS avholdte
+              CASE WHEN o.dato <= $2 THEN 1 ELSE 0 END), 0)
+                                                    AS avholdte
        FROM skolear_fag sf
        JOIN fag f ON f.id = sf.fag_id
        JOIN skolear a ON a.id = sf.skolear_id
@@ -141,7 +142,7 @@ export async function hentTimeregnskap(skolearId: string): Promise<Fagtimer[]> {
       WHERE sf.slettet IS NULL AND sf.skolear_id = $1
       GROUP BY sf.id
       ORDER BY f.kode`,
-    [skolearId],
+    [skolearId, idag],
   );
 
   return rader.map((r) => ({

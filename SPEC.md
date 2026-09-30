@@ -314,6 +314,10 @@ trykket på har den verdien du satte, resten er `0`. Bare det du faktisk trykker
 lagres — resten fylles ut ved visning, slik at en økt ikke legger igjen 30 rader
 som bare sier at ingenting skjedde.
 
+**Tellingen av avholdte økter går på dato.** I fagpanelet og årsoversikten er
+en økt holdt når datoen er i dag eller passert, enten den er skåret eller
+ikke. Regelen over gjelder skåringen: hvilke verdier elevene står med.
+
 Skåringen peker på `skalaverdi` (§3.4), ikke på en hardkodet farge. Skalaen som
 brukes ligger på faget (`fag.skaringsskala_id`) og er trafikklyset som standard.
 Det betyr at en bruker som heller vil skåre 1–6 eller 1–10 bare velger en annen
