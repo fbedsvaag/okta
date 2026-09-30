@@ -1,7 +1,16 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { save } from "@tauri-apps/plugin-dialog";
-import { filnavn, type Ark } from "../data/arsplanark";
+import {
+  ARKFELT,
+  FELTNOKKEL,
+  filnavn,
+  lesFelt,
+  standardFelt,
+  type Ark,
+  type Arkfelt,
+} from "../data/arsplanark";
+import { hentInnstilling, settInnstilling } from "../data/skolear";
 import { somCsv, somMarkdownFlere } from "../data/arsplaneksport";
 import { Knapp, Kontekstmeny, Menyvalg } from "../ui/felles";
 
@@ -16,13 +25,29 @@ export function Arsplanmeny({
   hentArk,
   onSkrivUt,
 }: {
-  /** bygger arkene for det som er valgt i filteret akkurat nå */
-  hentArk: () => Promise<Ark[]>;
+  /** bygger arkene for det som er valgt i filteret, med de valgte feltene */
+  hentArk: (felt: ReadonlySet<Arkfelt>) => Promise<Ark[]>;
   onSkrivUt: (ark: Ark[]) => Promise<void>;
 }) {
   const knapp = useRef<HTMLDivElement>(null);
   const [meny, setMeny] = useState<{ x: number; y: number } | null>(null);
   const [melding, setMelding] = useState<string | null>(null);
+  const [velgerFelt, setVelgerFelt] = useState(false);
+  // Hvilke felt som skal med. Huskes i innstillingene, så valget står til
+  // neste gang — også etter omstart.
+  const [felt, setFelt] = useState<Set<Arkfelt>>(standardFelt);
+
+  useEffect(() => {
+    void hentInnstilling(FELTNOKKEL).then((v) => setFelt(lesFelt(v)));
+  }, []);
+
+  function byttFelt(id: Arkfelt, pa: boolean) {
+    const ny = new Set(felt);
+    if (pa) ny.add(id);
+    else ny.delete(id);
+    setFelt(ny);
+    void settInnstilling(FELTNOKKEL, JSON.stringify([...ny]));
+  }
 
   function apne() {
     const r = knapp.current?.getBoundingClientRect();
@@ -33,7 +58,7 @@ export function Arsplanmeny({
   async function gjor(handling: (ark: Ark[]) => Promise<string | null>) {
     setMeny(null);
     try {
-      const ark = await hentArk();
+      const ark = await hentArk(felt);
       if (ark.length === 0) {
         setMelding("Ingen økter å ta med");
         return;
@@ -62,7 +87,7 @@ export function Arsplanmeny({
   const tekst = (s: string) => new TextEncoder().encode(s);
 
   return (
-    <div ref={knapp} className="flex items-center gap-2">
+    <div ref={knapp} className="relative flex items-center gap-2">
       {melding && (
         <span className="text-liten text-blekk-dempet" role="status">
           {melding}
@@ -131,8 +156,91 @@ export function Arsplanmeny({
           >
             Lagre som regneark (.csv)
           </Menyvalg>
+          <div className="my-1 border-t border-linje-medium" />
+          <Menyvalg onKlikk={() => setVelgerFelt(true)}>Velg felt …</Menyvalg>
         </Kontekstmeny>
       )}
+
+      {velgerFelt && (
+        <Feltvelger
+          felt={felt}
+          onBytt={byttFelt}
+          onLukk={() => setVelgerFelt(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+/**
+ * Hvilke felt som skal med på årsplanen. Gjelder alle formatene — papir,
+ * Word, markdown og CSV — så de sier det samme.
+ *
+ * Lukkes med Ferdig, Escape eller et trykk utenfor.
+ */
+function Feltvelger({
+  felt,
+  onBytt,
+  onLukk,
+}: {
+  felt: ReadonlySet<Arkfelt>;
+  onBytt: (id: Arkfelt, pa: boolean) => void;
+  onLukk: () => void;
+}) {
+  const boks = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const utenfor = (e: MouseEvent) => {
+      if (!boks.current?.contains(e.target as Node)) onLukk();
+    };
+    const tast = (e: KeyboardEvent) => e.key === "Escape" && onLukk();
+    window.addEventListener("mousedown", utenfor);
+    window.addEventListener("keydown", tast);
+    return () => {
+      window.removeEventListener("mousedown", utenfor);
+      window.removeEventListener("keydown", tast);
+    };
+  }, [onLukk]);
+
+  const gruppe = (g: "hode" | "kolonne", tittel: string) => (
+    <div>
+      <p className="mb-1 text-etikett uppercase tracking-etikett text-blekk-dempet">
+        {tittel}
+      </p>
+      {ARKFELT.filter((f) => f.gruppe === g).map((f) => (
+        <label
+          key={f.id}
+          className="flex items-center gap-2 py-0.5 text-brod hover:bg-flate"
+        >
+          <input
+            type="checkbox"
+            checked={felt.has(f.id)}
+            onChange={(e) => onBytt(f.id, e.target.checked)}
+          />
+          {f.navn}
+        </label>
+      ))}
+    </div>
+  );
+
+  return (
+    <div
+      ref={boks}
+      className="absolute right-0 top-full z-30 mt-1 w-64 rounded-vanlig border border-linje bg-ark p-3 shadow-[var(--shadow-ark)]"
+    >
+      <div className="space-y-3">
+        {gruppe("hode", "Øverst på arket")}
+        {gruppe("kolonne", "Kolonner")}
+      </div>
+      <p className="mt-2 text-liten text-blekk-svak">
+        Kolonner uten innhold tas ikke med. Plan og øktlogg er dine egne notater
+        og står aldri på arket.
+      </p>
+      <div className="mt-2 border-t border-linje-medium pt-2 text-right">
+        <Knapp variant="stille" onClick={onLukk}>
+          Ferdig
+        </Knapp>
+      </div>
     </div>
   );
 }

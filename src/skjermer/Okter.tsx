@@ -241,7 +241,7 @@ export function Okter({
                   Perioder
                 </label>
                 <Arsplanmeny
-                  hentArk={() => {
+                  hentArk={(felt) => {
                     // Faget i filteret, eller alle fag som har økter.
                     const liste = filterFag
                       ? fag.filter((f) => f.id === filterFag)
@@ -249,7 +249,7 @@ export function Okter({
                           okter.some((o) => o.skolearFagId === f.id),
                         );
                     return Promise.all(
-                      liste.map((f) => hentArk(skolear, f, medPerioder)),
+                      liste.map((f) => hentArk(skolear, f, medPerioder, felt)),
                     );
                   }}
                   onSkrivUt={async (a) => {

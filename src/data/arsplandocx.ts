@@ -12,9 +12,11 @@ import {
   WidthType,
   type IBorderOptions,
 } from "docx";
-import { formatDato, regnskapstekst, ukedag, type Ark } from "./arsplanark";
+import { regnskapstekst, type Ark } from "./arsplanark";
 import {
   bolktekst,
+  celleverdi,
+  kolonnebredde,
   kolonner,
   KOLONNENAVN,
   undertittel,
@@ -95,14 +97,9 @@ function overskrift(t: string) {
   });
 }
 
-/** Kolonnebredder i prosent. Tema tar det som blir til overs. */
-const BREDDE = { uke: 7, dato: 15, lekse: 24, vurdering: 20 } as const;
-
 function tabell(ark: Ark, bolk: Ark["bolker"][number]): Table {
   const kol = kolonner(ark);
-  const fast = kol.reduce((s, k) => s + (k === "tema" ? 0 : BREDDE[k]), 0);
-  const bredde = (k: (typeof kol)[number]) =>
-    k === "tema" ? 100 - fast : BREDDE[k];
+  const bredde = (k: (typeof kol)[number]) => kolonnebredde(kol, k);
 
   const celle = (innhold: string, k: (typeof kol)[number], hode: boolean) =>
     new TableCell({
@@ -136,19 +133,7 @@ function tabell(ark: Ark, bolk: Ark["bolker"][number]): Table {
     (r) =>
       new TableRow({
         cantSplit: true,
-        children: kol.map((k) =>
-          celle(
-            {
-              uke: String(r.uke),
-              dato: `${ukedag(r.dato)} ${formatDato(r.dato)}`,
-              tema: r.tema ?? "",
-              lekse: r.lekse ?? "",
-              vurdering: r.vurderinger.join(", "),
-            }[k],
-            k,
-            false,
-          ),
-        ),
+        children: kol.map((k) => celle(celleverdi(r, k), k, false)),
       }),
   );
 
@@ -202,7 +187,9 @@ function seksjon(ark: Ark) {
       spacing: { after: 120 },
     }),
     avsnitt([tekst(undertittel(ark), { farge: DEMPET })], 40),
-    avsnitt([tekst(regnskapstekst(ark.regnskap), { farge: DEMPET })], 120),
+    ...(ark.regnskap
+      ? [avsnitt([tekst(regnskapstekst(ark.regnskap), { farge: DEMPET })], 120)]
+      : []),
   );
 
   if (ark.arknotat) {

@@ -1,5 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { byggArk, filnavn, isoUke, regnskapstekst, ukedag } from "./arsplanark";
+import {
+  byggArk,
+  filnavn,
+  isoUke,
+  lesFelt,
+  regnskapstekst,
+  standardFelt,
+  ukedag,
+  type Arkfelt,
+} from "./arsplanark";
 import { somCsv, somMarkdown } from "./arsplaneksport";
 import type { FagIAr } from "./fag";
 import type { Okt, OktVurdering } from "./okter";
@@ -110,8 +119,8 @@ describe("byggArk", () => {
     const a = ark({
       okter: [okt({ dato: "2026-08-10" }), okt({ dato: "2026-09-01" })],
     });
-    expect(a.regnskap.antallOkter).toBe(1);
-    expect(a.regnskap.timer).toBe(3);
+    expect(a.regnskap?.antallOkter).toBe(1);
+    expect(a.regnskap?.timer).toBe(3);
     expect(a.bolker[0].rader).toHaveLength(2);
     expect(a.bolker[0].rader[0].utenfor).toBe(true);
   });
@@ -134,13 +143,12 @@ describe("byggArk", () => {
     ]);
     const a = ark({ okter: [o], vurderinger: v });
     expect(a.bolker[0].rader[0].vurderinger).toEqual(["Fagartikkel"]);
-    expect(a.harVurdering).toBe(true);
+    expect(a.kolonner).toContain("vurdering");
   });
 
   it("utelater lekse- og vurderingskolonnen når de er tomme", () => {
     const a = ark({ okter: [okt({ lekse: "  " })] });
-    expect(a.harLekse).toBe(false);
-    expect(a.harVurdering).toBe(false);
+    expect(a.kolonner).toEqual(["uke", "dato", "tema"]);
   });
 
   it("grupperer på periode, med uplasserte økter sist", () => {
@@ -170,6 +178,93 @@ describe("byggArk", () => {
     });
     expect(a.kompetansemalFritekst).toBeNull();
     expect(a.kompetansemal).toHaveLength(1);
+  });
+});
+
+describe("feltvalg", () => {
+  const alle = (): Set<Arkfelt> =>
+    new Set([
+      ...standardFelt(),
+      "tid",
+      "varighet",
+      "sted",
+      "agenda",
+    ] as Arkfelt[]);
+
+  it("tar med klokkeslett, varighet, sted og agenda når de er valgt", () => {
+    const a = ark({
+      felt: alle(),
+      okter: [okt({ sted: "R204", agenda: "Ta med PC", lekse: "Les" })],
+    });
+    expect(a.kolonner).toEqual([
+      "uke",
+      "dato",
+      "tid",
+      "varighet",
+      "tema",
+      "sted",
+      "agenda",
+      "lekse",
+    ]);
+    const md = somMarkdown(a);
+    expect(md).toContain(
+      "| 36 | tir 01.09.26 | 09:15 | 3 t | Markedsanalyse | R204 | Ta med PC | Les |",
+    );
+  });
+
+  it("utelater en valgt kolonne når ingen økter har noe i den", () => {
+    expect(ark({ felt: alle(), okter: [okt()] }).kolonner).not.toContain(
+      "sted",
+    );
+  });
+
+  it("tar bort det som er valgt bort i hodet", () => {
+    const felt = standardFelt();
+    for (const f of [
+      "laerer",
+      "rom",
+      "timeregnskap",
+      "arknotat",
+      "kompetansemal",
+    ] as Arkfelt[])
+      felt.delete(f);
+    const a = ark({
+      felt,
+      fag: { ...fag, arknotat: "Hemmelig tekst", kompetansemal: "Egne mål" },
+      kompetansemal: [],
+    });
+    expect(a).toMatchObject({
+      laerer: null,
+      rom: null,
+      regnskap: null,
+      arknotat: null,
+      kompetansemalFritekst: null,
+    });
+    const md = somMarkdown(a);
+    expect(md).not.toContain("Faglærer");
+    expect(md).not.toContain("timer");
+    expect(md).not.toContain("Kompetansemål");
+  });
+
+  it("kan velge bort tema og dato også", () => {
+    const felt = standardFelt();
+    felt.delete("tema");
+    felt.delete("dato");
+    expect(ark({ felt, okter: [okt()] }).kolonner).toEqual(["uke"]);
+  });
+
+  it("CSV følger valget", () => {
+    const felt = standardFelt();
+    felt.delete("uke");
+    felt.add("sted");
+    const csv = somCsv([ark({ felt, okter: [okt({ sted: "R204" })] })]);
+    expect(csv.split("\r\n")[0]).toBe("\uFEFFFag;Dato;Ukedag;Tema;Sted");
+  });
+
+  it("leser lagret valg, og faller tilbake på standard når det er ødelagt", () => {
+    expect(lesFelt(null)).toEqual(standardFelt());
+    expect(lesFelt("ikke json")).toEqual(standardFelt());
+    expect(lesFelt('["tema","ukjent"]')).toEqual(new Set(["tema"]));
   });
 });
 

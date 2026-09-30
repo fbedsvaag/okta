@@ -1,11 +1,8 @@
-import {
-  formatDato,
-  regnskapstekst,
-  ukedag,
-  type Ark,
-} from "../data/arsplanark";
+import { regnskapstekst, type Ark } from "../data/arsplanark";
 import {
   bolktekst,
+  celleverdi,
+  kolonnebredde,
   kolonner,
   KOLONNENAVN,
   undertittel,
@@ -47,9 +44,11 @@ function Side({ ark }: { ark: Ark }) {
         <p className="mt-0.5 text-[9.5pt] text-blekk-dempet">
           {undertittel(ark)}
         </p>
-        <p className="text-[9.5pt] text-blekk-dempet">
-          {regnskapstekst(ark.regnskap)}
-        </p>
+        {ark.regnskap && (
+          <p className="text-[9.5pt] text-blekk-dempet">
+            {regnskapstekst(ark.regnskap)}
+          </p>
+        )}
       </header>
 
       {ark.arknotat && (
@@ -94,7 +93,8 @@ function Side({ ark }: { ark: Ark }) {
                 {kol.map((k) => (
                   <th
                     key={k}
-                    className={`py-1 pr-2 font-semibold ${BREDDE[k]}`}
+                    className="py-1 pr-2 font-semibold"
+                    style={{ width: `${kolonnebredde(kol, k)}%` }}
                   >
                     {KOLONNENAVN[k]}
                   </th>
@@ -109,19 +109,13 @@ function Side({ ark }: { ark: Ark }) {
                 >
                   {kol.map((k) => (
                     <td key={k} className="py-[3px] pr-2 tabular-nums">
-                      {
-                        {
-                          uke: r.uke,
-                          dato: (
-                            <span className="whitespace-nowrap">
-                              {ukedag(r.dato)} {formatDato(r.dato)}
-                            </span>
-                          ),
-                          tema: r.tema,
-                          lekse: r.lekse,
-                          vurdering: r.vurderinger.join(", "),
-                        }[k]
-                      }
+                      {k === "dato" ? (
+                        <span className="whitespace-nowrap">
+                          {celleverdi(r, k)}
+                        </span>
+                      ) : (
+                        celleverdi(r, k)
+                      )}
                     </td>
                   ))}
                 </tr>
@@ -137,15 +131,3 @@ function Side({ ark }: { ark: Ark }) {
     </section>
   );
 }
-
-/**
- * Faste bredder, så tema får det som blir til overs. Med automatisk bredde
- * delte nettleseren likt, og tema brakk over tre linjer på hver rad.
- */
-const BREDDE = {
-  uke: "w-[2.2rem]",
-  dato: "w-[5.8rem]",
-  tema: "",
-  lekse: "w-[28%]",
-  vurdering: "w-[20%]",
-} as const;

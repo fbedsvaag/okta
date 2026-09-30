@@ -3,7 +3,7 @@
 Kort status pr. 2026-09-30, versjon 0.1.2. Skrevet mot SPEC.md slik den er nå.
 Denne fila eies fritt — oppdater den løpende, i motsetning til SPEC.md.
 
-**366 tester, alle grønne. `tsc --noEmit` er ren. `npm run build` går
+**372 tester, alle grønne. `tsc --noEmit` er ren. `npm run build` går
 gjennom. 16 migrasjoner.**
 
 ## Hva som virker
@@ -32,7 +32,9 @@ Skjerm for skjerm (§4), med tilstand:
 - **Utskrift og eksport av årsplan (§4.9)** — ferdig, og utvidet. Ett fag
   (eller alle) på papir/PDF, som Word, markdown (kopi eller fil) og CSV.
   Hodet har faglærer, rom, timeregnskap, fritekst og kompetansemålene fra
-  Udir; tabellen har uke, dato, tema, lekse og vurdering. Utskriften kuttet
+  Udir; tabellen har uke, dato, tema, lekse og vurdering. Feltene velges
+  av og på under «Velg felt …» (også klokkeslett, timer, sted og agenda),
+  og valget gjelder alle formatene. Utskriften kuttet
   før alt etter første side — rettet 30.09.
 - **Vurdering knyttet til økt** — ferdig 30.09. Én vurdering kan ligge over
   flere økter (migrasjon 016, koblingstabell). Automatisk når fristen faller
@@ -106,7 +108,7 @@ rettes tilbake, ligger hos eieren.
 
 ## Tester
 
-21 testfiler, 366 tester, alle grønne. `tsc` ren.
+21 testfiler, 372 tester, alle grønne. `tsc` ren.
 
 Dekningen er tung i datalaget og tynn i skjermlaget. Migrasjonene testes ved å
 kjøre dem i to omganger med data imellom — kjørt mot en tom base ville en

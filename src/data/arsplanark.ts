@@ -29,6 +29,81 @@ export const LAERERNAVN = "laerer_navn";
  * felter for dem.
  */
 
+// ------------------------------------------------------------------ feltvalg
+
+export type Kolonne =
+  | "uke"
+  | "dato"
+  | "tid"
+  | "varighet"
+  | "tema"
+  | "sted"
+  | "agenda"
+  | "lekse"
+  | "vurdering";
+export type Hodefelt =
+  "laerer" | "rom" | "timeregnskap" | "arknotat" | "kompetansemal";
+export type Arkfelt = Kolonne | Hodefelt;
+
+/**
+ * Feltene som kan velges av og på, i den rekkefølgen de står på arket.
+ *
+ * Plan og øktlogg er ikke blant dem, med vilje: de er lærerens egne notater,
+ * og arket er laget for å deles med elevene.
+ */
+export const ARKFELT: {
+  id: Arkfelt;
+  navn: string;
+  gruppe: "hode" | "kolonne";
+  standard: boolean;
+}[] = [
+  { id: "laerer", navn: "Faglærer", gruppe: "hode", standard: true },
+  { id: "rom", navn: "Rom", gruppe: "hode", standard: true },
+  { id: "timeregnskap", navn: "Timeregnskap", gruppe: "hode", standard: true },
+  {
+    id: "arknotat",
+    navn: "Tekst på årsplanen",
+    gruppe: "hode",
+    standard: true,
+  },
+  {
+    id: "kompetansemal",
+    navn: "Kompetansemål",
+    gruppe: "hode",
+    standard: true,
+  },
+  { id: "uke", navn: "Uke", gruppe: "kolonne", standard: true },
+  { id: "dato", navn: "Dato", gruppe: "kolonne", standard: true },
+  { id: "tid", navn: "Klokkeslett", gruppe: "kolonne", standard: false },
+  { id: "varighet", navn: "Varighet", gruppe: "kolonne", standard: false },
+  { id: "tema", navn: "Tema", gruppe: "kolonne", standard: true },
+  { id: "sted", navn: "Sted", gruppe: "kolonne", standard: false },
+  { id: "agenda", navn: "Agenda", gruppe: "kolonne", standard: false },
+  { id: "lekse", navn: "Lekse", gruppe: "kolonne", standard: true },
+  { id: "vurdering", navn: "Vurdering", gruppe: "kolonne", standard: true },
+];
+
+/** Innstillingen der valget huskes, som JSON-liste. */
+export const FELTNOKKEL = "arsplan_felt";
+
+export function standardFelt(): Set<Arkfelt> {
+  return new Set(ARKFELT.filter((f) => f.standard).map((f) => f.id));
+}
+
+/** Leser valget fra innstillingen. Ukjente eller ødelagte verdier gir standard. */
+export function lesFelt(json: string | null): Set<Arkfelt> {
+  if (!json) return standardFelt();
+  try {
+    const kjente = new Set(ARKFELT.map((f) => f.id));
+    const liste = (JSON.parse(json) as unknown[]).filter(
+      (x): x is Arkfelt => typeof x === "string" && kjente.has(x as Arkfelt),
+    );
+    return new Set(liste);
+  } catch {
+    return standardFelt();
+  }
+}
+
 export type Arkrad = {
   oktId: string;
   dato: string;
@@ -38,6 +113,8 @@ export type Arkrad = {
   varighetMin: number;
   tema: string | null;
   lekse: string | null;
+  sted: string | null;
+  agenda: string | null;
   vurderinger: string[];
   /** datert utenfor skoleåret; vises, men teller ikke i regnskapet */
   utenfor: boolean;
@@ -60,17 +137,20 @@ export type Ark = {
   /** fra Udir når faget har kode, ellers fritekst som én bolk */
   kompetansemal: Kompetansemaal[];
   kompetansemalFritekst: string | null;
+  /** null når timeregnskapet er valgt bort */
   regnskap: {
     antallOkter: number;
     timer: number;
     arstimetall: number | null;
     /** timer satt av til samtaledager i faget (§4.2) */
     samtaletimer: number;
-  };
+  } | null;
   bolker: Arkbolk[];
-  /** hvilke kolonner som har noe i seg — tomme kolonner tar bare plass */
-  harLekse: boolean;
-  harVurdering: boolean;
+  /**
+   * Kolonnene arket har: de som er valgt, i fast rekkefølge — og av de
+   * valgfrie bare dem som har noe i seg. Tomme kolonner tar bare plass.
+   */
+  kolonner: Kolonne[];
 };
 
 export function byggArk(inn: {
@@ -83,7 +163,11 @@ export function byggArk(inn: {
   laererNavn: string | null;
   kompetansemal: Kompetansemaal[];
   samtaletimer: number;
+  /** feltene som skal med. Utelatt = standardvalget */
+  felt?: ReadonlySet<Arkfelt>;
 }): Ark {
+  const felt = inn.felt ?? standardFelt();
+  const med = (f: Arkfelt) => felt.has(f);
   const { skolear, fag } = inn;
   const egne = inn.okter
     .filter((o) => o.skolearFagId === fag.id)
@@ -102,6 +186,8 @@ export function byggArk(inn: {
     varighetMin: o.varighetMin,
     tema: tom(o.tema),
     lekse: tom(o.lekse),
+    sted: tom(o.sted),
+    agenda: tom(o.agenda),
     vurderinger: (inn.vurderinger.get(o.id) ?? []).map((v) => v.tittel),
     utenfor: o.dato < skolear.start || o.dato > skolear.slutt,
   });
@@ -112,20 +198,24 @@ export function byggArk(inn: {
     fagKode: fag.kode,
     fagNavn: fag.navn,
     skolearNavn: skolear.navn,
-    laerer: tom(fag.laerer) ?? tom(inn.laererNavn),
-    rom: tom(fag.rom),
-    arknotat: tom(fag.arknotat),
-    kompetansemal: inn.kompetansemal,
+    laerer: med("laerer") ? (tom(fag.laerer) ?? tom(inn.laererNavn)) : null,
+    rom: med("rom") ? tom(fag.rom) : null,
+    arknotat: med("arknotat") ? tom(fag.arknotat) : null,
+    kompetansemal: med("kompetansemal") ? inn.kompetansemal : [],
     // Fritekstfeltet er reserven for fag uten Udir-kode. Har faget mål fra
     // Udir, er det de som gjelder — to lister ville sagt to ting.
     kompetansemalFritekst:
-      inn.kompetansemal.length > 0 ? null : tom(fag.kompetansemal),
-    regnskap: {
-      antallOkter: talte.length,
-      timer: timer(talte),
-      arstimetall: fag.arstimetall,
-      samtaletimer: inn.samtaletimer,
-    },
+      !med("kompetansemal") || inn.kompetansemal.length > 0
+        ? null
+        : tom(fag.kompetansemal),
+    regnskap: med("timeregnskap")
+      ? {
+          antallOkter: talte.length,
+          timer: timer(talte),
+          arstimetall: fag.arstimetall,
+          samtaletimer: inn.samtaletimer,
+        }
+      : null,
     bolker: inn.medPerioder
       ? grupper(
           egne,
@@ -133,8 +223,19 @@ export function byggArk(inn: {
           inn.perioder.filter((p) => p.skolearFagId === fag.id),
         )
       : [{ navn: null, rader, timer: timer(talte) }],
-    harLekse: rader.some((r) => r.lekse !== null),
-    harVurdering: rader.some((r) => r.vurderinger.length > 0),
+    kolonner: ARKFELT.filter((f) => f.gruppe === "kolonne" && med(f.id))
+      .map((f) => f.id as Kolonne)
+      .filter((k) => {
+        const harInnhold: Partial<Record<Kolonne, (r: Arkrad) => boolean>> = {
+          tid: (r) => r.klokkeslett !== null,
+          sted: (r) => r.sted !== null,
+          agenda: (r) => r.agenda !== null,
+          lekse: (r) => r.lekse !== null,
+          vurdering: (r) => r.vurderinger.length > 0,
+        };
+        const sjekk = harInnhold[k];
+        return !sjekk || rader.some(sjekk);
+      }),
   };
 }
 
@@ -143,6 +244,7 @@ export async function hentArk(
   skolear: Skolear,
   fag: FagIAr,
   medPerioder: boolean,
+  felt?: ReadonlySet<Arkfelt>,
 ): Promise<Ark> {
   const [okter, vurderinger, perioder, laererNavn, grep, samtale] =
     await Promise.all([
@@ -163,6 +265,7 @@ export async function hentArk(
     laererNavn,
     kompetansemal: grep?.kompetansemaal ?? [],
     samtaletimer: samtale.get(fag.id)?.timer ?? 0,
+    felt,
   });
 }
 
@@ -249,7 +352,7 @@ export function isoUke(dato: string): number {
 }
 
 /** «42 økter · 126 av 140 timer», med samtaledagene som egen hale. */
-export function regnskapstekst(r: Ark["regnskap"]): string {
+export function regnskapstekst(r: NonNullable<Ark["regnskap"]>): string {
   const okter = `${r.antallOkter} ${r.antallOkter === 1 ? "økt" : "økter"}`;
   const t = r.arstimetall
     ? `${formatTimer(r.timer)} av ${r.arstimetall} timer`
