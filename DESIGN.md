@@ -138,6 +138,13 @@ lukkes med Esc eller et trykk utenfor.
 
 **Tomme tilstander** sier hva som mangler og har en knapp dit det fikses.
 
+**Notater skrives i markdown** (møteloggen og øktloggen). Mens man skriver er
+det ren tekst med hjelp — Enter fortsetter en liste, Tab/Shift+Tab rykker
+inn og ut, ⌘B og ⌘I gir fet og kursiv. Når feltet forlates, vises teksten
+formatert: overskrifter, punkter, nummerering, avkrysningsbokser som kan
+klikkes. Klikk på teksten for å skrive igjen. Utvalget er lite med vilje
+(`src/ui/markdown.ts`): ingen HTML, ingen lenker, ingen avhengighet.
+
 ## 7. Dybde og bevegelse
 
 Tre skyggenivåer: `shadow-lav` (kort), `shadow-panel` (panel),

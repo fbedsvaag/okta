@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Ikon } from "../ui/felles";
+import { Markdownfelt } from "../ui/Notattekst";
 import { confirm as bekreft } from "@tauri-apps/plugin-dialog";
 import {
   endreOkt,
@@ -622,19 +623,22 @@ function Vurderingskobling({
 function Logg({ okt, onEndret }: { okt: Okt; onEndret: () => void }) {
   return (
     <div className="px-5 py-3">
-      <Linje etikett="Øktlogg">
-        <textarea
-          defaultValue={okt.logg ?? ""}
-          key={okt.logg ?? ""}
-          rows={2}
-          placeholder="Hvordan gikk det med klassen samlet?"
-          onBlur={async (e) => {
-            await endreOkt(okt.id, { logg: e.target.value.trim() || null });
+      {/* Ikke en <label>: markdown-visningen er klikkbar i seg selv. */}
+      <div>
+        <span className="mb-0.5 block text-etikett uppercase tracking-etikett text-blekk-dempet">
+          Øktlogg
+        </span>
+        <Markdownfelt
+          key={okt.id}
+          verdi={okt.logg}
+          minRader={2}
+          plassholder="Hvordan gikk det med klassen samlet?"
+          onLagre={async (v) => {
+            await endreOkt(okt.id, { logg: v });
             onEndret();
           }}
-          className={feltStil}
         />
-      </Linje>
+      </div>
 
       <button
         onClick={async () => {

@@ -43,8 +43,10 @@ import {
   slettElevnotat,
   sorterNotater,
   type Elevnotat,
+  endreElevnotat,
 } from "../data/elevnotat";
 import { NOYTRAL, skalafarge } from "../ui/farger";
+import { Markdownfelt, MarkdownSkriv } from "../ui/Notattekst";
 
 /**
  * Elevportalen, SPEC §4.5.
@@ -767,7 +769,20 @@ function Notatrad({
           </button>
         </span>
       </div>
-      <p className="mt-0.5 whitespace-pre-wrap text-brod">{notat.tekst}</p>
+      {/*
+        Formatert markdown; klikk for å skrive. Avkrysningsbokser kan krysses
+        av rett i visningen. Et notat kan ikke tømmes — da slettes det.
+      */}
+      <div className="-mx-2 mt-0.5">
+        <Markdownfelt
+          verdi={notat.tekst}
+          onLagre={async (v) => {
+            if (!v) return;
+            await endreElevnotat(notat.id, { tekst: v });
+            onEndret();
+          }}
+        />
+      </div>
     </div>
   );
 }
@@ -818,14 +833,14 @@ function NyttNotat({
         )}
       </div>
 
-      <textarea
-        autoFocus
-        value={tekst}
-        onChange={(e) => setTekst(e.target.value)}
-        rows={3}
-        placeholder="Hva skjedde, og hva ble avtalt?"
-        className="mt-2 w-full rounded-vanlig border border-linje px-2 py-1.5 text-brod outline-none placeholder:text-blekk-svak focus:border-aksent"
-      />
+      <div className="mt-2">
+        <MarkdownSkriv
+          autoFocus
+          verdi={tekst}
+          onEndre={setTekst}
+          plassholder="Hva skjedde, og hva ble avtalt? «- » gir en punktliste, «- [ ] » en avkrysningsboks."
+        />
+      </div>
 
       <div className="mt-2 flex gap-2">
         <Knapp
