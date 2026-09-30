@@ -6,6 +6,8 @@ import { Ikon, Kappet, Knapp, Tomtilstand } from "../ui/felles";
 import { Arsoversikt } from "./Arsoversikt";
 import { dagenssetning, hentSamtalerPaDato } from "../data/samtale";
 import { Ukelinje } from "./Ukelinje";
+import { OktPanel } from "./OktPanel";
+import { useGlidende } from "../ui/bevegelse";
 
 /**
  * I dag — startskjermen, SPEC §4.1, med årsoversikten under.
@@ -20,6 +22,7 @@ export function IDag({
   fag,
   onGaTil,
   onApneOkt,
+  onApneElev,
 }: {
   skolear: Skolear;
   fag: FagIAr[];
@@ -29,15 +32,34 @@ export function IDag({
     id?: string,
   ) => void;
   onApneOkt: (id: string) => void;
+  /** åpner elevkortet — fra en elev i øktpanelet */
+  onApneElev: (elevId: string) => void;
 }) {
   const [okter, setOkter] = useState<Okt[]>([]);
   const [samtaler, setSamtaler] = useState<
     Awaited<ReturnType<typeof hentSamtalerPaDato>>
   >([]);
 
+  const lastOkter = () => void hentOkter(skolear.id).then(setOkter);
+  useEffect(lastOkter, [skolear.id]);
+
+  // Økta som er åpnet her på forsiden. Den glir inn over forsiden i stedet
+  // for å sende deg til Økter — du blir der du er, og uka står fram under.
+  const [valgt, setValgt] = useState<string | null>(null);
+  const { vist, apen } = useGlidende(okter.find((o) => o.id === valgt) ?? null);
+  const apne = (id: string) => setValgt(id);
+
+  // Esc lukker, men ikke når man står i et felt — der angrer Esc teksten.
   useEffect(() => {
-    void hentOkter(skolear.id).then(setOkter);
-  }, [skolear.id]);
+    if (!valgt) return;
+    const tast = (e: KeyboardEvent) => {
+      const i = e.target as HTMLElement;
+      if (e.key === "Escape" && !i.closest("input, textarea, select"))
+        setValgt(null);
+    };
+    window.addEventListener("keydown", tast);
+    return () => window.removeEventListener("keydown", tast);
+  }, [valgt]);
 
   useEffect(() => {
     void hentSamtalerPaDato(skolear.id, isoDato(new Date())).then(setSamtaler);
@@ -46,7 +68,6 @@ export function IDag({
   const idag = isoDato(new Date());
 
   const dagens = okter.filter((o) => o.dato === idag);
-  const kommende = okter.filter((o) => o.dato > idag).slice(0, KOMMENDE_ANTALL);
 
   return (
     <div className="mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col overflow-clip">
@@ -88,8 +109,8 @@ export function IDag({
           {dagens.length > 0 ? (
             dagens.map((o) => (
               <div key={o.id}>
-                <OktLinje okt={o} onApne={onApneOkt} />
-                <Forrigelogg okt={o} alle={okter} onApne={onApneOkt} />
+                <OktLinje okt={o} onApne={apne} />
+                <Forrigelogg okt={o} alle={okter} onApne={apne} />
               </div>
             ))
           ) : okter.length === 0 ? (
@@ -121,35 +142,8 @@ export function IDag({
             forste={skolear.start}
             siste={skolear.slutt}
             idag={idag}
-            onApneOkt={onApneOkt}
+            onApneOkt={apne}
           />
-        </Bolk>
-
-        {/*
-        Bolken står alltid, også når den er tom. Før dukket den bare opp i
-        uker uten økter, og et helt avsnitt som kommer og går flytter alt
-        under seg. Plassen til tre økter er reservert av samme grunn: da er
-        høyden den samme enten det ligger én eller tre foran deg.
-      */}
-        <Bolk tittel="Neste økter">
-          <div
-            style={{ minHeight: `${KOMMENDE_ANTALL * KOMMENDE_RADHOYDE}px` }}
-          >
-            {kommende.length === 0 ? (
-              <p className="py-2 text-brod text-blekk-svak">
-                Ingen flere økter er lagt inn i dette skoleåret.
-              </p>
-            ) : (
-              kommende.map((o) => (
-                <div key={o.id}>
-                  <p className="mt-2 text-liten text-blekk-dempet first-letter:uppercase">
-                    {langDato(o.dato)}
-                  </p>
-                  <OktLinje okt={o} onApne={onApneOkt} />
-                </div>
-              ))
-            )}
-          </div>
         </Bolk>
 
         <Arsoversikt
@@ -158,6 +152,45 @@ export function IDag({
           onApneVurderinger={() => onGaTil("vurderinger")}
         />
       </div>
+
+      {/*
+        Øktpanelet som et ark over forsiden (DESIGN.md §7). Klikk utenfor
+        eller Esc lukker; uka under oppdateres når noe endres.
+      */}
+      {vist && (
+        <div
+          className="fixed inset-0 z-40 bg-blekk/10"
+          onMouseDown={(e) => e.target === e.currentTarget && setValgt(null)}
+        >
+          <div
+            className={`panel gli-inn absolute inset-y-0 right-0 w-full max-w-2xl overflow-auto bg-ark shadow-[var(--shadow-ark)] ${
+              apen ? "" : "panel-ute"
+            }`}
+          >
+            <div className="flex justify-end border-b border-linje-medium px-5 py-1">
+              <button
+                onClick={() => {
+                  setValgt(null);
+                  onApneOkt(vist.id);
+                }}
+                className="text-liten text-blekk-svak hover:text-blekk"
+              >
+                Vis i Økter <Ikon navn="pil" />
+              </button>
+            </div>
+            <OktPanel
+              key={vist.id}
+              okt={vist}
+              onLukk={() => setValgt(null)}
+              onEndret={lastOkter}
+              onApneElev={(id) => {
+                setValgt(null);
+                onApneElev(id);
+              }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -194,15 +227,6 @@ function Bolk({
  * årsoversikten inkludert — flytter seg etter hvor mye du skrev sist.
  */
 const LOGGLINJER = 2;
-
-/**
- * «Neste økter» viser tre, og plassen til tre er reservert uansett hvor mange
- * som finnes. Radhøyden er datolinja pluss øktlinja — endres de to, må dette
- * tallet følge etter. Det er en reservasjon, ikke et tak: er teksten høyere
- * enn antatt, vokser boksen framfor å klippe.
- */
-const KOMMENDE_ANTALL = 3;
-const KOMMENDE_RADHOYDE = 55;
 
 function Forrigelogg({
   okt,

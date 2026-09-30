@@ -312,6 +312,7 @@ export default function App() {
               fag={fag}
               onGaTil={(v, id) => ga(v, id ?? null)}
               onApneOkt={(id) => ga("okter", id)}
+              onApneElev={(id) => ga("elev", id)}
             />
           )}
 
