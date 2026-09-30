@@ -58,7 +58,9 @@ Hver av disse er under en time og fjerner daglig friksjon.
   når, tema og agenda. Plan og øktlogg går aldri ut, som i §8.1.
 - [x] Generell hendelse i skoleruta med egen tag. Trengte ingen migrasjon —
   `fridag.type` er TEXT uten CHECK, så det holdt med en fjerde verdi.
-- [ ] **Knytt en vurdering til økta den ble holdt i.** `vurdering.okt_id`
+- [x] **Knytt en vurdering til økta den ble holdt i.** Gjort 30.09:
+  automatisk på fristdagen, for hånd fra begge panelene, migrasjon 015.
+  Opprinnelig punkt: `vurdering.okt_id`
   finnes og leses av øktlistas Vurdering-kolonne, men ingenting skriver
   den — alle vurderinger i basen har den tom. I dag virker koblingen bare
   implisitt, ved at fristen tilfeldigvis er samme dato som økta. Trengs
@@ -90,11 +92,19 @@ integreres senere.
 
 ## 4. Store funksjoner
 
-Tas én om gangen, etter at 0–3 er gjort.
+Tas én om gangen, etter at 0–3 er gjort. Rekkefølgen under er eierens
+prioritering fra 30.09.
 
-- [ ] **Visuell oppstramming.** Appen ser hjemmesnekra ut. DESIGN.md er
-  skrevet som et designoppdrag, men aldri utført — paletten er tatt i
-  bruk, resten av briefen ikke. Dette er den største åpne saken nå.
+- [x] **Utskrift og eksport av årsplan.** Utskriften kuttet alt etter første
+  side. Nå: ett fag per ark, med kompetansemål, faglærer, rom, timeregnskap,
+  fritekst, og uke/dato/tema/lekse/vurdering. PDF, Word, markdown og CSV.
+- [ ] **`⌘K` — søk på elev, hopp til elevvisningen.** Globalt, ikke bare i
+  skåringsflyten. Prioritert opp 30.09.
+
+- [ ] **Visuell oppstramming.** Steg 1 gjort 21.09. Neste: en ryddigere og
+  strammere toppmeny — eieren synes det er for mange lister der. DESIGN.md
+  må oppdateres til å beskrive serif-overskriftene og det som faktisk er
+  valgt.
 
 - [x] **Samtaletrekkeren.** Bygget i seks deler, §4.10. Migrasjon 012 og
   013, egen fane pluss inngang fra muntlige vurderinger. Notater fra
@@ -103,10 +113,7 @@ Tas én om gangen, etter at 0–3 er gjort.
   som egen linje uten måltall. Gjenstår: å vise hvilken oppgave eleven
   fikk under selve vurderingen — gjort, gjennom en vurderingsvelger i
   samtaleoppsettet.
-- [ ] **Klassekart.** Bygges standalone først, integreres senere.
-  Spec-seksjon før integrasjonen. Rom må kunne lages enkelt, ellers
-  blir den ubrukt
-- [ ] Ukesvisning av økter — uavklart hva den skal være, se med eieren
+- [ ] Ukesvisning av økter — uavklart hva den skal være. Avventer.
 - [x] AND/OR i filtrering av elever. Flere fag kan velges, med bryter
   mellom «har alle» og «minst ett».
 
@@ -114,6 +121,10 @@ Tas én om gangen, etter at 0–3 er gjort.
 
 Ting som er vurdert og lagt bort med vilje. Står her så de ikke dukker opp
 igjen som nye ideer.
+
+- Klassekart — kraftig nedprioritert 30.09. Bygges standalone først om det
+  kommer, og rom må kunne lages enkelt, ellers blir det ubrukt
+- Klasseopprykk — avventer; eieren er usikker på om det trengs
 
 - Fagpresets fra Udirs Grep-API — `hent_grep.py` finnes, men hører til etter v1
 - Synk mellom maskiner

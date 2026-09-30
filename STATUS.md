@@ -1,10 +1,10 @@
 # Status
 
-Kort status pr. 2026-09-21, versjon 0.1.2. Skrevet mot SPEC.md slik den er nå.
+Kort status pr. 2026-09-30, versjon 0.1.2. Skrevet mot SPEC.md slik den er nå.
 Denne fila eies fritt — oppdater den løpende, i motsetning til SPEC.md.
 
-**319 tester, alle grønne. `tsc --noEmit` er ren. `npm run build` går
-gjennom. 13 migrasjoner.**
+**349 tester, alle grønne. `tsc --noEmit` er ren. `npm run build` går
+gjennom. 15 migrasjoner.**
 
 ## Hva som virker
 
@@ -29,7 +29,13 @@ Skjerm for skjerm (§4), med tilstand:
   oppfølgingsskjermen som aldri ble bygget.
 - **Innstillinger (§4.8)** — ferdig. Fagbank og «fag i år» ligger i Fag-fanen,
   ikke her.
-- **Utskrift (§4.9)** — ferdig.
+- **Utskrift og eksport av årsplan (§4.9)** — ferdig, og utvidet. Ett fag
+  (eller alle) på papir/PDF, som Word, markdown (kopi eller fil) og CSV.
+  Hodet har faglærer, rom, timeregnskap, fritekst og kompetansemålene fra
+  Udir; tabellen har uke, dato, tema, lekse og vurdering. Utskriften kuttet
+  før alt etter første side — rettet 30.09.
+- **Vurdering knyttet til økt** — ferdig 30.09. Automatisk når fristen
+  faller på en øktdag, og for hånd fra begge panelene.
 - **Samtaletrekkeren (§4.10)** — ferdig. To modus, trekning med låser,
   dra-og-slipp, tre visninger, tre eksporter, historikk på tidspunkt, og
   publisering av mentorsamtaler til kalenderserveren.
@@ -37,19 +43,19 @@ Skjerm for skjerm (§4), med tilstand:
 ## Hva som ikke er bygget av det SPEC.md lover
 
 - **Klasseopprykk (§4.3/§4.8).** Datamodellen bærer det, skjermen finnes ikke.
-  Trengs første gang et nytt skoleår opprettes, altså august 2027.
-- **`⌘K`-søk i skåringsflyten (§4.4).** Står i tastetabellen, finnes ikke.
+  Avventer — eieren er usikker på om det trengs.
+- **`⌘K`-søk (§4.4).** Står i tastetabellen, finnes ikke. Eieren vil ha det
+  som et globalt søk som åpner elevvisningen — prioritert opp.
 - **Skalabygger (§5.3).** Spec sier selv at den kommer etter rammeverket.
 - **Findelt karakterskala (§5.2).** Riktig — den hører til §10.
-- **Å knytte en vurdering til økta den ble holdt i.** `vurdering.okt_id`
-  finnes og leses, men ingenting skriver den. Koblingen virker i dag bare
-  ved at fristen tilfeldigvis er samme dato som økta.
 
 ## Hva som er i stykker eller irriterer
 
-- **Appen ser hjemmesnekra ut.** Eierens ord, og det er den største åpne
-  saken nå. DESIGN.md er skrevet som et designoppdrag, men aldri utført —
-  paletten i `index.css` er tatt i bruk, resten av briefen ikke.
+- **Appen ser hjemmesnekra ut.** Eierens ord. Steg 1 av oppstrammingen er
+  gjort 21.09 (typografi med serif-overskrifter, tetthet, fokus, knapper).
+  DESIGN.md er ikke oppdatert etter det — den beskriver fortsatt
+  utgangspunktet fra august. Eieren synes toppmenyen har for mange lister;
+  det hører til neste steg.
 - **Skjermkomponentene har ingen tester.** `OktPanel`, `ElevPanel`,
   `VurderingPanel` og `Samtaler` er utestet på komponentnivå. Datalaget under
   dem er godt dekket — all trekningslogikk, kapasitetsregning,
@@ -68,6 +74,14 @@ Skjerm for skjerm (§4), med tilstand:
 - **§4.2-navigasjon.** Spec beskriver ett fag om gangen med en visningsbryter;
   koden har globale lister og en egen per-fag-skjerm.
 - **Serieopprettelse av økter** finnes, mot et eksplisitt forbud i §4.2.
+  Eieren har sagt at spec-en er utdatert her: færrest mulig klikk er et
+  overordnet prinsipp.
+- **§4.9 Utskrift** beskriver ett ark med dato, ukedag, varighet og tema.
+  Koden har mer: kompetansemål, faglærer, rom, fritekst, lekse, vurdering og
+  fire eksportformater.
+- **§3.2/§3.3** mangler de nye feltene fra migrasjon 014: `okt.lekse` og
+  `skolear_fag.rom`, `laerer`, `kompetansemal`, `arknotat`. Og
+  innstillingen `laerer_navn` står ikke i tabellen i §4.8.
 - **Årsoversikt-widgeten på §4.1** er et villet unntak fra §13.
 - **§4.8s fem deler** stemmer ikke: fagbank og «fag i år» ligger i Fag.
 - **§11 Byggerekkefølge** er utdatert og hører hjemme i ARBEIDSLISTE.md.
@@ -78,7 +92,7 @@ rettes tilbake, ligger hos eieren.
 
 ## Tester
 
-19 testfiler, 319 tester, alle grønne. `tsc` ren.
+21 testfiler, 349 tester, alle grønne. `tsc` ren.
 
 Dekningen er tung i datalaget og tynn i skjermlaget. Migrasjonene testes ved å
 kjøre dem i to omganger med data imellom — kjørt mot en tom base ville en
