@@ -77,9 +77,7 @@ export function Fag({
     <div className="mx-auto flex min-h-0 w-full max-w-6xl flex-1 overflow-clip">
       <div
         className={`liste-bredde flex min-w-0 flex-col ${
-          glir
-            ? "hidden w-full pr-4 lg:flex lg:w-1/3"
-            : "mx-auto w-full max-w-4xl"
+          glir ? "hidden w-full pr-4 lg:flex lg:w-1/3" : "w-full"
         }`}
       >
         {/* Overskrift og Rediger-bryteren blir stående mens lista ruller. */}

@@ -1126,7 +1126,9 @@ export function Samtaler({
           <Tomtilstand
             tekst={
               dager.length === 0
-                ? "Legg til minst én samtaledag til venstre."
+                ? modus === "fag"
+                  ? "Kryss av for øktene samtalene skal ligge i, til venstre — eller legg til en egen dag."
+                  : "Legg til minst én samtaledag til venstre."
                 : "Sett opp trekningen til venstre og trykk Generer timeplan."
             }
           />
