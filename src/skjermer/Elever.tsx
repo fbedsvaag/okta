@@ -244,7 +244,13 @@ export function Elever({
               </span>
             </label>
 
-            <div className="ml-auto flex items-center gap-2">
+            {/*
+              Knappene gjelder tabellen. Med elevkortet åpent er lista smal, og
+              da brakk linja over tre rader — de skjules til kortet lukkes.
+            */}
+            <div
+              className={`ml-auto flex items-center gap-2 ${apentPanel ? "hidden" : ""}`}
+            >
               <label className="flex select-none items-center gap-2 text-liten text-blekk-dempet">
                 <input
                   type="checkbox"
@@ -285,7 +291,7 @@ export function Elever({
               <table className="tabell-fast w-full text-brod">
                 <thead>
                   <tr className="border-b border-linje text-left text-etikett uppercase tracking-etikett text-blekk-dempet">
-                    <th className="w-6 py-1">
+                    <th className="w-8 py-1 pr-3">
                       <input
                         type="checkbox"
                         checked={alleMerket}
@@ -392,8 +398,6 @@ export function Elever({
                         Sist endret
                       </Overskrift>
                     )}
-                    {/* Tar opp slakken, så kolonnene over hugger innholdet sitt. */}
-                    <th className="w-full" />
                   </tr>
                 </thead>
                 <tbody>
@@ -703,15 +707,17 @@ function Rad({
       } ${valgt ? "bg-valgt" : merket ? "bg-flate-svak" : "hover:bg-flate-svak"}`}
     >
       {/* Klikket stoppes her, ellers ville avhukingen åpnet elevkortet. */}
-      <td className="py-1.5" onClick={(e) => e.stopPropagation()}>
+      <td className="w-8 py-1.5 pr-3" onClick={(e) => e.stopPropagation()}>
         <input
           type="checkbox"
           checked={merket}
           title="Merk for sletting"
           onChange={(e) => onMerk(e.target.checked)}
+          className="align-middle"
         />
       </td>
-      <td className="py-1.5 pr-5">
+      {/* Navn brekker aldri (DESIGN.md §2): én linje, kuttet med «…» om nødvendig. */}
+      <td className="whitespace-nowrap py-1.5 pr-5">
         {forfalt && (
           <span
             aria-label="Har et forfalt oppfølgingspunkt"
@@ -732,7 +738,7 @@ function Rad({
         />
       </td>
       {vis.has("etternavn") && (
-        <td className="py-1.5 pr-5">
+        <td className="whitespace-nowrap py-1.5 pr-5">
           <Navnefelt
             verdi={elev.etternavn}
             rediger={rediger}
@@ -919,7 +925,6 @@ function Rad({
           {kortTid(elev.endret)}
         </td>
       )}
-      <td />
     </tr>
   );
 }
@@ -945,7 +950,8 @@ function Navnefelt({
     return (
       <button
         onClick={onApne}
-        className="text-left hover:text-aksent hover:underline"
+        title={verdi}
+        className="inline-block max-w-[16rem] truncate whitespace-nowrap text-left align-middle hover:text-aksent hover:underline"
       >
         {verdi}
       </button>
