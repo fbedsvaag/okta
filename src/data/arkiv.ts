@@ -131,6 +131,8 @@ async function samle(skolearId: string) {
             sv.kode AS verdi, sv.farge, sv.teller_ikke AS tellerIkke,
             s.notat
        FROM skaring s
+       -- Skåringer fra slettede elever skal heller ikke ut i arkivet.
+       JOIN elev e         ON e.id = s.elev_id AND e.slettet IS NULL
        JOIN okt o          ON o.id = s.okt_id AND o.slettet IS NULL
        JOIN skolear_fag sf ON sf.id = o.skolear_fag_id
                           AND sf.slettet IS NULL AND sf.skolear_id = $1
