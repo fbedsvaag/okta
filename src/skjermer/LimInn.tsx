@@ -9,6 +9,9 @@ import {
 } from "../import/utfor";
 import type { EksisterendeElev } from "../import/duplikat";
 import { frakobleFag, hentForDuplikatsjekk } from "../data/elever";
+import { settElevbilde } from "../data/elevbilde";
+import { lesInschool, navnenokkel, somLimInnTekst } from "../import/inschool";
+import { Elevbilde } from "../ui/Elevbilde";
 import type { FagIAr } from "../data/fag";
 import { Felt, Knapp } from "../ui/felles";
 
@@ -46,6 +49,63 @@ export function LimInn({
   // alle som ikke står på lista; hver kan krysses av igjen.
   const [medlemmer, setMedlemmer] = useState<EksisterendeElev[]>([]);
   const [tasUt, setTasUt] = useState<Set<string>>(new Set());
+  // Bildene fra en InSchool-PDF, klippet ut og klare, etter navnenøkkel.
+  // Lagres på elevene først når importen bekreftes.
+  const [bilder, setBilder] = useState<Map<string, string>>(new Map());
+  const [pdfMelding, setPdfMelding] = useState<string | null>(null);
+  const [leserPdf, setLeserPdf] = useState(false);
+
+  /**
+   * Leser klasselista og bildene fra InSchool-utskriften. Navnene går inn i
+   * tekstfeltet som «navn; klasse», så resten er den vanlige flyten:
+   * forhåndsvisning, duplikatsjekk, bekreftelse (§7).
+   */
+  async function lesPdf(fil: File) {
+    setLeserPdf(true);
+    setPdfMelding(null);
+    try {
+      const { apnePdf } = await import("../import/pdf");
+      const pdf = await apnePdf(new Uint8Array(await fil.arrayBuffer()));
+      const r = lesInschool(pdf.sider);
+      if (r.elever.length === 0) {
+        setPdfMelding(
+          "Fant ingen klasseliste i PDF-en. Er det utskriften fra InSchool?",
+        );
+        return;
+      }
+      const klipt = new Map<string, string>();
+      for (const b of r.bilder)
+        klipt.set(navnenokkel(b.navn), await pdf.klipp(b.side, b.plass));
+      setBilder(klipt);
+      setTekst(somLimInnTekst(r.elever));
+
+      // Faget i toppen av utskriften, når det finnes i året.
+      const treff = r.fagkode
+        ? fag.find(
+            (f) =>
+              f.grepKode === r.fagkode ||
+              f.fagkode === r.fagkode ||
+              f.kode === r.fagkode,
+          )
+        : undefined;
+      const valgt = fag.find((f) => f.id === fagId);
+      let omFag = "";
+      if (treff && !startFagId) setFagId(treff.id);
+      else if (r.fagkode && valgt && treff?.id !== valgt.id)
+        omFag = ` NB: PDF-en er for ${r.fagkode}, men du legger inn i ${valgt.kode}.`;
+      setPdfMelding(
+        `Leste ${r.elever.length} elever og ${klipt.size} bilder fra ` +
+          `${fil.name}.${omFag}`,
+      );
+    } catch (e) {
+      setPdfMelding(`Kunne ikke lese PDF-en: ${String(e)}`);
+    } finally {
+      setLeserPdf(false);
+    }
+  }
+
+  const bildeFor = (rad: Importrad) =>
+    bilder.get(navnenokkel(`${rad.linje.fornavn} ${rad.linje.etternavn}`));
 
   async function forhandsvis() {
     const { elever, hoppetOver } = parseListe(tekst);
@@ -87,6 +147,15 @@ export function LimInn({
             ).filter((id) => tasUt.has(id))
           : [];
       for (const id of utIder) await frakobleFag(id, fagId);
+      let medBilde = 0;
+      for (const rad of rader) {
+        const id = r.elevIder.get(rad.linje.linjenr);
+        const bilde = bildeFor(rad);
+        if (id && bilde) {
+          await settElevbilde(id, bilde, "InSchool");
+          medBilde++;
+        }
+      }
       const hvor = fagId
         ? (fag.find((f) => f.id === fagId)?.kode ?? "faget")
         : somMentor
@@ -95,7 +164,8 @@ export function LimInn({
       onFerdig(
         `${hvor}: ${r.opprettet} nye elever, ${r.koblet} fantes fra før` +
           (r.hoppet > 0 ? `, ${r.hoppet} hoppet over` : "") +
-          (utIder.length > 0 ? `, ${utIder.length} tatt ut av faget` : ""),
+          (utIder.length > 0 ? `, ${utIder.length} tatt ut av faget` : "") +
+          (medBilde > 0 ? `, ${medBilde} bilder lagt på` : ""),
       );
     } finally {
       setJobber(false);
@@ -141,6 +211,7 @@ export function LimInn({
               <ForhandsvisRad
                 key={rad.linje.linjenr}
                 rad={rad}
+                bilde={bildeFor(rad)}
                 onEndre={(f) => endre(i, f)}
               />
             ))}
@@ -293,6 +364,34 @@ export function LimInn({
         </p>
       )}
 
+      {/*
+        InSchool-utskriften: navn og klasse fra tabellen, bildene fra
+        rutenettet. Fila leses her på maskinen og sendes ingen steder.
+      */}
+      <div className="mt-3 flex items-center gap-3">
+        <label
+          className={`cursor-pointer rounded-vanlig border border-linje bg-ark px-3 py-1 text-brod hover:bg-flate ${leserPdf ? "opacity-50" : ""}`}
+        >
+          {leserPdf ? "Leser PDF …" : "Les fra InSchool-PDF …"}
+          <input
+            type="file"
+            accept="application/pdf,.pdf"
+            className="hidden"
+            disabled={leserPdf}
+            onChange={(e) => {
+              const fil = e.target.files?.[0];
+              if (fil) void lesPdf(fil);
+              e.target.value = "";
+            }}
+          />
+        </label>
+        {pdfMelding && (
+          <span className="text-liten text-blekk-dempet" role="status">
+            {pdfMelding}
+          </span>
+        )}
+      </div>
+
       <textarea
         value={tekst}
         onChange={(e) => setTekst(e.target.value)}
@@ -319,9 +418,12 @@ export function LimInn({
 
 function ForhandsvisRad({
   rad,
+  bilde,
   onEndre,
 }: {
   rad: Importrad;
+  /** bildet fra PDF-en, når det finnes */
+  bilde?: string;
   onEndre: (felter: Partial<Importrad>) => void;
 }) {
   const merke = {
@@ -347,6 +449,13 @@ function ForhandsvisRad({
       className={`border-b border-linje-svak ${rad.hopp ? "opacity-40" : ""}`}
     >
       <td className="py-1.5">
+        {bilde && (
+          <Elevbilde
+            src={bilde}
+            storrelse={28}
+            klasse="mr-2 inline-block align-middle"
+          />
+        )}
         {rad.linje.fornavn} {rad.linje.etternavn}
       </td>
       <td className="py-1.5">

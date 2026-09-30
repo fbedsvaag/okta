@@ -3,8 +3,8 @@
 Kort status pr. 2026-09-30, versjon 0.1.3. Skrevet mot SPEC.md slik den er nå.
 Denne fila eies fritt — oppdater den løpende, i motsetning til SPEC.md.
 
-**449 tester, alle grønne. `tsc --noEmit` er ren. `npm run build` går
-gjennom. 20 migrasjoner.**
+**460 tester, alle grønne. `tsc --noEmit` er ren. `npm run build` går
+gjennom. 21 migrasjoner.**
 
 ## Hva som virker
 
@@ -49,6 +49,12 @@ Skjerm for skjerm (§4), med tilstand:
 - **⌘K-søk** — ferdig 30.09. Globalt, ikke bare i skåringsflyten som §4.4
   beskriver. Finner elever (navn, klasse, fag) og økter (tema, fag, alias,
   dato i ISO og norske formater). Fag kan ha et alias (migrasjon 018).
+- **Elevbilder fra InSchool** — 30.09 (migrasjon 021, `elevbilde`). «Les
+  fra InSchool-PDF» i Lim inn: navn og klasse fra tabellen, fagkoden velger
+  faget, bildene klippes ut, trimmes og lagres som gråtoner. Looken
+  (åtte trinn, blekk til lys lilla) er et SVG-filter i `Elevbilde`. Vises
+  i elevkortet, kan fjernes der. pdf.js ligger i bygget, lastes bare ved
+  import. Bildet går aldri ut av appen; sletting tømmer det.
 - **Kortlogikken overalt** — 30.09. Elev, vurdering og fag åpnes som ark
   (`Arkstabel`) fra lister, forsiden og hverandre. Økter beholder
   sidepanelet med vilje, se DESIGN.md §7.
@@ -111,7 +117,7 @@ dager, ⌘K, alias, de nye feltene). Det som står igjen:
 
 ## Tester
 
-29 testfiler, 449 tester, alle grønne. `tsc` ren.
+32 testfiler, 460 tester, alle grønne. `tsc` ren.
 
 Dekningen er tung i datalaget og tynn i skjermlaget. Migrasjonene testes ved å
 kjøre dem i to omganger med data imellom — kjørt mot en tom base ville en

@@ -1,4 +1,5 @@
 import { varsleElever } from "./endringer";
+import { slettElevbilde } from "./elevbilde";
 import { hent, oppdater, settInn, slett } from "../db";
 import { lagElevkode } from "./elevkode";
 import type { EksisterendeElev } from "../import/duplikat";
@@ -465,6 +466,7 @@ export async function slettElevHelt(elevId: string): Promise<void> {
     );
     for (const r of rader) await slett(tabell, r.id);
   }
+  await slettElevbilde(elevId);
   await slett("elev", elevId);
   varsleElever();
 }

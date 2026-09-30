@@ -23,6 +23,8 @@ export type Importrad = Vurdering & {
 };
 
 export type Resultat = {
+  /** eleven hver linje ble til, etter linjenummer — til elevbildene */
+  elevIder: Map<number, string>;
   opprettet: number;
   koblet: number;
   hoppet: number;
@@ -44,6 +46,7 @@ export async function utforImport(
   somMentor = false,
 ): Promise<Resultat> {
   const resultat: Resultat = {
+    elevIder: new Map(),
     opprettet: 0,
     koblet: 0,
     hoppet: 0,
@@ -62,6 +65,9 @@ export async function utforImport(
 
   for (const rad of rader) {
     if (rad.hopp || rad.status === "allerede") {
+      // Står eleven i faget allerede, er hen likevel eleven på linja.
+      if (!rad.hopp && rad.valgt !== "ny")
+        resultat.elevIder.set(rad.linje.linjenr, rad.valgt);
       resultat.hoppet++;
       continue;
     }
@@ -73,6 +79,7 @@ export async function utforImport(
         if (somMentor) await settMentor(elevId, skolearId, true);
       }
       if (skolearFagId) await koblePaFag(elevId, skolearFagId);
+      resultat.elevIder.set(rad.linje.linjenr, elevId);
       resultat.opprettet++;
       continue;
     }
@@ -80,6 +87,7 @@ export async function utforImport(
     // "Samme elev" legger til fag, ikke klasse. Klassen byttes bare hvis
     // brukeren uttrykkelig har sagt det (§7.1).
     if (skolearFagId) await koblePaFag(rad.valgt, skolearFagId);
+    resultat.elevIder.set(rad.linje.linjenr, rad.valgt);
     resultat.koblet++;
 
     if (rad.byttKlasse && rad.klasse.trim() !== "") {

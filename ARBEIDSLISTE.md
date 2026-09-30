@@ -119,7 +119,7 @@ prioritering fra 30.09.
   fikk under selve vurderingen — gjort, gjennom en vurderingsvelger i
   samtaleoppsettet.
 - [ ] Ukesvisning av økter — uavklart hva den skal være. Avventer.
-- [ ] **Elevbilder fra InSchool-PDF.** Ønsket 30.09, ikke påbegynt. Les den
+- [x] **Elevbilder fra InSchool-PDF.** Bygget 30.09 (migrasjon 021), testet mot en ekte utskrift. Les den
   utskrevne klasselista (én–to sider PDF med navn og bilde) lokalt i appen:
   navnene blir klasseliste gjennom lim-inn-flyten (§7, duplikatsjekk og
   forhåndsvisning), og bildet til hver elev klippes ut og legges på

@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { useArk } from "../ui/Arkstabel";
+import { Elevbilde } from "../ui/Elevbilde";
+import { hentElevbilde, slettElevbilde } from "../data/elevbilde";
 import { lyttVurderinger } from "../data/endringer";
 import { confirm as bekreft } from "@tauri-apps/plugin-dialog";
 import {
@@ -92,6 +94,11 @@ export function ElevPanel({
   };
 }) {
   const ark = useArk();
+  // Bildet fra InSchool-utskriften, når det er lest inn (import/inschool).
+  const [bilde, setBilde] = useState<string | null>(null);
+  useEffect(() => {
+    void hentElevbilde(elevId).then(setBilde);
+  }, [elevId]);
   const [elev, setElev] = useState<ElevGrunnlag | null>(null);
   const [ar, setAr] = useState<ElevAr[]>([]);
   const [valgtAr, setValgtAr] = useState(aktivtSkolearId);
@@ -207,147 +214,169 @@ export function ElevPanel({
         bla?.retning ? `flikk-${bla.retning}` : ""
       }`}
     >
-      <header className="flex flex-wrap items-baseline gap-x-3 gap-y-2 border-b border-linje-medium px-5 py-3">
-        {/*
+      <header className="flex items-start gap-4 border-b border-linje-medium px-5 py-3">
+        {bilde && (
+          <span className="group relative">
+            <Elevbilde src={bilde} storrelse={60} alt="" />
+            <button
+              onClick={async () => {
+                if (
+                  !(await bekreft(
+                    `Fjerne bildet av ${elev.fornavn}? Det slettes fra basen.`,
+                  ))
+                )
+                  return;
+                await slettElevbilde(elevId);
+                setBilde(null);
+              }}
+              className="absolute inset-x-0 bottom-0 bg-blekk/70 py-0.5 text-mikro text-ark opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100"
+            >
+              Fjern
+            </button>
+          </span>
+        )}
+        <div className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-3 gap-y-2">
+          {/*
           Navnet redigeres der det står. Samme mønster som resten av appen:
           skriv, og feltet lagrer når det forlates. Enter bekrefter, Escape
           angrer.
         */}
-        <Navnefelt
-          verdi={elev.fornavn}
-          plassholder="Fornavn"
-          onLagre={async (v) => {
-            await endreElev(elevId, { fornavn: v });
-            setElev(await hentElevGrunnlag(elevId));
-          }}
-        />
-        <Navnefelt
-          verdi={elev.etternavn}
-          plassholder="Etternavn"
-          manglerTekst="Mangler etternavn"
-          onLagre={async (v) => {
-            await endreElev(elevId, { etternavn: v });
-            setElev(await hentElevGrunnlag(elevId));
-          }}
-        />
-        <span className="font-mono text-etikett text-blekk-svak">
-          {elev.kode}
-        </span>
-        <Klassevelger
-          klasser={klasser}
-          valgt={detteAret?.klasse ?? null}
-          onVelg={async (klasseId) => {
-            await settKlasse(elevId, valgtAr, klasseId);
-            setAr(await hentElevAr(elevId));
-          }}
-          onNy={async (navn) => {
-            const id = await finnEllerOpprettKlasse(valgtAr, navn);
-            await settKlasse(elevId, valgtAr, id);
-            setKlasser(await hentKlasser(valgtAr));
-            setAr(await hentElevAr(elevId));
-          }}
-        />
+          <Navnefelt
+            verdi={elev.fornavn}
+            plassholder="Fornavn"
+            onLagre={async (v) => {
+              await endreElev(elevId, { fornavn: v });
+              setElev(await hentElevGrunnlag(elevId));
+            }}
+          />
+          <Navnefelt
+            verdi={elev.etternavn}
+            plassholder="Etternavn"
+            manglerTekst="Mangler etternavn"
+            onLagre={async (v) => {
+              await endreElev(elevId, { etternavn: v });
+              setElev(await hentElevGrunnlag(elevId));
+            }}
+          />
+          <span className="font-mono text-etikett text-blekk-svak">
+            {elev.kode}
+          </span>
+          <Klassevelger
+            klasser={klasser}
+            valgt={detteAret?.klasse ?? null}
+            onVelg={async (klasseId) => {
+              await settKlasse(elevId, valgtAr, klasseId);
+              setAr(await hentElevAr(elevId));
+            }}
+            onNy={async (navn) => {
+              const id = await finnEllerOpprettKlasse(valgtAr, navn);
+              await settKlasse(elevId, valgtAr, id);
+              setKlasser(await hentKlasser(valgtAr));
+              setAr(await hentElevAr(elevId));
+            }}
+          />
 
-        {/*
+          {/*
           Mentormerket hører hjemme her: det er når man står og ser på eleven
           man vet at hen er mentoreleven sin. Uten klasse finnes ingen rad å
           merke (§3.2), og da er boksen av.
         */}
-        <label
-          title={
-            detteAret?.klasse
-              ? "Min mentorelev dette året"
-              : "Sett klasse først — mentormerket henger på klassen"
-          }
-          className={`flex shrink-0 select-none items-center gap-1.5 text-liten ${
-            detteAret?.klasse ? "text-blekk-dempet" : "text-blekk-svakest"
-          }`}
-        >
-          <input
-            type="checkbox"
-            checked={detteAret?.mentor ?? false}
-            disabled={!detteAret?.klasse}
-            onChange={async (e) => {
-              const ok = await settMentor(elevId, valgtAr, e.target.checked);
-              if (ok) setAr(await hentElevAr(elevId));
-            }}
-          />
-          Mentorelev
-        </label>
+          <label
+            title={
+              detteAret?.klasse
+                ? "Min mentorelev dette året"
+                : "Sett klasse først — mentormerket henger på klassen"
+            }
+            className={`flex shrink-0 select-none items-center gap-1.5 text-liten ${
+              detteAret?.klasse ? "text-blekk-dempet" : "text-blekk-svakest"
+            }`}
+          >
+            <input
+              type="checkbox"
+              checked={detteAret?.mentor ?? false}
+              disabled={!detteAret?.klasse}
+              onChange={async (e) => {
+                const ok = await settMentor(elevId, valgtAr, e.target.checked);
+                if (ok) setAr(await hentElevAr(elevId));
+              }}
+            />
+            Mentorelev
+          </label>
 
-        {/*
+          {/*
           Fagene eleven har i året. Frakobling rører aldri skåringene — de
           blir liggende, og kobler du til igjen kommer de tilbake i heatmapet.
           Derfor er dette trygt å rette i, og spørsmålet stilles bare når det
           faktisk finnes skåringer å forsvinne ut av lista med.
         */}
-        {arsFag.length > 0 && (
-          <span className="flex flex-wrap items-center gap-1.5">
-            {arsFag.map((f) => {
-              const har = elevensFagIder.has(f.id);
-              return (
-                <label
-                  key={f.id}
-                  title={har ? `Koble fra ${f.kode}` : `Koble til ${f.kode}`}
-                  className="flex cursor-pointer select-none items-center gap-1"
-                >
-                  <input
-                    type="checkbox"
-                    checked={har}
-                    onChange={async (e) => {
-                      if (e.target.checked) {
-                        if (
-                          !(await bekreft(
-                            `Legge ${elev.fornavn} ${elev.etternavn} til i ${f.kode}? Hen kommer med i fagets elevliste og i øktene.`,
-                          ))
-                        ) {
-                          e.target.checked = false;
-                          return;
+          {arsFag.length > 0 && (
+            <span className="flex flex-wrap items-center gap-1.5">
+              {arsFag.map((f) => {
+                const har = elevensFagIder.has(f.id);
+                return (
+                  <label
+                    key={f.id}
+                    title={har ? `Koble fra ${f.kode}` : `Koble til ${f.kode}`}
+                    className="flex cursor-pointer select-none items-center gap-1"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={har}
+                      onChange={async (e) => {
+                        if (e.target.checked) {
+                          if (
+                            !(await bekreft(
+                              `Legge ${elev.fornavn} ${elev.etternavn} til i ${f.kode}? Hen kommer med i fagets elevliste og i øktene.`,
+                            ))
+                          ) {
+                            e.target.checked = false;
+                            return;
+                          }
+                          await koblePaFag(elevId, f.id);
+                        } else {
+                          const n = await tellSkaringerIFag(elevId, f.id);
+                          if (
+                            n > 0 &&
+                            !(await bekreft(
+                              frakobletekst(elev.fornavn, f.kode, n),
+                            ))
+                          ) {
+                            e.target.checked = true;
+                            return;
+                          }
+                          await frakobleFag(elevId, f.id);
                         }
-                        await koblePaFag(elevId, f.id);
-                      } else {
-                        const n = await tellSkaringerIFag(elevId, f.id);
-                        if (
-                          n > 0 &&
-                          !(await bekreft(
-                            frakobletekst(elev.fornavn, f.kode, n),
-                          ))
-                        ) {
-                          e.target.checked = true;
-                          return;
-                        }
-                        await frakobleFag(elevId, f.id);
-                      }
-                      await lastFag();
-                    }}
-                  />
-                  <Fagmerke kode={f.kode} farge={f.farge} liten />
-                </label>
-              );
-            })}
-          </span>
-        )}
-        {bla && bla.av > 1 && (
-          <span className="ml-auto flex shrink-0 items-center gap-1">
-            <Ikonknapp onClick={bla.forrige} tittel="Forrige elev (⌥↑)">
-              <Ikon navn="opp" />
-            </Ikonknapp>
-            <span className="tabular-nums text-liten text-blekk-svak">
-              {bla.nr} av {bla.av}
+                        await lastFag();
+                      }}
+                    />
+                    <Fagmerke kode={f.kode} farge={f.farge} liten />
+                  </label>
+                );
+              })}
             </span>
-            <Ikonknapp onClick={bla.neste} tittel="Neste elev (⌥↓)">
-              <Ikon navn="ned" />
-            </Ikonknapp>
-          </span>
-        )}
-        <button
-          onClick={onLukk}
-          className={`shrink-0 text-liten text-blekk-svak hover:text-blekk ${
-            bla && bla.av > 1 ? "ml-3" : "ml-auto"
-          }`}
-        >
-          Lukk (Esc)
-        </button>
+          )}
+          {bla && bla.av > 1 && (
+            <span className="ml-auto flex shrink-0 items-center gap-1">
+              <Ikonknapp onClick={bla.forrige} tittel="Forrige elev (⌥↑)">
+                <Ikon navn="opp" />
+              </Ikonknapp>
+              <span className="tabular-nums text-liten text-blekk-svak">
+                {bla.nr} av {bla.av}
+              </span>
+              <Ikonknapp onClick={bla.neste} tittel="Neste elev (⌥↓)">
+                <Ikon navn="ned" />
+              </Ikonknapp>
+            </span>
+          )}
+          <button
+            onClick={onLukk}
+            className={`shrink-0 text-liten text-blekk-svak hover:text-blekk ${
+              bla && bla.av > 1 ? "ml-3" : "ml-auto"
+            }`}
+          >
+            Lukk (Esc)
+          </button>
+        </div>
       </header>
 
       <div className="overflow-y-auto px-5 py-4">
