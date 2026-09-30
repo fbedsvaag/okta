@@ -10,7 +10,7 @@ const { leggFagIAr, endreFagIAr } = await import("./fag");
 const { opprettOkt, endreOkt, hentOktVurderinger, hentOkter } =
   await import("./okter");
 const { opprettSkolear } = await import("./skolear");
-const { opprettVurdering, settFrist, kobleTilOkt, hentVurderinger } =
+const { opprettVurdering, settFrist, knyttOkt, losOkt, hentVurderinger } =
   await import("./vurderinger");
 
 /** Karakter 1–6, seedet i migrasjon 002. */
@@ -44,7 +44,7 @@ describe("vurdering knyttet til økt", () => {
       null,
       "2026-10-06",
     );
-    expect((await vurdering(v)).oktId).toBe(okt);
+    expect((await vurdering(v)).oktIder).toEqual([okt]);
     expect((await hentOktVurderinger(skolearId)).get(okt)?.[0].tittel).toBe(
       "Prøve",
     );
@@ -60,7 +60,7 @@ describe("vurdering knyttet til økt", () => {
       null,
       "2026-10-06",
     );
-    expect((await vurdering(v)).oktId).toBeNull();
+    expect((await vurdering(v)).oktIder).toEqual([]);
   });
 
   it("kobles når økta legges inn etter vurderingen", async () => {
@@ -72,7 +72,7 @@ describe("vurdering knyttet til økt", () => {
       "2026-10-06",
     );
     const okt = await opprettOkt(fagId, "MFL1", "2026-10-06", null, 180);
-    expect((await vurdering(v)).oktId).toBe(okt);
+    expect((await vurdering(v)).oktIder).toEqual([okt]);
   });
 
   it("følger fristen når koblingen kom fra fristen", async () => {
@@ -86,7 +86,7 @@ describe("vurdering knyttet til økt", () => {
       "2026-10-06",
     );
     await settFrist(v, "2026-10-13");
-    expect((await vurdering(v)).oktId).toBe(ny);
+    expect((await vurdering(v)).oktIder).toEqual([ny]);
   });
 
   it("beholder en kobling du har satt selv, når fristen flyttes", async () => {
@@ -99,10 +99,10 @@ describe("vurdering knyttet til økt", () => {
       null,
       null,
     );
-    await kobleTilOkt(v, utdeling);
+    await knyttOkt(v, utdeling);
     await settFrist(v, "2026-10-20");
     const etter = await vurdering(v);
-    expect(etter.oktId).toBe(utdeling);
+    expect(etter.oktIder).toEqual([utdeling]);
     expect(etter.frist).toBe("2026-10-20");
   });
 
@@ -115,7 +115,7 @@ describe("vurdering knyttet til økt", () => {
       null,
       null,
     );
-    await kobleTilOkt(v, okt);
+    await knyttOkt(v, okt);
     expect((await vurdering(v)).frist).toBe("2026-11-03");
   });
 
@@ -128,7 +128,7 @@ describe("vurdering knyttet til økt", () => {
       null,
       "2026-10-06",
     );
-    await kobleTilOkt(v, null);
+    await losOkt(v, okt);
     expect((await hentOktVurderinger(skolearId)).has(okt)).toBe(false);
   });
 
@@ -137,6 +137,75 @@ describe("vurdering knyttet til økt", () => {
     await opprettVurdering(fagId, await skala(), "Prøve", null, "2026-10-06");
     await endreOkt(okt, { dato: "2026-10-08" });
     expect((await hentOktVurderinger(skolearId)).get(okt)).toHaveLength(1);
+  });
+});
+
+describe("vurdering over flere økter", () => {
+  it("står på alle øktene den er knyttet til", async () => {
+    const a = await opprettOkt(fagId, "MFL1", "2026-11-03", null, 180);
+    const b = await opprettOkt(fagId, "MFL1", "2026-11-05", null, 180);
+    const v = await opprettVurdering(
+      fagId,
+      await skala(),
+      "Muntlig",
+      null,
+      "2026-11-03",
+    );
+    await knyttOkt(v, b);
+    expect((await vurdering(v)).oktIder.sort()).toEqual([a, b].sort());
+    const kart = await hentOktVurderinger(skolearId);
+    expect(kart.get(a)?.[0].tittel).toBe("Muntlig");
+    expect(kart.get(b)?.[0].tittel).toBe("Muntlig");
+  });
+
+  it("lar den andre økta stå når én løses", async () => {
+    const a = await opprettOkt(fagId, "MFL1", "2026-11-03", null, 180);
+    const b = await opprettOkt(fagId, "MFL1", "2026-11-05", null, 180);
+    const v = await opprettVurdering(
+      fagId,
+      await skala(),
+      "Muntlig",
+      null,
+      "2026-11-03",
+    );
+    await knyttOkt(v, b);
+    await losOkt(v, a);
+    expect((await vurdering(v)).oktIder).toEqual([b]);
+  });
+
+  it("flytter ikke øktene når fristen flyttes", async () => {
+    const a = await opprettOkt(fagId, "MFL1", "2026-11-03", null, 180);
+    const b = await opprettOkt(fagId, "MFL1", "2026-11-05", null, 180);
+    await opprettOkt(fagId, "MFL1", "2026-11-10", null, 180);
+    const v = await opprettVurdering(
+      fagId,
+      await skala(),
+      "Muntlig",
+      null,
+      "2026-11-03",
+    );
+    await knyttOkt(v, b);
+    await settFrist(v, "2026-11-10");
+    expect((await vurdering(v)).oktIder.sort()).toEqual([a, b].sort());
+  });
+
+  it("gjenbruker koblingsraden når en løst økt knyttes igjen", async () => {
+    const a = await opprettOkt(fagId, "MFL1", "2026-11-03", null, 180);
+    const v = await opprettVurdering(
+      fagId,
+      await skala(),
+      "Muntlig",
+      null,
+      "2026-11-03",
+    );
+    await losOkt(v, a);
+    await knyttOkt(v, a); // ville feilet på UNIQUE uten gjenbruk
+    const rader = await base.select<unknown[]>(
+      "SELECT id FROM vurdering_okt WHERE vurdering_id = $1",
+      [v],
+    );
+    expect(rader).toHaveLength(1);
+    expect((await vurdering(v)).oktIder).toEqual([a]);
   });
 });
 

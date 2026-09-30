@@ -1,4 +1,5 @@
 import { hent, oppdater, settInn, slett } from "../db";
+import { knyttOkt, losOkt } from "./vurderinger";
 
 /**
  * Samtaler, SPEC §3.6 og §4.10.
@@ -91,7 +92,11 @@ export function kapasitet(
   samtaletid: number,
   pause: number,
 ): number {
-  const tak = Math.max(0, Math.ceil((tilMin(dag.til) - tilMin(dag.fra)) / Math.max(1, samtaletid)) + 2);
+  const tak = Math.max(
+    0,
+    Math.ceil((tilMin(dag.til) - tilMin(dag.fra)) / Math.max(1, samtaletid)) +
+      2,
+  );
   return leggUtDagen(dag, tak, samtaletid, pause).filter(
     (s) => s.type === "samtale",
   ).length;
@@ -110,7 +115,10 @@ export function timerPaDagen(dag: Dagoppsett): number {
   if (til <= fra) return 0;
 
   const lunsj =
-    dag.lunsjFra && dag.lunsjMin && tilMin(dag.lunsjFra) >= fra && tilMin(dag.lunsjFra) < til
+    dag.lunsjFra &&
+    dag.lunsjMin &&
+    tilMin(dag.lunsjFra) >= fra &&
+    tilMin(dag.lunsjFra) < til
       ? dag.lunsjMin
       : 0;
 
@@ -132,7 +140,10 @@ export function fordelPaDager(antall: number, kapasiteter: number[]): number[] {
 // ------------------------------------------------------------------ trekning
 
 /** Stokker en liste. Tilfeldigheten sendes inn, så trekningen kan prøves. */
-export function stokk<T>(liste: T[], tilfeldig: () => number = Math.random): T[] {
+export function stokk<T>(
+  liste: T[],
+  tilfeldig: () => number = Math.random,
+): T[] {
   const a = [...liste];
   for (let i = a.length - 1; i > 0; i--) {
     const j = Math.floor(tilfeldig() * (i + 1));
@@ -161,7 +172,10 @@ export function tildelTema(
  * Skilt fra trekningen fordi rekkefølgen kan komme to veier: stokket, eller
  * vektet mot gjentakelse (§4.10). Delingen er den samme uansett.
  */
-export function delPaDager(ordnet: string[], kapasiteter: number[]): string[][] {
+export function delPaDager(
+  ordnet: string[],
+  kapasiteter: number[],
+): string[][] {
   const fordelt = fordelPaDager(ordnet.length, kapasiteter);
   const ut: string[][] = [];
   let i = 0;
@@ -552,6 +566,11 @@ export type Samtaledag = {
   skolearFagId: string | null;
   fagKode: string | null;
   vurderingId: string | null;
+  /**
+   * Økta dagen ligger i. Da er øktas start og slutt rammen, og timene er
+   * allerede talt som økt. null = en egen dag, eller økta er slettet.
+   */
+  oktId: string | null;
   dato: string;
   fra: string;
   til: string;
@@ -573,13 +592,16 @@ export type Samtale = {
   motte: boolean;
 };
 
-export async function hentSamtaledager(skolearId: string): Promise<Samtaledag[]> {
+export async function hentSamtaledager(
+  skolearId: string,
+): Promise<Samtaledag[]> {
   return hent<Samtaledag>(
     `SELECT d.id,
             d.skolear_id     AS skolearId,
             d.skolear_fag_id AS skolearFagId,
             f.kode           AS fagKode,
             d.vurdering_id   AS vurderingId,
+            o.id             AS oktId,
             d.dato, d.fra, d.til,
             d.lunsj_fra      AS lunsjFra,
             d.lunsj_min      AS lunsjMin,
@@ -588,6 +610,8 @@ export async function hentSamtaledager(skolearId: string): Promise<Samtaledag[]>
        FROM samtaledag d
        LEFT JOIN skolear_fag sf ON sf.id = d.skolear_fag_id AND sf.slettet IS NULL
        LEFT JOIN fag f ON f.id = sf.fag_id AND f.slettet IS NULL
+       -- Er økta slettet, blir dagen en vanlig samtaledag igjen.
+       LEFT JOIN okt o ON o.id = d.okt_id AND o.slettet IS NULL
       WHERE d.skolear_id = $1 AND d.slettet IS NULL
       ORDER BY d.dato, d.fra`,
     [skolearId],
@@ -628,12 +652,86 @@ export async function opprettSamtaledag(
     skolear_id: skolearId,
     skolear_fag_id: felter.skolearFagId,
     vurdering_id: felter.vurderingId ?? null,
+    okt_id: null,
     dato: felter.dato,
     fra: felter.fra,
     til: felter.til,
     lunsj_fra: felter.lunsjFra,
     lunsj_min: felter.lunsjMin,
   });
+}
+
+/**
+ * Legger en samtaledag i en økt, SPEC §4.10.
+ *
+ * Øktas klokkeslett og varighet er rammen, og det er ingen lunsj: økta er
+ * allerede en blokk i timeplanen. Hører trekningen til en vurdering, knyttes
+ * vurderingen til økta, så den står der i årsplanen.
+ *
+ * En økt uten klokkeslett har ingen ramme å legge samtalene i — da gjøres
+ * ingenting, og null kommer tilbake.
+ */
+export async function leggDagIOkt(
+  skolearId: string,
+  oktId: string,
+  vurderingId: string | null,
+): Promise<string | null> {
+  const [o] = await hent<{
+    skolearFagId: string;
+    dato: string;
+    klokkeslett: string | null;
+    varighetMin: number;
+  }>(
+    `SELECT skolear_fag_id AS skolearFagId, dato, klokkeslett,
+            varighet_min AS varighetMin
+       FROM okt WHERE id = $1 AND slettet IS NULL`,
+    [oktId],
+  );
+  if (!o?.klokkeslett) return null;
+
+  const id = await settInn("samtaledag", {
+    skolear_id: skolearId,
+    skolear_fag_id: o.skolearFagId,
+    vurdering_id: vurderingId,
+    okt_id: oktId,
+    dato: o.dato,
+    fra: o.klokkeslett,
+    til: tilKlokke(tilMin(o.klokkeslett) + o.varighetMin),
+    lunsj_fra: null,
+    lunsj_min: null,
+  });
+  if (vurderingId) await knyttOkt(vurderingId, oktId);
+  return id;
+}
+
+/**
+ * Tar samtaledagen ut av økta igjen: dagen og samtalene på den forsvinner,
+ * og vurderingen løses fra økta.
+ */
+export async function fjernDagFraOkt(samtaledagId: string): Promise<void> {
+  const [d] = await hent<{ oktId: string | null; vurderingId: string | null }>(
+    `SELECT okt_id AS oktId, vurdering_id AS vurderingId
+       FROM samtaledag WHERE id = $1`,
+    [samtaledagId],
+  );
+  await slettSamtaledag(samtaledagId);
+  if (d?.oktId && d.vurderingId) await losOkt(d.vurderingId, d.oktId);
+}
+
+/**
+ * Bytter vurderingen trekningen hører til, for alle dagene. Dager som ligger
+ * i en økt, flytter koblingen med seg: den gamle vurderingen løses fra økta,
+ * den nye knyttes.
+ */
+export async function settTrekningensVurdering(
+  dager: Samtaledag[],
+  vurderingId: string | null,
+): Promise<void> {
+  for (const d of dager) {
+    if (d.oktId && d.vurderingId) await losOkt(d.vurderingId, d.oktId);
+    await oppdater("samtaledag", d.id, { vurdering_id: vurderingId });
+    if (d.oktId && vurderingId) await knyttOkt(vurderingId, d.oktId);
+  }
 }
 
 export async function endreSamtaledag(

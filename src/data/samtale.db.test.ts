@@ -29,12 +29,22 @@ beforeEach(async () => {
   skolearId = await opprettSkolear("2026/27", "2026-08-17", "2027-06-20");
   fagId = await leggFagIAr(skolearId, "MFL1", "Markedsføring", null);
   elever = [];
-  for (const navn of ["Tony", "Carmela", "Adriana", "Silvio", "Paulie", "Furio"]) {
+  for (const navn of [
+    "Tony",
+    "Carmela",
+    "Adriana",
+    "Silvio",
+    "Paulie",
+    "Furio",
+  ]) {
     elever.push(await opprettElev(navn, "Soprano"));
   }
 });
 
-async function dagMed(dato: string, fag: string | null = fagId): Promise<string> {
+async function dagMed(
+  dato: string,
+  fag: string | null = fagId,
+): Promise<string> {
   return opprettSamtaledag(skolearId, {
     skolearFagId: fag,
     dato,
@@ -89,7 +99,11 @@ describe("lagreTrekning", () => {
     await trekning(dagId, elever.slice(0, 3));
 
     const samtaler = await hentSamtaler(dagId);
-    expect(samtaler.map((s) => s.klokkeslett)).toEqual(["09:00", "09:20", "09:40"]);
+    expect(samtaler.map((s) => s.klokkeslett)).toEqual([
+      "09:00",
+      "09:20",
+      "09:40",
+    ]);
     expect(samtaler.every((s) => s.motte)).toBe(true);
   });
 
@@ -133,7 +147,9 @@ describe("når en elev ikke møter", () => {
     await settMotte(for_[1].id, false);
 
     const etter = await hentSamtaler(dagId);
-    expect(etter.map((s) => s.klokkeslett)).toEqual(for_.map((s) => s.klokkeslett));
+    expect(etter.map((s) => s.klokkeslett)).toEqual(
+      for_.map((s) => s.klokkeslett),
+    );
     expect(etter[1].motte).toBe(false);
   });
 
@@ -145,7 +161,12 @@ describe("når en elev ikke møter", () => {
     await settMotte(forste.id, false);
 
     await lagreTrekning(dagId, [
-      { elevId: forste.elevId, klokkeslett: "14:30", varighetMin: 20, tema: null },
+      {
+        elevId: forste.elevId,
+        klokkeslett: "14:30",
+        varighetMin: 20,
+        tema: null,
+      },
     ]);
 
     const samtaler = await hentSamtaler(dagId);
@@ -368,17 +389,161 @@ describe("oppgaven vises under vurderingen", () => {
       lunsjMin: null,
     });
     await lagreTrekning(dagId, [
-      { elevId: elever[0], klokkeslett: "09:00", varighetMin: 20, tema: "Oppgave 1" },
+      {
+        elevId: elever[0],
+        klokkeslett: "09:00",
+        varighetMin: 20,
+        tema: "Oppgave 1",
+      },
     ]);
     const [forste] = await hentSamtaler(dagId);
     await settMotte(forste.id, false);
     await lagreTrekning(dagId, [
-      { elevId: elever[0], klokkeslett: "14:00", varighetMin: 20, tema: "Oppgave 1" },
+      {
+        elevId: elever[0],
+        klokkeslett: "14:00",
+        varighetMin: 20,
+        tema: "Oppgave 1",
+      },
     ]);
 
     const rader = await hentVurderingElever(vurderingId, fagId);
     expect(rader).toHaveLength(1);
     // Den hen faktisk møtte til vinner.
     expect(rader[0].samtaletid).toBe("2026-11-24 14:00");
+  });
+});
+
+describe("samtaledager lagt i økter", () => {
+  async function skala(): Promise<string> {
+    const [s] = await base.select<{ id: string }[]>(
+      "SELECT id FROM skala WHERE bruksomrade = 'vurdering' LIMIT 1",
+    );
+    return s.id;
+  }
+
+  it("tar øktas klokkeslett og varighet som ramme, uten lunsj", async () => {
+    const { opprettOkt } = await import("./okter");
+    const { leggDagIOkt } = await import("./samtale");
+    const okt = await opprettOkt(fagId, "MFL1", "2026-11-03", "08:30", 180);
+    const id = await leggDagIOkt(skolearId, okt, null);
+    const [dag] = (await hentSamtaledager(skolearId)).filter(
+      (d) => d.id === id,
+    );
+    expect(dag).toMatchObject({
+      dato: "2026-11-03",
+      fra: "08:30",
+      til: "11:30",
+      lunsjFra: null,
+      oktId: okt,
+      skolearFagId: fagId,
+    });
+  });
+
+  it("legger ingen dag i en økt uten klokkeslett", async () => {
+    const { opprettOkt } = await import("./okter");
+    const { leggDagIOkt } = await import("./samtale");
+    const okt = await opprettOkt(fagId, "MFL1", "2026-11-03", null, 180);
+    expect(await leggDagIOkt(skolearId, okt, null)).toBeNull();
+  });
+
+  it("knytter vurderingen til hver økt samtalene legges i", async () => {
+    const { opprettOkt, hentOktVurderinger } = await import("./okter");
+    const { leggDagIOkt } = await import("./samtale");
+    const a = await opprettOkt(fagId, "MFL1", "2026-11-03", "08:30", 180);
+    const b = await opprettOkt(fagId, "MFL1", "2026-11-05", "12:30", 90);
+    const v = await opprettVurdering(
+      fagId,
+      await skala(),
+      "Muntlig",
+      "muntlig",
+      null,
+    );
+    await leggDagIOkt(skolearId, a, v);
+    await leggDagIOkt(skolearId, b, v);
+    const kart = await hentOktVurderinger(skolearId);
+    expect(kart.get(a)?.[0].id).toBe(v);
+    expect(kart.get(b)?.[0].id).toBe(v);
+  });
+
+  it("løser vurderingen fra økta når dagen tas ut", async () => {
+    const { opprettOkt, hentOktVurderinger } = await import("./okter");
+    const { leggDagIOkt, fjernDagFraOkt } = await import("./samtale");
+    const a = await opprettOkt(fagId, "MFL1", "2026-11-03", "08:30", 180);
+    const b = await opprettOkt(fagId, "MFL1", "2026-11-05", "08:30", 180);
+    const v = await opprettVurdering(
+      fagId,
+      await skala(),
+      "Muntlig",
+      "muntlig",
+      null,
+    );
+    await leggDagIOkt(skolearId, a, v);
+    const dagB = (await leggDagIOkt(skolearId, b, v))!;
+    await fjernDagFraOkt(dagB);
+    const kart = await hentOktVurderinger(skolearId);
+    expect(kart.has(a)).toBe(true);
+    expect(kart.has(b)).toBe(false);
+    expect((await hentSamtaledager(skolearId)).map((d) => d.oktId)).toEqual([
+      a,
+    ]);
+  });
+
+  it("flytter koblingen når trekningen bytter vurdering", async () => {
+    const { opprettOkt, hentOktVurderinger } = await import("./okter");
+    const { leggDagIOkt, settTrekningensVurdering } = await import("./samtale");
+    const a = await opprettOkt(fagId, "MFL1", "2026-11-03", "08:30", 180);
+    const gammel = await opprettVurdering(
+      fagId,
+      await skala(),
+      "Gammel",
+      null,
+      null,
+    );
+    const ny = await opprettVurdering(fagId, await skala(), "Ny", null, null);
+    await leggDagIOkt(skolearId, a, gammel);
+    await settTrekningensVurdering(await hentSamtaledager(skolearId), ny);
+    expect(
+      (await hentOktVurderinger(skolearId)).get(a)?.map((v) => v.id),
+    ).toEqual([ny]);
+  });
+
+  it("følger økta når den flyttes eller forlenges", async () => {
+    const { opprettOkt, endreOkt } = await import("./okter");
+    const { leggDagIOkt } = await import("./samtale");
+    const okt = await opprettOkt(fagId, "MFL1", "2026-11-03", "08:30", 90);
+    await leggDagIOkt(skolearId, okt, null);
+    await endreOkt(okt, {
+      dato: "2026-11-04",
+      klokkeslett: "12:30",
+      varighet_min: 120,
+    });
+    const [dag] = await hentSamtaledager(skolearId);
+    expect(dag).toMatchObject({
+      dato: "2026-11-04",
+      fra: "12:30",
+      til: "14:30",
+    });
+  });
+
+  it("teller ikke timene en gang til i timeregnskapet", async () => {
+    const { opprettOkt } = await import("./okter");
+    const { leggDagIOkt } = await import("./samtale");
+    const { hentVurderingstimer } = await import("./dashbord");
+    const okt = await opprettOkt(fagId, "MFL1", "2026-11-03", "08:30", 180);
+    await leggDagIOkt(skolearId, okt, null);
+    await dagMed("2026-11-10"); // en egen dag, utenfor øktene
+    const timer = (await hentVurderingstimer(skolearId)).get(fagId)?.timer;
+    expect(timer).toBe(6); // bare den egne dagen: 08:30–15:00 minus lunsj
+  });
+
+  it("blir en vanlig dag igjen når økta slettes", async () => {
+    const { opprettOkt, slettOkt } = await import("./okter");
+    const { leggDagIOkt } = await import("./samtale");
+    const okt = await opprettOkt(fagId, "MFL1", "2026-11-03", "08:30", 180);
+    await leggDagIOkt(skolearId, okt, null);
+    await slettOkt(okt);
+    const [dag] = await hentSamtaledager(skolearId);
+    expect(dag.oktId).toBeNull();
   });
 });

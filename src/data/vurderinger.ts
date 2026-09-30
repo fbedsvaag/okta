@@ -20,8 +20,8 @@ export type Vurdering = {
   tittel: string;
   type: Vurderingstype | null;
   frist: string | null;
-  /** økta vurderingen holdes i. null = ikke knyttet til noen økt */
-  oktId: string | null;
+  /** øktene vurderingen holdes i — én, flere, eller ingen */
+  oktIder: string[];
   beskrivelse: string | null;
   /** antall resultater med en skalaverdi satt */
   fort: number;
@@ -46,14 +46,19 @@ export type VurderingElev = {
 };
 
 export async function hentVurderinger(skolearId: string): Promise<Vurdering[]> {
-  return hent<Vurdering>(
+  const rader = await hent<
+    Omit<Vurdering, "oktIder"> & { oktIder: string | null }
+  >(
     `SELECT v.id,
             v.skolear_fag_id AS skolearFagId,
             f.kode           AS fagKode,
             f.farge          AS farge,
             v.skala_id       AS skalaId,
             sk.navn          AS skalaNavn,
-            v.tittel, v.type, v.frist, v.okt_id AS oktId, v.beskrivelse,
+            v.tittel, v.type, v.frist, v.beskrivelse,
+            (SELECT group_concat(vo.okt_id) FROM vurdering_okt vo
+               JOIN okt o ON o.id = vo.okt_id AND o.slettet IS NULL
+              WHERE vo.vurdering_id = v.id AND vo.slettet IS NULL) AS oktIder,
             (SELECT COUNT(*) FROM vurderingsresultat r
               WHERE r.vurdering_id = v.id AND r.slettet IS NULL
                 AND r.skalaverdi_id IS NOT NULL) AS fort,
@@ -69,6 +74,12 @@ export async function hentVurderinger(skolearId: string): Promise<Vurdering[]> {
       ORDER BY v.frist IS NULL, v.frist, v.tittel`,
     [skolearId],
   );
+  return rader.map((r) => ({ ...r, oktIder: delListe(r.oktIder) }));
+}
+
+/** group_concat gir én kommaseparert streng, eller null. */
+function delListe(s: string | null): string[] {
+  return s ? s.split(",") : [];
 }
 
 /** Som elevlista i en økt: leses live fra faget, ikke lagret på forhånd. */
@@ -152,14 +163,16 @@ export async function opprettVurdering(
   type: Vurderingstype | null,
   frist: string | null,
 ): Promise<string> {
-  return settInn("vurdering", {
+  const id = await settInn("vurdering", {
     skolear_fag_id: skolearFagId,
     skala_id: skalaId,
     tittel,
     type,
     frist,
-    okt_id: frist ? await oktPaDato(skolearFagId, frist) : null,
   });
+  const okt = frist ? await oktPaDato(skolearFagId, frist) : null;
+  if (okt) await knyttOkt(id, okt);
+  return id;
 }
 
 export async function endreVurdering(
@@ -174,62 +187,93 @@ export async function endreVurdering(
   await oppdater("vurdering", id, felter);
 }
 
+/** Øktene vurderingen er knyttet til nå, med dato. */
+async function knyttede(
+  vurderingId: string,
+): Promise<{ radId: string; oktId: string; dato: string }[]> {
+  return hent(
+    `SELECT vo.id AS radId, vo.okt_id AS oktId, o.dato
+       FROM vurdering_okt vo
+       JOIN okt o ON o.id = vo.okt_id AND o.slettet IS NULL
+      WHERE vo.vurdering_id = $1 AND vo.slettet IS NULL
+      ORDER BY o.dato`,
+    [vurderingId],
+  );
+}
+
 /**
  * Flytter fristen, og økta følger med når det finnes en å følge.
  *
- * Koblingen flyttes bare når den var «økta på fristdagen» (eller mangler),
- * og den nye fristdagen har én økt i faget. Har du knyttet vurderingen til
- * en økt på en annen dag — en innlevering som gis ut i én time og leveres en
- * uke senere — står den koblingen. Og har den nye dagen ingen økt, blir
- * koblingen stående heller enn å forsvinne: panelet viser den, og den kan
- * endres der.
+ * Koblingen flyttes bare når den er enkel — ingen økt, eller én økt på den
+ * gamle fristdagen — og den nye fristdagen har én økt i faget. En vurdering
+ * over flere økter, eller en innlevering som gis ut i én time og leveres en
+ * uke senere, beholder øktene sine. Har den nye dagen ingen økt, blir
+ * koblingen stående heller enn å forsvinne.
  */
 export async function settFrist(
   id: string,
   frist: string | null,
 ): Promise<void> {
-  const [v] = await hent<{
-    skolearFagId: string;
-    frist: string | null;
-    oktDato: string | null;
-    oktId: string | null;
-  }>(
-    `SELECT v.skolear_fag_id AS skolearFagId, v.frist, v.okt_id AS oktId,
-            o.dato AS oktDato
-       FROM vurdering v
-       LEFT JOIN okt o ON o.id = v.okt_id AND o.slettet IS NULL
-      WHERE v.id = $1`,
+  const [v] = await hent<{ skolearFagId: string; frist: string | null }>(
+    "SELECT skolear_fag_id AS skolearFagId, frist FROM vurdering WHERE id = $1",
     [id],
   );
   if (!v) return;
+  await oppdater("vurdering", id, { frist });
 
-  const felter: Record<string, unknown> = { frist };
-  const fulgteFristen = v.oktId === null || v.oktDato === v.frist;
-  if (fulgteFristen && frist) {
-    const ny = await oktPaDato(v.skolearFagId, frist);
-    if (ny) felter.okt_id = ny;
-  }
-  await oppdater("vurdering", id, felter);
+  const na = await knyttede(id);
+  const fulgteFristen =
+    na.length === 0 || (na.length === 1 && na[0].dato === v.frist);
+  if (!fulgteFristen || !frist) return;
+
+  const ny = await oktPaDato(v.skolearFagId, frist);
+  if (!ny) return;
+  for (const k of na) await slett("vurdering_okt", k.radId);
+  await knyttOkt(id, ny);
 }
 
 /**
- * Knytter vurderingen til en økt, eller løser den (null). Mangler
- * vurderingen frist, blir øktas dato fristen — ett valg i stedet for to.
+ * Knytter vurderingen til en økt til. Mangler vurderingen frist, blir øktas
+ * dato fristen — ett valg i stedet for to.
+ *
+ * En koblingsrad som er løst tidligere, gjenbrukes: UNIQUE gjelder også
+ * soft-slettede rader (§12).
  */
-export async function kobleTilOkt(
+export async function knyttOkt(
   vurderingId: string,
-  oktId: string | null,
+  oktId: string,
 ): Promise<void> {
-  const felter: Record<string, unknown> = { okt_id: oktId };
-  if (oktId) {
-    const [rad] = await hent<{ frist: string | null; dato: string }>(
-      `SELECT v.frist, o.dato FROM vurdering v, okt o
-        WHERE v.id = $1 AND o.id = $2`,
-      [vurderingId, oktId],
-    );
-    if (rad && rad.frist === null) felter.frist = rad.dato;
-  }
-  await oppdater("vurdering", vurderingId, felter);
+  const [rad] = await hent<{ id: string }>(
+    "SELECT id FROM vurdering_okt WHERE vurdering_id = $1 AND okt_id = $2",
+    [vurderingId, oktId],
+  );
+  if (rad) await oppdater("vurdering_okt", rad.id, { slettet: null });
+  else
+    await settInn("vurdering_okt", {
+      vurdering_id: vurderingId,
+      okt_id: oktId,
+    });
+
+  const [v] = await hent<{ frist: string | null; dato: string }>(
+    `SELECT v.frist, o.dato FROM vurdering v, okt o
+      WHERE v.id = $1 AND o.id = $2`,
+    [vurderingId, oktId],
+  );
+  if (v && v.frist === null)
+    await oppdater("vurdering", vurderingId, { frist: v.dato });
+}
+
+/** Løser vurderingen fra én økt. De andre øktene står. */
+export async function losOkt(
+  vurderingId: string,
+  oktId: string,
+): Promise<void> {
+  const [rad] = await hent<{ id: string }>(
+    `SELECT id FROM vurdering_okt
+      WHERE vurdering_id = $1 AND okt_id = $2 AND slettet IS NULL`,
+    [vurderingId, oktId],
+  );
+  if (rad) await slett("vurdering_okt", rad.id);
 }
 
 export async function slettVurdering(id: string): Promise<void> {
@@ -319,13 +363,14 @@ export type Oktvalg = {
   id: string;
   dato: string;
   klokkeslett: string | null;
+  varighetMin: number;
   tema: string | null;
 };
 
 /** Øktene i faget, til «Økt»-valget på vurderingen. */
 export async function hentOktvalg(skolearFagId: string): Promise<Oktvalg[]> {
   return hent<Oktvalg>(
-    `SELECT id, dato, klokkeslett, tema FROM okt
+    `SELECT id, dato, klokkeslett, varighet_min AS varighetMin, tema FROM okt
       WHERE skolear_fag_id = $1 AND slettet IS NULL
       ORDER BY dato, klokkeslett`,
     [skolearFagId],
@@ -335,17 +380,25 @@ export async function hentOktvalg(skolearFagId: string): Promise<Oktvalg[]> {
 export type Vurderingsvalg = {
   id: string;
   tittel: string;
-  oktId: string | null;
+  oktIder: string[];
 };
 
 /** Vurderingene i faget, til «Vurdering»-valget på økta. */
 export async function hentVurderingsvalg(
   skolearFagId: string,
 ): Promise<Vurderingsvalg[]> {
-  return hent<Vurderingsvalg>(
-    `SELECT id, tittel, okt_id AS oktId FROM vurdering
-      WHERE skolear_fag_id = $1 AND slettet IS NULL
-      ORDER BY frist IS NULL, frist, tittel`,
+  const rader = await hent<{
+    id: string;
+    tittel: string;
+    oktIder: string | null;
+  }>(
+    `SELECT v.id, v.tittel,
+            (SELECT group_concat(vo.okt_id) FROM vurdering_okt vo
+              WHERE vo.vurdering_id = v.id AND vo.slettet IS NULL) AS oktIder
+       FROM vurdering v
+      WHERE v.skolear_fag_id = $1 AND v.slettet IS NULL
+      ORDER BY v.frist IS NULL, v.frist, v.tittel`,
     [skolearFagId],
   );
+  return rader.map((r) => ({ ...r, oktIder: delListe(r.oktIder) }));
 }

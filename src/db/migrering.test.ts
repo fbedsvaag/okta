@@ -301,3 +301,39 @@ describe("migrasjon 015 — vurderinger knyttes til økta på fristdagen", () =>
     expect(kobling(d).okt_id).toBeNull();
   });
 });
+
+describe("migrasjon 016 — én vurdering over flere økter", () => {
+  const T = "2026-09-01T10:00:00";
+
+  it("flytter koblingen fra vurdering.okt_id over i koblingstabellen", () => {
+    const d = basenFram("015_vurdering_okt.sql");
+    const skala = (
+      d.prepare("SELECT id FROM skala LIMIT 1").get() as { id: string }
+    ).id;
+    d.exec(`
+      INSERT INTO skolear (id, navn, start, slutt, opprettet, endret)
+      VALUES ('ar', '2026/27', '2026-08-17', '2027-06-20', '${T}', '${T}');
+      INSERT INTO fag (id, kode, navn, opprettet, endret)
+      VALUES ('f', 'MFL1', 'Markedsføring', '${T}', '${T}');
+      INSERT INTO skolear_fag (id, skolear_id, fag_id, opprettet, endret)
+      VALUES ('sf', 'ar', 'f', '${T}', '${T}');
+      INSERT INTO okt (id, skolear_fag_id, dato, varighet_min, opprettet, endret)
+      VALUES ('o', 'sf', '2026-10-06', 180, '${T}', '${T}');
+      INSERT INTO vurdering (id, skolear_fag_id, skala_id, tittel, okt_id, opprettet, endret)
+      VALUES ('med', 'sf', '${skala}', 'Prøve', 'o', '${T}', '${T}'),
+             ('uten', 'sf', '${skala}', 'Essay', NULL, '${T}', '${T}');
+    `);
+    kjor(d, "016_vurdering_flere_okter.sql");
+
+    const rader = d.prepare("SELECT * FROM vurdering_okt").all() as {
+      id: string;
+      vurdering_id: string;
+      okt_id: string;
+    }[];
+    expect(rader).toHaveLength(1);
+    expect(rader[0]).toMatchObject({ vurdering_id: "med", okt_id: "o" });
+    expect(rader[0].id).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
+    );
+  });
+});

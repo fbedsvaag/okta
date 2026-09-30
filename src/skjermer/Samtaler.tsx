@@ -4,11 +4,19 @@ import type { Skolear } from "../data/skolear";
 import { hentInnstilling, settInnstilling } from "../data/skolear";
 import type { FagIAr } from "../data/fag";
 import { hentElever, type ElevRad } from "../data/elever";
-import { hentVurderinger, type Vurdering } from "../data/vurderinger";
+import {
+  hentOktvalg,
+  hentVurderinger,
+  type Oktvalg,
+  type Vurdering,
+} from "../data/vurderinger";
 import {
   delPaDager,
   endreSamtaledag,
   finnLunsj,
+  fjernDagFraOkt,
+  leggDagIOkt,
+  settTrekningensVurdering,
   flyttInnenDagen,
   grupperTrekninger,
   somMarkdown,
@@ -125,6 +133,11 @@ export function Samtaler({
   > | null>(null);
   const [publiserer, setPubliserer] = useState(false);
   const [vurderinger, setVurderinger] = useState<Vurdering[]>([]);
+  // Fagets økter, til avkrysningen. Samtalene legges i øktene (§4.10).
+  const [oktvalg, setOktvalg] = useState<Oktvalg[]>([]);
+  // Vurderingen trekningen hører til. Står på dagene i basen, men må kunne
+  // velges før noen dag finnes — da øktene krysses av etterpå.
+  const [valgtVurdering, setValgtVurdering] = useState("");
 
   const minutter = Number(samtaletid) || 20;
   const pausen = Number(pause) || 0;
@@ -182,9 +195,14 @@ export function Samtaler({
     setVurderinger(await hentVurderinger(skolear.id));
     setLagret(true);
 
-    // Én dag ligger klar med én gang, så datofeltet er fremme og ikke gjemt
-    // bak en «legg til»-lenke.
-    if (mine.length === 0) {
+    if (modus === "fag") {
+      setOktvalg(await hentOktvalg(fagId));
+      setValgtVurdering(mine.find((d) => d.vurderingId)?.vurderingId ?? "");
+    }
+
+    // I mentormodus ligger én dag klar med én gang, så datofeltet er fremme
+    // og ikke gjemt bak en «legg til»-lenke. I fagmodus velges øktene.
+    if (mine.length === 0 && modus === "mentor") {
       await opprettSamtaledag(skolear.id, {
         skolearFagId: modus === "mentor" ? null : fagId,
         dato: "",
@@ -642,61 +660,27 @@ export function Samtaler({
             </Bolk>
           )}
 
-          <Bolk tittel="Samtaledager">
-            {dager.map((dag, i) => (
-              <Dagkort
-                key={dag.id}
-                dag={dag}
-                nr={i + 1}
-                kapasitet={kapasiteter[i]}
-                onEndre={async (felter) => {
-                  await endreSamtaledag(dag.id, felter);
-                  await last();
-                }}
-                onSlett={async () => {
-                  if (
-                    !(await bekreft(
-                      `Slette dag ${i + 1}?\n\nSamtalene som er trukket på den forsvinner.`,
-                    ))
-                  )
-                    return;
-                  await slettSamtaledag(dag.id);
-                  await last();
-                }}
-              />
-            ))}
-            <button
-              onClick={async () => {
-                await opprettSamtaledag(skolear.id, {
-                  skolearFagId: modus === "mentor" ? null : fagId,
-                  dato: "",
-                  vurderingId: dager[0]?.vurderingId ?? null,
-                  ...NY_DAG,
-                });
-                await last();
-              }}
-              className="mt-1 text-liten text-blekk-dempet hover:text-blekk"
-            >
-              + Legg til dag
-            </button>
-
+          <Bolk
+            tittel={modus === "fag" ? "Vurdering og økter" : "Samtaledager"}
+          >
             {/*
               Hvilken vurdering trekningen hører til. Uten den vises ikke
-              oppgaven eleven fikk under selve vurderingen (§4.6) — det er
-              denne koblingen som knytter de to sammen.
+              oppgaven eleven fikk under selve vurderingen (§4.6), og den
+              står ikke på øktene i årsplanen.
             */}
-            {modus === "fag" && dager.length > 0 && (
-              <label className="mt-3 block">
+            {modus === "fag" && (
+              <label className="mb-3 block">
                 <span className="mb-1 block text-etikett uppercase tracking-etikett text-blekk-dempet">
                   Hører til vurdering
                 </span>
                 <select
-                  value={dager[0]?.vurderingId ?? ""}
+                  value={valgtVurdering}
                   onChange={async (e) => {
-                    const id = e.target.value || null;
-                    for (const d of dager) {
-                      await endreSamtaledag(d.id, { vurdering_id: id });
-                    }
+                    setValgtVurdering(e.target.value);
+                    await settTrekningensVurdering(
+                      dager,
+                      e.target.value || null,
+                    );
                     await last();
                   }}
                   className="w-full rounded border border-linje bg-ark px-2 py-1.5 text-brod"
@@ -710,11 +694,81 @@ export function Samtaler({
                       </option>
                     ))}
                 </select>
-                <p className="mt-1 text-liten text-blekk-svak">
-                  Da vises oppgaven eleven fikk når du åpner vurderingen.
-                </p>
               </label>
             )}
+
+            {modus === "fag" && (
+              <Oktvelger
+                okter={oktvalg}
+                dager={dager}
+                kapasiteter={kapasiteter}
+                onVelg={async (okt, pa) => {
+                  const dag = dager.find((d) => d.oktId === okt.id);
+                  if (pa) {
+                    await leggDagIOkt(
+                      skolear.id,
+                      okt.id,
+                      valgtVurdering || null,
+                    );
+                  } else if (dag) {
+                    if (
+                      dag.antall > 0 &&
+                      !(await bekreft(
+                        `Ta samtalene ut av økta ${kortDato(okt.dato)}?\n\n` +
+                          `${dag.antall} samtaler er trukket der. De forsvinner.`,
+                      ))
+                    )
+                      return;
+                    await fjernDagFraOkt(dag.id);
+                  }
+                  await last();
+                }}
+              />
+            )}
+
+            {/*
+              Egne dager, utenfor øktene. I mentormodus er det de eneste —
+              mentorsamtalen har ikke noe fag og dermed ingen økter.
+            */}
+            {dager.map((dag, i) =>
+              dag.oktId ? null : (
+                <Dagkort
+                  key={dag.id}
+                  dag={dag}
+                  nr={i + 1}
+                  kapasitet={kapasiteter[i]}
+                  onEndre={async (felter) => {
+                    await endreSamtaledag(dag.id, felter);
+                    await last();
+                  }}
+                  onSlett={async () => {
+                    if (
+                      !(await bekreft(
+                        `Slette dag ${i + 1}?\n\nSamtalene som er trukket på den forsvinner.`,
+                      ))
+                    )
+                      return;
+                    await slettSamtaledag(dag.id);
+                    await last();
+                  }}
+                />
+              ),
+            )}
+            <button
+              onClick={async () => {
+                await opprettSamtaledag(skolear.id, {
+                  skolearFagId: modus === "mentor" ? null : fagId,
+                  dato: "",
+                  vurderingId: modus === "fag" ? valgtVurdering || null : null,
+                  ...NY_DAG,
+                });
+                await last();
+              }}
+              className="mt-1 text-liten text-blekk-dempet hover:text-blekk"
+            >
+              {modus === "fag" ? "+ Egen dag utenfor øktene" : "+ Legg til dag"}
+            </button>
+
             {dager.length > 0 && (
               <p className="mt-2 text-liten text-blekk-svak">
                 {timer} timer satt av til vurdering
@@ -794,8 +848,10 @@ export function Samtaler({
         {deltakere.length > samletKapasitet && dager.length > 0 && (
           <div className="mb-4 border border-varsel bg-fri-flate px-3 py-2 text-brod text-varsel">
             Kapasiteten ({samletKapasitet} elever) er lavere enn antall elever (
-            {deltakere.length}). Legg til flere dager, forleng øktene, eller
-            reduser pausetiden.
+            {deltakere.length}).{" "}
+            {modus === "fag"
+              ? "Kryss av for flere økter, legg til en egen dag, eller reduser pausetiden."
+              : "Legg til flere dager, forleng øktene, eller reduser pausetiden."}
           </div>
         )}
 
@@ -971,6 +1027,97 @@ function Modusknapp({
  * Kapasiteten oppdateres mens du skriver — den regnes ut fra dagen slik den
  * står akkurat nå, ikke fra noe som må lagres først.
  */
+/**
+ * Fagets økter som avkrysningsliste. Hver økt som krysses av, blir en
+ * samtaledag med øktas klokkeslett som ramme (§4.10). Får ikke alle elevene
+ * plass i én økt, krysses en til av — kapasiteten står ved hver.
+ *
+ * Kommende økter vises; tidligere bare når de allerede er valgt, eller når
+ * du ber om dem.
+ */
+function Oktvelger({
+  okter,
+  dager,
+  kapasiteter,
+  onVelg,
+}: {
+  okter: Oktvalg[];
+  dager: Samtaledag[];
+  kapasiteter: number[];
+  onVelg: (okt: Oktvalg, pa: boolean) => Promise<void>;
+}) {
+  const [visTidligere, setVisTidligere] = useState(false);
+  const idag = new Date().toLocaleDateString("sv-SE");
+  const valgt = new Map(dager.map((d, i) => [d.oktId, kapasiteter[i]]));
+  const synlige = okter.filter(
+    (o) => visTidligere || o.dato >= idag || valgt.has(o.id),
+  );
+  const skjulte = okter.length - synlige.length;
+
+  if (okter.length === 0) {
+    return (
+      <p className="mb-2 text-liten text-blekk-svak">
+        Faget har ingen økter ennå. Legg dem inn under Økter, eller bruk en egen
+        dag under.
+      </p>
+    );
+  }
+
+  return (
+    <div className="mb-2">
+      <span className="mb-1 block text-etikett uppercase tracking-etikett text-blekk-dempet">
+        Legg samtalene i økta
+      </span>
+      <div className="max-h-64 overflow-y-auto rounded border border-linje bg-ark">
+        {synlige.map((o) => {
+          const pa = valgt.has(o.id);
+          const plass = valgt.get(o.id);
+          const tid = o.klokkeslett
+            ? `${o.klokkeslett}–${tilKlokke(tilMin(o.klokkeslett) + o.varighetMin)}`
+            : null;
+          return (
+            <label
+              key={o.id}
+              className={`flex items-baseline gap-2 border-b border-linje-svak px-2 py-1 text-brod last:border-b-0 ${
+                tid ? "hover:bg-flate" : "text-blekk-svak"
+              }`}
+              title={tid ? undefined : "Økta mangler klokkeslett"}
+            >
+              <input
+                type="checkbox"
+                checked={pa}
+                disabled={!tid}
+                onChange={(e) => void onVelg(o, e.target.checked)}
+                className="self-center"
+              />
+              <span className="shrink-0 tabular-nums">{kortDato(o.dato)}</span>
+              <span className="shrink-0 tabular-nums text-blekk-dempet">
+                {tid ?? "uten klokkeslett"}
+              </span>
+              <span className="min-w-0 flex-1 truncate text-blekk-dempet">
+                {o.tema}
+              </span>
+              {pa && (
+                <span className="shrink-0 text-liten tabular-nums text-blekk-dempet">
+                  maks {plass}
+                </span>
+              )}
+            </label>
+          );
+        })}
+      </div>
+      {skjulte > 0 && (
+        <button
+          onClick={() => setVisTidligere(true)}
+          className="mt-1 text-liten text-blekk-svak hover:text-blekk"
+        >
+          Vis {skjulte} tidligere økter
+        </button>
+      )}
+    </div>
+  );
+}
+
 function Dagkort({
   dag,
   nr,

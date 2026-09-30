@@ -92,6 +92,9 @@ export async function hentVurderingstimer(
   for (const d of dager) {
     // Samme regel som for øktene: en dag utenfor skoleårets spenn teller ikke.
     if (ar && (d.dato < ar.start || d.dato > ar.slutt)) continue;
+    // En dag som ligger i en økt, er allerede talt som økt. Å telle den her
+    // også ville gitt samme timer to ganger.
+    if (d.oktId) continue;
 
     const na = ut.get(d.skolearFagId) ?? { timer: 0, antall: 0 };
     ut.set(d.skolearFagId, {
@@ -115,7 +118,9 @@ export async function hentVurderingstimer(
  */
 export async function hentTimeregnskap(skolearId: string): Promise<Fagtimer[]> {
   const vurdering = await hentVurderingstimer(skolearId);
-  const rader = await hent<Omit<Fagtimer, "vurderingTimer" | "vurderingAntall">>(
+  const rader = await hent<
+    Omit<Fagtimer, "vurderingTimer" | "vurderingAntall">
+  >(
     `SELECT sf.id                                   AS skolearFagId,
             f.kode                                  AS kode,
             f.navn                                  AS navn,

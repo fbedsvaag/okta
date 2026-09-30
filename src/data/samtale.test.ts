@@ -99,7 +99,9 @@ describe("leggUtDagen", () => {
     const slots = leggUtDagen(lunsjdag, 20, 20, 5);
     const lunsj = slots.find((s) => s.type === "lunsj")!;
     expect(lunsj).toBeDefined();
-    expect(tilMin(tilKlokke(lunsj.fra))).toBeGreaterThanOrEqual(tilMin("11:45"));
+    expect(tilMin(tilKlokke(lunsj.fra))).toBeGreaterThanOrEqual(
+      tilMin("11:45"),
+    );
   });
 
   it("gir ingen elev et tidspunkt inne i lunsjen", () => {
@@ -143,18 +145,35 @@ describe("timerPaDagen", () => {
   it("regner spennet minus lunsjen", () => {
     // Eksempelet fra §4.2: 08:30–15:30 med 30 minutters lunsj = 6,5 timer.
     expect(
-      timerPaDagen({ fra: "08:30", til: "15:30", lunsjFra: "11:45", lunsjMin: 30 }),
+      timerPaDagen({
+        fra: "08:30",
+        til: "15:30",
+        lunsjFra: "11:45",
+        lunsjMin: 30,
+      }),
     ).toBe(6.5);
   });
 
   it("trekker ikke fra en lunsj som ligger utenfor dagen", () => {
     expect(
-      timerPaDagen({ fra: "08:30", til: "10:30", lunsjFra: "11:45", lunsjMin: 30 }),
+      timerPaDagen({
+        fra: "08:30",
+        til: "10:30",
+        lunsjFra: "11:45",
+        lunsjMin: 30,
+      }),
     ).toBe(2);
   });
 
   it("gir null på et spenn som ikke går opp", () => {
-    expect(timerPaDagen({ fra: "15:00", til: "08:00", lunsjFra: null, lunsjMin: null })).toBe(0);
+    expect(
+      timerPaDagen({
+        fra: "15:00",
+        til: "08:00",
+        lunsjFra: null,
+        lunsjMin: null,
+      }),
+    ).toBe(0);
   });
 });
 
@@ -176,7 +195,11 @@ describe("trekningen", () => {
   const elever = ["a", "b", "c", "d", "e"];
 
   it("tar med alle elevene, og ingen to ganger", () => {
-    const dager = trekkRekkefolge(elever, [3, 3], fast([0.1, 0.7, 0.3, 0.9, 0.5]));
+    const dager = trekkRekkefolge(
+      elever,
+      [3, 3],
+      fast([0.1, 0.7, 0.3, 0.9, 0.5]),
+    );
     const alle = dager.flat();
     expect(alle).toHaveLength(elever.length);
     expect(new Set(alle).size).toBe(elever.length);
@@ -343,7 +366,10 @@ describe("trekk på nytt", () => {
   it("flytter ingen mellom dager", () => {
     // Dagene har hver sin kapasitet — en omtrekning skal ikke stille
     // spørsmål om hvem som må ut.
-    const perDag = [["a", "b"], ["c", "d"]];
+    const perDag = [
+      ["a", "b"],
+      ["c", "d"],
+    ];
     const ut = trekkOmRekkefolge(perDag, new Set(), fast([0.7, 0.2]));
     expect(new Set(ut[0])).toEqual(new Set(["a", "b"]));
     expect(new Set(ut[1])).toEqual(new Set(["c", "d"]));
@@ -360,13 +386,25 @@ describe("trekk på nytt", () => {
       ["a", "T1"],
       ["b", "T2"],
     ]);
-    const ut = trekkOmTema(["a", "b"], na, new Set(["a"]), ["T1", "T2"], fast([0.9]));
+    const ut = trekkOmTema(
+      ["a", "b"],
+      na,
+      new Set(["a"]),
+      ["T1", "T2"],
+      fast([0.9]),
+    );
     expect(ut.get("a")).toBe("T1");
   });
 
   it("gir alle et tema, også etter omtrekning", () => {
     const na = new Map([["a", "T1"]]);
-    const ut = trekkOmTema(["a", "b", "c"], na, new Set(["a"]), ["T1", "T2"], fast([0.3]));
+    const ut = trekkOmTema(
+      ["a", "b", "c"],
+      na,
+      new Set(["a"]),
+      ["T1", "T2"],
+      fast([0.3]),
+    );
     expect(ut.size).toBe(3);
   });
 
@@ -415,7 +453,12 @@ describe("flyttInnenDagen", () => {
 });
 
 describe("finnLunsj", () => {
-  const dag: Dagoppsett = { fra: "08:30", til: "15:00", lunsjFra: "11:45", lunsjMin: 30 };
+  const dag: Dagoppsett = {
+    fra: "08:30",
+    til: "15:00",
+    lunsjFra: "11:45",
+    lunsjMin: 30,
+  };
 
   it("finner pausen i hullet mellom to samtaler", () => {
     const rader = [
@@ -427,7 +470,9 @@ describe("finnLunsj", () => {
 
   it("gir null når dagen ikke har lunsj", () => {
     const rader = [{ fra: "09:00", til: "09:20" }];
-    expect(finnLunsj(rader, { ...dag, lunsjFra: null, lunsjMin: null })).toBeNull();
+    expect(
+      finnLunsj(rader, { ...dag, lunsjFra: null, lunsjMin: null }),
+    ).toBeNull();
   });
 
   it("gir null når det ikke finnes noe hull", () => {
@@ -444,8 +489,20 @@ describe("eksport", () => {
     dato: "2026-11-24",
     lunsj: { fra: "11:45", til: "12:15" },
     rader: [
-      { navn: "Tony Soprano", tema: "Oppgave 4", fra: "11:25", til: "11:45", motte: true },
-      { navn: "Carmela Soprano", tema: "Oppgave 1", fra: "12:15", til: "12:35", motte: true },
+      {
+        navn: "Tony Soprano",
+        tema: "Oppgave 4",
+        fra: "11:25",
+        til: "11:45",
+        motte: true,
+      },
+      {
+        navn: "Carmela Soprano",
+        tema: "Oppgave 1",
+        fra: "12:15",
+        til: "12:35",
+        motte: true,
+      },
     ],
   };
 
@@ -500,6 +557,7 @@ describe("grupperTrekninger", () => {
     skolearFagId: null,
     fagKode: null,
     vurderingId: null,
+    oktId: null,
     dato: "2026-11-24",
     fra: "08:30",
     til: "15:00",
@@ -511,8 +569,18 @@ describe("grupperTrekninger", () => {
 
   it("samler dagene som deler fag til én trekning", () => {
     const ut = grupperTrekninger([
-      dag({ skolearFagId: "sf1", fagKode: "MFL1", dato: "2026-12-02", antall: 12 }),
-      dag({ skolearFagId: "sf1", fagKode: "MFL1", dato: "2026-12-03", antall: 12 }),
+      dag({
+        skolearFagId: "sf1",
+        fagKode: "MFL1",
+        dato: "2026-12-02",
+        antall: 12,
+      }),
+      dag({
+        skolearFagId: "sf1",
+        fagKode: "MFL1",
+        dato: "2026-12-03",
+        antall: 12,
+      }),
     ]);
     expect(ut).toHaveLength(1);
     expect(ut[0].antall).toBe(24);
@@ -584,7 +652,11 @@ describe("dagenssetning", () => {
   });
 
   it("bøyer entall riktig", () => {
-    const ut = dagenssetning([s("Tony", "12:30"), s("Carmela", "12:55")], "08:00", true);
+    const ut = dagenssetning(
+      [s("Tony", "12:30"), s("Carmela", "12:55")],
+      "08:00",
+      true,
+    );
     expect(ut).toContain("1 elev fram til");
   });
 

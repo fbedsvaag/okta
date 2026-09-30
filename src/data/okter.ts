@@ -1,4 +1,4 @@
-import { db, hent, naa, oppdater, settInn, slett } from "../db";
+import { hent, oppdater, settInn, slett } from "../db";
 import { varsle } from "./endringer";
 import type { Skalaverdi } from "../skala";
 
@@ -191,15 +191,18 @@ export async function opprettOkt(
     [skolearFagId, dato],
   );
   if (samme[0]?.n === 1) {
-    await (
-      await db()
-    ).execute(
-      `UPDATE vurdering SET okt_id = $1, endret = $2
-        WHERE skolear_fag_id = $3 AND frist = $4
-          AND okt_id IS NULL AND slettet IS NULL`,
-      [id, naa(), skolearFagId, dato],
+    const uten = await hent<{ id: string }>(
+      `SELECT v.id FROM vurdering v
+        WHERE v.skolear_fag_id = $1 AND v.frist = $2 AND v.slettet IS NULL
+          AND NOT EXISTS (SELECT 1 FROM vurdering_okt vo
+                           WHERE vo.vurdering_id = v.id AND vo.slettet IS NULL)`,
+      [skolearFagId, dato],
     );
+    for (const v of uten) {
+      await settInn("vurdering_okt", { vurdering_id: v.id, okt_id: id });
+    }
   }
+
   varsle();
   return id;
 }
@@ -220,6 +223,38 @@ export async function endreOkt(
   },
 ): Promise<void> {
   await oppdater("okt", id, felter);
+
+  // Samtaledager som ligger i økta, følger den når den flyttes eller endrer
+  // lengde. Samtalene som alt er trukket, står på sine klokkeslett — de må
+  // trekkes på nytt om rammen er endret.
+  if (
+    felter.dato !== undefined ||
+    felter.klokkeslett !== undefined ||
+    felter.varighet_min !== undefined
+  ) {
+    const [o] = await hent<{
+      dato: string;
+      klokkeslett: string | null;
+      varighetMin: number;
+    }>(
+      "SELECT dato, klokkeslett, varighet_min AS varighetMin FROM okt WHERE id = $1",
+      [id],
+    );
+    const dager = await hent<{ id: string }>(
+      "SELECT id FROM samtaledag WHERE okt_id = $1 AND slettet IS NULL",
+      [id],
+    );
+    for (const d of dager) {
+      const ramme: Record<string, unknown> = { dato: o.dato };
+      if (o.klokkeslett) {
+        const [t, m] = o.klokkeslett.split(":").map(Number);
+        const slutt = t * 60 + m + o.varighetMin;
+        ramme.fra = o.klokkeslett;
+        ramme.til = `${String(Math.floor(slutt / 60)).padStart(2, "0")}:${String(slutt % 60).padStart(2, "0")}`;
+      }
+      await oppdater("samtaledag", d.id, ramme);
+    }
+  }
   varsle();
 }
 
@@ -362,37 +397,37 @@ export type OktVurdering = {
   id: string;
   tittel: string;
   frist: string | null;
-  oktId: string | null;
+  oktId: string;
   skolearFagId: string;
 };
 
 /**
  * Vurderingene knyttet til øktene i året, til kolonnen i §4.2 og
- * årsplanarket.
+ * årsplanarket. En vurdering over to økter står på begge.
  *
- * Bare den direkte koblingen (`okt_id`) teller. Den skrives av seg selv når
- * fristen faller på en dag med én økt i faget, og når en økt legges på en
- * fristdag — så det vanlige tilfellet koster ingen klikk. Før ble koblingen
- * gjettet ut fra datoen ved visning, og da kunne en vurdering du hadde løst
- * fra økta dukke opp igjen der.
+ * Bare koblingstabellen teller. Den skrives av seg selv når fristen faller
+ * på en dag med én økt i faget, når en økt legges på en fristdag, og når
+ * samtaletrekkeren legges over økter — så det vanlige tilfellet koster ingen
+ * klikk.
  */
 export async function hentOktVurderinger(
   skolearId: string,
 ): Promise<Map<string, OktVurdering[]>> {
   const alle = await hent<OktVurdering>(
-    `SELECT v.id, v.tittel, v.frist, v.okt_id AS oktId,
+    `SELECT v.id, v.tittel, v.frist, vo.okt_id AS oktId,
             v.skolear_fag_id AS skolearFagId
-       FROM vurdering v
+       FROM vurdering_okt vo
+       JOIN vurdering v ON v.id = vo.vurdering_id AND v.slettet IS NULL
        JOIN skolear_fag sf ON sf.id = v.skolear_fag_id AND sf.slettet IS NULL
-       JOIN okt o ON o.id = v.okt_id AND o.slettet IS NULL
-      WHERE v.slettet IS NULL AND sf.skolear_id = $1
+       JOIN okt o ON o.id = vo.okt_id AND o.slettet IS NULL
+      WHERE vo.slettet IS NULL AND sf.skolear_id = $1
       ORDER BY v.tittel`,
     [skolearId],
   );
 
   const kart = new Map<string, OktVurdering[]>();
   for (const v of alle) {
-    kart.set(v.oktId!, [...(kart.get(v.oktId!) ?? []), v]);
+    kart.set(v.oktId, [...(kart.get(v.oktId) ?? []), v]);
   }
   return kart;
 }

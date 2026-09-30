@@ -98,6 +98,8 @@ prioritering fra 30.09.
 - [x] **Utskrift og eksport av årsplan.** Utskriften kuttet alt etter første
   side. Nå: ett fag per ark, med kompetansemål, faglærer, rom, timeregnskap,
   fritekst, og uke/dato/tema/lekse/vurdering. PDF, Word, markdown og CSV.
+- [x] **Vurdering over flere økter, og trekkeren i øktene.** Gjort 30.09.
+  Trekkeren fordeler elevene på avkryssede økter i faget.
 - [ ] **`⌘K` — søk på elev, hopp til elevvisningen.** Globalt, ikke bare i
   skåringsflyten. Prioritert opp 30.09.
 

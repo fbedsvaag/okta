@@ -3,8 +3,8 @@
 Kort status pr. 2026-09-30, versjon 0.1.2. Skrevet mot SPEC.md slik den er nå.
 Denne fila eies fritt — oppdater den løpende, i motsetning til SPEC.md.
 
-**349 tester, alle grønne. `tsc --noEmit` er ren. `npm run build` går
-gjennom. 15 migrasjoner.**
+**362 tester, alle grønne. `tsc --noEmit` er ren. `npm run build` går
+gjennom. 16 migrasjoner.**
 
 ## Hva som virker
 
@@ -34,8 +34,13 @@ Skjerm for skjerm (§4), med tilstand:
   Hodet har faglærer, rom, timeregnskap, fritekst og kompetansemålene fra
   Udir; tabellen har uke, dato, tema, lekse og vurdering. Utskriften kuttet
   før alt etter første side — rettet 30.09.
-- **Vurdering knyttet til økt** — ferdig 30.09. Automatisk når fristen
-  faller på en øktdag, og for hånd fra begge panelene.
+- **Vurdering knyttet til økt** — ferdig 30.09. Én vurdering kan ligge over
+  flere økter (migrasjon 016, koblingstabell). Automatisk når fristen faller
+  på en øktdag, og for hånd fra begge panelene.
+- **Samtaletrekkeren i økter** — ferdig 30.09. I fagmodus krysses fagets
+  økter av i stedet for å legge inn datoer; øktas klokkeslett er rammen,
+  uten lunsj. Vurderingen knyttes til hver økt. Egne dager utenfor øktene
+  går fortsatt. Slike dager telles ikke dobbelt i timeregnskapet.
 - **Samtaletrekkeren (§4.10)** — ferdig. To modus, trekning med låser,
   dra-og-slipp, tre visninger, tre eksporter, historikk på tidspunkt, og
   publisering av mentorsamtaler til kalenderserveren.
@@ -79,6 +84,11 @@ Skjerm for skjerm (§4), med tilstand:
 - **§4.9 Utskrift** beskriver ett ark med dato, ukedag, varighet og tema.
   Koden har mer: kompetansemål, faglærer, rom, fritekst, lekse, vurdering og
   fire eksportformater.
+- **§3.6 «Samtaledagen er ikke en økt»** stemmer bare delvis: en
+  samtaledag kan nå ligge i en økt (`samtaledag.okt_id`), og §4.10s
+  «Samtaledager — ett kort per dag med dato» er i fagmodus erstattet av
+  avkrysning av økter. §3.4 har `vurdering.okt_id`; koden bruker
+  koblingstabellen `vurdering_okt`, og kolonnen står ubrukt.
 - **§3.2/§3.3** mangler de nye feltene fra migrasjon 014: `okt.lekse` og
   `skolear_fag.rom`, `laerer`, `kompetansemal`, `arknotat`. Og
   innstillingen `laerer_navn` står ikke i tabellen i §4.8.
@@ -92,7 +102,7 @@ rettes tilbake, ligger hos eieren.
 
 ## Tester
 
-21 testfiler, 349 tester, alle grønne. `tsc` ren.
+21 testfiler, 362 tester, alle grønne. `tsc` ren.
 
 Dekningen er tung i datalaget og tynn i skjermlaget. Migrasjonene testes ved å
 kjøre dem i to omganger med data imellom — kjørt mot en tom base ville en

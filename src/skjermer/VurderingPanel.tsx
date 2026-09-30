@@ -8,7 +8,8 @@ import {
   hentVurderingElever,
   hentOktvalg,
   hentVurderingsskalaer,
-  kobleTilOkt,
+  knyttOkt,
+  losOkt,
   settFrist,
   settKommentar,
   settLevert,
@@ -443,23 +444,7 @@ function Felter({
           på en øktdag; velges her når det er en annen — innleveringen som
           gis ut i én time og leveres senere. Vises på årsplanen.
         */}
-        <Linje etikett="Økt">
-          <select
-            value={vurdering.oktId ?? ""}
-            onChange={async (e) => {
-              await kobleTilOkt(vurdering.id, e.target.value || null);
-              onEndret();
-            }}
-            className={feltStil}
-          >
-            <option value="">Ingen økt</option>
-            {okter.map((o) => (
-              <option key={o.id} value={o.id}>
-                {oktetikett(o)}
-              </option>
-            ))}
-          </select>
-        </Linje>
+        <Oktkobling vurdering={vurdering} okter={okter} onEndret={onEndret} />
 
         <Linje etikett="Skala">
           <select
@@ -559,6 +544,65 @@ function Linje({
       </span>
       {children}
     </label>
+  );
+}
+
+/**
+ * Øktene vurderingen holdes i. En muntlig vurdering som ikke får plass i én
+ * økt, strekkes over flere — da står den på alle i årsplanen.
+ *
+ * Ikke en <label>: den har flere knapper i seg.
+ */
+function Oktkobling({
+  vurdering,
+  okter,
+  onEndret,
+}: {
+  vurdering: Vurdering;
+  okter: Oktvalg[];
+  onEndret: () => void;
+}) {
+  const her = okter.filter((o) => vurdering.oktIder.includes(o.id));
+  const andre = okter.filter((o) => !vurdering.oktIder.includes(o.id));
+
+  return (
+    <div>
+      <span className="mb-0.5 block text-etikett uppercase tracking-etikett text-blekk-dempet">
+        {her.length > 1 ? "Økter" : "Økt"}
+      </span>
+      {her.map((o) => (
+        <div key={o.id} className="flex items-baseline gap-2 text-brod">
+          <span className="min-w-0 flex-1 truncate">{oktetikett(o)}</span>
+          <button
+            onClick={async () => {
+              await losOkt(vurdering.id, o.id);
+              onEndret();
+            }}
+            className="shrink-0 text-liten text-blekk-svak hover:text-blekk"
+          >
+            Løs
+          </button>
+        </div>
+      ))}
+      <select
+        value=""
+        onChange={async (e) => {
+          if (!e.target.value) return;
+          await knyttOkt(vurdering.id, e.target.value);
+          onEndret();
+        }}
+        className={`${feltStil} ${her.length > 0 ? "mt-1" : ""}`}
+      >
+        <option value="">
+          {her.length > 0 ? "Legg til en økt til …" : "Knytt til en økt …"}
+        </option>
+        {andre.map((o) => (
+          <option key={o.id} value={o.id}>
+            {oktetikett(o)}
+          </option>
+        ))}
+      </select>
+    </div>
   );
 }
 

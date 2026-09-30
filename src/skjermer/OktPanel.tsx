@@ -18,7 +18,8 @@ import { skalafarge } from "../ui/farger";
 import { hentPerioder, periodeFor, type Periode } from "../data/perioder";
 import {
   hentVurderingsvalg,
-  kobleTilOkt,
+  knyttOkt,
+  losOkt,
   type Vurderingsvalg,
 } from "../data/vurderinger";
 
@@ -590,11 +591,12 @@ function Vurderingskobling({
   const last = () => void hentVurderingsvalg(okt.skolearFagId).then(setValg);
   useEffect(last, [okt.skolearFagId, okt.id]);
 
-  const her = valg.filter((v) => v.oktId === okt.id);
-  const andre = valg.filter((v) => v.oktId !== okt.id);
+  const her = valg.filter((v) => v.oktIder.includes(okt.id));
+  const andre = valg.filter((v) => !v.oktIder.includes(okt.id));
 
-  async function koble(vurderingId: string, oktId: string | null) {
-    await kobleTilOkt(vurderingId, oktId);
+  async function koble(vurderingId: string, pa: boolean) {
+    if (pa) await knyttOkt(vurderingId, okt.id);
+    else await losOkt(vurderingId, okt.id);
     last();
     onEndret();
   }
@@ -608,7 +610,7 @@ function Vurderingskobling({
         <div key={v.id} className="flex items-baseline gap-2 text-brod">
           <span className="min-w-0 flex-1 truncate">{v.tittel}</span>
           <button
-            onClick={() => void koble(v.id, null)}
+            onClick={() => void koble(v.id, false)}
             className="shrink-0 text-liten text-blekk-svak hover:text-blekk"
           >
             Løs fra økta
@@ -618,7 +620,7 @@ function Vurderingskobling({
       {andre.length > 0 ? (
         <select
           value=""
-          onChange={(e) => e.target.value && void koble(e.target.value, okt.id)}
+          onChange={(e) => e.target.value && void koble(e.target.value, true)}
           className={`${feltStil} ${her.length > 0 ? "mt-1" : ""}`}
         >
           <option value="">
@@ -627,7 +629,9 @@ function Vurderingskobling({
           {andre.map((v) => (
             <option key={v.id} value={v.id}>
               {v.tittel}
-              {v.oktId ? " (flyttes hit)" : ""}
+              {v.oktIder.length > 0
+                ? ` (står også på ${v.oktIder.length} ${v.oktIder.length === 1 ? "annen økt" : "andre økter"})`
+                : ""}
             </option>
           ))}
         </select>
