@@ -112,7 +112,9 @@ describe("serieopprettelse", () => {
         til: "2026-08-17",
       },
     ]);
-    expect(serie.find((s) => s.dato === "2026-08-17")?.hoppet).toBe("planlegging");
+    expect(serie.find((s) => s.dato === "2026-08-17")?.hoppet).toBe(
+      "planlegging",
+    );
   });
 
   it("gir tom liste når ukedagen ikke finnes i spennet", () => {

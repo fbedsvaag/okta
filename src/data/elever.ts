@@ -60,7 +60,10 @@ export async function finnEllerOpprettKlasse(
   return settInn("klasse", { skolear_id: skolearId, navn });
 }
 
-export async function giKlasseNyttNavn(id: string, navn: string): Promise<void> {
+export async function giKlasseNyttNavn(
+  id: string,
+  navn: string,
+): Promise<void> {
   await oppdater("klasse", id, { navn });
 }
 
@@ -134,8 +137,12 @@ export async function hentElever(skolearId: string): Promise<ElevRad[]> {
     [skolearId],
   );
 
-  const fag = await hent<{ elevId: string; skolearFagId: string; kode: string }>(
-    `SELECT ef.elev_id AS elevId, sf.id AS skolearFagId, f.kode AS kode
+  const fag = await hent<{
+    elevId: string;
+    skolearFagId: string;
+    kode: string;
+  }>(
+    `SELECT ef.elev_id AS elevId, sf.id AS skolearFagId, COALESCE(NULLIF(f.alias, ''), f.kode) AS kode
        FROM elev_fag ef
        JOIN skolear_fag sf ON sf.id = ef.skolear_fag_id
                           AND sf.slettet IS NULL AND sf.skolear_id = $1
@@ -306,7 +313,8 @@ export async function koblePaFag(
   );
 
   if (finnes[0]) {
-    if (finnes[0].slettet) await oppdater("elev_fag", finnes[0].id, { slettet: null });
+    if (finnes[0].slettet)
+      await oppdater("elev_fag", finnes[0].id, { slettet: null });
     return;
   }
 

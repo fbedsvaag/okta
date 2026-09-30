@@ -301,8 +301,9 @@ function FagRad({
       </td>
 
       <td className="py-1.5">
+        {/* Koden redigeres, ikke aliaset — det ligger i fagpanelet. */}
         <Innfelt
-          verdi={fag.kode}
+          verdi={fag.fagkode}
           lagre={async (v) => {
             await endreFag(fag.fagId, { kode: v });
             onEndret();

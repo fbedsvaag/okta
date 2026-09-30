@@ -591,7 +591,7 @@ function Valgtlinje({
       for (const dato of datoer) {
         await opprettOkt(
           f.id,
-          f.kode,
+          f.fagkode,
           dato,
           klokke || null,
           Number(f.standardVarighetMin ?? global),

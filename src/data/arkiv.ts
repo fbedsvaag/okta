@@ -222,8 +222,15 @@ async function samle(skolearId: string) {
   );
 
   return {
-    elever, fagPerElev, skaringer, resultater, okter, oppfolging, fag,
-    skaringsskala, vurderingsskala,
+    elever,
+    fagPerElev,
+    skaringer,
+    resultater,
+    okter,
+    oppfolging,
+    fag,
+    skaringsskala,
+    vurderingsskala,
   };
 }
 
@@ -251,7 +258,13 @@ export async function byggArkiv(skolear: Skolear): Promise<Fil[]> {
   );
   legg(
     "README.md",
-    lesMeg(skolear, fagSortert, d.skaringsskala, d.vurderingsskala, d.elever.length),
+    lesMeg(
+      skolear,
+      fagSortert,
+      d.skaringsskala,
+      d.vurderingsskala,
+      d.elever.length,
+    ),
   );
 
   for (const e of d.elever) {
@@ -372,7 +385,9 @@ function lesMeg(
     ut.push("| --- | --- | ---: | ---: | --- |");
     for (const f of fag) {
       const timer = rund(f.minutter / 60);
-      const kolonne = f.arstimetall ? `${timer} av ${f.arstimetall}` : `${timer}`;
+      const kolonne = f.arstimetall
+        ? `${timer} av ${f.arstimetall}`
+        : `${timer}`;
       ut.push(
         `| [[${slugg(f.kode)}\\|${f.kode}]] | ${tab(f.navn)} | ${f.elever} ` +
           `| ${f.okter} | ${kolonne} |`,
@@ -402,7 +417,11 @@ function lesMeg(
       if (v.tellerIkke) bit.push("Teller ikke med noe sted.");
       ut.push(bit.length > 0 ? `- ${hode} — ${bit.join(" ")}` : `- ${hode}`);
     }
-    ut.push("", "I sammenhengende striper brukes kvadrater i stedet: 🟩 🟨 🟥 ⬜", "");
+    ut.push(
+      "",
+      "I sammenhengende striper brukes kvadrater i stedet: 🟩 🟨 🟥 ⬜",
+      "",
+    );
   }
 
   // --- Vurderingsskalaer ---
@@ -454,7 +473,9 @@ function trinn(koder: string[]): string {
     koder.length > 2 &&
     tall.every((n) => Number.isInteger(n)) &&
     tall.every((n, i) => i === 0 || n === tall[i - 1] + 1);
-  return sammenhengende ? `${koder[0]} til ${koder[koder.length - 1]}` : koder.join(" · ");
+  return sammenhengende
+    ? `${koder[0]} til ${koder[koder.length - 1]}`
+    : koder.join(" · ");
 }
 
 function rund(n: number): string {
@@ -526,7 +547,8 @@ function elevfil(
 }
 
 function fagfil(kode: string, okter: OktRad[], skolear: Skolear): string {
-  const timer = Math.round((okter.reduce((s, o) => s + o.varighetMin, 0) / 60) * 10) / 10;
+  const timer =
+    Math.round((okter.reduce((s, o) => s + o.varighetMin, 0) / 60) * 10) / 10;
   const ut: string[] = [
     "---",
     `fag: "${kode}"`,

@@ -56,7 +56,9 @@ export type ElevVurdering = {
   kommentar: string | null;
 };
 
-export async function hentElevGrunnlag(elevId: string): Promise<ElevGrunnlag | null> {
+export async function hentElevGrunnlag(
+  elevId: string,
+): Promise<ElevGrunnlag | null> {
   const rader = await hent<ElevGrunnlag>(
     "SELECT id, kode, fornavn, etternavn FROM elev WHERE id = $1 AND slettet IS NULL",
     [elevId],
@@ -90,10 +92,15 @@ export async function hentHeatmap(
   skolearId: string,
 ): Promise<FagRad[]> {
   const rader = await hent<
-    HeatmapRute & { skolearFagId: string; fagKode: string; fagNavn: string; farge: string | null }
+    HeatmapRute & {
+      skolearFagId: string;
+      fagKode: string;
+      fagNavn: string;
+      farge: string | null;
+    }
   >(
     `SELECT sf.id   AS skolearFagId,
-            f.kode  AS fagKode,
+            COALESCE(NULLIF(f.alias, ''), f.kode) AS fagKode,
             f.navn  AS fagNavn,
             f.farge AS farge,
             o.id    AS oktId,
@@ -149,9 +156,16 @@ export async function hentHeatmap(
 export async function hentElevFag(
   elevId: string,
   skolearId: string,
-): Promise<{ skolearFagId: string; fagKode: string; fagNavn: string; farge: string | null }[]> {
+): Promise<
+  {
+    skolearFagId: string;
+    fagKode: string;
+    fagNavn: string;
+    farge: string | null;
+  }[]
+> {
   return hent(
-    `SELECT sf.id AS skolearFagId, f.kode AS fagKode, f.navn AS fagNavn, f.farge
+    `SELECT sf.id AS skolearFagId, COALESCE(NULLIF(f.alias, ''), f.kode) AS fagKode, f.navn AS fagNavn, f.farge
        FROM elev_fag ef
        JOIN skolear_fag sf ON sf.id = ef.skolear_fag_id
                           AND sf.slettet IS NULL AND sf.skolear_id = $2
@@ -168,7 +182,7 @@ export async function hentElevVurderinger(
 ): Promise<ElevVurdering[]> {
   return hent<ElevVurdering>(
     `SELECT sf.id AS skolearFagId,
-            f.kode AS fagKode,
+            COALESCE(NULLIF(f.alias, ''), f.kode) AS fagKode,
             vu.tittel, vu.type, vu.frist,
             sv.kode AS resultat,
             COALESCE(r.levert, 0) AS levert,
@@ -186,4 +200,3 @@ export async function hentElevVurderinger(
     [elevId, skolearId],
   );
 }
-

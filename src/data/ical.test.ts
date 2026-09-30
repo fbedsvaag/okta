@@ -54,7 +54,9 @@ describe("lagIcal", () => {
 
   it("bruker øktas UUID som UID, så en flyttet økt oppdateres", () => {
     const s = lagIcal([okt()], "2026/27", NA);
-    expect(s).toContain("UID:aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee@elevtracking");
+    expect(s).toContain(
+      "UID:aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee@elevtracking",
+    );
   });
 
   it("regner lokal tid om til UTC og legger varigheten til slutten", () => {
@@ -109,7 +111,6 @@ describe("lagIcal", () => {
       "DESCRIPTION",
     );
   });
-
 
   it("escaper tegn som ellers ville brutt formatet", () => {
     const s = lagIcal([okt({ tema: "Salg; markedsføring, del 1" })], "x", NA);
@@ -187,7 +188,9 @@ describe("mentorsamtale som kalenderhendelse", () => {
   };
 
   it("har fornavn og klokkeslett i tittelen", () => {
-    expect(samtaletittel("Vera", "08:30", "08:45")).toBe("Vera kl. 08:30–08:45");
+    expect(samtaletittel("Vera", "08:30", "08:45")).toBe(
+      "Vera kl. 08:30–08:45",
+    );
     expect(lagSamtaleHendelse(vera)).toContain("SUMMARY:Vera kl. 08:30–08:45");
   });
 

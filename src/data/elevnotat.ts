@@ -48,7 +48,7 @@ export async function hentElevnotater(elevId: string): Promise<Elevnotat[]> {
             n.elev_id          AS elevId,
             n.skolear_id       AS skolearId,
             n.skolear_fag_id   AS skolearFagId,
-            f.kode             AS fagKode,
+            COALESCE(NULLIF(f.alias, ''), f.kode) AS fagKode,
             n.dato, n.tekst, n.frist, n.lukket,
             n.samtale_id       AS samtaleId,
             n.skal_folges_opp  AS skalFolgesOpp
@@ -139,7 +139,8 @@ export async function endreElevnotat(
   const rad: Record<string, unknown> = {};
   if (felter.dato !== undefined) rad.dato = felter.dato;
   if (felter.tekst !== undefined) rad.tekst = felter.tekst;
-  if (felter.skolearFagId !== undefined) rad.skolear_fag_id = felter.skolearFagId;
+  if (felter.skolearFagId !== undefined)
+    rad.skolear_fag_id = felter.skolearFagId;
   if (felter.frist !== undefined) rad.frist = felter.frist;
   if (felter.skalFolgesOpp !== undefined) {
     rad.skal_folges_opp = felter.skalFolgesOpp ? 1 : 0;

@@ -77,7 +77,7 @@ export function NySerie({
         if (!dag.valgt) continue;
         await opprettOkt(
           valgtFag.id,
-          valgtFag.kode,
+          valgtFag.fagkode,
           dag.dato,
           klokke || null,
           Number(varighet || arvet),

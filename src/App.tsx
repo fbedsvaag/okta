@@ -24,6 +24,7 @@ import { Skolekalender } from "./skjermer/Skolekalender";
 import { Innstillinger } from "./skjermer/Innstillinger";
 import { Vurderinger } from "./skjermer/Vurderinger";
 import { Samtaler } from "./skjermer/Samtaler";
+import { ElevPanel } from "./skjermer/ElevPanel";
 import { Knapp, Ikon } from "./ui/felles";
 import { Sokevindu } from "./ui/Sokevindu";
 import { Ordmerke } from "./ui/logo";
@@ -42,6 +43,8 @@ type Visning =
   | "kalender"
   | "fag"
   | "elever"
+  /** én elev over hele skjermen, uten lista — der søket åpner */
+  | "elev"
   | "okter"
   | "perioder"
   | "vurderinger"
@@ -195,7 +198,7 @@ export default function App() {
         <Sokevindu
           skolearId={skolear.id}
           fag={fag}
-          onApneElev={(id) => ga("elever", id)}
+          onApneElev={(id) => ga("elev", id)}
           onApneOkt={(id) => ga("okter", id)}
           onLukk={() => setSokApent(false)}
         />
@@ -233,7 +236,9 @@ export default function App() {
         />
         <Fane
           navn="Elever"
-          aktiv={visning === "elever" || visning === "liminn"}
+          aktiv={
+            visning === "elever" || visning === "elev" || visning === "liminn"
+          }
           onKlikk={() => ga("elever")}
         />
         <Fane
@@ -366,6 +371,22 @@ export default function App() {
               onLimInn={() => ga("liminn")}
               onApneOkt={(id) => ga("okter", id)}
             />
+          )}
+
+          {/*
+            Elevkortet alene, over hele bredden. Lista ved siden av forstyrrer
+            når man har søkt opp én bestemt elev. Lukk går dit man kom fra.
+          */}
+          {visning === "elev" && apneId && (
+            <div className="mx-auto min-h-0 w-full max-w-5xl flex-1 overflow-auto rounded-vanlig border border-linje">
+              <ElevPanel
+                key={apneId}
+                elevId={apneId}
+                aktivtSkolearId={skolear.id}
+                onLukk={() => (peker > 0 ? tilbake() : ga("elever"))}
+                onApneOkt={(id) => ga("okter", id)}
+              />
+            </div>
           )}
 
           {visning === "liminn" && (

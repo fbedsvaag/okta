@@ -16,6 +16,15 @@ import {
  * Alle leser av samme `Ark`. Det som ikke står der, kan ikke lekke ut her.
  */
 
+/** «MFL1 (SAM3045) — Markedsføring og ledelse 1». Koden i parentes bare
+ * når faget har et alias. */
+export function tittel(ark: Ark): string {
+  const kode = ark.offisiellKode
+    ? `${ark.fagKode} (${ark.offisiellKode})`
+    : ark.fagKode;
+  return `${kode} — ${ark.fagNavn}`;
+}
+
 /** Linja under tittelen: år, faglærer og rom — det som finnes av dem. */
 export function undertittel(ark: Ark): string {
   return [
@@ -109,7 +118,7 @@ function celle(s: string): string {
 
 export function somMarkdown(ark: Ark): string {
   const ut: string[] = [];
-  ut.push(`# ${ark.fagKode} — ${ark.fagNavn}`, "");
+  ut.push(`# ${tittel(ark)}`, "");
   ut.push(undertittel(ark), "");
   if (ark.regnskap) ut.push(regnskapstekst(ark.regnskap), "");
 

@@ -737,7 +737,7 @@ export async function hentSamtaledager(
     `SELECT d.id,
             d.skolear_id     AS skolearId,
             d.skolear_fag_id AS skolearFagId,
-            f.kode           AS fagKode,
+            COALESCE(NULLIF(f.alias, ''), f.kode) AS fagKode,
             d.vurdering_id   AS vurderingId,
             o.id             AS oktId,
             d.dato, d.fra, d.til,

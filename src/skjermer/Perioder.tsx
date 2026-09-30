@@ -172,7 +172,7 @@ export function Perioder({
         {lagerOkt && valgtFag && (
           <NyOktIPeriode
             perioder={perioder}
-            fagKode={valgtFag.kode}
+            fagKode={valgtFag.fagkode}
             skolearFagId={fagId}
             standardVarighet={Number(valgtFag.standardVarighetMin ?? 180)}
             sisteDato={okter[okter.length - 1]?.dato}

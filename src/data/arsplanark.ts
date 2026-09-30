@@ -128,7 +128,10 @@ export type Arkbolk = {
 };
 
 export type Ark = {
+  /** det faget kalles — aliaset, ellers koden */
   fagKode: string;
+  /** den offisielle koden, når aliaset er noe annet; ellers null */
+  offisiellKode: string | null;
   fagNavn: string;
   skolearNavn: string;
   laerer: string | null;
@@ -196,6 +199,7 @@ export function byggArk(inn: {
 
   return {
     fagKode: fag.kode,
+    offisiellKode: fag.fagkode !== fag.kode ? fag.fagkode : null,
     fagNavn: fag.navn,
     skolearNavn: skolear.navn,
     laerer: med("laerer") ? (tom(fag.laerer) ?? tom(inn.laererNavn)) : null,

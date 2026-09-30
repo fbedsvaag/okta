@@ -186,7 +186,10 @@ function iso(d: Date): string {
 
 /** 2026-08-15T09:15:00 lokal tid -> 20260815T071500Z */
 function utc(d: Date): string {
-  return d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+  return d
+    .toISOString()
+    .replace(/[-:]/g, "")
+    .replace(/\.\d{3}/, "");
 }
 
 /** RFC 5545 §3.3.11: omvendt skråstrek, semikolon, komma og linjeskift. */
@@ -215,7 +218,11 @@ function brett(linje: string): string[] {
   while (start < bytes.length) {
     let slutt = Math.min(start + plass, bytes.length);
     // Ikke del et flerbytetegn på midten.
-    while (slutt > start && slutt < bytes.length && (bytes[slutt] & 0xc0) === 0x80) {
+    while (
+      slutt > start &&
+      slutt < bytes.length &&
+      (bytes[slutt] & 0xc0) === 0x80
+    ) {
       slutt--;
     }
     const bit = new TextDecoder().decode(bytes.slice(start, slutt));

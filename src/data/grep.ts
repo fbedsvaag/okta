@@ -40,7 +40,12 @@ export type GrepFag = {
   kompetansemaal: Kompetansemaal[];
 };
 
-type Fil = { hentet: string; kilde: string; antall_fag: number; fag: GrepFag[] };
+type Fil = {
+  hentet: string;
+  kilde: string;
+  antall_fag: number;
+  fag: GrepFag[];
+};
 
 let lastet: Promise<GrepFag[]> | null = null;
 
@@ -61,7 +66,9 @@ export function hentGrepFag(): Promise<GrepFag[]> {
         // versjon av hent_grep.py, en halvskrevet fil — skal søket si fra,
         // ikke kaste midt i en tastetrykkhåndterer.
         const gyldig = fag.filter(
-          (x) => typeof x?.navn === "string" && typeof x?.opplaeringsfag === "string",
+          (x) =>
+            typeof x?.navn === "string" &&
+            typeof x?.opplaeringsfag === "string",
         );
         if (gyldig.length !== fag.length) {
           console.error(

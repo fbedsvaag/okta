@@ -12,7 +12,10 @@ export type FagIAr = {
   id: string;
   /** fag.id — banken */
   fagId: string;
+  /** det faget kalles: aliaset hvis det finnes, ellers koden */
   kode: string;
+  /** fagets egen kode i banken, f.eks. SAM3045 — uansett alias */
+  fagkode: string;
   navn: string;
   farge: string | null;
   arstimetall: number | null;
@@ -51,7 +54,10 @@ export async function hentFagIAr(skolearId: string): Promise<FagIAr[]> {
   return hent<FagIAr>(
     `SELECT sf.id            AS id,
             f.id             AS fagId,
-            f.kode           AS kode,
+            -- Det læreren kaller faget: aliaset, ellers koden. Den offisielle
+            -- koden står i fagkode, der den trengs (øktkoder, redigering).
+            COALESCE(NULLIF(f.alias, ''), f.kode) AS kode,
+            f.kode           AS fagkode,
             f.navn           AS navn,
             f.farge          AS farge,
             f.grep_kode      AS grepKode,

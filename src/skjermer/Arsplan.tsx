@@ -5,6 +5,7 @@ import {
   kolonnebredde,
   kolonner,
   KOLONNENAVN,
+  tittel,
   undertittel,
 } from "../data/arsplaneksport";
 
@@ -39,7 +40,7 @@ function Side({ ark }: { ark: Ark }) {
     <section className="fagside">
       <header className="mb-3 border-b-2 border-aksent pb-1.5">
         <h1 className="font-display text-[17pt] leading-tight">
-          {ark.fagKode} — {ark.fagNavn}
+          {tittel(ark)}
         </h1>
         <p className="mt-0.5 text-[9.5pt] text-blekk-dempet">
           {undertittel(ark)}

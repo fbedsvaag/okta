@@ -19,6 +19,7 @@ import {
   kolonnebredde,
   kolonner,
   KOLONNENAVN,
+  tittel,
   undertittel,
 } from "./arsplaneksport";
 
@@ -173,9 +174,7 @@ function seksjon(ark: Ark) {
 
   innhold.push(
     new Paragraph({
-      children: [
-        tekst(`${ark.fagKode} — ${ark.fagNavn}`, { font: SERIF, str: 18 }),
-      ],
+      children: [tekst(tittel(ark), { font: SERIF, str: 18 })],
       border: {
         bottom: {
           style: BorderStyle.SINGLE,

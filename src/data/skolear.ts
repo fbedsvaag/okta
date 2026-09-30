@@ -57,7 +57,9 @@ export async function hentAktivtSkolearId(): Promise<string | null> {
 }
 
 export async function settAktivtSkolear(id: string): Promise<void> {
-  await (await db()).execute(
+  await (
+    await db()
+  ).execute(
     `INSERT INTO innstilling (nokkel, verdi, endret) VALUES ($1, $2, $3)
      ON CONFLICT(nokkel) DO UPDATE SET verdi = $2, endret = $3`,
     [AKTIVT, id, naa()],
@@ -69,9 +71,9 @@ export async function settAktivtSkolear(id: string): Promise<void> {
  * en verdi som ikke gjelder lenger skal bort, ikke merkes.
  */
 async function fjernAktivtSkolear(): Promise<void> {
-  await (await db()).execute("DELETE FROM innstilling WHERE nokkel = $1", [
-    AKTIVT,
-  ]);
+  await (
+    await db()
+  ).execute("DELETE FROM innstilling WHERE nokkel = $1", [AKTIVT]);
 }
 
 /**
@@ -114,11 +116,15 @@ export async function hentInnstilling(nokkel: string): Promise<string | null> {
  * så i januar 2027 er forslaget fortsatt 2026/27.
  */
 export function foreslattSkolearnavn(idag = new Date()): string {
-  const startAr = idag.getMonth() >= 6 ? idag.getFullYear() : idag.getFullYear() - 1;
+  const startAr =
+    idag.getMonth() >= 6 ? idag.getFullYear() : idag.getFullYear() - 1;
   return `${startAr}/${String((startAr + 1) % 100).padStart(2, "0")}`;
 }
 
-export function foreslatteDatoer(navn: string): { start: string; slutt: string } {
+export function foreslatteDatoer(navn: string): {
+  start: string;
+  slutt: string;
+} {
   const startAr = Number(navn.slice(0, 4));
   if (Number.isNaN(startAr)) return { start: "", slutt: "" };
   return { start: `${startAr}-08-17`, slutt: `${startAr + 1}-06-20` };
@@ -169,8 +175,13 @@ export async function slettFridag(id: string): Promise<void> {
   await slett("fridag", id);
 }
 
-export async function settInnstilling(nokkel: string, verdi: string): Promise<void> {
-  await (await db()).execute(
+export async function settInnstilling(
+  nokkel: string,
+  verdi: string,
+): Promise<void> {
+  await (
+    await db()
+  ).execute(
     `INSERT INTO innstilling (nokkel, verdi, endret) VALUES ($1, $2, $3)
      ON CONFLICT(nokkel) DO UPDATE SET verdi = $2, endret = $3`,
     [nokkel, verdi, naa()],

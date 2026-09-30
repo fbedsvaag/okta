@@ -125,7 +125,7 @@ export async function hentTimeregnskap(
     Omit<Fagtimer, "vurderingTimer" | "vurderingAntall">
   >(
     `SELECT sf.id                                   AS skolearFagId,
-            f.kode                                  AS kode,
+            COALESCE(NULLIF(f.alias, ''), f.kode) AS kode,
             f.navn                                  AS navn,
             f.farge                                 AS farge,
             sf.arstimetall                          AS arstimetall,
@@ -226,7 +226,7 @@ export async function hentKommendeVurderinger(
     `SELECT v.id     AS vurderingId,
             v.tittel AS tittel,
             v.frist  AS frist,
-            f.kode   AS kode,
+            COALESCE(NULLIF(f.alias, ''), f.kode) AS kode,
             f.farge  AS farge,
             (SELECT COUNT(*) FROM vurderingsresultat vr
               WHERE vr.vurdering_id = v.id AND vr.slettet IS NULL

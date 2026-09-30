@@ -30,7 +30,11 @@ beforeEach(async () => {
 
 async function elevIKlasse(fornavn: string, klasse: string): Promise<string> {
   const id = await opprettElev(fornavn, "Soprano");
-  await settKlasse(id, skolearId, await finnEllerOpprettKlasse(skolearId, klasse));
+  await settKlasse(
+    id,
+    skolearId,
+    await finnEllerOpprettKlasse(skolearId, klasse),
+  );
   return id;
 }
 
@@ -49,7 +53,9 @@ describe("mentorgruppa", () => {
     expect(await settMentor(tony, skolearId, true)).toBe(true);
 
     const elever = await hentElever(skolearId);
-    expect(elever.filter((e) => e.mentor).map((e) => e.fornavn)).toEqual(["Tony"]);
+    expect(elever.filter((e) => e.mentor).map((e) => e.fornavn)).toEqual([
+      "Tony",
+    ]);
   });
 
   it("lar merket fjernes igjen", async () => {
@@ -156,13 +162,21 @@ describe("passerFagfilter", () => {
 
   it("krever samtlige fag i «alle»", () => {
     // Det er dette spørsmålet filteret finnes for: hvem har både MFL1 og ENG1.
-    expect(passerFagfilter(eleven, new Set(["mfl1", "eng1"]), "alle")).toBe(true);
-    expect(passerFagfilter(eleven, new Set(["mfl1", "ebu1"]), "alle")).toBe(false);
+    expect(passerFagfilter(eleven, new Set(["mfl1", "eng1"]), "alle")).toBe(
+      true,
+    );
+    expect(passerFagfilter(eleven, new Set(["mfl1", "ebu1"]), "alle")).toBe(
+      false,
+    );
   });
 
   it("krever bare ett fag i «minst ett»", () => {
-    expect(passerFagfilter(eleven, new Set(["mfl1", "ebu1"]), "minstEtt")).toBe(true);
-    expect(passerFagfilter(eleven, new Set(["ebu1", "sam1"]), "minstEtt")).toBe(false);
+    expect(passerFagfilter(eleven, new Set(["mfl1", "ebu1"]), "minstEtt")).toBe(
+      true,
+    );
+    expect(passerFagfilter(eleven, new Set(["ebu1", "sam1"]), "minstEtt")).toBe(
+      false,
+    );
   });
 
   it("betyr det samme for begge modus når ett fag er valgt", () => {

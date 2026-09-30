@@ -248,3 +248,28 @@ describe("avholdte økter", () => {
     expect((await hentNokkeltall(fagId, idag)).avholdte).toBe(2);
   });
 });
+
+describe("alias", () => {
+  it("vises i stedet for koden, men den offisielle koden er der fortsatt", async () => {
+    const { endreFag, hentFagIAr } = await import("./fag");
+    const { hentOkter } = await import("./okter");
+    const [f] = await hentFagIAr(skolearId);
+    await endreFag(f.fagId, { alias: "MFLX" });
+    await opprettOkt(fagId, f.fagkode, "2026-10-06", null, 180);
+
+    const [etter] = await hentFagIAr(skolearId);
+    expect(etter.kode).toBe("MFLX");
+    expect(etter.fagkode).toBe("MFL1");
+    const [okt] = await hentOkter(skolearId);
+    expect(okt.fagKode).toBe("MFLX");
+    // Øktkoden bruker den offisielle koden, så den er stabil.
+    expect(okt.kode).toContain("MFL1");
+  });
+
+  it("faller tilbake på koden når aliaset er tomt", async () => {
+    const { endreFag, hentFagIAr } = await import("./fag");
+    const [f] = await hentFagIAr(skolearId);
+    await endreFag(f.fagId, { alias: "" });
+    expect((await hentFagIAr(skolearId))[0].kode).toBe("MFL1");
+  });
+});

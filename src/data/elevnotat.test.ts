@@ -16,7 +16,8 @@ const {
   hentNotatPerElev,
   sorterNotater,
 } = await import("./elevnotat");
-const { opprettSamtaledag, lagreTrekning, hentSamtaler } = await import("./samtale");
+const { opprettSamtaledag, lagreTrekning, hentSamtaler } =
+  await import("./samtale");
 const { opprettElev } = await import("./elever");
 const { opprettSkolear } = await import("./skolear");
 
@@ -140,8 +141,14 @@ describe("møteloggen i basen", () => {
   });
 
   it("holder flere møter fra hverandre, nyeste først", async () => {
-    await opprettElevnotat(elevId, skolearId, { dato: "2026-09-01", tekst: "Første" });
-    await opprettElevnotat(elevId, skolearId, { dato: "2026-11-01", tekst: "Andre" });
+    await opprettElevnotat(elevId, skolearId, {
+      dato: "2026-09-01",
+      tekst: "Første",
+    });
+    await opprettElevnotat(elevId, skolearId, {
+      dato: "2026-11-01",
+      tekst: "Andre",
+    });
 
     const notater = await hentElevnotater(elevId);
     expect(notater.map((n) => n.tekst)).toEqual(["Andre", "Første"]);

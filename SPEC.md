@@ -116,7 +116,10 @@ Det som kan variere fra år til år ligger på koblingen, ikke på banken:
 teksten på årsplanarket.
 
 **Aliaset er lærerens eget navn på faget.** SAM3045 er ofte «MFL1» i egne
-dokumenter og filnavn. Faget kan søkes opp på begge (§4.4).
+dokumenter og filnavn. Faget kan søkes opp på begge (§4.4), og aliaset er
+det som vises — i appen, i kalenderen (§8.1) og i Teams-kopien. Årsplanarket
+viser begge: «MFL1 (SAM3045) — Markedsføring og ledelse 1». Øktkodene
+(`2608-SAM3045-3`) bruker den offisielle koden, så de står fast.
 
 **Standard rom gjelder også øktene som finnes.** Settes eller endres rommet på
 faget, får økter uten rom — og de som hadde det gamle standardrommet — det nye.

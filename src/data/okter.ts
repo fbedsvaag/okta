@@ -72,7 +72,7 @@ export async function hentOkter(skolearId: string): Promise<Okt[]> {
     `SELECT o.id,
             o.kode,
             o.skolear_fag_id AS skolearFagId,
-            f.kode           AS fagKode,
+            COALESCE(NULLIF(f.alias, ''), f.kode) AS fagKode,
             f.navn           AS fagNavn,
             f.farge          AS farge,
             o.periode_id     AS periodeId,

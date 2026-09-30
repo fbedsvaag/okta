@@ -25,6 +25,7 @@ const fag: FagIAr = {
   id: "sf1",
   fagId: "f1",
   kode: "MFL1",
+  fagkode: "MFL1",
   navn: "Markedsføring og ledelse 1",
   farge: null,
   arstimetall: 140,
@@ -306,6 +307,16 @@ describe("format", () => {
   it("lager et filnavn uten skråstrek", () => {
     expect(filnavn([ark()], "md")).toBe("Årsplan MFL1 2026-27.md");
     expect(filnavn([ark(), ark()], "csv")).toBe("Årsplan 2026-27.csv");
+  });
+});
+
+describe("alias på arket", () => {
+  it("viser aliaset med den offisielle koden i parentes", () => {
+    const a = ark({ fag: { ...fag, kode: "MFL1", fagkode: "SAM3045" } });
+    expect(somMarkdown(a)).toContain(
+      "# MFL1 (SAM3045) — Markedsføring og ledelse 1",
+    );
+    expect(filnavn([a], "pdf")).toBe("Årsplan MFL1 2026-27.pdf");
   });
 });
 

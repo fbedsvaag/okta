@@ -958,7 +958,7 @@ function NyOkt({
     if (!valgtFag || !dato) return;
     const id = await opprettOkt(
       valgtFag.id,
-      valgtFag.kode,
+      valgtFag.fagkode,
       dato,
       klokke || null,
       Number(varighet || arvet),
