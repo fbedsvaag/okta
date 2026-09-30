@@ -85,7 +85,11 @@ export function Elever({
   const [filterFag, setFilterFag] = useState<Set<string>>(new Set());
   const [fagModus, setFagModus] = useState<"alle" | "minstEtt">("alle");
   // Mentorfilteret virker uavhengig av klasse- og fagfilteret (§4.3).
-  const [baraMentor, setBaraMentor] = useState(false);
+  // Egenskapene styrer visningen, som i en database: fag (også «uten fag»),
+  // klasse og mentor kan kombineres fritt.
+  const [mentorFilter, setMentorFilter] = useState<"" | "ja" | "nei">("");
+  const [utenFag, setUtenFag] = useState(false);
+  const baraMentor = mentorFilter === "ja";
   // Elever med et åpent, forfalt oppfølgingspunkt (§4.7). Merket sier bare at
   // noe venter — aldri hva. Tabellen vises i klasserommet og i møter.
   const [forfalte, setForfalte] = useState<Set<string>>(new Set());
@@ -148,8 +152,14 @@ export function Elever({
     const s = sok.trim().toLocaleLowerCase("nb-NO");
     const filtrert = elever.filter((e) => {
       if (filterKlasse && e.klasseId !== filterKlasse) return false;
-      if (!passerFagfilter(e.fagIder, filterFag, fagModus)) return false;
-      if (baraMentor && !e.mentor) return false;
+      if (
+        utenFag
+          ? e.fagIder.length > 0
+          : !passerFagfilter(e.fagIder, filterFag, fagModus)
+      )
+        return false;
+      if (mentorFilter === "ja" && !e.mentor) return false;
+      if (mentorFilter === "nei" && e.mentor) return false;
       if (
         s &&
         !`${e.fornavn} ${e.etternavn}`.toLocaleLowerCase("nb-NO").includes(s)
@@ -158,7 +168,16 @@ export function Elever({
       return true;
     });
     return sorter(filtrert, sortering);
-  }, [elever, sok, filterKlasse, filterFag, fagModus, baraMentor, sortering]);
+  }, [
+    elever,
+    sok,
+    filterKlasse,
+    filterFag,
+    fagModus,
+    utenFag,
+    mentorFilter,
+    sortering,
+  ]);
 
   const alleMerket =
     synlige.length > 0 && synlige.every((e) => merket.has(e.id));
@@ -224,25 +243,34 @@ export function Elever({
             <Fagflervalg
               fag={fag}
               valgte={filterFag}
-              settValgte={setFilterFag}
+              settValgte={(v) => {
+                setFilterFag(v);
+                if (v.size > 0) setUtenFag(false);
+              }}
               modus={fagModus}
               settModus={setFagModus}
+              utenFag={utenFag}
+              antallUtenFag={
+                elever.filter((e) => e.fagIder.length === 0).length
+              }
+              settUtenFag={(pa) => {
+                setUtenFag(pa);
+                if (pa) setFilterFag(new Set());
+              }}
             />
 
-            <label
-              title="Bare elevene du er kontaktlærer for i år"
-              className="flex select-none items-center gap-1.5 text-liten text-blekk-dempet"
-            >
-              <input
-                type="checkbox"
-                checked={baraMentor}
-                onChange={(e) => setBaraMentor(e.target.checked)}
-              />
-              Mentorelever
-              <span className="tabular-nums text-blekk-svak">
-                {elever.filter((e) => e.mentor).length}
-              </span>
-            </label>
+            <Velger
+              verdi={mentorFilter}
+              settVerdi={(v) => setMentorFilter(v as typeof mentorFilter)}
+              tom="Mentor: alle"
+              valg={[
+                {
+                  id: "ja",
+                  tekst: `Mentorelever (${elever.filter((e) => e.mentor).length})`,
+                },
+                { id: "nei", tekst: "Ikke mentorelever" },
+              ]}
+            />
 
             {/*
               Knappene gjelder tabellen. Med elevkortet åpent er lista smal, og
@@ -459,7 +487,64 @@ export function Elever({
               <span className="tabular-nums">
                 {merket.size} {merket.size === 1 ? "elev" : "elever"} merket
               </span>
-              <div className="ml-auto flex items-center gap-2">
+              <div className="ml-auto flex flex-wrap items-center gap-2">
+                {/*
+                  Endringer på alle de avkryssede samtidig — som å redigere en
+                  kolonne i et regneark. Skåringene blir liggende når en elev
+                  tas ut av et fag, og kommer tilbake om hen kobles på igjen.
+                */}
+                <Velger
+                  verdi=""
+                  settVerdi={async (id) => {
+                    if (!id) return;
+                    for (const e of merket) await koblePaFag(e, id);
+                    await last();
+                  }}
+                  tom="Legg til i fag …"
+                  valg={fag.map((f) => ({ id: f.id, tekst: f.kode }))}
+                />
+                <Velger
+                  verdi=""
+                  settVerdi={async (id) => {
+                    if (!id) return;
+                    const f = fag.find((x) => x.id === id);
+                    const i = [...merket].filter((e) =>
+                      elever.find((x) => x.id === e)?.fagIder.includes(id),
+                    );
+                    if (i.length === 0) return;
+                    if (
+                      !(await bekreft(
+                        `Ta ${i.length} ${i.length === 1 ? "elev" : "elever"} ut av ${f?.kode}?\n\n` +
+                          "Skåringene deres blir liggende i basen, men elevene forsvinner ut av fagets lister og heatmap. " +
+                          "Kobles de til igjen, kommer skåringene tilbake.",
+                      ))
+                    )
+                      return;
+                    for (const e of i) await frakobleFag(e, id);
+                    await last();
+                  }}
+                  tom="Fjern fra fag …"
+                  valg={fag.map((f) => ({ id: f.id, tekst: f.kode }))}
+                />
+                <Velger
+                  verdi=""
+                  settVerdi={async (v) => {
+                    if (!v) return;
+                    let uten = 0;
+                    for (const e of merket)
+                      if (!(await settMentor(e, skolearId, v === "ja"))) uten++;
+                    if (uten > 0)
+                      setFeil(
+                        `${uten} av elevene har ingen klasse i år, og kan derfor ikke merkes som mentorelev.`,
+                      );
+                    await last();
+                  }}
+                  tom="Mentor …"
+                  valg={[
+                    { id: "ja", tekst: "Gjør til mentorelever" },
+                    { id: "nei", tekst: "Ikke mentorelever" },
+                  ]}
+                />
                 <Knapp variant="stille" onClick={() => setMerket(new Set())}>
                   Nullstill
                 </Knapp>

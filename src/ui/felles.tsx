@@ -380,21 +380,31 @@ export function Fagflervalg({
   settValgte,
   modus,
   settModus,
+  utenFag,
+  settUtenFag,
+  antallUtenFag,
 }: {
   fag: { id: string; kode: string; farge: string | null }[];
   valgte: ReadonlySet<string>;
   settValgte: (v: Set<string>) => void;
   modus: "alle" | "minstEtt";
   settModus: (m: "alle" | "minstEtt") => void;
+  /** «Uten fag»: elevene som ikke er koblet til noe fag. Valgfritt. */
+  utenFag?: boolean;
+  settUtenFag?: (pa: boolean) => void;
+  antallUtenFag?: number;
 }) {
   if (fag.length === 0) return null;
 
   return (
     <div className="flex flex-wrap items-center gap-1">
       <Fagknapp
-        aktiv={valgte.size === 0}
+        aktiv={valgte.size === 0 && !utenFag}
         farge={null}
-        onClick={() => settValgte(new Set())}
+        onClick={() => {
+          settValgte(new Set());
+          settUtenFag?.(false);
+        }}
       >
         Alle fag
       </Fagknapp>
@@ -413,6 +423,21 @@ export function Fagflervalg({
           {f.kode}
         </Fagknapp>
       ))}
+
+      {settUtenFag && (
+        <Fagknapp
+          aktiv={!!utenFag}
+          farge={null}
+          onClick={() => settUtenFag(!utenFag)}
+        >
+          Uten fag
+          {antallUtenFag !== undefined && (
+            <span className="ml-1 tabular-nums text-blekk-svak">
+              {antallUtenFag}
+            </span>
+          )}
+        </Fagknapp>
+      )}
 
       {valgte.size > 1 && (
         <Bryter

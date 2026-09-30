@@ -715,8 +715,16 @@ Jennifer Melfi          2STA      MFL2                 19      5 d
 - **Økter** er antall skåringer registrert, **Siste** er hvor lenge siden. Sammen
   avslører de hull: en elev med påfallende få skåringer er som regel en du har
   oversett, ikke en som har vært mye borte.
-- Filter på klasse og på fag, uavhengig av hverandre. Sortering på hvilken som
-  helst kolonne. Søk øverst.
+- Filter på klasse, på fag (også «Uten fag») og på mentor (mentorelever /
+  ikke mentorelever), uavhengig av hverandre og fritt kombinert — som i en
+  database der egenskapene styrer visningen. Sortering på hvilken som helst
+  kolonne. Søk øverst.
+- **Endringer på mange elever samtidig:** kryss av, og legg til i fag, fjern
+  fra fag, sett eller fjern mentor, eller slett. Tas en elev ut av et fag,
+  blir skåringene liggende og kommer tilbake om hen kobles på igjen.
+  «Uten fag» + «Ikke mentorelever» finner elevene man ikke lenger har.
+- **Sletter man en elev, forsvinner alt som hører til eleven:** skåringer,
+  vurderingsresultater, notater, samtaler og koblinger.
 - Klikk på navnet åpner §4.5.
 
 #### Manuell innlegging
