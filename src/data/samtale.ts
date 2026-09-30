@@ -260,6 +260,39 @@ export function flyttInnenDagen<T>(rader: T[], fra: number, til: number): T[] {
 }
 
 /**
+ * Flytter en elev til en annen dag i trekningen.
+ *
+ * Har måldagen ledig plass, settes eleven inn der (`etter` = etter raden
+ * det ble sluppet på), og dagen den kom fra får én mindre. Er måldagen full,
+ * bytter de to elevene plass i stedet — da holder begge dagene kapasiteten
+ * sin, og ingen må ut. `byttet` sier hvilken av de to som skjedde.
+ */
+export function flyttMellomDager<T>(
+  perDag: T[][],
+  kapasiteter: number[],
+  fra: { dag: number; rad: number },
+  til: { dag: number; rad: number; etter: boolean },
+): { perDag: T[][]; byttet: T | null } {
+  const ut = perDag.map((d) => [...d]);
+  const kilde = ut[fra.dag];
+  const mal = ut[til.dag];
+  if (!kilde || !mal || fra.rad >= kilde.length)
+    return { perDag, byttet: null };
+
+  if (mal.length < (kapasiteter[til.dag] ?? 0)) {
+    const [elev] = kilde.splice(fra.rad, 1);
+    mal.splice(Math.min(til.rad + (til.etter ? 1 : 0), mal.length), 0, elev);
+    return { perDag: ut, byttet: null };
+  }
+
+  if (til.rad >= mal.length) return { perDag, byttet: null };
+  const byttet = mal[til.rad];
+  mal[til.rad] = kilde[fra.rad];
+  kilde[fra.rad] = byttet;
+  return { perDag: ut, byttet };
+}
+
+/**
  * Finner lunsjen i en ferdig lagret dag.
  *
  * Pausen lagres ikke som en rad — den utledes av hullet mellom to samtaler.

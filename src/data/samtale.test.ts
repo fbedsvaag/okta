@@ -4,6 +4,7 @@ import {
   delPaDager,
   finnLunsj,
   flyttInnenDagen,
+  flyttMellomDager,
   fordelPaDager,
   grupperTrekninger,
   medLunsj,
@@ -671,5 +672,62 @@ describe("dagenssetning", () => {
 
   it("gir null når det ikke er samtaler", () => {
     expect(dagenssetning([], "08:00", true)).toBeNull();
+  });
+});
+
+describe("flyttMellomDager", () => {
+  const dager = () => [
+    ["Tony", "Carmela", "Adriana"],
+    ["Silvio", "Paulie"],
+  ];
+
+  it("setter eleven sist på en dag med ledig plass", () => {
+    // Tony var tidlig sist; han dras til bunnen av dag 2.
+    const { perDag, byttet } = flyttMellomDager(
+      dager(),
+      [3, 3],
+      { dag: 0, rad: 0 },
+      { dag: 1, rad: 1, etter: true },
+    );
+    expect(perDag).toEqual([
+      ["Carmela", "Adriana"],
+      ["Silvio", "Paulie", "Tony"],
+    ]);
+    expect(byttet).toBeNull();
+  });
+
+  it("setter inn foran raden når den slippes på øvre halvdel", () => {
+    const { perDag } = flyttMellomDager(
+      dager(),
+      [3, 3],
+      { dag: 0, rad: 2 },
+      { dag: 1, rad: 0, etter: false },
+    );
+    expect(perDag[1]).toEqual(["Adriana", "Silvio", "Paulie"]);
+  });
+
+  it("bytter plass når måldagen er full", () => {
+    const { perDag, byttet } = flyttMellomDager(
+      dager(),
+      [3, 2],
+      { dag: 0, rad: 0 },
+      { dag: 1, rad: 1, etter: true },
+    );
+    expect(perDag).toEqual([
+      ["Paulie", "Carmela", "Adriana"],
+      ["Silvio", "Tony"],
+    ]);
+    expect(byttet).toBe("Paulie");
+  });
+
+  it("rører ikke originalen", () => {
+    const inn = dager();
+    flyttMellomDager(
+      inn,
+      [3, 3],
+      { dag: 0, rad: 0 },
+      { dag: 1, rad: 0, etter: false },
+    );
+    expect(inn).toEqual(dager());
   });
 });

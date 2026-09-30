@@ -3,7 +3,7 @@
 Kort status pr. 2026-09-30, versjon 0.1.2. Skrevet mot SPEC.md slik den er nå.
 Denne fila eies fritt — oppdater den løpende, i motsetning til SPEC.md.
 
-**362 tester, alle grønne. `tsc --noEmit` er ren. `npm run build` går
+**366 tester, alle grønne. `tsc --noEmit` er ren. `npm run build` går
 gjennom. 16 migrasjoner.**
 
 ## Hva som virker
@@ -89,6 +89,10 @@ Skjerm for skjerm (§4), med tilstand:
   «Samtaledager — ett kort per dag med dato» er i fagmodus erstattet av
   avkrysning av økter. §3.4 har `vurdering.okt_id`; koden bruker
   koblingstabellen `vurdering_okt`, og kolonnen står ubrukt.
+- **§4.10 Manuell justering** sier at rader bare dras innenfor en dag.
+  Eieren vil kunne dra en elev til en annen dag (typisk «sist»), nå som
+  samtalene går over flere økter. Koden: settes inn når måldagen har
+  plass, bytter plass med eleven det slippes på når den er full.
 - **§3.2/§3.3** mangler de nye feltene fra migrasjon 014: `okt.lekse` og
   `skolear_fag.rom`, `laerer`, `kompetansemal`, `arknotat`. Og
   innstillingen `laerer_navn` står ikke i tabellen i §4.8.
@@ -102,7 +106,7 @@ rettes tilbake, ligger hos eieren.
 
 ## Tester
 
-21 testfiler, 362 tester, alle grønne. `tsc` ren.
+21 testfiler, 366 tester, alle grønne. `tsc` ren.
 
 Dekningen er tung i datalaget og tynn i skjermlaget. Migrasjonene testes ved å
 kjøre dem i to omganger med data imellom — kjørt mot en tom base ville en

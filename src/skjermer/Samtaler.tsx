@@ -18,6 +18,7 @@ import {
   leggDagIOkt,
   settTrekningensVurdering,
   flyttInnenDagen,
+  flyttMellomDager,
   grupperTrekninger,
   somMarkdown,
   somTeamsHtml,
@@ -324,21 +325,55 @@ export function Samtaler({
   }
 
   /**
-   * Flytter en rad innen dagen.
+   * Flytter en rad, innen dagen eller til en annen dag.
    *
    * Klokkeslettene står der de står — det er elevene som flyttes mellom dem.
+   * `fra` og `til` er plasser i den viste timeplanen, som hopper over dager
+   * uten elever; de oversettes her til dagslista, som `byggPlan` leser.
    */
-  async function flytt(dagIdx: number, fra: number, til: number) {
+  async function flytt(
+    fra: { dag: number; rad: number },
+    til: { dag: number; rad: number; etter: boolean },
+  ) {
     if (!trekning) return;
 
-    const perDag = trekning.map((d) => d.rader.map((r) => r.elevId));
-    perDag[dagIdx] = flyttInnenDagen(perDag[dagIdx], fra, til);
+    const perDag = dager.map(
+      (d) =>
+        trekning.find((p) => p.dag.id === d.id)?.rader.map((r) => r.elevId) ??
+        [],
+    );
+    const idx = (planIdx: number) =>
+      dager.findIndex((d) => d.id === trekning[planIdx]?.dag.id);
+    const fraDag = idx(fra.dag);
+    const tilDag = idx(til.dag);
+    if (fraDag < 0 || tilDag < 0) return;
+
+    let nye = perDag;
+    if (fraDag === tilDag) {
+      nye[fraDag] = flyttInnenDagen(perDag[fraDag], fra.rad, til.rad);
+    } else {
+      const svar = flyttMellomDager(
+        perDag,
+        kapasiteter,
+        { dag: fraDag, rad: fra.rad },
+        { dag: tilDag, rad: til.rad, etter: til.etter },
+      );
+      nye = svar.perDag;
+      if (svar.byttet) {
+        const navn = new Map(deltakere.map((d) => [d.id, d.navn]));
+        const flyttet = perDag[fraDag][fra.rad];
+        setDragmelding(
+          `Dagen var full, så ${navn.get(flyttet) ?? "eleven"} og ${navn.get(svar.byttet) ?? "eleven"} byttet plass.`,
+        );
+        setTimeout(() => setDragmelding(null), 6000);
+      }
+    }
 
     const na = new Map<string, string>();
     for (const d of trekning) {
       for (const r of d.rader) if (r.tema) na.set(r.elevId, r.tema);
     }
-    await skriv(byggPlan(perDag, na));
+    await skriv(byggPlan(nye, na));
   }
 
   /**
@@ -956,13 +991,7 @@ export function Samtaler({
             onNotat={(rad, dag, tekst, folgesOpp) =>
               void lagreNotat(rad, dag, tekst, folgesOpp)
             }
-            onFlytt={(dagIdx, fra, til) => void flytt(dagIdx, fra, til)}
-            onFeilDrag={() => {
-              setDragmelding(
-                "Flytting mellom dager gjøres ikke ved å dra. Dagene har hver sin kapasitet, og et slikt drag ville stilt spørsmål om hvem som må ut. Endre dagene til venstre, eller generer på nytt.",
-              );
-              setTimeout(() => setDragmelding(null), 6000);
-            }}
+            onFlytt={(fra, til) => void flytt(fra, til)}
             onLas={(elevId) =>
               setLasteElever((f) => {
                 const ny = new Set(f);
@@ -1234,7 +1263,6 @@ function Timeplan({
   onLas,
   onNotat,
   onFlytt,
-  onFeilDrag,
 }: {
   plan: Dagplan[];
   historikk: Map<string, Plassering[]>;
@@ -1247,8 +1275,10 @@ function Timeplan({
     tekst: string,
     folgesOpp: boolean,
   ) => void;
-  onFlytt: (dagIdx: number, fra: number, til: number) => void;
-  onFeilDrag: () => void;
+  onFlytt: (
+    fra: { dag: number; rad: number },
+    til: { dag: number; rad: number; etter: boolean },
+  ) => void;
 }) {
   let plass = 0;
 
@@ -1309,10 +1339,14 @@ function Timeplan({
                       dagIdx: number;
                       radIdx: number;
                     };
-                    // Et drag som stille ruller tilbake ser ut som at musa
-                    // glapp. Derfor sier vi fra om hvorfor (§4.10).
-                    if (kilde.dagIdx !== dagIdx) return onFeilDrag();
-                    onFlytt(dagIdx, kilde.radIdx, radIdx);
+                    // Nedre halvdel av raden betyr «etter denne». Slik kan en
+                    // elev dras helt sist på en annen dag.
+                    const r = e.currentTarget.getBoundingClientRect();
+                    const etter = e.clientY > r.top + r.height / 2;
+                    onFlytt(
+                      { dag: kilde.dagIdx, rad: kilde.radIdx },
+                      { dag: dagIdx, rad: radIdx, etter },
+                    );
                   }}
                   className={`flex items-baseline gap-3 border-b border-linje-svak py-1.5 text-brod ${
                     r.motte ? "" : "text-blekk-svak line-through"
