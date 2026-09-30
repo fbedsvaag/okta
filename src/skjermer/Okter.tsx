@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { confirm as bekreft } from "@tauri-apps/plugin-dialog";
 import {
@@ -231,6 +231,36 @@ export function Okter({
     return kart;
   }, [periodePerOkt]);
 
+  // Lista åpner på dagens dato: den første økta fra i dag står øverst, og
+  // det som har vært ligger over. Gjøres når skjermen åpnes og når faget
+  // byttes — ikke når lista lastes på nytt mens man jobber i den.
+  const rullesone = useRef<HTMLDivElement>(null);
+  const skalRulle = useRef(true);
+  useEffect(() => {
+    skalRulle.current = true;
+  }, [filterFag, startValgt]);
+  // Før skjermen tegnes, så lista ikke blinker øverst først.
+  useLayoutEffect(() => {
+    if (!skalRulle.current || synlige.length === 0) return;
+    const sone = rullesone.current;
+    if (!sone) return;
+    skalRulle.current = false;
+    // Åpnet fra søket eller en lenke: den økta, ikke dagens.
+    const mal = startValgt
+      ? synlige.find((o) => o.id === startValgt)
+      : (synlige.find((o) => o.dato >= iDag()) ?? synlige[synlige.length - 1]);
+    const rad =
+      mal && sone.querySelector<HTMLElement>(`[data-okt="${mal.id}"]`);
+    if (!rad) return;
+    // Månedsoverskriften står fast øverst; raden skal ligge rett under den.
+    const overskrift =
+      sone.querySelector<HTMLElement>(".sticky")?.offsetHeight ?? 0;
+    sone.scrollTop +=
+      rad.getBoundingClientRect().top -
+      sone.getBoundingClientRect().top -
+      overskrift;
+  }, [synlige, startValgt]);
+
   const { vist: apen, apen: glir } = useGlidende(
     okter.find((o) => o.id === valgt) ?? null,
   );
@@ -340,7 +370,7 @@ export function Okter({
 
           {/* Én rullesone. Hadde lista hatt sin egen overflow-x, ville
             månedene festet seg til DEN i stedet for til denne. */}
-          <div className="min-h-0 flex-1 overflow-auto">
+          <div ref={rullesone} className="min-h-0 flex-1 overflow-auto">
             {lagerNy && (
               <NyOkt
                 fag={fag}
@@ -686,7 +716,7 @@ function Liste({
             {manedsnavn(maned + "-01")}
           </div>
           {gruppe.map((o) => (
-            <div key={o.id}>
+            <div key={o.id} data-okt={o.id}>
               {/*
                 Avkrysningsboksen ligger utenfor knappen, ikke inni: en knapp
                 kan ikke inneholde en annen kontroll. Derfor bærer wrapperen
