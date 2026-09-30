@@ -217,38 +217,36 @@ export default function App() {
           hint="Fram (⌘])"
         />
         <span className="mx-2 h-4 w-px bg-linje-medium" />
+        {/*
+          Én rad. Kalender og Perioder er visninger av øktene og står som en
+          bryter i Økter; Skoleruta ligger under Innstillinger.
+        */}
         <Fane
-          navn={skolear.navn}
-          aktiv={erArsfane(visning)}
+          navn="I dag"
+          aktiv={visning === "idag"}
           onKlikk={() => ga("idag")}
-          tabulaer
         />
-        <Skille />
-        <Fane navn="Fag" aktiv={visning === "fag"} onKlikk={() => ga("fag")} />
-        <Skille />
+        <Fane
+          navn="Økter"
+          aktiv={erOktvisning(visning)}
+          onKlikk={() => ga("okter")}
+        />
         <Fane
           navn="Elever"
           aktiv={visning === "elever" || visning === "liminn"}
           onKlikk={() => ga("elever")}
         />
-        <Skille />
-        <Fane
-          navn="Økter"
-          aktiv={visning === "okter" || visning === "perioder"}
-          onKlikk={() => ga("okter")}
-        />
-        <Skille />
         <Fane
           navn="Vurderinger"
           aktiv={visning === "vurderinger"}
           onKlikk={() => ga("vurderinger")}
         />
-        <Skille />
         <Fane
           navn="Samtaler"
           aktiv={visning === "samtaler"}
           onKlikk={() => ga("samtaler")}
         />
+        <Fane navn="Fag" aktiv={visning === "fag"} onKlikk={() => ga("fag")} />
         <span className="grow" />
         {/* Synlig inngang til ⌘K, så snarveien kan oppdages. */}
         <button
@@ -258,47 +256,19 @@ export default function App() {
           Søk
           <kbd className="font-sans text-blekk-svakest">⌘K</kbd>
         </button>
+        <button
+          onClick={() => ga("innstillinger")}
+          title="Skoleåret — bytt eller endre i Innstillinger"
+          className="mr-1 px-1 text-liten tabular-nums text-blekk-svak hover:text-blekk"
+        >
+          {skolear.navn}
+        </button>
         <Fane
           navn="Innstillinger"
-          aktiv={visning === "innstillinger"}
+          aktiv={visning === "innstillinger" || visning === "skoleruta"}
           onKlikk={() => ga("innstillinger")}
         />
       </header>
-
-      {(visning === "okter" || visning === "perioder") && (
-        <div className="ikkeutskrift flex shrink-0 gap-1 border-b border-linje-medium px-6 py-1.5">
-          <Underfane
-            navn="Liste"
-            aktiv={visning === "okter"}
-            onKlikk={() => ga("okter")}
-          />
-          <Underfane
-            navn="Perioder"
-            aktiv={visning === "perioder"}
-            onKlikk={() => ga("perioder")}
-          />
-        </div>
-      )}
-
-      {erArsfane(visning) && (
-        <div className="ikkeutskrift flex shrink-0 gap-1 border-b border-linje-medium px-6 py-1.5">
-          <Underfane
-            navn="I dag"
-            aktiv={visning === "idag"}
-            onKlikk={() => ga("idag")}
-          />
-          <Underfane
-            navn="Kalender"
-            aktiv={visning === "kalender"}
-            onKlikk={() => ga("kalender")}
-          />
-          <Underfane
-            navn="Skoleruta"
-            aktiv={visning === "skoleruta"}
-            onKlikk={() => ga("skoleruta")}
-          />
-        </div>
-      )}
 
       {melding && (
         <div className="ikkeutskrift flex shrink-0 items-center gap-3 border-b border-linje-medium bg-flate-svak px-6 py-1.5 text-brod text-aksent">
@@ -342,6 +312,7 @@ export default function App() {
 
           {visning === "kalender" && (
             <Skolekalender
+              bryter={<Visningsbryter visning={visning} ga={ga} />}
               key={versjon}
               skolear={skolear}
               fag={fag}
@@ -363,7 +334,12 @@ export default function App() {
           )}
 
           {visning === "innstillinger" && (
-            <Innstillinger skolear={skolear} fag={fag} onEndret={last} />
+            <Innstillinger
+              skolear={skolear}
+              fag={fag}
+              onEndret={last}
+              onApneSkoleruta={() => ga("skoleruta")}
+            />
           )}
 
           {/*
@@ -407,6 +383,7 @@ export default function App() {
 
           {visning === "okter" && (
             <Okter
+              bryter={<Visningsbryter visning={visning} ga={ga} />}
               key={versjon}
               skolear={skolear}
               fag={fag}
@@ -417,6 +394,7 @@ export default function App() {
 
           {visning === "perioder" && (
             <Perioder
+              bryter={<Visningsbryter visning={visning} ga={ga} />}
               key={versjon}
               skolear={skolear}
               fag={fag}
@@ -487,38 +465,42 @@ function Fane({
   );
 }
 
-/** Fanene som hører under årstallet i headeren. */
-function erArsfane(v: Visning): boolean {
-  return v === "idag" || v === "kalender" || v === "skoleruta";
+/** Visningene som hører under Økter-fanen. */
+function erOktvisning(v: Visning): boolean {
+  return v === "okter" || v === "kalender" || v === "perioder";
 }
 
-function Skille() {
-  return (
-    <span className="hidden select-none px-0.5 text-blekk-svakest sm:inline">
-      ·
-    </span>
-  );
-}
-
-function Underfane({
-  navn,
-  aktiv,
-  onKlikk,
+/**
+ * Liste, Kalender og Perioder er tre måter å se øktene på. Bryteren står
+ * først i verktøylinja i alle tre, på samme sted, så den ikke hopper.
+ */
+function Visningsbryter({
+  visning,
+  ga,
 }: {
-  navn: string;
-  aktiv: boolean;
-  onKlikk: () => void;
+  visning: Visning;
+  ga: (v: Visning) => void;
 }) {
+  const valg: [Visning, string][] = [
+    ["okter", "Liste"],
+    ["kalender", "Kalender"],
+    ["perioder", "Perioder"],
+  ];
   return (
-    <button
-      onClick={onKlikk}
-      className={`rounded px-2 py-0.5 text-liten ${
-        aktiv
-          ? "bg-flate font-medium text-blekk"
-          : "text-blekk-dempet hover:text-blekk"
-      }`}
-    >
-      {navn}
-    </button>
+    <div className="inline-flex shrink-0 rounded border border-linje bg-ark p-0.5">
+      {valg.map(([v, navn]) => (
+        <button
+          key={v}
+          onClick={() => ga(v)}
+          className={`rounded-sm px-2.5 py-0.5 text-liten ${
+            visning === v
+              ? "bg-valgt font-medium text-aksent"
+              : "text-blekk-dempet hover:text-blekk"
+          }`}
+        >
+          {navn}
+        </button>
+      ))}
+    </div>
   );
 }

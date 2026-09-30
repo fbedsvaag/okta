@@ -51,9 +51,12 @@ export function Innstillinger({
   skolear,
   fag,
   onEndret,
+  onApneSkoleruta,
 }: {
   skolear: Skolear;
   fag: FagIAr[];
+  /** Skoleruta — ferier, fridager og hendelser. Lå før i menyen. */
+  onApneSkoleruta: () => void;
   /** laster skoleåret og fagene på nytt — uten å laste hele appen, som
       ville sendt deg tilbake til startskjermen */
   onEndret: () => void;
@@ -169,6 +172,10 @@ export function Innstillinger({
           Ett år er aktivt om gangen. Å bytte rører ingen data — det endrer bare
           hva appen viser.
         </p>
+        <Knapp onClick={onApneSkoleruta}>
+          Skoleruta — ferier og fridager <Ikon navn="pil" />
+        </Knapp>
+        <div className="mb-3" />
 
         {ar.length === 0 ? (
           <p className="text-brod text-blekk-svak">Ingen skoleår ennå.</p>

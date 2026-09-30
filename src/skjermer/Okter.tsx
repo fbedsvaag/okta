@@ -84,7 +84,10 @@ export function Okter({
   fag,
   startValgt = null,
   onApnePerioder,
+  bryter,
 }: {
+  /** Liste | Kalender | Perioder, først i verktøylinja */
+  bryter?: React.ReactNode;
   skolear: Skolear;
   fag: FagIAr[];
   onApnePerioder: () => void;
@@ -202,7 +205,7 @@ export function Okter({
     });
   }, [okter, filterFag, sok]);
 
-  // Perioden utledes av datoen, så den finnes uten at noe er lagret på økta.
+  // Perioden står på økta; den settes ved å fargelegge (§4.2).
   const periodePerOkt = useMemo(() => {
     const kart = new Map<string, Periode>();
     for (const o of okter) {
@@ -244,6 +247,7 @@ export function Okter({
             fester seg rett under den. */}
           <div className="shrink-0">
             <div className="mb-3 flex flex-wrap items-center gap-2">
+              {bryter}
               <Felt
                 verdi={sok}
                 settVerdi={setSok}

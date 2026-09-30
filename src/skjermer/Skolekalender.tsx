@@ -131,7 +131,10 @@ export function Skolekalender({
   skolear,
   fag,
   onApneOkt,
+  bryter,
 }: {
+  /** Liste | Kalender | Perioder, først i verktøylinja */
+  bryter?: React.ReactNode;
   skolear: Skolear;
   fag: FagIAr[];
   onApneOkt: (oktId: string) => void;
@@ -208,9 +211,10 @@ export function Skolekalender({
   );
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-clip">
+    <div className="mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col overflow-clip">
       {/* Fagfargene og hjelpeteksten blir stående mens månedene ruller. */}
       <div className="mb-4 flex shrink-0 flex-wrap items-center gap-4 text-liten text-blekk-dempet">
+        {bryter}
         <span>{okter.length} økter i året</span>
         {fag.map((f) => (
           <span key={f.id} className="flex items-center gap-1.5">

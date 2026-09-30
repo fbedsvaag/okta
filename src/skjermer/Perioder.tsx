@@ -37,7 +37,10 @@ export function Perioder({
   skolear,
   fag,
   onApneOkt,
+  bryter,
 }: {
+  /** Liste | Kalender | Perioder, først i verktøylinja */
+  bryter?: React.ReactNode;
   skolear: Skolear;
   fag: FagIAr[];
   onApneOkt: (oktId: string) => void;
@@ -89,13 +92,14 @@ export function Perioder({
   }
 
   return (
-    <div className="mx-auto flex min-h-0 w-full max-w-4xl flex-1 flex-col overflow-clip">
+    <div className="mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col overflow-clip">
       {/*
         Fagvelger, timeregnskap og knappene blir stående mens du ruller
         gjennom periodene — det er dem du styrer skjermen med.
       */}
       <div className="shrink-0">
         <div className="mb-4 flex flex-wrap items-center gap-3">
+          {bryter}
           <select
             value={fagId}
             onChange={(e) => setFagId(e.target.value)}
