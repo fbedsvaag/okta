@@ -3,7 +3,7 @@
 Kort status pr. 2026-09-30, versjon 0.1.3. Skrevet mot SPEC.md slik den er nå.
 Denne fila eies fritt — oppdater den løpende, i motsetning til SPEC.md.
 
-**398 tester, alle grønne. `tsc --noEmit` er ren. `npm run build` går
+**402 tester, alle grønne. `tsc --noEmit` er ren. `npm run build` går
 gjennom. 18 migrasjoner.**
 
 ## Hva som virker
@@ -91,7 +91,7 @@ dager, ⌘K, alias, de nye feltene). Det som står igjen:
 
 ## Tester
 
-23 testfiler, 398 tester, alle grønne. `tsc` ren.
+23 testfiler, 402 tester, alle grønne. `tsc` ren.
 
 Dekningen er tung i datalaget og tynn i skjermlaget. Migrasjonene testes ved å
 kjøre dem i to omganger med data imellom — kjørt mot en tom base ville en

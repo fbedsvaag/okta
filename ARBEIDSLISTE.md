@@ -102,7 +102,11 @@ prioritering fra 30.09.
   Trekkeren fordeler elevene på avkryssede økter i faget.
 - [x] **`⌘K` — søk på elev og økt.** Gjort 30.09, med alias på fag.
 
-- [ ] **Visuell oppstramming.** Steg 1 gjort 21.09. Neste: en ryddigere og
+- [ ] **Visuell oppstramming.** Steg 1 gjort 21.09. Steg 2 påbegynt 30.09:
+  DESIGN.md skrevet om, menyen på én rad, Elever bruker bredden og navn
+  brekker ikke, uka på forsiden er en kalender med bla, Fag har samme
+  bredde som resten. Gjenstår: Vurderinger og Innstillinger med ekte data,
+  og det som står under «Ikke bygget ennå» i DESIGN.md. Opprinnelig: Neste: en ryddigere og
   strammere toppmeny — eieren synes det er for mange lister der. DESIGN.md
   må oppdateres til å beskrive serif-overskriftene og det som faktisk er
   valgt.
