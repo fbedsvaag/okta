@@ -79,43 +79,15 @@ Skjerm for skjerm (§4), med tilstand:
 
 ## Hvor SPEC.md ikke stemmer med koden lenger
 
-- **§4.2-navigasjon.** Spec beskriver ett fag om gangen med en visningsbryter;
-  koden har globale lister og en egen per-fag-skjerm.
-- **Serieopprettelse av økter** finnes, mot et eksplisitt forbud i §4.2.
-  Eieren har sagt at spec-en er utdatert her: færrest mulig klikk er et
-  overordnet prinsipp.
-- **§4.9 Utskrift** beskriver ett ark med dato, ukedag, varighet og tema.
-  Koden har mer: kompetansemål, faglærer, rom, fritekst, lekse, vurdering og
-  fire eksportformater.
-- **§3.6 «Samtaledagen er ikke en økt»** stemmer bare delvis: en
-  samtaledag kan nå ligge i en økt (`samtaledag.okt_id`), og §4.10s
-  «Samtaledager — ett kort per dag med dato» er i fagmodus erstattet av
-  avkrysning av økter. §3.4 har `vurdering.okt_id`; koden bruker
-  koblingstabellen `vurdering_okt`, og kolonnen står ubrukt.
-- **§4.10 Manuell justering** sier at rader bare dras innenfor en dag.
-  Eieren vil kunne dra en elev til en annen dag (typisk «sist»), nå som
-  samtalene går over flere økter. Koden: settes inn når måldagen har
-  plass, bytter plass med eleven det slippes på når den er full.
-- **§3.3 og §4.2 Perioder.** Spec sier at perioden utledes av datoene, og
-  at `periode.start/slutt` er planlagt spenn. Nå står perioden på økta
-  (`okt.periode_id`, migrasjon 017), og settes ved å fargelegge økter i
-  lista. Spennet følger det som er farget. Tema skrives rett i lista.
-- **§4.10 Gruppesamtaler** finnes ikke i spec. Koden: «Samtale» enkeltvis,
-  i par, tre og tre … seks og seks. En gruppe er én plass i trekningen;
-  lagres som én samtalerad per elev på samme klokkeslett (ingen
-  schemaendring). Navn dras mellom grupper i timeplanen.
-- **Menyen (§4.1–4.3, §13)** er én rad; Kalender og Perioder er en bryter i
-  Økter, Skoleruta ligger under Innstillinger.
-- **§3.2/§3.3** mangler de nye feltene fra migrasjon 014: `okt.lekse` og
-  `skolear_fag.rom`, `laerer`, `kompetansemal`, `arknotat`. Og
-  innstillingen `laerer_navn` står ikke i tabellen i §4.8.
-- **Årsoversikt-widgeten på §4.1** er et villet unntak fra §13.
-- **§4.8s fem deler** stemmer ikke: fagbank og «fag i år» ligger i Fag.
-- **§11 Byggerekkefølge** er utdatert og hører hjemme i ARBEIDSLISTE.md.
-- **§13 Visuell retning** er erstattet av DESIGN.md, men står fortsatt.
+SPEC.md ble oppdatert 30.09 med alt som ble bygget den dagen (meny, perioder
+som fargelegging, tema i lista, serieopprettelse, årsplanarket og eksporten,
+vurdering over flere økter, samtaledager i økter, gruppesamtaler, dra mellom
+dager, ⌘K, alias, de nye feltene). Det som står igjen:
 
-Disse er notert, ikke rettet. Beslutningen om spec skal oppdateres eller koden
-rettes tilbake, ligger hos eieren.
+- **Årsoversikt-widgeten på §4.1** er et villet unntak fra §13.
+- **§11 Byggerekkefølge** er utdatert og hører hjemme i ARBEIDSLISTE.md.
+- **§13 Visuell retning** er erstattet av DESIGN.md, men står fortsatt — og
+  DESIGN.md beskriver utgangspunktet fra august, ikke serif-overskriftene.
 
 ## Tester
 

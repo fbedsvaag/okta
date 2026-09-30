@@ -29,8 +29,9 @@ et eksempel, ikke en konfigurasjon som skal bygges inn.
 
 Skoleår og fag konfigureres av brukeren ved oppsett — ingenting er hardkodet.
 Fagene ligger i en fagbank som er uavhengig av år, og hvert skoleår velger inn
-de fagene læreren faktisk har (§3.2). Øktene legges inn manuelt, én dato om
-gangen, så fleksibel eller forskjøvet skolestart er et ikke-problem.
+de fagene læreren faktisk har (§3.2). Øktene legges inn manuelt — én og én,
+eller mange på en gang (§4.2) — så fleksibel eller forskjøvet skolestart er et
+ikke-problem.
 
 ### To bærende prinsipper
 
@@ -43,6 +44,10 @@ skjerm løser ikke problemet.
 dropdowns, ingen lagre-knapp, ingen musbruk. Ett tastetrykk per elev, og markøren
 flytter seg selv.
 
+**Færrest mulig klikk.** Det gjelder hele appen, ikke bare skåringen. Det som
+allerede er kjent, fylles ut av seg selv (fagets rom, lærerens navn, økta på
+fristdagen), og det som skal gjøres mange ganger, skal kunne gjøres på én gang.
+
 ### Ikke-mål
 
 - **Ingen karakterer i standpunktforstand.** Vurderingsresultater i appen er
@@ -50,9 +55,8 @@ flytter seg selv.
 - **Ingen fraværsføring mot InSchool.** «Ikke i økta» finnes som
   skåringsalternativ og betyr at eleven ikke var der å vurdere. Den er en
   markering i lærerens eget arbeidsmateriale, ikke en fraværsregistrering.
-- **Ingen timeplanimport i v1.** Øktene opprettes manuelt, én om gangen (§4.2).
-  Rundt 40 økter per fag i året er overkommelig, og planleggingen er en del av
-  jobben. Kalender- og InSchool-import står i §10.
+- **Ingen timeplanimport i v1.** Øktene opprettes manuelt i appen, én om gangen
+  eller som en serie (§4.2). Kalender- og InSchool-import står i §10.
 - Ingen synk i v1. Se §9 for hva som likevel forberedes.
 - Ingen nettverkskall overhodet i v1, bortsett fra publisering av
   timeplanen til brukerens egen kalenderserver (§8.1). Av som standard.
@@ -108,7 +112,15 @@ er den perioder, økter, vurderinger og elevkoblinger henger på. Uten det skill
 blander ENG1 i 2026/27 seg med ENG1 i 2027/28.
 
 Det som kan variere fra år til år ligger på koblingen, ikke på banken:
-årstimetall, skåringsskala og standard øktvarighet.
+årstimetall, skåringsskala, standard øktvarighet, standard rom, faglærer og
+teksten på årsplanarket.
+
+**Aliaset er lærerens eget navn på faget.** SAM3045 er ofte «MFL1» i egne
+dokumenter og filnavn. Faget kan søkes opp på begge (§4.4).
+
+**Standard rom gjelder også øktene som finnes.** Settes eller endres rommet på
+faget, får økter uten rom — og de som hadde det gamle standardrommet — det nye.
+Et rom satt for hånd på én økt står.
 
 ```sql
 CREATE TABLE fag (
@@ -117,6 +129,8 @@ CREATE TABLE fag (
   navn         TEXT NOT NULL,           -- "Markedsføring og ledelse 1"
   farge        TEXT,                    -- hex, fargestrek i venstremarg
   beskrivelse  TEXT,                    -- fritekst i v1, se §10
+  grep_kode    TEXT,                    -- Udirs fagkode, f.eks. SAM3045
+  alias        TEXT,                    -- lærerens eget navn, f.eks. "MFL1"
   opprettet TEXT NOT NULL,
   endret    TEXT NOT NULL,
   slettet   TEXT
@@ -129,6 +143,10 @@ CREATE TABLE skolear_fag (
   skaringsskala_id TEXT REFERENCES skala(id),  -- default: trafikklys
   standard_varighet_min INTEGER,        -- overstyrer global standard, NULL = arv
   arstimetall  INTEGER,                 -- for timeregnskapet i §4.2
+  rom          TEXT,                    -- standard rom; fyller ut okt.sted
+  laerer       TEXT,                    -- faglærer; NULL = lærernavnet (§4.8)
+  kompetansemal TEXT,                   -- fritekst, for fag uten Udir-kode
+  arknotat     TEXT,                    -- fritekst øverst på årsplanarket (§4.9)
   opprettet TEXT NOT NULL,
   endret    TEXT NOT NULL,
   slettet   TEXT,
@@ -222,9 +240,14 @@ klasser samme år er nesten alltid to personer.
 
 ### 3.3 Perioder, økter og skåring
 
-`periode.start` og `periode.slutt` er **planlagt** spenn — brukerens intensjon.
-Det faktiske spennet utledes av øktene som er knyttet til perioden. Begge vises
-i årsplanen, og avvik mellom dem er nyttig informasjon, ikke en feil å skjule.
+**Perioden står på økta.** `okt.periode_id` bestemmer, alltid. Perioder legges
+på ved å fargelegge øktene i lista (§4.2), og `periode.start` og `periode.slutt`
+følger det som er farget: første og siste økt i perioden. Settes spennet for
+hånd i periodevisningen, farges øktene innenfor. En ny økt som legges midt i
+en farget periode, får periodens farge med én gang.
+
+Perioden utledes ikke av datoene. Gjorde den det, kunne en økt ikke tas ut av
+en periode uten å flytte periodegrensene.
 
 En økt uten `periode_id` er lovlig og vises som uplassert.
 
@@ -238,7 +261,7 @@ CREATE TABLE periode (
   slutt          TEXT,                  -- planlagt sluttdato
   kompetansemal  TEXT,
   notat          TEXT,                  -- markdown
-  farge          TEXT,
+  farge          TEXT,                  -- settes når perioden lages, fra en fast rekke
   opprettet TEXT NOT NULL,
   endret    TEXT NOT NULL,
   slettet   TEXT
@@ -254,7 +277,10 @@ CREATE TABLE okt (
   kode           TEXT,                  -- "2608-ENG1-3", se under
   tema           TEXT,
   kompetansemal  TEXT,
-  plan           TEXT,                  -- markdown, hva som skal skje
+  sted           TEXT,                  -- rom; forhåndsutfylt fra faget
+  agenda         TEXT,                  -- skrevet for eleven; går ut i kalenderen
+  lekse          TEXT,                  -- på årsplanarket; aldri i kalenderen
+  plan           TEXT,                  -- markdown, lærerens egne notater
   logg           TEXT,                  -- markdown, hvordan det gikk
   opprettet TEXT NOT NULL,
   endret    TEXT NOT NULL,
@@ -324,7 +350,7 @@ CREATE TABLE skalaverdi (
 CREATE TABLE vurdering (
   id        TEXT PRIMARY KEY,
   skolear_fag_id TEXT NOT NULL REFERENCES skolear_fag(id),
-  okt_id    TEXT REFERENCES okt(id),    -- valgfri kobling til en økt
+  okt_id    TEXT REFERENCES okt(id),    -- ubrukt; se vurdering_okt
   skala_id  TEXT NOT NULL REFERENCES skala(id),
   tittel    TEXT NOT NULL,              -- "Fagartikkel: markedsanalyse"
   type      TEXT,                       -- muntlig | skriftlig | praktisk
@@ -333,6 +359,16 @@ CREATE TABLE vurdering (
   opprettet TEXT NOT NULL,
   endret    TEXT NOT NULL,
   slettet   TEXT
+);
+
+CREATE TABLE vurdering_okt (
+  id           TEXT PRIMARY KEY,
+  vurdering_id TEXT NOT NULL REFERENCES vurdering(id),
+  okt_id       TEXT NOT NULL REFERENCES okt(id),
+  opprettet TEXT NOT NULL,
+  endret    TEXT NOT NULL,
+  slettet   TEXT,
+  UNIQUE(vurdering_id, okt_id)
 );
 
 CREATE TABLE vurderingsresultat (
@@ -348,6 +384,22 @@ CREATE TABLE vurderingsresultat (
   UNIQUE(vurdering_id, elev_id)
 );
 ```
+
+**En vurdering kan holdes i én eller flere økter.** En muntlig vurdering får
+ikke alltid plass i én. Koblingen står i `vurdering_okt`; `vurdering.okt_id`
+rommet bare én, og leses ikke lenger.
+
+Koblingen skrives av seg selv i det vanlige tilfellet:
+
+- når fristen faller på en dag der faget har nøyaktig én økt,
+- når en økt legges inn på en dag der en vurdering i faget har frist,
+- når samtaletrekkeren legges i økter (§4.10).
+
+Den kan også settes og løses for hånd, fra vurderingen og fra økta. Knyttes en
+vurdering uten frist til en økt, blir øktas dato fristen. Flyttes fristen,
+følger økta med bare når koblingen var «økta på fristdagen» og den nye dagen
+har en økt — en innlevering som gis ut i én time og leveres senere, beholder
+timen sin.
 
 ### 3.5 Notater og møtelogg
 
@@ -389,6 +441,7 @@ CREATE TABLE samtaledag (
   skolear_id     TEXT NOT NULL REFERENCES skolear(id),
   skolear_fag_id TEXT REFERENCES skolear_fag(id),  -- NULL = mentorsamtale
   vurdering_id   TEXT REFERENCES vurdering(id),    -- flere dager, samme vurdering
+  okt_id         TEXT REFERENCES okt(id),          -- NULL = egen dag utenfor øktene
   dato           TEXT NOT NULL,
   fra            TEXT NOT NULL,        -- "08:30"
   til            TEXT NOT NULL,        -- "15:00", overstyrbar
@@ -422,6 +475,15 @@ hver spørring som antar at et fag finnes.
 
 Prisen er at samtaledager må kobles inn i kalenderen (§4.2) og i det som
 blokkerer undervisning med vilje. Det er en kjent kostnad, ikke en glipp.
+
+**En samtaledag kan ligge i en økt.** Da er øktas klokkeslett og varighet
+rammen, uten lunsj, og dagen følger økta hvis den flyttes eller endrer lengde.
+Timene er allerede talt som økt, og telles ikke en gang til i timeregnskapet.
+Slettes økta, blir dagen en vanlig samtaledag igjen.
+
+**En gruppesamtale er flere samtalerader på samme klokkeslett** samme dag. Den
+trenger ingen egen tabell: nøkkelen tillater det allerede, og plassen utledes
+av klokkeslettet.
 
 **`til` foreslås fra siste samtale, men kan overstyres.** Noen ganger settes
 dagen av lenger enn samtalene varer, og da er det den avsatte tida som gjelder.
@@ -473,12 +535,20 @@ Appen er de fire arkene fra Excel-versjonen, gjort om til ordentlige skjermer:
 
 Resten (§4.6–4.8) er støtteskjermer. Bygg de fire første først.
 
+**Menyen er én rad:** I dag · Økter · Elever · Vurderinger · Samtaler · Fag, og
+til høyre søk (⌘K), skoleåret og Innstillinger. Liste, Kalender og Perioder er
+tre måter å se øktene på, og står som en bryter først i verktøylinja i Økter —
+på samme sted i alle tre. Skoleruta (ferier og fridager) ligger under
+Innstillinger.
+
 ### 4.0 Førstegangsoppsett
 
 Appen starter helt tom. Første gang den åpnes møter brukeren en veiviser med tre
 steg, i denne rekkefølgen fordi hvert steg avhenger av det forrige:
 
-1. **Opprett skoleåret** — navn, startdato, sluttdato. Det blir det aktive.
+1. **Opprett skoleåret** — navnet ditt, skoleårets navn, startdato, sluttdato.
+   Det blir det aktive. Navnet ditt blir faglærer på årsplanen i alle fag
+   (§4.8), og er utfylt fra før når neste skoleår opprettes.
 2. **Velg fagene du har i år.** Fagene ligger i en fagbank (§3.2) og velges inn
    i skoleåret. Er banken tom, eller mangler faget, opprettes det her med kode,
    navn og farge — `MFL1`, `EBU2`, `Norsk`, hva brukeren nå enn underviser i.
@@ -516,15 +586,29 @@ Ingen økter i dag: vis de tre neste kommende, med lenke til årsplanen.
 
 ### 4.2 Årsplan — økter per fag
 
-Ett fag om gangen, innenfor det aktive skoleåret. Tre visninger som veksles med
-en bryter øverst: liste, kalender, periode.
+Alle fag i én kronologisk liste, med fagfilter og søk i tema, innenfor det
+aktive skoleåret. Tre visninger som veksles med en bryter øverst: liste,
+kalender, periode.
 
 #### Listevisning (standard)
 
-Øktene kronologisk nedover, gruppert under sin periode. Per rad: dato, ukedag,
-klokkeslett, varighet, tema, og om det henger en vurdering på økta.
+Øktene kronologisk nedover, under månedsoverskrifter. Per rad: dato, ukedag,
+klokkeslett, varighet, tema, og om det henger en vurdering på økta. Hvilke
+kolonner som vises, velges.
 
-Klikk åpner økta for redigering: tema, kompetansemål, plan, varighet, periode.
+**Temaet skrives rett i lista.** Feltet står åpent i hver rad; Enter lagrer og
+hopper til neste rads tema, Shift+Enter til forrige, Esc angrer. En hel termin
+kan skrives inn nedover uten å åpne noe.
+
+Klikk ellers på raden åpner økta i et panel: dato, klokkeslett, varighet, tema,
+rom, agenda (med «Kopier til Teams»), lekse og vurdering. Plan vises bare der
+det allerede står noe.
+
+**Periodisering er fargelegging.** Med ett fag i filteret står fagets perioder
+som pensler over lista. Velg én, og klikk eller dra over radene for å farge
+dem; viskelæret tar perioden bort. «+ Ny periode» lager en og velger den, og
+dobbeltklikk på en pensel gir perioden nytt navn. Er det krysset av for rader,
+farges de med ett klikk. Radene har en svak tone i periodens farge.
 
 Dette er visningen du står i når du planlegger. Den skal tåle å bli scrollet
 gjennom et helt år uten å bli tung.
@@ -550,19 +634,20 @@ felt: antall økter og sum timer.
 | 8 økter · 24 t       | 11 økter · 33 t     | 6 · 18 t  |
 ```
 
-Perioder opprettes, navngis og endres i lengde her. Økter uten periode vises i
-et eget felt under tidslinja, så de ikke blir usynlige.
+Perioder kan også opprettes, navngis og endres i lengde her. Settes spennet for
+hånd, farges øktene innenfor (§3.3). Økter uten periode vises i et eget felt
+under tidslinja, så de ikke blir usynlige.
 
 #### Opprett ny økt
 
-Én økt om gangen, med en pluss-knapp. Dato, klokkeslett, varighet, tema og
-periode. Varighet forhåndsutfylles etter arvekjeden i §4.8; standard er 180
-minutter.
+Én økt med «+ Ny økt», eller mange på en gang med «+ Serie» — ukedager og
+klokkeslett over et spenn, eller dager klikket fram i kalenderen. Varighet
+forhåndsutfylles etter arvekjeden i §4.8; standard er 180 minutter. Rommet
+forhåndsutfylles fra faget, og perioden fra en farget periode økta faller midt
+i.
 
-Ingen serieopprettelse i v1. Det er rundt 40 økter i året per fag, og punchingen
-er en del av planleggingen — læreren skal kjenne øktene sine. Automatisk
-utfylling fra timeplan hører hjemme i §10, når det finnes en timeplan å hente
-fra.
+Mange økter samtidig er med vilje: færrest mulig klikk (§1). Flere kan også
+slettes samtidig.
 
 #### Timeregnskap
 
@@ -706,7 +791,7 @@ Under: elevlista for faget, alfabetisk på fornavn, én rad per elev.
 | `↓` `↑` | Flytt uten å skåre |
 | `⇥` `⇧⇥` | Flytt uten å skåre — samme som pil ned/opp |
 | `N` | Åpne notatfelt for markert elev |
-| `⌘K` | Søk på elevnavn, hopp dit |
+| `⌘K` | Søk — se under |
 | `⌫` | Fjern skåre på markert elev |
 
 Tastene er ikke hardkodet — de utledes av skalaens rangering (§5.1), slik at en
@@ -731,6 +816,18 @@ tilbake og rette. Den samme verdien kan også velges med musa fra en
 nedtrekksliste på raden — tastene er snarveien, ikke den eneste veien.
 
 Nederst: fritekstfelt for øktlogg — hvordan det gikk med klassen samlet.
+
+#### ⌘K — søk i hele appen
+
+⌘K åpner et søkefelt hvor som helst i appen, også her. Det finner elever (navn,
+klasse, fag) og økter (tema, fagkode, fagnavn, alias og dato). Datoer kan
+skrives som 2026-10-12 — det vanlige, også i filnavn — eller 12.10.2026,
+12.10.26, 12.10, 12/10, og 2026-10 for en hel måned. Flere ord snevrer inn:
+«mfl1 2026-10». Økter med ordet i temaet kommer først, deretter de nærmest i
+dag.
+
+Enter på en elev åpner elevkortet over hele skjermen, uten elevlista ved
+siden av. Enter på en økt åpner den i Økter.
 
 **Ikke** vis løpende statistikk i denne visningen. Ingen teller på hvor mange
 røde du har satt. Det påvirker skjønnet ditt mens du skårer.
@@ -829,21 +926,23 @@ være hardkodet i applikasjonskoden.
 | `standard_varighet_min` | Forhåndsutfylt varighet på nye økter | `180` |
 | `eksportmappe` | Hvor tekstfilene i §8 skrives | ikke satt |
 | `aktivt_skolear` | Hvilket skoleår appen viser | første opprettede |
+| `laerer_navn` | Faglærer på årsplanen i alle fag. Spørres om når skoleåret opprettes (§4.0) | ikke satt |
+| `arsplan_felt` | Hvilke felt som står på årsplanarket (§4.9) | se §4.9 |
 
 Etikettene på trafikklyset (§5.1) ligger på `skalaverdi.etikett` og redigeres
 der, ikke som en egen innstilling. Ett sted, ikke to.
 
-Skjermen har fem deler:
+Skjermen har disse delene:
 
-- **Skoleår:** navn, start, slutt, hvilket som er aktivt. Nytt skoleår
-  opprettes her, med klasseopprykk (§4.3) som neste steg.
-- **Fagbank:** kode, navn, farge, beskrivelse. Fagene slik de er, uavhengig av
-  år.
-- **Fag i år:** hvilke fag fra banken du har i det aktive skoleåret, og for hvert
-  av dem årstimetall, skåringsskala og standard varighet. Er varigheten satt,
-  overstyrer den den globale.
+- **Skoleår:** navn, start, slutt, hvilket som er aktivt, og inngangen til
+  Skoleruta. Nytt skoleår opprettes her, med klasseopprykk (§4.3) som neste
+  steg.
+- **Fagbank og fag i år** ligger under Fag, ikke her: kode, navn, alias, farge,
+  Udir-kode, og for året årstimetall, standard varighet, standard rom,
+  faglærer, kompetansemål (fritekst for fag uten Udir-kode) og teksten på
+  årsplanarket.
 - **Skalaer:** se og lage skåringsskalaer og vurderingsskalaer
-- **Generelt:** standard varighet og eksportmappe
+- **Generelt:** lærernavn, standard varighet og eksportmappe
 
 **Varighet arves i tre ledd:** global standard → fagets standard → øktas egen
 verdi. Nye økter (§4.2) forhåndsutfylles fra fagets standard, og verdien kan
@@ -853,14 +952,30 @@ endres på den enkelte økta etterpå. Ingen av leddene skal kreve at man skrive
 Fagets standard ligger på `skolear_fag`, ikke på fagbanken — varigheten kan
 være en annen neste år uten at faget selv endres.
 
-### 4.9 Utskrift av årsplan (sekundært)
+### 4.9 Årsplanen ut av appen
 
-Lav prioritet — bygges når §4.2–4.5 står. Egen utskriftsvisning, ikke utskrift av
-skjermbildet, laget som en print-stylesheet slik at Cmd+P gir riktig resultat.
+Ett fag for ett år, på ett til tre ark — arket elevene får. «Årsplan …» i
+Økter gjelder faget i filteret, eller alle fag (ett per side) når filteret
+står på «Alle fag»:
 
-Ett fag per side. Fagnavn og skoleår i topptekst. Perioder som overskrifter med
-spenn og timetall. Øktene i en tabell under: dato, ukedag, varighet, tema.
-Lesbar i svart-hvitt.
+- **Skriv ut / lagre som PDF** — egen utskriftsvisning, ikke skjermbildet.
+  Flyter over så mange sider som trengs, med tabellhodet gjentatt.
+- **Kopier som markdown**, eller **lagre som .md**
+- **Lagre som Word (.docx)** — samme uttrykk som appen
+- **Lagre som regneark (.csv)** — semikolon og BOM, slik norsk Excel vil ha det
+
+Alle fire bygges av samme innhold, så de sier det samme.
+
+**Øverst:** fag, skoleår, faglærer, rom, timeregnskap (økter og timer mot
+årstimetallet, med samtaledager som egen hale), teksten på årsplanarket, og
+kompetansemålene — fra Udir når faget har kode, ellers fritekstfeltet.
+
+**Tabellen:** uke, dato, tema, lekse og vurdering; valgfritt også klokkeslett,
+timer, rom og agenda. Øktene kan grupperes under periodene sine. Kolonner uten
+innhold utelates. Lesbar i svart-hvitt.
+
+**Hvilke felt som står på arket, velges** under «Velg felt …», og huskes.
+Plan og øktlogg kan ikke velges: de er lærerens egne notater.
 
 ### 4.10 Samtaletrekkeren
 
@@ -875,14 +990,19 @@ er synlig samtidig, og resultatet oppdateres ved siden av.
 
 1. **Modus** — Fagsamtale eller Mentorsamtale, som to knapper.
 2. **Grunninnstillinger** — antall elever, minutter per samtale, pause mellom
-   samtaler. Antallet fylles ut fra elevlista, men kan overstyres.
+   samtaler, og om samtalene er enkeltvis eller i grupper (se under). Antallet
+   fylles ut fra elevlista, men kan overstyres.
 3. **Elever** — hentes fra faget (`elev_fag`) i fagsamtale, fra mentorelevene
    (§3.2) i mentorsamtale. Kan overstyres ved å lime inn en liste, for grupper
    som ikke er i appen.
 4. **Oppgavenummer og tema** — bare i fagsamtale. Skjules helt i mentormodus;
    en mentorsamtale har ikke oppgavenummer. Ingen øvre grense på antall temaer.
-5. **Samtaledager** — ett kort per dag med dato, start, slutt og lunsj. Hvert
-   kort viser sin egen kapasitet fortløpende: «Maks 15 elever».
+5. **Samtaledager.** I fagsamtale: først vurderingen trekningen hører til,
+   så fagets økter som en avkrysningsliste — hver økt som krysses av, blir en
+   samtaledag med øktas klokkeslett som ramme (§3.6), og vurderingen knyttes
+   til økta. Egne dager utenfor øktene går fortsatt. I mentorsamtale: ett kort
+   per dag med dato, start, slutt og lunsj. Kapasiteten står fortløpende ved
+   hver: «Maks 15 elever».
 6. **Generer**, og under den **Trekk på nytt** med de to låsene.
 
 #### Kapasitet
@@ -904,6 +1024,25 @@ Er samlet kapasitet lavere enn antall elever, står det over resultatet:
 > dager, forleng øktene, eller reduser pausetiden.
 
 Varselet oppdateres mens du endrer innstillingene, ikke bare ved generering.
+
+#### Gruppesamtaler
+
+«Samtale» velges blant enkeltvis, i par, tre og tre, og opp til seks og seks,
+og huskes per fag. En gruppe er én plass i timeplanen, med ett tema og én lås —
+trekningen, låsene, dra-og-slipp og kapasiteten virker på gruppene akkurat som
+på enkeltelever.
+
+Gruppene settes sammen av den trukne rekkefølgen, og er dermed tilfeldige. Går
+elevtallet ikke opp, blir de siste gruppene én større: 25 elever i par gir
+elleve par og én trio. Ingen sitter igjen alene. Minuttene per samtale gjelder
+hele gruppa.
+
+Gruppene kan justeres for hånd: i timeplanen står navnene i en gruppe som
+merkelapper, og et navn dras over på en annen gruppe. Temaet og låsen følger
+plassen, og en gruppe som blir tom, forsvinner.
+
+Den alfabetiske lista viser hver elev for seg. Notatfeltet vises bare på
+enkeltsamtaler, siden notatet går til én elevs møtelogg.
 
 #### Lunsj
 
@@ -954,13 +1093,14 @@ valgt og som skal stå til man selv slår den av.
 
 #### Manuell justering
 
-Rader kan dras om **innenfor en dag**. Å flytte en elev til en annen dag gjøres
-ikke ved å dra — dagene har hver sin kapasitet, og et slikt drag ville stille
-et spørsmål om hvem som skal ut.
+Rader kan dras om, innenfor en dag og til en annen dag — en elev som var
+«tidlig» sist og havner først igjen, skal kunne dras sist. Nedre halvdel av en
+rad betyr «etter denne».
 
-**Draget skal si fra om hvorfor det ikke gikk.** Slipper man en rad på en annen
-dag, står det at flytting mellom dager ikke gjøres her, og hvorfor. Et drag som
-stille ruller tilbake ser ut som at musa glapp.
+**Dagene har hver sin kapasitet.** Har dagen det slippes på ledig plass, settes
+eleven inn der. Er den full, bytter de to plass, og appen sier fra om hvem som
+byttet — et drag som stille gjør noe annet enn man trodde, ser ut som at musa
+glapp.
 
 #### Når en elev ikke møter
 
