@@ -533,6 +533,21 @@ function OktFelter({
         </button>
       </Linje>
 
+      {/* Lekse står på årsplanarket og i Teams-kopien, aldri i kalenderen. */}
+      <Linje etikett="Lekse">
+        <textarea
+          defaultValue={okt.lekse ?? ""}
+          key={okt.lekse ?? ""}
+          rows={1}
+          placeholder="Til denne økta — står på årsplanen"
+          onBlur={async (e) => {
+            await endreOkt(okt.id, { lekse: e.target.value.trim() || null });
+            onEndret();
+          }}
+          className={feltStil}
+        />
+      </Linje>
+
       <Linje etikett="Plan">
         <textarea
           defaultValue={okt.plan ?? ""}

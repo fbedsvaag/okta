@@ -1,9 +1,12 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   foreslattSkolearnavn,
   foreslatteDatoer,
+  hentInnstilling,
   opprettSkolear,
+  settInnstilling,
 } from "../data/skolear";
+import { LAERERNAVN } from "../data/arsplanark";
 import { hentFagIAr, leggFagIAr, type FagIAr } from "../data/fag";
 import { FAGFARGER } from "../ui/farger";
 import { Felt, Knapp, Fagstrek, Ikon } from "../ui/felles";
@@ -68,6 +71,12 @@ function StegSkolear({ onFerdig }: { onFerdig: (id: string) => void }) {
   const foreslatt = foreslatteDatoer(navn);
   const [start, setStart] = useState(foreslatt.start);
   const [slutt, setSlutt] = useState(foreslatt.slutt);
+  // Navnet ditt blir faglærer på årsplanen i alle fag. Står det der fra et
+  // tidligere år, er det allerede fylt ut.
+  const [laerer, setLaerer] = useState("");
+  useEffect(() => {
+    void hentInnstilling(LAERERNAVN).then((v) => v && setLaerer(v));
+  }, []);
 
   const gyldig =
     navn.trim() !== "" && start !== "" && slutt !== "" && start < slutt;
@@ -80,7 +89,14 @@ function StegSkolear({ onFerdig }: { onFerdig: (id: string) => void }) {
       </p>
 
       <div className="mt-6 space-y-4">
-        <Felt etikett="Navn" verdi={navn} settVerdi={setNavn} autoFocus />
+        <Felt
+          etikett="Ditt navn"
+          verdi={laerer}
+          settVerdi={setLaerer}
+          plassholder="Står som faglærer på årsplanen"
+          autoFocus
+        />
+        <Felt etikett="Skoleår" verdi={navn} settVerdi={setNavn} />
         <div className="flex gap-3">
           <Felt
             etikett="Første skoledag"
@@ -101,9 +117,10 @@ function StegSkolear({ onFerdig }: { onFerdig: (id: string) => void }) {
         <Knapp
           variant="primar"
           disabled={!gyldig}
-          onClick={async () =>
-            onFerdig(await opprettSkolear(navn.trim(), start, slutt))
-          }
+          onClick={async () => {
+            if (laerer.trim()) await settInnstilling(LAERERNAVN, laerer.trim());
+            onFerdig(await opprettSkolear(navn.trim(), start, slutt));
+          }}
         >
           Videre
         </Knapp>

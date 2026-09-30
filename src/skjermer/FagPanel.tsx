@@ -9,11 +9,13 @@ import {
   type FagVurdering,
 } from "../data/fagportal";
 import { endreFag, endreFagIAr, slettFagHelt, tellForFag } from "../data/fag";
-import { Felt, Kappet } from "../ui/felles";
+import { Felt, Kappet, KONTROLL } from "../ui/felles";
 import { finnFag, type GrepFag } from "../data/grep";
 import { hentDekkedeMal } from "../data/perioder";
 import type { FagIAr } from "../data/fag";
 import { TRAFIKKLYS } from "../ui/farger";
+import { hentInnstilling } from "../data/skolear";
+import { LAERERNAVN } from "../data/arsplanark";
 
 /**
  * Fagportalen — faget sett ovenfra.
@@ -40,6 +42,11 @@ export function FagPanel({
   const [tall, setTall] = useState<FagNokkeltall | null>(null);
   const [elever, setElever] = useState<FagElev[]>([]);
   const [vurderinger, setVurderinger] = useState<FagVurdering[]>([]);
+  const [laererNavn, setLaererNavn] = useState<string | null>(null);
+
+  useEffect(() => {
+    void hentInnstilling(LAERERNAVN).then(setLaererNavn);
+  }, []);
 
   useEffect(() => {
     let avbrutt = false;
@@ -117,10 +124,58 @@ export function FagPanel({
               onEndret();
             }}
           />
+          <Tekstfelt
+            etikett="Standard rom"
+            verdi={fag.rom}
+            plassholder="R204"
+            lagre={async (v) => {
+              await endreFagIAr(fag.id, { rom: v });
+              onEndret();
+            }}
+          />
+          <Tekstfelt
+            etikett="Faglærer"
+            verdi={fag.laerer}
+            plassholder={laererNavn ?? "Navnet ditt"}
+            lagre={async (v) => {
+              await endreFagIAr(fag.id, { laerer: v });
+              onEndret();
+            }}
+          />
         </section>
 
         <OmFaget grepKode={fag.grepKode} />
         <Kompetansemaal grepKode={fag.grepKode} skolearFagId={fag.id} />
+
+        {/*
+          Det som står øverst på årsplanarket (§4.9). Kompetansemålene
+          hentes fra Udir når faget har kode; fritekstfeltet er for fag
+          uten, og vises bare da — to lister ville sagt to ting.
+        */}
+        <section className="mb-6 max-w-md space-y-3">
+          {!fag.grepKode && (
+            <Tekstfelt
+              etikett="Kompetansemål på årsplanen"
+              verdi={fag.kompetansemal}
+              plassholder="Ett mål per linje"
+              rader={4}
+              lagre={async (v) => {
+                await endreFagIAr(fag.id, { kompetansemal: v });
+                onEndret();
+              }}
+            />
+          )}
+          <Tekstfelt
+            etikett="Tekst på årsplanen"
+            verdi={fag.arknotat}
+            plassholder="Vurderingsordning, lærebok, beskjeder til elevene"
+            rader={3}
+            lagre={async (v) => {
+              await endreFagIAr(fag.id, { arknotat: v });
+              onEndret();
+            }}
+          />
+        </section>
 
         <section className="mb-6">
           <div className="flex items-baseline justify-between text-brod">
@@ -251,6 +306,53 @@ export function FagPanel({
  * Innsatsfordelingen som én stripe. Ikke et diagram — en tett strek som lar
  * deg se hvem som skiller seg ut når du scroller nedover.
  */
+/**
+ * Tekstfelt som lagrer når du går ut av det, ikke for hvert tastetrykk.
+ * Tomt felt lagres som null.
+ */
+function Tekstfelt({
+  etikett,
+  verdi,
+  plassholder,
+  rader,
+  lagre,
+}: {
+  etikett: string;
+  verdi: string | null;
+  plassholder?: string;
+  /** flere linjer når satt */
+  rader?: number;
+  lagre: (v: string | null) => Promise<void>;
+}) {
+  const felles = {
+    defaultValue: verdi ?? "",
+    placeholder: plassholder,
+    onBlur: (e: { target: { value: string } }) => {
+      const ny = e.target.value.trim() || null;
+      if (ny !== verdi) void lagre(ny);
+    },
+    className:
+      "w-full rounded border border-linje bg-ark px-2 py-1 text-brod outline-none focus:border-aksent",
+  };
+  return (
+    <label className="block">
+      <span className="mb-1 block text-etikett uppercase tracking-etikett text-blekk-dempet">
+        {etikett}
+      </span>
+      {/* Ny nøkkel når verdien endres utenfra, så feltet viser den. */}
+      {rader ? (
+        <textarea key={verdi ?? ""} rows={rader} {...felles} />
+      ) : (
+        <input
+          key={verdi ?? ""}
+          {...felles}
+          className={`${KONTROLL} ${felles.className}`}
+        />
+      )}
+    </label>
+  );
+}
+
 function Fordeling({ elev }: { elev: FagElev }) {
   if (elev.talt === 0)
     return (

@@ -22,6 +22,7 @@ function okt(over: Partial<Okt> = {}): Okt {
     tema: "Markedsanalyse",
     sted: "R204",
     agenda: "Vi ser på SWOT og lager en enkel analyse.",
+    lekse: "HEMMELIG LEKSE",
     endret: "2026-08-07T14:03:22",
     plan: "HEMMELIG PLAN",
     logg: "HEMMELIG LOGG",

@@ -32,6 +32,7 @@ const okt = (id: string, dato: string, periodeId: string | null = null): Okt => 
   tema: null,
     sted: null,
     agenda: null,
+    lekse: null,
     endret: "2026-08-07T00:00:00",
   plan: null,
   logg: null,

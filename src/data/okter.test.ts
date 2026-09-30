@@ -17,7 +17,9 @@ describe("innenforAret", () => {
   });
 
   it("holder utenfor det som ligger etter skoleslutt", () => {
-    expect(innenforAret([{ dato: "2027-06-21" }], ar.start, ar.slutt)).toEqual([]);
+    expect(innenforAret([{ dato: "2027-06-21" }], ar.start, ar.slutt)).toEqual(
+      [],
+    );
   });
 
   it("regner første og siste skoledag som innenfor", () => {
@@ -62,6 +64,14 @@ describe("teamstekst", () => {
     // notater går aldri ut, uansett hvor de limes inn.
     const ut = teamstekst({ ...okt, agenda: "Ta med PC." });
     expect(ut).not.toContain("plan");
-    expect(ut).toBe("MFL1 — tirsdag 15. september, 09:15\n\nMarkedsanalyse\n\nTa med PC.");
+    expect(ut).toBe(
+      "MFL1 — tirsdag 15. september, 09:15\n\nMarkedsanalyse\n\nTa med PC.",
+    );
+  });
+
+  it("tar med leksa til slutt, merket som lekse", () => {
+    expect(teamstekst({ ...okt, lekse: "Les kap. 3" })).toBe(
+      "MFL1 — tirsdag 15. september, 09:15\n\nMarkedsanalyse\n\nTa med PC.\n\nLekse: Les kap. 3",
+    );
   });
 });

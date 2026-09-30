@@ -98,6 +98,12 @@ fn migrations() -> Vec<Migration> {
             sql: include_str!("../migrations/013_samtalenotat.sql"),
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 14,
+            description: "årsplanarket: rom, faglærer, kompetansemål, arknotat, lekse",
+            sql: include_str!("../migrations/014_arsplanark.sql"),
+            kind: MigrationKind::Up,
+        },
     ]
 }
 
@@ -109,6 +115,13 @@ fn migrations() -> Vec<Migration> {
 #[tauri::command]
 fn skriv_ut(vindu: tauri::WebviewWindow) -> Result<(), String> {
     vindu.print().map_err(|e| e.to_string())
+}
+
+/// Skriver en eksportfil (årsplan som .md, .csv eller .docx) dit brukeren
+/// valgte i lagre-dialogen. Stien kommer fra dialogen, ikke fra appen selv.
+#[tauri::command]
+fn skriv_fil(sti: String, innhold: Vec<u8>) -> Result<(), String> {
+    std::fs::write(&sti, innhold).map_err(|e| format!("klarte ikke skrive {sti}: {e}"))
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -123,6 +136,7 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![
             skriv_ut,
+            skriv_fil,
             sikkerhetskopi::forbered_sikkerhetskopi,
             sikkerhetskopi::sikkerhetskopier,
             sikkerhetskopi::rydd_sikkerhetskopier,

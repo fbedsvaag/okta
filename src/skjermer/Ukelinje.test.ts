@@ -7,7 +7,7 @@ function okt(over: Partial<Okt>): Okt {
     id: Math.random().toString(36).slice(2),
     kode: null, skolearFagId: "sf", fagKode: "MFL1", fagNavn: "F",
     farge: null, periodeId: null, dato: "2026-08-11", klokkeslett: "09:15",
-    varighetMin: 120, tema: null, sted: null, agenda: null,
+    varighetMin: 120, tema: null, sted: null, agenda: null, lekse: null,
     endret: "2026-08-01T00:00:00", plan: null, logg: null,
     skaret: 0, elever: 0, gronn: 0, gul: 0, rod: 0,
     ...over,

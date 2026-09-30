@@ -386,8 +386,23 @@ html {
     margin: 18mm 15mm;
   }
 
-  body {
-    background: #fff;
+  /*
+   * Dette var feilen som kuttet årsplanen etter første side. html, body og
+   * #root er låst til vindushøyden med overflow: hidden (se over), og papiret
+   * arvet den låsen: alt under første sidehøyde ble klippet bort. Skallet
+   * lenger inne var sluppet fri, men ytterst satt låsen fortsatt.
+   */
+  html,
+  body,
+  #root {
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  html,
+  body,
+  .app-skall {
+    background: #fff !important;
   }
 
   .ikkeutskrift {

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { flushSync } from "react-dom";
 import { confirm as bekreft } from "@tauri-apps/plugin-dialog";
 import {
   hentOkter,
@@ -36,6 +37,8 @@ import {
 import { invoke } from "@tauri-apps/api/core";
 import { OktPanel } from "./OktPanel";
 import { Arsplan } from "./Arsplan";
+import { Arsplanmeny } from "./Arsplanmeny";
+import { hentArk, type Ark } from "../data/arsplanark";
 import { TRAFIKKLYS } from "../ui/farger";
 import { hentAllePerioder, periodeFor, type Periode } from "../data/perioder";
 import { ElevPanel } from "./ElevPanel";
@@ -92,6 +95,8 @@ export function Okter({
   // Om årsplanen grupperes under perioder på papiret. Valget hører til
   // brukeren og lagres i innstilling, som kolonnevalgene.
   const [medPerioder, setMedPerioder] = useState(true);
+  // Arkene som står klare til utskrift. Bygges først når noen ber om dem.
+  const [ark, setArk] = useState<Ark[]>([]);
   // Kolonnevalget ligger i innstilling, ikke i nettleseren, så det følger
   // databasen hvis du flytter den til en annen maskin.
   const [kolonner, setKolonner] = useState<Set<KolonneId>>(
@@ -188,13 +193,7 @@ export function Okter({
 
   return (
     <>
-      <Arsplan
-        skolear={skolear}
-        fag={fag}
-        okter={synlige}
-        vurderinger={vurderinger}
-        perioder={medPerioder ? periodePerOkt : new Map()}
-      />
+      <Arsplan ark={ark} />
 
       <div className="ikkeutskrift mx-auto flex min-h-0 w-full max-w-6xl flex-1 gap-0 overflow-clip">
         <div
@@ -241,9 +240,25 @@ export function Okter({
                   />
                   Perioder
                 </label>
-                <Knapp onClick={() => void invoke("skriv_ut")}>
-                  Skriv ut / PDF
-                </Knapp>
+                <Arsplanmeny
+                  hentArk={() => {
+                    // Faget i filteret, eller alle fag som har økter.
+                    const liste = filterFag
+                      ? fag.filter((f) => f.id === filterFag)
+                      : fag.filter((f) =>
+                          okter.some((o) => o.skolearFagId === f.id),
+                        );
+                    return Promise.all(
+                      liste.map((f) => hentArk(skolear, f, medPerioder)),
+                    );
+                  }}
+                  onSkrivUt={async (a) => {
+                    // Arket må stå i DOM-en før dialogen åpnes, ellers
+                    // skrives det forrige ut.
+                    flushSync(() => setArk(a));
+                    await invoke("skriv_ut");
+                  }}
+                />
                 <Knapp onClick={() => setLagerSerie(true)}>+ Serie</Knapp>
                 <Knapp variant="primar" onClick={() => setLagerNy(true)}>
                   + Ny økt

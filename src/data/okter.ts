@@ -25,6 +25,8 @@ export type Okt = {
   sted: string | null;
   /** kort beskrivelse for eleven; går ut i kalenderen */
   agenda: string | null;
+  /** lekse til økta. Står på årsplanarket, går aldri ut i kalenderen. */
+  lekse: string | null;
   /** lokal ISO. Brukes som DTSTAMP og til å se hva som faktisk er endret. */
   endret: string;
   plan: string | null;
@@ -77,7 +79,7 @@ export async function hentOkter(skolearId: string): Promise<Okt[]> {
             o.dato,
             o.klokkeslett,
             o.varighet_min   AS varighetMin,
-            o.tema, o.sted, o.agenda, o.plan, o.logg, o.endret,
+            o.tema, o.sted, o.agenda, o.lekse, o.plan, o.logg, o.endret,
             (SELECT COUNT(*) FROM skaring s
               WHERE s.okt_id = o.id AND s.slettet IS NULL) AS skaret,
             (SELECT COUNT(*) FROM skaring s
@@ -166,11 +168,18 @@ export async function opprettOkt(
   klokkeslett: string | null,
   varighetMin: number,
 ): Promise<string> {
+  // Fagets standard rom følger med inn i økta, så det ikke må skrives på
+  // hver av dem. Endres det på én økt, gjelder det bare den.
+  const [fag] = await hent<{ rom: string | null }>(
+    "SELECT rom FROM skolear_fag WHERE id = $1",
+    [skolearFagId],
+  );
   const id = await settInn("okt", {
     skolear_fag_id: skolearFagId,
     dato,
     klokkeslett,
     varighet_min: varighetMin,
+    sted: fag?.rom ?? null,
     kode: await lagOktkode(skolearFagId, fagKode, dato),
   });
   varsle();
@@ -186,6 +195,7 @@ export async function endreOkt(
     tema?: string | null;
     sted?: string | null;
     agenda?: string | null;
+    lekse?: string | null;
     plan?: string | null;
     logg?: string | null;
     periode_id?: string | null;
@@ -238,7 +248,8 @@ export function slettetekst(
 /**
  * Økta som tekst å lime inn i Teams.
  *
- * Bare det som er skrevet for eleven blir med: fagkode, når, tema og agenda.
+ * Bare det som er skrevet for eleven blir med: fagkode, når, tema, agenda
+ * og lekse.
  * `plan` og `logg` er lærerens egne notater og skal aldri ut — samme
  * feltgrense som kalenderpubliseringen i §8.1, og av samme grunn.
  *
@@ -250,12 +261,19 @@ export function teamstekst(okt: {
   klokkeslett: string | null;
   tema: string | null;
   agenda: string | null;
+  lekse?: string | null;
 }): string {
   const nar = okt.klokkeslett
     ? `${langDato(okt.dato)}, ${okt.klokkeslett}`
     : langDato(okt.dato);
 
-  return [`${okt.fagKode} — ${nar}`, okt.tema?.trim(), okt.agenda?.trim()]
+  const lekse = okt.lekse?.trim();
+  return [
+    `${okt.fagKode} — ${nar}`,
+    okt.tema?.trim(),
+    okt.agenda?.trim(),
+    lekse && `Lekse: ${lekse}`,
+  ]
     .filter((d) => d && d !== "")
     .join("\n\n");
 }
@@ -299,7 +317,10 @@ export async function settSkaring(
   });
 }
 
-export async function fjernSkaring(elevId: string, oktId: string): Promise<void> {
+export async function fjernSkaring(
+  elevId: string,
+  oktId: string,
+): Promise<void> {
   const finnes = await hent<{ id: string }>(
     "SELECT id FROM skaring WHERE elev_id = $1 AND okt_id = $2 AND slettet IS NULL",
     [elevId, oktId],

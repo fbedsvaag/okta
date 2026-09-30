@@ -29,6 +29,7 @@ import type { Skolear } from "../data/skolear";
 import * as kalender from "../data/kalenderfeed";
 import * as caldav from "../data/caldav";
 import { skrivArkiv } from "../data/arkiv";
+import { LAERERNAVN } from "../data/arsplanark";
 import { Merke } from "../ui/logo";
 import { getVersion } from "@tauri-apps/api/app";
 import {
@@ -304,6 +305,7 @@ export function Innstillinger({
       </Bolk>
 
       <Bolk tittel="Standardverdier">
+        <Laerernavn />
         <div className="flex items-end gap-3">
           <label className="block">
             <Etikett>Standard varighet på nye økter</Etikett>
@@ -852,6 +854,30 @@ function Etikett({ children }: { children: React.ReactNode }) {
     <span className="mb-1 block text-etikett uppercase tracking-etikett text-blekk-dempet">
       {children}
     </span>
+  );
+}
+
+/**
+ * Navnet ditt. Står som faglærer på årsplanen i alle fag, med mindre et fag
+ * har fått en annen faglærer i fagpanelet. Lagres mens du skriver.
+ */
+function Laerernavn() {
+  const [navn, setNavn] = useState("");
+  useEffect(() => {
+    void hentInnstilling(LAERERNAVN).then((v) => setNavn(v ?? ""));
+  }, []);
+  return (
+    <div className="mb-4 max-w-sm">
+      <Felt
+        etikett="Ditt navn"
+        verdi={navn}
+        plassholder="Står som faglærer på årsplanen"
+        settVerdi={(v) => {
+          setNavn(v);
+          void settInnstilling(LAERERNAVN, v.trim());
+        }}
+      />
+    </div>
   );
 }
 

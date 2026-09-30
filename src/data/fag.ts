@@ -19,6 +19,14 @@ export type FagIAr = {
   /** offisiell fagkode fra Udir, f.eks. MFL1001. Fritekst i v1 (§10). */
   grepKode: string | null;
   standardVarighetMin: number | null;
+  /** standard rom; forhåndsutfyller `okt.sted` */
+  rom: string | null;
+  /** faglærer. null = lærernavnet fra innstillingene */
+  laerer: string | null;
+  /** kompetansemål som fritekst, for fag uten Udir-kode */
+  kompetansemal: string | null;
+  /** fritekst øverst på årsplanarket */
+  arknotat: string | null;
 };
 
 export type Fag = {
@@ -46,7 +54,8 @@ export async function hentFagIAr(skolearId: string): Promise<FagIAr[]> {
             f.farge          AS farge,
             f.grep_kode      AS grepKode,
             sf.arstimetall   AS arstimetall,
-            sf.standard_varighet_min AS standardVarighetMin
+            sf.standard_varighet_min AS standardVarighetMin,
+            sf.rom, sf.laerer, sf.kompetansemal, sf.arknotat
        FROM skolear_fag sf
        JOIN fag f ON f.id = sf.fag_id AND f.slettet IS NULL
       WHERE sf.skolear_id = $1 AND sf.slettet IS NULL
@@ -127,7 +136,14 @@ export async function endreFag(
  */
 export async function endreFagIAr(
   skolearFagId: string,
-  felter: { arstimetall?: number | null; standard_varighet_min?: number | null },
+  felter: {
+    arstimetall?: number | null;
+    standard_varighet_min?: number | null;
+    rom?: string | null;
+    laerer?: string | null;
+    kompetansemal?: string | null;
+    arknotat?: string | null;
+  },
 ): Promise<void> {
   await oppdater("skolear_fag", skolearFagId, felter);
 }
