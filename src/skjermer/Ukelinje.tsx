@@ -1,180 +1,277 @@
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { Okt } from "../data/okter";
-import { Kappet } from "../ui/felles";
+import { Ikon } from "../ui/felles";
 
 /**
- * Uka lagt ut vannrett: én rad per ukedag, klokka fra venstre mot høyre.
+ * Uka på forsiden, som en kalender: dagene bortover, klokka nedover.
  *
- * Hensikten er å se **formen** på uka, ikke å lese detaljer — hvor blokkene
- * ligger, og like viktig hvor de ikke ligger. En dag uten økter er en tom rad,
- * ikke en dag som mangler i lista. Det er hullene man planlegger etter.
+ * Hele skoleåret ligger i én vannrett stripe, og én uke — fem dager — står
+ * framme av gangen. Man blar med to fingre på styreflata, eller med pilene.
+ * Rullingen snapper til hele uker (`scroll-snap`), så den alltid lander på en
+ * mandag, og den er myk fordi det er nettleserens egen rulling som gjør
+ * jobben — ingen JavaScript i hvert bilde.
  *
- * Mandag til fredag, som resten av appen (§4.2). Helg tar plass uten å
- * inneholde noe.
+ * Hensikten er å se **formen** på uka: hvor blokkene ligger, og like viktig
+ * hvor de ikke ligger. En dag uten økter er en tom kolonne.
+ *
+ * Høyden er den samme hele året — klokkespennet regnes ut fra alle øktene,
+ * ikke fra uka som vises — så ingenting under flytter seg når man blar.
  */
 
 /** Klokka vises alltid minst fra 08 til 16, og utvides om øktene krever det. */
 const TIDLIGST = 8;
 const SENEST = 16;
+/** Piksler per time. */
+const TIME = 28;
 
-const DAGER = ["man", "tir", "ons", "tor", "fre"];
-
-/** Høyden på én bane, og luft over og under blokkene. */
-const BANEHOYDE = 22;
-const LUFT = 8;
-
-/**
- * Hvor mange baner en dagrad viser.
- *
- * Dette tallet er grunnen til at raden har fast høyde. Før ble høyden regnet
- * ut fra hvor mange økter som overlappet, og da fikk uka ny høyde hver gang
- * den endret form — noe som flyttet hele årsoversikten under (§4.1). Nå
- * bestemmer ramma høyden, og øktene som ikke får plass telles opp i stedet.
- *
- * To baner, ikke én: overlappende økter er som regel en tabbe man vil se, og
- * med bare én bane ville den første overlappen forsvunnet bak en teller. Er
- * dashbordet for luftig, er dette tallet det eneste som skal endres.
- */
-export const BANER = 2;
-
-/**
- * Kapper banene til det raden har plass til.
- *
- * Det som ikke får plass forsvinner ikke — det telles opp og vises som
- * «+n til», som kan klikkes.
- */
-export function kappBaner(
-  baner: Okt[][],
-  tak: number = BANER,
-): { synlige: Okt[][]; skjulte: Okt[] } {
-  if (baner.length <= tak) return { synlige: baner, skjulte: [] };
-  return { synlige: baner.slice(0, tak), skjulte: baner.slice(tak).flat() };
-}
+const DAGNAVN = ["man", "tir", "ons", "tor", "fre"];
 
 export function Ukelinje({
-  mandag,
   okter,
+  forste,
+  siste,
   idag,
   onApneOkt,
 }: {
-  /** ISO-dato for mandagen i uka som vises */
-  mandag: string;
-  /** øktene i hele uka, ikke bare de som gjenstår */
+  /** alle øktene i året */
   okter: Okt[];
+  /** skoleårets første og siste dag — stripa går fra uka til uka */
+  forste: string;
+  siste: string;
   idag: string;
   onApneOkt: (id: string) => void;
 }) {
-  const datoer = Array.from({ length: 5 }, (_, i) => leggTil(mandag, i));
-  const perDag = new Map(
-    datoer.map((d) => [d, okter.filter((o) => o.dato === d)]),
-  );
+  const stripe = useRef<HTMLDivElement>(null);
 
-  // Spennet regnes ut fra øktene, så aksen ikke er halvtom i en uke der alt
-  // ligger midt på dagen.
-  let fra = TIDLIGST;
-  let til = SENEST;
-  for (const o of okter) {
-    if (!o.klokkeslett) continue;
-    const start = timer(o.klokkeslett);
-    fra = Math.min(fra, Math.floor(start));
-    til = Math.max(til, Math.ceil(start + o.varighetMin / 60));
+  // Mandagene fra skolestart til skoleslutt, og uka med i dag i seg — også
+  // om i dag ligger utenfor året, så forsiden aldri står på en tom stripe.
+  const mandager = useMemo(() => {
+    const start = mandagFor(forste < idag ? forste : idag);
+    const slutt = mandagFor(siste > idag ? siste : idag);
+    const ut: string[] = [];
+    for (let m = start; m <= slutt; m = leggTil(m, 7)) ut.push(m);
+    return ut;
+  }, [forste, siste, idag]);
+
+  const perDag = useMemo(() => {
+    const kart = new Map<string, Okt[]>();
+    for (const o of okter) kart.set(o.dato, [...(kart.get(o.dato) ?? []), o]);
+    return kart;
+  }, [okter]);
+
+  // Samme spenn hele året, så høyden står fast.
+  const [fra, til] = useMemo(() => {
+    let f = TIDLIGST;
+    let t = SENEST;
+    for (const o of okter) {
+      if (!o.klokkeslett) continue;
+      const s = timer(o.klokkeslett);
+      f = Math.min(f, Math.floor(s));
+      t = Math.max(t, Math.ceil(s + o.varighetMin / 60));
+    }
+    return [f, t];
+  }, [okter]);
+  const hoyde = (til - fra) * TIME;
+
+  const styrt = useRef(false);
+  const slipp = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const denneUka = mandagFor(idag);
+  const [synlig, setSynlig] = useState(denneUka);
+
+  // Uka som står framme, i en ref så bredde-lytteren under ser den ferske.
+  const synligRef = useRef(synlig);
+  synligRef.current = synlig;
+
+  // Står på denne uka fra start, uten å gli dit. Og holder seg på uka når
+  // bredden endrer seg: stripa kan være smalere i første bilde enn når
+  // vinduet har lagt seg, og da ble den stående mellom to uker.
+  useLayoutEffect(() => {
+    const el = stripe.current;
+    if (!el) return;
+    const plasser = () => {
+      const i = mandager.indexOf(synligRef.current);
+      if (i < 0) return;
+      // Rullingen dette gir, er ikke brukeren som blar. Uten sperren leste
+      // lesPosisjon mellomposisjonen og satte uka én bakover.
+      styrt.current = true;
+      el.scrollLeft = i * el.clientWidth;
+      if (slipp.current) clearTimeout(slipp.current);
+      slipp.current = setTimeout(() => (styrt.current = false), 150);
+    };
+    plasser();
+    const ro = new ResizeObserver(plasser);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [mandager]);
+
+  /**
+   * Blar til en uke. Målet regnes ut her, og etiketten settes med en gang —
+   * den venter ikke på at rullingen er ferdig.
+   */
+  function ga(til: "forrige" | "neste" | "idag") {
+    const el = stripe.current;
+    if (!el) return;
+    const na = mandager.indexOf(synlig);
+    const mal =
+      til === "idag"
+        ? mandager.indexOf(denneUka)
+        : Math.min(
+            Math.max(na + (til === "neste" ? 1 : -1), 0),
+            mandager.length - 1,
+          );
+    setSynlig(mandager[mal]);
+    // Mens rullingen glir, forbigår den ukene imellom. De skal ikke vises i
+    // etiketten.
+    styrt.current = true;
+    if (slipp.current) clearTimeout(slipp.current);
+    slipp.current = setTimeout(() => (styrt.current = false), 700);
+    el.scrollTo({ left: mal * el.clientWidth, behavior: "smooth" });
   }
-  const spenn = til - fra;
-  const timeliste = Array.from({ length: spenn + 1 }, (_, i) => fra + i);
+
+  /** Uka som står framme etter et sveip på styreflata. */
+  function lesPosisjon(el: HTMLDivElement) {
+    if (styrt.current) return;
+    const i = Math.round(el.scrollLeft / el.clientWidth);
+    if (mandager[i]) setSynlig(mandager[i]);
+  }
 
   return (
     <div>
-      {/* Timeaksen. Merkene sitter der linjene går, så de flukter. */}
-      <div className="relative ml-16 h-4 border-b border-linje">
-        {timeliste.map((t) => (
-          <span
-            key={t}
-            className="absolute top-0 -translate-x-1/2 text-mikro tabular-nums text-blekk-svakest"
-            style={{ left: `${((t - fra) / spenn) * 100}%` }}
-          >
-            {t}
+      <div className="mb-1 flex items-center gap-2">
+        <span className="text-liten tabular-nums text-blekk-dempet">
+          {ukeTekst(synlig)}
+        </span>
+        <span className="grow" />
+        <button
+          onClick={() => ga("forrige")}
+          title="Forrige uke"
+          className="rounded px-1.5 py-0.5 text-blekk-dempet hover:bg-flate hover:text-blekk"
+        >
+          <span className="inline-block rotate-180">
+            <Ikon navn="pil" />
           </span>
-        ))}
+        </button>
+        <button
+          onClick={() => ga("idag")}
+          disabled={synlig === denneUka}
+          className="rounded px-2 py-0.5 text-liten text-blekk-dempet hover:bg-flate hover:text-blekk disabled:opacity-40"
+        >
+          Denne uka
+        </button>
+        <button
+          onClick={() => ga("neste")}
+          title="Neste uke"
+          className="rounded px-1.5 py-0.5 text-blekk-dempet hover:bg-flate hover:text-blekk"
+        >
+          <Ikon navn="pil" />
+        </button>
       </div>
 
-      {datoer.map((dato) => {
-        const dagens = perDag.get(dato) ?? [];
-        const { synlige, skjulte } = kappBaner(fordelPaBaner(dagens, fra));
-        const erIdag = dato === idag;
-        const passert = dato < idag;
-
-        return (
-          <div
-            key={dato}
-            className={`flex items-stretch border-b border-linje-svak ${
-              erIdag ? "bg-valgt" : ""
-            }`}
-          >
-            <div
-              className={`flex w-16 shrink-0 items-center gap-1.5 py-1 text-liten tabular-nums ${
-                passert ? "text-blekk-svakest" : "text-blekk-dempet"
-              }`}
-            >
-              <span className={erIdag ? "font-medium text-blekk" : ""}>
-                {DAGER[ukedag(dato)]}
+      <div className="flex">
+        {/* Klokka står fast til venstre mens ukene glir forbi. */}
+        <div className="w-8 shrink-0 pt-7" style={{ height: hoyde + 28 }}>
+          <div className="relative" style={{ height: hoyde }}>
+            {Array.from({ length: til - fra }, (_, i) => (
+              <span
+                key={i}
+                className="absolute -translate-y-1/2 text-mikro tabular-nums text-blekk-svakest"
+                style={{ top: i * TIME }}
+              >
+                {String(fra + i).padStart(2, "0")}
               </span>
-              <span>{Number(dato.slice(8))}.</span>
-            </div>
-
-            {/*
-              Fast høyde, ikke minstehøyde: raden skal være like høy i en uke
-              med én økt som i en uke der alt overlapper.
-            */}
-            <div
-              className="relative flex-1"
-              style={{ height: `${BANER * BANEHOYDE + LUFT}px` }}
-            >
-              {/* Timelinjer bak øktene, som linjene i en klassejournal. */}
-              {timeliste.map((t) => (
-                <span
-                  key={t}
-                  aria-hidden
-                  className="absolute inset-y-0 w-px bg-linje-svak"
-                  style={{ left: `${((t - fra) / spenn) * 100}%` }}
-                />
-              ))}
-
-              {synlige.map((bane, i) =>
-                bane.map((o) => (
-                  <Blokk
-                    key={o.id}
-                    okt={o}
-                    fra={fra}
-                    spenn={spenn}
-                    topp={i * BANEHOYDE + 4}
-                    dempet={passert}
-                    onApne={() => onApneOkt(o.id)}
-                  />
-                )),
-              )}
-
-              {skjulte.length > 0 && (
-                <button
-                  onClick={() => onApneOkt(skjulte[0].id)}
-                  title={skjulte
-                    .map(
-                      (o) =>
-                        `${o.fagKode}${o.klokkeslett ? ` · ${o.klokkeslett}` : ""}${
-                          o.tema ? ` — ${o.tema}` : ""
-                        }`,
-                    )
-                    .join("\n")}
-                  className={`absolute right-0 z-10 flex h-[18px] items-center rounded-liten border border-linje bg-flate px-1 text-mikro tabular-nums text-blekk-dempet hover:brightness-95 ${
-                    passert ? "opacity-55" : ""
-                  }`}
-                  style={{ top: (BANER - 1) * BANEHOYDE + 4 }}
-                >
-                  +{skjulte.length} til
-                </button>
-              )}
-            </div>
+            ))}
           </div>
-        );
-      })}
+        </div>
+
+        <div
+          ref={stripe}
+          onScroll={(e) => lesPosisjon(e.currentTarget)}
+          className="flex min-w-0 flex-1 snap-x snap-mandatory overflow-x-auto overscroll-x-contain scrollbar-skjult"
+        >
+          {mandager.map((mandag) => (
+            <div
+              key={mandag}
+              className="grid w-full shrink-0 snap-start grid-cols-5"
+            >
+              {DAGNAVN.map((navn, d) => {
+                const dato = leggTil(mandag, d);
+                return (
+                  <Dag
+                    key={dato}
+                    navn={navn}
+                    dato={dato}
+                    okter={perDag.get(dato) ?? []}
+                    idag={idag}
+                    fra={fra}
+                    hoyde={hoyde}
+                    onApneOkt={onApneOkt}
+                  />
+                );
+              })}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Dag({
+  navn,
+  dato,
+  okter,
+  idag,
+  fra,
+  hoyde,
+  onApneOkt,
+}: {
+  navn: string;
+  dato: string;
+  okter: Okt[];
+  idag: string;
+  fra: number;
+  hoyde: number;
+  onApneOkt: (id: string) => void;
+}) {
+  const erIdag = dato === idag;
+  const passert = dato < idag;
+  const baner = fordelPaBaner(okter, fra);
+
+  return (
+    <div className="min-w-0 border-l border-linje-svak first:border-l-0">
+      <div
+        className={`flex h-7 items-baseline gap-1.5 px-1.5 pt-1 text-liten tabular-nums ${
+          erIdag
+            ? "font-medium text-aksent"
+            : passert
+              ? "text-blekk-svakest"
+              : "text-blekk-dempet"
+        }`}
+      >
+        {navn} {Number(dato.slice(8))}.
+      </div>
+      <div
+        className={`relative ${erIdag ? "bg-valgt/40" : ""}`}
+        style={{
+          height: hoyde,
+          // Timelinjer bak øktene, som linjene i en klassejournal.
+          backgroundImage: `repeating-linear-gradient(to bottom, var(--color-linje-svak) 0 1px, transparent 1px ${TIME}px)`,
+        }}
+      >
+        {baner.map((bane, b) =>
+          bane.map((o) => (
+            <Blokk
+              key={o.id}
+              okt={o}
+              fra={fra}
+              bane={b}
+              baner={baner.length}
+              dempet={passert}
+              onApne={() => onApneOkt(o.id)}
+            />
+          )),
+        )}
+      </div>
     </div>
   );
 }
@@ -182,24 +279,24 @@ export function Ukelinje({
 function Blokk({
   okt,
   fra,
-  spenn,
-  topp,
+  bane,
+  baner,
   dempet,
   onApne,
 }: {
   okt: Okt;
   fra: number;
-  spenn: number;
-  topp: number;
+  bane: number;
+  baner: number;
   dempet: boolean;
   onApne: () => void;
 }) {
   // Uten klokkeslett vet vi ikke hvor på dagen den hører hjemme. Da legges
-  // den først på aksen med stiplet kant, framfor å bli plassert et sted som
-  // ser presist ut uten å være det.
+  // den øverst med stiplet kant, framfor å stå et sted som ser presist ut.
   const utenTid = !okt.klokkeslett;
   const [start, slutt] = spennet(okt, fra);
-  const lengde = slutt - start;
+  const topp = (start - fra) * TIME;
+  const hoyde = Math.max((slutt - start) * TIME - 2, 16);
 
   return (
     <button
@@ -207,30 +304,38 @@ function Blokk({
       title={`${okt.fagKode}${okt.tema ? ` — ${okt.tema}` : ""}${
         okt.klokkeslett ? ` · ${okt.klokkeslett}` : " · uten klokkeslett"
       }${okt.sted ? ` · ${okt.sted}` : ""}`}
-      className={`absolute flex h-[18px] items-center gap-1 overflow-clip rounded-liten border bg-ark px-1 text-left text-mikro hover:brightness-95 ${
+      className={`absolute overflow-hidden rounded-liten border bg-ark px-1.5 py-0.5 text-left text-mikro leading-tight shadow-[var(--shadow-lav)] hover:brightness-95 ${
         utenTid ? "border-dashed border-linje-sterk" : "border-linje"
       } ${dempet ? "opacity-55" : ""}`}
       style={{
-        left: `${((start - fra) / spenn) * 100}%`,
-        width: `calc(${(lengde / spenn) * 100}% - 2px)`,
-        top: topp,
+        top: topp + 1,
+        height: hoyde,
+        left: `calc(${(bane / baner) * 100}% + 2px)`,
+        width: `calc(${100 / baner}% - 4px)`,
+        borderLeft: `3px solid ${okt.farge ?? "var(--color-linje-sterk)"}`,
       }}
     >
-      <span
-        aria-hidden
-        className="h-[11px] w-[3px] shrink-0 rounded-full"
-        style={{ background: okt.farge ?? "var(--color-linje-sterk)" }}
-      />
-      <Kappet verdi={okt.fagKode} klasse="font-medium" />
-      {okt.tema && <Kappet verdi={okt.tema} klasse="text-blekk-dempet" />}
+      <span className="block truncate font-medium text-blekk">
+        {okt.fagKode}
+        {okt.klokkeslett && (
+          <span className="ml-1 font-normal tabular-nums text-blekk-svak">
+            {okt.klokkeslett}
+          </span>
+        )}
+      </span>
+      {okt.tema && (
+        <span className="block text-blekk-dempet [overflow-wrap:anywhere]">
+          {okt.tema}
+        </span>
+      )}
     </button>
   );
 }
 
 /**
- * Hvor på aksen en økt ligger, i timer fra midnatt.
+ * Hvor på dagen en økt ligger, i timer fra midnatt.
  *
- * Uten klokkeslett legges den først på aksen med én times bredde — samme
+ * Uten klokkeslett legges den først på aksen med én times lengde — samme
  * plassering som `Blokk` tegner den. De to må regne likt, ellers legges to
  * økter uten klokkeslett oppå hverandre.
  */
@@ -241,7 +346,8 @@ export function spennet(o: Okt, fra: number): [number, number] {
 }
 
 /**
- * Deler øktene i baner slik at to som overlapper ikke havner oppå hverandre.
+ * Deler øktene i baner slik at to som overlapper står side om side i
+ * stedet for oppå hverandre.
  *
  * Det skjer sjelden — men når det gjør det, er det som regel en feil man vil
  * se, ikke skjule.
@@ -266,19 +372,38 @@ export function fordelPaBaner(okter: Okt[], fra: number): Okt[][] {
   return baner;
 }
 
+/** «Uke 40 · 28. sep – 2. okt» */
+export function ukeTekst(mandag: string): string {
+  const fredag = leggTil(mandag, 4);
+  const kort = (d: string) =>
+    new Date(`${d}T12:00:00`)
+      .toLocaleDateString("nb-NO", { day: "numeric", month: "short" })
+      .replace(/\.$/, "");
+  return `Uke ${isoUke(mandag)} · ${kort(mandag)} – ${kort(fredag)}`;
+}
+
+function isoUke(dato: string): number {
+  const [a, m, d] = dato.split("-").map(Number);
+  const t = new Date(Date.UTC(a, m - 1, d));
+  t.setUTCDate(t.getUTCDate() + 4 - (t.getUTCDay() || 7));
+  const nyttar = Date.UTC(t.getUTCFullYear(), 0, 1);
+  return Math.ceil(((t.getTime() - nyttar) / 86400000 + 1) / 7);
+}
+
 function timer(klokkeslett: string): number {
   const [t, m] = klokkeslett.split(":").map(Number);
   return t + (m || 0) / 60;
 }
 
-function leggTil(dato: string, dager: number): string {
-  const d = new Date(`${dato}T00:00:00`);
+export function leggTil(dato: string, dager: number): string {
+  const d = new Date(`${dato}T12:00:00`);
   d.setDate(d.getDate() + dager);
   const p = (n: number) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
 }
 
-/** Mandag = 0. */
-function ukedag(dato: string): number {
-  return (new Date(`${dato}T00:00:00`).getDay() + 6) % 7;
+/** Mandagen i uka datoen ligger i. */
+export function mandagFor(dato: string): string {
+  const d = new Date(`${dato}T12:00:00`);
+  return leggTil(dato, -((d.getDay() + 6) % 7));
 }

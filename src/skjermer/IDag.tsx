@@ -44,12 +44,8 @@ export function IDag({
   }, [skolear.id]);
 
   const idag = isoDato(new Date());
-  const { mandag, fredag } = ukesspenn(new Date());
 
   const dagens = okter.filter((o) => o.dato === idag);
-  // Hele uka, ikke bare det som gjenstår. Tidslinja skal vise formen på uka,
-  // og en mandag som forsvinner på onsdag ser ut som en feil.
-  const uka = okter.filter((o) => o.dato >= mandag && o.dato <= fredag);
   const kommende = okter.filter((o) => o.dato > idag).slice(0, KOMMENDE_ANTALL);
 
   return (
@@ -119,10 +115,11 @@ export function IDag({
           )}
         </Bolk>
 
-        <Bolk tittel="Denne uka">
+        <Bolk tittel="Uka">
           <Ukelinje
-            mandag={mandag}
-            okter={uka}
+            okter={okter}
+            forste={skolear.start}
+            siste={skolear.slutt}
             idag={idag}
             onApneOkt={onApneOkt}
           />
@@ -309,16 +306,6 @@ function OktLinje({ okt, onApne }: { okt: Okt; onApne: (id: string) => void }) {
       </span>
     </button>
   );
-}
-
-/** Fredag i uka som inneholder datoen. Helg vises ikke. */
-function ukesspenn(d: Date): { mandag: string; fredag: string } {
-  const dag = (d.getDay() + 6) % 7; // mandag = 0
-  const man = new Date(d);
-  man.setDate(d.getDate() - dag);
-  const fre = new Date(man);
-  fre.setDate(man.getDate() + 4);
-  return { mandag: isoDato(man), fredag: isoDato(fre) };
 }
 
 function isoDato(d: Date): string {

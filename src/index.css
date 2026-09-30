@@ -448,6 +448,17 @@ html {
 }
 
 /*
+ * Vannrett stripe uten synlig rullefelt — uka på forsiden. Man blar med
+ * styreflata eller pilene; et rullefelt under kalenderen er bare støy.
+ */
+.scrollbar-skjult {
+  scrollbar-width: none;
+}
+.scrollbar-skjult::-webkit-scrollbar {
+  display: none;
+}
+
+/*
  * Fokusringen.
  *
  * Mange felter og knapper hadde `outline-none` uten erstatning, og da er

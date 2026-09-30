@@ -1,15 +1,37 @@
 import { describe, expect, it } from "vitest";
-import { BANER, fordelPaBaner, kappBaner, spennet } from "./Ukelinje";
+import {
+  fordelPaBaner,
+  leggTil,
+  mandagFor,
+  spennet,
+  ukeTekst,
+} from "./Ukelinje";
 import type { Okt } from "../data/okter";
 
 function okt(over: Partial<Okt>): Okt {
   return {
     id: Math.random().toString(36).slice(2),
-    kode: null, skolearFagId: "sf", fagKode: "MFL1", fagNavn: "F",
-    farge: null, periodeId: null, dato: "2026-08-11", klokkeslett: "09:15",
-    varighetMin: 120, tema: null, sted: null, agenda: null, lekse: null,
-    endret: "2026-08-01T00:00:00", plan: null, logg: null,
-    skaret: 0, elever: 0, gronn: 0, gul: 0, rod: 0,
+    kode: null,
+    skolearFagId: "sf",
+    fagKode: "MFL1",
+    fagNavn: "F",
+    farge: null,
+    periodeId: null,
+    dato: "2026-08-11",
+    klokkeslett: "09:15",
+    varighetMin: 120,
+    tema: null,
+    sted: null,
+    agenda: null,
+    lekse: null,
+    endret: "2026-08-01T00:00:00",
+    plan: null,
+    logg: null,
+    skaret: 0,
+    elever: 0,
+    gronn: 0,
+    gul: 0,
+    rod: 0,
     ...over,
   };
 }
@@ -87,37 +109,18 @@ describe("fordelPaBaner", () => {
   });
 });
 
-describe("kappBaner", () => {
-  // Poenget med kappingen er at dagraden er like høy uansett uke. Blir den
-  // høyere når noe overlapper, flytter årsoversikten under seg (§4.1).
-  it("lar alt stå når det får plass", () => {
-    const baner = [[okt({})], [okt({})]];
-    expect(kappBaner(baner, 2)).toEqual({ synlige: baner, skjulte: [] });
+describe("uker", () => {
+  it("finner mandagen i uka", () => {
+    expect(mandagFor("2026-09-30")).toBe("2026-09-28");
+    expect(mandagFor("2026-09-28")).toBe("2026-09-28");
+    expect(mandagFor("2026-10-04")).toBe("2026-09-28"); // søndag
   });
 
-  it("kapper det som ikke får plass og teller det opp", () => {
-    const tredje = okt({ klokkeslett: "10:00" });
-    const fjerde = okt({ klokkeslett: "11:00" });
-    const { synlige, skjulte } = kappBaner(
-      [[okt({})], [okt({})], [tredje], [fjerde]],
-      2,
-    );
-    expect(synlige).toHaveLength(2);
-    expect(skjulte).toEqual([tredje, fjerde]);
+  it("skriver ukenummer og spennet mandag–fredag", () => {
+    expect(ukeTekst("2026-09-28")).toBe("Uke 40 · 28. sep – 2. okt");
   });
 
-  it("mister ingen økter — alt er enten synlig eller talt", () => {
-    const baner = [[okt({})], [okt({})], [okt({}), okt({})], [okt({})]];
-    const { synlige, skjulte } = kappBaner(baner, 2);
-    expect(synlige.flat().length + skjulte.length).toBe(baner.flat().length);
-  });
-
-  it("tåler en dag uten økter", () => {
-    expect(kappBaner([], 2)).toEqual({ synlige: [], skjulte: [] });
-  });
-
-  it("bruker banetaket som standard", () => {
-    const baner = Array.from({ length: BANER + 1 }, () => [okt({})]);
-    expect(kappBaner(baner).skjulte).toHaveLength(1);
+  it("går over månedsskiftet", () => {
+    expect(leggTil("2026-09-28", 4)).toBe("2026-10-02");
   });
 });
