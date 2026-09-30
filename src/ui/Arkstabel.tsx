@@ -101,6 +101,21 @@ export function Arkstabel({
   const stabelRef = useRef(stabel);
   stabelRef.current = stabel;
 
+  /**
+   * Klikk utenfor: alle arkene glir ut samtidig, med samme utgang som ett.
+   * Før tok klikket bare det øverste, og arket under ble hengende.
+   */
+  const lukkAlle = useCallback(() => {
+    const alle = stabelRef.current.map((a) => a.n);
+    if (alle.length === 0) return;
+    lukkendeRef.current = new Set(alle);
+    setLukkende(lukkendeRef.current);
+    setTimeout(() => {
+      setStabel((x) => x.filter((a) => !alle.includes(a.n)));
+      setLukkende(new Set());
+    }, UT_MS);
+  }, []);
+
   const lukk = useCallback(() => {
     const topp = [...stabelRef.current]
       .reverse()
@@ -155,13 +170,17 @@ export function Arkstabel({
             aktive.length > 0 ? "bg-blekk/10" : "bg-transparent"
           }`}
           style={{ transitionDuration: `${UT_MS}ms` }}
-          onMouseDown={(e) => e.target === e.currentTarget && lukk()}
+          onMouseDown={(e) => e.target === e.currentTarget && lukkAlle()}
         >
           {stabel.map((ark, i) => {
             const paVeiUt = lukkende.has(ark.n);
             // Dybden regnes blant arkene som blir stående, så arket under
             // begynner å gli tilbake samtidig som det øverste glir ut.
             const dybde = paVeiUt ? 0 : aktive.length - 1 - aktive.indexOf(ark);
+            // Et ark under som glir ut sammen med det over (klikk utenfor),
+            // starter utgangen der det står — forskjøvet og krympet — og
+            // ikke fra rett posisjon. Ellers hopper det først.
+            const utFra = stabel.slice(i + 1).length;
             return (
               <div
                 key={ark.n}
@@ -178,14 +197,18 @@ export function Arkstabel({
                         : ""
                 }`}
                 style={
-                  dybde > 0
-                    ? {
-                        // Arket under skyves litt mot venstre, krymper og
-                        // dempes — kanten stikker fram, så lagene kan leses.
-                        transform: `translateX(-${dybde * 32}px) scale(0.98)`,
-                        filter: "brightness(0.94)",
-                      }
-                    : undefined
+                  paVeiUt && utFra > 0
+                    ? ({
+                        "--fra": `translateX(-${utFra * 32}px) scale(0.98)`,
+                      } as React.CSSProperties)
+                    : dybde > 0
+                      ? {
+                          // Arket under skyves litt mot venstre, krymper og
+                          // dempes — kanten stikker fram, så lagene kan leses.
+                          transform: `translateX(-${dybde * 32}px) scale(0.98)`,
+                          filter: "brightness(0.94)",
+                        }
+                      : undefined
                 }
               >
                 {ark.type === "okt" ? (

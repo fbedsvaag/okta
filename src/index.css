@@ -422,8 +422,10 @@ html {
  * `forwards` holder det ute til det tas bort, så det ikke blinker tilbake.
  */
 @keyframes gli-ut {
+  /* --fra settes på et ark som var dypere i stabelen, så det glir fra der
+     det sto. */
   from {
-    transform: translateX(0);
+    transform: var(--fra, translateX(0));
   }
   to {
     transform: translateX(calc(100% + 40px));

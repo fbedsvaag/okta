@@ -618,16 +618,22 @@ function tell(ruter: HeatmapRute[]) {
 
 function Bolk({
   tittel,
+  handling,
   children,
 }: {
   tittel: string;
+  /** en knapp til høyre i overskriftslinja, f.eks. «+ Nytt notat» */
+  handling?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
     <section className="mb-6">
-      <h3 className="mb-2 border-b border-linje-medium pb-1 text-etikett uppercase tracking-etikett text-blekk-dempet">
-        {tittel}
-      </h3>
+      <div className="mb-2 flex items-baseline border-b border-linje-medium pb-1">
+        <h3 className="text-etikett uppercase tracking-etikett text-blekk-dempet">
+          {tittel}
+        </h3>
+        {handling && <span className="ml-auto">{handling}</span>}
+      </div>
       {children}
     </section>
   );
@@ -665,19 +671,21 @@ function Motelogg({
   }, [elevId]);
 
   return (
-    <Bolk tittel="Notater og møtelogg">
-      {notater.length === 0 && !skriver && (
-        <Stille>
-          Ingen notater ennå. Her samles det du vil huske om eleven over tid —
-          samtaler, observasjoner, avtaler.
-        </Stille>
-      )}
-
-      {notater.map((n) => (
-        <Notatrad key={n.id} notat={n} idag={idag} onEndret={last} />
-      ))}
-
-      {skriver ? (
+    <Bolk
+      tittel="Notater og møtelogg"
+      handling={
+        !skriver && (
+          <button
+            onClick={() => setSkriver(true)}
+            className="text-liten text-blekk-dempet hover:text-blekk"
+          >
+            + Nytt notat
+          </button>
+        )
+      }
+    >
+      {/* Det nye notatet skrives øverst, der det havner — nyeste først. */}
+      {skriver && (
         <NyttNotat
           elevId={elevId}
           skolearId={skolearId}
@@ -687,14 +695,27 @@ function Motelogg({
           }}
           onAvbryt={() => setSkriver(false)}
         />
-      ) : (
-        <button
-          onClick={() => setSkriver(true)}
-          className="mt-2 text-brod text-blekk-dempet hover:text-blekk"
-        >
-          + Nytt notat
-        </button>
       )}
+
+      {notater.length === 0 && !skriver && (
+        <Stille>
+          Ingen notater ennå. Her samles det du vil huske om eleven over tid —
+          samtaler, observasjoner, avtaler.
+        </Stille>
+      )}
+
+      {/* Tidslinja: dato til venstre, en linje med et punkt per notat. */}
+      <div className={skriver ? "mt-4" : ""}>
+        {notater.map((n, i) => (
+          <Notatrad
+            key={n.id}
+            notat={n}
+            idag={idag}
+            sist={i === notater.length - 1}
+            onEndret={last}
+          />
+        ))}
+      </div>
 
       <p className="mt-2 text-etikett text-blekk-svak">
         Dette er arbeidsmateriale. Helse, hjemmeforhold og andre særlige
@@ -707,81 +728,113 @@ function Motelogg({
 function Notatrad({
   notat,
   idag,
+  sist,
   onEndret,
 }: {
   notat: Elevnotat;
   idag: string;
+  /** nederste punkt: linja stopper ved prikken */
+  sist: boolean;
   onEndret: () => void;
 }) {
   const apent = notat.skalFolgesOpp && notat.lukket === null;
   const forfalt = erForfalt(notat, idag);
+  const d = new Date(`${notat.dato}T12:00:00`);
+  const dag = d.toLocaleDateString("nb-NO", { day: "numeric", month: "short" });
+  const arOgUkedag = `${d.getFullYear()} · ${d.toLocaleDateString("nb-NO", {
+    weekday: "short",
+  })}`;
+  const prikk = forfalt
+    ? "border-feil bg-feil"
+    : apent
+      ? "border-aksent bg-aksent"
+      : "border-linje-sterk bg-ark";
 
   return (
-    <div
-      className={`border-b border-linje-svak py-2 ${
-        apent ? "border-l-2 pl-2" : ""
-      }`}
-      style={apent ? { borderLeftColor: "var(--color-aksent)" } : undefined}
-    >
-      <div className="flex items-baseline gap-2 text-liten">
-        <span className="tabular-nums text-blekk-dempet">{notat.dato}</span>
-        {/*
-          Herkomsten leses av notatets egne felter, ikke av at samtalen
-          fortsatt finnes: en ny trekning erstatter samtaleradene, og notatet
-          skal stå like fullt.
-        */}
-        {notat.samtaleId && (
-          <span className="rounded-liten bg-flate px-1.5 text-blekk-dempet">
-            {notat.skolearFagId ? "Fagsamtale" : "Mentorsamtale"}
-          </span>
-        )}
-        {notat.fagKode && (
-          <span className="text-blekk-svak">{notat.fagKode}</span>
-        )}
-        {apent && (
-          <span className={forfalt ? "text-feil" : "text-blekk-dempet"}>
-            {notat.frist
-              ? `${forfalt ? "forfalt" : "frist"} ${notat.frist}`
-              : "følges opp"}
-          </span>
-        )}
-        <span className="ml-auto flex items-center gap-2">
-          {notat.skalFolgesOpp && (
+    <div className="flex gap-3">
+      {/* Datoen er det man leter etter i en logg, så den står for seg. */}
+      <div className="w-[4.75rem] shrink-0 pt-px text-right">
+        <div className="text-brod font-medium tabular-nums text-blekk">
+          {dag.replace(/\.$/, "")}
+        </div>
+        <div className="text-mikro tabular-nums text-blekk-svak">
+          {arOgUkedag.replace(/\.$/, "")}
+        </div>
+      </div>
+
+      <div className="relative w-3 shrink-0" aria-hidden>
+        <span
+          className={`absolute left-1/2 top-0 w-px -translate-x-1/2 bg-linje ${
+            sist ? "h-2" : "h-full"
+          }`}
+        />
+        <span
+          className={`absolute left-1/2 top-[0.4rem] h-2.5 w-2.5 -translate-x-1/2 rounded-full border-2 ${prikk}`}
+        />
+      </div>
+
+      <div className="min-w-0 flex-1 pb-4">
+        <div className="flex items-baseline gap-2 text-liten">
+          {/*
+            Herkomsten leses av notatets egne felter, ikke av at samtalen
+            fortsatt finnes: en ny trekning erstatter samtaleradene, og
+            notatet skal stå like fullt.
+          */}
+          {notat.samtaleId && (
+            <span className="rounded-liten bg-flate px-1.5 text-blekk-dempet">
+              {notat.skolearFagId ? "Fagsamtale" : "Mentorsamtale"}
+            </span>
+          )}
+          {notat.fagKode && (
+            <span className="text-blekk-svak">{notat.fagKode}</span>
+          )}
+          {apent && (
+            <span className={forfalt ? "text-feil" : "text-aksent"}>
+              {notat.frist
+                ? `${forfalt ? "forfalt" : "frist"} ${notat.frist}`
+                : "følges opp"}
+            </span>
+          )}
+          <span className="ml-auto flex items-center gap-2">
+            {notat.skalFolgesOpp && (
+              <button
+                onClick={async () => {
+                  await settLukket(notat.id, notat.lukket === null);
+                  onEndret();
+                }}
+                className="text-blekk-svak hover:text-blekk"
+              >
+                {notat.lukket === null ? "Lukk" : "Åpne igjen"}
+              </button>
+            )}
             <button
               onClick={async () => {
-                await settLukket(notat.id, notat.lukket === null);
+                if (!(await bekreft(`Slette notatet fra ${notat.dato}?`)))
+                  return;
+                await slettElevnotat(notat.id);
                 onEndret();
               }}
-              className="text-blekk-svak hover:text-blekk"
+              className="text-blekk-svakest hover:text-feil"
             >
-              {notat.lukket === null ? "Lukk" : "Åpne igjen"}
+              Slett
             </button>
-          )}
-          <button
-            onClick={async () => {
-              if (!(await bekreft(`Slette notatet fra ${notat.dato}?`))) return;
-              await slettElevnotat(notat.id);
+          </span>
+        </div>
+        {/*
+          Formatert markdown; klikk for å skrive. Avkrysningsbokser kan
+          krysses av rett i visningen. Et notat kan ikke tømmes — da slettes
+          det.
+        */}
+        <div className="-mx-2">
+          <Markdownfelt
+            verdi={notat.tekst}
+            onLagre={async (v) => {
+              if (!v) return;
+              await endreElevnotat(notat.id, { tekst: v });
               onEndret();
             }}
-            className="text-blekk-svakest hover:text-feil"
-          >
-            Slett
-          </button>
-        </span>
-      </div>
-      {/*
-        Formatert markdown; klikk for å skrive. Avkrysningsbokser kan krysses
-        av rett i visningen. Et notat kan ikke tømmes — da slettes det.
-      */}
-      <div className="-mx-2 mt-0.5">
-        <Markdownfelt
-          verdi={notat.tekst}
-          onLagre={async (v) => {
-            if (!v) return;
-            await endreElevnotat(notat.id, { tekst: v });
-            onEndret();
-          }}
-        />
+          />
+        </div>
       </div>
     </div>
   );

@@ -159,8 +159,9 @@ lista — der er lista bare forstyrrende.
 en elev fra en økt, en økt fra en elevs heatmap, en økt fra forsiden eller
 kalenderen — legger det seg som et nytt ark over det du sto i. Du blir på
 siden du var på. Arket under skyves 32 px mot venstre, krymper til 98 % og
-dempes, så kanten stikker fram og lagene kan leses. Lukk, «Tilbake», Esc
-eller et klikk utenfor tar deg ett nivå tilbake — ikke helt ut. Én felles
+dempes, så kanten stikker fram og lagene kan leses. Lukk, «Tilbake» og Esc
+tar deg ett nivå tilbake — ikke helt ut. Et klikk utenfor arkene lukker alle,
+og de glir ut samtidig. Én felles
 stabel (`src/ui/Arkstabel.tsx`) gjør dette for hele appen.
 
 **Et ark lukkes med samme bevegelse som det åpnes, baklengs:** 180 ms, kurven
