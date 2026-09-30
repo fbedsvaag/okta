@@ -325,6 +325,7 @@ export function Okter({
                   await mal([...merket], p);
                   setMerket(new Set());
                 }}
+                onEndret={() => void last()}
                 onNy={async (id) => {
                   await last();
                   setPensel(id);

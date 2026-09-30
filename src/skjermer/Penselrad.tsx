@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { opprettPeriode, type Periode } from "../data/perioder";
+import { endrePeriode, opprettPeriode, type Periode } from "../data/perioder";
 
 /** Viskelæret: fargelegger med «ingen periode». */
 export const VISK = "visk";
@@ -15,6 +15,8 @@ export type Pensel = string | typeof VISK | null;
  *
  * Er det allerede krysset av for rader, farges de med én gang penselen
  * velges, i stedet for at penselen blir liggende.
+ *
+ * Dobbeltklikk på en pensel gir perioden nytt navn.
  */
 export function Penselrad({
   skolearFagId,
@@ -25,6 +27,7 @@ export function Penselrad({
   onVelg,
   onMalMerkede,
   onNy,
+  onEndret,
 }: {
   skolearFagId: string;
   /** fagets perioder, i rekkefølge */
@@ -37,9 +40,21 @@ export function Penselrad({
   onMalMerkede: (p: Exclude<Pensel, null>) => void;
   /** en periode er laget; last på nytt og velg den som pensel */
   onNy: (id: string) => void;
+  /** en periode har fått nytt navn */
+  onEndret: () => void;
 }) {
   const [lager, setLager] = useState(false);
   const [navn, setNavn] = useState("");
+  // Perioden som får nytt navn akkurat nå.
+  const [omdoper, setOmdoper] = useState<string | null>(null);
+
+  async function giNavn(p: Periode, nytt: string) {
+    setOmdoper(null);
+    const n = nytt.trim();
+    if (!n || n === p.navn) return;
+    await endrePeriode(p.id, { navn: n });
+    onEndret();
+  }
 
   // Escape legger fra seg penselen.
   useEffect(() => {
@@ -76,16 +91,39 @@ export function Penselrad({
       </span>
       {perioder.map((p) => {
         const aktiv = pensel === p.id;
+        if (omdoper === p.id) {
+          return (
+            <input
+              key={p.id}
+              autoFocus
+              defaultValue={p.navn}
+              onFocus={(e) => e.currentTarget.select()}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") void giNavn(p, e.currentTarget.value);
+                if (e.key === "Escape") setOmdoper(null);
+              }}
+              onBlur={(e) => void giNavn(p, e.currentTarget.value)}
+              className="w-44 rounded-full border border-aksent bg-ark px-2.5 py-0.5 text-liten outline-none"
+              style={{ boxShadow: `inset 4px 0 0 ${p.farge}` }}
+            />
+          );
+        }
         return (
           <button
             key={p.id}
             onClick={() => velg(p.id)}
+            onDoubleClick={() => {
+              // De to klikkene i dobbeltklikket har slått penselen av og
+              // på. Her skal det gis navn, ikke males.
+              onVelg(null);
+              setOmdoper(p.id);
+            }}
             title={
               harMerket
                 ? `Fargelegg de avkryssede med ${p.navn}`
                 : aktiv
-                  ? "Legg fra deg penselen (Esc)"
-                  : `Fargelegg med ${p.navn}`
+                  ? "Legg fra deg penselen (Esc) · dobbeltklikk for nytt navn"
+                  : `Fargelegg med ${p.navn} · dobbeltklikk for nytt navn`
             }
             className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-liten ${
               aktiv
