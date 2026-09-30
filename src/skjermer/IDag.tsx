@@ -132,6 +132,7 @@ export function IDag({
 
         <Arsoversikt
           skolearId={skolear.id}
+          skolestart={skolear.start}
           onApneElev={(elevId) => onGaTil("elever", elevId)}
           onApneVurderinger={() => onGaTil("vurderinger")}
         />

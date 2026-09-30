@@ -55,6 +55,106 @@ export async function hentInnsatsPerUke(
   );
 }
 
+/** Én uke i ett fag på innsatslinja. */
+export type Innsatsprikk = {
+  /** mandagen i uka, ISO */
+  mandag: string;
+  gronn: number;
+  gul: number;
+  rod: number;
+};
+
+export type Innsatslinje = {
+  skolearFagId: string;
+  kode: string;
+  farge: string | null;
+  prikker: Innsatsprikk[];
+};
+
+/**
+ * Skåringene per fag og uke, til linjene på forsiden: én linje per fag, én
+ * prikk per uke. Uker uten skåringer har ingen prikk — hullet er poenget.
+ *
+ * Grupperes per mandag i JavaScript framfor med strftime('%W'), som ikke er
+ * ISO-uker og deler uka feil rundt nyttår.
+ */
+export async function hentInnsatslinjer(
+  skolearId: string,
+): Promise<Innsatslinje[]> {
+  const rader = await hent<{
+    skolearFagId: string;
+    kode: string;
+    farge: string | null;
+    dato: string;
+    gronn: number;
+    gul: number;
+    rod: number;
+  }>(
+    `SELECT sf.id AS skolearFagId,
+            COALESCE(NULLIF(f.alias, ''), f.kode) AS kode,
+            f.farge,
+            o.dato,
+            SUM(CASE WHEN sv.farge = 'gronn' THEN 1 ELSE 0 END) AS gronn,
+            SUM(CASE WHEN sv.farge = 'gul'   THEN 1 ELSE 0 END) AS gul,
+            SUM(CASE WHEN sv.farge = 'rod'   THEN 1 ELSE 0 END) AS rod
+       FROM skaring s
+       JOIN elev e         ON e.id = s.elev_id AND e.slettet IS NULL
+       JOIN okt o          ON o.id = s.okt_id AND o.slettet IS NULL
+       JOIN skalaverdi sv  ON sv.id = s.skalaverdi_id
+       JOIN skolear_fag sf ON sf.id = o.skolear_fag_id AND sf.slettet IS NULL
+       JOIN fag f          ON f.id = sf.fag_id
+      WHERE s.slettet IS NULL AND sv.teller_ikke = 0 AND sf.skolear_id = $1
+      GROUP BY sf.id, o.dato
+      ORDER BY kode, o.dato`,
+    [skolearId],
+  );
+
+  const perFag = new Map<string, Innsatslinje>();
+  for (const r of rader) {
+    const linje = perFag.get(r.skolearFagId) ?? {
+      skolearFagId: r.skolearFagId,
+      kode: r.kode,
+      farge: r.farge,
+      prikker: [],
+    };
+    perFag.set(r.skolearFagId, linje);
+    const mandag = mandagFor(r.dato);
+    const p = linje.prikker.find((x) => x.mandag === mandag);
+    if (p) {
+      p.gronn += r.gronn;
+      p.gul += r.gul;
+      p.rod += r.rod;
+    } else {
+      linje.prikker.push({ mandag, gronn: r.gronn, gul: r.gul, rod: r.rod });
+    }
+  }
+  return [...perFag.values()];
+}
+
+/**
+ * Uka samlet i ett av trafikklysets fem trinn: andelen grønt, der gult
+ * teller halvt. Nesten alt grønt er grønn, mest rødt er rød.
+ */
+export function ukesfarge(
+  p: Pick<Innsatsprikk, "gronn" | "gul" | "rod">,
+): "gronn" | "gronngul" | "gul" | "oransje" | "rod" | null {
+  const total = p.gronn + p.gul + p.rod;
+  if (total === 0) return null;
+  const andel = (p.gronn + p.gul / 2) / total;
+  if (andel >= 0.8) return "gronn";
+  if (andel >= 0.6) return "gronngul";
+  if (andel >= 0.4) return "gul";
+  if (andel >= 0.2) return "oransje";
+  return "rod";
+}
+
+export function mandagFor(dato: string): string {
+  const [a, m, d] = dato.split("-").map(Number);
+  const t = new Date(Date.UTC(a, m - 1, d));
+  t.setUTCDate(t.getUTCDate() - ((t.getUTCDay() + 6) % 7));
+  return t.toISOString().slice(0, 10);
+}
+
 // ----------------------------------------------------------- timeregnskap
 
 export type Fagtimer = {

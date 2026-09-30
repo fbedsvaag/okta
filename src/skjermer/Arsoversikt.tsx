@@ -1,14 +1,16 @@
 import { useEffect, useState } from "react";
 import {
   hentGlipp,
-  hentInnsatsPerUke,
+  hentInnsatslinjer,
+  mandagFor,
+  ukesfarge,
+  type Innsatslinje,
   hentKommendeVurderinger,
   hentTimeregnskap,
   hentVurderingstimer,
   type Fagtimer,
   type Glipp,
   type Kommende,
-  type Uketall,
 } from "../data/dashbord";
 import { Fagmerke, Kappet, Tomtilstand } from "../ui/felles";
 
@@ -22,10 +24,13 @@ import { Fagmerke, Kappet, Tomtilstand } from "../ui/felles";
  */
 export function Arsoversikt({
   skolearId,
+  skolestart,
   onApneElev,
   onApneVurderinger,
 }: {
   skolearId: string;
+  /** første skoledag — innsatslinjene begynner der */
+  skolestart: string;
   onApneElev: (elevId: string) => void;
   onApneVurderinger: () => void;
 }) {
@@ -41,7 +46,7 @@ export function Arsoversikt({
     let avbrutt = false;
     (async () => {
       const [uker, timer, glipp, kommende, vurdering] = await Promise.all([
-        hentInnsatsPerUke(skolearId),
+        hentInnsatslinjer(skolearId),
         hentTimeregnskap(skolearId),
         hentGlipp(skolearId),
         hentKommendeVurderinger(skolearId),
@@ -64,7 +69,7 @@ export function Arsoversikt({
   return (
     <div className="mt-8 grid gap-x-8 gap-y-7 lg:grid-cols-2">
       <div className="lg:col-span-2">
-        <Innsats uker={data?.uker ?? []} />
+        <Innsats linjer={data?.uker ?? []} skolestart={skolestart} />
       </div>
       <Timeregnskap fag={data?.timer ?? []} mentor={data?.mentor ?? null} />
       <div className="grid gap-y-7">
@@ -79,7 +84,7 @@ export function Arsoversikt({
 }
 
 type Oversikt = {
-  uker: Uketall[];
+  uker: Innsatslinje[];
   timer: Fagtimer[];
   /** mentorsamtalene, som ikke hører til noe fag (§4.10) */
   mentor: { timer: number; antall: number } | null;
@@ -114,173 +119,117 @@ function Panel({
 
 // ------------------------------------------------------------------ innsats
 
-const SERIER = [
-  { n: "gronn" as const, navn: "Grønn", farge: "var(--color-lys-gronn)" },
-  { n: "gul" as const, navn: "Gul", farge: "var(--color-lys-gul)" },
-  { n: "rod" as const, navn: "Rød", farge: "var(--color-lys-rod)" },
-];
+const PRIKKFARGE = {
+  gronn: "var(--color-lys-gronn)",
+  gronngul: "var(--color-lys-gronngul)",
+  gul: "var(--color-lys-gul)",
+  oransje: "var(--color-lys-oransje)",
+  rod: "var(--color-lys-rod)",
+} as const;
 
 /**
- * Skåringene per uke som stablede stolper.
+ * Innsats over tid: én tynn linje per fag, én prikk per uke.
  *
- * Høyden er antall, ikke andel — en uke med to skåringer og en med tretti
- * sier ikke det samme, og en andelsgraf ville skjult forskjellen.
- *
- * Gulfargen har 2,12:1 mot hvit flate, altså under 3:1. Den er ikke endret,
- * for det er trafikklysets gul og må være den samme som i heatmapet. I stedet
- * har grafen synlige totaler og en tabellvisning, som er den kompensasjonen
- * kontrastkravet ber om.
+ * Prikkens farge er uka samlet i trafikklysets fem trinn — andelen grønt,
+ * der gult teller halvt. Uker uten skåringer har ingen prikk, så hullene
+ * synes. Samme språk som heatmapet på elevkortet: små prikker, ikke grafer.
  */
-function Innsats({ uker }: { uker: Uketall[] }) {
-  const [tabell, setTabell] = useState(false);
-
-  const sum = uker.reduce(
-    (a, u) => ({
-      gronn: a.gronn + u.gronn,
-      gul: a.gul + u.gul,
-      rod: a.rod + u.rod,
-    }),
-    { gronn: 0, gul: 0, rod: 0 },
-  );
-  const total = sum.gronn + sum.gul + sum.rod;
-  const hoyest = Math.max(1, ...uker.map((u) => u.gronn + u.gul + u.rod));
+function Innsats({
+  linjer,
+  skolestart,
+}: {
+  linjer: Innsatslinje[];
+  skolestart: string;
+}) {
+  // Ukene fra skolestart til i dag, felles for alle fagene.
+  const forste = mandagFor(skolestart);
+  const siste = mandagFor(isoIdag());
+  const uker: string[] = [];
+  for (let m = forste; m <= siste; m = pluss7(m)) uker.push(m);
 
   return (
-    <Panel
-      tittel="Innsats over tid"
-      hjelp={total > 0 ? `${total} skåringer som teller` : undefined}
-      handling={
-        uker.length > 0 && (
-          <button
-            onClick={() => setTabell((v) => !v)}
-            className="text-liten text-blekk-dempet hover:text-blekk"
-          >
-            {tabell ? "Vis graf" : "Vis tabell"}
-          </button>
-        )
-      }
-    >
-      {uker.length === 0 ? (
-        <Tomtilstand tekst="Ingen skåringer ført ennå. Grafen fyller seg selv etter hvert som du skårer øktene." />
-      ) : tabell ? (
-        <Innsatstabell uker={uker} />
+    <Panel tittel="Innsats over tid" hjelp="én prikk per uke">
+      {linjer.length === 0 ? (
+        <p className="py-2 text-brod text-blekk-svak">
+          Ingen skåringer ført ennå. Linjene fyller seg etter hvert som du
+          skårer øktene.
+        </p>
       ) : (
-        <>
-          <div className="flex items-end gap-[3px] border-b border-linje pt-4">
-            {uker.map((u) => (
-              <Stolpe key={u.uke} uke={u} hoyest={hoyest} />
-            ))}
+        <div className="space-y-2.5 pt-1">
+          {linjer.map((l) => {
+            const perUke = new Map(l.prikker.map((p) => [p.mandag, p]));
+            return (
+              <div key={l.skolearFagId} className="flex items-center gap-3">
+                <span className="flex w-20 shrink-0 items-center gap-1.5 text-liten font-medium">
+                  <span
+                    aria-hidden
+                    className="h-3 w-[3px] rounded-full"
+                    style={{
+                      background: l.farge ?? "var(--color-linje-sterk)",
+                    }}
+                  />
+                  <span className="truncate">{l.kode}</span>
+                </span>
+                <div className="relative flex h-4 flex-1 items-center">
+                  <span
+                    aria-hidden
+                    className="absolute inset-x-0 top-1/2 h-px bg-linje"
+                  />
+                  {uker.map((m) => {
+                    const p = perUke.get(m);
+                    const f = p ? ukesfarge(p) : null;
+                    return (
+                      <span
+                        key={m}
+                        className="group/prikk relative flex flex-1 justify-center"
+                      >
+                        {f && (
+                          <>
+                            <span
+                              className="h-2.5 w-2.5 rounded-full ring-2 ring-ark"
+                              style={{ background: PRIKKFARGE[f] }}
+                            />
+                            <span
+                              role="tooltip"
+                              className="pointer-events-none absolute bottom-full z-20 mb-1.5 hidden whitespace-nowrap rounded-liten border border-linje bg-ark px-2 py-1 text-liten shadow-[var(--shadow-panel)] group-hover/prikk:block"
+                            >
+                              <span className="font-medium tabular-nums">
+                                Uke {isoUke(m)} · {norskDato(m)}
+                              </span>
+                              <span className="ml-2 tabular-nums text-blekk-dempet">
+                                grønn {p!.gronn} · gul {p!.gul} · rød {p!.rod}
+                              </span>
+                            </span>
+                          </>
+                        )}
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+          <div className="flex gap-3 pl-[5.75rem] text-mikro tabular-nums text-blekk-svakest">
+            <span>uke {isoUke(forste)}</span>
+            <span className="ml-auto">uke {isoUke(siste)}</span>
           </div>
-          <div className="mt-1.5 flex items-center gap-4">
-            {SERIER.map((s) => (
-              <span
-                key={s.n}
-                className="flex items-center gap-1.5 text-liten text-blekk-dempet"
-              >
-                <span
-                  aria-hidden
-                  className="h-2.5 w-2.5 rounded-liten"
-                  style={{ background: s.farge }}
-                />
-                {s.navn}
-                <span className="tabular-nums text-blekk-svak">{sum[s.n]}</span>
-              </span>
-            ))}
-            <span className="ml-auto text-liten text-blekk-svak">
-              uke {uker[0]?.uke.slice(5)}–{uker[uker.length - 1]?.uke.slice(5)}
-            </span>
-          </div>
-        </>
+        </div>
       )}
     </Panel>
   );
 }
 
-/**
- * Én uke. Segmentene skilles med 2 px av flata under, slik at to like farger
- * ved siden av hverandre ikke smelter sammen.
- */
-function Stolpe({ uke, hoyest }: { uke: Uketall; hoyest: number }) {
-  const total = uke.gronn + uke.gul + uke.rod;
-  const deler = SERIER.filter((s) => uke[s.n] > 0);
-
-  return (
-    <div className="group/uke relative flex min-w-0 flex-1 flex-col items-center">
-      <span className="mb-1 text-mikro tabular-nums text-blekk-svak">
-        {total}
-      </span>
-
-      <div
-        className="flex w-full flex-col-reverse justify-start gap-[2px]"
-        style={{ height: `${Math.round((total / hoyest) * 96) + 4}px` }}
-      >
-        {deler.map((s, i) => (
-          <div
-            key={s.n}
-            className={i === deler.length - 1 ? "rounded-t-[4px]" : ""}
-            style={{
-              background: s.farge,
-              flexGrow: uke[s.n],
-              minHeight: "3px",
-            }}
-          />
-        ))}
-      </div>
-
-      <span className="mt-1 text-mikro tabular-nums text-blekk-svakest">
-        {uke.uke.slice(5)}
-      </span>
-
-      <span
-        role="tooltip"
-        className="pointer-events-none absolute bottom-full z-20 mb-1 hidden whitespace-nowrap rounded-liten border border-linje bg-ark px-2 py-1 text-liten shadow-[var(--shadow-panel)] group-hover/uke:block"
-      >
-        <span className="font-medium tabular-nums">
-          {norskDato(uke.forste)}
-        </span>
-        {SERIER.map((s) => (
-          <span key={s.n} className="ml-2 tabular-nums text-blekk-dempet">
-            {s.navn.toLowerCase()} {uke[s.n]}
-          </span>
-        ))}
-      </span>
-    </div>
-  );
+function pluss7(dato: string): string {
+  const [a, m, d] = dato.split("-").map(Number);
+  return new Date(Date.UTC(a, m - 1, d + 7)).toISOString().slice(0, 10);
 }
 
-function Innsatstabell({ uker }: { uker: Uketall[] }) {
-  return (
-    <div className="max-h-64 overflow-y-auto">
-      <table className="w-full text-brod">
-        <thead>
-          <tr className="border-b border-linje text-left text-etikett uppercase tracking-etikett text-blekk-dempet">
-            <th className="py-1 font-normal">Uke</th>
-            <th className="py-1 font-normal">Fra</th>
-            <th className="py-1 text-right font-normal">Grønn</th>
-            <th className="py-1 text-right font-normal">Gul</th>
-            <th className="py-1 text-right font-normal">Rød</th>
-            <th className="py-1 text-right font-normal">Sum</th>
-          </tr>
-        </thead>
-        <tbody>
-          {uker.map((u) => (
-            <tr key={u.uke} className="border-b border-linje-svak">
-              <td className="py-1 tabular-nums">{u.uke.slice(5)}</td>
-              <td className="py-1 tabular-nums text-blekk-dempet">
-                {norskDato(u.forste)}
-              </td>
-              <td className="py-1 text-right tabular-nums">{u.gronn}</td>
-              <td className="py-1 text-right tabular-nums">{u.gul}</td>
-              <td className="py-1 text-right tabular-nums">{u.rod}</td>
-              <td className="py-1 text-right tabular-nums font-medium">
-                {u.gronn + u.gul + u.rod}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
+function isoUke(dato: string): number {
+  const [a, m, d] = dato.split("-").map(Number);
+  const t = new Date(Date.UTC(a, m - 1, d));
+  t.setUTCDate(t.getUTCDate() + 4 - (t.getUTCDay() || 7));
+  const nyttar = Date.UTC(t.getUTCFullYear(), 0, 1);
+  return Math.ceil(((t.getTime() - nyttar) / 86400000 + 1) / 7);
 }
 
 // ------------------------------------------------------------- timeregnskap
