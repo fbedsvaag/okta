@@ -174,8 +174,19 @@ export async function opprettOkt(
     "SELECT rom FROM skolear_fag WHERE id = $1",
     [skolearFagId],
   );
+  // En økt som legges midt i en farget periode, får periodens farge med én
+  // gang. Faller den utenfor alle, står den uten til den farges.
+  const [periode] = await hent<{ id: string }>(
+    `SELECT id FROM periode
+      WHERE skolear_fag_id = $1 AND slettet IS NULL
+        AND start IS NOT NULL AND slutt IS NOT NULL
+        AND $2 BETWEEN start AND slutt
+      ORDER BY start, rekkefolge LIMIT 1`,
+    [skolearFagId, dato],
+  );
   const id = await settInn("okt", {
     skolear_fag_id: skolearFagId,
+    periode_id: periode?.id ?? null,
     dato,
     klokkeslett,
     varighet_min: varighetMin,

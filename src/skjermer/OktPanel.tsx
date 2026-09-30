@@ -15,7 +15,7 @@ import {
 } from "../data/okter";
 import { taster, type Skalaverdi } from "../skala";
 import { skalafarge } from "../ui/farger";
-import { hentPerioder, periodeFor, type Periode } from "../data/perioder";
+import { fargelegg, hentPerioder, type Periode } from "../data/perioder";
 import {
   hentVurderingsvalg,
   knyttOkt,
@@ -401,9 +401,6 @@ function OktFelter({
   perioder: Periode[];
   onEndret: () => void;
 }) {
-  // Perioden følger datoen. Velger du en uttrykkelig, skrives periode_id og
-  // den vinner — også hvis du senere flytter periodegrensene.
-  const automatisk = periodeFor({ ...okt, periodeId: null }, perioder);
   const [kopiert, setKopiert] = useState(false);
 
   return (
@@ -456,16 +453,14 @@ function OktFelter({
         <select
           value={okt.periodeId ?? ""}
           onChange={async (e) => {
-            await endreOkt(okt.id, { periode_id: e.target.value || null });
+            // Samme vei som fargeleggingen i lista, så periodens spenn
+            // følger med.
+            await fargelegg([okt.id], e.target.value || null);
             onEndret();
           }}
           className={feltStil}
         >
-          <option value="">
-            {automatisk
-              ? `Automatisk etter dato — ${automatisk.navn}`
-              : "Automatisk etter dato — ingen treff"}
-          </option>
+          <option value="">Ingen periode</option>
           {perioder.map((p) => (
             <option key={p.id} value={p.id}>
               {p.navn}

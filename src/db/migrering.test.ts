@@ -337,3 +337,39 @@ describe("migrasjon 016 — én vurdering over flere økter", () => {
     );
   });
 });
+
+describe("migrasjon 017 — perioden står på økta", () => {
+  const T = "2026-09-01T10:00:00";
+
+  it("skriver ned perioden datoene ga, og lar resten stå", () => {
+    const d = basenFram("016_vurdering_flere_okter.sql");
+    d.exec(`
+      INSERT INTO skolear (id, navn, start, slutt, opprettet, endret)
+      VALUES ('ar', '2026/27', '2026-08-17', '2027-06-20', '${T}', '${T}');
+      INSERT INTO fag (id, kode, navn, opprettet, endret)
+      VALUES ('f', 'MFL1', 'Markedsføring', '${T}', '${T}');
+      INSERT INTO skolear_fag (id, skolear_id, fag_id, opprettet, endret)
+      VALUES ('sf', 'ar', 'f', '${T}', '${T}');
+      INSERT INTO periode (id, skolear_fag_id, navn, rekkefolge, start, slutt, opprettet, endret)
+      VALUES ('host', 'sf', 'Høst', 1, '2026-08-17', '2026-10-31', '${T}', '${T}'),
+             ('okt', 'sf', 'Oktober', 2, '2026-10-01', '2026-10-31', '${T}', '${T}');
+      INSERT INTO okt (id, skolear_fag_id, periode_id, dato, varighet_min, opprettet, endret)
+      VALUES ('i-host', 'sf', NULL, '2026-09-01', 180, '${T}', '${T}'),
+             ('overlapp', 'sf', NULL, '2026-10-06', 180, '${T}', '${T}'),
+             ('satt', 'sf', 'okt', '2026-09-08', 180, '${T}', '${T}'),
+             ('utenfor', 'sf', NULL, '2027-03-01', 180, '${T}', '${T}');
+    `);
+    kjor(d, "017_periode_malt.sql");
+
+    const periode = (id: string) =>
+      (
+        d.prepare("SELECT periode_id FROM okt WHERE id = ?").get(id) as {
+          periode_id: string | null;
+        }
+      ).periode_id;
+    expect(periode("i-host")).toBe("host");
+    expect(periode("overlapp")).toBe("host"); // den som begynner først
+    expect(periode("satt")).toBe("okt"); // uttrykkelig valg røres ikke
+    expect(periode("utenfor")).toBeNull();
+  });
+});

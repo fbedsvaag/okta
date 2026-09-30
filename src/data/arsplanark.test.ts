@@ -76,6 +76,7 @@ function periode(over: Partial<Periode>): Periode {
     slutt: "2026-10-01",
     kompetansemal: null,
     notat: null,
+    farge: null,
     ...over,
   };
 }
@@ -155,7 +156,10 @@ describe("byggArk", () => {
     const a = ark({
       medPerioder: true,
       perioder: [periode({})],
-      okter: [okt({ dato: "2026-11-01" }), okt({ dato: "2026-09-01" })],
+      okter: [
+        okt({ dato: "2026-11-01" }),
+        okt({ dato: "2026-09-01", periodeId: "p1" }),
+      ],
     });
     expect(a.bolker.map((b) => b.navn)).toEqual([
       "Markedsanalyse",

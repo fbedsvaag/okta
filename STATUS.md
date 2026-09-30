@@ -3,8 +3,8 @@
 Kort status pr. 2026-09-30, versjon 0.1.3. Skrevet mot SPEC.md slik den er nå.
 Denne fila eies fritt — oppdater den løpende, i motsetning til SPEC.md.
 
-**372 tester, alle grønne. `tsc --noEmit` er ren. `npm run build` går
-gjennom. 16 migrasjoner.**
+**376 tester, alle grønne. `tsc --noEmit` er ren. `npm run build` går
+gjennom. 17 migrasjoner.**
 
 ## Hva som virker
 
@@ -95,6 +95,10 @@ Skjerm for skjerm (§4), med tilstand:
   Eieren vil kunne dra en elev til en annen dag (typisk «sist»), nå som
   samtalene går over flere økter. Koden: settes inn når måldagen har
   plass, bytter plass med eleven det slippes på når den er full.
+- **§3.3 og §4.2 Perioder.** Spec sier at perioden utledes av datoene, og
+  at `periode.start/slutt` er planlagt spenn. Nå står perioden på økta
+  (`okt.periode_id`, migrasjon 017), og settes ved å fargelegge økter i
+  lista. Spennet følger det som er farget. Tema skrives rett i lista.
 - **§3.2/§3.3** mangler de nye feltene fra migrasjon 014: `okt.lekse` og
   `skolear_fag.rom`, `laerer`, `kompetansemal`, `arknotat`. Og
   innstillingen `laerer_navn` står ikke i tabellen i §4.8.
@@ -108,7 +112,7 @@ rettes tilbake, ligger hos eieren.
 
 ## Tester
 
-21 testfiler, 372 tester, alle grønne. `tsc` ren.
+22 testfiler, 376 tester, alle grønne. `tsc` ren.
 
 Dekningen er tung i datalaget og tynn i skjermlaget. Migrasjonene testes ved å
 kjøre dem i to omganger med data imellom — kjørt mot en tom base ville en

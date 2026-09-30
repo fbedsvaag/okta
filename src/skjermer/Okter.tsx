@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { confirm as bekreft } from "@tauri-apps/plugin-dialog";
 import {
   hentOkter,
+  endreOkt,
   hentOktVurderinger,
   opprettOkt,
   slettetekst,
@@ -40,7 +41,13 @@ import { Arsplan } from "./Arsplan";
 import { Arsplanmeny } from "./Arsplanmeny";
 import { hentArk, type Ark } from "../data/arsplanark";
 import { TRAFIKKLYS } from "../ui/farger";
-import { hentAllePerioder, periodeFor, type Periode } from "../data/perioder";
+import {
+  fargelegg,
+  hentAllePerioder,
+  periodeFor,
+  type Periode,
+} from "../data/perioder";
+import { Penselrad, VISK, type Pensel } from "./Penselrad";
 import { ElevPanel } from "./ElevPanel";
 import { useGlidende } from "../ui/bevegelse";
 import type { Skolear } from "../data/skolear";
@@ -112,6 +119,25 @@ export function Okter({
   const [meny, setMeny] = useState<{ okt: Okt; x: number; y: number } | null>(
     null,
   );
+  // Perioden som males med akkurat nå, eller viskelæret (§4.2).
+  const [pensel, setPensel] = useState<Pensel>(null);
+
+  // Penselen hører til ett fag. Byttes faget, legges den fra seg.
+  useEffect(() => setPensel(null), [filterFag]);
+
+  async function mal(ider: string[], p: Exclude<Pensel, null>) {
+    await fargelegg(ider, p === VISK ? null : p);
+    await last();
+  }
+
+  /**
+   * Temaet skrives rett i lista. Lagres uten å laste alt på nytt, så
+   * markøren kan gå videre til neste rad uten at lista tegnes om under den.
+   */
+  async function lagreTema(id: string, tema: string | null) {
+    setOkter((f) => f.map((o) => (o.id === id ? { ...o, tema } : o)));
+    await endreOkt(id, { tema });
+  }
 
   const skolearId = skolear.id;
   const skolearStart = skolear.start;
@@ -186,6 +212,21 @@ export function Okter({
     }
     return kart;
   }, [okter, perioder]);
+
+  // Periodens farge per økt, til tonen over raden. Vises uavhengig av om
+  // Periode-kolonnen er slått på: det er fargen som er periodiseringen.
+  const periodeFarge = useMemo(() => {
+    const kart = new Map<string, string>();
+    for (const [id, p] of periodePerOkt) if (p.farge) kart.set(id, p.farge);
+    return kart;
+  }, [periodePerOkt]);
+
+  const periodeAntall = useMemo(() => {
+    const kart = new Map<string, number>();
+    for (const p of periodePerOkt.values())
+      kart.set(p.id, (kart.get(p.id) ?? 0) + 1);
+    return kart;
+  }, [periodePerOkt]);
 
   const { vist: apen, apen: glir } = useGlidende(
     okter.find((o) => o.id === valgt) ?? null,
@@ -267,6 +308,31 @@ export function Okter({
             </div>
           </div>
 
+          {/*
+            Periodiseringen som fargelegging. Bare når ett fag er valgt —
+            periodene hører til faget.
+          */}
+          {filterFag && (
+            <div className="shrink-0">
+              <Penselrad
+                skolearFagId={filterFag}
+                perioder={perioder.filter((p) => p.skolearFagId === filterFag)}
+                antall={periodeAntall}
+                pensel={pensel}
+                harMerket={merket.size > 0}
+                onVelg={setPensel}
+                onMalMerkede={async (p) => {
+                  await mal([...merket], p);
+                  setMerket(new Set());
+                }}
+                onNy={async (id) => {
+                  await last();
+                  setPensel(id);
+                }}
+              />
+            </div>
+          )}
+
           {/* Én rullesone. Hadde lista hatt sin egen overflow-x, ville
             månedene festet seg til DEN i stedet for til denne. */}
           <div className="min-h-0 flex-1 overflow-auto">
@@ -331,6 +397,15 @@ export function Okter({
                 blokkert={blokkert}
                 vurderinger={vurderinger}
                 perioder={medPerioder ? periodePerOkt : new Map()}
+                periodeFarge={periodeFarge}
+                pensel={pensel}
+                penselFarge={
+                  pensel && pensel !== VISK
+                    ? (perioder.find((p) => p.id === pensel)?.farge ?? null)
+                    : null
+                }
+                onMal={(ider) => pensel && void mal(ider, pensel)}
+                onTema={(id, tema) => void lagreTema(id, tema)}
                 onApnePerioder={onApnePerioder}
                 onVelg={setValgt}
                 onMerk={(id, pa) =>
@@ -488,6 +563,11 @@ function Liste({
   blokkert,
   vurderinger,
   perioder,
+  periodeFarge,
+  pensel,
+  penselFarge,
+  onMal,
+  onTema,
   onApnePerioder,
   onVelg,
   onMerk,
@@ -501,6 +581,14 @@ function Liste({
   blokkert: Map<string, Blokkering>;
   vurderinger: Map<string, OktVurdering[]>;
   perioder: Map<string, Periode>;
+  /** periodens farge per økt, til tonen over raden */
+  periodeFarge: Map<string, string>;
+  /** perioden som males med, eller viskelæret; null = vanlig klikk */
+  pensel: Pensel;
+  /** fargen på penselen, til å vise det som males før det er lagret */
+  penselFarge: string | null;
+  onMal: (ider: string[]) => void;
+  onTema: (id: string, tema: string | null) => void;
   onApnePerioder: () => void;
   onVelg: (id: string) => void;
   onMerk: (id: string, pa: boolean) => void;
@@ -508,6 +596,44 @@ function Liste({
   onMeny: (okt: Okt, x: number, y: number) => void;
 }) {
   const alleMerket = okter.length > 0 && okter.every((o) => merket.has(o.id));
+
+  // Fargelegging med dra: museknappen ned på én rad, over flere, og slipp.
+  // Radene som males vises med penselens farge med en gang, og lagres samlet
+  // når knappen slippes.
+  const [malte, setMalte] = useState<Set<string>>(new Set());
+  const drar = useRef(false);
+
+  useEffect(() => {
+    const slipp = () => {
+      if (!drar.current) return;
+      drar.current = false;
+      setMalte((m) => {
+        if (m.size > 0) onMal([...m]);
+        return new Set();
+      });
+    };
+    window.addEventListener("mouseup", slipp);
+    return () => window.removeEventListener("mouseup", slipp);
+  }, [onMal]);
+
+  /** Tonen over raden: det som males nå, ellers periodens farge. */
+  function tone(id: string): string | undefined {
+    if (malte.has(id)) return penselFarge ? `${penselFarge}33` : undefined;
+    const f = periodeFarge.get(id);
+    return f ? `${f}1f` : undefined;
+  }
+
+  /** Enter hopper til neste rads tema, Shift+Enter til forrige. */
+  function hopp(fra: HTMLInputElement, retning: 1 | -1) {
+    const alle = [
+      ...document.querySelectorAll<HTMLInputElement>("input[data-tema]"),
+    ];
+    const neste = alle[alle.indexOf(fra) + retning];
+    if (neste) {
+      neste.focus();
+      neste.select();
+    } else fra.blur();
+  }
 
   return (
     <div>
@@ -566,7 +692,28 @@ function Liste({
                   e.preventDefault();
                   onMeny(o, e.clientX, e.clientY);
                 }}
+                onMouseDown={(e) => {
+                  if (!pensel || e.button !== 0) return;
+                  if ((e.target as HTMLElement).closest("input")) return;
+                  // Ingen tekstmarkering mens det males.
+                  e.preventDefault();
+                  drar.current = true;
+                  setMalte(new Set([o.id]));
+                }}
+                onMouseOver={() => {
+                  // mouseover, ikke mouseenter: den kommer hver gang musa er
+                  // over raden, og å legge samme rad til på nytt gjør ingenting.
+                  if (drar.current && !malte.has(o.id))
+                    setMalte((m) => new Set(m).add(o.id));
+                }}
+                style={
+                  valgt === o.id || merket.has(o.id)
+                    ? undefined
+                    : { background: tone(o.id) }
+                }
                 className={`flex w-full items-center gap-3 border-b border-linje-svak px-2 ${
+                  pensel ? "cursor-cell select-none" : ""
+                } ${
                   valgt === o.id
                     ? "bg-valgt"
                     : merket.has(o.id)
@@ -578,12 +725,22 @@ function Liste({
                   type="checkbox"
                   checked={merket.has(o.id)}
                   onChange={(e) => onMerk(o.id, e.target.checked)}
-                  title="Merk for sletting"
+                  title="Merk for sletting eller fargelegging"
                   className="shrink-0"
                 />
-                <button
-                  onClick={() => onVelg(o.id)}
-                  className="flex min-w-0 flex-1 items-center gap-3 py-1.5 text-left text-brod"
+                {/*
+                  Raden er ikke en <button>: tema-feltet ligger inni, og en
+                  knapp kan ikke inneholde et felt. Klikk hvor som helst
+                  utenom feltet åpner økta.
+                */}
+                <div
+                  role="button"
+                  onClick={(e) => {
+                    if (pensel) return;
+                    if ((e.target as HTMLElement).closest("input")) return;
+                    onVelg(o.id);
+                  }}
+                  className="flex min-w-0 flex-1 cursor-default items-center gap-3 py-1 text-left text-brod"
                 >
                   {vis.has("uke") && (
                     <span className="w-7 shrink-0 tabular-nums text-blekk-svak">
@@ -622,7 +779,33 @@ function Liste({
                       {o.varighetMin} min
                     </span>
                   )}
-                  <Kappet verdi={o.tema} klasse="flex-1" />
+                  <input
+                    data-tema
+                    defaultValue={o.tema ?? ""}
+                    key={o.tema ?? ""}
+                    placeholder="Skriv tema …"
+                    readOnly={pensel !== null}
+                    title={o.tema ?? undefined}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        hopp(e.currentTarget, e.shiftKey ? -1 : 1);
+                      }
+                      if (e.key === "Escape") {
+                        e.currentTarget.value = o.tema ?? "";
+                        e.currentTarget.blur();
+                      }
+                    }}
+                    onBlur={(e) => {
+                      const ny = e.target.value.trim() || null;
+                      if (ny !== o.tema) onTema(o.id, ny);
+                    }}
+                    className={`min-w-0 flex-1 truncate rounded border border-transparent bg-transparent px-1 py-0.5 outline-none placeholder:text-blekk-svakest ${
+                      pensel
+                        ? "pointer-events-none"
+                        : "hover:border-linje focus:border-aksent focus:bg-ark"
+                    }`}
+                  />
                   {vis.has("periode") && (
                     <span className="w-36 shrink-0 truncate">
                       {perioder.has(o.id) ? (
@@ -680,7 +863,7 @@ function Liste({
                     </span>
                   )}
                   <Status okt={o} />
-                </button>
+                </div>
               </div>
             </div>
           ))}

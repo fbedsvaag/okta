@@ -116,6 +116,12 @@ fn migrations() -> Vec<Migration> {
             sql: include_str!("../migrations/016_vurdering_flere_okter.sql"),
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 17,
+            description: "perioden står på økta: fargelegging i stedet for datoer",
+            sql: include_str!("../migrations/017_periode_malt.sql"),
+            kind: MigrationKind::Up,
+        },
     ]
 }
 
