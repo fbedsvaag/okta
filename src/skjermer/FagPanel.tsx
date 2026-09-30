@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { lyttElever } from "../data/endringer";
 import { confirm as bekreft } from "@tauri-apps/plugin-dialog";
 import {
   hentFagElever,
@@ -43,6 +44,10 @@ export function FagPanel({
   const [elever, setElever] = useState<FagElev[]>([]);
   const [vurderinger, setVurderinger] = useState<FagVurdering[]>([]);
   const [laererNavn, setLaererNavn] = useState<string | null>(null);
+  // Telles opp når en elev endres et annet sted, så elevlista hentes på nytt.
+  const [elevversjon, setElevversjon] = useState(0);
+
+  useEffect(() => lyttElever(() => setElevversjon((v) => v + 1)), []);
 
   useEffect(() => {
     void hentInnstilling(LAERERNAVN).then(setLaererNavn);
@@ -64,7 +69,7 @@ export function FagPanel({
     return () => {
       avbrutt = true;
     };
-  }, [fag.id, skolearId]);
+  }, [fag.id, skolearId, elevversjon]);
 
   useEffect(() => {
     const paEsc = (e: KeyboardEvent) => e.key === "Escape" && onLukk();

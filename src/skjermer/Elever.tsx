@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { confirm as bekreft } from "@tauri-apps/plugin-dialog";
+import { lyttElever } from "../data/endringer";
 import {
   endreElev,
   finnEllerOpprettKlasse,
@@ -126,6 +127,10 @@ export function Elever({
       if (v) setSynligeKolonner(new Set(JSON.parse(v) as Synlig[]));
     });
   }, [skolearId]);
+
+  // Endres en elev fra et kort over lista — fag, mentor, klasse —
+  // skal lista vise det når kortet lukkes.
+  useEffect(() => lyttElever(() => void last()), [skolearId]);
 
   function byttKolonne(id: Synlig, pa: boolean) {
     setSynligeKolonner((f) => {

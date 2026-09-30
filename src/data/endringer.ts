@@ -28,3 +28,29 @@ export function varsle(): void {
     }
   }
 }
+
+// ----------------------------------------------------------------- elever
+
+/**
+ * Beskjed om at en elev er endret — fag, mentor, klasse eller sletting.
+ *
+ * Elevkortet kan ligge over elevlista eller fagpanelet. Endrer man faget
+ * til en elev i kortet, skal lista bak vise det med en gang; ellers ser det
+ * ut som ingenting skjedde.
+ */
+const elevlyttere = new Set<Lytter>();
+
+export function lyttElever(fn: Lytter): () => void {
+  elevlyttere.add(fn);
+  return () => elevlyttere.delete(fn);
+}
+
+export function varsleElever(): void {
+  for (const fn of elevlyttere) {
+    try {
+      fn();
+    } catch (e) {
+      console.error("elevlytter:", e);
+    }
+  }
+}

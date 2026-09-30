@@ -283,6 +283,14 @@ export function ElevPanel({
                     checked={har}
                     onChange={async (e) => {
                       if (e.target.checked) {
+                        if (
+                          !(await bekreft(
+                            `Legge ${elev.fornavn} ${elev.etternavn} til i ${f.kode}? Hen kommer med i fagets elevliste og i øktene.`,
+                          ))
+                        ) {
+                          e.target.checked = false;
+                          return;
+                        }
                         await koblePaFag(elevId, f.id);
                       } else {
                         const n = await tellSkaringerIFag(elevId, f.id);

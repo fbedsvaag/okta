@@ -1,3 +1,4 @@
+import { varsleElever } from "./endringer";
 import { hent, oppdater, settInn, slett } from "../db";
 import { lagElevkode } from "./elevkode";
 import type { EksisterendeElev } from "../import/duplikat";
@@ -266,6 +267,7 @@ export async function settMentor(
   if (!finnes[0]) return false;
 
   await oppdater("elev_klasse", finnes[0].id, { mentor: pa ? 1 : 0 });
+  varsleElever();
   return true;
 }
 
@@ -280,27 +282,22 @@ export async function settKlasse(
   );
 
   if (klasseId === null) {
-    if (finnes[0]) {
-      await slett("elev_klasse", finnes[0].id);
-    }
-    return;
-  }
-
-  // UNIQUE(elev_id, skolear_id) gjelder også soft-slettede rader, så raden
-  // gjenbrukes i stedet for at vi setter inn en ny (§12).
-  if (finnes[0]) {
+    if (finnes[0]) await slett("elev_klasse", finnes[0].id);
+  } else if (finnes[0]) {
+    // UNIQUE(elev_id, skolear_id) gjelder også soft-slettede rader, så raden
+    // gjenbrukes i stedet for at vi setter inn en ny (§12).
     await oppdater("elev_klasse", finnes[0].id, {
       klasse_id: klasseId,
       slettet: null,
     });
-    return;
+  } else {
+    await settInn("elev_klasse", {
+      elev_id: elevId,
+      klasse_id: klasseId,
+      skolear_id: skolearId,
+    });
   }
-
-  await settInn("elev_klasse", {
-    elev_id: elevId,
-    klasse_id: klasseId,
-    skolear_id: skolearId,
-  });
+  varsleElever();
 }
 
 export async function koblePaFag(
@@ -313,12 +310,16 @@ export async function koblePaFag(
   );
 
   if (finnes[0]) {
+    // Koblet før og tatt ut: raden gjenbrukes (UNIQUE, §12).
     if (finnes[0].slettet)
       await oppdater("elev_fag", finnes[0].id, { slettet: null });
-    return;
+  } else {
+    await settInn("elev_fag", {
+      elev_id: elevId,
+      skolear_fag_id: skolearFagId,
+    });
   }
-
-  await settInn("elev_fag", { elev_id: elevId, skolear_fag_id: skolearFagId });
+  varsleElever();
 }
 
 /**
@@ -352,6 +353,7 @@ export async function frakobleFag(
   if (finnes[0]) {
     await slett("elev_fag", finnes[0].id);
   }
+  varsleElever();
 }
 
 // --------------------------------------------------------------- opprydding
@@ -464,6 +466,7 @@ export async function slettElevHelt(elevId: string): Promise<void> {
     for (const r of rader) await slett(tabell, r.id);
   }
   await slett("elev", elevId);
+  varsleElever();
 }
 
 /** Hvor mange skåringer eleven har i ett fag, i året faget hører til. */
