@@ -11,8 +11,14 @@ import {
   type Vurdering,
 } from "../data/vurderinger";
 import {
+  antallEnheter,
+  delIGrupper,
   delPaDager,
   endreSamtaledag,
+  enhetId,
+  flyttTilEnhet,
+  medlemmerAv,
+  samlePaTid,
   finnLunsj,
   fjernDagFraOkt,
   leggDagIOkt,
@@ -62,6 +68,9 @@ import { Bryter, Felt, Ikon, Kappet, Knapp, Tomtilstand } from "../ui/felles";
  */
 
 export type Modus = "fag" | "mentor";
+
+/** Datatypen når et navn dras ut av en gruppe (ikke hele raden). */
+const ELEVDRAG = "application/x-okta-elev";
 type Visning = "timeplan" | "fordeling" | "alfabetisk";
 
 /** En dag slik den vises i timeplanen. */
@@ -72,8 +81,12 @@ type Dagplan = {
   rader: {
     /** raden i basen, når trekningen er lagret */
     samtaleId: string | null;
+    /** eleven — eller gruppa, som én enhet (se `enhetId`) */
     elevId: string;
+    /** navnene, kommaseparert når det er en gruppe */
     navn: string;
+    /** elevene på plassen: én, eller flere i en gruppesamtale */
+    medlemmer: { id: string; navn: string }[];
     tema: string | null;
     fra: string;
     til: string;
@@ -134,6 +147,13 @@ export function Samtaler({
   > | null>(null);
   const [publiserer, setPubliserer] = useState(false);
   const [vurderinger, setVurderinger] = useState<Vurdering[]>([]);
+  // Hvor mange som har samtale sammen: 1 = enkeltvis, 2 = par, osv.
+  // Huskes per fag, og for mentorsamtalene for seg.
+  const [storrelse, setStorrelse] = useState(1);
+  const storrelseNokkel =
+    modus === "mentor"
+      ? "samtale_storrelse_mentor"
+      : `samtale_storrelse_${fagId}`;
   // Fagets økter, til avkrysningen. Samtalene legges i øktene (§4.10).
   const [oktvalg, setOktvalg] = useState<Oktvalg[]>([]);
   // Vurderingen trekningen hører til. Står på dagene i basen, men må kunne
@@ -174,20 +194,30 @@ export function Samtaler({
         fra: s.klokkeslett,
         til: tilKlokke(tilMin(s.klokkeslett) + s.varighetMin),
       }));
+      // Elever på samme klokkeslett er én gruppesamtale. De samles igjen til
+      // én plass, slik de ble trukket.
       lagrede.push({
         dag,
         lunsj: finnLunsj(tider, dag),
-        rader: samtaler.map((s) => ({
-          samtaleId: s.id,
-          elevId: s.elevId,
-          navn: `${s.fornavn} ${s.etternavn}`,
-          // En dag uten fag har ingen oppgave. Sto det likevel noe der fra
-          // før, er det spor etter feilen over, og det skal ikke vises.
-          tema: dag.skolearFagId === null ? null : s.tema,
-          fra: s.klokkeslett,
-          til: tilKlokke(tilMin(s.klokkeslett) + s.varighetMin),
-          motte: s.motte,
-        })),
+        rader: samlePaTid(samtaler).map((gr) => {
+          const s = gr[0];
+          const medlemmer = gr.map((x) => ({
+            id: x.elevId,
+            navn: `${x.fornavn} ${x.etternavn}`,
+          }));
+          return {
+            samtaleId: s.id,
+            elevId: enhetId(gr.map((x) => x.elevId)),
+            navn: medlemmer.map((m) => m.navn).join(", "),
+            medlemmer,
+            // En dag uten fag har ingen oppgave. Sto det likevel noe der fra
+            // før, er det spor etter feilen over, og det skal ikke vises.
+            tema: dag.skolearFagId === null ? null : s.tema,
+            fra: s.klokkeslett,
+            til: tilKlokke(tilMin(s.klokkeslett) + s.varighetMin),
+            motte: gr.every((x) => x.motte),
+          };
+        }),
       });
     }
     setTrekning(lagrede.length > 0 ? lagrede : null);
@@ -224,6 +254,12 @@ export function Samtaler({
   useEffect(() => {
     void last();
   }, [skolear.id, modus, fagId]);
+
+  useEffect(() => {
+    void hentInnstilling(storrelseNokkel).then((v) =>
+      setStorrelse(v ? Math.max(1, Number(v) || 1) : 1),
+    );
+  }, [storrelseNokkel]);
 
   useEffect(() => {
     if (modus !== "fag" || !fagId) return;
@@ -277,15 +313,22 @@ export function Samtaler({
         lunsj: lunsjslot
           ? { fra: tilKlokke(lunsjslot.fra), til: tilKlokke(lunsjslot.til) }
           : null,
-        rader: slots.map((s, j) => ({
-          samtaleId: null,
-          elevId: paDagen[j],
-          navn: navn.get(paDagen[j]) ?? "",
-          tema: temakart.get(paDagen[j]) ?? null,
-          fra: tilKlokke(s.fra),
-          til: tilKlokke(s.til),
-          motte: true,
-        })),
+        rader: slots.map((s, j) => {
+          const medlemmer = medlemmerAv(paDagen[j]).map((id) => ({
+            id,
+            navn: navn.get(id) ?? "",
+          }));
+          return {
+            samtaleId: null,
+            elevId: paDagen[j],
+            navn: medlemmer.map((m) => m.navn).join(", "),
+            medlemmer,
+            tema: temakart.get(paDagen[j]) ?? null,
+            fra: tilKlokke(s.fra),
+            til: tilKlokke(s.til),
+            motte: true,
+          };
+        }),
       });
     });
     return plan;
@@ -307,14 +350,17 @@ export function Samtaler({
     }
 
     for (const d of plan) {
+      // En gruppe pakkes ut: hver elev får sin rad, på samme klokkeslett.
       await lagreTrekning(
         d.dag.id,
-        d.rader.map((r) => ({
-          elevId: r.elevId,
-          klokkeslett: r.fra,
-          varighetMin: minutter,
-          tema: r.tema,
-        })),
+        d.rader.flatMap((r) =>
+          medlemmerAv(r.elevId).map((elevId) => ({
+            elevId,
+            klokkeslett: r.fra,
+            varighetMin: minutter,
+            tema: r.tema,
+          })),
+        ),
       );
     }
     setLagret(true);
@@ -374,6 +420,34 @@ export function Samtaler({
       for (const r of d.rader) if (r.tema) na.set(r.elevId, r.tema);
     }
     await skriv(byggPlan(nye, na));
+  }
+
+  /**
+   * Flytter én elev fra sin gruppe over i en annen — den manuelle justeringen
+   * av gruppene. Temaet og låsen følger plassen, ikke eleven.
+   */
+  async function flyttElev(elevId: string, dagIdx: number, radIdx: number) {
+    if (!trekning) return;
+    const perDag = dager.map(
+      (d) =>
+        trekning.find((p) => p.dag.id === d.id)?.rader.map((r) => r.elevId) ??
+        [],
+    );
+    const tilDag = dager.findIndex((d) => d.id === trekning[dagIdx]?.dag.id);
+    if (tilDag < 0) return;
+
+    const { perDag: nye, nyId } = flyttTilEnhet(perDag, elevId, {
+      dag: tilDag,
+      rad: radIdx,
+    });
+    if (nyId.size === 0) return;
+
+    const tema = new Map<string, string>();
+    for (const d of trekning)
+      for (const r of d.rader)
+        if (r.tema) tema.set(nyId.get(r.elevId) ?? r.elevId, r.tema);
+    setLasteElever((l) => new Set([...l].map((id) => nyId.get(id) ?? id)));
+    await skriv(byggPlan(nye, tema));
   }
 
   /**
@@ -489,12 +563,15 @@ export function Samtaler({
 
     const ider = deltakere.map((d) => d.id);
     const ordnet = vekting ? vektetRekkefolge(ider, historikk) : stokk(ider);
+    // Gruppene settes sammen av den trukne rekkefølgen, så de er tilfeldige
+    // de også. Hver gruppe er én plass i timeplanen.
+    const enheter = delIGrupper(ordnet, storrelse).map(enhetId);
 
     setLasteElever(new Set());
     await skriv(
       byggPlan(
-        delPaDager(ordnet, kapasiteter),
-        tildelTema(ordnet, aktiveTemaer),
+        delPaDager(enheter, kapasiteter),
+        tildelTema(enheter, aktiveTemaer),
       ),
     );
   }
@@ -528,6 +605,9 @@ export function Samtaler({
 
   const kapasiteter = dager.map((d) => kapasitet(d, minutter, pausen));
   const samletKapasitet = kapasiteter.reduce((a, b) => a + b, 0);
+  // Plassene som trengs: én per elev, eller én per gruppe.
+  const plasserTrengs = antallEnheter(deltakere.length, storrelse);
+  const plassord = storrelse > 1 ? "grupper" : "elever";
   const timer = dager.reduce((sum, d) => sum + timerPaDagen(d), 0);
 
   return (
@@ -606,9 +686,39 @@ export function Samtaler({
                 bredde="w-1/2"
               />
             </div>
+            <label className="mt-2 block">
+              <span className="mb-1 block text-etikett uppercase tracking-etikett text-blekk-dempet">
+                Samtale
+              </span>
+              <select
+                value={storrelse}
+                onChange={(e) => {
+                  const n = Number(e.target.value);
+                  setStorrelse(n);
+                  void settInnstilling(storrelseNokkel, String(n));
+                }}
+                className="w-full rounded border border-linje bg-ark px-2 py-1.5 text-brod"
+              >
+                <option value={1}>Enkeltvis</option>
+                <option value={2}>I par</option>
+                <option value={3}>Tre og tre</option>
+                <option value={4}>Fire og fire</option>
+                <option value={5}>Fem og fem</option>
+                <option value={6}>Seks og seks</option>
+              </select>
+            </label>
             <p className="mt-1 text-liten text-blekk-dempet">
-              {deltakere.length} elever · plass til {samletKapasitet}
+              {deltakere.length} elever
+              {storrelse > 1 && ` i ${plasserTrengs} grupper`} · plass til{" "}
+              {samletKapasitet} {plassord}
             </p>
+            {storrelse > 1 && (
+              <p className="mt-1 text-liten text-blekk-svak">
+                Minuttene gjelder hele gruppa. Går det ikke opp, blir de siste
+                gruppene én større. Dra et navn i timeplanen over på en annen
+                gruppe for å flytte eleven.
+              </p>
+            )}
           </Bolk>
 
           <Bolk tittel="Elever">
@@ -737,6 +847,7 @@ export function Samtaler({
                 okter={oktvalg}
                 dager={dager}
                 kapasiteter={kapasiteter}
+                plassord={plassord}
                 onVelg={async (okt, pa) => {
                   const dag = dager.find((d) => d.oktId === okt.id);
                   if (pa) {
@@ -772,6 +883,7 @@ export function Samtaler({
                   dag={dag}
                   nr={i + 1}
                   kapasitet={kapasiteter[i]}
+                  plassord={plassord}
                   onEndre={async (felter) => {
                     await endreSamtaledag(dag.id, felter);
                     await last();
@@ -880,10 +992,10 @@ export function Samtaler({
       </div>
 
       <div className="min-h-0 flex-1 overflow-auto">
-        {deltakere.length > samletKapasitet && dager.length > 0 && (
+        {plasserTrengs > samletKapasitet && dager.length > 0 && (
           <div className="mb-4 border border-varsel bg-fri-flate px-3 py-2 text-brod text-varsel">
-            Kapasiteten ({samletKapasitet} elever) er lavere enn antall elever (
-            {deltakere.length}).{" "}
+            Kapasiteten ({samletKapasitet} {plassord}) er lavere enn det som
+            trengs ({plasserTrengs} {plassord}).{" "}
             {modus === "fag"
               ? "Kryss av for flere økter, legg til en egen dag, eller reduser pausetiden."
               : "Legg til flere dager, forleng øktene, eller reduser pausetiden."}
@@ -992,6 +1104,7 @@ export function Samtaler({
               void lagreNotat(rad, dag, tekst, folgesOpp)
             }
             onFlytt={(fra, til) => void flytt(fra, til)}
+            onFlyttElev={(elevId, dag, rad) => void flyttElev(elevId, dag, rad)}
             onLas={(elevId) =>
               setLasteElever((f) => {
                 const ny = new Set(f);
@@ -1068,11 +1181,13 @@ function Oktvelger({
   okter,
   dager,
   kapasiteter,
+  plassord,
   onVelg,
 }: {
   okter: Oktvalg[];
   dager: Samtaledag[];
   kapasiteter: number[];
+  plassord: string;
   onVelg: (okt: Oktvalg, pa: boolean) => Promise<void>;
 }) {
   const [visTidligere, setVisTidligere] = useState(false);
@@ -1128,7 +1243,7 @@ function Oktvelger({
               </span>
               {pa && (
                 <span className="shrink-0 text-liten tabular-nums text-blekk-dempet">
-                  maks {plass}
+                  maks {plass} {plassord}
                 </span>
               )}
             </label>
@@ -1151,12 +1266,15 @@ function Dagkort({
   dag,
   nr,
   kapasitet: plass,
+  plassord = "elever",
   onEndre,
   onSlett,
 }: {
   dag: Samtaledag;
   nr: number;
   kapasitet: number;
+  /** «elever», eller «grupper» i gruppesamtaler */
+  plassord?: string;
   onEndre: (felter: Record<string, unknown>) => Promise<void>;
   onSlett: () => void;
 }) {
@@ -1168,7 +1286,7 @@ function Dagkort({
         <span className="text-liten font-medium">Dag {nr}</span>
         <span className="flex items-baseline gap-2">
           <span className="text-liten tabular-nums text-blekk-dempet">
-            {plass > 0 ? `Maks ${plass} elever` : "–"}
+            {plass > 0 ? `Maks ${plass} ${plassord}` : "–"}
           </span>
           <button
             onClick={onSlett}
@@ -1263,6 +1381,7 @@ function Timeplan({
   onLas,
   onNotat,
   onFlytt,
+  onFlyttElev,
 }: {
   plan: Dagplan[];
   historikk: Map<string, Plassering[]>;
@@ -1279,6 +1398,8 @@ function Timeplan({
     fra: { dag: number; rad: number },
     til: { dag: number; rad: number; etter: boolean },
   ) => void;
+  /** en elev dras fra sin gruppe over på en annen plass */
+  onFlyttElev: (elevId: string, dag: number, rad: number) => void;
 }) {
   let plass = 0;
 
@@ -1291,7 +1412,10 @@ function Timeplan({
               {langDato(d.dag.dato)}
             </h2>
             <span className="text-liten tabular-nums text-blekk-dempet">
-              {d.dag.fra}–{d.dag.til} · {d.rader.length} elever
+              {d.dag.fra}–{d.dag.til} ·{" "}
+              {d.rader.reduce((n, r) => n + r.medlemmer.length, 0)} elever
+              {d.rader.some((r) => r.medlemmer.length > 1) &&
+                ` i ${d.rader.length} grupper`}
             </span>
           </div>
 
@@ -1333,6 +1457,9 @@ function Timeplan({
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={(e) => {
                     e.preventDefault();
+                    // Et navn dratt ut av en gruppe: eleven flyttes hit.
+                    const elev = e.dataTransfer.getData(ELEVDRAG);
+                    if (elev) return onFlyttElev(elev, dagIdx, radIdx);
                     const data = e.dataTransfer.getData("text/plain");
                     if (!data) return;
                     const kilde = JSON.parse(data) as {
@@ -1358,7 +1485,28 @@ function Timeplan({
                   <span className="w-24 shrink-0 tabular-nums text-blekk-dempet">
                     {r.fra}–{r.til}
                   </span>
-                  <Kappet verdi={r.navn} klasse="min-w-0 flex-1" />
+                  {r.medlemmer.length > 1 ? (
+                    <span className="flex min-w-0 flex-1 flex-wrap gap-1">
+                      {r.medlemmer.map((m) => (
+                        <span
+                          key={m.id}
+                          draggable={!erLast}
+                          onDragStart={(e) => {
+                            // Navnet, ikke hele raden: raden har sitt eget drag.
+                            e.stopPropagation();
+                            e.dataTransfer.setData(ELEVDRAG, m.id);
+                            e.dataTransfer.effectAllowed = "move";
+                          }}
+                          title="Dra til en annen gruppe"
+                          className={`rounded-full bg-flate px-2 py-px ${erLast ? "" : "cursor-grab hover:bg-linje-medium"}`}
+                        >
+                          {m.navn}
+                        </span>
+                      ))}
+                    </span>
+                  ) : (
+                    <Kappet verdi={r.navn} klasse="min-w-0 flex-1" />
+                  )}
                   {r.tema && (
                     <Kappet
                       verdi={r.tema}
@@ -1385,7 +1533,8 @@ function Timeplan({
                   </button>
                 </div>
 
-                {r.samtaleId && (
+                {/* Notatet går til elevens møtelogg, så det hører til én elev. */}
+                {r.samtaleId && r.medlemmer.length === 1 && (
                   <Notatfelt
                     notat={notater.get(r.elevId) ?? null}
                     onLagre={(tekst, folgesOpp) =>
@@ -1518,8 +1667,18 @@ function Fordeling({ plan }: { plan: Dagplan[] }) {
 
 /** Alfabetisk — lista sortert på navn, med tidspunkt og dag. */
 function Alfabetisk({ plan, medTema }: { plan: Dagplan[]; medTema: boolean }) {
+  // Én rad per elev, også i gruppesamtaler — lista er til å finne seg selv.
   const rader = plan
-    .flatMap((d) => d.rader.map((r) => ({ ...r, dato: d.dag.dato })))
+    .flatMap((d) =>
+      d.rader.flatMap((r) =>
+        r.medlemmer.map((m) => ({
+          ...r,
+          elevId: m.id,
+          navn: m.navn,
+          dato: d.dag.dato,
+        })),
+      ),
+    )
     .sort((a, b) => a.navn.localeCompare(b.navn, "nb-NO"));
 
   return (

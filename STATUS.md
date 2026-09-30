@@ -3,7 +3,7 @@
 Kort status pr. 2026-09-30, versjon 0.1.3. Skrevet mot SPEC.md slik den er nå.
 Denne fila eies fritt — oppdater den løpende, i motsetning til SPEC.md.
 
-**388 tester, alle grønne. `tsc --noEmit` er ren. `npm run build` går
+**398 tester, alle grønne. `tsc --noEmit` er ren. `npm run build` går
 gjennom. 18 migrasjoner.**
 
 ## Hva som virker
@@ -100,6 +100,12 @@ Skjerm for skjerm (§4), med tilstand:
   at `periode.start/slutt` er planlagt spenn. Nå står perioden på økta
   (`okt.periode_id`, migrasjon 017), og settes ved å fargelegge økter i
   lista. Spennet følger det som er farget. Tema skrives rett i lista.
+- **§4.10 Gruppesamtaler** finnes ikke i spec. Koden: «Samtale» enkeltvis,
+  i par, tre og tre … seks og seks. En gruppe er én plass i trekningen;
+  lagres som én samtalerad per elev på samme klokkeslett (ingen
+  schemaendring). Navn dras mellom grupper i timeplanen.
+- **Menyen (§4.1–4.3, §13)** er én rad; Kalender og Perioder er en bryter i
+  Økter, Skoleruta ligger under Innstillinger.
 - **§3.2/§3.3** mangler de nye feltene fra migrasjon 014: `okt.lekse` og
   `skolear_fag.rom`, `laerer`, `kompetansemal`, `arknotat`. Og
   innstillingen `laerer_navn` står ikke i tabellen i §4.8.
@@ -113,7 +119,7 @@ rettes tilbake, ligger hos eieren.
 
 ## Tester
 
-23 testfiler, 388 tester, alle grønne. `tsc` ren.
+23 testfiler, 398 tester, alle grønne. `tsc` ren.
 
 Dekningen er tung i datalaget og tynn i skjermlaget. Migrasjonene testes ved å
 kjøre dem i to omganger med data imellom — kjørt mot en tom base ville en

@@ -152,6 +152,111 @@ export function stokk<T>(
   return a;
 }
 
+// ------------------------------------------------------------ grupper
+
+/**
+ * Gruppesamtaler: en gruppe er én plass i timeplanen, med ett tema og én
+ * lås, akkurat som en enkelt elev. Trekningen behandler den som en enhet;
+ * først når den lagres, får hver elev sin egen rad — på samme klokkeslett.
+ *
+ * En enhet med én elev har elevens id. En gruppe får en id laget av
+ * medlemmene, så den kan kjennes igjen og pakkes ut igjen.
+ */
+const GRUPPE = "g:";
+
+export function enhetId(medlemmer: string[]): string {
+  return medlemmer.length === 1 ? medlemmer[0] : GRUPPE + medlemmer.join("+");
+}
+
+export function medlemmerAv(enhet: string): string[] {
+  return enhet.startsWith(GRUPPE)
+    ? enhet.slice(GRUPPE.length).split("+")
+    : [enhet];
+}
+
+/**
+ * Deler en ordnet elevliste i grupper på `storrelse`.
+ *
+ * Går det ikke opp, blir de siste gruppene én større — 25 elever i par gir
+ * elleve par og én trio. Ingen sitter igjen alene. Er det færre elever enn
+ * gruppestørrelsen, blir alle én gruppe.
+ */
+export function delIGrupper(ider: string[], storrelse: number): string[][] {
+  if (storrelse <= 1) return ider.map((id) => [id]);
+  const antall = Math.max(1, Math.floor(ider.length / storrelse));
+  const rest = ider.length - antall * storrelse;
+  const ut: string[][] = [];
+  let i = 0;
+  for (let g = 0; g < antall; g++) {
+    // Resten legges på de siste gruppene, én hver.
+    const n = storrelse + (g >= antall - rest ? 1 : 0);
+    ut.push(ider.slice(i, i + n));
+    i += n;
+  }
+  // Bare når det er færre elever enn én gruppe, er rest negativ.
+  if (i < ider.length) ut[ut.length - 1].push(...ider.slice(i));
+  return ut;
+}
+
+/**
+ * Samler lagrede samtaler til plasser igjen: elever på samme klokkeslett
+ * samme dag er én gruppesamtale. Rekkefølgen følger klokka.
+ */
+export function samlePaTid<T extends { klokkeslett: string }>(
+  rader: T[],
+): T[][] {
+  const kart = new Map<string, T[]>();
+  for (const r of rader)
+    kart.set(r.klokkeslett, [...(kart.get(r.klokkeslett) ?? []), r]);
+  return [...kart.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([, gr]) => gr);
+}
+
+/** Hvor mange plasser elevene trenger med denne gruppestørrelsen. */
+export function antallEnheter(elever: number, storrelse: number): number {
+  if (elever === 0) return 0;
+  return storrelse <= 1 ? elever : Math.max(1, Math.floor(elever / storrelse));
+}
+
+/**
+ * Flytter én elev over i en annen enhet. Enhetene er lister per dag; den
+ * eleven kom fra blir borte om den blir tom. Gir de nye enhetene, og et kart
+ * fra gammel til ny id — så tema og lås kan følge med.
+ */
+export function flyttTilEnhet(
+  perDag: string[][],
+  elevId: string,
+  til: { dag: number; rad: number },
+): { perDag: string[][]; nyId: Map<string, string> } {
+  const nyId = new Map<string, string>();
+  const ut = perDag.map((d) => d.map((e) => medlemmerAv(e)));
+  const malGammel = perDag[til.dag]?.[til.rad];
+  if (!malGammel || medlemmerAv(malGammel).includes(elevId))
+    return { perDag, nyId };
+
+  for (let d = 0; d < ut.length; d++) {
+    for (let r = 0; r < ut[d].length; r++) {
+      if (ut[d][r].includes(elevId))
+        ut[d][r] = ut[d][r].filter((x) => x !== elevId);
+    }
+  }
+  ut[til.dag][til.rad] = [...ut[til.dag][til.rad], elevId];
+
+  const ny = ut.map((d, di) =>
+    d
+      .map((m, ri) => {
+        const gammel = perDag[di][ri];
+        if (m.length === 0) return null;
+        const id = enhetId(m);
+        nyId.set(gammel, id);
+        return id;
+      })
+      .filter((x): x is string => x !== null),
+  );
+  return { perDag: ny, nyId };
+}
+
 /** Temaene fordeles jevnt og tilfeldig — like mange av hvert, så langt det går. */
 export function tildelTema(
   elevIder: string[],

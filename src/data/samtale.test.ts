@@ -5,6 +5,11 @@ import {
   finnLunsj,
   flyttInnenDagen,
   flyttMellomDager,
+  delIGrupper,
+  antallEnheter,
+  enhetId,
+  medlemmerAv,
+  flyttTilEnhet,
   fordelPaDager,
   grupperTrekninger,
   medLunsj,
@@ -729,5 +734,67 @@ describe("flyttMellomDager", () => {
       { dag: 1, rad: 0, etter: false },
     );
     expect(inn).toEqual(dager());
+  });
+});
+
+describe("gruppesamtaler", () => {
+  const elever = (n: number) =>
+    Array.from({ length: n }, (_, i) => `e${i + 1}`);
+
+  it("deler i par, og gjør den siste til en trio når det ikke går opp", () => {
+    const g = delIGrupper(elever(25), 2);
+    expect(g).toHaveLength(12);
+    expect(g.slice(0, 11).every((x) => x.length === 2)).toBe(true);
+    expect(g[11]).toHaveLength(3);
+    expect(g.flat()).toEqual(elever(25));
+  });
+
+  it("legger resten én og én på de siste gruppene", () => {
+    // 22 i firere: fem grupper, to til overs → to femmere, ikke én sekser.
+    expect(delIGrupper(elever(22), 4).map((x) => x.length)).toEqual([
+      4, 4, 4, 5, 5,
+    ]);
+  });
+
+  it("samler alle i én gruppe når de er færre enn gruppestørrelsen", () => {
+    expect(delIGrupper(elever(2), 3)).toEqual([["e1", "e2"]]);
+  });
+
+  it("gir hver elev sin egen enhet med størrelse 1", () => {
+    expect(delIGrupper(elever(3), 1)).toEqual([["e1"], ["e2"], ["e3"]]);
+  });
+
+  it("teller plassene som trengs", () => {
+    expect(antallEnheter(25, 2)).toBe(12);
+    expect(antallEnheter(25, 1)).toBe(25);
+    expect(antallEnheter(2, 3)).toBe(1);
+    expect(antallEnheter(0, 2)).toBe(0);
+  });
+
+  it("pakker en gruppe inn og ut igjen", () => {
+    const id = enhetId(["a", "b"]);
+    expect(medlemmerAv(id)).toEqual(["a", "b"]);
+    expect(enhetId(["a"])).toBe("a");
+    expect(medlemmerAv("a")).toEqual(["a"]);
+  });
+
+  it("flytter en elev til en annen gruppe, og sier hvilke id-er som ble nye", () => {
+    const ab = enhetId(["a", "b"]);
+    const cd = enhetId(["c", "d"]);
+    const { perDag, nyId } = flyttTilEnhet([[ab], [cd]], "b", {
+      dag: 1,
+      rad: 0,
+    });
+    expect(perDag).toEqual([["a"], [enhetId(["c", "d", "b"])]]);
+    expect(nyId.get(ab)).toBe("a");
+    expect(nyId.get(cd)).toBe(enhetId(["c", "d", "b"]));
+  });
+
+  it("fjerner en gruppe som blir tom", () => {
+    const { perDag } = flyttTilEnhet([["a", enhetId(["b", "c"])]], "a", {
+      dag: 0,
+      rad: 1,
+    });
+    expect(perDag).toEqual([[enhetId(["b", "c", "a"])]]);
   });
 });

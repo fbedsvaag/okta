@@ -547,3 +547,66 @@ describe("samtaledager lagt i økter", () => {
     expect(dag.oktId).toBeNull();
   });
 });
+
+describe("gruppesamtaler i basen", () => {
+  it("lagrer gruppa som én rad per elev på samme klokkeslett, og samler den igjen", async () => {
+    const { samlePaTid, enhetId, medlemmerAv } = await import("./samtale");
+    const dag = await dagMed("2026-11-24");
+    const par = enhetId([elever[0], elever[1]]);
+    const trio = enhetId([elever[2], elever[3], elever[4]]);
+
+    // Slik Samtaler lagrer: gruppa pakkes ut per elev.
+    await lagreTrekning(
+      dag,
+      [
+        { enhet: par, klokkeslett: "08:30" },
+        { enhet: trio, klokkeslett: "08:55" },
+      ].flatMap((r) =>
+        medlemmerAv(r.enhet).map((elevId) => ({
+          elevId,
+          klokkeslett: r.klokkeslett,
+          varighetMin: 20,
+          tema: "Oppgave 1",
+        })),
+      ),
+    );
+
+    const lagret = await hentSamtaler(dag);
+    expect(lagret).toHaveLength(5);
+    const plasser = samlePaTid(lagret);
+    expect(plasser.map((p) => p.map((x) => x.elevId).sort())).toEqual([
+      [elever[0], elever[1]].sort(),
+      [elever[2], elever[3], elever[4]].sort(),
+    ]);
+  });
+
+  it("gjenbruker radene når gruppene trekkes om", async () => {
+    const dag = await dagMed("2026-11-24");
+    const rad = (elevId: string, klokkeslett: string) => ({
+      elevId,
+      klokkeslett,
+      varighetMin: 20,
+      tema: null,
+    });
+    await lagreTrekning(dag, [
+      rad(elever[0], "08:30"),
+      rad(elever[1], "08:30"),
+      rad(elever[2], "08:55"),
+      rad(elever[3], "08:55"),
+    ]);
+    const for_ = new Map(
+      (await hentSamtaler(dag)).map((s) => [s.elevId, s.id]),
+    );
+
+    // Nye par: 0+2 og 1+3.
+    await lagreTrekning(dag, [
+      rad(elever[0], "08:30"),
+      rad(elever[2], "08:30"),
+      rad(elever[1], "08:55"),
+      rad(elever[3], "08:55"),
+    ]);
+    const etter = await hentSamtaler(dag);
+    expect(etter).toHaveLength(4);
+    for (const s of etter) expect(s.id).toBe(for_.get(s.elevId));
+  });
+});
