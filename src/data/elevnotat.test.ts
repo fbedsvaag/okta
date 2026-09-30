@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { lagTestbase } from "../db/testbase";
-import type { Elevnotat } from "./elevnotat";
+import type { Elevnotat, Oktnotat } from "./elevnotat";
 
 const base = lagTestbase();
 vi.mock("@tauri-apps/plugin-sql", () => ({
@@ -15,7 +15,12 @@ const {
   settLukket,
   hentNotatPerElev,
   sorterNotater,
+  flettTidslinje,
+  hentOktnotater,
 } = await import("./elevnotat");
+const { opprettOkt, settSkaring, settSkaringsnotat, slettOkt } =
+  await import("./okter");
+const { leggFagIAr } = await import("./fag");
 const { opprettSamtaledag, lagreTrekning, hentSamtaler } =
   await import("./samtale");
 const { opprettElev } = await import("./elever");
@@ -299,5 +304,77 @@ describe("notat fra en samtale", () => {
   it("gir et tomt oppslag uten elever eller dato", async () => {
     expect((await hentNotatPerElev([], "2026-11-24")).size).toBe(0);
     expect((await hentNotatPerElev([elevId], "")).size).toBe(0);
+  });
+});
+
+describe("flettTidslinje", () => {
+  const notat = (id: string, dato: string, apen = false) =>
+    ({
+      id,
+      elevId: "e",
+      skolearId: "ar",
+      skolearFagId: null,
+      fagKode: null,
+      dato,
+      tekst: id,
+      skalFolgesOpp: apen,
+      frist: null,
+      lukket: null,
+      samtaleId: null,
+    }) as Elevnotat;
+  const okt = (id: string, dato: string) =>
+    ({
+      id,
+      oktId: `o-${id}`,
+      dato,
+      fagKode: "MFL1",
+      tema: null,
+      tekst: id,
+      farge: "gul",
+      verdi: "Gul",
+    }) as Oktnotat;
+
+  it("fletter møtelogg og øktnotater etter dato, åpne punkter øverst", () => {
+    const t = flettTidslinje(
+      [notat("gammel", "2026-09-01"), notat("apen", "2026-08-20", true)],
+      [okt("okt", "2026-09-10")],
+    );
+    expect(t.map((p) => p.notat.id)).toEqual(["apen", "okt", "gammel"]);
+  });
+
+  it("filtrerer på møtelogg eller øktnotater", () => {
+    const n = [notat("m", "2026-09-01", true)];
+    const o = [okt("o", "2026-09-02")];
+    expect(flettTidslinje(n, o, "motelogg").map((p) => p.slag)).toEqual([
+      "notat",
+    ]);
+    expect(flettTidslinje(n, o, "okt").map((p) => p.slag)).toEqual(["okt"]);
+  });
+});
+
+describe("hentOktnotater", () => {
+  it("gir notatene fra skåringen, men ikke tomme eller fra slettede økter", async () => {
+    base.nullstill();
+    const ar = await opprettSkolear("2026/27", "2026-08-17", "2027-06-20");
+    const fag = await leggFagIAr(ar, "MFL1", "Markedsføring", null);
+    const elev = await opprettElev("Tony", "Soprano");
+    const GUL = "5ca1ade1-0001-4000-8000-000000000003";
+    const a = await opprettOkt(fag, "MFL1", "2026-09-01", "08:15", 90);
+    const b = await opprettOkt(fag, "MFL1", "2026-09-08", "08:15", 90);
+    const c = await opprettOkt(fag, "MFL1", "2026-09-15", "08:15", 90);
+    for (const o of [a, b, c]) await settSkaring(elev, o, GUL);
+    await settSkaringsnotat(elev, a, "Sov i timen");
+    await settSkaringsnotat(elev, b, "   ");
+    await settSkaringsnotat(elev, c, "Borte etter pause");
+    await slettOkt(c);
+
+    const n = await hentOktnotater(elev);
+    expect(n).toHaveLength(1);
+    expect(n[0]).toMatchObject({
+      oktId: a,
+      tekst: "Sov i timen",
+      fagKode: "MFL1",
+      farge: "gul",
+    });
   });
 });

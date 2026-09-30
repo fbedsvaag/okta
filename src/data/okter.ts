@@ -1,5 +1,5 @@
 import { hent, oppdater, settInn, slett } from "../db";
-import { varsle } from "./endringer";
+import { varsle, varsleElever } from "./endringer";
 import type { Skalaverdi } from "../skala";
 
 /**
@@ -445,6 +445,8 @@ export async function settSkaringsnotat(
     [elevId, oktId],
   );
   if (finnes[0]) await oppdater("skaring", finnes[0].id, { notat });
+  // Notatet står også i elevens tidslinje; kortet under skal vise det.
+  varsleElever();
 }
 
 export type OktVurdering = {

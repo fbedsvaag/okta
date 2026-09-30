@@ -3,7 +3,7 @@
 Kort status pr. 2026-09-30, versjon 0.1.3. Skrevet mot SPEC.md slik den er nå.
 Denne fila eies fritt — oppdater den løpende, i motsetning til SPEC.md.
 
-**446 tester, alle grønne. `tsc --noEmit` er ren. `npm run build` går
+**449 tester, alle grønne. `tsc --noEmit` er ren. `npm run build` går
 gjennom. 20 migrasjoner.**
 
 ## Hva som virker
@@ -30,7 +30,9 @@ Skjerm for skjerm (§4), med tilstand:
   og fag endres i panelet. Møteloggen ligger nederst.
 - **Vurderinger (§4.6)** — ferdig. Viser nå også hvilken oppgave eleven trakk,
   når vurderingen har en samtaletrekning knyttet til seg.
-- **Notater og møtelogg (§4.7)** — ferdig. Erstattet den gamle
+- **Notater og møtelogg (§4.7)** — ferdig. Tidslinja på elevkortet viser
+  også notatene fra skåringen i øktene (§4.4), med filter Alle · Møtelogg ·
+  Fra øktene. Erstattet den gamle
   oppfølgingsskjermen som aldri ble bygget.
 - **Innstillinger (§4.8)** — ferdig. Fagbank og «fag i år» ligger i Fag-fanen,
   ikke her.
@@ -109,7 +111,7 @@ dager, ⌘K, alias, de nye feltene). Det som står igjen:
 
 ## Tester
 
-29 testfiler, 446 tester, alle grønne. `tsc` ren.
+29 testfiler, 449 tester, alle grønne. `tsc` ren.
 
 Dekningen er tung i datalaget og tynn i skjermlaget. Migrasjonene testes ved å
 kjøre dem i to omganger med data imellom — kjørt mot en tom base ville en

@@ -30,3 +30,7 @@ __pycache__/
 
 # Claude Codes tillatelsesliste er maskinlokal, som navnet sier.
 .claude/settings.local.json
+
+# Ekte elevdata til utvikling (InSchool-utskrifter med navn og bilder).
+# Skal aldri inn i git eller til GitHub.
+privat/

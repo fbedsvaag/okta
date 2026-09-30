@@ -35,6 +35,7 @@ import {
   Fagmerke,
   Ikon,
   Ikonknapp,
+  Kappet,
   Knapp,
 } from "../ui/felles";
 import {
@@ -43,10 +44,15 @@ import {
   opprettElevnotat,
   settLukket,
   slettElevnotat,
-  sorterNotater,
   type Elevnotat,
   endreElevnotat,
+  flettTidslinje,
+  hentOktnotater,
+  type Notatfilter,
+  type Oktnotat,
 } from "../data/elevnotat";
+import { settSkaringsnotat } from "../data/okter";
+import { lyttElever } from "../data/endringer";
 import { NOYTRAL, skalafarge } from "../ui/farger";
 import { Markdownfelt, MarkdownSkriv } from "../ui/Notattekst";
 
@@ -682,16 +688,30 @@ function Motelogg({
   skolearId: string;
 }) {
   const [notater, setNotater] = useState<Elevnotat[]>([]);
+  // Notatene fra skåringen i øktene (§4.4). De bor på skåringsraden, men
+  // hører hjemme i elevens tidslinje sammen med møteloggen.
+  const [oktnotater, setOktnotater] = useState<Oktnotat[]>([]);
+  const [filter, setFilter] = useState<Notatfilter>("alle");
   const [skriver, setSkriver] = useState(false);
   const idag = new Date().toISOString().slice(0, 10);
+  const ark = useArk();
 
   async function last() {
-    setNotater(sorterNotater(await hentElevnotater(elevId)));
+    const [n, o] = await Promise.all([
+      hentElevnotater(elevId),
+      hentOktnotater(elevId),
+    ]);
+    setNotater(n);
+    setOktnotater(o);
   }
 
   useEffect(() => {
     void last();
   }, [elevId]);
+  // Et notat skrevet i en økt over kortet, skal stå her når økta lukkes.
+  useEffect(() => lyttElever(() => void last()), [elevId]);
+
+  const punkter = flettTidslinje(notater, oktnotater, filter);
 
   return (
     <Bolk
@@ -720,7 +740,26 @@ function Motelogg({
         />
       )}
 
-      {notater.length === 0 && !skriver && (
+      {/*
+        Filteret står bare når det er noe å skille: møteloggen og notatene
+        fra øktene.
+      */}
+      {notater.length > 0 && oktnotater.length > 0 && (
+        <div className="mb-3">
+          <Bryter
+            storrelse="liten"
+            verdi={filter}
+            settVerdi={(v) => setFilter(v as Notatfilter)}
+            valg={[
+              { id: "alle", navn: "Alle" },
+              { id: "motelogg", navn: `Møtelogg · ${notater.length}` },
+              { id: "okt", navn: `Fra øktene · ${oktnotater.length}` },
+            ]}
+          />
+        </div>
+      )}
+
+      {notater.length === 0 && oktnotater.length === 0 && !skriver && (
         <Stille>
           Ingen notater ennå. Her samles det du vil huske om eleven over tid —
           samtaler, observasjoner, avtaler.
@@ -729,15 +768,26 @@ function Motelogg({
 
       {/* Tidslinja: dato til venstre, en linje med et punkt per notat. */}
       <div className={skriver ? "mt-4" : ""}>
-        {notater.map((n, i) => (
-          <Notatrad
-            key={n.id}
-            notat={n}
-            idag={idag}
-            sist={i === notater.length - 1}
-            onEndret={last}
-          />
-        ))}
+        {punkter.map((p, i) =>
+          p.slag === "notat" ? (
+            <Notatrad
+              key={p.notat.id}
+              notat={p.notat}
+              idag={idag}
+              sist={i === punkter.length - 1}
+              onEndret={last}
+            />
+          ) : (
+            <Oktnotatrad
+              key={p.notat.id}
+              elevId={elevId}
+              notat={p.notat}
+              sist={i === punkter.length - 1}
+              onApneOkt={() => ark.apneOkt(p.notat.oktId)}
+              onEndret={last}
+            />
+          ),
+        )}
       </div>
 
       <p className="mt-2 text-etikett text-blekk-svak">
@@ -745,6 +795,90 @@ function Motelogg({
         kategorier hører ikke hjemme her.
       </p>
     </Bolk>
+  );
+}
+
+/** Datoen til venstre i tidslinja: dag og måned, år og ukedag under. */
+function Tidslinjedato({ dato }: { dato: string }) {
+  const d = new Date(`${dato}T12:00:00`);
+  const dag = d.toLocaleDateString("nb-NO", { day: "numeric", month: "short" });
+  const arOgUkedag = `${d.getFullYear()} · ${d.toLocaleDateString("nb-NO", {
+    weekday: "short",
+  })}`;
+  return (
+    <div className="w-[4.75rem] shrink-0 pt-px text-right">
+      <div className="text-brod font-medium tabular-nums text-blekk">
+        {dag.replace(/\.$/, "")}
+      </div>
+      <div className="text-mikro tabular-nums text-blekk-svak">
+        {arOgUkedag.replace(/\.$/, "")}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Et notat fra skåringen i en økt. Prikken har skåringens farge, så
+ * tidslinja også viser hvordan timen gikk. Fag og tema åpner økta.
+ */
+function Oktnotatrad({
+  elevId,
+  notat,
+  sist,
+  onApneOkt,
+  onEndret,
+}: {
+  elevId: string;
+  notat: Oktnotat;
+  sist: boolean;
+  onApneOkt: () => void;
+  onEndret: () => void;
+}) {
+  return (
+    <div className="flex gap-3">
+      <Tidslinjedato dato={notat.dato} />
+
+      <div className="relative w-3 shrink-0" aria-hidden>
+        <span
+          className={`absolute left-1/2 top-0 w-px -translate-x-1/2 bg-linje ${
+            sist ? "h-2" : "h-full"
+          }`}
+        />
+        <span
+          className="absolute left-1/2 top-[0.4rem] h-2.5 w-2.5 -translate-x-1/2 rounded-full border-2 border-ark"
+          style={{ background: skalafarge(notat.farge) }}
+        />
+      </div>
+
+      <div className="min-w-0 flex-1 pb-4">
+        <div className="flex items-baseline gap-2 text-liten">
+          <button
+            onClick={onApneOkt}
+            className="flex min-w-0 items-baseline gap-2 text-left hover:text-aksent"
+          >
+            <span className="shrink-0 rounded-liten bg-flate px-1.5 text-blekk-dempet">
+              Økt
+            </span>
+            <span className="shrink-0 text-blekk-svak">{notat.fagKode}</span>
+            {notat.tema && (
+              <Kappet verdi={notat.tema} klasse="text-blekk-svak" />
+            )}
+          </button>
+          <span className="ml-auto shrink-0 text-blekk-svak">
+            {notat.verdi}
+          </span>
+        </div>
+        <div className="-mx-2">
+          <Markdownfelt
+            verdi={notat.tekst}
+            onLagre={async (v) => {
+              await settSkaringsnotat(elevId, notat.oktId, v ?? "");
+              onEndret();
+            }}
+          />
+        </div>
+      </div>
+    </div>
   );
 }
 

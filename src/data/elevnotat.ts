@@ -203,3 +203,82 @@ export async function hentForfalte(skolearId: string): Promise<Set<string>> {
   );
   return new Set(rader.map((r) => r.elevId));
 }
+
+// ------------------------------------------------------------- øktnotater
+
+/**
+ * Notatet du skrev på eleven mens du skåret en økt (§4.4). Det bor på
+ * skåringsraden, ikke i møteloggen — men det er like fullt noe du ville
+ * huske om eleven, og står derfor i tidslinja på elevkortet.
+ */
+export type Oktnotat = {
+  /** skåringsraden notatet står på */
+  id: string;
+  oktId: string;
+  dato: string;
+  fagKode: string;
+  tema: string | null;
+  tekst: string;
+  /** skalaverdiens fargenavn, til prikken i tidslinja */
+  farge: string | null;
+  verdi: string;
+};
+
+export async function hentOktnotater(elevId: string): Promise<Oktnotat[]> {
+  return hent<Oktnotat>(
+    `SELECT s.id, o.id AS oktId, o.dato,
+            COALESCE(NULLIF(f.alias, ''), f.kode) AS fagKode,
+            o.tema, s.notat AS tekst, sv.farge, sv.kode AS verdi
+       FROM skaring s
+       JOIN okt o          ON o.id = s.okt_id AND o.slettet IS NULL
+       JOIN skolear_fag sf ON sf.id = o.skolear_fag_id AND sf.slettet IS NULL
+       JOIN fag f          ON f.id = sf.fag_id
+       JOIN skalaverdi sv  ON sv.id = s.skalaverdi_id
+      WHERE s.elev_id = $1 AND s.slettet IS NULL
+        AND TRIM(COALESCE(s.notat, '')) <> ''
+      ORDER BY o.dato DESC, o.klokkeslett DESC`,
+    [elevId],
+  );
+}
+
+export type Tidslinjepunkt =
+  | { slag: "notat"; dato: string; notat: Elevnotat }
+  | { slag: "okt"; dato: string; notat: Oktnotat };
+
+export type Notatfilter = "alle" | "motelogg" | "okt";
+
+/**
+ * Møteloggen og øktnotatene i én tidslinje. Åpne oppfølgingspunkter står
+ * øverst som før (§4.7); resten flettes etter dato, nyeste først.
+ */
+export function flettTidslinje(
+  notater: Elevnotat[],
+  oktnotater: Oktnotat[],
+  filter: Notatfilter = "alle",
+): Tidslinjepunkt[] {
+  const sortert = sorterNotater(notater);
+  const apent = (n: Elevnotat) => n.skalFolgesOpp && n.lukket === null;
+  const topp: Tidslinjepunkt[] =
+    filter === "okt"
+      ? []
+      : sortert
+          .filter(apent)
+          .map((n) => ({ slag: "notat" as const, dato: n.dato, notat: n }));
+  const resten: Tidslinjepunkt[] = [
+    ...(filter === "okt"
+      ? []
+      : sortert
+          .filter((n) => !apent(n))
+          .map((n) => ({ slag: "notat" as const, dato: n.dato, notat: n }))),
+    ...(filter === "motelogg"
+      ? []
+      : oktnotater.map((n) => ({
+          slag: "okt" as const,
+          dato: n.dato,
+          notat: n,
+        }))),
+  ];
+  // Stabil sortering: samme dato beholder rekkefølgen over — møtelogg før økt.
+  resten.sort((a, b) => b.dato.localeCompare(a.dato));
+  return [...topp, ...resten];
+}
