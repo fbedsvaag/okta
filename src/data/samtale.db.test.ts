@@ -687,3 +687,24 @@ describe("sletting av elev", () => {
     expect(etter.gronn).toBe(0);
   });
 });
+
+describe("elev tatt ut av faget", () => {
+  it("farger ikke øktstripa, men skåringen kommer tilbake om hen kobles på igjen", async () => {
+    const { opprettOkt, settSkaring, hentOkter } = await import("./okter");
+    const { koblePaFag: kobl, frakobleFag } = await import("./elever");
+    await kobl(elever[0], fagId);
+    const okt = await opprettOkt(fagId, "MFL1", "2026-10-06", "08:30", 180);
+    const [gronn] = await base.select<{ id: string }[]>(
+      "SELECT id FROM skalaverdi WHERE farge = 'gronn' AND teller_ikke = 0 LIMIT 1",
+    );
+    await settSkaring(elever[0], okt, gronn.id);
+    expect((await hentOkter(skolearId))[0].gronn).toBe(1);
+
+    await frakobleFag(elever[0], fagId);
+    const [ute] = await hentOkter(skolearId);
+    expect([ute.skaret, ute.gronn]).toEqual([0, 0]);
+
+    await kobl(elever[0], fagId);
+    expect((await hentOkter(skolearId))[0].gronn).toBe(1);
+  });
+});

@@ -65,7 +65,8 @@ export function IDag({
         </p>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-auto">
+      {/* Rullefeltet er skjult — man ruller med styreflata. */}
+      <div className="scrollbar-skjult min-h-0 flex-1 overflow-auto">
         {/*
         Samtaledagen står først: er det samtaler i dag, er det dem dagen
         handler om. Setningen sier hva som venter — hvem du begynner med, hvor

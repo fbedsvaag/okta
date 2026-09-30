@@ -43,6 +43,10 @@ export async function hentInnsatsPerUke(
        -- Skåringer fra slettede elever teller ikke.
        JOIN elev e         ON e.id = s.elev_id AND e.slettet IS NULL
        JOIN okt o          ON o.id = s.okt_id AND o.slettet IS NULL
+       -- Bare elever som står i faget nå, som i øktlista.
+       JOIN elev_fag ef    ON ef.elev_id = s.elev_id
+                          AND ef.skolear_fag_id = o.skolear_fag_id
+                          AND ef.slettet IS NULL
        JOIN skalaverdi sv  ON sv.id = s.skalaverdi_id
        JOIN skolear_fag sf ON sf.id = o.skolear_fag_id AND sf.slettet IS NULL
       WHERE s.slettet IS NULL
@@ -100,6 +104,10 @@ export async function hentInnsatslinjer(
        FROM skaring s
        JOIN elev e         ON e.id = s.elev_id AND e.slettet IS NULL
        JOIN okt o          ON o.id = s.okt_id AND o.slettet IS NULL
+       -- Bare elever som står i faget nå, som i øktlista.
+       JOIN elev_fag ef    ON ef.elev_id = s.elev_id
+                          AND ef.skolear_fag_id = o.skolear_fag_id
+                          AND ef.slettet IS NULL
        JOIN skalaverdi sv  ON sv.id = s.skalaverdi_id
        JOIN skolear_fag sf ON sf.id = o.skolear_fag_id AND sf.slettet IS NULL
        JOIN fag f          ON f.id = sf.fag_id
