@@ -872,6 +872,17 @@ export function Samtaler({
             {modus === "fag" && (
               <Oktvelger
                 okter={oktvalg}
+                vurderingsokter={
+                  new Set(
+                    vurderinger
+                      .filter(
+                        (v) =>
+                          v.skolearFagId === fagId &&
+                          (!valgtVurdering || v.id === valgtVurdering),
+                      )
+                      .flatMap((v) => v.oktIder),
+                  )
+                }
                 dager={dager}
                 kapasiteter={kapasiteter}
                 plassord={plassord}
@@ -1221,24 +1232,34 @@ function Modusknapp({
  */
 function Oktvelger({
   okter,
+  vurderingsokter,
   dager,
   kapasiteter,
   plassord,
   onVelg,
 }: {
   okter: Oktvalg[];
+  /**
+   * Øktene som er huket av for en vurdering — den valgte, eller alle i
+   * faget når ingen er valgt. Det er bare dem samtaler legges i, så lista
+   * viser bare dem til du ber om resten.
+   */
+  vurderingsokter: Set<string>;
   dager: Samtaledag[];
   kapasiteter: number[];
   plassord: string;
   onVelg: (okt: Oktvalg, pa: boolean) => Promise<void>;
 }) {
+  const [visAlle, setVisAlle] = useState(false);
   const [visTidligere, setVisTidligere] = useState(false);
   const idag = new Date().toLocaleDateString("sv-SE");
   const valgt = new Map(dager.map((d, i) => [d.oktId, kapasiteter[i]]));
-  const synlige = okter.filter(
-    (o) => visTidligere || o.dato >= idag || valgt.has(o.id),
+  const synlige = okter.filter((o) =>
+    visAlle
+      ? visTidligere || o.dato >= idag || valgt.has(o.id)
+      : vurderingsokter.has(o.id) || valgt.has(o.id),
   );
-  const skjulte = okter.length - synlige.length;
+  const skjulte = visAlle ? okter.length - synlige.length : 0;
 
   if (okter.length === 0) {
     return (
@@ -1254,52 +1275,71 @@ function Oktvelger({
       <span className="mb-1 block text-etikett uppercase tracking-etikett text-blekk-dempet">
         Legg samtalene i økta
       </span>
-      <div className="max-h-64 overflow-y-auto rounded border border-linje bg-ark">
-        {synlige.map((o) => {
-          const pa = valgt.has(o.id);
-          const plass = valgt.get(o.id);
-          const tid = o.klokkeslett
-            ? `${o.klokkeslett}–${tilKlokke(tilMin(o.klokkeslett) + o.varighetMin)}`
-            : null;
-          return (
-            <label
-              key={o.id}
-              className={`flex items-baseline gap-2 border-b border-linje-svak px-2 py-1 text-brod last:border-b-0 ${
-                tid ? "hover:bg-flate" : "text-blekk-svak"
-              }`}
-              title={tid ? undefined : "Økta mangler klokkeslett"}
-            >
-              <input
-                type="checkbox"
-                checked={pa}
-                disabled={!tid}
-                onChange={(e) => void onVelg(o, e.target.checked)}
-                className="self-center"
-              />
-              <span className="shrink-0 tabular-nums">{kortDato(o.dato)}</span>
-              <span className="shrink-0 tabular-nums text-blekk-dempet">
-                {tid ?? "uten klokkeslett"}
-              </span>
-              <span className="min-w-0 flex-1 truncate text-blekk-dempet">
-                {o.tema}
-              </span>
-              {pa && (
-                <span className="shrink-0 text-liten tabular-nums text-blekk-dempet">
-                  maks {plass} {plassord}
+      {synlige.length === 0 ? (
+        <p className="text-liten text-blekk-svak">
+          Ingen økter er knyttet til vurderingen ennå. Huk av for vurderingen på
+          økta, eller vis alle øktene i faget.
+        </p>
+      ) : (
+        <div className="max-h-64 overflow-y-auto rounded border border-linje bg-ark">
+          {synlige.map((o) => {
+            const pa = valgt.has(o.id);
+            const plass = valgt.get(o.id);
+            const tid = o.klokkeslett
+              ? `${o.klokkeslett}–${tilKlokke(tilMin(o.klokkeslett) + o.varighetMin)}`
+              : null;
+            return (
+              <label
+                key={o.id}
+                className={`flex items-baseline gap-2 border-b border-linje-svak px-2 py-1 text-brod last:border-b-0 ${
+                  tid ? "hover:bg-flate" : "text-blekk-svak"
+                }`}
+                title={tid ? undefined : "Økta mangler klokkeslett"}
+              >
+                <input
+                  type="checkbox"
+                  checked={pa}
+                  disabled={!tid}
+                  onChange={(e) => void onVelg(o, e.target.checked)}
+                  className="self-center"
+                />
+                <span className="shrink-0 tabular-nums">
+                  {kortDato(o.dato)}
                 </span>
-              )}
-            </label>
-          );
-        })}
-      </div>
-      {skjulte > 0 && (
-        <button
-          onClick={() => setVisTidligere(true)}
-          className="mt-1 text-liten text-blekk-svak hover:text-blekk"
-        >
-          Vis {skjulte} tidligere økter
-        </button>
+                <span className="shrink-0 tabular-nums text-blekk-dempet">
+                  {tid ?? "uten klokkeslett"}
+                </span>
+                <span className="min-w-0 flex-1 truncate text-blekk-dempet">
+                  {o.tema}
+                </span>
+                {pa && (
+                  <span className="shrink-0 text-liten tabular-nums text-blekk-dempet">
+                    maks {plass} {plassord}
+                  </span>
+                )}
+              </label>
+            );
+          })}
+        </div>
       )}
+      <span className="mt-1 flex gap-4">
+        <button
+          onClick={() => setVisAlle((v) => !v)}
+          className="text-liten text-blekk-svak hover:text-blekk"
+        >
+          {visAlle
+            ? "Bare øktene med vurdering"
+            : `Vis alle ${okter.length} øktene i faget`}
+        </button>
+        {skjulte > 0 && (
+          <button
+            onClick={() => setVisTidligere(true)}
+            className="text-liten text-blekk-svak hover:text-blekk"
+          >
+            Vis {skjulte} tidligere økter
+          </button>
+        )}
+      </span>
     </div>
   );
 }

@@ -134,6 +134,12 @@ fn migrations() -> Vec<Migration> {
             sql: include_str!("../migrations/019_rydd_slettede_elever.sql"),
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 20,
+            description: "kompetansemål knyttet til en økt",
+            sql: include_str!("../migrations/020_okt_kompetansemal.sql"),
+            kind: MigrationKind::Up,
+        },
     ]
 }
 

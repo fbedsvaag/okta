@@ -17,7 +17,7 @@ import {
   opprettOkt,
   type Okt,
 } from "../data/okter";
-import { hentPeriodemal } from "../data/perioder";
+import { hentPeriodemal, settPeriodemal } from "../data/perioder";
 import { Malvelger } from "./Malvelger";
 import { ukenummer } from "../data/kalender";
 import type { FagIAr } from "../data/fag";
@@ -367,10 +367,12 @@ function Bunke({
       {p && (
         <Malvelger
           grepKode={grepKode}
-          periodeId={p.id}
           valgte={mal}
           dekketAndreSteder={dekket}
-          onEndret={onMalEndret}
+          onBytt={async (kode, pa) => {
+            await settPeriodemal(p.id, kode, pa);
+            onMalEndret();
+          }}
         />
       )}
 

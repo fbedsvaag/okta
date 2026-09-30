@@ -156,8 +156,8 @@ sidebytte. Unntak: elevkortet åpnet fra søket dekker hele bredden, uten
 lista — der er lista bare forstyrrende.
 
 **Ark over ark — kortlogikken.** Åpner du noe fra et panel eller et kort —
-en elev fra en økt, en økt fra en elevs heatmap, en økt fra forsiden eller
-kalenderen — legger det seg som et nytt ark over det du sto i. Du blir på
+en elev fra en økt, en økt fra en elevs heatmap, en økt, elev eller
+vurdering fra forsiden eller kalenderen — legger det seg som et nytt ark over det du sto i. Du blir på
 siden du var på. Arket under skyves 32 px mot venstre, krymper til 98 % og
 dempes, så kanten stikker fram og lagene kan leses. Lukk, «Tilbake» og Esc
 tar deg ett nivå tilbake — ikke helt ut. Et klikk utenfor arkene lukker alle,

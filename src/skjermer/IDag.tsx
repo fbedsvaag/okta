@@ -1,8 +1,9 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import type { Skolear } from "../data/skolear";
 import type { FagIAr } from "../data/fag";
 import { hentOkter, type Okt } from "../data/okter";
-import { Ikon, Kappet, Knapp, Tomtilstand } from "../ui/felles";
+import { Ikon, Knapp, Tomtilstand } from "../ui/felles";
+import { useArk } from "../ui/Arkstabel";
 import { Arsoversikt } from "./Arsoversikt";
 import { dagenssetning, hentSamtalerPaDato } from "../data/samtale";
 import { Ukelinje } from "./Ukelinje";
@@ -42,16 +43,16 @@ export function IDag({
   // Endres en økt i et ark over forsiden, skal uka vise det med en gang.
   useEffect(() => lytt(lastOkter), [skolear.id]);
 
-  // En økt åpnes som et ark over forsiden (Arkstabel) — du blir her.
+  // En økt, en elev eller en vurdering åpnes som et ark over forsiden
+  // (Arkstabel) — du blir her.
   const apne = onApneOkt;
+  const ark = useArk();
 
   useEffect(() => {
     void hentSamtalerPaDato(skolear.id, isoDato(new Date())).then(setSamtaler);
   }, [skolear.id]);
 
   const idag = isoDato(new Date());
-
-  const dagens = okter.filter((o) => o.dato === idag);
 
   return (
     <div className="mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col overflow-clip">
@@ -90,36 +91,27 @@ export function IDag({
           </Bolk>
         )}
 
-        <Bolk tittel="I dag">
-          {dagens.length > 0 ? (
-            dagens.map((o) => (
-              <div key={o.id}>
-                <OktLinje okt={o} onApne={apne} />
-                <Forrigelogg okt={o} alle={okter} onApne={apne} />
-              </div>
-            ))
-          ) : okter.length === 0 ? (
-            <Tomtilstand
-              tekst={
-                fag.length === 0
-                  ? "Ingen fag i skoleåret ennå."
-                  : "Ingen økter er lagt inn ennå."
-              }
-              handling={
-                <Knapp
-                  variant="primar"
-                  onClick={() => onGaTil(fag.length === 0 ? "fag" : "okter")}
-                >
-                  {fag.length === 0 ? "Legg inn fagene dine" : "Legg inn økter"}
-                </Knapp>
-              }
-            />
-          ) : (
-            <p className="py-2 text-brod text-blekk-dempet">
-              Ingen økter i dag.
-            </p>
-          )}
-        </Bolk>
+        {/*
+          Uten økter er det ingenting å vise i uka — da peker forsiden dit
+          man begynner. Dagens økter står i uka, så de har ingen egen bolk.
+        */}
+        {okter.length === 0 && (
+          <Tomtilstand
+            tekst={
+              fag.length === 0
+                ? "Ingen fag i skoleåret ennå."
+                : "Ingen økter er lagt inn ennå."
+            }
+            handling={
+              <Knapp
+                variant="primar"
+                onClick={() => onGaTil(fag.length === 0 ? "fag" : "okter")}
+              >
+                {fag.length === 0 ? "Legg inn fagene dine" : "Legg inn økter"}
+              </Knapp>
+            }
+          />
+        )}
 
         <Bolk tittel="Uka">
           <Ukelinje
@@ -134,8 +126,8 @@ export function IDag({
         <Arsoversikt
           skolearId={skolear.id}
           skolestart={skolear.start}
-          onApneElev={(elevId) => onGaTil("elever", elevId)}
-          onApneVurderinger={() => onGaTil("vurderinger")}
+          onApneElev={(elevId) => ark.apneElev(elevId)}
+          onApneVurdering={(id) => ark.apneVurdering(id)}
         />
       </div>
     </div>
@@ -156,126 +148,6 @@ function Bolk({
       </h2>
       {children}
     </section>
-  );
-}
-
-/**
- * Øktloggen fra forrige gang du hadde faget.
- *
- * Skriver du «husk å dele ut oppgavearket» i loggen på torsdag, står det her
- * neste torsdag — den dagen du faktisk trenger det. Uten dette må man lete
- * seg bakover i øktlista for å finne igjen sin egen beskjed.
- *
- * Bare økter som er holdt teller, altså de som ligger før i tid. En logg
- * skrevet på en økt lenger fram er ikke en beskjed til i dag.
- *
- * Loggen er fritekst uten lengdegrense, så den vises kappet til to linjer.
- * Uten kappingen bestemmer teksten høyden på hele bolken, og alt under —
- * årsoversikten inkludert — flytter seg etter hvor mye du skrev sist.
- */
-const LOGGLINJER = 2;
-
-function Forrigelogg({
-  okt,
-  alle,
-  onApne,
-}: {
-  okt: Okt;
-  alle: Okt[];
-  onApne: (id: string) => void;
-}) {
-  const [utvidet, setUtvidet] = useState(false);
-  const [kanUtvides, setKanUtvides] = useState(false);
-  const tekst = useRef<HTMLParagraphElement>(null);
-
-  const forrige = alle
-    .filter(
-      (o) =>
-        o.skolearFagId === okt.skolearFagId &&
-        o.dato < okt.dato &&
-        (o.logg ?? "").trim() !== "",
-    )
-    .sort((a, b) => b.dato.localeCompare(a.dato))[0];
-
-  // Om teksten faktisk er lengre enn de to linjene kan bare måles, ikke
-  // gjettes — en logg på to korte linjer skal ikke få en «vis mer» som
-  // ikke viser noe. Målingen skjer på den kappede høyden, så den utløser
-  // ingen ny layout.
-  useLayoutEffect(() => {
-    const el = tekst.current;
-    if (!el || utvidet) return;
-    setKanUtvides(el.scrollHeight > el.clientHeight + 1);
-  }, [forrige?.id, forrige?.logg, utvidet]);
-
-  if (!forrige) return null;
-
-  return (
-    <div
-      className="mb-1 rounded-vanlig border-l-2 bg-flate-svak px-3 py-2 text-brod"
-      style={{ borderColor: okt.farge ?? "var(--color-linje-sterk)" }}
-    >
-      <button
-        onClick={() => onApne(forrige.id)}
-        className="text-liten uppercase tracking-etikett text-blekk-svak hover:text-blekk-dempet"
-      >
-        Notat fra forrige økt
-      </button>
-
-      <p
-        ref={tekst}
-        className="whitespace-pre-wrap text-blekk-dempet"
-        style={
-          utvidet
-            ? undefined
-            : {
-                display: "-webkit-box",
-                WebkitBoxOrient: "vertical",
-                WebkitLineClamp: LOGGLINJER,
-                overflow: "hidden",
-              }
-        }
-      >
-        {forrige.logg}
-      </p>
-
-      {(kanUtvides || utvidet) && (
-        <button
-          onClick={() => setUtvidet((v) => !v)}
-          className="mt-0.5 text-liten text-blekk-svak hover:text-blekk"
-        >
-          {utvidet ? "Vis mindre" : "Vis mer"}
-        </button>
-      )}
-    </div>
-  );
-}
-
-function OktLinje({ okt, onApne }: { okt: Okt; onApne: (id: string) => void }) {
-  return (
-    <button
-      onClick={() => onApne(okt.id)}
-      className="flex w-full items-center gap-3 border-b border-linje-svak py-1.5 text-left text-brod hover:bg-flate"
-    >
-      <span
-        aria-hidden
-        className="h-3.5 w-[3px] shrink-0 rounded-full"
-        style={{ background: okt.farge ?? "var(--color-linje-sterk)" }}
-      />
-      <Kappet verdi={okt.fagKode} klasse="w-20 shrink-0 font-medium" />
-      <span className="w-12 shrink-0 tabular-nums text-blekk-dempet">
-        {okt.klokkeslett ?? "–"}
-      </span>
-      <Kappet verdi={okt.tema} klasse="flex-1" />
-      <span className="shrink-0 tabular-nums text-blekk-dempet">
-        {okt.skaret === 0 ? (
-          ""
-        ) : okt.skaret >= okt.elever ? (
-          <Ikon navn="hake" />
-        ) : (
-          `${okt.skaret}/${okt.elever}`
-        )}
-      </span>
-    </button>
   );
 }
 

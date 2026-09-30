@@ -3,6 +3,7 @@ import {
   hentGlipp,
   hentInnsatslinjer,
   mandagFor,
+  snittfarge,
   ukesfarge,
   type Innsatslinje,
   hentKommendeVurderinger,
@@ -26,13 +27,13 @@ export function Arsoversikt({
   skolearId,
   skolestart,
   onApneElev,
-  onApneVurderinger,
+  onApneVurdering,
 }: {
   skolearId: string;
   /** første skoledag — innsatslinjene begynner der */
   skolestart: string;
   onApneElev: (elevId: string) => void;
-  onApneVurderinger: () => void;
+  onApneVurdering: (vurderingId: string) => void;
 }) {
   // Alle fire hentes samlet og settes i én state. Før var det fire kall som
   // hver satte sin egen, og siden hvert panel er innholdsstyrt flyttet
@@ -75,7 +76,7 @@ export function Arsoversikt({
       <div className="grid gap-y-7">
         <Vurderingsfrister
           rader={data?.kommende ?? []}
-          onApne={onApneVurderinger}
+          onApne={onApneVurdering}
         />
         <Glipper elever={data?.glipp ?? []} onApne={onApneElev} />
       </div>
@@ -340,44 +341,36 @@ function Glipper({
   elever: Glipp[];
   onApne: (id: string) => void;
 }) {
-  const idag = new Date();
-
   return (
-    <Panel tittel="Elever som glipper" hjelp="færrest skåringer først">
+    <Panel tittel="Elever som glipper" hjelp="lavest snitt først">
       {elever.length === 0 ? (
-        <Tomtilstand tekst="Ingen elever koblet til fag ennå." />
+        <Tomtilstand tekst="Ingen elever er skåret ennå." />
       ) : (
         <ul className="divide-y divide-linje-svak">
-          {elever.map((e) => {
-            const dager = e.siste ? dagerSiden(e.siste, idag) : null;
-            return (
-              <li key={e.elevId}>
-                <button
-                  onClick={() => onApne(e.elevId)}
-                  className="flex w-full items-baseline gap-2 py-1 text-left text-brod hover:text-aksent"
-                >
-                  <Kappet verdi={`${e.fornavn} ${e.etternavn}`} />
-                  {e.klasse && (
-                    <span className="shrink-0 text-liten text-blekk-svak">
-                      {e.klasse}
-                    </span>
-                  )}
-                  <span className="ml-auto shrink-0 tabular-nums text-blekk-dempet">
-                    {e.antall}
+          {elever.map((e) => (
+            <li key={e.elevId}>
+              <button
+                onClick={() => onApne(e.elevId)}
+                title={`Snitt ${Math.round(e.snitt * 100)} av 100 over ${e.antall} skåringer, sist ${norskDato(e.siste)}`}
+                className="flex w-full items-center gap-2 py-1 text-left text-brod hover:text-aksent"
+              >
+                <span
+                  aria-hidden
+                  className="h-2.5 w-2.5 shrink-0 rounded-full"
+                  style={{ background: PRIKKFARGE[snittfarge(e.snitt)] }}
+                />
+                <Kappet verdi={`${e.fornavn} ${e.etternavn}`} />
+                {e.klasse && (
+                  <span className="shrink-0 text-liten text-blekk-svak">
+                    {e.klasse}
                   </span>
-                  <span
-                    className={`w-16 shrink-0 text-right text-liten tabular-nums ${
-                      dager === null || dager > 14
-                        ? "text-varsel"
-                        : "text-blekk-svak"
-                    }`}
-                  >
-                    {dager === null ? "aldri" : `${dager} d`}
-                  </span>
-                </button>
-              </li>
-            );
-          })}
+                )}
+                <span className="ml-auto shrink-0 text-liten tabular-nums text-blekk-dempet">
+                  {e.antall} skåringer
+                </span>
+              </button>
+            </li>
+          ))}
         </ul>
       )}
     </Panel>
@@ -391,7 +384,7 @@ function Vurderingsfrister({
   onApne,
 }: {
   rader: Kommende[];
-  onApne: () => void;
+  onApne: (vurderingId: string) => void;
 }) {
   const idag = isoIdag();
 
@@ -407,7 +400,7 @@ function Vurderingsfrister({
             return (
               <li key={v.vurderingId}>
                 <button
-                  onClick={onApne}
+                  onClick={() => onApne(v.vurderingId)}
                   className="flex w-full items-baseline gap-2 py-1 text-left text-brod hover:text-aksent"
                 >
                   <Fagmerke kode={v.kode} farge={v.farge} liten />
@@ -442,11 +435,6 @@ function isoIdag(): string {
   const d = new Date();
   const p = (n: number) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
-}
-
-function dagerSiden(dato: string, na: Date): number {
-  const d = new Date(`${dato}T00:00:00`);
-  return Math.max(0, Math.round((na.getTime() - d.getTime()) / 86400000));
 }
 
 function norskDato(dato: string): string {

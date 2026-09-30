@@ -3,17 +3,20 @@
 Kort status pr. 2026-09-30, versjon 0.1.3. Skrevet mot SPEC.md slik den er nå.
 Denne fila eies fritt — oppdater den løpende, i motsetning til SPEC.md.
 
-**402 tester, alle grønne. `tsc --noEmit` er ren. `npm run build` går
-gjennom. 18 migrasjoner.**
+**432 tester, alle grønne. `tsc --noEmit` er ren. `npm run build` går
+gjennom. 20 migrasjoner.**
 
 ## Hva som virker
 
 Skjerm for skjerm (§4), med tilstand:
 
 - **Førstegangsoppsett (§4.0)** — ferdig. Tre steg, lagrer underveis.
-- **I dag (§4.1)** — ferdig. Dagens økter, ukelinje, årsoversikt, og en
-  setning om dagens samtaler når det er noen. Årsoversikten er et villet
-  avvik fra §13, kommentert i koden.
+- **I dag (§4.1)** — ferdig. Ukekalender, årsoversikt, og en setning om
+  dagens samtaler når det er noen. «I dag»-bolken er tatt bort 30.09 —
+  dagens økter står i uka (og «notat fra forrige økt» forsvant med den).
+  «Elever som glipper» viser lavest snitt først; elever og vurderinger
+  åpnes som ark over forsiden. Årsoversikten er et villet avvik fra §13,
+  kommentert i koden.
 - **Årsplan (§4.2)** — ferdig, men strukturert annerledes enn spec beskriver:
   globale liste- og kalendervisninger under «Økter», perioder som egen fane,
   per-fag-portal under «Fag». Serieopprettelse finnes. Begge deler avviker
@@ -42,8 +45,13 @@ Skjerm for skjerm (§4), med tilstand:
 - **⌘K-søk** — ferdig 30.09. Globalt, ikke bare i skåringsflyten som §4.4
   beskriver. Finner elever (navn, klasse, fag) og økter (tema, fag, alias,
   dato i ISO og norske formater). Fag kan ha et alias (migrasjon 018).
+- **Kompetansemål på økter** — ferdig 30.09 (migrasjon 020,
+  `okt_kompetansemal`). Økta arver periodens mål og kan få egne. Fag uten
+  Udir-kode får fritekstfeltet `okt.kompetansemal`. Periodens mål velges
+  også under penslene i Økter. Ikke med på årsplanarket ennå.
 - **Samtaletrekkeren i økter** — ferdig 30.09. I fagmodus krysses fagets
-  økter av i stedet for å legge inn datoer; øktas klokkeslett er rammen,
+  økter av i stedet for å legge inn datoer — lista viser bare øktene som
+  er knyttet til en vurdering, til man ber om alle; øktas klokkeslett er rammen,
   uten lunsj. Vurderingen knyttes til hver økt. Egne dager utenfor øktene
   går fortsatt. Slike dager telles ikke dobbelt i timeregnskapet.
 - **Samtaletrekkeren (§4.10)** — ferdig. To modus, trekning med låser,
@@ -85,13 +93,16 @@ vurdering over flere økter, samtaledager i økter, gruppesamtaler, dra mellom
 dager, ⌘K, alias, de nye feltene). Det som står igjen:
 
 - **Årsoversikt-widgeten på §4.1** er et villet unntak fra §13.
+- **Kompetansemål på økt** er strukturert (koblingstabell), mens §3.1 og
+  §10 sier fritekst i v1. Fritekstfeltet brukes fortsatt for fag uten
+  Udir-kode.
 - **§11 Byggerekkefølge** er utdatert og hører hjemme i ARBEIDSLISTE.md.
 - **§13 Visuell retning** er erstattet av DESIGN.md, men står fortsatt — og
   DESIGN.md beskriver utgangspunktet fra august, ikke serif-overskriftene.
 
 ## Tester
 
-23 testfiler, 402 tester, alle grønne. `tsc` ren.
+28 testfiler, 432 tester, alle grønne. `tsc` ren.
 
 Dekningen er tung i datalaget og tynn i skjermlaget. Migrasjonene testes ved å
 kjøre dem i to omganger med data imellom — kjørt mot en tom base ville en

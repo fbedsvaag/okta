@@ -282,21 +282,119 @@ export async function settPeriodemal(
   kode: string,
   pa: boolean,
 ): Promise<void> {
+  await settMal("periode_kompetansemal", "periode_id", periodeId, kode, pa);
+}
+
+/** Det samme for en økt. */
+export async function settOktmal(
+  oktId: string,
+  kode: string,
+  pa: boolean,
+): Promise<void> {
+  await settMal("okt_kompetansemal", "okt_id", oktId, kode, pa);
+}
+
+async function settMal(
+  tabell: "periode_kompetansemal" | "okt_kompetansemal",
+  kolonne: "periode_id" | "okt_id",
+  id: string,
+  kode: string,
+  pa: boolean,
+): Promise<void> {
   const [finnes] = await hent<{ id: string; slettet: string | null }>(
-    "SELECT id, slettet FROM periode_kompetansemal WHERE periode_id = $1 AND kode = $2",
-    [periodeId, kode],
+    `SELECT id, slettet FROM ${tabell} WHERE ${kolonne} = $1 AND kode = $2`,
+    [id, kode],
   );
 
   if (!finnes) {
-    if (pa)
-      await settInn("periode_kompetansemal", { periode_id: periodeId, kode });
+    if (pa) await settInn(tabell, { [kolonne]: id, kode });
     return;
   }
   if (pa && finnes.slettet !== null) {
-    await oppdater("periode_kompetansemal", finnes.id, { slettet: null });
+    await oppdater(tabell, finnes.id, { slettet: null });
   } else if (!pa && finnes.slettet === null) {
-    await slett("periode_kompetansemal", finnes.id);
+    await slett(tabell, finnes.id);
   }
+}
+
+export type Oktmal = {
+  /** fagets Udir-kode; uten den finnes ingen liste å velge fra */
+  grepKode: string | null;
+  /** målene som er huket av for akkurat denne økta */
+  egne: string[];
+  /** målene perioden økta ligger i dekker — de gjelder økta også */
+  fraPeriode: string[];
+  periodeNavn: string | null;
+  /** målene som er dekket av en periode eller en annen økt i faget */
+  dekketAndreSteder: Set<string>;
+  /** `okt.kompetansemal` — fritekst for fag uten Udir-kode */
+  fritekst: string | null;
+};
+
+/**
+ * Kompetansemålene for én økt: dens egne, og dem den arver fra perioden.
+ * Koder, ikke tekst — teksten slås opp i `grep-fag.json`.
+ */
+export async function hentOktmal(oktId: string): Promise<Oktmal> {
+  const [okt] = await hent<{
+    skolearFagId: string;
+    periodeId: string | null;
+    periodeNavn: string | null;
+    grepKode: string | null;
+    fritekst: string | null;
+  }>(
+    `SELECT o.skolear_fag_id AS skolearFagId, o.periode_id AS periodeId,
+            o.kompetansemal AS fritekst,
+            p.navn AS periodeNavn, f.grep_kode AS grepKode
+       FROM okt o
+       JOIN skolear_fag sf ON sf.id = o.skolear_fag_id
+       JOIN fag f          ON f.id = sf.fag_id
+       LEFT JOIN periode p ON p.id = o.periode_id AND p.slettet IS NULL
+      WHERE o.id = $1`,
+    [oktId],
+  );
+  if (!okt) {
+    return {
+      grepKode: null,
+      egne: [],
+      fraPeriode: [],
+      periodeNavn: null,
+      dekketAndreSteder: new Set(),
+      fritekst: null,
+    };
+  }
+
+  const egne = await hent<{ kode: string }>(
+    `SELECT kode FROM okt_kompetansemal
+      WHERE okt_id = $1 AND slettet IS NULL ORDER BY kode`,
+    [oktId],
+  );
+  const perioder = await hentPeriodemal(okt.skolearFagId);
+  const andreOkter = await hent<{ kode: string }>(
+    `SELECT DISTINCT om.kode FROM okt_kompetansemal om
+       JOIN okt o ON o.id = om.okt_id AND o.slettet IS NULL
+      WHERE om.slettet IS NULL AND o.skolear_fag_id = $1 AND o.id <> $2`,
+    [okt.skolearFagId, oktId],
+  );
+
+  const fraPeriode = okt.periodeNavn
+    ? (perioder.get(okt.periodeId!) ?? [])
+    : [];
+  const dekket = new Set([
+    ...[...perioder.entries()]
+      .filter(([id]) => id !== okt.periodeId)
+      .flatMap(([, koder]) => koder),
+    ...andreOkter.map((r) => r.kode),
+  ]);
+
+  return {
+    grepKode: okt.grepKode,
+    egne: egne.map((r) => r.kode),
+    fraPeriode,
+    periodeNavn: okt.periodeNavn,
+    dekketAndreSteder: dekket,
+    fritekst: okt.fritekst,
+  };
 }
 
 /** Alle kodene som er dekket av minst én periode i faget. */

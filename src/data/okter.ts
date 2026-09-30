@@ -248,6 +248,7 @@ export async function endreOkt(
     sted?: string | null;
     agenda?: string | null;
     lekse?: string | null;
+    kompetansemal?: string | null;
     plan?: string | null;
     logg?: string | null;
     periode_id?: string | null;

@@ -11,6 +11,8 @@ import { lytt } from "../data/endringer";
 import { hentOkter, type Okt } from "../data/okter";
 import { OktPanel } from "../skjermer/OktPanel";
 import { ElevPanel } from "../skjermer/ElevPanel";
+import { VurderingPanel } from "../skjermer/VurderingPanel";
+import { hentVurderinger, type Vurdering } from "../data/vurderinger";
 import { Ikon } from "./felles";
 
 /**
@@ -28,6 +30,7 @@ import { Ikon } from "./felles";
 
 type Ark =
   | { type: "okt"; id: string; n: number }
+  | { type: "vurdering"; id: string; n: number }
   | {
       type: "elev";
       id: string;
@@ -40,6 +43,7 @@ type Ark =
 
 type Api = {
   apneOkt: (id: string) => void;
+  apneVurdering: (id: string) => void;
   apneElev: (
     id: string,
     valg?: { liste?: string[]; startFag?: string },
@@ -137,6 +141,7 @@ export function Arkstabel({
 
   const api: Api = {
     apneOkt: (id) => legg({ type: "okt", id }),
+    apneVurdering: (id) => legg({ type: "vurdering", id }),
     apneElev: (id, valg) => legg({ type: "elev", id, ...valg }),
     lukk,
   };
@@ -222,6 +227,14 @@ export function Arkstabel({
                       setStabel([]);
                       onVisIOkter(ark.id);
                     }}
+                  />
+                ) : ark.type === "vurdering" ? (
+                  <VurderingArk
+                    vurderingId={ark.id}
+                    skolearId={skolearId}
+                    underst={i === 0}
+                    onLukk={lukk}
+                    onApneElev={(id) => api.apneElev(id)}
                   />
                 ) : (
                   <ElevArk
@@ -323,6 +336,48 @@ function OktArk({
                 setOkt(o.find((x) => x.id === oktId) ?? null),
               )
             }
+            onApneElev={onApneElev}
+          />
+        )}
+      </div>
+    </>
+  );
+}
+
+function VurderingArk({
+  vurderingId,
+  skolearId,
+  underst,
+  onLukk,
+  onApneElev,
+}: {
+  vurderingId: string;
+  skolearId: string;
+  underst: boolean;
+  onLukk: () => void;
+  onApneElev: (id: string) => void;
+}) {
+  const [vurdering, setVurdering] = useState<Vurdering | null>(null);
+
+  const last = useCallback(
+    () =>
+      void hentVurderinger(skolearId).then((v) =>
+        setVurdering(v.find((x) => x.id === vurderingId) ?? null),
+      ),
+    [vurderingId, skolearId],
+  );
+  useEffect(last, [last]);
+
+  return (
+    <>
+      <Arkhode underst={underst} onLukk={onLukk} />
+      <div className="flex min-h-0 flex-1 flex-col overflow-auto">
+        {vurdering && (
+          <VurderingPanel
+            key={vurdering.id}
+            vurdering={vurdering}
+            onLukk={onLukk}
+            onEndret={last}
             onApneElev={onApneElev}
           />
         )}

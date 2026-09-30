@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { Ikon } from "../ui/felles";
 import { Markdownfelt } from "../ui/Notattekst";
+import { hentOktmal, settOktmal, type Oktmal } from "../data/perioder";
+import { Malvelger } from "./Malvelger";
 import { confirm as bekreft } from "@tauri-apps/plugin-dialog";
 import {
   endreOkt,
@@ -521,6 +523,8 @@ function OktFelter({ okt, onEndret }: { okt: Okt; onEndret: () => void }) {
         />
       </Linje>
 
+      <Kompetansemal okt={okt} />
+
       <Vurderingskobling okt={okt} onEndret={onEndret} />
 
       {/*
@@ -543,6 +547,58 @@ function OktFelter({ okt, onEndret }: { okt: Okt; onEndret: () => void }) {
           />
         </Linje>
       )}
+    </div>
+  );
+}
+
+/**
+ * Kompetansemålene økta tar for seg. Målene perioden dekker, står huket av
+ * av seg selv; her legges det økta tar for seg i tillegg. Fag uten Udir-kode
+ * har ingen liste å velge fra, og får et fritekstfelt i stedet.
+ */
+function Kompetansemal({ okt }: { okt: Okt }) {
+  const [mal, setMal] = useState<Oktmal | null>(null);
+  const last = () => void hentOktmal(okt.id).then(setMal);
+  useEffect(last, [okt.id, okt.periodeId]);
+
+  if (!mal) return null;
+
+  if (!mal.grepKode) {
+    return (
+      <Linje etikett="Kompetansemål">
+        <textarea
+          defaultValue={mal.fritekst ?? ""}
+          key={mal.fritekst ?? ""}
+          rows={1}
+          placeholder="Faget har ingen Udir-kode — skriv målet her"
+          onBlur={async (e) => {
+            await endreOkt(okt.id, {
+              kompetansemal: e.target.value.trim() || null,
+            });
+            last();
+          }}
+          className={feltStil}
+        />
+      </Linje>
+    );
+  }
+
+  return (
+    <div>
+      <Malvelger
+        grepKode={mal.grepKode}
+        valgte={mal.egne}
+        arvet={
+          mal.periodeNavn
+            ? { koder: mal.fraPeriode, fra: mal.periodeNavn }
+            : undefined
+        }
+        dekketAndreSteder={mal.dekketAndreSteder}
+        onBytt={async (kode, pa) => {
+          await settOktmal(okt.id, kode, pa);
+          last();
+        }}
+      />
     </div>
   );
 }

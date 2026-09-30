@@ -148,7 +148,13 @@ export function ukesfarge(
 ): "gronn" | "gronngul" | "gul" | "oransje" | "rod" | null {
   const total = p.gronn + p.gul + p.rod;
   if (total === 0) return null;
-  const andel = (p.gronn + p.gul / 2) / total;
+  return snittfarge((p.gronn + p.gul / 2) / total);
+}
+
+/** Et snitt fra 0 til 1 som ett av trafikklysets fem trinn. */
+export function snittfarge(
+  andel: number,
+): "gronn" | "gronngul" | "gul" | "oransje" | "rod" {
   if (andel >= 0.8) return "gronn";
   if (andel >= 0.6) return "gronngul";
   if (andel >= 0.4) return "gul";
@@ -269,43 +275,64 @@ export type Glipp = {
   fornavn: string;
   etternavn: string;
   klasse: string | null;
-  /** Siste dato eleven ble skåret i år. null = aldri */
-  siste: string | null;
+  /** Siste dato eleven ble skåret i år */
+  siste: string;
+  /** skåringer som teller med */
   antall: number;
+  /** snittet, fra 0 (laveste verdi på skalaen) til 1 (høyeste) */
+  snitt: number;
 };
 
 /**
- * Elevene med færrest skåringer, og hvor lenge siden sist.
+ * Elevene med lavest snitt i skåringene sine, lavest først.
  *
- * Poenget er å avsløre dem du har oversett, ikke dem som har vært borte —
- * derfor teller «ikke i økta» ikke med her heller. En elev du har registrert
- * som fraværende er sett; en elev uten rader er ikke det.
+ * Hver skåring regnes om til et tall fra 0 til 1 etter hvor den ligger på
+ * sin egen skala — rød er 0, grønn 1, gul midt imellom på trafikklyset. Da
+ * kan fag med ulike skalaer stå i samme liste, uten at noen skala er
+ * hardkodet. «Ikke i økta» (`teller_ikke`) er verken høyt eller lavt og
+ * holdes utenfor, også når ytterpunktene på skalaen finnes.
+ *
+ * Bare skåringer i fag eleven fortsatt står i teller. En elev uten skåringer
+ * har ikke noe snitt og står ikke her.
  */
 export async function hentGlipp(
   skolearId: string,
   grense = 8,
 ): Promise<Glipp[]> {
   return hent<Glipp>(
-    `SELECT e.id                       AS elevId,
-            e.fornavn                  AS fornavn,
-            e.etternavn                AS etternavn,
-            k.navn                     AS klasse,
-            MAX(o.dato)                AS siste,
-            COUNT(s.id)                AS antall
-       FROM elev e
-       JOIN elev_fag ef    ON ef.elev_id = e.id AND ef.slettet IS NULL
-       JOIN skolear_fag sf ON sf.id = ef.skolear_fag_id
-                          AND sf.slettet IS NULL AND sf.skolear_id = $1
+    `WITH spenn AS (
+       SELECT skala_id, MIN(rang) AS mn, MAX(rang) AS mx
+         FROM skalaverdi WHERE teller_ikke = 0
+        GROUP BY skala_id
+     ),
+     poeng AS (
+       SELECT s.elev_id AS elevId, o.dato,
+              CASE WHEN sp.mx = sp.mn THEN 1.0
+                   ELSE (sv.rang - sp.mn) * 1.0 / (sp.mx - sp.mn) END AS p
+         FROM skaring s
+         JOIN okt o          ON o.id = s.okt_id AND o.slettet IS NULL
+         JOIN skolear_fag sf ON sf.id = o.skolear_fag_id
+                            AND sf.slettet IS NULL AND sf.skolear_id = $1
+         JOIN elev_fag ef    ON ef.elev_id = s.elev_id
+                            AND ef.skolear_fag_id = sf.id AND ef.slettet IS NULL
+         JOIN skalaverdi sv  ON sv.id = s.skalaverdi_id AND sv.teller_ikke = 0
+         JOIN spenn sp       ON sp.skala_id = sv.skala_id
+        WHERE s.slettet IS NULL
+     )
+     SELECT e.id        AS elevId,
+            e.fornavn   AS fornavn,
+            e.etternavn AS etternavn,
+            k.navn      AS klasse,
+            MAX(p.dato) AS siste,
+            COUNT(*)    AS antall,
+            AVG(p.p)    AS snitt
+       FROM poeng p
+       JOIN elev e ON e.id = p.elevId AND e.slettet IS NULL
        LEFT JOIN elev_klasse ek ON ek.elev_id = e.id
                           AND ek.skolear_id = $1 AND ek.slettet IS NULL
        LEFT JOIN klasse k  ON k.id = ek.klasse_id AND k.slettet IS NULL
-       LEFT JOIN skaring s ON s.elev_id = e.id AND s.slettet IS NULL
-       LEFT JOIN okt o     ON o.id = s.okt_id AND o.slettet IS NULL
-                          AND o.skolear_fag_id = sf.id
-       LEFT JOIN skalaverdi sv ON sv.id = s.skalaverdi_id AND sv.teller_ikke = 0
-      WHERE e.slettet IS NULL AND (s.id IS NULL OR sv.id IS NOT NULL)
       GROUP BY e.id
-      ORDER BY antall ASC, siste ASC
+      ORDER BY snitt ASC, antall DESC, e.etternavn, e.fornavn
       LIMIT $2`,
     [skolearId, grense],
   );

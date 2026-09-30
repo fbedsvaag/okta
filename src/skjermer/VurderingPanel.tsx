@@ -392,7 +392,9 @@ function Felter({
         />
       </Linje>
 
-      <div className="flex gap-2">
+      {/* Rutenett, ikke flex: i et smalt ark brekker feltene til to rader i
+          stedet for at «Økt» klemmes til én bokstav. */}
+      <div className="grid gap-2 [grid-template-columns:repeat(auto-fit,minmax(10rem,1fr))]">
         <Linje etikett="Type">
           <select
             value={vurdering.type ?? ""}

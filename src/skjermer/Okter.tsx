@@ -48,6 +48,7 @@ import {
   type Periode,
 } from "../data/perioder";
 import { Penselrad, VISK, type Pensel } from "./Penselrad";
+import { Periodemal } from "./Malvelger";
 import { useArk } from "../ui/Arkstabel";
 import { useGlidende } from "../ui/bevegelse";
 import type { Skolear } from "../data/skolear";
@@ -218,11 +219,14 @@ export function Okter({
 
   // Periodens farge per økt, til tonen over raden. Vises uavhengig av om
   // Periode-kolonnen er slått på: det er fargen som er periodiseringen.
+  // Men bare når ett fag er valgt — med alle fag blandes periodene fra
+  // ulike fag, og fargene sier ikke lenger noe.
   const periodeFarge = useMemo(() => {
     const kart = new Map<string, string>();
+    if (!filterFag) return kart;
     for (const [id, p] of periodePerOkt) if (p.farge) kart.set(id, p.farge);
     return kart;
-  }, [periodePerOkt]);
+  }, [periodePerOkt, filterFag]);
 
   const periodeAntall = useMemo(() => {
     const kart = new Map<string, number>();
@@ -365,6 +369,16 @@ export function Okter({
                   setPensel(id);
                 }}
               />
+              {/* Målene for perioden penselen står på. */}
+              {pensel && pensel !== VISK && (
+                <Periodemal
+                  skolearFagId={filterFag}
+                  periodeId={pensel}
+                  grepKode={
+                    fag.find((f) => f.id === filterFag)?.grepKode ?? null
+                  }
+                />
+              )}
             </div>
           )}
 
