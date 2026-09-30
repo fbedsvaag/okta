@@ -1,6 +1,6 @@
 # Status
 
-Kort status pr. 2026-09-30, versjon 0.1.2. Skrevet mot SPEC.md slik den er nå.
+Kort status pr. 2026-09-30, versjon 0.1.3. Skrevet mot SPEC.md slik den er nå.
 Denne fila eies fritt — oppdater den løpende, i motsetning til SPEC.md.
 
 **372 tester, alle grønne. `tsc --noEmit` er ren. `npm run build` går
