@@ -187,11 +187,11 @@ describe("mentorsamtale som kalenderhendelse", () => {
     endret: "2026-11-01T00:00:00",
   };
 
-  it("har fornavn og klokkeslett i tittelen", () => {
-    expect(samtaletittel("Vera", "08:30", "08:45")).toBe(
-      "Vera kl. 08:30–08:45",
+  it("har tittelen «Mentorsamtale med» og fornavnet", () => {
+    expect(samtaletittel("Vera")).toBe("Mentorsamtale med Vera");
+    expect(lagSamtaleHendelse(vera)).toContain(
+      "SUMMARY:Mentorsamtale med Vera",
     );
-    expect(lagSamtaleHendelse(vera)).toContain("SUMMARY:Vera kl. 08:30–08:45");
   });
 
   it("sender aldri etternavnet", () => {
@@ -224,7 +224,9 @@ describe("mentorsamtale som kalenderhendelse", () => {
   });
 
   it("setter slutt etter varigheten", () => {
+    // 08:30 norsk normaltid i november = 07:30Z; 30 minutter gir 08:00Z.
     const ics = lagSamtaleHendelse({ ...vera, varighetMin: 30 });
-    expect(ics).toContain("Vera kl. 08:30–09:00");
+    expect(ics).toContain("DTSTART:20261124T073000Z");
+    expect(ics).toContain("DTEND:20261124T080000Z");
   });
 });

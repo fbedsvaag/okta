@@ -1602,8 +1602,10 @@ Mentorsamtalene kan publiseres som egne hendelser, én per samtale. Da er det
 **fornavn og klokkeslett** som går ut, og ingenting annet:
 
 ```
-SUMMARY:Vera kl. 08:30–08:45
+SUMMARY:Mentorsamtale med Vera
 ```
+
+Klokkeslettet står i hendelsens start og slutt, ikke i tittelen.
 
 Ingen `DESCRIPTION`, ingen `LOCATION`, intet etternavn, ingen klasse, ingen
 fagkode. Feltgrensen håndheves ett sted i koden, i `lagSamtaleHendelse`, med

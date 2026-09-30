@@ -127,25 +127,19 @@ export function lagSamtaleHendelse(
     `DTSTAMP:${utc(s.endret ? new Date(s.endret) : na)}`,
     `DTSTART:${utc(start)}`,
     `DTEND:${utc(slutt)}`,
-    `SUMMARY:${esc(samtaletittel(s.fornavn, s.klokkeslett, klokke(slutt)))}`,
+    `SUMMARY:${esc(samtaletittel(s.fornavn))}`,
     "END:VEVENT",
     "END:VCALENDAR",
   ];
   return linjer.flatMap(brett).join("\r\n") + "\r\n";
 }
 
-/** «Vera kl. 08:30–08:45». Alt som står i hendelsen. */
-export function samtaletittel(
-  fornavn: string,
-  fra: string,
-  til: string,
-): string {
-  return `${fornavn} kl. ${fra}–${til}`;
-}
-
-function klokke(d: Date): string {
-  const p = (n: number) => String(n).padStart(2, "0");
-  return `${p(d.getHours())}:${p(d.getMinutes())}`;
+/**
+ * «Mentorsamtale med Vera». Tidspunktet står i selve hendelsen (DTSTART og
+ * DTEND), så tittelen trenger det ikke. Fornavnet er det eneste om eleven.
+ */
+export function samtaletittel(fornavn: string): string {
+  return `Mentorsamtale med ${fornavn}`;
 }
 
 /** Tittelen på kalenderhendelsen: «FAG: Tittel». */

@@ -600,8 +600,9 @@ export function Innstillinger({
         <p className="ml-6 text-liten text-blekk-dempet">
           Det eneste som går ut er{" "}
           <strong className="font-medium">fornavn og klokkeslett</strong> —
-          «Vera kl. 08:30–08:45». Ikke etternavn, ikke klasse, ikke fag, ingen
-          beskrivelse. Denne kalenderen bør ikke deles med andre.
+          «Mentorsamtale med Vera», på samtalens tidspunkt. Ikke etternavn, ikke
+          klasse, ikke fag, ingen beskrivelse. Denne kalenderen bør ikke deles
+          med andre.
         </p>
         {/*
           Feltet står alltid framme, som fagkalenderne — ikke gjemt bak
