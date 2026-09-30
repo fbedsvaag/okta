@@ -100,7 +100,12 @@ export function Penselrad({
               onFocus={(e) => e.currentTarget.select()}
               onKeyDown={(e) => {
                 if (e.key === "Enter") void giNavn(p, e.currentTarget.value);
-                if (e.key === "Escape") setOmdoper(null);
+                if (e.key === "Escape") {
+                  // Feltet mister fokus når det lukkes, og blur lagrer.
+                  // Tilbake til det gamle navnet først, så Esc avbryter.
+                  e.currentTarget.value = p.navn;
+                  setOmdoper(null);
+                }
               }}
               onBlur={(e) => void giNavn(p, e.currentTarget.value)}
               className="w-44 rounded-full border border-aksent bg-ark px-2.5 py-0.5 text-liten outline-none"
