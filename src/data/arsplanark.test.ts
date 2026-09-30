@@ -262,7 +262,7 @@ describe("feltvalg", () => {
     felt.delete("uke");
     felt.add("sted");
     const csv = somCsv([ark({ felt, okter: [okt({ sted: "R204" })] })]);
-    expect(csv.split("\r\n")[0]).toBe("\uFEFFFag;Dato;Ukedag;Tema;Sted");
+    expect(csv.split("\r\n")[0]).toBe("\uFEFFFag;Dato;Ukedag;Tema;Rom");
   });
 
   it("leser lagret valg, og faller tilbake på standard når det er ødelagt", () => {

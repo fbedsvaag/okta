@@ -145,7 +145,28 @@ export async function endreFagIAr(
     arknotat?: string | null;
   },
 ): Promise<void> {
+  // Nytt standard rom gjelder også øktene som finnes: de uten rom, og de som
+  // hadde det gamle standardrommet. Et rom satt for hånd på én økt står.
+  let gammeltRom: string | null = null;
+  if (felter.rom !== undefined) {
+    const [f] = await hent<{ rom: string | null }>(
+      "SELECT rom FROM skolear_fag WHERE id = $1",
+      [skolearFagId],
+    );
+    gammeltRom = f?.rom ?? null;
+  }
+
   await oppdater("skolear_fag", skolearFagId, felter);
+
+  if (felter.rom !== undefined && felter.rom !== gammeltRom) {
+    const okter = await hent<{ id: string }>(
+      `SELECT id FROM okt
+        WHERE skolear_fag_id = $1 AND slettet IS NULL
+          AND (sted IS NULL OR sted = '' OR sted = $2)`,
+      [skolearFagId, gammeltRom ?? ""],
+    );
+    for (const o of okter) await oppdater("okt", o.id, { sted: felter.rom });
+  }
 }
 
 /** Fjerner faget fra skoleåret. Bankfaget og elevkoblingene blir stående. */

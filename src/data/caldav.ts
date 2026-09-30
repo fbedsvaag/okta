@@ -2,7 +2,6 @@ import { invoke } from "@tauri-apps/api/core";
 import { lagHendelse, lagSamtaleHendelse } from "./ical";
 import { hentOkter } from "./okter";
 import { hentSamtaledager, hentSamtaler } from "./samtale";
-import { hentAllePerioder, periodeFor, type Periode } from "./perioder";
 import { hentInnstilling, settInnstilling, type Skolear } from "./skolear";
 import { lytt } from "./endringer";
 
@@ -156,16 +155,6 @@ export async function publiser(skolear: Skolear): Promise<Resultat> {
   }
 
   const okter = await hentOkter(skolear.id);
-  const alle = await hentAllePerioder(skolear.id);
-
-  const perOkt = new Map<string, Periode>();
-  for (const okt of okter) {
-    const p = periodeFor(
-      okt,
-      alle.filter((x) => x.skolearFagId === okt.skolearFagId),
-    );
-    if (p) perOkt.set(okt.id, p);
-  }
 
   const forrige = lesForrige(await hentInnstilling(PUBLISERT));
   const na: Record<string, Record<string, string>> = {};
@@ -302,7 +291,8 @@ async function mentorHendelser(
       });
       const sum = await summer(ics);
       kontroll[samtale.id] = sum;
-      if (publisert[samtale.id] !== sum) hendelser.push({ uid: samtale.id, ics });
+      if (publisert[samtale.id] !== sum)
+        hendelser.push({ uid: samtale.id, ics });
     }
   }
   return { summer: kontroll, hendelser };
@@ -324,7 +314,7 @@ export async function mentorStatus(skolear: Skolear): Promise<{
   fjernes: number;
 }> {
   const o = await hentOppsett();
-  const var_ = (lesForrige(await hentInnstilling(PUBLISERT)))[MENTORNOKKEL] ?? {};
+  const var_ = lesForrige(await hentInnstilling(PUBLISERT))[MENTORNOKKEL] ?? {};
   const { summer, hendelser } = await mentorHendelser(skolear, var_);
 
   return {

@@ -15,7 +15,6 @@ import {
 } from "../data/okter";
 import { taster, type Skalaverdi } from "../skala";
 import { skalafarge } from "../ui/farger";
-import { fargelegg, hentPerioder, type Periode } from "../data/perioder";
 import {
   hentVurderingsvalg,
   knyttOkt,
@@ -47,7 +46,6 @@ export function OktPanel({
   const [verdier, setVerdier] = useState<Skalaverdi[]>([]);
   const [markert, setMarkert] = useState(0);
   const [notatFor, setNotatFor] = useState<string | null>(null);
-  const [perioder, setPerioder] = useState<Periode[]>([]);
   const liste = useRef<HTMLDivElement>(null);
   const markertRad = useRef<HTMLDivElement>(null);
 
@@ -82,7 +80,6 @@ export function OktPanel({
       if (avbrutt) return;
       setElever(e);
       setVerdier(v);
-      setPerioder(await hentPerioder(okt.skolearFagId));
       setMarkert(0);
       liste.current?.focus();
     })();
@@ -188,7 +185,7 @@ export function OktPanel({
       </header>
 
       <div className="overflow-y-auto">
-        <OktFelter okt={okt} perioder={perioder} onEndret={onEndret} />
+        <OktFelter okt={okt} onEndret={onEndret} />
 
         <div className="flex items-baseline justify-between border-y border-linje-medium bg-flate px-5 py-1.5">
           <span className="text-etikett uppercase tracking-etikett text-blekk-dempet">
@@ -392,15 +389,7 @@ function Merke({
   );
 }
 
-function OktFelter({
-  okt,
-  perioder,
-  onEndret,
-}: {
-  okt: Okt;
-  perioder: Periode[];
-  onEndret: () => void;
-}) {
+function OktFelter({ okt, onEndret }: { okt: Okt; onEndret: () => void }) {
   const [kopiert, setKopiert] = useState(false);
 
   return (
@@ -449,27 +438,6 @@ function OktFelter({
         </Linje>
       </div>
 
-      <Linje etikett="Periode">
-        <select
-          value={okt.periodeId ?? ""}
-          onChange={async (e) => {
-            // Samme vei som fargeleggingen i lista, så periodens spenn
-            // følger med.
-            await fargelegg([okt.id], e.target.value || null);
-            onEndret();
-          }}
-          className={feltStil}
-        >
-          <option value="">Ingen periode</option>
-          {perioder.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.navn}
-              {p.start && p.slutt ? ` (${p.start} – ${p.slutt})` : ""}
-            </option>
-          ))}
-        </select>
-      </Linje>
-
       <Linje etikett="Tema">
         <input
           defaultValue={okt.tema ?? ""}
@@ -483,7 +451,8 @@ function OktFelter({
         />
       </Linje>
 
-      <Linje etikett="Sted">
+      {/* Fylles ut fra fagets standard rom (Fag-panelet). */}
+      <Linje etikett="Rom">
         <input
           defaultValue={okt.sted ?? ""}
           key={okt.sted ?? ""}
@@ -551,19 +520,26 @@ function OktFelter({
 
       <Vurderingskobling okt={okt} onEndret={onEndret} />
 
-      <Linje etikett="Plan">
-        <textarea
-          defaultValue={okt.plan ?? ""}
-          key={okt.plan ?? ""}
-          rows={3}
-          placeholder="Hva skal skje"
-          onBlur={async (e) => {
-            await endreOkt(okt.id, { plan: e.target.value.trim() || null });
-            onEndret();
-          }}
-          className={feltStil}
-        />
-      </Linje>
+      {/*
+        Plan er tatt ut av panelet — tema, agenda og lekse dekker det som
+        trengs. Feltet vises bare der det allerede står noe, så ingenting
+        som er skrevet blir borte.
+      */}
+      {okt.plan && (
+        <Linje etikett="Plan">
+          <textarea
+            defaultValue={okt.plan ?? ""}
+            key={okt.plan ?? ""}
+            rows={3}
+            placeholder="Hva skal skje"
+            onBlur={async (e) => {
+              await endreOkt(okt.id, { plan: e.target.value.trim() || null });
+              onEndret();
+            }}
+            className={feltStil}
+          />
+        </Linje>
+      )}
     </div>
   );
 }

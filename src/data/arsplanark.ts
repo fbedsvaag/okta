@@ -77,7 +77,7 @@ export const ARKFELT: {
   { id: "tid", navn: "Klokkeslett", gruppe: "kolonne", standard: false },
   { id: "varighet", navn: "Varighet", gruppe: "kolonne", standard: false },
   { id: "tema", navn: "Tema", gruppe: "kolonne", standard: true },
-  { id: "sted", navn: "Sted", gruppe: "kolonne", standard: false },
+  { id: "sted", navn: "Rom", gruppe: "kolonne", standard: false },
   { id: "agenda", navn: "Agenda", gruppe: "kolonne", standard: false },
   { id: "lekse", navn: "Lekse", gruppe: "kolonne", standard: true },
   { id: "vurdering", navn: "Vurdering", gruppe: "kolonne", standard: true },

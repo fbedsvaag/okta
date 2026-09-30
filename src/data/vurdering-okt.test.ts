@@ -210,6 +210,22 @@ describe("vurdering over flere økter", () => {
 });
 
 describe("standard rom", () => {
+  it("gjelder også øktene som finnes, men ikke et rom satt for hånd", async () => {
+    const uten = await opprettOkt(fagId, "MFL1", "2026-10-06", null, 180);
+    const egen = await opprettOkt(fagId, "MFL1", "2026-10-07", null, 180);
+    await endreOkt(egen, { sted: "Gymsal" });
+    await endreFagIAr(fagId, { rom: "R204" });
+    const sted = async (id: string) =>
+      (await hentOkter(skolearId)).find((o) => o.id === id)?.sted;
+    expect(await sted(uten)).toBe("R204");
+    expect(await sted(egen)).toBe("Gymsal");
+
+    // Byttes standardrommet, følger de som hadde det gamle med.
+    await endreFagIAr(fagId, { rom: "R310" });
+    expect(await sted(uten)).toBe("R310");
+    expect(await sted(egen)).toBe("Gymsal");
+  });
+
   it("fyller ut stedet på nye økter i faget", async () => {
     await endreFagIAr(fagId, { rom: "R204" });
     const okt = await opprettOkt(fagId, "MFL1", "2026-10-06", null, 180);

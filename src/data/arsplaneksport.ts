@@ -48,7 +48,7 @@ export const KOLONNENAVN: Record<Kolonne, string> = {
   tid: "Tid",
   varighet: "Timer",
   tema: "Tema",
-  sted: "Sted",
+  sted: "Rom",
   agenda: "Agenda",
   lekse: "Lekse",
   vurdering: "Vurdering",
