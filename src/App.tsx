@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   brukTekstskala,
   hentAktivtSkolear,
@@ -27,6 +27,7 @@ import { Samtaler } from "./skjermer/Samtaler";
 import { ElevPanel } from "./skjermer/ElevPanel";
 import { Knapp, Ikon } from "./ui/felles";
 import { Sokevindu } from "./ui/Sokevindu";
+import { ArkKobling, Arkstabel, type ArkApi } from "./ui/Arkstabel";
 import { Ordmerke } from "./ui/logo";
 
 /**
@@ -98,6 +99,11 @@ export default function App() {
       })),
     [],
   );
+
+  // Arkstabelen (DESIGN.md §7): en økt eller elev åpnet fra en skjerm legger
+  // seg som et ark over den, i stedet for å bytte skjerm.
+  const ark = useRef<ArkApi | null>(null);
+  const apneOktSomArk = (id: string) => ark.current?.apneOkt(id);
 
   // ⌘K: søk på elev eller økt, hvor som helst i appen (§4.4).
   const [sokApent, setSokApent] = useState(false);
@@ -193,101 +199,107 @@ export default function App() {
   }
 
   return (
-    <div className="app-skall flex h-full flex-col overflow-clip bg-bord text-blekk">
-      {sokApent && (
-        <Sokevindu
-          skolearId={skolear.id}
-          fag={fag}
-          onApneElev={(id) => ga("elev", id)}
-          onApneOkt={(id) => ga("okter", id)}
-          onLukk={() => setSokApent(false)}
-        />
-      )}
-      <header className="ikkeutskrift flex shrink-0 flex-wrap items-center gap-x-1 gap-y-1 border-b border-linje px-4 py-2">
-        <span className="mr-3">
-          <Ordmerke />
-        </span>
-        <Pil
-          retning="tilbake"
-          av={peker === 0}
-          onKlikk={tilbake}
-          hint="Tilbake (⌘[)"
-        />
-        <Pil
-          retning="fram"
-          av={peker >= steder.length - 1}
-          onKlikk={fram}
-          hint="Fram (⌘])"
-        />
-        <span className="mx-2 h-4 w-px bg-linje-medium" />
-        {/*
+    <Arkstabel skolearId={skolear.id} onVisIOkter={(id) => ga("okter", id)}>
+      <ArkKobling til={ark} />
+      <div className="app-skall flex h-full flex-col overflow-clip bg-bord text-blekk">
+        {sokApent && (
+          <Sokevindu
+            skolearId={skolear.id}
+            fag={fag}
+            onApneElev={(id) => ga("elev", id)}
+            onApneOkt={(id) => ga("okter", id)}
+            onLukk={() => setSokApent(false)}
+          />
+        )}
+        <header className="ikkeutskrift flex shrink-0 flex-wrap items-center gap-x-1 gap-y-1 border-b border-linje px-4 py-2">
+          <span className="mr-3">
+            <Ordmerke />
+          </span>
+          <Pil
+            retning="tilbake"
+            av={peker === 0}
+            onKlikk={tilbake}
+            hint="Tilbake (⌘[)"
+          />
+          <Pil
+            retning="fram"
+            av={peker >= steder.length - 1}
+            onKlikk={fram}
+            hint="Fram (⌘])"
+          />
+          <span className="mx-2 h-4 w-px bg-linje-medium" />
+          {/*
           Én rad. Kalender og Perioder er visninger av øktene og står som en
           bryter i Økter; Skoleruta ligger under Innstillinger.
         */}
-        <Fane
-          navn="I dag"
-          aktiv={visning === "idag"}
-          onKlikk={() => ga("idag")}
-        />
-        <Fane
-          navn="Økter"
-          aktiv={erOktvisning(visning)}
-          onKlikk={() => ga("okter")}
-        />
-        <Fane
-          navn="Elever"
-          aktiv={
-            visning === "elever" || visning === "elev" || visning === "liminn"
-          }
-          onKlikk={() => ga("elever")}
-        />
-        <Fane
-          navn="Vurderinger"
-          aktiv={visning === "vurderinger"}
-          onKlikk={() => ga("vurderinger")}
-        />
-        <Fane
-          navn="Samtaler"
-          aktiv={visning === "samtaler"}
-          onKlikk={() => ga("samtaler")}
-        />
-        <Fane navn="Fag" aktiv={visning === "fag"} onKlikk={() => ga("fag")} />
-        <span className="grow" />
-        {/* Synlig inngang til ⌘K, så snarveien kan oppdages. */}
-        <button
-          onClick={() => setSokApent(true)}
-          className="mr-2 flex items-center gap-2 rounded border border-linje px-2 py-0.5 text-liten text-blekk-svak hover:border-linje-sterk hover:text-blekk"
-        >
-          Søk
-          <kbd className="font-sans text-blekk-svakest">⌘K</kbd>
-        </button>
-        <button
-          onClick={() => ga("innstillinger")}
-          title="Skoleåret — bytt eller endre i Innstillinger"
-          className="mr-1 px-1 text-liten tabular-nums text-blekk-svak hover:text-blekk"
-        >
-          {skolear.navn}
-        </button>
-        <Fane
-          navn="Innstillinger"
-          aktiv={visning === "innstillinger" || visning === "skoleruta"}
-          onKlikk={() => ga("innstillinger")}
-        />
-      </header>
+          <Fane
+            navn="I dag"
+            aktiv={visning === "idag"}
+            onKlikk={() => ga("idag")}
+          />
+          <Fane
+            navn="Økter"
+            aktiv={erOktvisning(visning)}
+            onKlikk={() => ga("okter")}
+          />
+          <Fane
+            navn="Elever"
+            aktiv={
+              visning === "elever" || visning === "elev" || visning === "liminn"
+            }
+            onKlikk={() => ga("elever")}
+          />
+          <Fane
+            navn="Vurderinger"
+            aktiv={visning === "vurderinger"}
+            onKlikk={() => ga("vurderinger")}
+          />
+          <Fane
+            navn="Samtaler"
+            aktiv={visning === "samtaler"}
+            onKlikk={() => ga("samtaler")}
+          />
+          <Fane
+            navn="Fag"
+            aktiv={visning === "fag"}
+            onKlikk={() => ga("fag")}
+          />
+          <span className="grow" />
+          {/* Synlig inngang til ⌘K, så snarveien kan oppdages. */}
+          <button
+            onClick={() => setSokApent(true)}
+            className="mr-2 flex items-center gap-2 rounded border border-linje px-2 py-0.5 text-liten text-blekk-svak hover:border-linje-sterk hover:text-blekk"
+          >
+            Søk
+            <kbd className="font-sans text-blekk-svakest">⌘K</kbd>
+          </button>
+          <button
+            onClick={() => ga("innstillinger")}
+            title="Skoleåret — bytt eller endre i Innstillinger"
+            className="mr-1 px-1 text-liten tabular-nums text-blekk-svak hover:text-blekk"
+          >
+            {skolear.navn}
+          </button>
+          <Fane
+            navn="Innstillinger"
+            aktiv={visning === "innstillinger" || visning === "skoleruta"}
+            onKlikk={() => ga("innstillinger")}
+          />
+        </header>
 
-      {melding && (
-        <div className="ikkeutskrift flex shrink-0 items-center gap-3 border-b border-linje-medium bg-flate-svak px-6 py-1.5 text-brod text-aksent">
-          <span className="inline-flex items-center gap-1.5">
-            <Ikon navn="hake" />
-            {melding}
-          </span>
-          <Knapp variant="stille" onClick={() => setMelding(null)}>
-            Lukk
-          </Knapp>
-        </div>
-      )}
+        {melding && (
+          <div className="ikkeutskrift flex shrink-0 items-center gap-3 border-b border-linje-medium bg-flate-svak px-6 py-1.5 text-brod text-aksent">
+            <span className="inline-flex items-center gap-1.5">
+              <Ikon navn="hake" />
+              {melding}
+            </span>
+            <Knapp variant="stille" onClick={() => setMelding(null)}>
+              Lukk
+            </Knapp>
+          </div>
+        )}
 
-      {/*
+        {/*
         Flex hele veien ned, ingen prosenthøyder. `h-full` krever at hver
         forelder har en definert høyde, og brister det ett sted vokser
         innholdet forbi skallet — som da lar seg rulle med hjulet selv om
@@ -297,145 +309,143 @@ export default function App() {
         Uten den nekter den å krympe, og rullesonen under får aldri en
         begrenset høyde å rulle innenfor.
       */}
-      <main className="flex min-h-0 flex-1 flex-col overflow-clip">
-        {/*
+        <main className="flex min-h-0 flex-1 flex-col overflow-clip">
+          {/*
           Samme padding på alle skjermer. Den var før avhengig av om skjermen
           hadde sidepanel, og da hoppet innholdet 8 px både sidelengs og ned
           hver gang man byttet fane. Skjermene med panel er de tetteste — de
           skal ikke miste bredde — så det er den strammeste verdien som gjelder
           for alle.
         */}
-        <div className="flex min-h-0 flex-1 flex-col px-6 py-4">
-          {visning === "idag" && (
-            <IDag
-              skolear={skolear}
-              fag={fag}
-              onGaTil={(v, id) => ga(v, id ?? null)}
-              onApneOkt={(id) => ga("okter", id)}
-              onApneElev={(id) => ga("elev", id)}
-            />
-          )}
+          <div className="flex min-h-0 flex-1 flex-col px-6 py-4">
+            {visning === "idag" && (
+              <IDag
+                skolear={skolear}
+                fag={fag}
+                onGaTil={(v, id) => ga(v, id ?? null)}
+                onApneOkt={apneOktSomArk}
+              />
+            )}
 
-          {visning === "kalender" && (
-            <Skolekalender
-              bryter={<Visningsbryter visning={visning} ga={ga} />}
-              key={versjon}
-              skolear={skolear}
-              fag={fag}
-              onApneOkt={(id) => ga("okter", id)}
-            />
-          )}
+            {visning === "kalender" && (
+              <Skolekalender
+                bryter={<Visningsbryter visning={visning} ga={ga} />}
+                key={versjon}
+                skolear={skolear}
+                fag={fag}
+                onApneOkt={apneOktSomArk}
+              />
+            )}
 
-          {visning === "skoleruta" && (
-            <Skoleruta key={versjon} skolear={skolear} onEndret={last} />
-          )}
+            {visning === "skoleruta" && (
+              <Skoleruta key={versjon} skolear={skolear} onEndret={last} />
+            )}
 
-          {visning === "samtaler" && (
-            <Samtaler
-              key={versjon}
-              skolear={skolear}
-              fag={fag}
-              startFagId={apneId ?? undefined}
-            />
-          )}
+            {visning === "samtaler" && (
+              <Samtaler
+                key={versjon}
+                skolear={skolear}
+                fag={fag}
+                startFagId={apneId ?? undefined}
+              />
+            )}
 
-          {visning === "innstillinger" && (
-            <Innstillinger
-              skolear={skolear}
-              fag={fag}
-              onEndret={last}
-              onApneSkoleruta={() => ga("skoleruta")}
-            />
-          )}
+            {visning === "innstillinger" && (
+              <Innstillinger
+                skolear={skolear}
+                fag={fag}
+                onEndret={last}
+                onApneSkoleruta={() => ga("skoleruta")}
+              />
+            )}
 
-          {/*
+            {/*
           Ingen key={versjon} her, med vilje. Fag får faglista som prop og
           trenger ikke bygges opp på nytt for å vise ferske data — og gjør den
           det, nullstilles Rediger-bryteren hver gang et felt lagrer.
         */}
-          {visning === "fag" && (
-            <Fag
-              skolearId={skolear.id}
-              fag={fag}
-              onEndret={last}
-              onApneOkt={(id) => ga("okter", id)}
-              onApneVurderinger={() => ga("vurderinger")}
-            />
-          )}
+            {visning === "fag" && (
+              <Fag
+                skolearId={skolear.id}
+                fag={fag}
+                onEndret={last}
+                onApneVurderinger={() => ga("vurderinger")}
+              />
+            )}
 
-          {visning === "elever" && (
-            <Elever
-              key={versjon}
-              startElev={apneId}
-              skolearId={skolear.id}
-              fag={fag}
-              onLimInn={() => ga("liminn")}
-              onApneOkt={(id) => ga("okter", id)}
-            />
-          )}
+            {visning === "elever" && (
+              <Elever
+                key={versjon}
+                startElev={apneId}
+                skolearId={skolear.id}
+                fag={fag}
+                onLimInn={() => ga("liminn")}
+                onApneOkt={apneOktSomArk}
+              />
+            )}
 
-          {/*
+            {/*
             Elevkortet alene, over hele bredden. Lista ved siden av forstyrrer
             når man har søkt opp én bestemt elev. Lukk går dit man kom fra.
           */}
-          {visning === "elev" && apneId && (
-            <div className="mx-auto min-h-0 w-full max-w-5xl flex-1 overflow-auto rounded-vanlig border border-linje">
-              <ElevPanel
-                key={apneId}
-                elevId={apneId}
-                aktivtSkolearId={skolear.id}
-                onLukk={() => (peker > 0 ? tilbake() : ga("elever"))}
-                onApneOkt={(id) => ga("okter", id)}
+            {visning === "elev" && apneId && (
+              <div className="mx-auto min-h-0 w-full max-w-5xl flex-1 overflow-auto rounded-vanlig border border-linje">
+                <ElevPanel
+                  key={apneId}
+                  elevId={apneId}
+                  aktivtSkolearId={skolear.id}
+                  onLukk={() => (peker > 0 ? tilbake() : ga("elever"))}
+                  onApneOkt={apneOktSomArk}
+                />
+              </div>
+            )}
+
+            {visning === "liminn" && (
+              <LimInn
+                skolearId={skolear.id}
+                fag={fag}
+                onFerdig={(m) => {
+                  setMelding(m);
+                  ga("elever");
+                  setVersjon((v) => v + 1);
+                }}
+                onAvbryt={() => ga("elever")}
               />
-            </div>
-          )}
+            )}
 
-          {visning === "liminn" && (
-            <LimInn
-              skolearId={skolear.id}
-              fag={fag}
-              onFerdig={(m) => {
-                setMelding(m);
-                ga("elever");
-                setVersjon((v) => v + 1);
-              }}
-              onAvbryt={() => ga("elever")}
-            />
-          )}
+            {visning === "okter" && (
+              <Okter
+                bryter={<Visningsbryter visning={visning} ga={ga} />}
+                key={versjon}
+                skolear={skolear}
+                fag={fag}
+                startValgt={apneId}
+                onApnePerioder={() => ga("perioder")}
+              />
+            )}
 
-          {visning === "okter" && (
-            <Okter
-              bryter={<Visningsbryter visning={visning} ga={ga} />}
-              key={versjon}
-              skolear={skolear}
-              fag={fag}
-              startValgt={apneId}
-              onApnePerioder={() => ga("perioder")}
-            />
-          )}
+            {visning === "perioder" && (
+              <Perioder
+                bryter={<Visningsbryter visning={visning} ga={ga} />}
+                key={versjon}
+                skolear={skolear}
+                fag={fag}
+                onApneOkt={apneOktSomArk}
+              />
+            )}
 
-          {visning === "perioder" && (
-            <Perioder
-              bryter={<Visningsbryter visning={visning} ga={ga} />}
-              key={versjon}
-              skolear={skolear}
-              fag={fag}
-              onApneOkt={(id) => ga("okter", id)}
-            />
-          )}
-
-          {visning === "vurderinger" && (
-            <Vurderinger
-              key={versjon}
-              skolearId={skolear.id}
-              fag={fag}
-              onApneSamtaler={(fagId) => ga("samtaler", fagId)}
-              onApneOkt={(id) => ga("okter", id)}
-            />
-          )}
-        </div>
-      </main>
-    </div>
+            {visning === "vurderinger" && (
+              <Vurderinger
+                key={versjon}
+                skolearId={skolear.id}
+                fag={fag}
+                onApneSamtaler={(fagId) => ga("samtaler", fagId)}
+              />
+            )}
+          </div>
+        </main>
+      </div>
+    </Arkstabel>
   );
 }
 

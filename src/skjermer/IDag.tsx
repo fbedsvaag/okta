@@ -6,8 +6,7 @@ import { Ikon, Kappet, Knapp, Tomtilstand } from "../ui/felles";
 import { Arsoversikt } from "./Arsoversikt";
 import { dagenssetning, hentSamtalerPaDato } from "../data/samtale";
 import { Ukelinje } from "./Ukelinje";
-import { OktPanel } from "./OktPanel";
-import { useGlidende } from "../ui/bevegelse";
+import { lytt } from "../data/endringer";
 
 /**
  * I dag — startskjermen, SPEC §4.1, med årsoversikten under.
@@ -22,7 +21,6 @@ export function IDag({
   fag,
   onGaTil,
   onApneOkt,
-  onApneElev,
 }: {
   skolear: Skolear;
   fag: FagIAr[];
@@ -31,9 +29,8 @@ export function IDag({
     /** tingen skjermen skal åpne — f.eks. eleven du klikket på */
     id?: string,
   ) => void;
+  /** åpner økta som et ark over forsiden */
   onApneOkt: (id: string) => void;
-  /** åpner elevkortet — fra en elev i øktpanelet */
-  onApneElev: (elevId: string) => void;
 }) {
   const [okter, setOkter] = useState<Okt[]>([]);
   const [samtaler, setSamtaler] = useState<
@@ -42,24 +39,11 @@ export function IDag({
 
   const lastOkter = () => void hentOkter(skolear.id).then(setOkter);
   useEffect(lastOkter, [skolear.id]);
+  // Endres en økt i et ark over forsiden, skal uka vise det med en gang.
+  useEffect(() => lytt(lastOkter), [skolear.id]);
 
-  // Økta som er åpnet her på forsiden. Den glir inn over forsiden i stedet
-  // for å sende deg til Økter — du blir der du er, og uka står fram under.
-  const [valgt, setValgt] = useState<string | null>(null);
-  const { vist, apen } = useGlidende(okter.find((o) => o.id === valgt) ?? null);
-  const apne = (id: string) => setValgt(id);
-
-  // Esc lukker, men ikke når man står i et felt — der angrer Esc teksten.
-  useEffect(() => {
-    if (!valgt) return;
-    const tast = (e: KeyboardEvent) => {
-      const i = e.target as HTMLElement;
-      if (e.key === "Escape" && !i.closest("input, textarea, select"))
-        setValgt(null);
-    };
-    window.addEventListener("keydown", tast);
-    return () => window.removeEventListener("keydown", tast);
-  }, [valgt]);
+  // En økt åpnes som et ark over forsiden (Arkstabel) — du blir her.
+  const apne = onApneOkt;
 
   useEffect(() => {
     void hentSamtalerPaDato(skolear.id, isoDato(new Date())).then(setSamtaler);
@@ -152,45 +136,6 @@ export function IDag({
           onApneVurderinger={() => onGaTil("vurderinger")}
         />
       </div>
-
-      {/*
-        Øktpanelet som et ark over forsiden (DESIGN.md §7). Klikk utenfor
-        eller Esc lukker; uka under oppdateres når noe endres.
-      */}
-      {vist && (
-        <div
-          className="fixed inset-0 z-40 bg-blekk/10"
-          onMouseDown={(e) => e.target === e.currentTarget && setValgt(null)}
-        >
-          <div
-            className={`panel gli-inn absolute inset-y-0 right-0 w-full max-w-2xl overflow-auto bg-ark shadow-[var(--shadow-ark)] ${
-              apen ? "" : "panel-ute"
-            }`}
-          >
-            <div className="flex justify-end border-b border-linje-medium px-5 py-1">
-              <button
-                onClick={() => {
-                  setValgt(null);
-                  onApneOkt(vist.id);
-                }}
-                className="text-liten text-blekk-svak hover:text-blekk"
-              >
-                Vis i Økter <Ikon navn="pil" />
-              </button>
-            </div>
-            <OktPanel
-              key={vist.id}
-              okt={vist}
-              onLukk={() => setValgt(null)}
-              onEndret={lastOkter}
-              onApneElev={(id) => {
-                setValgt(null);
-                onApneElev(id);
-              }}
-            />
-          </div>
-        </div>
-      )}
     </div>
   );
 }

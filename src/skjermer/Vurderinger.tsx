@@ -10,7 +10,7 @@ import type { FagIAr } from "../data/fag";
 import type { Skala } from "../skala";
 import { Felt, Ikon, Kappet, Knapp, Tomtilstand } from "../ui/felles";
 import { VurderingPanel } from "./VurderingPanel";
-import { ElevPanel } from "./ElevPanel";
+import { useArk } from "../ui/Arkstabel";
 import { useGlidende } from "../ui/bevegelse";
 
 /**
@@ -23,12 +23,10 @@ import { useGlidende } from "../ui/bevegelse";
 export function Vurderinger({
   skolearId,
   fag,
-  onApneOkt,
   onApneSamtaler,
 }: {
   skolearId: string;
   fag: FagIAr[];
-  onApneOkt: (oktId: string) => void;
   onApneSamtaler: (skolearFagId: string) => void;
 }) {
   const [vurderinger, setVurderinger] = useState<Vurdering[]>([]);
@@ -37,7 +35,7 @@ export function Vurderinger({
   const [filterFag, setFilterFag] = useState("");
   const [sok, setSok] = useState("");
   const [lagerNy, setLagerNy] = useState(false);
-  const [valgtElev, setValgtElev] = useState<string | null>(null);
+  const ark = useArk();
 
   async function last() {
     setVurderinger(await hentVurderinger(skolearId));
@@ -188,25 +186,14 @@ export function Vurderinger({
         <div
           className={`panel min-h-0 min-w-0 w-full overflow-auto lg:w-2/3 ${glir ? "" : "panel-ute"}`}
         >
-          {valgtElev ? (
-            // Elevportalen legger seg oppå vurderingen. Esc tar deg tilbake
-            // til den du sto i, ikke helt ut.
-            <ElevPanel
-              key={valgtElev}
-              elevId={valgtElev}
-              aktivtSkolearId={skolearId}
-              onLukk={() => setValgtElev(null)}
-              onApneOkt={onApneOkt}
-            />
-          ) : (
-            <VurderingPanel
-              vurdering={apen}
-              onLukk={() => setValgt(null)}
-              onEndret={last}
-              onApneElev={setValgtElev}
-              onApneSamtaler={onApneSamtaler}
-            />
-          )}
+          {/* Elevkortet legger seg som et ark over vurderingen (Arkstabel). */}
+          <VurderingPanel
+            vurdering={apen}
+            onLukk={() => setValgt(null)}
+            onEndret={last}
+            onApneElev={(id) => ark.apneElev(id)}
+            onApneSamtaler={onApneSamtaler}
+          />
         </div>
       )}
     </div>

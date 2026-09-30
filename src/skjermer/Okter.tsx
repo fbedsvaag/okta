@@ -48,7 +48,7 @@ import {
   type Periode,
 } from "../data/perioder";
 import { Penselrad, VISK, type Pensel } from "./Penselrad";
-import { ElevPanel } from "./ElevPanel";
+import { useArk } from "../ui/Arkstabel";
 import { useGlidende } from "../ui/bevegelse";
 import type { Skolear } from "../data/skolear";
 import { NySerie } from "./NySerie";
@@ -100,7 +100,7 @@ export function Okter({
   const [sok, setSok] = useState("");
   const [lagerNy, setLagerNy] = useState(false);
   const [lagerSerie, setLagerSerie] = useState(false);
-  const [valgtElev, setValgtElev] = useState<string | null>(null);
+  const arkstabel = useArk();
   const [perioder, setPerioder] = useState<Periode[]>([]);
   // Om årsplanen grupperes under perioder på papiret. Valget hører til
   // brukeren og lagres i innstilling, som kolonnevalgene.
@@ -548,25 +548,13 @@ export function Okter({
           <div
             className={`panel min-h-0 min-w-0 w-full overflow-auto lg:w-2/3 ${glir ? "" : "panel-ute"}`}
           >
-            {valgtElev ? (
-              <ElevPanel
-                key={valgtElev}
-                elevId={valgtElev}
-                aktivtSkolearId={skolearId}
-                onLukk={() => setValgtElev(null)}
-                onApneOkt={(id) => {
-                  setValgtElev(null);
-                  setValgt(id);
-                }}
-              />
-            ) : (
-              <OktPanel
-                okt={apen}
-                onLukk={() => setValgt(null)}
-                onEndret={last}
-                onApneElev={setValgtElev}
-              />
-            )}
+            {/* En elev åpnes som et ark over økta (Arkstabel). */}
+            <OktPanel
+              okt={apen}
+              onLukk={() => setValgt(null)}
+              onEndret={last}
+              onApneElev={(id) => arkstabel.apneElev(id)}
+            />
           </div>
         )}
       </div>

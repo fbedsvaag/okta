@@ -148,6 +148,14 @@ lista trekker seg sammen til en tredjedel. Navigasjonen er dybde, ikke
 sidebytte. Unntak: elevkortet åpnet fra søket dekker hele bredden, uten
 lista — der er lista bare forstyrrende.
 
+**Ark over ark — kortlogikken.** Åpner du noe fra et panel eller et kort —
+en elev fra en økt, en økt fra en elevs heatmap, en økt fra forsiden eller
+kalenderen — legger det seg som et nytt ark over det du sto i. Du blir på
+siden du var på. Arket under skyves 32 px mot venstre, krymper til 98 % og
+dempes, så kanten stikker fram og lagene kan leses. Lukk, «Tilbake», Esc
+eller et klikk utenfor tar deg ett nivå tilbake — ikke helt ut. Én felles
+stabel (`src/ui/Arkstabel.tsx`) gjør dette for hele appen.
+
 ```
 --tid-inn     180ms   panel inn
 --tid-ut      130ms   ut — alltid raskere enn inn
@@ -191,5 +199,4 @@ farge. En økt ingen er skåret i, er et hull.
   `prefers-reduced-motion` som utgangspunkt.
 - **Stagger** når lister lastes (12 ms per rad, maks ti rader).
 - **FLIP** når rader flyttes.
-- **Ark over ark** — det under skaleres til 98 % og dempes.
 - **Mørk modus.** Lav prioritet; klasserom er lyse.

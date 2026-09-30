@@ -1,3 +1,4 @@
+import { useArk } from "../ui/Arkstabel";
 import { useEffect, useState } from "react";
 import { confirm as bekreft } from "@tauri-apps/plugin-dialog";
 import {
@@ -12,7 +13,6 @@ import { FAGFARGER } from "../ui/farger";
 import { Felt, Knapp, Tomtilstand } from "../ui/felles";
 import { FagPanel } from "./FagPanel";
 import { Fagvelger } from "./Fagvelger";
-import { ElevPanel } from "./ElevPanel";
 import { useGlidende } from "../ui/bevegelse";
 import { hentFagElever, type FagElev } from "../data/fagportal";
 
@@ -27,13 +27,11 @@ export function Fag({
   skolearId,
   fag,
   onEndret,
-  onApneOkt,
   onApneVurderinger,
 }: {
   skolearId: string;
   fag: FagIAr[];
   onEndret: () => void;
-  onApneOkt: (oktId: string) => void;
   onApneVurderinger: () => void;
 }) {
   const [globalVarighet, setGlobalVarighet] = useState("180");
@@ -41,31 +39,19 @@ export function Fag({
   // i tabellen åpner fagportalen i stedet for å sette markøren i et felt.
   const [rediger, setRediger] = useState(false);
   const [valgtFag, setValgtFag] = useState<string | null>(null);
-  const [valgtElev, setValgtElev] = useState<string | null>(null);
+  const ark = useArk();
   const { vist: apent, apen: glir } = useGlidende(
     fag.find((f) => f.id === valgtFag) ?? null,
   );
 
   // Elevene i det åpne faget, i samme rekkefølge som fagpanelet viser dem.
-  // Brukes bare til å bla — panelet henter sine egne data selv.
+  // Sendes med til elevarket, så man kan bla mellom dem der (⌥↑/⌥↓).
   const [fagElever, setFagElever] = useState<FagElev[]>([]);
-  const [retning, setRetning] = useState<"opp" | "ned" | null>(null);
 
   useEffect(() => {
     if (!apent) return;
     void hentFagElever(apent.id, skolearId).then(setFagElever);
   }, [apent?.id, skolearId]);
-
-  const nr = fagElever.findIndex((e) => e.elevId === valgtElev);
-
-  function blaTil(steg: number) {
-    if (nr < 0 || fagElever.length === 0) return;
-    // Går rundt i begge ender — lista er kort nok til at det er greiere
-    // enn å stoppe, og du slipper å lure på om det er flere igjen.
-    const ny = (nr + steg + fagElever.length) % fagElever.length;
-    setRetning(steg > 0 ? "opp" : "ned");
-    setValgtElev(fagElever[ny].elevId);
-  }
 
   useEffect(() => {
     void hentInnstilling("standard_varighet_min").then((v) =>
@@ -158,37 +144,21 @@ export function Fag({
         <div
           className={`panel min-h-0 min-w-0 w-full overflow-auto lg:w-2/3 ${glir ? "" : "panel-ute"}`}
         >
-          {valgtElev ? (
-            <ElevPanel
-              key={valgtElev}
-              elevId={valgtElev}
-              aktivtSkolearId={skolearId}
-              startFag={apent.id}
-              onLukk={() => setValgtElev(null)}
-              onApneOkt={onApneOkt}
-              bla={
-                nr >= 0
-                  ? {
-                      nr: nr + 1,
-                      av: fagElever.length,
-                      retning,
-                      forrige: () => blaTil(-1),
-                      neste: () => blaTil(1),
-                    }
-                  : undefined
-              }
-            />
-          ) : (
-            <FagPanel
-              key={apent.id}
-              fag={apent}
-              skolearId={skolearId}
-              onLukk={() => setValgtFag(null)}
-              onEndret={onEndret}
-              onApneElev={setValgtElev}
-              onApneVurderinger={onApneVurderinger}
-            />
-          )}
+          {/* En elev åpnes som et ark over fagpanelet (Arkstabel). */}
+          <FagPanel
+            key={apent.id}
+            fag={apent}
+            skolearId={skolearId}
+            onLukk={() => setValgtFag(null)}
+            onEndret={onEndret}
+            onApneElev={(id) =>
+              ark.apneElev(id, {
+                liste: fagElever.map((e) => e.elevId),
+                startFag: apent.id,
+              })
+            }
+            onApneVurderinger={onApneVurderinger}
+          />
         </div>
       )}
     </div>
