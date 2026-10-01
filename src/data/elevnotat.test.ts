@@ -362,19 +362,43 @@ describe("hentOktnotater", () => {
     const a = await opprettOkt(fag, "MFL1", "2026-09-01", "08:15", 90);
     const b = await opprettOkt(fag, "MFL1", "2026-09-08", "08:15", 90);
     const c = await opprettOkt(fag, "MFL1", "2026-09-15", "08:15", 90);
+    const d = await opprettOkt(fag, "MFL1", "2026-09-22", "08:15", 90);
     for (const o of [a, b, c]) await settSkaring(elev, o, GUL);
     await settSkaringsnotat(elev, a, "Sov i timen");
     await settSkaringsnotat(elev, b, "   ");
     await settSkaringsnotat(elev, c, "Borte etter pause");
     await slettOkt(c);
+    // Ikke skåret: notatet skal likevel lagres og stå i tidslinja.
+    await settSkaringsnotat(elev, d, "Kom for sent");
 
     const n = await hentOktnotater(elev);
-    expect(n).toHaveLength(1);
-    expect(n[0]).toMatchObject({
-      oktId: a,
-      tekst: "Sov i timen",
-      fagKode: "MFL1",
-      farge: "gul",
-    });
+    expect(n.map((x) => [x.oktId, x.tekst, x.farge])).toEqual([
+      [d, "Kom for sent", null],
+      [a, "Sov i timen", "gul"],
+    ]);
+  });
+});
+
+describe("øktnotatet uten skåring", () => {
+  it("lagres, byttes ut og fjernes med tom tekst — og overlever at skåringen fjernes", async () => {
+    base.nullstill();
+    const { fjernSkaring, hentOktElever } = await import("./okter");
+    const ar = await opprettSkolear("2026/27", "2026-08-17", "2027-06-20");
+    const fag = await leggFagIAr(ar, "MFL1", "Markedsføring", null);
+    const { koblePaFag } = await import("./elever");
+    const elev = await opprettElev("Tony", "Soprano");
+    await koblePaFag(elev, fag);
+    const o = await opprettOkt(fag, "MFL1", "2026-09-01", "08:15", 90);
+
+    await settSkaringsnotat(elev, o, "Første");
+    await settSkaringsnotat(elev, o, "Andre");
+    expect((await hentOktElever(o, fag))[0].notat).toBe("Andre");
+
+    await settSkaring(elev, o, "5ca1ade1-0001-4000-8000-000000000004");
+    await fjernSkaring(elev, o);
+    expect((await hentOktElever(o, fag))[0].notat).toBe("Andre");
+
+    await settSkaringsnotat(elev, o, "  ");
+    expect((await hentOktElever(o, fag))[0].notat).toBeNull();
   });
 });

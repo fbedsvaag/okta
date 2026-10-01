@@ -409,3 +409,43 @@ describe("migrasjon 019 — rydd etter slettede elever", () => {
     expect(levende("elev_fag")).toEqual(["ef2"]);
   });
 });
+
+describe("migrasjon 022 — øktnotatet flyttes ut av skåringen", () => {
+  function medSkaringer(d: DatabaseSync) {
+    // Fremmednøklene av: bare skåringsradene trengs for å teste flyttingen.
+    d.exec("PRAGMA foreign_keys = OFF");
+    const rad = (id: string, notat: string | null, slettet: string | null) =>
+      `('${id}', 'e1', 'o-${id}', 'v', ${notat === null ? "NULL" : `'${notat}'`},
+        '2026-09-01T10:00:00', '2026-09-02T11:00:00',
+        ${slettet === null ? "NULL" : `'${slettet}'`})`;
+    d.exec(`
+      INSERT INTO skaring (id, elev_id, okt_id, skalaverdi_id, notat,
+                           opprettet, endret, slettet)
+      VALUES ${rad("a", "Sov i timen", null)},
+             ${rad("b", "   ", null)},
+             ${rad("c", null, null)},
+             ${rad("d", "Slettet", "2026-09-03T00:00:00")};
+    `);
+    // Står av også mens 022 kjøres: elevene og øktene radene peker på finnes
+    // ikke i testen. I en ekte base gjør de det.
+  }
+
+  it("flytter notatene som finnes, med tidsstemplene", () => {
+    const d = basenFram("021_elevbilde.sql");
+    medSkaringer(d);
+    kjor(d, "022_oktnotat.sql");
+    const rader = d.prepare("SELECT * FROM oktnotat").all() as any[];
+    expect(rader).toHaveLength(1);
+    expect(rader[0]).toMatchObject({
+      elev_id: "e1",
+      okt_id: "o-a",
+      tekst: "Sov i timen",
+      opprettet: "2026-09-01T10:00:00",
+      endret: "2026-09-02T11:00:00",
+      slettet: null,
+    });
+    expect(rader[0].id).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
+    );
+  });
+});

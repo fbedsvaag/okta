@@ -109,7 +109,7 @@ export async function hentHeatmap(
             sv.kode        AS verdiKode,
             sv.farge       AS verdiFarge,
             COALESCE(sv.teller_ikke, 0) AS tellerIkke,
-            s.notat,
+            n.tekst AS notat,
             (SELECT COUNT(*) FROM skaring s2
               WHERE s2.okt_id = o.id AND s2.slettet IS NULL) AS avholdt
        FROM elev_fag ef
@@ -120,6 +120,8 @@ export async function hentHeatmap(
        LEFT JOIN skaring s
               ON s.okt_id = o.id AND s.elev_id = $1 AND s.slettet IS NULL
        LEFT JOIN skalaverdi sv ON sv.id = s.skalaverdi_id
+       LEFT JOIN oktnotat n
+              ON n.okt_id = o.id AND n.elev_id = $1 AND n.slettet IS NULL
       WHERE ef.elev_id = $1 AND ef.slettet IS NULL
       ORDER BY f.kode, o.dato, o.klokkeslett IS NULL, o.klokkeslett`,
     [elevId, skolearId],

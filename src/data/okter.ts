@@ -143,11 +143,13 @@ export async function hentOktElever(
     `SELECT e.id        AS elevId,
             e.fornavn, e.etternavn, e.kode,
             s.skalaverdi_id AS skalaverdiId,
-            s.notat
+            n.tekst AS notat
        FROM elev_fag ef
        JOIN elev e ON e.id = ef.elev_id AND e.slettet IS NULL
        LEFT JOIN skaring s
               ON s.elev_id = e.id AND s.okt_id = $1 AND s.slettet IS NULL
+       LEFT JOIN oktnotat n
+              ON n.elev_id = e.id AND n.okt_id = $1 AND n.slettet IS NULL
       WHERE ef.skolear_fag_id = $2 AND ef.slettet IS NULL
       ORDER BY e.fornavn COLLATE NOCASE, e.etternavn COLLATE NOCASE`,
     [oktId, skolearFagId],
@@ -435,16 +437,28 @@ export async function fjernSkaring(
   if (finnes[0]) await slett("skaring", finnes[0].id);
 }
 
+/**
+ * Notatet på en elev i en økt. Bor i `oktnotat`, ikke på skåringsraden —
+ * så det lagres også når eleven ikke er skåret (migrasjon 022). Tom tekst
+ * fjerner notatet. Raden gjenbrukes (UNIQUE, §12).
+ */
 export async function settSkaringsnotat(
   elevId: string,
   oktId: string,
   notat: string,
 ): Promise<void> {
-  const finnes = await hent<{ id: string }>(
-    "SELECT id FROM skaring WHERE elev_id = $1 AND okt_id = $2 AND slettet IS NULL",
+  const tekst = notat.trim();
+  const [finnes] = await hent<{ id: string; slettet: string | null }>(
+    "SELECT id, slettet FROM oktnotat WHERE elev_id = $1 AND okt_id = $2",
     [elevId, oktId],
   );
-  if (finnes[0]) await oppdater("skaring", finnes[0].id, { notat });
+  if (!tekst) {
+    if (finnes && finnes.slettet === null) await slett("oktnotat", finnes.id);
+  } else if (finnes) {
+    await oppdater("oktnotat", finnes.id, { tekst, slettet: null });
+  } else {
+    await settInn("oktnotat", { elev_id: elevId, okt_id: oktId, tekst });
+  }
   // Notatet står også i elevens tidslinje; kortet under skal vise det.
   varsleElever();
 }

@@ -3,8 +3,8 @@
 Kort status pr. 2026-09-30, versjon 0.1.3. Skrevet mot SPEC.md slik den er nå.
 Denne fila eies fritt — oppdater den løpende, i motsetning til SPEC.md.
 
-**467 tester, alle grønne. `tsc --noEmit` er ren. `npm run build` går
-gjennom. 21 migrasjoner.**
+**469 tester, alle grønne. `tsc --noEmit` er ren. `npm run build` går
+gjennom. 22 migrasjoner.**
 
 ## Hva som virker
 
@@ -31,8 +31,9 @@ Skjerm for skjerm (§4), med tilstand:
 - **Vurderinger (§4.6)** — ferdig. Viser nå også hvilken oppgave eleven trakk,
   når vurderingen har en samtaletrekning knyttet til seg.
 - **Notater og møtelogg (§4.7)** — ferdig. Tidslinja på elevkortet viser
-  også notatene fra skåringen i øktene (§4.4), med filter Alle · Møtelogg ·
-  Fra øktene. Erstattet den gamle
+  også notatene fra øktene (§4.4), med filter Alle · Møtelogg · Fra øktene.
+  Øktnotatet bor i `oktnotat` (migrasjon 022), ikke på skåringsraden: før
+  ble et notat på en elev som ikke var skåret stille borte. Erstattet den gamle
   oppfølgingsskjermen som aldri ble bygget.
 - **Innstillinger (§4.8)** — ferdig. Fagbank og «fag i år» ligger i Fag-fanen,
   ikke her.
@@ -52,8 +53,8 @@ Skjerm for skjerm (§4), med tilstand:
 - **Elevbilder fra InSchool** — 30.09 (migrasjon 021, `elevbilde`). «Les
   fra InSchool-PDF» i Lim inn: navn og klasse fra tabellen, fagkoden velger
   faget, bildene klippes ut, trimmes og lagres som gråtoner. Looken
-  (halvtone i 45° over en myk tone fra blekk til lys lilla, og svakt korn)
-  tegnes i `Elevbilde` når bildet vises. Vises
+  (myk tone fra blekk til lys lilla, og svakt korn — halvtone ble prøvd og
+  tatt bort) tegnes i `Elevbilde` når bildet vises. Vises
   i elevkortet, kan fjernes der. pdf.js ligger i bygget, lastes bare ved
   import. Bildet går aldri ut av appen; sletting tømmer det.
 - **Kortlogikken overalt** — 30.09. Elev, vurdering og fag åpnes som ark
@@ -118,7 +119,7 @@ dager, ⌘K, alias, de nye feltene). Det som står igjen:
 
 ## Tester
 
-33 testfiler, 467 tester, alle grønne. `tsc` ren.
+33 testfiler, 469 tester, alle grønne. `tsc` ren.
 
 Dekningen er tung i datalaget og tynn i skjermlaget. Migrasjonene testes ved å
 kjøre dem i to omganger med data imellom — kjørt mot en tom base ville en

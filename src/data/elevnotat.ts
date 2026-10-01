@@ -212,30 +212,32 @@ export async function hentForfalte(skolearId: string): Promise<Set<string>> {
  * huske om eleven, og står derfor i tidslinja på elevkortet.
  */
 export type Oktnotat = {
-  /** skåringsraden notatet står på */
+  /** raden i oktnotat */
   id: string;
   oktId: string;
   dato: string;
   fagKode: string;
   tema: string | null;
   tekst: string;
-  /** skalaverdiens fargenavn, til prikken i tidslinja */
+  /** skalaverdiens fargenavn, til prikken i tidslinja; null når ikke skåret */
   farge: string | null;
-  verdi: string;
+  verdi: string | null;
 };
 
 export async function hentOktnotater(elevId: string): Promise<Oktnotat[]> {
   return hent<Oktnotat>(
-    `SELECT s.id, o.id AS oktId, o.dato,
+    `SELECT n.id, o.id AS oktId, o.dato,
             COALESCE(NULLIF(f.alias, ''), f.kode) AS fagKode,
-            o.tema, s.notat AS tekst, sv.farge, sv.kode AS verdi
-       FROM skaring s
-       JOIN okt o          ON o.id = s.okt_id AND o.slettet IS NULL
+            o.tema, n.tekst, sv.farge, sv.kode AS verdi
+       FROM oktnotat n
+       JOIN okt o          ON o.id = n.okt_id AND o.slettet IS NULL
        JOIN skolear_fag sf ON sf.id = o.skolear_fag_id AND sf.slettet IS NULL
        JOIN fag f          ON f.id = sf.fag_id
-       JOIN skalaverdi sv  ON sv.id = s.skalaverdi_id
-      WHERE s.elev_id = $1 AND s.slettet IS NULL
-        AND TRIM(COALESCE(s.notat, '')) <> ''
+       LEFT JOIN skaring s ON s.okt_id = o.id AND s.elev_id = n.elev_id
+                          AND s.slettet IS NULL
+       LEFT JOIN skalaverdi sv ON sv.id = s.skalaverdi_id
+      WHERE n.elev_id = $1 AND n.slettet IS NULL
+        AND TRIM(n.tekst) <> ''
       ORDER BY o.dato DESC, o.klokkeslett DESC`,
     [elevId],
   );

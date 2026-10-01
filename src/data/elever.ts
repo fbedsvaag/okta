@@ -454,6 +454,7 @@ export async function slettElever(elevIder: string[]): Promise<void> {
 export async function slettElevHelt(elevId: string): Promise<void> {
   for (const tabell of [
     "skaring",
+    "oktnotat",
     "vurderingsresultat",
     "elevnotat",
     "samtale",

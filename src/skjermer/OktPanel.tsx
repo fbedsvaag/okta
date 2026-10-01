@@ -252,7 +252,9 @@ export function OktPanel({
               await settSkaringsnotat(notatFor, okt.id, tekst);
               setElever((f) =>
                 f.map((e) =>
-                  e.elevId === notatFor ? { ...e, notat: tekst } : e,
+                  e.elevId === notatFor
+                    ? { ...e, notat: tekst.trim() || null }
+                    : e,
                 ),
               );
             }

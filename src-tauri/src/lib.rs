@@ -146,6 +146,12 @@ fn migrations() -> Vec<Migration> {
             sql: include_str!("../migrations/021_elevbilde.sql"),
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 22,
+            description: "notatet i en økt, uavhengig av skåringen",
+            sql: include_str!("../migrations/022_oktnotat.sql"),
+            kind: MigrationKind::Up,
+        },
     ]
 }
 
