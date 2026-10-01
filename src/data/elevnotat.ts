@@ -1,4 +1,6 @@
 import { hent, oppdater, settInn, slett } from "../db";
+// Notatene står i elevkortet og i gjøremålene på forsiden; begge lytter.
+import { varsleElever } from "./endringer";
 
 /**
  * Notater og møtelogg per elev, SPEC §4.7.
@@ -74,7 +76,7 @@ export async function opprettElevnotat(
     samtaleId?: string | null;
   },
 ): Promise<string> {
-  return settInn("elevnotat", {
+  const id = await settInn("elevnotat", {
     elev_id: elevId,
     skolear_id: skolearId,
     skolear_fag_id: felter.skolearFagId ?? null,
@@ -85,6 +87,8 @@ export async function opprettElevnotat(
     lukket: null,
     samtale_id: felter.samtaleId ?? null,
   });
+  varsleElever();
+  return id;
 }
 
 /**
@@ -148,6 +152,7 @@ export async function endreElevnotat(
     if (!felter.skalFolgesOpp) rad.frist = null;
   }
   if (Object.keys(rad).length > 0) await oppdater("elevnotat", id, rad);
+  varsleElever();
 }
 
 /** Lukker et oppfølgingspunkt, eller åpner det igjen. */
@@ -155,10 +160,12 @@ export async function settLukket(id: string, lukket: boolean): Promise<void> {
   await oppdater("elevnotat", id, {
     lukket: lukket ? new Date().toISOString().slice(0, 10) : null,
   });
+  varsleElever();
 }
 
 export async function slettElevnotat(id: string): Promise<void> {
   await slett("elevnotat", id);
+  varsleElever();
 }
 
 /**

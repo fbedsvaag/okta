@@ -24,11 +24,11 @@ export function Elevbilde({
   storrelse = 64,
   klasse = "",
   alt = "",
-  rund = false,
+  hjorne,
 }: {
   src: string;
-  /** rundt i stedet for med små hjørner — i lister og søket */
-  rund?: boolean;
+  /** hjørneradius i px; uten står appens små hjørner */
+  hjorne?: number;
   /** sidene i px — bildet er kvadratisk, beskåret om midten */
   storrelse?: number;
   klasse?: string;
@@ -52,8 +52,12 @@ export function Elevbilde({
 
   return (
     <span
-      className={`relative shrink-0 overflow-clip bg-valgt ${rund ? "rounded-full" : "rounded-liten"} ${klasse}`}
-      style={{ width: storrelse, height: storrelse }}
+      className={`relative shrink-0 overflow-hidden bg-valgt ${hjorne === undefined ? "rounded-liten" : ""} ${klasse}`}
+      style={{
+        width: storrelse,
+        height: storrelse,
+        borderRadius: hjorne,
+      }}
     >
       {tegnet && (
         <img
@@ -61,6 +65,9 @@ export function Elevbilde({
           alt={alt}
           draggable={false}
           className="block h-full w-full"
+          // Hjørnene også på bildet: WebKit klipper ikke alltid barnet
+          // etter forelderens radius.
+          style={{ borderRadius: hjorne }}
         />
       )}
     </span>

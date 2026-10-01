@@ -3,7 +3,7 @@
 Kort status pr. 2026-09-30, versjon 0.1.3. Skrevet mot SPEC.md slik den er nå.
 Denne fila eies fritt — oppdater den løpende, i motsetning til SPEC.md.
 
-**469 tester, alle grønne. `tsc --noEmit` er ren. `npm run build` går
+**474 tester, alle grønne. `tsc --noEmit` er ren. `npm run build` går
 gjennom. 22 migrasjoner.**
 
 ## Hva som virker
@@ -16,6 +16,9 @@ Skjerm for skjerm (§4), med tilstand:
   Så ukekalender, årsoversikt, og en setning om dagens samtaler når det er
   noen. «Notat fra forrige økt» står også i øktkortet, over øktloggen.
   En prikk i «Innsats over tid» åpner ukas økter.
+  «Gjøremål» samler åpne oppfølgingspunkter og ukryssede `- [ ]` fra
+  elevnotater og øktlogger (`data/gjoremal.ts`, ingen egen tabell);
+  krysses av rett på forsiden.
   «Elever som glipper» viser lavest snitt først; elever og vurderinger
   åpnes som ark over forsiden. Årsoversikten er et villet avvik fra §13,
   kommentert i koden.
@@ -120,7 +123,7 @@ dager, ⌘K, alias, de nye feltene). Det som står igjen:
 
 ## Tester
 
-33 testfiler, 469 tester, alle grønne. `tsc` ren.
+34 testfiler, 474 tester, alle grønne. `tsc` ren.
 
 Dekningen er tung i datalaget og tynn i skjermlaget. Migrasjonene testes ved å
 kjøre dem i to omganger med data imellom — kjørt mot en tom base ville en

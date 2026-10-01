@@ -21,6 +21,8 @@ import {
   Tomtilstand,
 } from "../ui/felles";
 import type { Okt } from "../data/okter";
+import { fullforGjoremal, hentGjoremal, type Gjoremal } from "../data/gjoremal";
+import { lytt, lyttElever, lyttOktvisning } from "../data/endringer";
 import { useArk } from "../ui/Arkstabel";
 
 /**
@@ -89,6 +91,7 @@ export function Arsoversikt({
       </div>
       <Timeregnskap fag={data?.timer ?? []} mentor={data?.mentor ?? null} />
       <div className="grid gap-y-7">
+        <Gjoremalsliste skolearId={skolearId} />
         <Vurderingsfrister
           rader={data?.kommende ?? []}
           onApne={onApneVurdering}
@@ -445,6 +448,100 @@ function Glipper({
             </li>
           ))}
         </ul>
+      )}
+    </Panel>
+  );
+}
+
+// ---------------------------------------------------------------- gjøremål
+
+/** Hvor mange som står før «Vis alle». */
+const GJOREMAL_SYNLIGE = 6;
+
+/**
+ * Alt som venter: oppfølgingspunkter og åpne avkrysningsbokser fra notater
+ * og øktlogger (`data/gjoremal.ts`). Krysses av rett her, og et klikk på
+ * teksten åpner eleven eller økta det står i.
+ */
+function Gjoremalsliste({ skolearId }: { skolearId: string }) {
+  const [liste, setListe] = useState<Gjoremal[]>([]);
+  const [alle, setAlle] = useState(false);
+  const ark = useArk();
+
+  useEffect(() => {
+    const last = () => void hentGjoremal(skolearId).then(setListe);
+    last();
+    const av = [lyttElever(last), lytt(last), lyttOktvisning(last)];
+    return () => av.forEach((f) => f());
+  }, [skolearId]);
+
+  const idag = isoIdag();
+  const synlige = alle ? liste : liste.slice(0, GJOREMAL_SYNLIGE);
+
+  return (
+    <Panel
+      tittel="Gjøremål"
+      hjelp={liste.length > 0 ? `${liste.length} åpne` : undefined}
+    >
+      {liste.length === 0 ? (
+        <p className="py-1 text-brod text-blekk-svak">
+          Ingenting venter. Huk av «skal følges opp» på et notat, eller skriv «-
+          [ ]» i et notat eller en øktlogg, så havner det her.
+        </p>
+      ) : (
+        <ul className="divide-y divide-linje-svak">
+          {synlige.map((g) => {
+            const nokkel =
+              g.slag === "oktboks"
+                ? `${g.oktId}:${g.linje}`
+                : `${g.notatId}:${g.slag === "elevboks" ? g.linje : "o"}`;
+            const hvem = g.slag === "oktboks" ? g.fagKode : g.navn;
+            const frist = g.slag === "oppfolging" ? g.frist : null;
+            return (
+              <li key={nokkel} className="flex items-baseline gap-2 py-1">
+                <input
+                  type="checkbox"
+                  title="Ferdig"
+                  onChange={async () => {
+                    setListe((l) => l.filter((x) => x !== g));
+                    await fullforGjoremal(g);
+                  }}
+                  className="shrink-0 self-center"
+                />
+                <button
+                  onClick={() =>
+                    g.slag === "oktboks"
+                      ? ark.apneOkt(g.oktId)
+                      : ark.apneElev(g.elevId)
+                  }
+                  className="flex min-w-0 flex-1 items-baseline gap-2 text-left text-brod hover:text-aksent"
+                >
+                  <Kappet verdi={g.tekst || "(uten tekst)"} />
+                  <span className="ml-auto shrink-0 text-liten text-blekk-svak">
+                    {hvem}
+                  </span>
+                </button>
+                {frist && (
+                  <span
+                    className={`w-14 shrink-0 text-right text-liten tabular-nums ${
+                      frist < idag ? "text-feil" : "text-blekk-dempet"
+                    }`}
+                  >
+                    {norskDato(frist)}
+                  </span>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+      {liste.length > GJOREMAL_SYNLIGE && (
+        <button
+          onClick={() => setAlle((v) => !v)}
+          className="mt-1 text-liten text-blekk-svak hover:text-blekk"
+        >
+          {alle ? "Vis færre" : `Vis alle ${liste.length}`}
+        </button>
       )}
     </Panel>
   );

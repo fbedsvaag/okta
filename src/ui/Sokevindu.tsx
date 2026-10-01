@@ -34,6 +34,10 @@ export function Sokevindu({
   const [okter, setOkter] = useState<Sokeokt[]>([]);
   // Elevbildene, til et lite rundt bilde foran navnet.
   const [bilder, setBilder] = useState<Map<string, string>>(new Map());
+  // Fagene hver elev har, med fargen, til linja under navnet.
+  const [fagFor, setFagFor] = useState<
+    Map<string, { kode: string; farge: string | null }[]>
+  >(new Map());
   const liste = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -49,6 +53,17 @@ export function Sokevindu({
       ]);
       if (avbrutt) return;
       const perFag = new Map(fag.map((f) => [f.id, f]));
+      setFagFor(
+        new Map(
+          e.map((x) => [
+            x.id,
+            x.fagIder.flatMap((id) => {
+              const f = perFag.get(id);
+              return f ? [{ kode: f.alias || f.kode, farge: f.farge }] : [];
+            }),
+          ]),
+        ),
+      );
       setElever(
         e.map((x) => ({
           id: x.id,
@@ -186,25 +201,49 @@ export function Sokevindu({
                 >
                   {t.type === "elev" ? (
                     <>
-                      {/* Like høyt som teksten; uten bilde står initialene. */}
+                      {/* To linjer: navnet, og fagene eleven har hos deg. */}
                       <span className="self-center">
                         {bilder.get(t.elev.id) ? (
                           <Elevbilde
                             src={bilder.get(t.elev.id)!}
-                            storrelse={22}
-                            rund
+                            storrelse={36}
+                            hjorne={7}
                           />
                         ) : (
-                          <span className="flex h-[22px] w-[22px] items-center justify-center rounded-full bg-flate text-[9px] font-medium text-blekk-dempet">
+                          <span className="flex h-9 w-9 items-center justify-center rounded-[7px] bg-flate text-liten font-medium text-blekk-dempet">
                             {t.elev.fornavn[0]}
                             {t.elev.etternavn[0] ?? ""}
                           </span>
                         )}
                       </span>
-                      <span className="min-w-0 flex-1 truncate">
-                        {t.elev.fornavn} {t.elev.etternavn}
+                      <span className="min-w-0 flex-1 self-center">
+                        <span className="block truncate">
+                          {t.elev.fornavn} {t.elev.etternavn}
+                        </span>
+                        <span className="flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-liten text-blekk-dempet">
+                          {(fagFor.get(t.elev.id) ?? []).length === 0 ? (
+                            <span className="text-blekk-svak">uten fag</span>
+                          ) : (
+                            fagFor.get(t.elev.id)!.map((f) => (
+                              <span
+                                key={f.kode}
+                                className="flex items-center gap-1"
+                              >
+                                <span
+                                  aria-hidden
+                                  className="h-2 w-2 rounded-full"
+                                  style={{
+                                    background:
+                                      f.farge ?? "var(--color-linje-sterk)",
+                                  }}
+                                />
+                                {f.kode}
+                              </span>
+                            ))
+                          )}
+                        </span>
                       </span>
-                      <span className="shrink-0 text-liten text-blekk-dempet">
+                      <span className="shrink-0 self-center text-liten text-blekk-dempet">
                         {t.elev.klasse ?? ""}
                       </span>
                     </>
