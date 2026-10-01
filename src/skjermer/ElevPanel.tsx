@@ -876,6 +876,7 @@ function Oktnotatrad({
         <span
           className="absolute left-1/2 top-[0.4rem] h-2.5 w-2.5 -translate-x-1/2 rounded-full border-2 border-ark"
           style={{ background: skalafarge(notat.farge) }}
+          title={notat.verdi ?? "Ikke skåret"}
         />
       </div>
 
@@ -893,9 +894,6 @@ function Oktnotatrad({
               <Kappet verdi={notat.tema} klasse="text-blekk-svak" />
             )}
           </button>
-          <span className="ml-auto shrink-0 text-blekk-svak">
-            {notat.verdi}
-          </span>
         </div>
         <div className="-mx-2">
           <Markdownfelt

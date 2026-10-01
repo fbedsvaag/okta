@@ -1,4 +1,4 @@
-import { useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { Okt } from "../data/okter";
 import { Ikon } from "../ui/felles";
 
@@ -42,6 +42,7 @@ export function Ukelinje({
   onApneOkt: (id: string) => void;
 }) {
   const stripe = useRef<HTMLDivElement>(null);
+  const naa = useNaa();
 
   // Mandagene fra skolestart til skoleslutt, og uka med i dag i seg — også
   // om i dag ligger utenfor året, så forsiden aldri står på en tom stripe.
@@ -204,6 +205,7 @@ export function Ukelinje({
                     idag={idag}
                     fra={fra}
                     hoyde={hoyde}
+                    naa={mandag === mandagFor(idag) ? naa : null}
                     onApneOkt={onApneOkt}
                   />
                 );
@@ -223,6 +225,7 @@ function Dag({
   idag,
   fra,
   hoyde,
+  naa,
   onApneOkt,
 }: {
   navn: string;
@@ -231,6 +234,8 @@ function Dag({
   idag: string;
   fra: number;
   hoyde: number;
+  /** klokka nå i timer fra midnatt, når dagen er i inneværende uke */
+  naa: number | null;
   onApneOkt: (id: string) => void;
 }) {
   const erIdag = dato === idag;
@@ -258,6 +263,10 @@ function Dag({
           backgroundImage: `repeating-linear-gradient(to bottom, var(--color-linje-svak) 0 1px, transparent 1px ${TIME}px)`,
         }}
       >
+        {/* Den svake streken ligger bak øktene, den sterke over. */}
+        {naa !== null && !erIdag && (
+          <Naalinje naa={naa} fra={fra} hoyde={hoyde} sterk={false} />
+        )}
         {baner.map((bane, b) =>
           bane.map((o) => (
             <Blokk
@@ -271,9 +280,69 @@ function Dag({
             />
           )),
         )}
+        {naa !== null && erIdag && (
+          <Naalinje naa={naa} fra={fra} hoyde={hoyde} sterk />
+        )}
       </div>
     </div>
   );
+}
+
+/**
+ * Streken for klokka nå, som i Fantastical: tydelig med en prikk og
+ * klokkeslettet i dagens kolonne, svak over resten av uka. Står utenfor
+ * kalenderens klokkespenn, vises den ikke.
+ */
+function Naalinje({
+  naa,
+  fra,
+  hoyde,
+  sterk,
+}: {
+  naa: number;
+  fra: number;
+  hoyde: number;
+  sterk: boolean;
+}) {
+  const topp = (naa - fra) * TIME;
+  if (topp < 0 || topp > hoyde) return null;
+  const t = Math.floor(naa);
+  const m = Math.floor((naa - t) * 60);
+  const klokke = `${String(t).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+
+  return (
+    <div
+      aria-hidden
+      className={`pointer-events-none absolute inset-x-0 ${sterk ? "z-10" : ""}`}
+      style={{ top: topp }}
+    >
+      {sterk ? (
+        <>
+          <span className="absolute -top-px left-0 right-0 h-[2px] bg-aksent" />
+          <span className="absolute -left-[3px] -top-[3px] h-2 w-2 rounded-full bg-aksent" />
+          <span className="absolute -top-4 left-1 rounded-liten bg-aksent px-1 text-mikro font-medium tabular-nums leading-tight text-ark">
+            {klokke}
+          </span>
+        </>
+      ) : (
+        <span className="absolute left-0 right-0 top-0 h-px bg-aksent/30" />
+      )}
+    </div>
+  );
+}
+
+/** Klokka nå i timer fra midnatt, oppdatert hvert halve minutt. */
+function useNaa(): number {
+  const les = () => {
+    const d = new Date();
+    return d.getHours() + d.getMinutes() / 60 + d.getSeconds() / 3600;
+  };
+  const [naa, setNaa] = useState(les);
+  useEffect(() => {
+    const t = setInterval(() => setNaa(les()), 30_000);
+    return () => clearInterval(t);
+  }, []);
+  return naa;
 }
 
 function Blokk({

@@ -136,6 +136,11 @@ for perioder, elevnavn i en gruppesamtale som kan dras. Ikke som pynt.
 **Kontekstmeny og søkevindu** er ark over alt annet, med `shadow-ark`. De
 lukkes med Esc eller et trykk utenfor.
 
+**⌘K-vinduet er unntaket fra de små radiene.** Det er formet som Spotlight:
+16 px hjørner, litt gjennomsiktig over appen, stort felt med lupe og uten
+fokusring, treff markert med en avrundet flate. Det er det ene vinduet som
+skal kjennes som en del av macOS.
+
 **Tomme tilstander** sier hva som mangler og har en knapp dit det fikses.
 
 **Notater skrives i markdown** (møteloggen og øktloggen). Mens man skriver er
@@ -182,6 +187,10 @@ med en gang, blinket.
 --ease-inn    cubic-bezier(.2, .9, .25, 1)
 --ease-ut     cubic-bezier(.4, 0, .9, .4)
 ```
+
+**Nå-streken** i uka på forsiden viser klokka, som i Fantastical: lilla med
+prikk og klokkeslett i dagens kolonne, svak bak øktene resten av uka.
+Flytter seg hvert halve minutt.
 
 **Rulling skal være myk og treffe riktig.** Horisontal bla (uka på «I dag»)
 bruker `scroll-snap`, så den alltid lander på en hel uke. Lister åpner der det

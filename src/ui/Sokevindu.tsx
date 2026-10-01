@@ -116,19 +116,44 @@ export function Sokevindu({
       className="fixed inset-0 z-50 flex items-start justify-center bg-blekk/20 px-4 pt-[14vh]"
       onMouseDown={(e) => e.target === e.currentTarget && onLukk()}
     >
-      <div className="w-full max-w-xl overflow-hidden rounded-vanlig border border-linje bg-ark shadow-[var(--shadow-ark)]">
-        <input
-          autoFocus
-          value={tekst}
-          onChange={(e) => setTekst(e.target.value)}
-          onKeyDown={tast}
-          placeholder="Søk på elev, tema, fag eller dato"
-          className="w-full border-b border-linje-medium bg-transparent px-4 py-3 text-medium outline-none placeholder:text-blekk-svak"
-        />
+      {/*
+        Formet som Spotlight: store, myke hjørner, litt gjennomsiktig over
+        appen, et stort søkefelt med lupe, og treff markert med en avrundet
+        flate innenfor kantene. Ellers er appen skarp (DESIGN.md §6) — dette
+        er det ene vinduet som skal kjennes som en del av macOS.
+      */}
+      <div className="w-full max-w-xl overflow-hidden rounded-[16px] border border-linje/70 bg-ark/90 shadow-[0_24px_60px_-12px_rgb(36_31_51/0.35),0_0_0_0.5px_rgb(36_31_51/0.08)] backdrop-blur-xl">
+        <div className="flex items-center gap-3 px-4">
+          <svg
+            aria-hidden
+            viewBox="0 0 20 20"
+            className="h-5 w-5 shrink-0 text-blekk-svak"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          >
+            <circle cx="8.5" cy="8.5" r="5.75" />
+            <path d="M13 13l4.25 4.25" />
+          </svg>
+          <input
+            autoFocus
+            value={tekst}
+            onChange={(e) => setTekst(e.target.value)}
+            onKeyDown={tast}
+            placeholder="Søk på elev, tema, fag eller dato"
+            className="uten-fokusring w-full bg-transparent py-3.5 text-[1.3rem] outline-none placeholder:text-blekk-svak"
+          />
+        </div>
 
-        <div ref={liste} className="max-h-[55vh] overflow-y-auto py-1">
+        <div
+          ref={liste}
+          className={`max-h-[55vh] overflow-y-auto pb-2 ${
+            tekst.trim() === "" ? "" : "border-t border-linje-medium/70 pt-1"
+          }`}
+        >
           {tekst.trim() === "" ? (
-            <p className="px-4 py-3 text-liten text-blekk-svak">
+            <p className="border-t border-linje-medium/70 px-4 pb-1 pt-3 text-liten text-blekk-svak">
               Navn, klasse, tema, fag (også aliaset) eller dato — 2026-10-12,
               12.10 eller 12.10.26. Flere ord snevrer inn, f.eks. «mfl1 2026-10»
               for oktoberøktene i MFL1.
@@ -147,7 +172,7 @@ export function Sokevindu({
                   data-nr={i}
                   onMouseMove={() => setMarkor(i)}
                   onClick={() => apne(t)}
-                  className={`flex w-full items-baseline gap-3 px-4 py-1.5 text-left text-brod ${
+                  className={`mx-2 flex w-[calc(100%-1rem)] items-baseline gap-3 rounded-[8px] px-3 py-1.5 text-left text-brod ${
                     i === markor ? "bg-valgt" : ""
                   }`}
                 >
@@ -181,7 +206,7 @@ export function Sokevindu({
           )}
         </div>
 
-        <p className="border-t border-linje-medium px-4 py-1.5 text-liten text-blekk-svak">
+        <p className="border-t border-linje-medium/70 px-4 py-1.5 text-liten text-blekk-svak">
           ↑↓ for å velge · Enter åpner · Esc lukker
         </p>
       </div>

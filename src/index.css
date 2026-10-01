@@ -568,6 +568,14 @@ html {
 }
 
 /*
+ * Unntaket: søkefeltet i ⌘K er hele vinduet. Markøren står alltid der, og
+ * vinduet selv viser at det har fokus — en ring rundt feltet inni er dobbelt.
+ */
+.app-skall .uten-fokusring:focus-visible {
+  outline: none;
+}
+
+/*
  * Kolonneoverskriftene blir stående når lista ruller.
  *
  * Regelen ligger her og ikke som klasser på hver <th>, av to grunner:
