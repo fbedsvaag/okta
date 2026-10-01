@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { parseListe } from "../import/parser";
-import { vurderImport } from "../import/duplikat";
+import { erFullereNavn, vurderImport } from "../import/duplikat";
 import {
   ikkePaLista,
   tilImportrader,
@@ -165,7 +165,8 @@ export function LimInn({
         `${hvor}: ${r.opprettet} nye elever, ${r.koblet} fantes fra før` +
           (r.hoppet > 0 ? `, ${r.hoppet} hoppet over` : "") +
           (utIder.length > 0 ? `, ${utIder.length} tatt ut av faget` : "") +
-          (medBilde > 0 ? `, ${medBilde} bilder lagt på` : ""),
+          (medBilde > 0 ? `, ${medBilde} bilder lagt på` : "") +
+          (r.navnByttet > 0 ? `, ${r.navnByttet} navn oppdatert` : ""),
       );
     } finally {
       setJobber(false);
@@ -441,8 +442,17 @@ function ForhandsvisRad({
       ? `${rad.kandidater[0].klasse ?? "ingen klasse"} · ${rad.kandidater[0].fag.join(", ") || "ingen fag"}`
       : "",
     "allerede-i-faget": "Linja hoppes over",
+    "fullere-navn": rad.kandidater[0]
+      ? `Står som «${rad.kandidater[0].fornavn} ${rad.kandidater[0].etternavn}»`
+      : "",
     "ingen-match": "",
   }[rad.grunn];
+
+  const valgtElev = rad.kandidater.find((k) => k.id === rad.valgt);
+  const navnUlikt =
+    valgtElev !== undefined &&
+    `${valgtElev.fornavn} ${valgtElev.etternavn}` !==
+      `${rad.linje.fornavn} ${rad.linje.etternavn}`;
 
   return (
     <tr
@@ -473,12 +483,24 @@ function ForhandsvisRad({
       </td>
       <td className="py-1.5">
         {rad.status === "allerede" ? (
-          <span className="text-blekk-svak">hoppes over</span>
+          valgtElev && navnUlikt ? (
+            <Navnebytte rad={rad} gammel={valgtElev} onEndre={onEndre} />
+          ) : (
+            <span className="text-blekk-svak">hoppes over</span>
+          )
         ) : (
           <div className="flex items-center gap-2">
             <select
               value={rad.valgt}
-              onChange={(e) => onEndre({ valgt: e.target.value })}
+              onChange={(e) => {
+                const k = rad.kandidater.find((x) => x.id === e.target.value);
+                // Et fullere navn fra lista tas med av seg selv; et annet
+                // navn må velges med vilje.
+                onEndre({
+                  valgt: e.target.value,
+                  byttNavn: k ? erFullereNavn(rad.linje, k) : false,
+                });
+              }}
               className="rounded border border-linje bg-ark px-1 py-0.5 text-liten"
             >
               <option value="ny">Ny elev</option>
@@ -499,9 +521,40 @@ function ForhandsvisRad({
                 bytt til {rad.klassekonflikt.importenSier}
               </label>
             )}
+            {valgtElev && navnUlikt && (
+              <Navnebytte rad={rad} gammel={valgtElev} onEndre={onEndre} />
+            )}
           </div>
         )}
       </td>
     </tr>
+  );
+}
+
+/**
+ * Navnet fra lista på den eleven som finnes. Det fulle navnet fra skolen
+ * slår det som ble skrevet inn for hånd — men bare når boksen er krysset av.
+ */
+function Navnebytte({
+  rad,
+  gammel,
+  onEndre,
+}: {
+  rad: Importrad;
+  gammel: { fornavn: string; etternavn: string };
+  onEndre: (felter: Partial<Importrad>) => void;
+}) {
+  return (
+    <label
+      className="flex items-center gap-1 text-liten text-blekk-dempet"
+      title={`Erstatter «${gammel.fornavn} ${gammel.etternavn}»`}
+    >
+      <input
+        type="checkbox"
+        checked={rad.byttNavn}
+        onChange={(e) => onEndre({ byttNavn: e.target.checked })}
+      />
+      bruk navnet fra lista
+    </label>
   );
 }

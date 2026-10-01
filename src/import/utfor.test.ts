@@ -4,7 +4,13 @@ import type { Vurdering } from "./duplikat";
 
 function vurdering(fornavn: string, klasse: string | null): Vurdering {
   return {
-    linje: { linjenr: 1, original: fornavn, fornavn, etternavn: "Soprano", klasse },
+    linje: {
+      linjenr: 1,
+      original: fornavn,
+      fornavn,
+      etternavn: "Soprano",
+      klasse,
+    },
     status: "ny",
     grunn: "ingen-match",
     kandidater: [],
@@ -63,5 +69,18 @@ describe("ikkePaLista", () => {
 
   it("regner en linje som hoppes over som «ikke på lista»", () => {
     expect(ikkePaLista([rad("tony", true)], ["tony"])).toEqual(["tony"]);
+  });
+});
+
+describe("byttNavn", () => {
+  it("er på når lista har det fulle navnet, ellers av", () => {
+    const fullere = {
+      ...vurdering("Per", null),
+      grunn: "fullere-navn" as const,
+    };
+    expect(tilImportrader([fullere], "")[0].byttNavn).toBe(true);
+    expect(tilImportrader([vurdering("Per", null)], "")[0].byttNavn).toBe(
+      false,
+    );
   });
 });

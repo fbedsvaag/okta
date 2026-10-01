@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { parseListe } from "./parser";
 import {
   avstand,
+  erFullereNavn,
   vurderImport,
   type EksisterendeElev,
   type Importoppsett,
@@ -20,7 +21,14 @@ const elev = (
   etternavn: string,
   klasse: string | null,
   skolearFagIder: string[],
-): EksisterendeElev => ({ id, fornavn, etternavn, klasse, fag: [], skolearFagIder });
+): EksisterendeElev => ({
+  id,
+  fornavn,
+  etternavn,
+  klasse,
+  fag: [],
+  skolearFagIder,
+});
 
 const tilEng1: Importoppsett = { skolearFagId: ENG1, valgtKlasse: "1STC" };
 
@@ -58,7 +66,11 @@ describe("tabellen i SPEC §7.1", () => {
 
   it("nær match → spør, forhåndsvalg ny elev", () => {
     const chris = elev("c", "Christopher", "Moltisanti", "1STC", [MFL1]);
-    const [v] = vurderImport([linje("Cristopher Moltisanti")], [chris], tilEng1);
+    const [v] = vurderImport(
+      [linje("Cristopher Moltisanti")],
+      [chris],
+      tilEng1,
+    );
     expect(v.status).toBe("spor");
     expect(v.grunn).toBe("naer-match");
     expect(v.valgt).toBe("ny");
@@ -187,7 +199,11 @@ describe("import uten fag", () => {
   });
 
   it("foreslår ny elev for et navn som ikke finnes", () => {
-    const [v] = vurderImport([linje("Jennifer Melfi", "1STC")], [tony], utenFag);
+    const [v] = vurderImport(
+      [linje("Jennifer Melfi", "1STC")],
+      [tony],
+      utenFag,
+    );
     expect(v.status).toBe("ny");
     expect(v.valgt).toBe("ny");
   });
@@ -197,5 +213,57 @@ describe("import uten fag", () => {
     const [v] = vurderImport([linje("Tony Soprano", "3STB")], [tony], utenFag);
     expect(v.status).toBe("spor");
     expect(v.valgt).toBe("ny");
+  });
+});
+
+describe("fullere navn fra lista", () => {
+  const per = elev("p", "Per", "Person", "2STB", [MFL1]);
+
+  it("kjenner igjen eleven skrevet inn med kortere navn", () => {
+    const [v] = vurderImport(
+      [linje("Per Johannes Persaune Person", "2STB")],
+      [per],
+      tilEng1,
+    );
+    expect(v).toMatchObject({
+      status: "samme",
+      grunn: "fullere-navn",
+      valgt: "p",
+    });
+  });
+
+  it("står allerede i faget: hoppes over, men navnet kan fortsatt byttes", () => {
+    const [v] = vurderImport(
+      [linje("Per Johannes Persaune Person", "2STB")],
+      [per],
+      { skolearFagId: MFL1, valgtKlasse: null },
+    );
+    expect(v).toMatchObject({ status: "allerede", grunn: "fullere-navn" });
+  });
+
+  it("slår ikke sammen ved ulik klasse — da spør appen", () => {
+    const [v] = vurderImport(
+      [linje("Per Johannes Persaune Person", "3STA")],
+      [per],
+      tilEng1,
+    );
+    expect(v.valgt).toBe("ny");
+    expect(v.status).toBe("spor");
+  });
+
+  it("krever samme fornavn og ordene i samme rekkefølge", () => {
+    const l = (navn: string) => linje(navn);
+    expect(erFullereNavn(l("Per Johannes Persaune Person"), per)).toBe(true);
+    expect(erFullereNavn(l("Pål Per Person"), per)).toBe(false);
+    expect(
+      erFullereNavn(
+        l("Per Person Johannes"),
+        elev("x", "Per", "Johannes Person", null, []),
+      ),
+    ).toBe(false);
+    expect(erFullereNavn(l("Per Person"), per)).toBe(false);
+    expect(
+      erFullereNavn(l("Per Johannes Person"), elev("m", "Per", "", null, [])),
+    ).toBe(false);
   });
 });

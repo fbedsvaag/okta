@@ -39,6 +39,8 @@ export type Grunn =
   | "flere-treff"
   | "annet-fag"
   | "allerede-i-faget"
+  /** Eleven finnes med et kortere navn: «Per Person» mot det fulle navnet. */
+  | "fullere-navn"
   | "ingen-match";
 
 export type Vurdering = {
@@ -77,7 +79,9 @@ export function vurderImport(
     indeks.set(n, [...(indeks.get(n) ?? []), e]);
   }
 
-  return linjer.map((linje) => vurderLinje(linje, eksisterende, indeks, oppsett));
+  return linjer.map((linje) =>
+    vurderLinje(linje, eksisterende, indeks, oppsett),
+  );
 }
 
 function vurderLinje(
@@ -89,6 +93,32 @@ function vurderLinje(
   const navn = normalisertNavn(linje.fornavn, linje.etternavn);
   const eksakte = indeks.get(navn) ?? [];
   const importKlasse = linje.klasse ?? oppsett.valgtKlasse;
+
+  // Ingen eksakt match, men et kortere navn som er inneholdt i dette —
+  // «Per Person» skrevet inn for hånd, «Per Johannes Persaune Person» fra
+  // skolens liste. Én slik elev uten klassekonflikt er samme elev; flere,
+  // eller ulik klasse, og brukeren må velge.
+  if (eksakte.length === 0) {
+    const kortere = alle.filter((e) => erFullereNavn(linje, e));
+    if (kortere.length === 1) {
+      const treff = kortere[0];
+      const konflikt =
+        treff.klasse && importKlasse && treff.klasse !== importKlasse;
+      if (!konflikt) {
+        const iFaget =
+          oppsett.skolearFagId === null ||
+          treff.skolearFagIder.includes(oppsett.skolearFagId);
+        return {
+          linje,
+          status: iFaget ? "allerede" : "samme",
+          grunn: "fullere-navn",
+          kandidater: [treff],
+          valgt: treff.id,
+          klassekonflikt: null,
+        };
+      }
+    }
+  }
 
   // Ingen eksakt match: se etter skrivefeil, men foreslå aldri sammenslåing.
   if (eksakte.length === 0) {
@@ -169,6 +199,30 @@ function vurderLinje(
     valgt: treff.id,
     klassekonflikt: null,
   };
+}
+
+/**
+ * Om importnavnet er en fullere utgave av et navn som finnes: alle ordene i
+ * det eksisterende navnet står i importnavnet, i samme rekkefølge, og
+ * fornavnet er det samme. «Per Person» ⊂ «Per Johannes Persaune Person».
+ * Et navn på ett ord er for lite å gå på.
+ */
+export function erFullereNavn(
+  linje: { fornavn: string; etternavn: string },
+  e: { fornavn: string; etternavn: string },
+): boolean {
+  const ord = (s: string) => normaliserteOrd(s).filter((o) => o !== "");
+  const ny = ord(`${linje.fornavn} ${linje.etternavn}`);
+  const gammel = ord(`${e.fornavn} ${e.etternavn}`);
+  if (gammel.length < 2 || ny.length <= gammel.length) return false;
+  if (ny[0] !== gammel[0]) return false;
+  let i = 0;
+  for (const o of ny) if (o === gammel[i]) i++;
+  return i === gammel.length;
+}
+
+function normaliserteOrd(s: string): string[] {
+  return s.toLocaleLowerCase("nb-NO").split(/[\s]+/);
 }
 
 /**

@@ -1,4 +1,5 @@
 import {
+  endreElev,
   finnEllerOpprettKlasse,
   koblePaFag,
   opprettElev,
@@ -20,6 +21,11 @@ export type Importrad = Vurdering & {
   byttKlasse: boolean;
   /** Hopp over linja helt. */
   hopp: boolean;
+  /**
+   * Gi en eksisterende elev navnet fra lista. På som standard når lista
+   * har det fulle navnet og basen et kortere (§7.1, «fullere-navn»).
+   */
+  byttNavn: boolean;
 };
 
 export type Resultat = {
@@ -29,6 +35,8 @@ export type Resultat = {
   koblet: number;
   hoppet: number;
   klasseByttet: number;
+  /** eksisterende elever som fikk navnet fra lista */
+  navnByttet: number;
 };
 
 /**
@@ -51,6 +59,7 @@ export async function utforImport(
     koblet: 0,
     hoppet: 0,
     klasseByttet: 0,
+    navnByttet: 0,
   };
 
   // Klasser opprettes én gang hver, ikke én gang per elev.
@@ -66,8 +75,10 @@ export async function utforImport(
   for (const rad of rader) {
     if (rad.hopp || rad.status === "allerede") {
       // Står eleven i faget allerede, er hen likevel eleven på linja.
-      if (!rad.hopp && rad.valgt !== "ny")
+      if (!rad.hopp && rad.valgt !== "ny") {
         resultat.elevIder.set(rad.linje.linjenr, rad.valgt);
+        if (rad.byttNavn && (await giNavn(rad))) resultat.navnByttet++;
+      }
       resultat.hoppet++;
       continue;
     }
@@ -88,6 +99,7 @@ export async function utforImport(
     // brukeren uttrykkelig har sagt det (§7.1).
     if (skolearFagId) await koblePaFag(rad.valgt, skolearFagId);
     resultat.elevIder.set(rad.linje.linjenr, rad.valgt);
+    if (rad.byttNavn && (await giNavn(rad))) resultat.navnByttet++;
     resultat.koblet++;
 
     if (rad.byttKlasse && rad.klasse.trim() !== "") {
@@ -111,6 +123,16 @@ export function ikkePaLista(rader: Importrad[], medlemmer: string[]): string[] {
   return medlemmer.filter((id) => !pa.has(id));
 }
 
+/** Navnet fra lista på den eksisterende eleven linja er koblet til. */
+async function giNavn(rad: Importrad): Promise<boolean> {
+  if (rad.valgt === "ny") return false;
+  await endreElev(rad.valgt, {
+    fornavn: rad.linje.fornavn,
+    etternavn: rad.linje.etternavn,
+  });
+  return true;
+}
+
 /** Startverdiene for forhåndsvisningen, før brukeren har rørt noe. */
 export function tilImportrader(
   vurderinger: Vurdering[],
@@ -121,5 +143,6 @@ export function tilImportrader(
     klasse: v.linje.klasse ?? valgtKlasse,
     byttKlasse: false,
     hopp: false,
+    byttNavn: v.grunn === "fullere-navn",
   }));
 }
