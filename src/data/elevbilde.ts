@@ -34,6 +34,15 @@ export async function hentElevbilde(elevId: string): Promise<string | null> {
   return rad?.bilde ?? null;
 }
 
+/** Alle bildene, etter elev. Til lister som søket, der mange vises på én gang. */
+export async function hentAlleElevbilder(): Promise<Map<string, string>> {
+  const rader = await hent<{ elevId: string; bilde: string }>(
+    `SELECT elev_id AS elevId, bilde FROM elevbilde
+      WHERE slettet IS NULL AND bilde IS NOT NULL`,
+  );
+  return new Map(rader.map((r) => [r.elevId, r.bilde]));
+}
+
 /**
  * Fjerner bildet. Raden soft-slettes som alt annet, men selve bildet tømmes
  * først — ansiktet skal ikke ligge igjen i basen.

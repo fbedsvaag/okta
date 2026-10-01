@@ -24,8 +24,11 @@ export function Elevbilde({
   storrelse = 64,
   klasse = "",
   alt = "",
+  rund = false,
 }: {
   src: string;
+  /** rundt i stedet for med små hjørner — i lister og søket */
+  rund?: boolean;
   /** sidene i px — bildet er kvadratisk, beskåret om midten */
   storrelse?: number;
   klasse?: string;
@@ -49,7 +52,7 @@ export function Elevbilde({
 
   return (
     <span
-      className={`relative shrink-0 overflow-clip rounded-liten bg-valgt ${klasse}`}
+      className={`relative shrink-0 overflow-clip bg-valgt ${rund ? "rounded-full" : "rounded-liten"} ${klasse}`}
       style={{ width: storrelse, height: storrelse }}
     >
       {tegnet && (

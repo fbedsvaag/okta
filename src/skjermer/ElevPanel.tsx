@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useArk } from "../ui/Arkstabel";
+import { hentInnstilling, settInnstilling } from "../data/skolear";
 import { Elevbilde } from "../ui/Elevbilde";
 import { hentElevbilde, slettElevbilde } from "../data/elevbilde";
 import { lyttVurderinger } from "../data/endringer";
@@ -677,22 +678,53 @@ function tell(ruter: HeatmapRute[]) {
 function Bolk({
   tittel,
   handling,
+  sammenlagt,
   children,
 }: {
   tittel: string;
   /** en knapp til høyre i overskriftslinja, f.eks. «+ Nytt notat» */
   handling?: React.ReactNode;
+  /**
+   * Gjør bolken sammenleggbar: overskriften blir en knapp. `apen` styres
+   * utenfra, så valget kan huskes; `etikett` står etter tittelen når den er
+   * lagt sammen, f.eks. antallet.
+   */
+  sammenlagt?: { apen: boolean; bytt: () => void; etikett?: string };
   children: React.ReactNode;
 }) {
+  const apen = sammenlagt?.apen ?? true;
   return (
     <section className="mb-6">
-      <div className="mb-2 flex items-baseline border-b border-linje-medium pb-1">
-        <h3 className="text-etikett uppercase tracking-etikett text-blekk-dempet">
-          {tittel}
-        </h3>
+      <div
+        className={`flex items-baseline border-b border-linje-medium pb-1 ${apen ? "mb-2" : ""}`}
+      >
+        {sammenlagt ? (
+          <button
+            onClick={sammenlagt.bytt}
+            aria-expanded={apen}
+            className="flex items-baseline gap-1.5 text-etikett uppercase tracking-etikett text-blekk-dempet hover:text-blekk"
+          >
+            <span
+              aria-hidden
+              className={`inline-block transition-transform duration-150 ${apen ? "rotate-90" : ""}`}
+            >
+              ›
+            </span>
+            {tittel}
+            {!apen && sammenlagt.etikett && (
+              <span className="normal-case tracking-normal text-blekk-svak">
+                {sammenlagt.etikett}
+              </span>
+            )}
+          </button>
+        ) : (
+          <h3 className="text-etikett uppercase tracking-etikett text-blekk-dempet">
+            {tittel}
+          </h3>
+        )}
         {handling && <span className="ml-auto">{handling}</span>}
       </div>
-      {children}
+      {apen && children}
     </section>
   );
 }
@@ -709,6 +741,9 @@ function Stille({ children }: { children: React.ReactNode }) {
  * bestemt økt og leses i heatmapet. Møteloggen er en bevisst hendelse — en
  * samtale, en observasjon, en avtale.
  */
+/** Innstillingen som husker om notatene står åpne på elevkortet. */
+const NOTATER_APEN = "elevkort_notater_apen";
+
 function Motelogg({
   elevId,
   skolearId,
@@ -722,6 +757,16 @@ function Motelogg({
   const [oktnotater, setOktnotater] = useState<Oktnotat[]>([]);
   const [filter, setFilter] = useState<Notatfilter>("alle");
   const [skriver, setSkriver] = useState(false);
+  // Lagt sammen eller åpen huskes, for alle elever: det er en vane, ikke en
+  // egenskap ved eleven.
+  const [apen, setApen] = useState(true);
+  useEffect(() => {
+    void hentInnstilling(NOTATER_APEN).then((v) => setApen(v !== "0"));
+  }, []);
+  function settApen(ny: boolean) {
+    setApen(ny);
+    void settInnstilling(NOTATER_APEN, ny ? "1" : "0");
+  }
   const idag = new Date().toISOString().slice(0, 10);
   const ark = useArk();
 
@@ -745,10 +790,21 @@ function Motelogg({
   return (
     <Bolk
       tittel="Notater og møtelogg"
+      sammenlagt={{
+        apen,
+        bytt: () => settApen(!apen),
+        etikett:
+          notater.length + oktnotater.length > 0
+            ? `· ${notater.length + oktnotater.length}`
+            : undefined,
+      }}
       handling={
         !skriver && (
           <button
-            onClick={() => setSkriver(true)}
+            onClick={() => {
+              settApen(true);
+              setSkriver(true);
+            }}
             className="text-liten text-blekk-dempet hover:text-blekk"
           >
             + Nytt notat

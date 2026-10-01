@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { hentElever } from "../data/elever";
+import { hentAlleElevbilder } from "../data/elevbilde";
+import { Elevbilde } from "./Elevbilde";
 import type { FagIAr } from "../data/fag";
 import { hentOkter } from "../data/okter";
 import { sok, type Sokeelev, type Sokeokt, type Treff } from "../data/sok";
@@ -30,7 +32,13 @@ export function Sokevindu({
   const [markor, setMarkor] = useState(0);
   const [elever, setElever] = useState<Sokeelev[]>([]);
   const [okter, setOkter] = useState<Sokeokt[]>([]);
+  // Elevbildene, til et lite rundt bilde foran navnet.
+  const [bilder, setBilder] = useState<Map<string, string>>(new Map());
   const liste = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    void hentAlleElevbilder().then(setBilder);
+  }, []);
 
   useEffect(() => {
     let avbrutt = false;
@@ -178,6 +186,21 @@ export function Sokevindu({
                 >
                   {t.type === "elev" ? (
                     <>
+                      {/* Like høyt som teksten; uten bilde står initialene. */}
+                      <span className="self-center">
+                        {bilder.get(t.elev.id) ? (
+                          <Elevbilde
+                            src={bilder.get(t.elev.id)!}
+                            storrelse={22}
+                            rund
+                          />
+                        ) : (
+                          <span className="flex h-[22px] w-[22px] items-center justify-center rounded-full bg-flate text-[9px] font-medium text-blekk-dempet">
+                            {t.elev.fornavn[0]}
+                            {t.elev.etternavn[0] ?? ""}
+                          </span>
+                        )}
+                      </span>
                       <span className="min-w-0 flex-1 truncate">
                         {t.elev.fornavn} {t.elev.etternavn}
                       </span>
