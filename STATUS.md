@@ -52,7 +52,8 @@ Skjerm for skjerm (§4), med tilstand:
 - **Elevbilder fra InSchool** — 30.09 (migrasjon 021, `elevbilde`). «Les
   fra InSchool-PDF» i Lim inn: navn og klasse fra tabellen, fagkoden velger
   faget, bildene klippes ut, trimmes og lagres som gråtoner. Looken
-  (åtte trinn, blekk til lys lilla) er et SVG-filter i `Elevbilde`. Vises
+  (halvtone i 45° over en myk tone fra blekk til lys lilla, og svakt korn)
+  tegnes i `Elevbilde` når bildet vises. Vises
   i elevkortet, kan fjernes der. pdf.js ligger i bygget, lastes bare ved
   import. Bildet går aldri ut av appen; sletting tømmer det.
 - **Kortlogikken overalt** — 30.09. Elev, vurdering og fag åpnes som ark
