@@ -210,6 +210,20 @@ async function samle(skolearId: string) {
     [skolearId],
   );
 
+  // Gjøremålene uten elev (migrasjon 023), åpne og ferdige.
+  const gjoremal = await hent<{
+    tekst: string;
+    frist: string | null;
+    ferdig: string | null;
+    dato: string;
+  }>(
+    `SELECT tekst, frist, ferdig, substr(opprettet, 1, 10) AS dato
+       FROM gjoremal
+      WHERE slettet IS NULL AND skolear_id = $1
+      ORDER BY ferdig IS NOT NULL, frist IS NULL, frist, opprettet`,
+    [skolearId],
+  );
+
   // Notatene fra øktene, også på elever som ikke ble skåret.
   const oktnotater = await hent<OktnotatRad>(
     `SELECT n.elev_id AS elevId, o.dato, f.kode AS fagKode, o.tema, n.tekst
@@ -276,6 +290,7 @@ async function samle(skolearId: string) {
     okter,
     notater,
     oktnotater,
+    gjoremal,
     fag,
     skaringsskala,
     vurderingsskala,
@@ -375,7 +390,7 @@ export async function byggArkiv(skolear: Skolear): Promise<Fil[]> {
     );
   }
 
-  legg("oppfolging.md", oppfolgingsfil(d.notater));
+  legg("oppfolging.md", oppfolgingsfil(d.notater, d.gjoremal));
   return filer;
 }
 
@@ -675,7 +690,15 @@ function fagfil(kode: string, okter: OktRad[], skolear: Skolear): string {
  * Notatene som er merket «skal følges opp» (§4.7), åpne først. Hele
  * teksten står i elevens fil; her står første linje.
  */
-function oppfolgingsfil(notater: NotatRad[]): string {
+function oppfolgingsfil(
+  notater: NotatRad[],
+  gjoremal: {
+    tekst: string;
+    frist: string | null;
+    ferdig: string | null;
+    dato: string;
+  }[] = [],
+): string {
   const rader = notater
     .filter((n) => n.skalFolgesOpp)
     .sort(
@@ -684,6 +707,17 @@ function oppfolgingsfil(notater: NotatRad[]): string {
         (a.frist ?? "9999").localeCompare(b.frist ?? "9999"),
     );
   const ut = ["# Oppfølging", ""];
+  if (gjoremal.length > 0) {
+    ut.push("## Gjøremål", "");
+    for (const g of gjoremal) {
+      ut.push(
+        `- [${g.ferdig ? "x" : " "}] ${g.tekst.replace(/\n+/g, " ")}` +
+          (g.frist ? ` — frist ${g.frist}` : "") +
+          (g.ferdig ? ` — ferdig ${g.ferdig}` : ""),
+      );
+    }
+    ut.push("", "## Elever", "");
+  }
   if (rader.length === 0) {
     ut.push("*Ingen oppfølgingspunkter.*");
     return ut.join("\n") + "\n";

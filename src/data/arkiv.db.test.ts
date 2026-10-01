@@ -77,3 +77,20 @@ describe("byggArkiv", () => {
     expect(fil(filer, "elever/aj-soprano.md")).toContain("# AJ Soprano");
   });
 });
+
+describe("byggArkiv og egne gjøremål", () => {
+  it("står i oppfolging.md, åpne og ferdige", async () => {
+    const { nyttGjoremal, hentGjoremal, fullforGjoremal } =
+      await import("./gjoremal");
+    await nyttGjoremal(skolear.id, {
+      tekst: "Kopier prøvene",
+      frist: "2026-10-02",
+    });
+    await nyttGjoremal(skolear.id, { tekst: "Bestill rom" });
+    const [forste] = await hentGjoremal(skolear.id);
+    await fullforGjoremal(forste);
+    const ut = fil(await byggArkiv(skolear), "oppfolging.md");
+    expect(ut).toContain("- [x] Kopier prøvene — frist 2026-10-02 — ferdig");
+    expect(ut).toContain("- [ ] Bestill rom");
+  });
+});

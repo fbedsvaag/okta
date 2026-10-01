@@ -1,6 +1,7 @@
-import { hent } from "../db";
+import { hent, oppdater, settInn } from "../db";
+import { varsleElever } from "./endringer";
 import { tolkMarkdown, vekslBoks } from "../ui/markdown";
-import { endreElevnotat, settLukket } from "./elevnotat";
+import { endreElevnotat, opprettElevnotat, settLukket } from "./elevnotat";
 import { endreOkt } from "./okter";
 
 /**
@@ -12,8 +13,10 @@ import { endreOkt } from "./okter";
  * - avkrysningsbokser som ikke er krysset av (`- [ ]`) i elevnotater og
  *   øktlogger.
  *
- * Ingen egen tabell: gjøremålet bor der det ble skrevet, og krysses av der.
- * Da kan det aldri si noe annet enn notatet sier.
+ * Gjøremålet bor der det ble skrevet, og krysses av der. Da kan det aldri
+ * si noe annet enn notatet sier. Et gjøremål skrevet på forsiden blir et
+ * oppfølgingsnotat på eleven — eller, uten elev, en rad i `gjoremal`
+ * (migrasjon 023).
  */
 
 export type Gjoremal =
@@ -33,6 +36,13 @@ export type Gjoremal =
       elevId: string;
       navn: string;
       dato: string;
+      tekst: string;
+    }
+  | {
+      slag: "eget";
+      id: string;
+      dato: string;
+      frist: string | null;
       tekst: string;
     }
   | {
@@ -81,7 +91,8 @@ export function forsteLinje(tekst: string): string {
  * resten, nyeste først.
  */
 export function sorterGjoremal(liste: Gjoremal[]): Gjoremal[] {
-  const frist = (g: Gjoremal) => (g.slag === "oppfolging" ? g.frist : null);
+  const frist = (g: Gjoremal) =>
+    g.slag === "oppfolging" || g.slag === "eget" ? g.frist : null;
   return [...liste].sort((a, b) => {
     const fa = frist(a);
     const fb = frist(b);
@@ -132,7 +143,19 @@ export async function hentGjoremal(skolearId: string): Promise<Gjoremal[]> {
     [skolearId],
   );
 
-  const ut: Gjoremal[] = [];
+  const egne = await hent<{
+    id: string;
+    dato: string;
+    frist: string | null;
+    tekst: string;
+  }>(
+    `SELECT id, substr(opprettet, 1, 10) AS dato, frist, tekst
+       FROM gjoremal
+      WHERE skolear_id = $1 AND slettet IS NULL AND ferdig IS NULL`,
+    [skolearId],
+  );
+
+  const ut: Gjoremal[] = egne.map((g) => ({ slag: "eget" as const, ...g }));
   for (const n of notater) {
     // Et oppfølgingsnotat står én gang, som seg selv — boksene i det er
     // en del av det samme punktet.
@@ -179,6 +202,13 @@ export async function hentGjoremal(skolearId: string): Promise<Gjoremal[]> {
  */
 export async function fullforGjoremal(g: Gjoremal): Promise<void> {
   if (g.slag === "oppfolging") return settLukket(g.notatId, true);
+  if (g.slag === "eget") {
+    await oppdater("gjoremal", g.id, {
+      ferdig: new Date().toLocaleDateString("sv-SE"),
+    });
+    varsleElever();
+    return;
+  }
   if (g.slag === "elevboks") {
     const [n] = await hent<{ tekst: string }>(
       "SELECT tekst FROM elevnotat WHERE id = $1",
@@ -193,4 +223,28 @@ export async function fullforGjoremal(g: Gjoremal): Promise<void> {
     [g.oktId],
   );
   if (o?.logg) await endreOkt(g.oktId, { logg: vekslBoks(o.logg, g.linje) });
+}
+
+/**
+ * Et nytt gjøremål fra forsiden. Med elev blir det et oppfølgingsnotat på
+ * eleven, så det også står i elevkortet; uten elev en rad i `gjoremal`.
+ */
+export async function nyttGjoremal(
+  skolearId: string,
+  felter: { tekst: string; elevId?: string | null; frist?: string | null },
+): Promise<void> {
+  const tekst = felter.tekst.trim();
+  if (!tekst) return;
+  const frist = felter.frist || null;
+  if (felter.elevId) {
+    await opprettElevnotat(felter.elevId, skolearId, {
+      dato: new Date().toLocaleDateString("sv-SE"),
+      tekst,
+      skalFolgesOpp: true,
+      frist,
+    });
+    return;
+  }
+  await settInn("gjoremal", { skolear_id: skolearId, tekst, frist });
+  varsleElever();
 }

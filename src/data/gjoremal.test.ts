@@ -99,3 +99,36 @@ describe("hentGjoremal", () => {
     expect(await hentGjoremal(ar)).toEqual([]);
   });
 });
+
+describe("nyttGjoremal", () => {
+  it("med elev blir det et oppfølgingsnotat på eleven", async () => {
+    const { nyttGjoremal } = await import("./gjoremal");
+    await nyttGjoremal(ar, {
+      tekst: "Ring foresatte",
+      elevId: tony,
+      frist: "2026-10-05",
+    });
+    const [n] = await hentElevnotater(tony);
+    expect(n).toMatchObject({
+      tekst: "Ring foresatte",
+      skalFolgesOpp: true,
+      frist: "2026-10-05",
+    });
+    expect((await hentGjoremal(ar))[0]).toMatchObject({
+      slag: "oppfolging",
+      navn: "Tony Soprano",
+    });
+  });
+
+  it("uten elev blir det et eget gjøremål som kan krysses av", async () => {
+    const { nyttGjoremal } = await import("./gjoremal");
+    await nyttGjoremal(ar, { tekst: "Kopier prøvene", frist: null });
+    await nyttGjoremal(ar, { tekst: "   " });
+    const g = await hentGjoremal(ar);
+    expect(g.map((x) => [x.slag, x.tekst])).toEqual([
+      ["eget", "Kopier prøvene"],
+    ]);
+    await fullforGjoremal(g[0]);
+    expect(await hentGjoremal(ar)).toEqual([]);
+  });
+});

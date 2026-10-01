@@ -21,7 +21,13 @@ import {
   Tomtilstand,
 } from "../ui/felles";
 import type { Okt } from "../data/okter";
-import { fullforGjoremal, hentGjoremal, type Gjoremal } from "../data/gjoremal";
+import {
+  fullforGjoremal,
+  hentGjoremal,
+  nyttGjoremal,
+  type Gjoremal,
+} from "../data/gjoremal";
+import { hentElever, type ElevRad } from "../data/elever";
 import { lytt, lyttElever, lyttOktvisning } from "../data/endringer";
 import { useArk } from "../ui/Arkstabel";
 
@@ -483,10 +489,12 @@ function Gjoremalsliste({ skolearId }: { skolearId: string }) {
       tittel="Gjøremål"
       hjelp={liste.length > 0 ? `${liste.length} åpne` : undefined}
     >
+      <NyttGjoremal skolearId={skolearId} />
       {liste.length === 0 ? (
         <p className="py-1 text-brod text-blekk-svak">
-          Ingenting venter. Huk av «skal følges opp» på et notat, eller skriv «-
-          [ ]» i et notat eller en øktlogg, så havner det her.
+          Ingenting venter. Skriv et gjøremål over, huk av «skal følges opp» på
+          et notat, eller skriv «- [ ]» i et notat eller en øktlogg, så havner
+          det her.
         </p>
       ) : (
         <ul className="divide-y divide-linje-svak">
@@ -494,9 +502,17 @@ function Gjoremalsliste({ skolearId }: { skolearId: string }) {
             const nokkel =
               g.slag === "oktboks"
                 ? `${g.oktId}:${g.linje}`
-                : `${g.notatId}:${g.slag === "elevboks" ? g.linje : "o"}`;
-            const hvem = g.slag === "oktboks" ? g.fagKode : g.navn;
-            const frist = g.slag === "oppfolging" ? g.frist : null;
+                : g.slag === "eget"
+                  ? g.id
+                  : `${g.notatId}:${g.slag === "elevboks" ? g.linje : "o"}`;
+            const hvem =
+              g.slag === "oktboks"
+                ? g.fagKode
+                : g.slag === "eget"
+                  ? null
+                  : g.navn;
+            const frist =
+              g.slag === "oppfolging" || g.slag === "eget" ? g.frist : null;
             return (
               <li key={nokkel} className="flex items-baseline gap-2 py-1">
                 <input
@@ -512,14 +528,20 @@ function Gjoremalsliste({ skolearId }: { skolearId: string }) {
                   onClick={() =>
                     g.slag === "oktboks"
                       ? ark.apneOkt(g.oktId)
-                      : ark.apneElev(g.elevId)
+                      : g.slag === "eget"
+                        ? undefined
+                        : ark.apneElev(g.elevId)
                   }
-                  className="flex min-w-0 flex-1 items-baseline gap-2 text-left text-brod hover:text-aksent"
+                  className={`flex min-w-0 flex-1 items-baseline gap-2 text-left text-brod ${
+                    g.slag === "eget" ? "cursor-default" : "hover:text-aksent"
+                  }`}
                 >
                   <Kappet verdi={g.tekst || "(uten tekst)"} />
-                  <span className="ml-auto shrink-0 text-liten text-blekk-svak">
-                    {hvem}
-                  </span>
+                  {hvem && (
+                    <span className="ml-auto shrink-0 text-liten text-blekk-svak">
+                      {hvem}
+                    </span>
+                  )}
                 </button>
                 {frist && (
                   <span
@@ -544,6 +566,96 @@ function Gjoremalsliste({ skolearId }: { skolearId: string }) {
         </button>
       )}
     </Panel>
+  );
+}
+
+/**
+ * Feltet øverst i gjøremålene. Skriv og trykk Enter. Elev og frist er
+ * valgfrie: med elev blir det et oppfølgingsnotat på eleven, uten et eget
+ * gjøremål (`nyttGjoremal`).
+ */
+function NyttGjoremal({ skolearId }: { skolearId: string }) {
+  const [tekst, setTekst] = useState("");
+  const [elevTekst, setElevTekst] = useState("");
+  const [frist, setFrist] = useState("");
+  const [elever, setElever] = useState<ElevRad[]>([]);
+  const listeId = `gjoremal-elever-${skolearId}`;
+
+  useEffect(() => {
+    const last = () => void hentElever(skolearId).then(setElever);
+    last();
+    return lyttElever(last);
+  }, [skolearId]);
+
+  const navn = (e: ElevRad) =>
+    `${e.fornavn} ${e.etternavn}${e.klasseNavn ? ` (${e.klasseNavn})` : ""}`;
+  const valgtElev = elever.find((e) => navn(e) === elevTekst.trim());
+  const ukjentElev = elevTekst.trim() !== "" && !valgtElev;
+
+  async function lagre() {
+    if (!tekst.trim() || ukjentElev) return;
+    await nyttGjoremal(skolearId, {
+      tekst,
+      elevId: valgtElev?.id ?? null,
+      frist: frist || null,
+    });
+    setTekst("");
+    setElevTekst("");
+    setFrist("");
+  }
+
+  const enter = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      void lagre();
+    }
+  };
+
+  return (
+    <div className="mb-1 flex items-center gap-2 border-b border-linje-svak pb-1.5">
+      <span
+        aria-hidden
+        className="w-[13px] shrink-0 text-center text-blekk-svak"
+      >
+        +
+      </span>
+      <input
+        value={tekst}
+        onChange={(e) => setTekst(e.target.value)}
+        onKeyDown={enter}
+        placeholder="Nytt gjøremål — Enter lagrer"
+        className="min-w-0 flex-1 bg-transparent py-0.5 text-brod outline-none placeholder:text-blekk-svak"
+      />
+      {/* Elev og frist kommer fram når det skrives, så linja er rolig ellers. */}
+      {tekst.trim() !== "" && (
+        <>
+          <input
+            value={elevTekst}
+            onChange={(e) => setElevTekst(e.target.value)}
+            onKeyDown={enter}
+            list={listeId}
+            placeholder="elev (valgfri)"
+            title={ukjentElev ? "Velg en elev fra lista" : undefined}
+            className={`w-36 rounded border bg-ark px-1.5 py-0.5 text-liten outline-none focus:border-aksent ${
+              ukjentElev ? "border-feil" : "border-linje"
+            }`}
+          />
+          <datalist id={listeId}>
+            {elever.map((e) => (
+              <option key={e.id} value={navn(e)} />
+            ))}
+          </datalist>
+          <input
+            type="date"
+            value={frist}
+            onChange={(e) => setFrist(e.target.value)}
+            onKeyDown={enter}
+            title="Frist (valgfri)"
+            className="rounded border border-linje bg-ark px-1 py-0.5 text-liten tabular-nums outline-none focus:border-aksent"
+          />
+        </>
+      )}
+    </div>
   );
 }
 
