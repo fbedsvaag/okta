@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { Ikon } from "../ui/felles";
 import { Markdown, Markdownfelt } from "../ui/Notattekst";
 import { useArk } from "../ui/Arkstabel";
+import { Elevbilde } from "../ui/Elevbilde";
+import { hentAlleElevbilder } from "../data/elevbilde";
 import { lyttVurderinger } from "../data/endringer";
 import { hentOktmal, settOktmal, type Oktmal } from "../data/perioder";
 import { Malvelger } from "./Malvelger";
@@ -49,6 +51,13 @@ export function OktPanel({
   onApneElev: (elevId: string) => void;
 }) {
   const [elever, setElever] = useState<OktElev[]>([]);
+  // Elevbildene, små foran navnet — det er her navnene skal sitte i august.
+  const [bilder, setBilder] = useState<Map<string, string>>(new Map());
+  useEffect(() => {
+    void hentAlleElevbilder().then(setBilder);
+  }, []);
+  // Bildekolonnen står bare når noen i lista har bilde.
+  const medBilder = elever.some((e) => bilder.has(e.elevId));
   const [verdier, setVerdier] = useState<Skalaverdi[]>([]);
   const [markert, setMarkert] = useState(0);
   const [notatFor, setNotatFor] = useState<string | null>(null);
@@ -235,6 +244,7 @@ export function OktPanel({
               onVelg={(v) => skaar(i, v)}
               onNotat={() => setNotatFor(elev.elevId)}
               onApneElev={() => onApneElev(elev.elevId)}
+              bilde={medBilder ? (bilder.get(elev.elevId) ?? null) : undefined}
             />
           ))}
         </div>
@@ -279,8 +289,11 @@ function ElevRad({
   onVelg,
   onNotat,
   onApneElev,
+  bilde,
 }: {
   elev: OktElev;
+  /** bildet; null = har ikke bilde (initialene står), utelatt = ingen kolonne */
+  bilde?: string | null;
   verdier: Skalaverdi[];
   tastekart: Map<string, string>;
   markert: boolean;
@@ -311,6 +324,16 @@ function ElevRad({
       <span className="w-3 text-etikett text-aksent">
         {markert ? <Ikon navn="markor" /> : null}
       </span>
+      {/* 20 px, så raden holder seg på 28 (DESIGN.md §3). */}
+      {bilde !== undefined &&
+        (bilde ? (
+          <Elevbilde src={bilde} storrelse={20} hjorne={4} />
+        ) : (
+          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-[4px] bg-flate text-[8px] font-medium text-blekk-svak">
+            {elev.fornavn[0]}
+            {elev.etternavn[0] ?? ""}
+          </span>
+        ))}
       <button
         onClick={(e) => {
           e.stopPropagation();
