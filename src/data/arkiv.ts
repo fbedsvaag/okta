@@ -28,7 +28,6 @@ type ElevRad = {
   etternavn: string;
   kode: string | null;
   klasse: string | null;
-  notat: string | null;
 };
 
 type SkaringRad = {
@@ -64,13 +63,27 @@ type OktRad = {
   periode: string | null;
 };
 
-type OppfolgingRad = {
+/** Et notat i møteloggen (§4.7), med oppfølgingen om det har en. */
+type NotatRad = {
+  elevId: string;
   fornavn: string;
   etternavn: string;
-  status: string;
-  tekst: string | null;
+  dato: string;
+  fagKode: string | null;
+  tekst: string;
+  skalFolgesOpp: number;
   frist: string | null;
   lukket: string | null;
+  fraSamtale: number;
+};
+
+/** Et notat skrevet på eleven i en økt (§4.4), skåret eller ikke. */
+type OktnotatRad = {
+  elevId: string;
+  dato: string;
+  fagKode: string;
+  tema: string | null;
+  tekst: string;
 };
 
 type FagRad = {
@@ -97,16 +110,24 @@ type SkalaverdiRad = {
 
 async function samle(skolearId: string) {
   const elever = await hent<ElevRad>(
-    `SELECT e.id AS elevId, e.fornavn, e.etternavn, e.kode, e.notat,
+    // Elevene i året: i et fag, i en klasse (mentorelever har ofte ikke
+    // noe fag hos deg), eller med et notat fra året.
+    `SELECT e.id AS elevId, e.fornavn, e.etternavn, e.kode,
             k.navn AS klasse
        FROM elev e
-       JOIN elev_fag ef    ON ef.elev_id = e.id AND ef.slettet IS NULL
-       JOIN skolear_fag sf ON sf.id = ef.skolear_fag_id
-                          AND sf.slettet IS NULL AND sf.skolear_id = $1
        LEFT JOIN elev_klasse ek ON ek.elev_id = e.id
                           AND ek.skolear_id = $1 AND ek.slettet IS NULL
        LEFT JOIN klasse k ON k.id = ek.klasse_id AND k.slettet IS NULL
       WHERE e.slettet IS NULL
+        AND (ek.id IS NOT NULL
+             OR EXISTS (SELECT 1 FROM elev_fag ef
+                          JOIN skolear_fag sf ON sf.id = ef.skolear_fag_id
+                                             AND sf.slettet IS NULL
+                                             AND sf.skolear_id = $1
+                         WHERE ef.elev_id = e.id AND ef.slettet IS NULL)
+             OR EXISTS (SELECT 1 FROM elevnotat n
+                         WHERE n.elev_id = e.id AND n.slettet IS NULL
+                           AND n.skolear_id = $1))
       GROUP BY e.id
       ORDER BY e.fornavn COLLATE NOCASE, e.etternavn COLLATE NOCASE`,
     [skolearId],
@@ -129,7 +150,7 @@ async function samle(skolearId: string) {
   const skaringer = await hent<SkaringRad>(
     `SELECT s.elev_id AS elevId, o.dato, f.kode AS fagKode, o.tema,
             sv.kode AS verdi, sv.farge, sv.teller_ikke AS tellerIkke,
-            s.notat
+            n.tekst AS notat
        FROM skaring s
        -- Skåringer fra slettede elever skal heller ikke ut i arkivet.
        JOIN elev e         ON e.id = s.elev_id AND e.slettet IS NULL
@@ -138,6 +159,9 @@ async function samle(skolearId: string) {
                           AND sf.slettet IS NULL AND sf.skolear_id = $1
        JOIN fag f          ON f.id = sf.fag_id
        JOIN skalaverdi sv  ON sv.id = s.skalaverdi_id
+       -- Notatet bor i oktnotat (migrasjon 022), ikke på skåringsraden.
+       LEFT JOIN oktnotat n ON n.okt_id = s.okt_id AND n.elev_id = s.elev_id
+                           AND n.slettet IS NULL
       WHERE s.slettet IS NULL
       ORDER BY o.dato, o.klokkeslett`,
     [skolearId],
@@ -171,12 +195,33 @@ async function samle(skolearId: string) {
     [skolearId],
   );
 
-  const oppfolging = await hent<OppfolgingRad>(
-    `SELECT e.fornavn, e.etternavn, op.status, op.tekst, op.frist, op.lukket
-       FROM oppfolging op
-       JOIN elev e ON e.id = op.elev_id AND e.slettet IS NULL
-      WHERE op.slettet IS NULL
-      ORDER BY op.lukket IS NOT NULL, op.frist`,
+  // Møteloggen for året, med samtalenotatene (de bor i elevnotat, §4.10).
+  const notater = await hent<NotatRad>(
+    `SELECT n.elev_id AS elevId, e.fornavn, e.etternavn, n.dato,
+            COALESCE(NULLIF(f.alias, ''), f.kode) AS fagKode,
+            n.tekst, n.skal_folges_opp AS skalFolgesOpp, n.frist, n.lukket,
+            (n.samtale_id IS NOT NULL) AS fraSamtale
+       FROM elevnotat n
+       JOIN elev e ON e.id = n.elev_id AND e.slettet IS NULL
+       LEFT JOIN skolear_fag sf ON sf.id = n.skolear_fag_id
+       LEFT JOIN fag f ON f.id = sf.fag_id
+      WHERE n.slettet IS NULL AND n.skolear_id = $1
+      ORDER BY n.dato, n.opprettet`,
+    [skolearId],
+  );
+
+  // Notatene fra øktene, også på elever som ikke ble skåret.
+  const oktnotater = await hent<OktnotatRad>(
+    `SELECT n.elev_id AS elevId, o.dato, f.kode AS fagKode, o.tema, n.tekst
+       FROM oktnotat n
+       JOIN elev e         ON e.id = n.elev_id AND e.slettet IS NULL
+       JOIN okt o          ON o.id = n.okt_id AND o.slettet IS NULL
+       JOIN skolear_fag sf ON sf.id = o.skolear_fag_id
+                          AND sf.slettet IS NULL AND sf.skolear_id = $1
+       JOIN fag f          ON f.id = sf.fag_id
+      WHERE n.slettet IS NULL
+      ORDER BY o.dato, o.klokkeslett`,
+    [skolearId],
   );
 
   const fag = await hent<FagRad>(
@@ -229,7 +274,8 @@ async function samle(skolearId: string) {
     skaringer,
     resultater,
     okter,
-    oppfolging,
+    notater,
+    oktnotater,
     fag,
     skaringsskala,
     vurderingsskala,
@@ -277,6 +323,8 @@ export async function byggArkiv(skolear: Skolear): Promise<Fil[]> {
         fagFor.get(e.elevId) ?? [],
         d.skaringer.filter((s) => s.elevId === e.elevId),
         d.resultater.filter((r) => r.elevId === e.elevId),
+        d.notater.filter((n) => n.elevId === e.elevId),
+        d.oktnotater.filter((n) => n.elevId === e.elevId),
         skolear,
       ),
     );
@@ -327,7 +375,7 @@ export async function byggArkiv(skolear: Skolear): Promise<Fil[]> {
     );
   }
 
-  legg("oppfolging.md", oppfolgingsfil(d.oppfolging));
+  legg("oppfolging.md", oppfolgingsfil(d.notater));
   return filer;
 }
 
@@ -439,7 +487,7 @@ function lesMeg(
   ut.push(
     "## Mappene",
     "",
-    "- `elever/` — én fil per elev, kronologisk",
+    "- `elever/` — én fil per elev: skåringer, vurderinger, notater og møtelogg",
     "- `fag/` — årsplanen per fag, med skåringer og vurderinger som CSV",
     "- `oppfolging.md` — oppfølgingspunkter",
     "",
@@ -498,6 +546,8 @@ function elevfil(
   fag: string[],
   skaringer: SkaringRad[],
   resultater: ResultatRad[],
+  notater: NotatRad[],
+  oktnotater: OktnotatRad[],
   skolear: Skolear,
 ): string {
   const ut: string[] = [
@@ -512,8 +562,6 @@ function elevfil(
     `# ${e.fornavn} ${e.etternavn}`,
     "",
   ].filter((l) => l !== "");
-
-  if (e.notat) ut.push(e.notat, "");
 
   ut.push("## Skåringer", "");
   if (skaringer.length === 0) {
@@ -543,6 +591,46 @@ function elevfil(
       );
     }
     ut.push("");
+  }
+
+  // Møteloggen og øktnotatene i én tidslinje, eldste først — som resten av
+  // fila. Notatene er markdown og står som de ble skrevet.
+  ut.push("## Notater og møtelogg", "");
+  const linje = [
+    ...notater.map((n) => ({ dato: n.dato, n, o: null })),
+    ...oktnotater.map((o) => ({ dato: o.dato, n: null, o })),
+  ].sort((a, b) => a.dato.localeCompare(b.dato));
+  if (linje.length === 0) {
+    ut.push("*Ingen notater.*", "");
+  } else {
+    for (const { n, o } of linje) {
+      if (n) {
+        const merker = [
+          n.fraSamtale ? (n.fagKode ? "fagsamtale" : "mentorsamtale") : null,
+          n.fagKode,
+          n.skalFolgesOpp
+            ? n.lukket
+              ? `fulgt opp ${n.lukket.slice(0, 10)}`
+              : n.frist
+                ? `følges opp, frist ${n.frist}`
+                : "følges opp"
+            : null,
+        ].filter(Boolean);
+        ut.push(
+          `### ${n.dato}${merker.length > 0 ? ` · ${merker.join(" · ")}` : ""}`,
+          "",
+          n.tekst.trim(),
+          "",
+        );
+      } else if (o) {
+        ut.push(
+          `### ${o.dato} · økt · ${o.fagKode}${o.tema ? ` · ${o.tema}` : ""}`,
+          "",
+          o.tekst.trim(),
+          "",
+        );
+      }
+    }
   }
 
   return ut.join("\n");
@@ -583,18 +671,34 @@ function fagfil(kode: string, okter: OktRad[], skolear: Skolear): string {
   return ut.join("\n") + "\n";
 }
 
-function oppfolgingsfil(rader: OppfolgingRad[]): string {
+/**
+ * Notatene som er merket «skal følges opp» (§4.7), åpne først. Hele
+ * teksten står i elevens fil; her står første linje.
+ */
+function oppfolgingsfil(notater: NotatRad[]): string {
+  const rader = notater
+    .filter((n) => n.skalFolgesOpp)
+    .sort(
+      (a, b) =>
+        Number(a.lukket !== null) - Number(b.lukket !== null) ||
+        (a.frist ?? "9999").localeCompare(b.frist ?? "9999"),
+    );
   const ut = ["# Oppfølging", ""];
   if (rader.length === 0) {
     ut.push("*Ingen oppfølgingspunkter.*");
     return ut.join("\n") + "\n";
   }
-  ut.push("| Elev | Status | Frist | Lukket | Tekst |");
+  ut.push("| Elev | Dato | Frist | Status | Notat |");
   ut.push("| --- | --- | --- | --- | --- |");
   for (const r of rader) {
+    const forste =
+      r.tekst
+        .split("\n")
+        .map((l) => l.trim())
+        .find(Boolean) ?? "";
     ut.push(
-      `| ${r.fornavn} ${r.etternavn} | ${r.status} | ${r.frist ?? ""} ` +
-        `| ${r.lukket ? r.lukket.slice(0, 10) : "åpen"} | ${tab(r.tekst)} |`,
+      `| ${r.fornavn} ${r.etternavn} | ${r.dato} | ${r.frist ?? ""} ` +
+        `| ${r.lukket ? `fulgt opp ${r.lukket.slice(0, 10)}` : "åpen"} | ${tab(forste)} |`,
     );
   }
   return ut.join("\n") + "\n";
