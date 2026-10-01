@@ -7,7 +7,7 @@ import { useArk } from "../ui/Arkstabel";
 import { Arsoversikt } from "./Arsoversikt";
 import { dagenssetning, hentSamtalerPaDato } from "../data/samtale";
 import { Ukelinje } from "./Ukelinje";
-import { lytt } from "../data/endringer";
+import { lytt, lyttOktvisning } from "../data/endringer";
 import { dagen } from "../data/dagen";
 
 /**
@@ -43,6 +43,7 @@ export function IDag({
   useEffect(lastOkter, [skolear.id]);
   // Endres en økt i et ark over forsiden, skal uka vise det med en gang.
   useEffect(() => lytt(lastOkter), [skolear.id]);
+  useEffect(() => lyttOktvisning(lastOkter), [skolear.id]);
 
   // En økt, en elev eller en vurdering åpnes som et ark over forsiden
   // (Arkstabel) — du blir her.

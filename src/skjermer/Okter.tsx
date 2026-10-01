@@ -36,7 +36,6 @@ import {
   Velger,
 } from "../ui/felles";
 import { invoke } from "@tauri-apps/api/core";
-import { OktPanel } from "./OktPanel";
 import { Arsplan } from "./Arsplan";
 import { Arsplanmeny } from "./Arsplanmeny";
 import { hentArk, type Ark } from "../data/arsplanark";
@@ -50,7 +49,7 @@ import {
 import { Penselrad, VISK, type Pensel } from "./Penselrad";
 import { Periodemal } from "./Malvelger";
 import { useArk } from "../ui/Arkstabel";
-import { useGlidende } from "../ui/bevegelse";
+import { lytt, lyttOktvisning } from "../data/endringer";
 import type { Skolear } from "../data/skolear";
 import { NySerie } from "./NySerie";
 
@@ -174,12 +173,22 @@ export function Okter({
     });
   }
 
-  // Navigerer du hit med en økt i sikte — fra forsiden, kalenderen eller et
-  // heatmap — skal den åpne seg, også når panelet allerede står åpent på en
-  // annen økt. Historikkpilene bruker samme vei.
+  // Kommer du hit med en økt i sikte — «Vis i Økter» fra et øktkort, eller
+  // historikkpilene — står den markert, og lista ruller dit (under).
   useEffect(() => {
     if (startValgt) setValgt(startValgt);
   }, [startValgt]);
+
+  // Økta åpnes som et kort over lista (Arkstabel), som elever, vurderinger
+  // og fag. Lista beholder bredden og kolonnene sine under.
+  function apne(id: string) {
+    setValgt(id);
+    arkstabel.apneOkt(id);
+  }
+
+  // Endres økta i kortet — tema, skåringer, notater — skal lista vise det.
+  useEffect(() => lytt(() => void last()), [skolearId]);
+  useEffect(() => lyttOktvisning(() => void last()), [skolearId]);
 
   // Ligger en økt på en ferie eller en rød dag, skal det synes. Datoen kan
   // ha blitt blokkert etter at økta ble lagt inn.
@@ -265,18 +274,12 @@ export function Okter({
       overskrift;
   }, [synlige, startValgt]);
 
-  const { vist: apen, apen: glir } = useGlidende(
-    okter.find((o) => o.id === valgt) ?? null,
-  );
-
   return (
     <>
       <Arsplan ark={ark} />
 
       <div className="ikkeutskrift mx-auto flex min-h-0 w-full max-w-6xl flex-1 gap-0 overflow-clip">
-        <div
-          className={`liste-bredde flex min-w-0 flex-col ${glir ? "hidden w-full pr-4 lg:flex lg:w-1/3" : "w-full"}`}
-        >
+        <div className="liste-bredde flex w-full min-w-0 flex-col">
           {/* Verktøylinja er header: den ruller ikke bort, og månedene
             fester seg rett under den. */}
           <div className="shrink-0">
@@ -286,7 +289,7 @@ export function Okter({
                 verdi={sok}
                 settVerdi={setSok}
                 plassholder="Søk i tema"
-                bredde={apen ? "w-full" : "w-56"}
+                bredde="w-56"
               />
               <Velger verdi={filterFag} settVerdi={setFilterFag}>
                 <option value="">Alle fag</option>
@@ -395,7 +398,7 @@ export function Okter({
                 onLagret={async (id) => {
                   setLagerNy(false);
                   await last();
-                  setValgt(id);
+                  apne(id);
                 }}
                 onAvbryt={() => setLagerNy(false)}
               />
@@ -442,7 +445,7 @@ export function Okter({
                 okter={synlige}
                 valgt={valgt}
                 merket={merket}
-                vis={apen ? new Set<KolonneId>() : kolonner}
+                vis={kolonner}
                 blokkert={blokkert}
                 vurderinger={vurderinger}
                 perioder={medPerioder ? periodePerOkt : new Map()}
@@ -456,7 +459,7 @@ export function Okter({
                 onMal={(ider) => pensel && void mal(ider, pensel)}
                 onTema={(id, tema) => void lagreTema(id, tema)}
                 onApnePerioder={onApnePerioder}
-                onVelg={setValgt}
+                onVelg={apne}
                 onMerk={(id, pa) =>
                   setMerket((f) => {
                     const ny = new Set(f);
@@ -476,7 +479,7 @@ export function Okter({
               <Kontekstmeny x={meny.x} y={meny.y} onLukk={() => setMeny(null)}>
                 <Menyvalg
                   onKlikk={() => {
-                    setValgt(meny.okt.id);
+                    apne(meny.okt.id);
                     setMeny(null);
                   }}
                 >
@@ -557,20 +560,6 @@ export function Okter({
             )}
           </div>
         </div>
-
-        {apen && (
-          <div
-            className={`panel min-h-0 min-w-0 w-full overflow-auto lg:w-2/3 ${glir ? "" : "panel-ute"}`}
-          >
-            {/* En elev åpnes som et ark over økta (Arkstabel). */}
-            <OktPanel
-              okt={apen}
-              onLukk={() => setValgt(null)}
-              onEndret={last}
-              onApneElev={(id) => arkstabel.apneElev(id)}
-            />
-          </div>
-        )}
       </div>
     </>
   );

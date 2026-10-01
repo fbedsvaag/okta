@@ -211,7 +211,7 @@ export default function App() {
             skolearId={skolear.id}
             fag={fag}
             onApneElev={(id) => ga("elev", id)}
-            onApneOkt={(id) => ga("okter", id)}
+            onApneOkt={apneOktSomArk}
             onLukk={() => setSokApent(false)}
           />
         )}

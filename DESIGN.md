@@ -150,14 +150,11 @@ klikkes. Klikk på teksten for å skrive igjen. Utvalget er lite med vilje
 Tre skyggenivåer: `shadow-lav` (kort), `shadow-panel` (panel),
 `shadow-ark` (det som legger seg over). Dybde, ikke dekorasjon.
 
-**Ark som glir.** Velger du en elev, en vurdering eller et fag i en liste,
-legger kortet seg som et ark over lista (se under). Lista beholder full
-bredde og alle kolonnene sine. Navigasjonen er dybde, ikke sidebytte.
+**Ark som glir.** Velger du en økt, en elev, en vurdering eller et fag i en
+liste, legger kortet seg som et ark over lista (se under). Lista beholder
+full bredde og alle kolonnene sine. Navigasjonen er dybde, ikke sidebytte.
 
-Unntak: **Økter** beholder sidepanelet — lista trekker seg sammen til en
-tredjedel og står igjen ved siden av økta. Der jobber man seg gjennom
-økt etter økt, og skal kunne klikke rett på neste uten å lukke noe. Og
-elevkortet åpnet fra søket dekker hele bredden, uten lista.
+Unntak: elevkortet åpnet fra søket dekker hele bredden, uten lista.
 
 Titler og navn i et kort er innganger til sine egne kort: vurderingen på
 en økt, økta på en vurdering, vurderingene på elevkortet, elevene og

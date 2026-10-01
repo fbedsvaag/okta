@@ -77,3 +77,27 @@ export function varsleVurderinger(): void {
     }
   }
 }
+
+// ---------------------------------------------------------- øktvisning
+
+/**
+ * Noe i en økt er endret som lista skal vise — skåringer, notater — uten at
+ * selve økta er endret. Egen kanal, så kalenderpubliseringen (som lytter
+ * på `lytt`) ikke kjøres for hvert tastetrykk i skåringen.
+ */
+const oktvisningslyttere = new Set<Lytter>();
+
+export function lyttOktvisning(fn: Lytter): () => void {
+  oktvisningslyttere.add(fn);
+  return () => oktvisningslyttere.delete(fn);
+}
+
+export function varsleOktvisning(): void {
+  for (const fn of oktvisningslyttere) {
+    try {
+      fn();
+    } catch (e) {
+      console.error("øktvisningslytter:", e);
+    }
+  }
+}

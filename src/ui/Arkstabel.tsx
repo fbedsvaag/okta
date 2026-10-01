@@ -7,7 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { lytt, varsleVurderinger } from "../data/endringer";
+import { lytt, varsleOktvisning, varsleVurderinger } from "../data/endringer";
 import { hentOkter, type Okt } from "../data/okter";
 import { OktPanel } from "../skjermer/OktPanel";
 import { ElevPanel } from "../skjermer/ElevPanel";
@@ -360,11 +360,13 @@ function OktArk({
             key={okt.id}
             okt={okt}
             onLukk={onLukk}
-            onEndret={() =>
+            onEndret={() => {
               void hentOkter(skolearId).then((o) =>
                 setOkt(o.find((x) => x.id === oktId) ?? null),
-              )
-            }
+              );
+              // Lista under — Økter, uka på forsiden — skal vise det.
+              varsleOktvisning();
+            }}
             onApneElev={onApneElev}
           />
         )}

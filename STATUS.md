@@ -57,9 +57,10 @@ Skjerm for skjerm (§4), med tilstand:
   tatt bort) tegnes i `Elevbilde` når bildet vises. Vises
   i elevkortet, kan fjernes der. pdf.js ligger i bygget, lastes bare ved
   import. Bildet går aldri ut av appen; sletting tømmer det.
-- **Kortlogikken overalt** — 30.09. Elev, vurdering og fag åpnes som ark
-  (`Arkstabel`) fra lister, forsiden og hverandre. Økter beholder
-  sidepanelet med vilje, se DESIGN.md §7.
+- **Kortlogikken overalt** — 30.09/01.10. Økt, elev, vurdering og fag
+  åpnes som ark (`Arkstabel`) fra lister, forsiden, søket og hverandre.
+  Lista under beholder bredden. Skåringer i et øktark når lista via
+  `lyttOktvisning`, egen kanal så CalDAV-publiseringen ikke trigges.
 - **Klasseliste i fagkortet** — 30.09. Ta ut (kobler fra, sletter ikke),
   legg til med søk, eller opprett ny elev rett der. «Lim inn ny liste»
   fra fagkortet: lista er hele faget, og de som ikke står på den tas ut
