@@ -307,11 +307,25 @@ CREATE TABLE skaring (
   id            TEXT PRIMARY KEY,
   elev_id       TEXT NOT NULL REFERENCES elev(id),
   okt_id        TEXT NOT NULL REFERENCES okt(id),
-  skalaverdi_id TEXT NOT NULL REFERENCES skalaverdi(id),
-  notat         TEXT,                   -- valgfri fritekst
+    skalaverdi_id TEXT NOT NULL REFERENCES skalaverdi(id),
+  notat         TEXT,                   -- leses ikke lenger, se oktnotat
   opprettet TEXT NOT NULL,
   endret    TEXT NOT NULL,
   slettet   TEXT,
+  UNIQUE(elev_id, okt_id)
+);
+
+-- Notatet på en elev i en økt. Egen tabell, så det lagres også når eleven
+-- ikke er skåret (skalaverdi_id er NOT NULL, og en skåringsrad uten verdi
+-- skal ikke finnes). skaring.notat ble flyttet hit i migrasjon 022.
+CREATE TABLE oktnotat (
+  id         TEXT PRIMARY KEY,
+  elev_id    TEXT NOT NULL REFERENCES elev(id),
+  okt_id     TEXT NOT NULL REFERENCES okt(id),
+  tekst      TEXT NOT NULL,
+  opprettet  TEXT NOT NULL,
+  endret     TEXT NOT NULL,
+  slettet    TEXT,
   UNIQUE(elev_id, okt_id)
 );
 ```
@@ -322,7 +336,8 @@ CREATE TABLE skaring (
 sorteringen skjer alltid på `dato` og `klokkeslett`.
 
 Én rad per elev per økt. Skåres eleven på nytt, oppdateres raden — det lages
-ikke historikk. `notat` er valgfritt og fylles sjelden.
+ikke historikk. Notatet på eleven i økta bor i `oktnotat`, ikke på
+skåringsraden, og fjernes ikke når skåringen fjernes.
 
 **Økta er avholdt så snart minst én elev er skåret.** Det utledes, det er ikke
 et felt. I en avholdt økt har hver elev en verdi mellom `0` og `3`: de du har
@@ -449,6 +464,25 @@ har det.
 Denne tabellen tar over for både `oppfolging` og fritekstfeltet `elev.notat`.
 Et felt som overskrives har ingen historikk å vise, og det var nettopp
 historikken som manglet. Se §4.7.
+
+```sql
+-- Gjøremål som ikke hører til noen elev — «kopier prøvene til fredag».
+-- Et gjøremål med elev er et elevnotat med skal_folges_opp = 1.
+CREATE TABLE gjoremal (
+  id         TEXT PRIMARY KEY,
+  skolear_id TEXT NOT NULL REFERENCES skolear(id),
+  tekst      TEXT NOT NULL,
+  frist      TEXT,
+  ferdig     TEXT,                       -- dato det ble krysset av; NULL = åpent
+  opprettet TEXT NOT NULL,
+  endret    TEXT NOT NULL,
+  slettet   TEXT
+);
+```
+
+Gjøremålene på forsiden (§4.1) har ingen egen kopi av noe: de leses fra
+`elevnotat` (oppfølging og ukryssede `- [ ]`), fra øktloggene (`- [ ]`) og
+fra `gjoremal`, og krysses av der de bor.
 
 ### 3.6 Samtaler
 
@@ -597,12 +631,27 @@ første» er riktig; et blankt panel er ikke.
 
 ### 4.1 I dag (startskjerm)
 
-Dagens økter basert på systemdato, kronologisk. Hver økt er ett kort: fag,
-klokkeslett, tema, og hvor mange av elevene som er skåret.
+Øverst datoen, og under den én setning om dagen: hvor mange økter, i hvilke
+fag og når — «Én økt i dag: MFL1 kl. 09:15.» For hver økt står notatet fra
+forrige økt i faget på én linje, eller at det ikke ble skrevet noe. Et klikk
+åpner økta notatet ble skrevet i.
 
-Nærmeste økt i tid er alltid forhåndsvalgt. **Enter** åpner den i §4.4.
+Under: **uka** som kalender, fem dager med øktene på klokkeslettet sitt, blabar
+uke for uke. En strek viser klokka nå — tydelig i dagens kolonne, svak bak
+øktene resten av uka. En økt åpnes med et klikk, som et kort over forsiden.
 
-Ingen økter i dag: vis de tre neste kommende, med lenke til årsplanen.
+Under igjen: **årsoversikten** — innsats over tid (én prikk per uke og fag;
+et klikk åpner ukas økter), timeregnskap, **gjøremål**, vurderingsfrister og
+elever som glipper (lavest snitt først, på tvers av skalaer).
+
+**Gjøremål** samler alt som venter: notater merket «skal følges opp» som ikke
+er lukket, og ukryssede avkrysningsbokser (`- [ ]`) i elevnotater og
+øktlogger. Fristene først. Krysses av rett på forsiden, og et klikk åpner
+eleven eller økta. Et nytt gjøremål skrives øverst i bolken: tekst, og
+valgfritt elev og frist. Med elev blir det et oppfølgingsnotat på eleven;
+uten et eget gjøremål (§3.5).
+
+Elever, vurderinger og fag fra forsiden åpnes også som kort over den.
 
 ### 4.2 Årsplan — økter per fag
 
@@ -620,12 +669,14 @@ kolonner som vises, velges.
 hopper til neste rads tema, Shift+Enter til forrige, Esc angrer. En hel termin
 kan skrives inn nedover uten å åpne noe.
 
-Klikk ellers på raden åpner økta i et panel: dato, klokkeslett, varighet, tema,
-rom, agenda (med «Kopier til Teams»), lekse og vurdering. Plan vises bare der
-det allerede står noe.
+Klikk ellers på raden åpner økta som et kort over lista — lista beholder
+bredden og kolonnene sine under: dato, klokkeslett, varighet, tema, rom,
+agenda (med «Kopier til Teams»), lekse, kompetansemål og vurdering, og over
+øktloggen notatet fra forrige økt i faget. Plan vises bare der det allerede
+står noe. Samme kortlogikk gjelder elever, vurderinger og fag (DESIGN.md §7).
 
 **Periodisering er fargelegging.** Med ett fag i filteret står fagets perioder
-som pensler over lista. Velg én, og klikk eller dra over radene for å farge
+som pensler over lista, og radenes periodefarge vises bare da. Velg én, og klikk eller dra over radene for å farge
 dem; viskelæret tar perioden bort. «+ Ny periode» lager en og velger den, og
 dobbeltklikk på en pensel gir perioden nytt navn. Er det krysset av for rader,
 farges de med ett klikk. Radene har en svak tone i periodens farge.
@@ -801,7 +852,9 @@ Motstykket til Tracking-fanen, og den daglige bruken. Full skjerm, minimal ramme
 Øverst en kompakt topplinje: fag, dato, tema, periode, og planen for økta
 sammenklappet — ett trykk for å utvide.
 
-Under: elevlista for faget, alfabetisk på fornavn, én rad per elev.
+Under: elevlista for faget, alfabetisk på fornavn, én rad per elev. Har
+elevene bilde (§7), står et lite bilde (20 px) foran navnet; raden holder
+seg på 28 px.
 
 ```
     Anna Reistad              ●  ○  ○  ○
@@ -826,7 +879,9 @@ Tastene er ikke hardkodet — de utledes av skalaens rangering (§5.1), slik at 
 annen skåringsskala virker uten kodeendring.
 
 Autoadvansering er hele poenget. Du går nedover lista med tallrekka og er ferdig
-med 30 elever på under 20 sekunder. Notat er unntaket, ikke regelen.
+med 30 elever på under 20 sekunder. Notat er unntaket, ikke regelen. Et notat
+kan skrives på en elev som ikke er skåret, og står da i elevens tidslinje
+(§4.7).
 
 Har eleven skåringsnotat fra tidligere økter, vises det siste som grå
 hjelpetekst under raden når markøren står der.
@@ -854,8 +909,9 @@ skrives som 2026-10-12 — det vanlige, også i filnavn — eller 12.10.2026,
 «mfl1 2026-10». Økter med ordet i temaet kommer først, deretter de nærmest i
 dag.
 
-Enter på en elev åpner elevkortet over hele skjermen, uten elevlista ved
-siden av. Enter på en økt åpner den i Økter.
+Elevtreffene viser bildet, navnet og fagene eleven har hos deg. Enter på en
+elev åpner elevkortet over hele skjermen, uten elevlista ved siden av. Enter
+på en økt åpner den som et kort over der du står.
 
 **Ikke** vis løpende statistikk i denne visningen. Ingen teller på hvor mange
 røde du har satt. Det påvirker skjønnet ditt mens du skårer.
@@ -934,10 +990,13 @@ passert, markeres det som forfalt. Har det ingen frist, ligger det bare
 Lukking er ett klikk, og notatet synker da ned til sin naturlige plass i
 kronologien.
 
-Dette er en annen type notat enn skåringsnotatet i §4.4: skåringsnotatet
-henger på én bestemt økt og leses i heatmapet ved å holde musa over ruten.
-Møteloggen er en egen, bevisst hendelse — en samtale, en observasjon, en
-avtale — og vises aldri sammen med skåringsnotatene i samme liste.
+Notatene fra øktene (§4.4) står i samme tidslinje, flettet inn etter dato,
+med skåringens farge på prikken og fag og tema som åpner økta. Et filter
+øverst — Alle · Møtelogg · Fra øktene — skiller dem når det finnes begge
+deler. Bolken kan legges sammen med et klikk på overskriften, og valget
+huskes.
+
+Åpne oppfølgingspunkter står også i Gjøremål på forsiden (§4.1).
 
 Elever med et åpent, forfalt oppfølgingspunkt får et lite merke ved navnet i
 elevtabellen (§4.3) — **merket sier bare at et punkt venter, aldri hva det
@@ -999,8 +1058,10 @@ Alle fire bygges av samme innhold, så de sier det samme.
 kompetansemålene — fra Udir når faget har kode, ellers fritekstfeltet.
 
 **Tabellen:** uke, dato, tema, lekse og vurdering; valgfritt også klokkeslett,
-timer, rom og agenda. Øktene kan grupperes under periodene sine. Kolonner uten
-innhold utelates. Lesbar i svart-hvitt.
+timer, rom, agenda og kompetansemål. Kompetansemålene i kolonnen er øktas
+egne; periodens mål står under periodenavnet. Øktene kan grupperes under
+periodene sine. Kolonner uten innhold utelates. Lesbar i svart-hvitt.
+Arket kan skrives ut og lagres som Word liggende.
 
 **Hvilke felt som står på arket, velges** under «Velg felt …», og huskes.
 Plan og øktlogg kan ikke velges: de er lærerens egne notater.
@@ -1418,7 +1479,7 @@ oppdateringssjekk.
 
 ## 7. Import av elever
 
-Ingen filimport i v1. Lim inn. Klasselistene lages som `.md`-filer.
+Lim inn — eller les klasselista fra InSchool-utskriften (PDF), se under.
 
 Ett tekstfelt, én elev per linje. Parseren skal tåle:
 
@@ -1464,6 +1525,33 @@ Duplikatgjenkjenningen virker som før. Den sammenlikner på navn og klasse
 (§7.1), og ingen av delene forutsetter et fag. En elev som senere limes inn i
 et fag, gjenkjennes og kobles — det er nettopp det gjenkjenningen er til for.
 
+**Lista er hele faget.** Limes en liste inn fra et fag, kan den erstatte
+klasselista: elevene i faget som ikke står på lista, tas ut av faget — de
+slettes ikke, og kan velges bort én og én i forhåndsvisningen.
+
+**InSchool-utskriften.** «Les fra InSchool-PDF» leser PDF-en skolen skriver
+ut, lokalt med pdf.js som følger appen (ingen nettverkskall, §1): navn og
+klasse fra tabellen fylles inn som `navn; klasse`, fagkoden i toppen velger
+faget, og bildet til hver elev klippes ut av rutenettet. Resten er den vanlige
+flyten med forhåndsvisning. Bildene lagres når importen bekreftes:
+
+```sql
+CREATE TABLE elevbilde (
+  id         TEXT PRIMARY KEY,
+  elev_id    TEXT NOT NULL REFERENCES elev(id),
+  bilde      TEXT,                     -- gråtoner, JPEG som data-URL; NULL når slettet
+  kilde      TEXT,                     -- «InSchool»
+  opprettet TEXT NOT NULL,
+  endret    TEXT NOT NULL,
+  slettet   TEXT,
+  UNIQUE(elev_id)
+);
+```
+
+Bildet er personopplysning og går aldri ut av appen — ikke i kalenderen,
+eksporten eller arkivet. Slettes bildet eller eleven, tømmes `bilde` før
+raden soft-slettes. Looken (lilla tone og svakt korn) legges på ved visning.
+
 ## 7.1 Duplikatgjenkjenning
 
 En lærer har ofte samme elev i flere fag. Når en liste limes inn i fag nummer to,
@@ -1497,6 +1585,7 @@ sammenslåing er høyere enn ved feil splitting, og splitting kan rettes etterp�
 | Samme navn, klasse mangler på én av dem, annet fag | Samme elev | Ja |
 | Samme navn, samme klasse, **samme fag** | Allerede importert — hopp over linja | Hopp over |
 | Samme navn, **ulik** klasse | Spør | Nei — ny elev |
+| Lista har et **fullere navn**: samme fornavn, og alle ordene i navnet som finnes står i samme rekkefølge («Per Person» ⊂ «Per Johannes Persaune Person») | Samme elev, og foreslå navnet fra lista | Ja — med «bruk navnet fra lista» |
 | Nær match (Levenshtein ≤ 2, eller likt etternavn og samme forbokstav) | Spør | Nei — ny elev |
 | Flere eksisterende elever matcher | Vis liste, la brukeren velge | Nei |
 | Ingen match | Ny elev | — |
@@ -1574,13 +1663,19 @@ lesbare tekstfiler til en mappe brukeren velger:
 ```
 <valgt mappe>/
   README.md                  ← definisjon av trafikklys og skalaer
+    oppfolging.md              ← gjøremål og oppfølgingspunkter, åpne først
   elever/
-    anna-reistad.md         ← med notater og møtelogg kronologisk
+    anna-reistad.md         ← skåringer, vurderinger, notater og møtelogg
   fag/
     mfl1.md                  ← årsplan med alle økter
     mfl1-skaring.csv
     mfl1-vurderinger.csv
 ```
+
+Elevene i året er de som står i et fag, i en klasse eller har et notat fra
+året — mentorelever uten fag kommer med. Elevfilenes «Notater og møtelogg»
+har både møteloggen (også fra samtaler) og notatene fra øktene, eldste
+først. Elevbilder tas ikke med.
 
 Elevfilene har YAML-frontmatter (navn, klasse, fag) og innhold kronologisk under.
 Skal kunne åpnes i Obsidian uten videre behandling.

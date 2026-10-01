@@ -3,8 +3,8 @@
 Kort status pr. 2026-09-30, versjon 0.1.3. Skrevet mot SPEC.md slik den er nå.
 Denne fila eies fritt — oppdater den løpende, i motsetning til SPEC.md.
 
-**474 tester, alle grønne. `tsc --noEmit` er ren. `npm run build` går
-gjennom. 22 migrasjoner.**
+**479 tester, alle grønne. `tsc --noEmit` er ren. `npm run build` går
+gjennom. 23 migrasjoner.**
 
 ## Hva som virker
 
@@ -18,7 +18,8 @@ Skjerm for skjerm (§4), med tilstand:
   En prikk i «Innsats over tid» åpner ukas økter.
   «Gjøremål» samler åpne oppfølgingspunkter og ukryssede `- [ ]` fra
   elevnotater og øktlogger (`data/gjoremal.ts`, ingen egen tabell);
-  krysses av rett på forsiden.
+  krysses av rett på forsiden. Nye gjøremål skrives øverst i bolken (med
+  elev → oppfølgingsnotat; uten → tabellen `gjoremal`, migrasjon 023).
   «Elever som glipper» viser lavest snitt først; elever og vurderinger
   åpnes som ark over forsiden. Årsoversikten er et villet avvik fra §13,
   kommentert i koden.
@@ -111,19 +112,17 @@ Skjerm for skjerm (§4), med tilstand:
 
 ## Hvor SPEC.md ikke stemmer med koden lenger
 
-SPEC.md ble oppdatert 30.09 med alt som ble bygget den dagen (meny, perioder
-som fargelegging, tema i lista, serieopprettelse, årsplanarket og eksporten,
-vurdering over flere økter, samtaledager i økter, gruppesamtaler, dra mellom
-dager, ⌘K, alias, de nye feltene). Det som står igjen:
+SPEC.md ble oppdatert 30.09 og igjen 01.10 (øktnotat i egen tabell,
+gjøremål, elevbilder og InSchool-PDF, forsiden, kortlogikken i Økter,
+kompetansemål på økter og årsplanen, arkivets innhold). Det som står igjen:
 
 - **Årsoversikt-widgeten på §4.1** er et villet unntak fra §13.
 - **§11 Byggerekkefølge** er utdatert og hører hjemme i ARBEIDSLISTE.md.
-- **§13 Visuell retning** er erstattet av DESIGN.md, men står fortsatt — og
-  DESIGN.md beskriver utgangspunktet fra august, ikke serif-overskriftene.
+- **§13 Visuell retning** er erstattet av DESIGN.md, men står fortsatt.
 
 ## Tester
 
-34 testfiler, 474 tester, alle grønne. `tsc` ren.
+35 testfiler, 479 tester, alle grønne. `tsc` ren.
 
 Dekningen er tung i datalaget og tynn i skjermlaget. Migrasjonene testes ved å
 kjøre dem i to omganger med data imellom — kjørt mot en tom base ville en
