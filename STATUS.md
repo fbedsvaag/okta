@@ -39,7 +39,7 @@ Skjerm for skjerm (§4), med tilstand:
   Øktnotatet bor i `oktnotat` (migrasjon 022), ikke på skåringsraden: før
   ble et notat på en elev som ikke var skåret stille borte. Erstattet den gamle
   oppfølgingsskjermen som aldri ble bygget.
-- **Innstillinger (§4.8)** — ferdig. Fagbank og «fag i år» ligger i Fag-fanen,
+- **Innstillinger (§4.8)** — ferdig. Mørk modus (som macOS / lys / mørk) under Utseende, 02.10. Fagbank og «fag i år» ligger i Fag-fanen,
   ikke her.
 - **Utskrift og eksport av årsplan (§4.9)** — ferdig, og utvidet. Ett fag
   (eller alle) på papir/PDF, som Word, markdown (kopi eller fil) og CSV.
@@ -112,13 +112,10 @@ Skjerm for skjerm (§4), med tilstand:
 
 ## Hvor SPEC.md ikke stemmer med koden lenger
 
-SPEC.md ble oppdatert 30.09 og igjen 01.10 (øktnotat i egen tabell,
-gjøremål, elevbilder og InSchool-PDF, forsiden, kortlogikken i Økter,
-kompetansemål på økter og årsplanen, arkivets innhold). Det som står igjen:
-
-- **Årsoversikt-widgeten på §4.1** er et villet unntak fra §13.
-- **§11 Byggerekkefølge** er utdatert og hører hjemme i ARBEIDSLISTE.md.
-- **§13 Visuell retning** er erstattet av DESIGN.md, men står fortsatt.
+SPEC.md ble oppdatert 30.09, 01.10 og 02.10. §11 peker nå til
+ARBEIDSLISTE.md, og §13 beskriver appen slik den er (med DESIGN.md for
+detaljene), inkludert mørk modus og forsiden som villet unntak. Ingen kjente
+avvik står igjen.
 
 ## Tester
 

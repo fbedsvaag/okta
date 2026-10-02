@@ -1,7 +1,7 @@
 # Økta — designguide
 
-Hvordan appen ser ut og oppfører seg, slik det er valgt. Erstatter §13 i
-`SPEC.md`; er de uenige, gjelder denne. Tokenene står i `src/index.css`,
+Hvordan appen ser ut og oppfører seg, slik det er valgt. Utdyper §13 i
+`SPEC.md`, som har retningen; her står detaljene. Tokenene står i `src/index.css`,
 felleskomponentene i `src/ui/felles.tsx`.
 
 Guiden var til 30.09.2026 et designoppdrag («foreslå tre paletter …»). Den er
@@ -71,6 +71,16 @@ i `@theme` i `index.css` — aldri hex i komponentene.
 | Linjer | `linje`, `linje-medium`, `linje-svak`, `linje-sterk` | Referansen er linjert papir |
 | Aksent | `aksent` `#4a3d7d` (+ `-mork`, `-dyp`) | Primærknapp, fokus, aktiv fane |
 | Feil | `feil` `#b3261e`, `feil-flate` | Sletting, feilmeldinger |
+
+**Mørk modus** er de samme tokens med andre verdier, i `index.css` under
+`:root[data-tema="mork"]` (bare på skjerm — utskriften er lys). Valget står i
+Innstillinger: som macOS, lys eller mørk (`ui/tema.ts`). Nøytralene beholder
+det fiolette stikket; aksenten er lysere (`#b3a6ec`) så den leses som tekst.
+Tre regler gjør at komponentene ikke trenger å vite om modusen:
+
+- Tekst på en aksent- eller feilflate er `text-ark`, som snur med.
+- Teppet bak ark og søkevinduet er `bg-teppe`, som alltid mørkner.
+- Fagfarger som tekst går gjennom `fagfarge()`, som lysner dem i mørk modus.
 
 **Trafikklyset er det eneste mettede i appen**, i en roligere variant:
 grønn `#3f9d49`, gulgrønn `#8ba33e`, gul `#d9a92f`, oransje `#cf7a35`,
@@ -227,4 +237,3 @@ farge. En økt ingen er skåret i, er et hull.
   `prefers-reduced-motion` som utgangspunkt.
 - **Stagger** når lister lastes (12 ms per rad, maks ti rader).
 - **FLIP** når rader flyttes.
-- **Mørk modus.** Lav prioritet; klasserom er lyse.

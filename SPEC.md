@@ -1839,24 +1839,12 @@ behandlingsansvarlig, uavhengig av hvor det ligger.
 
 ## 11. Byggerekkefølge
 
-| Dag | Innhold | Ferdig når |
-|-----|---------|------------|
-| 1 | Scaffold, schema, migrasjoner, seeding av skalaer, innstillinger | Fire skalaer ligger i basen, og du kan opprette skoleår, fag og klasse |
-| 2 | §4.0 veiviser, §4.3 Elever, §7 import med duplikatgjenkjenning | Samme elev i to fag, gjenkjent og koblet |
-| 3 | §4.2 Årsplan: opprett økt, listevisning | En hel termin MFL1 finnes |
-| 4 | §4.2 Kalendervisning, perioder, tidslinje, timeregnskap | MFL1 er periodisert for hele året |
-| 5–6 | §4.4 Skåringsflyten med full tastaturnavigasjon | 30 elever på under 20 sek |
-| 7 | §4.5 Elevskjerm med heatmap | Klar for elevsamtale |
-| 8 | §4.6 Vurderinger og resultatføring | Karakter 1–6 kan føres på en oppgave |
-| 9 | Eksport og backup, §4.7 oppfølging | Markdown ut av appen |
-| 10 | Test med fiktiv økt, §4.9 utskrift hvis tid | Du stoler på den |
+Den opprinnelige tidagersplanen er bygget. Hva som gjenstår og i hvilken
+rekkefølge, står i `ARBEIDSLISTE.md`.
 
 Klasseopprykk (§4.3) og flerårsvisningen i §4.5 hører til første gang et nytt
 skoleår opprettes, altså august 2027. Datamodellen bærer dem fra dag 1;
 skjermene kan komme senere.
-
-Glipper det: dag 1–4 er det du trenger i august, dag 5–7 er det du trenger i
-uke 1. Vurderinger, eksport og utskrift kan komme i uke 3.
 
 ---
 
@@ -1889,21 +1877,40 @@ uke 1. Vurderinger, eksport og utskrift kan komme i uke 3.
 
 ## 13. Visuell retning
 
-Referansen er den norske klassejournalen — linjert, tett, uten pynt. Et
-arbeidsverktøy som blir sett på i sekunder om gangen, i et lyst klasserom, ofte
-mens noen snakker til deg.
+Detaljene — tokens, komponenter, bevegelse — står i `DESIGN.md`. Her står
+retningen, og det som ikke skal fravikes.
 
-- **Palett:** blekksvart tekst på papirhvit flate. Én kald blå for markert rad og
-  fokus. Fag skilles med tynne fargestreker i venstremarg, ikke med flater.
-- **Trafikklyset:** dette er det eneste stedet i appen med mettet farge, og det er
-  grunnen til at alt annet må være nedtonet. Bruk former som skiller seg fra
-  hverandre i tillegg til farge — fylt, halvfylt, tom — så det er lesbart uten
-  fargesyn og på avstand.
-- **Type:** en smal grotesk til elevnavn og UI, tabulærsifre til datoer og tall.
-- **Tetthet:** radhøyde stram nok til at 30 elever får plass uten scrolling på en
-  14-tommer. Dette er den viktigste enkeltbeslutningen i hele UI-et.
-- **Bevegelse:** nesten ingen. Markørflytting kan ha 80 ms. Resten er umiddelbart.
-- **Mørk modus:** ja, men lav prioritet. Klasserom er lyse.
+Referansen er den norske klassejournalen — linjert, tett, uten pynt — men
+skarpere, og med lag som beveger seg. Et arbeidsverktøy som blir sett på i
+sekunder om gangen, i et lyst klasserom, ofte mens noen snakker til deg.
 
-Motstå impulsen til å gjøre dette til et dashboard. Ingen kort med store tall,
-ingen grafer på forsiden, ingen sammendragswidget. Appen har én jobb om gangen.
+- **Palett:** blekk med et kjølig fiolett stikk på en grå-lilla grunn, med
+  hvite kort og panel oppå. Én lilla aksent (`#4a3d7d`) for primærknapp,
+  markert rad og fokus. Fag skilles med tynne fargestreker i venstremarg og
+  små prikker, ikke med flater.
+- **Trafikklyset** er det eneste stedet i appen med mettet farge, og det er
+  grunnen til at alt annet er nedtonet. Formen bærer betydningen sammen med
+  fargen — fylt, halvfylt, ring, tynn ring — så det er lesbart uten fargesyn
+  og på avstand.
+- **Type:** Fira Sans til UI og tabeller, Fira Sans Condensed der bredden er
+  knapp, Georgia til overskrifter. Tabulære sifre på alt som står i kolonner.
+  Skriftene ligger lokalt (§1).
+- **Tetthet:** skåringslista holder 28 px rader, så 30 elever får plass uten
+  scrolling på en 14-tommer. Dette er den viktigste enkeltbeslutningen i hele
+  UI-et. Resten av appen har luftigere rader (34 px), men bredden brukes og
+  navn brekker aldri.
+- **Radier** er små (3–6 px) — et skjema, ikke kort med runde hjørner.
+  Unntaket er ⌘K-vinduet, som er formet som Spotlight.
+- **Bevegelse:** navigasjonen er dybde, ikke sidebytte. Økter, elever,
+  vurderinger og fag åpnes som kort som glir inn over lista (180 ms) og ut
+  igjen med samme bevegelse baklengs; lista under beholder bredden. Skåringen
+  animeres aldri: tastetrykk → farge → neste elev er null millisekunder.
+- **Mørk modus:** bygget. Samme tokens med andre verdier, valgt i
+  Innstillinger (som macOS, lys eller mørk). Utskriften er alltid lys.
+
+Forsiden er et villet unntak fra den opprinnelige regelen om ingen
+sammendrag: under dagen og uka ligger en årsoversikt med innsats over tid,
+timeregnskap, gjøremål, vurderingsfrister og elever som glipper. Den er der
+fordi eieren har bestemt det. Ellers gjelder fortsatt: ingen kort med store
+tall, ingen grafer for grafenes skyld, og ingen løpende statistikk mens man
+skårer (§4.4).
