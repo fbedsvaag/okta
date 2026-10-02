@@ -107,3 +107,61 @@ export async function hentFagVurderinger(
     [skolearFagId],
   );
 }
+
+// ------------------------------------------------------------- øktloggen
+
+export type Fagslogg = {
+  oktId: string;
+  dato: string;
+  klokkeslett: string | null;
+  tema: string | null;
+  logg: string;
+  /** skåringene som teller i økta, til prikken i tidslinja */
+  gronn: number;
+  gul: number;
+  rod: number;
+};
+
+/**
+ * Øktloggene i ett fag ett år, nyeste først. Bare økter med logg — det er
+ * loggen som er historikken.
+ *
+ * `fagId` er faget i fagbanken, så samme fag kan vises for et annet år.
+ */
+export async function hentFagslogg(
+  fagId: string,
+  skolearId: string,
+): Promise<Fagslogg[]> {
+  return hent<Fagslogg>(
+    `SELECT o.id AS oktId, o.dato, o.klokkeslett, o.tema, o.logg,
+            COALESCE(SUM(CASE WHEN sv.farge = 'gronn' THEN 1 ELSE 0 END), 0) AS gronn,
+            COALESCE(SUM(CASE WHEN sv.farge = 'gul'   THEN 1 ELSE 0 END), 0) AS gul,
+            COALESCE(SUM(CASE WHEN sv.farge = 'rod'   THEN 1 ELSE 0 END), 0) AS rod
+       FROM okt o
+       JOIN skolear_fag sf ON sf.id = o.skolear_fag_id AND sf.slettet IS NULL
+                          AND sf.fag_id = $1 AND sf.skolear_id = $2
+       LEFT JOIN skaring s ON s.okt_id = o.id AND s.slettet IS NULL
+       LEFT JOIN elev e    ON e.id = s.elev_id AND e.slettet IS NULL
+       -- «Ikke i økta» teller ikke (teller_ikke, CLAUDE.md regel 5).
+       LEFT JOIN skalaverdi sv ON sv.id = s.skalaverdi_id
+                              AND sv.teller_ikke = 0 AND e.id IS NOT NULL
+      WHERE o.slettet IS NULL AND TRIM(COALESCE(o.logg, '')) <> ''
+      GROUP BY o.id
+      ORDER BY o.dato DESC, o.klokkeslett DESC`,
+    [fagId, skolearId],
+  );
+}
+
+/** Skoleårene faget har vært undervist, nyeste først. */
+export async function hentArForFag(
+  fagId: string,
+): Promise<{ skolearId: string; navn: string }[]> {
+  return hent(
+    `SELECT s.id AS skolearId, s.navn
+       FROM skolear_fag sf
+       JOIN skolear s ON s.id = sf.skolear_id AND s.slettet IS NULL
+      WHERE sf.fag_id = $1 AND sf.slettet IS NULL
+      ORDER BY s.start DESC`,
+    [fagId],
+  );
+}

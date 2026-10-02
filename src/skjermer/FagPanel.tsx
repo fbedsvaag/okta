@@ -1,5 +1,20 @@
 import { useEffect, useState } from "react";
-import { lyttElever, lyttVurderinger } from "../data/endringer";
+import { Tidslinjedato, Tidslinjestrek } from "../ui/Tidslinje";
+import { Markdownfelt } from "../ui/Notattekst";
+import { useArk } from "../ui/Arkstabel";
+import { endreOkt } from "../data/okter";
+import { ukesfarge } from "../data/dashbord";
+import {
+  hentArForFag,
+  hentFagslogg,
+  type Fagslogg as FagsloggRad,
+} from "../data/fagportal";
+import {
+  lytt,
+  lyttElever,
+  lyttOktvisning,
+  lyttVurderinger,
+} from "../data/endringer";
 import { confirm as bekreft } from "@tauri-apps/plugin-dialog";
 import {
   hentFagElever,
@@ -197,6 +212,8 @@ export function FagPanel({
             </table>
           )}
         </Bolk>
+
+        <Fagslogg fag={fag} skolearId={skolearId} />
 
         {/*
           Rammene for faget dette året: hva som er avtalt, og hvilken kode
@@ -802,6 +819,131 @@ function Kompetansemaal({
         </>
       )}
     </section>
+  );
+}
+
+/** Prikkens farge: klassens skåringer i økta, i trafikklysets fem trinn. */
+const LOGGFARGE = {
+  gronn: "var(--color-lys-gronn)",
+  gronngul: "var(--color-lys-gronngul)",
+  gul: "var(--color-lys-gul)",
+  oransje: "var(--color-lys-oransje)",
+  rod: "var(--color-lys-rod)",
+} as const;
+
+/** Hvor mange logger som står før «Vis alle». */
+const LOGG_SYNLIGE = 8;
+
+/**
+ * Øktloggen i faget som tidslinje, som notatene på elevkortet: dato, tema
+ * og loggen, nyeste først. Prikken har fargen til hvordan klassen ble skåret
+ * den timen. Tema åpner økta; loggen kan rettes rett her. Har du hatt faget
+ * flere år, kan du bla mellom dem.
+ */
+function Fagslogg({ fag, skolearId }: { fag: FagIAr; skolearId: string }) {
+  const [ar, setAr] = useState(skolearId);
+  const [arene, setArene] = useState<{ skolearId: string; navn: string }[]>([]);
+  const [logg, setLogg] = useState<FagsloggRad[]>([]);
+  const [alle, setAlle] = useState(false);
+  const ark = useArk();
+
+  useEffect(() => {
+    void hentArForFag(fag.fagId).then(setArene);
+  }, [fag.fagId]);
+
+  useEffect(() => {
+    const last = () => void hentFagslogg(fag.fagId, ar).then(setLogg);
+    last();
+    setAlle(false);
+    // Skrives loggen i en økt over kortet, skal den stå her etterpå.
+    const av = [lytt(last), lyttOktvisning(last)];
+    return () => av.forEach((f) => f());
+  }, [fag.fagId, ar]);
+
+  const synlige = alle ? logg : logg.slice(0, LOGG_SYNLIGE);
+
+  return (
+    <Bolk
+      tittel={logg.length > 0 ? `Øktlogg · ${logg.length}` : "Øktlogg"}
+      handling={
+        arene.length > 1 ? (
+          <select
+            value={ar}
+            onChange={(e) => setAr(e.target.value)}
+            className="rounded border border-linje bg-ark px-1.5 py-0.5 text-liten"
+          >
+            {arene.map((a) => (
+              <option key={a.skolearId} value={a.skolearId}>
+                {a.navn}
+              </option>
+            ))}
+          </select>
+        ) : undefined
+      }
+    >
+      {logg.length === 0 ? (
+        <Stille>
+          Ingen øktlogg i {fag.kode}
+          {ar !== skolearId
+            ? ` ${arene.find((a) => a.skolearId === ar)?.navn ?? ""}`
+            : ""}{" "}
+          ennå. Den skrives nederst i hver økt.
+        </Stille>
+      ) : (
+        <div>
+          {synlige.map((l, i) => {
+            const f = ukesfarge(l);
+            return (
+              <div key={l.oktId} className="flex gap-3">
+                <Tidslinjedato dato={l.dato} />
+                <Tidslinjestrek
+                  sist={i === synlige.length - 1}
+                  farge={f ? LOGGFARGE[f] : null}
+                  tittel={
+                    f
+                      ? `${l.gronn} grønne, ${l.gul} gule, ${l.rod} røde`
+                      : "Ikke skåret"
+                  }
+                />
+                <div className="min-w-0 flex-1 pb-4">
+                  <button
+                    onClick={() => ark.apneOkt(l.oktId)}
+                    className="flex max-w-full items-baseline gap-2 text-left text-liten hover:text-aksent"
+                  >
+                    <Kappet
+                      verdi={l.tema ?? "Uten tema"}
+                      klasse={l.tema ? "text-blekk-dempet" : "text-blekk-svak"}
+                    />
+                    {l.klokkeslett && (
+                      <span className="shrink-0 tabular-nums text-blekk-svak">
+                        {l.klokkeslett}
+                      </span>
+                    )}
+                  </button>
+                  <div className="-mx-2">
+                    <Markdownfelt
+                      key={l.oktId}
+                      verdi={l.logg}
+                      onLagre={async (v) => {
+                        await endreOkt(l.oktId, { logg: v });
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+          {logg.length > LOGG_SYNLIGE && (
+            <button
+              onClick={() => setAlle((v) => !v)}
+              className="text-liten text-blekk-svak hover:text-blekk"
+            >
+              {alle ? "Vis færre" : `Vis alle ${logg.length}`}
+            </button>
+          )}
+        </div>
+      )}
+    </Bolk>
   );
 }
 

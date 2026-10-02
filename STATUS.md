@@ -3,7 +3,7 @@
 Kort status pr. 2026-09-30, versjon 0.1.3. Skrevet mot SPEC.md slik den er nå.
 Denne fila eies fritt — oppdater den løpende, i motsetning til SPEC.md.
 
-**479 tester, alle grønne. `tsc --noEmit` er ren. `npm run build` går
+**482 tester, alle grønne. `tsc --noEmit` er ren. `npm run build` går
 gjennom. 23 migrasjoner.**
 
 ## Hva som virker
@@ -65,6 +65,10 @@ Skjerm for skjerm (§4), med tilstand:
   åpnes som ark (`Arkstabel`) fra lister, forsiden, søket og hverandre.
   Lista under beholder bredden. Skåringer i et øktark når lista via
   `lyttOktvisning`, egen kanal så CalDAV-publiseringen ikke trigges.
+- **Øktlogg i fagkortet** — 02.10. Tidslinje som notatene på elevkortet
+  (felles `ui/Tidslinje.tsx`): økter med logg, nyeste først, prikk i
+  klassens skåringsfarge, tema åpner økta, loggen rettes rett der. Årsvelger
+  når faget er undervist flere år. Ikke beskrevet i SPEC.md ennå.
 - **Klasseliste i fagkortet** — 30.09. Ta ut (kobler fra, sletter ikke),
   legg til med søk, eller opprett ny elev rett der. «Lim inn ny liste»
   fra fagkortet: lista er hele faget, og de som ikke står på den tas ut
@@ -119,7 +123,7 @@ avvik står igjen.
 
 ## Tester
 
-35 testfiler, 479 tester, alle grønne. `tsc` ren.
+36 testfiler, 482 tester, alle grønne. `tsc` ren.
 
 Dekningen er tung i datalaget og tynn i skjermlaget. Migrasjonene testes ved å
 kjøre dem i to omganger med data imellom — kjørt mot en tom base ville en

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Tidslinjedato } from "../ui/Tidslinje";
 import { useArk } from "../ui/Arkstabel";
 import { hentInnstilling, settInnstilling } from "../data/skolear";
 import { Elevbilde } from "../ui/Elevbilde";
@@ -880,25 +881,6 @@ function Motelogg({
         kategorier hører ikke hjemme her.
       </p>
     </Bolk>
-  );
-}
-
-/** Datoen til venstre i tidslinja: dag og måned, år og ukedag under. */
-function Tidslinjedato({ dato }: { dato: string }) {
-  const d = new Date(`${dato}T12:00:00`);
-  const dag = d.toLocaleDateString("nb-NO", { day: "numeric", month: "short" });
-  const arOgUkedag = `${d.getFullYear()} · ${d.toLocaleDateString("nb-NO", {
-    weekday: "short",
-  })}`;
-  return (
-    <div className="w-[4.75rem] shrink-0 pt-px text-right">
-      <div className="text-brod font-medium tabular-nums text-blekk">
-        {dag.replace(/\.$/, "")}
-      </div>
-      <div className="text-mikro tabular-nums text-blekk-svak">
-        {arOgUkedag.replace(/\.$/, "")}
-      </div>
-    </div>
   );
 }
 
