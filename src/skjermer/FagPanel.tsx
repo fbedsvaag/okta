@@ -131,90 +131,6 @@ export function FagPanel({
       </header>
 
       <div className="overflow-y-auto px-5 py-4">
-        <section className="mb-6">
-          <div className="flex items-baseline justify-between text-brod">
-            <span>
-              <strong className="tabular-nums">{tall.avholdte}</strong> av{" "}
-              <span className="tabular-nums">{tall.okter}</span> økter avholdt
-            </span>
-            <span className="tabular-nums text-blekk-dempet">
-              {Math.round(andel * 100)} %
-            </span>
-          </div>
-          <div className="mt-1 h-1.5 w-full overflow-clip rounded-full bg-linje-medium">
-            <div
-              className="h-full rounded-full"
-              style={{
-                width: `${andel * 100}%`,
-                background: fag.farge ?? "var(--color-aksent)",
-              }}
-            />
-          </div>
-          <p className="mt-1.5 text-liten tabular-nums text-blekk-dempet">
-            {tall.elever} elever · {timer} timer planlagt
-            {fag.arstimetall !== null && (
-              <>
-                {" "}
-                av {fag.arstimetall} · {avvik(timer, fag.arstimetall)}
-              </>
-            )}
-            {tall.okter > tall.avholdte &&
-              ` · ${tall.okter - tall.avholdte} økter igjen`}
-          </p>
-        </section>
-
-        <Klasseliste
-          fag={fag}
-          skolearId={skolearId}
-          elever={elever}
-          onApneElev={onApneElev}
-          onLimInn={onLimInn}
-        />
-
-        <Bolk
-          tittel="Vurderinger"
-          handling={
-            <button
-              onClick={onApneVurderinger}
-              className="text-liten text-blekk-dempet hover:text-aksent"
-            >
-              Åpne Vurderinger
-            </button>
-          }
-        >
-          {vurderinger.length === 0 ? (
-            <Stille>Ingen vurderinger planlagt i {fag.kode}.</Stille>
-          ) : (
-            <table className="w-full text-brod">
-              <tbody>
-                {vurderinger.map((v) => (
-                  <tr key={v.id} className="border-b border-linje-svak">
-                    <td className="py-1.5">
-                      <button
-                        onClick={() => onApneVurdering(v.id)}
-                        className="text-left hover:text-aksent hover:underline"
-                      >
-                        {v.tittel}
-                      </button>
-                    </td>
-                    <td className="w-20 py-1.5 text-blekk-dempet">
-                      {v.type ?? ""}
-                    </td>
-                    <td className="w-28 py-1.5 tabular-nums text-blekk-dempet">
-                      {v.frist ? kort(v.frist) : "ingen frist"}
-                    </td>
-                    <td className="w-14 py-1.5 text-right tabular-nums text-blekk-dempet">
-                      {v.fort === 0 ? "·" : `${v.fort}`}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </Bolk>
-
-        <Fagslogg fag={fag} skolearId={skolearId} />
-
         {/*
           Rammene for faget dette året: hva som er avtalt, og hvilken kode
           det har i læreplanverket. Årstimetallet er det timeregnskapet
@@ -304,6 +220,90 @@ export function FagPanel({
             }}
           />
         </section>
+
+        <section className="mb-6">
+          <div className="flex items-baseline justify-between text-brod">
+            <span>
+              <strong className="tabular-nums">{tall.avholdte}</strong> av{" "}
+              <span className="tabular-nums">{tall.okter}</span> økter avholdt
+            </span>
+            <span className="tabular-nums text-blekk-dempet">
+              {Math.round(andel * 100)} %
+            </span>
+          </div>
+          <div className="mt-1 h-1.5 w-full overflow-clip rounded-full bg-linje-medium">
+            <div
+              className="h-full rounded-full"
+              style={{
+                width: `${andel * 100}%`,
+                background: fag.farge ?? "var(--color-aksent)",
+              }}
+            />
+          </div>
+          <p className="mt-1.5 text-liten tabular-nums text-blekk-dempet">
+            {tall.elever} elever · {timer} timer planlagt
+            {fag.arstimetall !== null && (
+              <>
+                {" "}
+                av {fag.arstimetall} · {avvik(timer, fag.arstimetall)}
+              </>
+            )}
+            {tall.okter > tall.avholdte &&
+              ` · ${tall.okter - tall.avholdte} økter igjen`}
+          </p>
+        </section>
+
+        <Klasseliste
+          fag={fag}
+          skolearId={skolearId}
+          elever={elever}
+          onApneElev={onApneElev}
+          onLimInn={onLimInn}
+        />
+
+        <Bolk
+          tittel="Vurderinger"
+          handling={
+            <button
+              onClick={onApneVurderinger}
+              className="text-liten text-blekk-dempet hover:text-aksent"
+            >
+              Åpne Vurderinger
+            </button>
+          }
+        >
+          {vurderinger.length === 0 ? (
+            <Stille>Ingen vurderinger planlagt i {fag.kode}.</Stille>
+          ) : (
+            <table className="w-full text-brod">
+              <tbody>
+                {vurderinger.map((v) => (
+                  <tr key={v.id} className="border-b border-linje-svak">
+                    <td className="py-1.5">
+                      <button
+                        onClick={() => onApneVurdering(v.id)}
+                        className="text-left hover:text-aksent hover:underline"
+                      >
+                        {v.tittel}
+                      </button>
+                    </td>
+                    <td className="w-20 py-1.5 text-blekk-dempet">
+                      {v.type ?? ""}
+                    </td>
+                    <td className="w-28 py-1.5 tabular-nums text-blekk-dempet">
+                      {v.frist ? kort(v.frist) : "ingen frist"}
+                    </td>
+                    <td className="w-14 py-1.5 text-right tabular-nums text-blekk-dempet">
+                      {v.fort === 0 ? "·" : `${v.fort}`}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </Bolk>
+
+        <Fagslogg fag={fag} skolearId={skolearId} />
 
         <button
           onClick={async () => {
