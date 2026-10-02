@@ -1,3 +1,4 @@
+import { Sammenleggknapp, useApen } from "../ui/Sammenleggbar";
 import { useEffect, useState } from "react";
 import type { Skolear } from "../data/skolear";
 import type { FagIAr } from "../data/fag";
@@ -74,7 +75,7 @@ export function IDag({
         mange som står igjen, og når du er ferdig (§4.10).
       */}
         {samtaler.length > 0 && (
-          <Bolk tittel="Samtaler">
+          <Bolk tittel="Samtaler" nokkel="forside-samtaler">
             <p className="py-1 text-brod">
               {dagenssetning(
                 samtaler,
@@ -113,7 +114,7 @@ export function IDag({
           />
         )}
 
-        <Bolk tittel="Uka">
+        <Bolk tittel="Uka" nokkel="forside-uka">
           <Ukelinje
             okter={okter}
             forste={skolear.start}
@@ -182,19 +183,30 @@ function Dagsoppsummering({
   );
 }
 
+/** En bolk på forsiden. Legges sammen med et klikk på overskriften. */
 function Bolk({
   tittel,
+  nokkel,
   children,
 }: {
   tittel: string;
+  /** husker om bolken er lagt sammen (ui/Sammenleggbar) */
+  nokkel: string;
   children: React.ReactNode;
 }) {
+  const [apen, setApen] = useApen(nokkel);
   return (
     <section className="mt-6">
-      <h2 className="mb-1 border-b border-linje-medium pb-1 text-etikett uppercase tracking-etikett text-blekk-dempet">
-        {tittel}
-      </h2>
-      {children}
+      <div
+        className={`border-b border-linje-medium pb-1 ${apen ? "mb-1" : ""}`}
+      >
+        <Sammenleggknapp
+          tittel={tittel}
+          apen={apen}
+          onBytt={() => setApen(!apen)}
+        />
+      </div>
+      {apen && children}
     </section>
   );
 }

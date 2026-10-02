@@ -1,3 +1,4 @@
+import { Sammenleggknapp, useApen } from "../ui/Sammenleggbar";
 import { useEffect, useState } from "react";
 import { Tidslinjedato, Tidslinjestrek } from "../ui/Tidslinje";
 import { Markdownfelt } from "../ui/Notattekst";
@@ -131,95 +132,97 @@ export function FagPanel({
       </header>
 
       <div className="overflow-y-auto px-5 py-4">
-        {/*
+        <Bolk tittel="Om faget" nokkel="fagkort-om">
+          {/*
           Rammene for faget dette året: hva som er avtalt, og hvilken kode
           det har i læreplanverket. Årstimetallet er det timeregnskapet
           måles mot; Udir-koden er nøkkelen til kompetansemålene (§10).
         */}
-        <section className="mb-6 grid max-w-md grid-cols-2 gap-3">
-          <Felt
-            etikett="Årstimer"
-            verdi={fag.arstimetall === null ? "" : String(fag.arstimetall)}
-            plassholder="ikke satt"
-            settVerdi={async (v) => {
-              const n = Number(v.trim());
-              await endreFagIAr(fag.id, {
-                arstimetall:
-                  v.trim() === "" || Number.isNaN(n) ? null : Math.round(n),
-              });
-              onEndret();
-            }}
-          />
-          <Felt
-            etikett="Fagkode (Udir)"
-            verdi={fag.grepKode ?? ""}
-            plassholder="MFL1001"
-            settVerdi={async (v) => {
-              await endreFag(fag.fagId, { grep_kode: v.trim() || null });
-              onEndret();
-            }}
-          />
-          <Tekstfelt
-            etikett="Alias"
-            verdi={fag.alias}
-            plassholder="Det du kaller faget, f.eks. MFL1"
-            lagre={async (v) => {
-              await endreFag(fag.fagId, { alias: v });
-              onEndret();
-            }}
-          />
-          <Tekstfelt
-            etikett="Standard rom"
-            verdi={fag.rom}
-            plassholder="R204"
-            lagre={async (v) => {
-              await endreFagIAr(fag.id, { rom: v });
-              onEndret();
-            }}
-          />
-          <Tekstfelt
-            etikett="Faglærer"
-            verdi={fag.laerer}
-            plassholder={laererNavn ?? "Navnet ditt"}
-            lagre={async (v) => {
-              await endreFagIAr(fag.id, { laerer: v });
-              onEndret();
-            }}
-          />
-        </section>
+          <section className="mb-6 grid max-w-md grid-cols-2 gap-3">
+            <Felt
+              etikett="Årstimer"
+              verdi={fag.arstimetall === null ? "" : String(fag.arstimetall)}
+              plassholder="ikke satt"
+              settVerdi={async (v) => {
+                const n = Number(v.trim());
+                await endreFagIAr(fag.id, {
+                  arstimetall:
+                    v.trim() === "" || Number.isNaN(n) ? null : Math.round(n),
+                });
+                onEndret();
+              }}
+            />
+            <Felt
+              etikett="Fagkode (Udir)"
+              verdi={fag.grepKode ?? ""}
+              plassholder="MFL1001"
+              settVerdi={async (v) => {
+                await endreFag(fag.fagId, { grep_kode: v.trim() || null });
+                onEndret();
+              }}
+            />
+            <Tekstfelt
+              etikett="Alias"
+              verdi={fag.alias}
+              plassholder="Det du kaller faget, f.eks. MFL1"
+              lagre={async (v) => {
+                await endreFag(fag.fagId, { alias: v });
+                onEndret();
+              }}
+            />
+            <Tekstfelt
+              etikett="Standard rom"
+              verdi={fag.rom}
+              plassholder="R204"
+              lagre={async (v) => {
+                await endreFagIAr(fag.id, { rom: v });
+                onEndret();
+              }}
+            />
+            <Tekstfelt
+              etikett="Faglærer"
+              verdi={fag.laerer}
+              plassholder={laererNavn ?? "Navnet ditt"}
+              lagre={async (v) => {
+                await endreFagIAr(fag.id, { laerer: v });
+                onEndret();
+              }}
+            />
+          </section>
 
-        <OmFaget grepKode={fag.grepKode} />
-        <Kompetansemaal grepKode={fag.grepKode} skolearFagId={fag.id} />
+          <OmFaget grepKode={fag.grepKode} />
+          <Kompetansemaal grepKode={fag.grepKode} skolearFagId={fag.id} />
 
-        {/*
+          {/*
           Det som står øverst på årsplanarket (§4.9). Kompetansemålene
           hentes fra Udir når faget har kode; fritekstfeltet er for fag
           uten, og vises bare da — to lister ville sagt to ting.
         */}
-        <section className="mb-6 max-w-md space-y-3">
-          {!fag.grepKode && (
+          <section className="mb-6 max-w-md space-y-3">
+            {!fag.grepKode && (
+              <Tekstfelt
+                etikett="Kompetansemål på årsplanen"
+                verdi={fag.kompetansemal}
+                plassholder="Ett mål per linje"
+                rader={4}
+                lagre={async (v) => {
+                  await endreFagIAr(fag.id, { kompetansemal: v });
+                  onEndret();
+                }}
+              />
+            )}
             <Tekstfelt
-              etikett="Kompetansemål på årsplanen"
-              verdi={fag.kompetansemal}
-              plassholder="Ett mål per linje"
-              rader={4}
+              etikett="Tekst på årsplanen"
+              verdi={fag.arknotat}
+              plassholder="Vurderingsordning, lærebok, beskjeder til elevene"
+              rader={3}
               lagre={async (v) => {
-                await endreFagIAr(fag.id, { kompetansemal: v });
+                await endreFagIAr(fag.id, { arknotat: v });
                 onEndret();
               }}
             />
-          )}
-          <Tekstfelt
-            etikett="Tekst på årsplanen"
-            verdi={fag.arknotat}
-            plassholder="Vurderingsordning, lærebok, beskjeder til elevene"
-            rader={3}
-            lagre={async (v) => {
-              await endreFagIAr(fag.id, { arknotat: v });
-              onEndret();
-            }}
-          />
-        </section>
+          </section>
+        </Bolk>
 
         <section className="mb-6">
           <div className="flex items-baseline justify-between text-brod">
@@ -263,6 +266,7 @@ export function FagPanel({
 
         <Bolk
           tittel="Vurderinger"
+          nokkel="fagkort-vurderinger"
           handling={
             <button
               onClick={onApneVurderinger}
@@ -411,6 +415,7 @@ function Klasseliste({
   return (
     <Bolk
       tittel={`Elever · ${elever.length}`}
+      nokkel="fagkort-elever"
       handling={
         <button
           onClick={onLimInn}
@@ -865,6 +870,7 @@ function Fagslogg({ fag, skolearId }: { fag: FagIAr; skolearId: string }) {
   return (
     <Bolk
       tittel={logg.length > 0 ? `Øktlogg · ${logg.length}` : "Øktlogg"}
+      nokkel="fagkort-oktlogg"
       handling={
         arene.length > 1 ? (
           <select
@@ -947,24 +953,38 @@ function Fagslogg({ fag, skolearId }: { fag: FagIAr; skolearId: string }) {
   );
 }
 
+/** En bolk i fagkortet. Med nøkkel kan den legges sammen, og valget huskes. */
 function Bolk({
   tittel,
+  nokkel,
   handling,
   children,
 }: {
   tittel: string;
+  nokkel?: string;
   handling?: React.ReactNode;
   children: React.ReactNode;
 }) {
+  const [apen, setApen] = useApen(nokkel);
   return (
     <section className="mb-6">
-      <div className="mb-2 flex items-baseline justify-between border-b border-linje-medium pb-1">
-        <h3 className="text-etikett uppercase tracking-etikett text-blekk-dempet">
-          {tittel}
-        </h3>
-        {handling}
+      <div
+        className={`flex items-baseline justify-between border-b border-linje-medium pb-1 ${apen ? "mb-2" : ""}`}
+      >
+        {nokkel ? (
+          <Sammenleggknapp
+            tittel={tittel}
+            apen={apen}
+            onBytt={() => setApen(!apen)}
+          />
+        ) : (
+          <h3 className="text-etikett uppercase tracking-etikett text-blekk-dempet">
+            {tittel}
+          </h3>
+        )}
+        {apen && handling}
       </div>
-      {children}
+      {apen && children}
     </section>
   );
 }

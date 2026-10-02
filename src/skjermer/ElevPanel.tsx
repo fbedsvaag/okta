@@ -1,7 +1,7 @@
+import { useApen } from "../ui/Sammenleggbar";
 import { useEffect, useState } from "react";
 import { Tidslinjedato } from "../ui/Tidslinje";
 import { useArk } from "../ui/Arkstabel";
-import { hentInnstilling, settInnstilling } from "../data/skolear";
 import { Elevbilde } from "../ui/Elevbilde";
 import { hentElevbilde, slettElevbilde } from "../data/elevbilde";
 import { lyttVurderinger } from "../data/endringer";
@@ -410,7 +410,7 @@ export function ElevPanel({
           </div>
         )}
 
-        <Bolk tittel="Innsats per økt">
+        <Bolk tittel="Innsats per økt" nokkel="elevkort-innsats">
           {synligeFagRader.length === 0 && synligeTommeFag.length === 0 ? (
             <Stille>
               {fagRader.length === 0 && tommeFag.length === 0
@@ -441,7 +441,7 @@ export function ElevPanel({
           )}
         </Bolk>
 
-        <Bolk tittel="Vurderinger">
+        <Bolk tittel="Vurderinger" nokkel="elevkort-vurderinger">
           {vurderinger.length === 0 ? (
             <Stille>Ingen vurderinger i fagene hens ennå.</Stille>
           ) : synligeVurderinger.length === 0 ? (
@@ -679,9 +679,12 @@ function tell(ruter: HeatmapRute[]) {
 function Bolk({
   tittel,
   handling,
-  sammenlagt,
+  sammenlagt: styrt,
+  nokkel,
   children,
 }: {
+  /** gjør bolken sammenleggbar på egen hånd; valget huskes (ui/Sammenleggbar) */
+  nokkel?: string;
   tittel: string;
   /** en knapp til høyre i overskriftslinja, f.eks. «+ Nytt notat» */
   handling?: React.ReactNode;
@@ -693,6 +696,13 @@ function Bolk({
   sammenlagt?: { apen: boolean; bytt: () => void; etikett?: string };
   children: React.ReactNode;
 }) {
+  const [egenApen, setEgenApen] = useApen(nokkel);
+  // Styrt utenfra (notatene, der «+ Nytt notat» også åpner), eller av seg selv.
+  const sammenlagt =
+    styrt ??
+    (nokkel
+      ? { apen: egenApen, bytt: () => setEgenApen(!egenApen) }
+      : undefined);
   const apen = sammenlagt?.apen ?? true;
   return (
     <section className="mb-6">
@@ -742,8 +752,6 @@ function Stille({ children }: { children: React.ReactNode }) {
  * bestemt økt og leses i heatmapet. Møteloggen er en bevisst hendelse — en
  * samtale, en observasjon, en avtale.
  */
-/** Innstillingen som husker om notatene står åpne på elevkortet. */
-const NOTATER_APEN = "elevkort_notater_apen";
 
 function Motelogg({
   elevId,
@@ -760,14 +768,7 @@ function Motelogg({
   const [skriver, setSkriver] = useState(false);
   // Lagt sammen eller åpen huskes, for alle elever: det er en vane, ikke en
   // egenskap ved eleven.
-  const [apen, setApen] = useState(true);
-  useEffect(() => {
-    void hentInnstilling(NOTATER_APEN).then((v) => setApen(v !== "0"));
-  }, []);
-  function settApen(ny: boolean) {
-    setApen(ny);
-    void settInnstilling(NOTATER_APEN, ny ? "1" : "0");
-  }
+  const [apen, settApen] = useApen("elevkort-notater");
   const idag = new Date().toISOString().slice(0, 10);
   const ark = useArk();
 

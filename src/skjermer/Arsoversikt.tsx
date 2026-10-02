@@ -1,3 +1,4 @@
+import { Sammenleggknapp, useApen } from "../ui/Sammenleggbar";
 import { useEffect, useState } from "react";
 import {
   hentGlipp,
@@ -117,27 +118,39 @@ type Oversikt = {
   kommende: Kommende[];
 };
 
+/**
+ * Et panel i årsoversikten. Legges sammen med et klikk på overskriften;
+ * hjelpeteksten (f.eks. «4 åpne») står også når det er lagt sammen.
+ */
 function Panel({
   tittel,
+  nokkel,
   hjelp,
   handling,
   children,
 }: {
   tittel: string;
+  /** husker om panelet er lagt sammen (ui/Sammenleggbar) */
+  nokkel: string;
   hjelp?: string;
   handling?: React.ReactNode;
   children: React.ReactNode;
 }) {
+  const [apen, setApen] = useApen(nokkel);
   return (
     <section>
-      <div className="mb-2 flex items-baseline gap-3 border-b border-linje pb-1">
-        <h2 className="text-etikett uppercase tracking-etikett text-blekk-dempet">
-          {tittel}
-        </h2>
-        {hjelp && <span className="text-liten text-blekk-svak">{hjelp}</span>}
-        {handling && <span className="ml-auto">{handling}</span>}
+      <div
+        className={`flex items-baseline gap-3 border-b border-linje pb-1 ${apen ? "mb-2" : ""}`}
+      >
+        <Sammenleggknapp
+          tittel={tittel}
+          apen={apen}
+          onBytt={() => setApen(!apen)}
+          etter={hjelp}
+        />
+        {handling && apen && <span className="ml-auto">{handling}</span>}
       </div>
-      {children}
+      {apen && children}
     </section>
   );
 }
@@ -198,7 +211,11 @@ function Innsats({
   for (let m = forste; m <= siste; m = pluss7(m)) uker.push(m);
 
   return (
-    <Panel tittel="Innsats over tid" hjelp="én prikk per uke">
+    <Panel
+      tittel="Innsats over tid"
+      nokkel="forside-innsats"
+      hjelp="én prikk per uke"
+    >
       {linjer.length === 0 ? (
         <p className="py-2 text-brod text-blekk-svak">
           Ingen skåringer ført ennå. Linjene fyller seg etter hvert som du
@@ -319,7 +336,11 @@ function Timeregnskap({
   mentor: { timer: number; antall: number } | null;
 }) {
   return (
-    <Panel tittel="Timeregnskap" hjelp="planlagt mot årstimetall">
+    <Panel
+      tittel="Timeregnskap"
+      nokkel="forside-timeregnskap"
+      hjelp="planlagt mot årstimetall"
+    >
       {fag.length === 0 && !mentor ? (
         <Tomtilstand tekst="Ingen fag i skoleåret ennå." />
       ) : (
@@ -424,7 +445,11 @@ function Glipper({
   onApne: (id: string) => void;
 }) {
   return (
-    <Panel tittel="Elever som glipper" hjelp="lavest snitt først">
+    <Panel
+      tittel="Elever som glipper"
+      nokkel="forside-glipper"
+      hjelp="lavest snitt først"
+    >
       {elever.length === 0 ? (
         <Tomtilstand tekst="Ingen elever er skåret ennå." />
       ) : (
@@ -487,6 +512,7 @@ function Gjoremalsliste({ skolearId }: { skolearId: string }) {
   return (
     <Panel
       tittel="Gjøremål"
+      nokkel="forside-gjoremal"
       hjelp={liste.length > 0 ? `${liste.length} åpne` : undefined}
     >
       <NyttGjoremal skolearId={skolearId} />
@@ -671,7 +697,11 @@ function Vurderingsfrister({
   const idag = isoIdag();
 
   return (
-    <Panel tittel="Vurderingsfrister" hjelp="nærmeste først">
+    <Panel
+      tittel="Vurderingsfrister"
+      nokkel="forside-frister"
+      hjelp="nærmeste først"
+    >
       {rader.length === 0 ? (
         <Tomtilstand tekst="Ingen vurderinger med frist." />
       ) : (

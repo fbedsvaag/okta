@@ -153,6 +153,11 @@ skal kjennes som en del av macOS.
 
 **Tomme tilstander** sier hva som mangler og har en knapp dit det fikses.
 
+**Bolker legges sammen** med et klikk på overskriften — på forsiden, i
+fagkortet og i elevkortet. En pil foran tittelen peker ned når bolken er
+åpen; hjelpeteksten eller antallet står også når den er lagt sammen. Valget
+huskes per bolk (`ui/Sammenleggbar.tsx`, innstillingen «sammenlagt:<nøkkel>»).
+
 **Notater skrives i markdown** (møteloggen og øktloggen). Mens man skriver er
 det ren tekst med hjelp — Enter fortsetter en liste, Tab/Shift+Tab rykker
 inn og ut, ⌘B og ⌘I gir fet og kursiv. Når feltet forlates, vises teksten
