@@ -357,7 +357,7 @@ function Bunke({
               await slettPeriode(p.id);
               onEndret();
             }}
-            className="text-liten text-blekk-svak hover:text-red-700"
+            className="text-liten text-blekk-svak hover:text-feil"
           >
             Slett
           </button>

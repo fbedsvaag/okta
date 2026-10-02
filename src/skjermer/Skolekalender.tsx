@@ -436,7 +436,7 @@ function Dag({
         <span
           className={`text-etikett tabular-nums ${
             erIdag
-              ? "rounded-sm bg-aksent px-1 font-medium text-white"
+              ? "rounded-sm bg-aksent px-1 font-medium text-ark"
               : utenfor
                 ? "text-blekk-svakest"
                 : "text-blekk-dempet"
@@ -518,7 +518,7 @@ function Dag({
               onSlettOkt(o);
             }}
             title={`Slett ${o.fagKode} denne dagen`}
-            className="hidden shrink-0 px-0.5 leading-none text-blekk-svak hover:text-red-700 group-hover/okt:block"
+            className="hidden shrink-0 px-0.5 leading-none text-blekk-svak hover:text-feil group-hover/okt:block"
           >
             &times;
           </button>
@@ -647,7 +647,7 @@ function Valgtlinje({
         {okter.length > 0 && (
           <button
             onClick={onSlett}
-            className="text-liten text-blekk-svak hover:text-red-700"
+            className="text-liten text-blekk-svak hover:text-feil"
           >
             Slett {okter.length === 1 ? "økta" : `${okter.length} øktene`} her
           </button>

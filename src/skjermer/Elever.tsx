@@ -1347,7 +1347,7 @@ function Klasser({
                       await slettKlasse(k.id);
                       onEndret();
                     }}
-                    className="text-liten text-blekk-svak hover:text-red-700"
+                    className="text-liten text-blekk-svak hover:text-feil"
                   >
                     Slett
                   </button>

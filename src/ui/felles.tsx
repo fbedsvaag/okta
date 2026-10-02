@@ -1,3 +1,4 @@
+import { fagfarge } from "./farger";
 import {
   useEffect,
   useLayoutEffect,
@@ -70,7 +71,7 @@ export function Knapp({
     vanlig:
       "border-linje-sterk bg-ark text-blekk hover:bg-flate active:bg-flate-svak",
     primar:
-      "border-aksent bg-aksent text-white hover:bg-aksent-mork active:bg-aksent-dyp",
+      "border-aksent bg-aksent text-ark hover:bg-aksent-mork active:bg-aksent-dyp",
     stille:
       "border-transparent text-blekk-dempet hover:bg-flate hover:text-blekk active:bg-flate-svak",
     farlig:
@@ -270,7 +271,7 @@ export function Fagmerke({
       className={`inline-block whitespace-nowrap rounded-sm font-medium ${
         liten ? "px-1 py-0 text-etikett" : "px-1.5 py-0.5 text-liten"
       }`}
-      style={{ background: `${f}1f`, color: f }}
+      style={{ background: `${f}1f`, color: fagfarge(f) }}
     >
       {kode}
     </span>

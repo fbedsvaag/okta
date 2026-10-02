@@ -101,3 +101,12 @@ export function skalategn(farge: string | null, sett: Tegnsett): string | null {
   if (farge === null || farge === "") return t.ingen;
   return t[farge] ?? null;
 }
+
+/**
+ * Fagfargen der den brukes som tekst eller strek. Fagfargene er mørke
+ * blekkfarger, laget for lys grunn; i mørk modus lysnes de (`--fag-lys` i
+ * index.css), så fagkoden fortsatt kan leses. I lys modus er den uendret.
+ */
+export function fagfarge(hex: string): string {
+  return `color-mix(in srgb, ${hex}, white var(--fag-lys))`;
+}

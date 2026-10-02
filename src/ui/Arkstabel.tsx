@@ -189,7 +189,7 @@ export function Arkstabel({
       {stabel.length > 0 && (
         <div
           className={`fixed inset-0 z-40 transition-colors ${
-            aktive.length > 0 ? "bg-blekk/10" : "bg-transparent"
+            aktive.length > 0 ? "bg-teppe/15" : "bg-transparent"
           }`}
           style={{ transitionDuration: `${UT_MS}ms` }}
           onMouseDown={(e) => e.target === e.currentTarget && lukkAlle()}

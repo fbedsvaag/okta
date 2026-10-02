@@ -230,7 +230,7 @@ export function ElevPanel({
                 await slettElevbilde(elevId);
                 setBilde(null);
               }}
-              className="absolute inset-x-0 bottom-0 bg-blekk/70 py-0.5 text-mikro text-ark opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100"
+              className="absolute inset-x-0 bottom-0 bg-teppe/70 py-0.5 text-mikro text-white opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100"
             >
               Fjern
             </button>

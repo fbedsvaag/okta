@@ -136,7 +136,7 @@ export function Sokevindu({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center bg-blekk/20 px-4 pt-[14vh]"
+      className="fixed inset-0 z-50 flex items-start justify-center bg-teppe/25 px-4 pt-[14vh]"
       onMouseDown={(e) => e.target === e.currentTarget && onLukk()}
     >
       {/*

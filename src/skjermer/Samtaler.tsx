@@ -1965,7 +1965,7 @@ function Trekningsrad({
         onClick={onSlett}
         tabIndex={apen ? 0 : -1}
         aria-hidden={!apen}
-        className="absolute inset-y-0 right-0 w-20 bg-feil text-liten font-medium text-white"
+        className="absolute inset-y-0 right-0 w-20 bg-feil text-liten font-medium text-ark"
       >
         Slett
       </button>

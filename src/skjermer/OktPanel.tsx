@@ -779,7 +779,7 @@ function Logg({ okt, onEndret }: { okt: Okt; onEndret: () => void }) {
           await slettOkt(okt.id);
           onEndret();
         }}
-        className="mt-4 text-liten text-blekk-svak hover:text-red-700"
+        className="mt-4 text-liten text-blekk-svak hover:text-feil"
       >
         Slett økta
       </button>

@@ -297,7 +297,7 @@ function FagRad({
             await fjernFagFraAr(fag.id);
             onEndret();
           }}
-          className="text-liten text-blekk-svak hover:text-red-700"
+          className="text-liten text-blekk-svak hover:text-feil"
         >
           Fjern
         </button>

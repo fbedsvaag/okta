@@ -222,7 +222,7 @@ export function VurderingPanel({
               onLukk();
               onEndret();
             }}
-            className="text-liten text-blekk-svak hover:text-red-700"
+            className="text-liten text-blekk-svak hover:text-feil"
           >
             Slett vurderingen
           </button>
@@ -344,7 +344,7 @@ function ElevRad({
             title={`${tastekart.get(v.id) ?? ""} — ${v.kode}${v.etikett ? `: ${v.etikett}` : ""}`}
             className={`min-w-7 rounded-sm border px-1.5 py-0.5 text-liten tabular-nums ${
               elev.skalaverdiId === v.id
-                ? "border-aksent bg-aksent text-white"
+                ? "border-aksent bg-aksent text-ark"
                 : "border-linje text-blekk-dempet hover:bg-flate"
             }`}
           >

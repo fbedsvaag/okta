@@ -224,6 +224,8 @@
   --color-hendelse-flate: #eef1f6;
   --color-feil: #b3261e;
   --color-feil-mork: #7a1a14;
+  /* Teppet bak ark og søkevinduet. Mørkner det under — i begge moduser. */
+  --color-teppe: #241f33;
 
   /*
    * Typeskala.
@@ -279,6 +281,80 @@
     0 4px 10px rgba(36, 31, 51, 0.16), 0 12px 32px rgba(36, 31, 51, 0.12);
   --shadow-dyp:
     0 8px 20px rgba(36, 31, 51, 0.22), 0 24px 60px rgba(36, 31, 51, 0.18);
+}
+
+/*
+ * Hvor mye fagfargene lysnes. 0 % i lys modus; i mørk modus lysnes de, så
+ * en fagkode skrevet i fagets egen, mørke blekkfarge fortsatt kan leses
+ * (`fagfarge()` i farger.ts).
+ */
+:root {
+  --fag-lys: 0%;
+}
+
+/*
+ * Mørk modus.
+ *
+ * Samme tokens, andre verdier — ingen komponent vet om modusen. Settes med
+ * data-tema="mork" på <html> (ui/tema.ts), etter valget i Innstillinger:
+ * System, Lys eller Mørk. Bare på skjerm: utskriften av årsplanen er alltid
+ * lys, svart på hvitt (§4.9).
+ *
+ * Nøytralene beholder det fiolette stikket. Aksenten er lysere enn i lys
+ * modus, så den leses som tekst på mørk grunn; tekst på aksent-flater bruker
+ * `text-ark`, som snur med.
+ */
+@media screen {
+  :root[data-tema="mork"] {
+    color-scheme: dark;
+
+    --color-blekk: #ebe8f3;
+    --color-blekk-dempet: #aaa2c4;
+    --color-blekk-svak: #7f779c;
+    --color-blekk-svakest: #605979;
+
+    --color-bord: #15121d;
+    --color-ark: #1e1a29;
+    --color-flate: #262133;
+    --color-flate-svak: #221e2e;
+    --color-valgt: #352c50;
+
+    --color-linje-svak: #252030;
+    --color-linje: #3a3450;
+    --color-linje-medium: #2e2940;
+    --color-linje-sterk: #4b4466;
+
+    --color-aksent: #b3a6ec;
+    --color-aksent-mork: #c4b9f2;
+    --color-aksent-dyp: #d3cbf6;
+    --color-aksent-dypere: #c4b9f2;
+
+    --color-lys-gronn: #4fb15a;
+    --color-lys-gronngul: #9db84e;
+    --color-lys-gul: #e2b53f;
+    --color-lys-oransje: #dd8a45;
+    --color-lys-rod: #d65b4d;
+    --color-lys-borte: #6f6a80;
+
+    --color-varsel: #e3b55c;
+    --color-feil-flate: #3a2024;
+    --color-helligdag-flate: #2d1f27;
+    --color-fri-flate: #24221f;
+    --color-hendelse-flate: #1d2232;
+    --color-feil: #f08378;
+    --color-feil-mork: #ffb3aa;
+    --color-teppe: #000000;
+
+    --shadow-lav: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-panel:
+      0 1px 3px rgba(0, 0, 0, 0.45), 0 4px 14px rgba(0, 0, 0, 0.3);
+    --shadow-ark:
+      0 4px 10px rgba(0, 0, 0, 0.5), 0 12px 32px rgba(0, 0, 0, 0.45);
+    --shadow-dyp:
+      0 8px 20px rgba(0, 0, 0, 0.55), 0 24px 60px rgba(0, 0, 0, 0.5);
+
+    --fag-lys: 45%;
+  }
 }
 
 /*

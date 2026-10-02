@@ -1,3 +1,4 @@
+import { lagreTema, TEMA, type Tema } from "../ui/tema";
 import { useEffect, useState } from "react";
 import {
   endreSkolear,
@@ -38,7 +39,7 @@ import {
   confirm as bekreft,
 } from "@tauri-apps/plugin-dialog";
 import type { FagIAr } from "../data/fag";
-import { Felt, Knapp, Ikon } from "../ui/felles";
+import { Bryter, Felt, Knapp, Ikon } from "../ui/felles";
 
 /**
  * Globale innstillinger, SPEC §4.8.
@@ -73,6 +74,7 @@ export function Innstillinger({
   const [davHarPassord, setDavHarPassord] = useState(false);
   const [davMelding, setDavMelding] = useState<string | null>(null);
   const [tekstskala, setTekstskala] = useState("0.93");
+  const [tema, setTema] = useState<Tema>("system");
   const [davFeil, setDavFeil] = useState<string | null>(null);
   const [davJobber, setDavJobber] = useState(false);
   const [arkivmappe, setArkivmappe] = useState("");
@@ -131,6 +133,9 @@ export function Innstillinger({
 
   useEffect(() => {
     void hentInnstilling(TEKSTSKALA).then((v) => setTekstskala(v ?? "0.93"));
+    void hentInnstilling(TEMA).then((v) =>
+      setTema(v === "lys" || v === "mork" ? v : "system"),
+    );
   }, []);
 
   useEffect(() => {
@@ -286,6 +291,25 @@ export function Innstillinger({
       </Bolk>
 
       <Bolk tittel="Utseende">
+        <div className="mb-4 max-w-sm">
+          <Etikett>Lys eller mørk</Etikett>
+          <Bryter
+            valg={[
+              { id: "system", navn: "Som macOS" },
+              { id: "lys", navn: "Lys" },
+              { id: "mork", navn: "Mørk" },
+            ]}
+            verdi={tema}
+            settVerdi={(v) => {
+              setTema(v as Tema);
+              void lagreTema(v as Tema);
+            }}
+          />
+          <p className="mt-1 text-liten text-blekk-dempet">
+            «Som macOS» skifter av seg selv når maskinen gjør det. Utskriften av
+            årsplanen er alltid lys.
+          </p>
+        </div>
         {/*
           Hele typeskalaen ganges med dette tallet, så forholdet mellom
           gradene holder seg uansett valg — det er hierarkiet som bærer, ikke

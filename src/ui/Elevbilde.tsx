@@ -52,7 +52,7 @@ export function Elevbilde({
 
   return (
     <span
-      className={`relative shrink-0 overflow-hidden bg-valgt ${hjorne === undefined ? "rounded-liten" : ""} ${klasse}`}
+      className={`relative block shrink-0 overflow-hidden bg-valgt ${hjorne === undefined ? "rounded-liten" : ""} ${klasse}`}
       style={{
         width: storrelse,
         height: storrelse,

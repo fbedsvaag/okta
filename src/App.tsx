@@ -1,3 +1,4 @@
+import { brukTema } from "./ui/tema";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   brukTekstskala,
@@ -133,6 +134,7 @@ export default function App() {
       // Tekststørrelsen først: den gjelder hele skjermen, og skal være på
       // plass før noe tegnes.
       await brukTekstskala().catch((e) => console.error("tekstskala:", e));
+      await brukTema().catch((e) => console.error("tema:", e));
 
       // Sikkerhetskopi, før noe rekker å endres i denne økta.
       await daglingKopi().catch((e) => console.error("sikkerhetskopi:", e));
@@ -178,7 +180,7 @@ export default function App() {
 
   if (feil) {
     return (
-      <main className="p-8 font-mono text-brod text-red-800">
+      <main className="p-8 font-mono text-brod text-feil">
         <p className="font-semibold">Databasen svarte ikke som forventet:</p>
         <pre className="mt-2 whitespace-pre-wrap">{feil}</pre>
       </main>

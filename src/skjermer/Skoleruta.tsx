@@ -124,7 +124,7 @@ export function Skoleruta({
                         await slettFridag(f.id);
                         await last();
                       }}
-                      className="text-liten text-blekk-svak hover:text-red-700"
+                      className="text-liten text-blekk-svak hover:text-feil"
                     >
                       Slett
                     </button>
