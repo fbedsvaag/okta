@@ -3,13 +3,17 @@ import { useEffect, useState } from "react";
 import type { Skolear } from "../data/skolear";
 import type { FagIAr } from "../data/fag";
 import { hentOkter, type Okt } from "../data/okter";
-import { Ikon, Knapp, Tomtilstand } from "../ui/felles";
+import { Fagfirkant, Ikon, Knapp, Tomtilstand } from "../ui/felles";
+import { Markdown } from "../ui/Notattekst";
+import { vekslBoks } from "../ui/markdown";
+import { endreOkt } from "../data/okter";
+import { hentPerioder } from "../data/perioder";
 import { useArk } from "../ui/Arkstabel";
 import { Arsoversikt } from "./Arsoversikt";
 import { dagenssetning, hentSamtalerPaDato } from "../data/samtale";
 import { Ukelinje } from "./Ukelinje";
 import { lytt, lyttOktvisning } from "../data/endringer";
-import { dagen } from "../data/dagen";
+import { dagen, type Dagslinje } from "../data/dagen";
 
 /**
  * I dag — startskjermen, SPEC §4.1, med årsoversikten under.
@@ -61,87 +65,93 @@ export function IDag({
     <div className="mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col overflow-clip">
       {/* Datoen blir stående mens resten ruller. */}
       <div className="shrink-0 pb-2">
-        <h1 className="text-overskrift font-light tracking-overskrift first-letter:uppercase">
+        <h1 className="text-[calc(32px*var(--tekst-skala))] font-light leading-tight tracking-overskrift first-letter:uppercase">
           {langDato(idag)}
         </h1>
-        <Dagsoppsummering okter={okter} idag={idag} onApne={apne} />
       </div>
 
       {/* Rullefeltet er skjult — man ruller med styreflata. */}
       <div className="scrollbar-skjult min-h-0 flex-1 overflow-auto">
-        {/*
-        Samtaledagen står først: er det samtaler i dag, er det dem dagen
-        handler om. Setningen sier hva som venter — hvem du begynner med, hvor
-        mange som står igjen, og når du er ferdig (§4.10).
-      */}
-        {samtaler.length > 0 && (
-          <Bolk tittel="Samtaler" nokkel="forside-samtaler">
-            <p className="py-1 text-brod">
-              {dagenssetning(
-                samtaler,
-                new Date().toTimeString().slice(0, 5),
-                samtaler.every((s) => s.erMentor),
-              )}
-            </p>
-            <button
-              onClick={() => onGaTil("samtaler")}
-              className="text-liten text-blekk-dempet hover:text-blekk"
-            >
-              Åpne timeplanen <Ikon navn="pil" />
-            </button>
-          </Bolk>
-        )}
-
-        {/*
-          Uten økter er det ingenting å vise i uka — da peker forsiden dit
-          man begynner. Dagens økter står i uka, så de har ingen egen bolk.
-        */}
-        {okter.length === 0 && (
-          <Tomtilstand
-            tekst={
-              fag.length === 0
-                ? "Ingen fag i skoleåret ennå."
-                : "Ingen økter er lagt inn ennå."
-            }
-            handling={
-              <Knapp
-                variant="primar"
-                onClick={() => onGaTil(fag.length === 0 ? "fag" : "okter")}
-              >
-                {fag.length === 0 ? "Legg inn fagene dine" : "Legg inn økter"}
-              </Knapp>
-            }
-          />
-        )}
-
-        <Bolk tittel="Uka" nokkel="forside-uka">
-          <Ukelinje
-            okter={okter}
-            forste={skolear.start}
-            siste={skolear.slutt}
-            idag={idag}
-            onApneOkt={apne}
-          />
-        </Bolk>
-
         <Arsoversikt
           skolearId={skolear.id}
           skolestart={skolear.start}
           okter={okter}
           onApneElev={(elevId) => ark.apneElev(elevId)}
           onApneVurdering={(id) => ark.apneVurdering(id)}
-        />
+        >
+          {/*
+            Samtaledagen står først: er det samtaler i dag, er det dem dagen
+            handler om. Setningen sier hva som venter — hvem du begynner med,
+            hvor mange som står igjen, og når du er ferdig (§4.10).
+          */}
+          {samtaler.length > 0 && (
+            <Bolk tittel="Samtaler" nokkel="forside-samtaler">
+              <p className="py-1 text-brod">
+                {dagenssetning(
+                  samtaler,
+                  new Date().toTimeString().slice(0, 5),
+                  samtaler.every((s) => s.erMentor),
+                )}
+              </p>
+              <button
+                onClick={() => onGaTil("samtaler")}
+                className="text-liten text-blekk-dempet hover:text-blekk"
+              >
+                Åpne timeplanen <Ikon navn="pil" />
+              </button>
+            </Bolk>
+          )}
+
+          {/*
+            Uten økter er det ingenting å vise — da peker forsiden dit man
+            begynner.
+          */}
+          {okter.length === 0 && (
+            <Tomtilstand
+              tekst={
+                fag.length === 0
+                  ? "Ingen fag i skoleåret ennå."
+                  : "Ingen økter er lagt inn ennå."
+              }
+              handling={
+                <Knapp
+                  variant="primar"
+                  onClick={() => onGaTil(fag.length === 0 ? "fag" : "okter")}
+                >
+                  {fag.length === 0 ? "Legg inn fagene dine" : "Legg inn økter"}
+                </Knapp>
+              }
+            />
+          )}
+
+          {okter.length > 0 && (
+            <Dagensokter okter={okter} idag={idag} onApne={apne} />
+          )}
+
+          <Bolk tittel="Uka" nokkel="forside-uka">
+            <Ukelinje
+              okter={okter}
+              forste={skolear.start}
+              siste={skolear.slutt}
+              idag={idag}
+              onApneOkt={apne}
+            />
+          </Bolk>
+        </Arsoversikt>
       </div>
     </div>
   );
 }
 
 /**
- * Én setning om dagen, og for hver økt det du skrev forrige gang i faget.
- * Én linje per økt, kappet — hele notatet står i verktøytipset, og et
- * klikk åpner økta det ble skrevet i.
+ * Dagens økter (DESIGN.md §10): tida i egen kolonne, fagfirkanten på linje
+ * med tittelen, og fag, rom og periode på linja under. Notatet fra forrige
+ * økt i faget står under hver økt og kan legges sammen — valget huskes for
+ * alle øktene samlet. Boksene i notatet kan krysses av rett her.
+ *
+ * Ingen oppsummeringssetning over: den gjentok bare det lista sier.
  */
-function Dagsoppsummering({
+function Dagensokter({
   okter,
   idag,
   onApne,
@@ -151,36 +161,214 @@ function Dagsoppsummering({
   onApne: (id: string) => void;
 }) {
   const d = dagen(okter, idag);
-  const flere = d.linjer.length > 1;
+  const [perioder, setPerioder] = useState<Map<string, string>>(new Map());
+  const [na, setNa] = useState(() => new Date());
+
+  // Periodenavnene til dagens økter. Få fag, få kall.
+  const fagIDag = [...new Set(d.linjer.map((l) => l.okt.skolearFagId))].join();
+  useEffect(() => {
+    let avbrutt = false;
+    void Promise.all(fagIDag.split(",").filter(Boolean).map(hentPerioder)).then(
+      (lister) => {
+        if (!avbrutt)
+          setPerioder(new Map(lister.flat().map((p) => [p.id, p.navn])));
+      },
+    );
+    return () => {
+      avbrutt = true;
+    };
+  }, [fagIDag]);
+
+  // «om 1 t 50 min» skal stemme uten at man laster forsiden på nytt.
+  useEffect(() => {
+    const t = window.setInterval(() => setNa(new Date()), 30_000);
+    return () => window.clearInterval(t);
+  }, []);
 
   return (
-    <div className="mt-1 text-brod text-blekk-dempet">
-      <p>{d.setning}</p>
-      {d.linjer.map(({ okt, forrige, notat }) => (
-        <p key={okt.id} className="flex min-w-0 items-baseline gap-1.5">
-          {flere && (
-            <span className="shrink-0 font-medium text-blekk">
-              {okt.fagKode}:
-            </span>
-          )}
-          {!forrige ? (
-            <span>Første økt i faget.</span>
-          ) : notat ? (
-            <button
-              onClick={() => onApne(forrige.id)}
-              title={notat}
-              className="min-w-0 truncate text-left hover:text-blekk"
-            >
-              Notatet du skrev forrige gang:{" "}
-              <span className="text-blekk">«{notat}»</span>
-            </button>
-          ) : (
-            <span>Du skrev ikke noe notat forrige økt.</span>
-          )}
+    <Bolk tittel="Dagens økter" nokkel="forside-dagens">
+      {d.linjer.length === 0 ? (
+        <p className="py-1 text-brod text-blekk-dempet">Ingen økter i dag.</p>
+      ) : (
+        <ul className="divide-y divide-linje-medium">
+          {d.linjer.map((l) => {
+            const okt = okter.find((o) => o.id === l.okt.id)!;
+            return (
+              <Dagensokt
+                key={okt.id}
+                okt={okt}
+                linje={l}
+                periode={
+                  okt.periodeId ? perioder.get(okt.periodeId) : undefined
+                }
+                na={na}
+                onApne={onApne}
+              />
+            );
+          })}
+        </ul>
+      )}
+    </Bolk>
+  );
+}
+
+function Dagensokt({
+  okt,
+  linje,
+  periode,
+  na,
+  onApne,
+}: {
+  okt: Okt;
+  linje: Dagslinje;
+  periode?: string;
+  na: Date;
+  onApne: (id: string) => void;
+}) {
+  const slutt = okt.klokkeslett
+    ? leggTilMinutter(okt.klokkeslett, okt.varighetMin)
+    : null;
+  const nar = narTekst(okt.klokkeslett, slutt, na);
+  const under = [okt.fagKode, okt.fagNavn, okt.sted, periode].filter(Boolean);
+
+  return (
+    <li className="grid grid-cols-[5.5rem_minmax(0,1fr)] gap-x-4 py-4">
+      <div className="tabular-nums">
+        <p className="text-[calc(22px*var(--tekst-skala))] leading-tight">
+          {okt.klokkeslett ?? "—"}
         </p>
-      ))}
+        {slutt && <p className="text-liten text-blekk-dempet">til {slutt}</p>}
+      </div>
+
+      <div className="min-w-0">
+        {/*
+          Firkanten i egen kolonne, på linje med tittelen, så både tittelen
+          og linja under starter på samme sted (DESIGN.md §6).
+        */}
+        <div className="grid grid-cols-[12px_minmax(0,1fr)_auto] items-baseline gap-x-2.5">
+          <Fagfirkant farge={okt.farge} storrelse={12} klasse="self-center" />
+          <button
+            onClick={() => onApne(okt.id)}
+            className="min-w-0 truncate text-left text-tittel font-medium hover:text-aksent"
+          >
+            {okt.tema || okt.fagNavn}
+          </button>
+          <span className="flex items-center gap-3">
+            {nar && (
+              <span className="text-liten tabular-nums text-blekk-dempet">
+                {nar}
+              </span>
+            )}
+            <Knapp onClick={() => onApne(okt.id)}>Åpne</Knapp>
+          </span>
+          <span />
+          <p className="col-span-2 truncate text-liten text-blekk-dempet">
+            <span className="font-medium text-blekk">{under[0]}</span>
+            {under.length > 1 && ` · ${under.slice(1).join(" · ")}`}
+          </p>
+        </div>
+
+        <div className="ml-[22px] mt-3 max-w-2xl">
+          <ForrigeNotat linje={linje} onApne={onApne} />
+        </div>
+      </div>
+    </li>
+  );
+}
+
+/** Notatet fra forrige økt i faget, som en boks som kan legges sammen. */
+function ForrigeNotat({
+  linje,
+  onApne,
+}: {
+  linje: Dagslinje;
+  onApne: (id: string) => void;
+}) {
+  const [apen, setApen] = useApen("forside-forrige-notat");
+  const { forrige } = linje;
+  const [logg, setLogg] = useState(forrige?.logg ?? null);
+  useEffect(() => setLogg(forrige?.logg ?? null), [forrige?.logg]);
+
+  if (!forrige) {
+    return <p className="text-liten text-blekk-svak">Første økt i faget.</p>;
+  }
+  const nar = kortDato(forrige.dato);
+
+  if (!logg?.trim()) {
+    return (
+      <p className="text-liten text-blekk-svak">
+        Ingen notat fra forrige økt ({nar}).
+      </p>
+    );
+  }
+
+  return (
+    <div className="rounded-stor border border-linje-medium bg-flate-svak px-3 py-2">
+      <Sammenleggknapp
+        tittel={`Notat fra forrige økt (${nar})`}
+        apen={apen}
+        onBytt={() => setApen(!apen)}
+        etter={apen ? undefined : (linje.notat ?? undefined)}
+      />
+      {apen && (
+        <div className="mt-1.5 pl-3.5">
+          <Markdown
+            tekst={logg}
+            onVekslBoks={(nr) => {
+              const ny = vekslBoks(logg, nr);
+              setLogg(ny);
+              void endreOkt(forrige.id, { logg: ny });
+            }}
+          />
+          <button
+            onClick={() => onApne(forrige.id)}
+            className="mt-1.5 text-liten text-aksent underline-offset-2 hover:underline"
+          >
+            Åpne økta {nar.split(" ")[1]}
+          </button>
+        </div>
+      )}
     </div>
   );
+}
+
+function leggTilMinutter(kl: string, min: number): string {
+  const [t, m] = kl.split(":").map(Number);
+  const tot = t * 60 + m + min;
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${p(Math.floor(tot / 60) % 24)}:${p(tot % 60)}`;
+}
+
+/** «om 1 t 50 min», «pågår», eller ingenting når økta er over. */
+function narTekst(
+  fra: string | null,
+  til: string | null,
+  na: Date,
+): string | null {
+  if (!fra) return null;
+  const naMin = na.getHours() * 60 + na.getMinutes();
+  const [ft, fm] = fra.split(":").map(Number);
+  const start = ft * 60 + fm;
+  if (naMin < start) {
+    const igjen = start - naMin;
+    const t = Math.floor(igjen / 60);
+    const m = igjen % 60;
+    return `om ${t > 0 ? `${t} t ` : ""}${m > 0 || t === 0 ? `${m} min` : ""}`.trim();
+  }
+  if (til) {
+    const [tt, tm] = til.split(":").map(Number);
+    if (naMin < tt * 60 + tm) return "pågår";
+  }
+  return null;
+}
+
+/** «tor 1.10» */
+function kortDato(dato: string): string {
+  const d = new Date(`${dato}T00:00:00`);
+  const dag = d
+    .toLocaleDateString("nb-NO", { weekday: "short" })
+    .replace(".", "");
+  return `${dag} ${d.getDate()}.${d.getMonth() + 1}`;
 }
 
 /** En bolk på forsiden. Legges sammen med et klikk på overskriften. */
@@ -196,7 +384,7 @@ function Bolk({
 }) {
   const [apen, setApen] = useApen(nokkel);
   return (
-    <section className="mt-6">
+    <section>
       <div
         className={`border-b border-linje-medium pb-1 ${apen ? "mb-1" : ""}`}
       >

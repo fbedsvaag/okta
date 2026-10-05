@@ -36,10 +36,15 @@ import { useArk } from "../ui/Arkstabel";
 /**
  * Årsoversikten på startskjermen.
  *
- * Fire paneler, og bare ett av dem er egentlig en graf. Timeregnskapet er en
- * måler, og de to nederste er lister — form følger jobben, ikke lysten til å
- * tegne noe. Alt bygger på skåringer som teller (§5.1): «ikke i økta» er
- * filtrert bort allerede i spørringslaget.
+ * Bare ett av panelene er egentlig en graf. Timeregnskapet er en måler, og
+ * resten er lister — form følger jobben, ikke lysten til å tegne noe. Alt
+ * bygger på skåringer som teller (§5.1): «ikke i økta» er filtrert bort
+ * allerede i spørringslaget.
+ *
+ * Oppsettet er forsidens (DESIGN.md §10): `children` — dagens økter og uka —
+ * står i hovedkolonnen med innsats og timeregnskap under, og gjøremål,
+ * vurderingsfrister og elever som glipper i en kolonne til høyre. På smal
+ * skjerm legger høyrekolonnen seg under.
  */
 export function Arsoversikt({
   skolearId,
@@ -47,6 +52,7 @@ export function Arsoversikt({
   okter,
   onApneElev,
   onApneVurdering,
+  children,
 }: {
   skolearId: string;
   /** første skoledag — innsatslinjene begynner der */
@@ -55,6 +61,7 @@ export function Arsoversikt({
   okter: Okt[];
   onApneElev: (elevId: string) => void;
   onApneVurdering: (vurderingId: string) => void;
+  children?: React.ReactNode;
 }) {
   // Alle fire hentes samlet og settes i én state. Før var det fire kall som
   // hver satte sin egen, og siden hvert panel er innholdsstyrt flyttet
@@ -89,16 +96,17 @@ export function Arsoversikt({
   }, [skolearId]);
 
   return (
-    <div className="mt-8 grid gap-x-8 gap-y-7 lg:grid-cols-2">
-      <div className="lg:col-span-2">
+    <div className="grid gap-x-10 gap-y-7 lg:grid-cols-[minmax(0,1fr)_20rem]">
+      <div className="min-w-0 space-y-7">
+        {children}
         <Innsats
           linjer={data?.uker ?? []}
           skolestart={skolestart}
           okter={okter}
         />
+        <Timeregnskap fag={data?.timer ?? []} mentor={data?.mentor ?? null} />
       </div>
-      <Timeregnskap fag={data?.timer ?? []} mentor={data?.mentor ?? null} />
-      <div className="grid gap-y-7">
+      <div className="grid content-start gap-y-7">
         <Gjoremalsliste skolearId={skolearId} />
         <Vurderingsfrister
           rader={data?.kommende ?? []}

@@ -166,7 +166,7 @@ committes alene, og så det som alt annet bygger på kommer først.
   Mørke verdier.
 - [x] **5.5 Paletter.** Seks paletter som `data-palett` på `:root`, lys og
   mørk. Velges i Utseende med forhåndsvisning. Fargeteppet følger paletten.
-- [ ] **5.6 I dag.** Dagens økter med tid i egen kolonne og fagfirkant på
+- [x] **5.6 I dag.** Dagens økter med tid i egen kolonne og fagfirkant på
   linje med tittelen. Notat fra forrige økt sammenleggbart. Fjern setningen
   over. Valget om sammenlagt huskes som de andre bolkene.
 - [ ] **5.7 Skåring.** Fjern symbol+tekst-kolonnen. Notat fra denne økta i
