@@ -37,18 +37,20 @@ function hex(s) {
  *
  * `skala` lar de samme koordinatene brukes for alle størrelser — formene er
  * definert på et 1024-lerret og regnes om her.
+ *
+ * `alfa` er gjennomsiktigheten (fill-opacity / stroke-opacity i SVG-en), og
+ * `strek` en kantlinje med den bredden, sentrert på kanten, i stedet for
+ * fyll. De to er det glasset er laget av.
  */
-function tegn(buf, side, form, farge, skala) {
+function tegn(buf, side, form, farge, skala, { alfa = 1, strek = 0 } = {}) {
   const [r, g, b] = hex(farge);
   const { x, y, w, h, rx } = form;
   for (let py = 0; py < side; py++) {
     for (let px = 0; px < side; px++) {
-      const d = avstand(
-        (px + 0.5) / skala,
-        (py + 0.5) / skala,
-        x, y, w, h, rx,
-      );
-      const dekning = Math.min(Math.max(0.5 - d * skala, 0), 1);
+      const d = avstand((px + 0.5) / skala, (py + 0.5) / skala, x, y, w, h, rx);
+      const fylt =
+        strek > 0 ? (strek / 2 - Math.abs(d)) * skala + 0.5 : 0.5 - d * skala;
+      const dekning = Math.min(Math.max(fylt, 0), 1) * alfa;
       if (dekning <= 0) continue;
 
       const i = (py * side + px) * 4;
@@ -113,13 +115,18 @@ function crc32(b) {
 
 // ----------------------------------------------------------------- former
 
-const PLATE = { x: 100, y: 100, w: 824, h: 824, rx: 185 };
+// Bolk med glass (valgt 05.10.2026). Kilden er src/assets/logo-glass.svg.
+const PLATE = { x: 40, y: 40, w: 944, h: 944, rx: 215 };
+/** Den lyse innerkanten på plata. */
+const KANT = { x: 48, y: 48, w: 928, h: 928, rx: 208 };
+/** Skyggen under det brede feltet, så feltene ligger oppå. */
+const SKYGGE = { x: 302, y: 346, w: 200, h: 364, rx: 44 };
 
 /** Merket slik det er: tre felt som avtar i bredde og styrke. */
 export const FULL = [
-  { x: 308, y: 342, w: 180, h: 340, rx: 24 },
-  { x: 512, y: 342, w: 90, h: 340, rx: 24 },
-  { x: 626, y: 342, w: 90, h: 340, rx: 24 },
+  { x: 290, y: 330, w: 200, h: 364, rx: 44 },
+  { x: 516, y: 330, w: 100, h: 364, rx: 40 },
+  { x: 642, y: 330, w: 100, h: 364, rx: 40 },
 ];
 
 /**
@@ -131,34 +138,61 @@ export const FULL = [
  * så kontrasten holder.
  */
 export const ENKEL = [
-  { x: 308, y: 342, w: 240, h: 340, rx: 28 },
-  { x: 596, y: 342, w: 120, h: 340, rx: 28 },
+  { x: 290, y: 330, w: 270, h: 364, rx: 44 },
+  { x: 608, y: 330, w: 134, h: 364, rx: 40 },
 ];
 
-export const MORK = { plate: "#241F33", felt: ["#EEEDFE", "#C9C2DD", "#9A90B8"] };
+export const MORK = {
+  plate: "#241F33",
+  felt: ["#EEEDFE", "#C9C2DD", "#9A90B8"],
+  /** stroke-opacity på kanten rundt hvert felt */
+  feltkant: [0.6, 0.4, 0.3],
+};
 
-export function lag(side, former, farger) {
+/**
+ * Tegner merket. Med `glass` kommer innerkanten, skyggen og kantene på
+ * feltene med; under 32 px blir de bare grums, og da tegnes plate og felt.
+ */
+export function lag(side, former, farger, glass = false) {
   const buf = Buffer.alloc(side * side * 4);
   const skala = side / 1024;
   tegn(buf, side, PLATE, farger.plate, skala);
-  former.forEach((f, i) => tegn(buf, side, f, farger.felt[i], skala));
+  if (glass) {
+    tegn(buf, side, KANT, "#FFFFFF", skala, { alfa: 0.16, strek: 8 });
+    tegn(buf, side, SKYGGE, "#000000", skala, { alfa: 0.3 });
+  }
+  former.forEach((f, i) => {
+    tegn(buf, side, f, farger.felt[i], skala);
+    if (glass)
+      tegn(buf, side, f, "#FFFFFF", skala, {
+        alfa: farger.feltkant[i],
+        strek: 6,
+      });
+  });
   return png(buf, side);
 }
 
 // ------------------------------------------------------------------- kjør
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-const ut = process.argv[2] ?? "src-tauri/icons/kilde";
-mkdirSync(ut, { recursive: true });
+  const ut = process.argv[2] ?? "src-tauri/icons/kilde";
+  mkdirSync(ut, { recursive: true });
 
-writeFileSync(`${ut}/okta-1024.png`, lag(1024, FULL, MORK));
-console.log(`${ut}/okta-1024.png`);
+  writeFileSync(`${ut}/okta-1024.png`, lag(1024, FULL, MORK, true));
+  console.log(`${ut}/okta-1024.png`);
 
-// Små størrelser med det forenklede merket. 16@2x er 32 px, men skal ha
-// samme forenkling — den vises der 16 px vises, bare skarpere.
-for (const side of [16, 32, 64]) {
-  const farger = { plate: MORK.plate, felt: [MORK.felt[0], MORK.felt[2]] };
-  writeFileSync(`${ut}/enkel-${side}.png`, lag(side, ENKEL, farger));
-  console.log(`${ut}/enkel-${side}.png`);
-}
+  // Mellomstørrelsene til .icns, med glass. 32 px og under får det enkle
+  // merket under, uten glass.
+  for (const side of [128, 256, 512]) {
+    writeFileSync(`${ut}/okta-${side}.png`, lag(side, FULL, MORK, true));
+    console.log(`${ut}/okta-${side}.png`);
+  }
+
+  // Små størrelser med det forenklede merket. 16@2x er 32 px, men skal ha
+  // samme forenkling — den vises der 16 px vises, bare skarpere.
+  for (const side of [16, 32, 64]) {
+    const farger = { plate: MORK.plate, felt: [MORK.felt[0], MORK.felt[2]] };
+    writeFileSync(`${ut}/enkel-${side}.png`, lag(side, ENKEL, farger));
+    console.log(`${ut}/enkel-${side}.png`);
+  }
 }

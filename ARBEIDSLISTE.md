@@ -191,7 +191,7 @@ committes alene, og så det som alt annet bygger på kommer først.
   oppsettfil, men knappen kan vente til 5.13.
 - [ ] **5.13 Oppsettfil.** Spec og oppskrift i `docs/oppsettfil.md`.
   Spec-teksten må godkjennes inn i SPEC.md før koden skrives.
-- [ ] **5.14 Logo — Bolk med glass** (valgt 05.10). Kildene ligger i
+- [x] **5.14 Logo — Bolk med glass** (valgt 05.10). Kildene ligger i
   `src/assets/logo-glass.svg` (mørk, appikon), `logo-glass-lys.svg` og
   `logo-glass-tonet.svg`. Erstatt `logo.svg` og `logo-lys.svg` med dem.
   Oppdater `Merke` i `src/ui/logo.tsx` til de nye formene (plate x/y 40,

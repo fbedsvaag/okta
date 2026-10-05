@@ -1,13 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024" role="img" aria-label="Økta">
   <title>Økta</title>
   <!--
+    Bolk med glass — valgt 05.10.2026. Variant: mørk, hovedvariant og appikon.
     Tre stående felt som avtar i bredde og styrke, på en avrundet plate.
-    Feltene er de samme som fargestreken i venstremarg og rutene i heatmapet —
-    merket er appen i miniatyr.
-    Variant: mørk — hovedvariant, appikonet
+    Glasset er tre ting: en lys innerkant på plata, en lys kant på feltene,
+    og en svak skygge under det brede feltet, så feltene ligger oppå.
   -->
-  <rect x="100" y="100" width="824" height="824" rx="185" fill="#241F33"/>
-  <rect x="308" y="342" width="180" height="340" rx="24" fill="#EEEDFE"/>
-  <rect x="512" y="342" width="90"  height="340" rx="24" fill="#C9C2DD"/>
-  <rect x="626" y="342" width="90"  height="340" rx="24" fill="#9A90B8"/>
+  <rect x="40" y="40" width="944" height="944" rx="215" fill="#241F33"/>
+  <rect x="48" y="48" width="928" height="928" rx="208" fill="none" stroke="#FFFFFF" stroke-opacity="0.16" stroke-width="8"/>
+  <rect x="302" y="346" width="200" height="364" rx="44" fill="#000000" fill-opacity="0.30"/>
+  <rect x="290" y="330" width="200" height="364" rx="44" fill="#EEEDFE" stroke="#FFFFFF" stroke-opacity="0.60" stroke-width="6"/>
+  <rect x="516" y="330" width="100" height="364" rx="40" fill="#C9C2DD" stroke="#FFFFFF" stroke-opacity="0.40" stroke-width="6"/>
+  <rect x="642" y="330" width="100" height="364" rx="40" fill="#9A90B8" stroke="#FFFFFF" stroke-opacity="0.30" stroke-width="6"/>
 </svg>
