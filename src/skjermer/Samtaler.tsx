@@ -1185,7 +1185,7 @@ function Bolk({
 }) {
   return (
     <section>
-      <h2 className="mb-2 border-b border-linje-medium pb-1 text-etikett uppercase tracking-etikett text-blekk-dempet">
+      <h2 className="mb-2 border-b border-linje-medium pb-1 text-brod font-semibold text-blekk">
         {tittel}
       </h2>
       {children}
@@ -1493,7 +1493,7 @@ function Timeplan({
       {plan.map((d, dagIdx) => (
         <section key={d.dag.id}>
           <div className="mb-1 flex items-baseline justify-between border-b border-linje pb-1">
-            <h2 className="font-display text-tittel first-letter:uppercase">
+            <h2 className="text-tittel font-medium first-letter:uppercase">
               {langDato(d.dag.dato)}
             </h2>
             <span className="text-liten tabular-nums text-blekk-dempet">

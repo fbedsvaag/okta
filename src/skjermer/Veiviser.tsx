@@ -83,7 +83,7 @@ function StegSkolear({ onFerdig }: { onFerdig: (id: string) => void }) {
 
   return (
     <section>
-      <h1 className="font-display text-overskrift">Opprett skoleåret</h1>
+      <h1 className="text-overskrift font-light tracking-overskrift">Opprett skoleåret</h1>
       <p className="mt-1 text-brod text-blekk-dempet">
         Alt annet i appen henger under et skoleår. Datoene kan endres senere.
       </p>
@@ -154,7 +154,7 @@ function StegFag({
 
   return (
     <section>
-      <h1 className="font-display text-overskrift">Hvilke fag har du i år?</h1>
+      <h1 className="text-overskrift font-light tracking-overskrift">Hvilke fag har du i år?</h1>
       <p className="mt-1 text-brod text-blekk-dempet">
         Kode og navn skriver du selv — <code>MFL1</code>, <code>ENG1</code>,{" "}
         <code>Norsk</code>, hva du nå enn underviser i.
@@ -228,7 +228,7 @@ function StegElever({
 
   return (
     <section>
-      <h1 className="font-display text-overskrift">Legg inn klasselistene</h1>
+      <h1 className="text-overskrift font-light tracking-overskrift">Legg inn klasselistene</h1>
       <p className="mt-1 text-brod text-blekk-dempet">
         Ett fag om gangen. Kjenner appen igjen et navn fra et fag du allerede
         har fylt, spør den om det er samme elev. Svarer du ja, blir eleven lagt

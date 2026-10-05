@@ -62,7 +62,7 @@ export function Sammenleggknapp({
     <button
       onClick={onBytt}
       aria-expanded={apen}
-      className={`flex min-w-0 items-baseline gap-1.5 text-left text-etikett uppercase tracking-etikett text-blekk-dempet hover:text-blekk ${klasse}`}
+      className={`flex min-w-0 items-baseline gap-1.5 text-left text-brod font-semibold text-blekk hover:text-blekk-dempet ${klasse}`}
     >
       <span
         aria-hidden
@@ -72,7 +72,7 @@ export function Sammenleggknapp({
       </span>
       <span className="shrink-0">{tittel}</span>
       {etter && (
-        <span className="truncate normal-case tracking-normal text-liten text-blekk-svak">
+        <span className="truncate font-normal text-liten text-blekk-svak">
           {etter}
         </span>
       )}

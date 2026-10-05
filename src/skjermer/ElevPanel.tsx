@@ -713,7 +713,7 @@ function Bolk({
           <button
             onClick={sammenlagt.bytt}
             aria-expanded={apen}
-            className="flex items-baseline gap-1.5 text-etikett uppercase tracking-etikett text-blekk-dempet hover:text-blekk"
+            className="flex items-baseline gap-1.5 text-brod font-semibold text-blekk hover:text-blekk-dempet"
           >
             <span
               aria-hidden
@@ -723,13 +723,13 @@ function Bolk({
             </span>
             {tittel}
             {!apen && sammenlagt.etikett && (
-              <span className="normal-case tracking-normal text-blekk-svak">
+              <span className="font-normal text-blekk-svak">
                 {sammenlagt.etikett}
               </span>
             )}
           </button>
         ) : (
-          <h3 className="text-etikett uppercase tracking-etikett text-blekk-dempet">
+          <h3 className="text-brod font-semibold text-blekk">
             {tittel}
           </h3>
         )}
@@ -1185,7 +1185,7 @@ function Navnefelt({
           }
         }}
         size={Math.max(plassholder.length, verdi.length + 1)}
-        className={`rounded-vanlig border border-transparent px-1 py-0.5 font-display text-tittel outline-none hover:border-linje focus:border-aksent ${
+        className={`rounded-vanlig border border-transparent px-1 py-0.5 text-tittel font-medium outline-none hover:border-linje focus:border-aksent ${
           mangler ? "border-varsel" : ""
         }`}
       />

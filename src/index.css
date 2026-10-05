@@ -1,176 +1,60 @@
 @import "tailwindcss";
 
 /*
- * Fira Sans og Fira Sans Condensed, SIL OFL. Filene ligger i public/fonts/ og
- * lastes fra disk — appen gjør ingen nettverkskall (§1). Lisensen følger med
- * i public/fonts/OFL.txt, som OFL-en krever.
+ * Geist, SIL OFL. Filene ligger i public/fonts/ og lastes fra disk — appen
+ * gjør ingen nettverkskall (§1). Lisensen følger med i public/fonts/OFL.txt,
+ * som OFL-en krever. Én fil per vekt med hele tegnsettet (latin og
+ * latin-ext), så navn med č, š og ŋ har ikke en annen skrift midt i seg.
  *
  * font-display: block, ikke swap: filene er lokale og laster momentant, og da
  * er et kort usynlig øyeblikk bedre enn at all tekst hopper når reserveskrifta
  * byttes ut. Appen skal starte på under ett sekund (§2) og bør ikke blafre.
  *
- * MERK: sifrene i Fira har ulik bredde som standard (433-558 enheter). Tall
+ * MERK: sifrene i Geist har ulik bredde som standard (373-663 enheter). Tall
  * som skal flukte i kolonner MÅ ha tabular-nums — det er verifisert at tnum
- * gir alle ti sifrene lik bredde. Klassene som allerede står på datoer,
- * klokkeslett og tall i appen er derfor bærende, ikke pynt.
+ * gir alle ti sifrene lik bredde i alle fire vektene. Klassene som allerede
+ * står på datoer, klokkeslett og tall i appen er derfor bærende, ikke pynt.
+ *
+ * Vekter: 300 til store overskrifter (24 px og over), 400 brødtekst, 500
+ * titler, 600 seksjonsoverskrifter. Se DESIGN.md §5.
  */
 
 @font-face {
-  font-family: "Fira Sans";
+  font-family: "Geist";
+  font-style: normal;
+  font-weight: 300;
+  font-display: block;
+  src: url("/fonts/geist-300.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Geist";
   font-style: normal;
   font-weight: 400;
   font-display: block;
-  src: url("/fonts/fira-sans-400-latin.woff2") format("woff2");
-  unicode-range:
-    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
-    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212,
-    U+2215, U+FEFF, U+FFFD;
+  src: url("/fonts/geist-400.woff2") format("woff2");
 }
 
 @font-face {
-  font-family: "Fira Sans";
-  font-style: normal;
-  font-weight: 400;
-  font-display: block;
-  src: url("/fonts/fira-sans-400-latin-ext.woff2") format("woff2");
-  unicode-range:
-    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304,
-    U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB,
-    U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
-}
-
-@font-face {
-  font-family: "Fira Sans";
+  font-family: "Geist";
   font-style: normal;
   font-weight: 500;
   font-display: block;
-  src: url("/fonts/fira-sans-500-latin.woff2") format("woff2");
-  unicode-range:
-    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
-    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212,
-    U+2215, U+FEFF, U+FFFD;
+  src: url("/fonts/geist-500.woff2") format("woff2");
 }
 
 @font-face {
-  font-family: "Fira Sans";
-  font-style: normal;
-  font-weight: 500;
-  font-display: block;
-  src: url("/fonts/fira-sans-500-latin-ext.woff2") format("woff2");
-  unicode-range:
-    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304,
-    U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB,
-    U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
-}
-
-@font-face {
-  font-family: "Fira Sans";
+  font-family: "Geist";
   font-style: normal;
   font-weight: 600;
   font-display: block;
-  src: url("/fonts/fira-sans-600-latin.woff2") format("woff2");
-  unicode-range:
-    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
-    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212,
-    U+2215, U+FEFF, U+FFFD;
-}
-
-@font-face {
-  font-family: "Fira Sans";
-  font-style: normal;
-  font-weight: 600;
-  font-display: block;
-  src: url("/fonts/fira-sans-600-latin-ext.woff2") format("woff2");
-  unicode-range:
-    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304,
-    U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB,
-    U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
-}
-
-@font-face {
-  font-family: "Fira Sans Condensed";
-  font-style: normal;
-  font-weight: 400;
-  font-display: block;
-  src: url("/fonts/fira-sans-condensed-400-latin.woff2") format("woff2");
-  unicode-range:
-    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
-    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212,
-    U+2215, U+FEFF, U+FFFD;
-}
-
-@font-face {
-  font-family: "Fira Sans Condensed";
-  font-style: normal;
-  font-weight: 400;
-  font-display: block;
-  src: url("/fonts/fira-sans-condensed-400-latin-ext.woff2") format("woff2");
-  unicode-range:
-    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304,
-    U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB,
-    U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
-}
-
-@font-face {
-  font-family: "Fira Sans Condensed";
-  font-style: normal;
-  font-weight: 500;
-  font-display: block;
-  src: url("/fonts/fira-sans-condensed-500-latin.woff2") format("woff2");
-  unicode-range:
-    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
-    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212,
-    U+2215, U+FEFF, U+FFFD;
-}
-
-@font-face {
-  font-family: "Fira Sans Condensed";
-  font-style: normal;
-  font-weight: 500;
-  font-display: block;
-  src: url("/fonts/fira-sans-condensed-500-latin-ext.woff2") format("woff2");
-  unicode-range:
-    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304,
-    U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB,
-    U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
-}
-
-@font-face {
-  font-family: "Fira Sans Condensed";
-  font-style: normal;
-  font-weight: 600;
-  font-display: block;
-  src: url("/fonts/fira-sans-condensed-600-latin.woff2") format("woff2");
-  unicode-range:
-    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
-    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212,
-    U+2215, U+FEFF, U+FFFD;
-}
-
-@font-face {
-  font-family: "Fira Sans Condensed";
-  font-style: normal;
-  font-weight: 600;
-  font-display: block;
-  src: url("/fonts/fira-sans-condensed-600-latin-ext.woff2") format("woff2");
-  unicode-range:
-    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304,
-    U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB,
-    U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+  src: url("/fonts/geist-600.woff2") format("woff2");
 }
 
 @theme {
-  --font-sans: "Fira Sans", -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-smal: "Fira Sans Condensed", "Fira Sans", -apple-system, sans-serif;
-  /*
-   * Overskriftsskriften. En serif i toppen mot Fira Sans i tabellene — det er
-   * den parringen som gir hierarki uten å gjøre tabelldata tyngre å lese.
-   *
-   * Georgia ligger på maskinen fra før, så den koster ingen fontfil og ingen
-   * lisens. Skal den byttes med en tegnet editorial-serif, er det denne
-   * variabelen og en @font-face som skal endres — ingenting annet.
-   */
-  --font-display: Georgia, "Times New Roman", serif;
+  --font-sans: "Geist", -apple-system, BlinkMacSystemFont, sans-serif;
+  /* Sperringen på store overskrifter i Light. */
+  --tracking-overskrift: -0.015em;
 
   /* =====================================================================
    * NY PALETT — hentet fra merkevareguiden. Definert her, men ennå ikke

@@ -55,7 +55,7 @@ export function Fag({
         {/* Overskrift og Rediger-bryteren blir stående mens lista ruller. */}
         <div className="shrink-0">
           <div className="flex items-baseline justify-between">
-            <h2 className="font-display text-tittel">Fag i dette skoleåret</h2>
+            <h2 className="text-tittel font-medium">Fag i dette skoleåret</h2>
             <label className="flex items-center gap-2 text-liten text-blekk-dempet">
               <input
                 type="checkbox"

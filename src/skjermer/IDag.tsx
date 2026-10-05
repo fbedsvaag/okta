@@ -61,7 +61,7 @@ export function IDag({
     <div className="mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col overflow-clip">
       {/* Datoen blir stående mens resten ruller. */}
       <div className="shrink-0 pb-2">
-        <h1 className="font-display text-overskrift first-letter:uppercase">
+        <h1 className="text-overskrift font-light tracking-overskrift first-letter:uppercase">
           {langDato(idag)}
         </h1>
         <Dagsoppsummering okter={okter} idag={idag} onApne={apne} />

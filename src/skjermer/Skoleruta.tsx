@@ -249,7 +249,7 @@ function Bolk({
 }) {
   return (
     <section className="mb-7">
-      <h2 className="mb-2 border-b border-linje-medium pb-1 text-etikett uppercase tracking-etikett text-blekk-dempet">
+      <h2 className="mb-2 border-b border-linje-medium pb-1 text-brod font-semibold text-blekk">
         {tittel}
       </h2>
       {children}

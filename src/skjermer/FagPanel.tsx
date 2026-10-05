@@ -121,7 +121,7 @@ export function FagPanel({
           className="h-3.5 w-[3px] rounded-full"
           style={{ background: fag.farge ?? "var(--color-linje-sterk)" }}
         />
-        <span className="font-display text-tittel">{fag.kode}</span>
+        <span className="text-tittel font-medium">{fag.kode}</span>
         <Kappet verdi={fag.navn} klasse="text-brod text-blekk-dempet" />
         <button
           onClick={onLukk}
@@ -655,7 +655,7 @@ function OmFaget({ grepKode }: { grepKode: string | null }) {
         onClick={() => setApen((v) => !v)}
         className="flex w-full items-baseline gap-2 border-b border-linje-medium pb-1 text-left"
       >
-        <span className="text-etikett uppercase tracking-etikett text-blekk-dempet">
+        <span className="text-brod font-semibold text-blekk">
           Om faget
         </span>
         <span className="ml-auto text-liten text-blekk-svak">
@@ -766,7 +766,7 @@ function Kompetansemaal({
         onClick={() => setApen((v) => !v)}
         className="flex w-full items-baseline gap-2 border-b border-linje-medium pb-1 text-left"
       >
-        <span className="text-etikett uppercase tracking-etikett text-blekk-dempet">
+        <span className="text-brod font-semibold text-blekk">
           Kompetansemål
         </span>
         <span className="tabular-nums text-liten text-blekk-svak">
@@ -978,7 +978,7 @@ function Bolk({
             onBytt={() => setApen(!apen)}
           />
         ) : (
-          <h3 className="text-etikett uppercase tracking-etikett text-blekk-dempet">
+          <h3 className="text-brod font-semibold text-blekk">
             {tittel}
           </h3>
         )}

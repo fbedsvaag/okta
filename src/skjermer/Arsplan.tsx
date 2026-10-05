@@ -43,7 +43,7 @@ function Side({ ark }: { ark: Ark }) {
   return (
     <section className="fagside">
       <header className="mb-3 border-b-2 border-aksent pb-1.5">
-        <h1 className="font-display text-[17pt] leading-tight">
+        <h1 className="text-[17pt] font-light tracking-overskrift leading-tight">
           {tittel(ark)}
         </h1>
         <p className="mt-0.5 text-[9.5pt] text-blekk-dempet">
@@ -62,7 +62,7 @@ function Side({ ark }: { ark: Ark }) {
 
       {harMal && (
         <div className="mb-4">
-          <h2 className="mb-1 font-display text-[12pt] text-aksent">
+          <h2 className="mb-1 text-[12pt] font-semibold text-aksent">
             Kompetansemål
           </h2>
           {ark.kompetansemal.length > 0 ? (
@@ -79,7 +79,7 @@ function Side({ ark }: { ark: Ark }) {
         </div>
       )}
 
-      <h2 className="mb-1 font-display text-[12pt] text-aksent">Økter</h2>
+      <h2 className="mb-1 text-[12pt] font-semibold text-aksent">Økter</h2>
 
       {ark.bolker.map((b, i) => (
         <div key={b.navn ?? i} className="mb-3">

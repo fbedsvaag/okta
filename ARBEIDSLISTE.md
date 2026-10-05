@@ -149,7 +149,7 @@ committes alene, og så det som alt annet bygger på kommer først.
 **Før du starter:** les DESIGN.md i sin helhet. Bestem om forslaget til ny
 §13 i `docs/spec-forslag-2026-10-05.md` skal inn i SPEC.md.
 
-- [ ] **5.1 Skrift.** Legg Geist (300/400/500/600, latin + latin-ext) i
+- [x] **5.1 Skrift.** Legg Geist (300/400/500/600, latin + latin-ext) i
   `public/fonts/` med OFL-lisensen, og bytt `--font-sans`. Sjekk at `tnum`
   virker. Fjern Fira, Fira Condensed og `--font-display` (Georgia).
   Overskrifter over 24 px får Light. Seksjonsoverskrifter med versaler blir
@@ -201,6 +201,13 @@ committes alene, og så det som alt annet bygger på kommer først.
   tegnes bare plate og felt der, uten glass. Kjør skriptet og sjekk
   ikonet i Dock. Kommentaren i `logo.tsx` om fargestreken i venstremarg er
   utdatert — feltene finnes igjen i fagfirkanten og heatmapet.
+- [ ] **5.15 Samtaletrekkeren.** Samme oppbygning som før (§4.10), strammet
+  opp etter DESIGN §10: planlagte trekninger i sidemenyen, eksport i
+  verktøylinja, oppsettet i én kolonne med blokker (modus, vurdering,
+  samtalene, temaer, samtaledager med kapasitet, historikk, Generer + låser),
+  kapasitetsvarsel som navngir hvem som mangler plass, og timeplanen med
+  dagen i Light-overskrift. Oppgavenummer som liten rute i temafargen.
+  «Møtte ikke» og lås som ikonknapper på raden.
 
 ## Ikke nå
 
