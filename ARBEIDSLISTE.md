@@ -160,7 +160,7 @@ committes alene, og så det som alt annet bygger på kommer først.
   `felles.tsx`, og bytt ut alle fargestreker i venstremarg.
 - [x] **5.3 Sidemeny.** Erstatt menyraden med sidemeny (DESIGN §6), med
   G-snarveier. Hovedflaten som ark med 10 px radius.
-- [ ] **5.4 Glass.** Fargeteppe i vinduet, glass på sidemeny, verktøylinje,
+- [x] **5.4 Glass.** Fargeteppe i vinduet, glass på sidemeny, verktøylinje,
   ⌘K og kontekstmeny (DESIGN §7). Innstilling `glass` (på/av) i
   `innstilling`-tabellen, og `prefers-reduced-transparency` overstyrer.
   Mørke verdier.

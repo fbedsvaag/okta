@@ -1,4 +1,5 @@
 import { lagreTema, TEMA, type Tema } from "../ui/tema";
+import { GLASS, lagreGlass, type Glass } from "../ui/glass";
 import { useEffect, useState } from "react";
 import {
   endreSkolear,
@@ -75,6 +76,7 @@ export function Innstillinger({
   const [davMelding, setDavMelding] = useState<string | null>(null);
   const [tekstskala, setTekstskala] = useState("0.93");
   const [tema, setTema] = useState<Tema>("system");
+  const [glass, setGlass] = useState<Glass>("pa");
   const [davFeil, setDavFeil] = useState<string | null>(null);
   const [davJobber, setDavJobber] = useState(false);
   const [arkivmappe, setArkivmappe] = useState("");
@@ -136,6 +138,7 @@ export function Innstillinger({
     void hentInnstilling(TEMA).then((v) =>
       setTema(v === "lys" || v === "mork" ? v : "system"),
     );
+    void hentInnstilling(GLASS).then((v) => setGlass(v === "av" ? "av" : "pa"));
   }, []);
 
   useEffect(() => {
@@ -308,6 +311,25 @@ export function Innstillinger({
           <p className="mt-1 text-liten text-blekk-dempet">
             «Som macOS» skifter av seg selv når maskinen gjør det. Utskriften av
             årsplanen er alltid lys.
+          </p>
+        </div>
+        <div className="mb-4 max-w-sm">
+          <Etikett>Glass</Etikett>
+          <Bryter
+            valg={[
+              { id: "pa", navn: "På" },
+              { id: "av", navn: "Av" },
+            ]}
+            verdi={glass}
+            settVerdi={(v) => {
+              setGlass(v as Glass);
+              void lagreGlass(v as Glass);
+            }}
+          />
+          <p className="mt-1 text-liten text-blekk-dempet">
+            Sidemenyen og søket er gjennomsiktige, med farge bak. Av gir hele
+            flater. Står «Reduser gjennomsiktighet» på i macOS, er glasset av
+            uansett.
           </p>
         </div>
         {/*

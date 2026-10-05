@@ -73,7 +73,7 @@ export function Sidemeny({
   onFram: () => void;
 }) {
   return (
-    <nav className="ikkeutskrift flex w-56 shrink-0 flex-col gap-3 px-2.5 py-3">
+    <nav className="glass-sidepanel ikkeutskrift my-2.5 ml-2.5 flex w-56 shrink-0 flex-col gap-3 rounded-glass px-2.5 py-3">
       <div className="flex items-center justify-between px-1.5">
         <Ordmerke storrelse={20} />
         <button
@@ -88,7 +88,7 @@ export function Sidemeny({
       {/* Synlig inngang til ⌘K, så snarveien kan oppdages. */}
       <button
         onClick={onSok}
-        className="flex h-8 items-center gap-2 rounded-stor border border-linje bg-ark px-2.5 text-liten text-blekk-svak hover:border-linje-sterk hover:text-blekk"
+        className="flex h-8 items-center gap-2 rounded-[10px] border border-[var(--glass-kant)] bg-[var(--glass-valgt)] px-2.5 text-liten text-blekk-dempet hover:text-blekk"
       >
         <IkonSok />
         Søk
@@ -184,10 +184,10 @@ function Rad({
       onClick={onKlikk}
       title={tittel}
       aria-current={aktiv ? "page" : undefined}
-      className={`flex h-8 w-full min-w-0 items-center gap-2.5 rounded-stor px-2 text-left text-brod ${
+      className={`flex h-8 w-full min-w-0 items-center gap-2.5 rounded-[10px] px-2 text-left text-brod ${
         aktiv
-          ? "bg-ark font-medium text-blekk shadow-[var(--shadow-lav)]"
-          : "text-blekk hover:bg-ark/60"
+          ? "glass-valgt font-medium text-blekk"
+          : "text-blekk hover:bg-[var(--glass-valgt)]"
       }`}
     >
       <span className="grid w-4 shrink-0 place-items-center text-blekk-dempet">
@@ -217,7 +217,7 @@ function Pil({
       onClick={onKlikk}
       disabled={av}
       title={retning === "tilbake" ? "Tilbake (⌘[)" : "Fram (⌘])"}
-      className="grid h-8 w-6 shrink-0 place-items-center rounded-stor text-tittel leading-none text-blekk-svak hover:bg-ark/60 hover:text-blekk disabled:opacity-30 disabled:hover:bg-transparent"
+      className="grid h-8 w-6 shrink-0 place-items-center rounded-[10px] text-tittel leading-none text-blekk-dempet hover:bg-[var(--glass-valgt)] hover:text-blekk disabled:opacity-30 disabled:hover:bg-transparent"
     >
       {retning === "tilbake" ? "‹" : "›"}
     </button>

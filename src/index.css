@@ -248,6 +248,169 @@
 }
 
 /*
+ * Glass (DESIGN.md §7).
+ *
+ * Sidemenyen, verktøylinja, ⌘K og kontekstmenyer er gjennomsiktige flater
+ * over et fargeteppe appen tegner selv. Ikke macOS-glass: CSS
+ * (`backdrop-filter`) over teppet, så det ser likt ut på alle maskiner og
+ * ikke trenger native kode. Aldri glass under innhold.
+ *
+ * Av (data-glass="av" fra Innstillinger, eller «Reduser gjennomsiktighet» i
+ * macOS) gir tette flater og tar bort teppet. Flatene beholder formen.
+ *
+ * Sekundærtekst på glass er mørkere enn ellers: den vanlige gråtonen blir
+ * for svak over teppet. Det gjøres ved å overstyre `--color-blekk-dempet`
+ * inne i glassflatene, så komponentene ikke trenger å vite om det.
+ */
+:root {
+  --glass-sidepanel: rgba(255, 255, 255, 0.5);
+  --glass-verktoy: rgba(255, 255, 255, 0.68);
+  --glass-sok: rgba(255, 255, 255, 0.74);
+  --glass-valgt: rgba(255, 255, 255, 0.88);
+  --glass-kant: rgba(255, 255, 255, 0.75);
+  --glass-innerlys: rgba(255, 255, 255, 0.95);
+  --glass-skygge: rgba(36, 31, 51, 0.14);
+  --glass-dempet: #4b4560;
+  --glass-uskarp: blur(28px) saturate(170%);
+  --glass-uskarp-sok: blur(40px) saturate(180%);
+  --teppe-styrke: 1;
+}
+
+@media screen {
+  :root[data-tema="mork"] {
+    --glass-sidepanel: rgba(42, 36, 58, 0.55);
+    --glass-verktoy: rgba(40, 35, 54, 0.72);
+    --glass-sok: rgba(36, 31, 50, 0.8);
+    --glass-valgt: rgba(255, 255, 255, 0.1);
+    --glass-kant: rgba(255, 255, 255, 0.12);
+    --glass-innerlys: rgba(255, 255, 255, 0.06);
+    --glass-skygge: rgba(0, 0, 0, 0.4);
+    --glass-dempet: #c0b8d8;
+    --teppe-styrke: 0.45;
+  }
+}
+
+/* Glass av: tette flater, intet teppe. */
+:root[data-glass="av"] {
+  --glass-sidepanel: #f3f1f7;
+  --glass-verktoy: #f3f1f7;
+  --glass-sok: #f3f1f7;
+  --glass-valgt: #ffffff;
+  --glass-kant: var(--color-linje);
+  --glass-innerlys: transparent;
+  --glass-dempet: var(--color-blekk-dempet);
+  --glass-uskarp: none;
+  --glass-uskarp-sok: none;
+  --teppe-styrke: 0;
+}
+
+@media screen {
+  :root[data-tema="mork"][data-glass="av"] {
+    --glass-sidepanel: #1e1a29;
+    --glass-verktoy: #1e1a29;
+    --glass-sok: #1e1a29;
+    --glass-valgt: #262133;
+    --glass-dempet: #aaa2c4;
+  }
+}
+
+/* macOS ber om redusert gjennomsiktighet: av, uansett hva som er valgt. */
+@media (prefers-reduced-transparency: reduce) {
+  :root[data-glass] {
+    --glass-sidepanel: #f3f1f7;
+    --glass-verktoy: #f3f1f7;
+    --glass-sok: #f3f1f7;
+    --glass-valgt: #ffffff;
+    --glass-kant: var(--color-linje);
+    --glass-innerlys: transparent;
+    --glass-dempet: var(--color-blekk-dempet);
+    --glass-uskarp: none;
+    --glass-uskarp-sok: none;
+    --teppe-styrke: 0;
+  }
+  :root[data-tema="mork"][data-glass] {
+    --glass-sidepanel: #1e1a29;
+    --glass-verktoy: #1e1a29;
+    --glass-sok: #1e1a29;
+    --glass-valgt: #262133;
+    --glass-dempet: #aaa2c4;
+  }
+}
+
+.glass-sidepanel,
+.glass-verktoy,
+.glass-sok {
+  --color-blekk-dempet: var(--glass-dempet);
+  border: 1px solid var(--glass-kant);
+  -webkit-backdrop-filter: var(--glass-uskarp);
+  backdrop-filter: var(--glass-uskarp);
+}
+
+.glass-sidepanel {
+  background: var(--glass-sidepanel);
+  box-shadow:
+    inset 0 1px 0 var(--glass-innerlys),
+    0 10px 30px var(--glass-skygge);
+}
+
+.glass-verktoy {
+  background: var(--glass-verktoy);
+  box-shadow:
+    inset 0 1px 0 var(--glass-innerlys),
+    0 4px 14px var(--glass-skygge);
+}
+
+.glass-sok {
+  background: var(--glass-sok);
+  -webkit-backdrop-filter: var(--glass-uskarp-sok);
+  backdrop-filter: var(--glass-uskarp-sok);
+  box-shadow:
+    inset 0 1px 0 var(--glass-innerlys),
+    0 24px 60px -12px var(--glass-skygge),
+    0 10px 30px var(--glass-skygge);
+}
+
+/* Valgt punkt på glass. */
+.glass-valgt {
+  background: var(--glass-valgt);
+  box-shadow: 0 1px 3px var(--glass-skygge);
+}
+
+/*
+ * Fargeteppet: store, uskarpe flater i palettens farger, bak alt annet i
+ * vinduet. Bygger på aksenten og valgt-fargen, så det følger paletten (§4).
+ * Dempet i mørk modus, borte når glass er av.
+ */
+.fargeteppe {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: var(--teppe-styrke);
+  background:
+    radial-gradient(
+      38% 48% at 12% 18%,
+      color-mix(in srgb, var(--color-aksent) 38%, transparent),
+      transparent 72%
+    ),
+    radial-gradient(
+      45% 55% at 88% 12%,
+      color-mix(in srgb, var(--color-valgt) 95%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      50% 50% at 72% 92%,
+      color-mix(in srgb, var(--color-aksent) 26%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      42% 52% at 8% 88%,
+      color-mix(in srgb, var(--color-valgt) 90%, transparent),
+      transparent 70%
+    );
+}
+
+/*
  * Dokumentet selv skal ikke kunne bevege seg.
  *
  * macOS lar deg dra hele siden med styreflata og spretter den tilbake, selv

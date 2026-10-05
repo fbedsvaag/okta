@@ -140,12 +140,11 @@ export function Sokevindu({
       onMouseDown={(e) => e.target === e.currentTarget && onLukk()}
     >
       {/*
-        Formet som Spotlight: store, myke hjørner, litt gjennomsiktig over
-        appen, et stort søkefelt med lupe, og treff markert med en avrundet
-        flate innenfor kantene. Ellers er appen skarp (DESIGN.md §6) — dette
-        er det ene vinduet som skal kjennes som en del av macOS.
+        Formet som Spotlight: store, myke hjørner (26 px), glass over appen
+        (DESIGN.md §7), et stort søkefelt med lupe, og treff markert med en
+        avrundet flate innenfor kantene.
       */}
-      <div className="w-full max-w-xl overflow-hidden rounded-[16px] border border-linje/70 bg-ark/90 shadow-[0_24px_60px_-12px_rgb(36_31_51/0.35),0_0_0_0.5px_rgb(36_31_51/0.08)] backdrop-blur-xl">
+      <div className="glass-sok w-full max-w-xl overflow-hidden rounded-[26px]">
         <div className="flex items-center gap-3 px-4">
           <svg
             aria-hidden
@@ -195,8 +194,8 @@ export function Sokevindu({
                   data-nr={i}
                   onMouseMove={() => setMarkor(i)}
                   onClick={() => apne(t)}
-                  className={`mx-2 flex w-[calc(100%-1rem)] items-baseline gap-3 rounded-[8px] px-3 py-1.5 text-left text-brod ${
-                    i === markor ? "bg-valgt" : ""
+                  className={`mx-2 flex w-[calc(100%-1rem)] items-baseline gap-3 rounded-[10px] px-3 py-1.5 text-left text-brod ${
+                    i === markor ? "glass-valgt" : ""
                   }`}
                 >
                   {t.type === "elev" ? (

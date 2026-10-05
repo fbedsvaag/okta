@@ -1,4 +1,6 @@
 import { brukTema } from "./ui/tema";
+import { brukGlass } from "./ui/glass";
+import { ukenummer } from "./data/kalender";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   brukTekstskala,
@@ -164,6 +166,7 @@ export default function App() {
       // plass før noe tegnes.
       await brukTekstskala().catch((e) => console.error("tekstskala:", e));
       await brukTema().catch((e) => console.error("tema:", e));
+      await brukGlass().catch((e) => console.error("glass:", e));
 
       // Sikkerhetskopi, før noe rekker å endres i denne økta.
       await daglingKopi().catch((e) => console.error("sikkerhetskopi:", e));
@@ -236,7 +239,8 @@ export default function App() {
       onFagEndret={last}
     >
       <ArkKobling til={ark} />
-      <div className="app-skall flex h-full overflow-clip bg-bord text-blekk">
+      <div className="app-skall relative isolate flex h-full overflow-clip bg-bord text-blekk">
+        <div aria-hidden className="fargeteppe ikkeutskrift" />
         {sokApent && (
           <Sokevindu
             skolearId={skolear.id}
@@ -267,7 +271,8 @@ export default function App() {
           kanten og med 10 px radius (DESIGN.md §6). Innholdet står alltid
           på hel flate — glass kommer bare på det som ligger over (§7).
         */}
-        <div className="ark-flate my-2 mr-2 flex min-w-0 flex-1 flex-col overflow-clip rounded-ark bg-ark shadow-[var(--shadow-panel)]">
+        <div className="ark-flate m-2.5 flex min-w-0 flex-1 flex-col overflow-clip rounded-ark bg-ark shadow-[var(--shadow-panel)]">
+          <Verktoylinje visning={visning} />
           {melding && (
             <div className="ikkeutskrift flex shrink-0 items-center gap-3 border-b border-linje-medium bg-flate-svak px-6 py-1.5 text-brod text-aksent">
               <span className="inline-flex items-center gap-1.5">
@@ -426,6 +431,45 @@ export default function App() {
       </div>
     </Arkstabel>
   );
+}
+
+const SKJERMNAVN: Record<Visning, string> = {
+  idag: "I dag",
+  okter: "Økter",
+  kalender: "Økter",
+  perioder: "Økter",
+  elever: "Elever",
+  elev: "Elever",
+  liminn: "Elever",
+  vurderinger: "Vurderinger",
+  samtaler: "Samtaler",
+  fag: "Fag",
+  innstillinger: "Innstillinger",
+  skoleruta: "Skoleruta",
+};
+
+/**
+ * Verktøylinja øverst i arket: en glasskapsel som flyter 10 px inn
+ * (DESIGN.md §6–7). Foreløpig står bare skjermnavnet her, og uka på «I dag»;
+ * skjermenes egne knapper står fortsatt i skjermen.
+ */
+function Verktoylinje({ visning }: { visning: Visning }) {
+  return (
+    <div className="glass-verktoy ikkeutskrift mx-2.5 mt-2.5 flex h-11 shrink-0 items-center gap-2.5 rounded-full px-5">
+      <span className="text-brod font-semibold">{SKJERMNAVN[visning]}</span>
+      {visning === "idag" && (
+        <span className="text-brod tabular-nums text-blekk-dempet">
+          Uke {ukenummer(isoIDag())}
+        </span>
+      )}
+    </div>
+  );
+}
+
+function isoIDag(): string {
+  const d = new Date();
+  const to = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${to(d.getMonth() + 1)}-${to(d.getDate())}`;
 }
 
 /** Hvilket punkt i sidemenyen som står markert for en visning. */

@@ -676,7 +676,7 @@ export function Kontekstmeny({
       // Et valg i menyen lukker den, etter at valget selv har gjort sitt.
       onClick={onLukk}
       style={{ left: plass.venstre, top: plass.topp }}
-      className="fixed z-50 min-w-40 rounded-vanlig border border-linje bg-ark py-1 shadow-[var(--shadow-ark)]"
+      className="glass-sok fixed z-50 min-w-40 rounded-[10px] p-1"
     >
       {children}
     </div>
@@ -697,7 +697,7 @@ export function Menyvalg({
     <button
       role="menuitem"
       onClick={onKlikk}
-      className={`block w-full px-3 py-1 text-left text-brod hover:bg-flate ${
+      className={`block w-full rounded-stor px-3 py-1 text-left text-brod hover:bg-[var(--glass-valgt)] ${
         farlig ? "text-feil" : ""
       }`}
     >
