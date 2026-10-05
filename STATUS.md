@@ -3,8 +3,38 @@
 Kort status pr. 2026-09-30, versjon 0.1.3. Skrevet mot SPEC.md slik den er nå.
 Denne fila eies fritt — oppdater den løpende, i motsetning til SPEC.md.
 
-**482 tester, alle grønne. `tsc --noEmit` er ren. `npm run build` går
+**483 tester, alle grønne. `tsc --noEmit` er ren. `npm run build` går
 gjennom. 23 migrasjoner.**
+
+## Redesign 05.10 (ARBEIDSLISTE §5)
+
+Bygget natt til 06.10 etter DESIGN.md, ett punkt per commit: 5.1–5.12,
+5.14 og 5.15. **5.13 (oppsettfila) venter** på at spec-teksten er godkjent
+inn i SPEC.md. Ikke prøvd i `tauri dev` ennå — bare tester og bygg.
+
+Der denne fila beskriver skjermene under, gjelder den tiden før redesignet.
+Det som er endret: Geist, sidemeny med G-snarveier, glass over fargeteppe,
+seks paletter, «I dag» med dagens økter og høyrekolonne, notat på raden i
+skåringslista, perioder som merkelapper og filtre (P setter periode;
+periodevisningen og penselen er borte), kalender med Uke | Måned og
+årsheatmap, elevkort med tidslinje, Innstillinger med venstremeny,
+veiviser med fem steg, ny logo og appikon, samtaletrekkeren med
+trekningene i sidemenyen.
+
+Avvik fra DESIGN.md som eieren bør vite om:
+
+- Klassekart står ikke i sidemenyen — skjermen finnes ikke («Ikke nå»).
+- Verktøylinja viser skjermnavnet; bare samtaletrekkeren har flyttet
+  knappene sine inn i den (`ui/Verktoylinje.tsx`). De andre skjermene har
+  fortsatt verktøylinja si inni arket.
+- Innstillinger: Generelt og Utseende er bygget som rader (etikett til
+  venstre), de andre sidene har innholdet sitt som før.
+- Skåringsskjermens høyre kolonne (forrige økt, plan, øktlogg, taster) er
+  ikke bygget; økta er fortsatt et kort med feltene øverst.
+- Samtaledager i ukevisningen står i heldagsraden, ikke som timeplan med
+  elever, pause og lunsj.
+- Bevegelsesbryteren, stagger og FLIP (DESIGN §8, §13) er ikke en del av §5
+  og er ikke gjort.
 
 ## Hva som virker
 
