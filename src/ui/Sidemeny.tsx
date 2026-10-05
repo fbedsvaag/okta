@@ -54,6 +54,7 @@ export function Sidemeny({
   onApneFag,
   onAlleFag,
   onInnstillinger,
+  onSkolear,
   onTilbake,
   onFram,
 }: {
@@ -69,6 +70,8 @@ export function Sidemeny({
   onApneFag: (id: string) => void;
   onAlleFag: () => void;
   onInnstillinger: () => void;
+  /** skoleåret øverst: Innstillinger › Skoleår */
+  onSkolear: () => void;
   onTilbake: () => void;
   onFram: () => void;
 }) {
@@ -77,7 +80,7 @@ export function Sidemeny({
       <div className="flex items-center justify-between px-1.5">
         <Ordmerke storrelse={20} />
         <button
-          onClick={onInnstillinger}
+          onClick={onSkolear}
           title="Skoleåret — bytt eller endre i Innstillinger"
           className="rounded-vanlig px-1 text-liten tabular-nums text-blekk-dempet hover:text-blekk"
         >

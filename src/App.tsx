@@ -262,6 +262,7 @@ export default function App() {
           onApneFag={(id) => ga("fag", id)}
           onAlleFag={() => ga("fag")}
           onInnstillinger={() => ga("innstillinger")}
+          onSkolear={() => ga("innstillinger", "skolear")}
           onTilbake={tilbake}
           onFram={fram}
         />
@@ -332,6 +333,8 @@ export default function App() {
                   fag={fag}
                   onEndret={last}
                   onApneSkoleruta={() => ga("skoleruta")}
+                  startSide={apneId ?? undefined}
+                  key={apneId ?? ""}
                 />
               )}
 

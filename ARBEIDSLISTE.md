@@ -183,7 +183,7 @@ committes alene, og så det som alt annet bygger på kommer først.
   valgt-økt-panel og timer per fag.
 - [x] **5.10 Elevkort.** Notater og møtelogg som tidslinje (gjenbruk
   `ui/Tidslinje.tsx` fra fagkortet).
-- [ ] **5.11 Innstillinger.** Venstremeny med grupper. Generelt får
+- [x] **5.11 Innstillinger.** Venstremeny med grupper. Generelt får
   tekststørrelse (Mindre / Vanlig / Større → `--tekst-skala`). Utseende får
   glass og paletter. Del oppsett kommer i 5.13.
 - [ ] **5.12 Oppsettveiviser.** Fire steg + Ferdig, større tekst,
