@@ -104,6 +104,15 @@ export function OktPanel({
   }, [okt.id, okt.skolearFagId]);
 
   const tastekart = taster(verdier);
+  /**
+   * Plottet har fast rekkefølge (DESIGN.md §9): verdiene stigende, og
+   * «ingenting her» (rang 0) til slutt — rød · gul · grønn · ikke i økta.
+   * Formen bærer ikke betydningen lenger, så plassen må gjøre det.
+   */
+  const plott = [...verdier].sort(
+    (a, b) =>
+      (a.rang === 0 ? 1 : 0) - (b.rang === 0 ? 1 : 0) || a.rang - b.rang,
+  );
   /** tast -> skalaverdi, slik at 0–3 slår opp riktig verdi for denne skalaen */
   const fraTast = new Map(
     verdier.map((v) => [tastekart.get(v.id) ?? "", v] as const),
@@ -227,7 +236,7 @@ export function OktPanel({
             <ElevRad
               key={elev.elevId}
               elev={elev}
-              verdier={verdier}
+              verdier={plott}
               tastekart={tastekart}
               markert={i === markert}
               radRef={i === markert ? markertRad : undefined}
@@ -239,6 +248,21 @@ export function OktPanel({
               }}
               onVelg={(v) => skaar(i, v)}
               onNotat={() => setNotatFor(elev.elevId)}
+              skriverNotat={notatFor === elev.elevId}
+              onNotatFerdig={async (tekst) => {
+                if (tekst !== null) {
+                  await settSkaringsnotat(elev.elevId, okt.id, tekst);
+                  setElever((f) =>
+                    f.map((e) =>
+                      e.elevId === elev.elevId
+                        ? { ...e, notat: tekst.trim() || null }
+                        : e,
+                    ),
+                  );
+                }
+                setNotatFor(null);
+                liste.current?.focus();
+              }}
               onApneElev={() => onApneElev(elev.elevId)}
               bilde={medBilder ? (bilder.get(elev.elevId) ?? null) : undefined}
             />
@@ -247,28 +271,6 @@ export function OktPanel({
 
         <Logg okt={okt} onEndret={onEndret} />
       </div>
-
-      {notatFor && (
-        <Notat
-          key={notatFor}
-          elev={elever.find((e) => e.elevId === notatFor)!}
-          oktId={okt.id}
-          onLukk={async (tekst) => {
-            if (tekst !== null) {
-              await settSkaringsnotat(notatFor, okt.id, tekst);
-              setElever((f) =>
-                f.map((e) =>
-                  e.elevId === notatFor
-                    ? { ...e, notat: tekst.trim() || null }
-                    : e,
-                ),
-              );
-            }
-            setNotatFor(null);
-            liste.current?.focus();
-          }}
-        />
-      )}
     </aside>
   );
 }
@@ -284,6 +286,8 @@ function ElevRad({
   onKlikk,
   onVelg,
   onNotat,
+  skriverNotat,
+  onNotatFerdig,
   onApneElev,
   bilde,
 }: {
@@ -300,6 +304,10 @@ function ElevRad({
   onKlikk: () => void;
   onVelg: (v: Skalaverdi) => void;
   onNotat: () => void;
+  /** notatfeltet er åpent i denne raden (N) */
+  skriverNotat: boolean;
+  /** null = avbrutt */
+  onNotatFerdig: (tekst: string | null) => void;
   onApneElev: () => void;
 }) {
   // Er økta avholdt, har alle en verdi. De du ikke har trykket på er 0 (§3.3).
@@ -311,9 +319,10 @@ function ElevRad({
     <div
       ref={radRef}
       onClick={onKlikk}
-      // Skåringslista holder den gamle tettheten: 13px og 28px rader, så
-      // tretti elever fortsatt får plass uten scrolling (DESIGN.md).
-      className={`flex cursor-default items-center gap-2 border-b border-linje-svak px-5 py-1 text-liten ${
+      // Skåringslista holder 28 px rader, så tretti elever får plass uten
+      // scrolling på en 14-tommer (DESIGN.md §3). Høyden er låst, så heller
+      // ikke notatfeltet i raden kan gjøre den høyere.
+      className={`group flex h-7 cursor-default items-center gap-2 border-b border-linje-svak px-5 text-liten ${
         markert ? "bg-valgt" : "hover:bg-flate"
       }`}
     >
@@ -336,27 +345,49 @@ function ElevRad({
           onApneElev();
         }}
         title="Åpne eleven"
-        className={`w-44 shrink-0 truncate text-left text-liten hover:text-aksent hover:underline ${
+        className={`w-[clamp(150px,28%,230px)] shrink-0 truncate text-left text-liten hover:text-aksent hover:underline ${
           eksplisitt ? "" : "text-blekk-dempet"
         }`}
       >
         {elev.fornavn} {elev.etternavn}
       </button>
 
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          onNotat();
-        }}
-        title={elev.notat ?? "Legg til notat (N)"}
-        className={`flex-1 truncate text-left text-liten italic ${
-          elev.notat
-            ? "text-blekk-dempet hover:text-blekk"
-            : "text-blekk-svakest hover:text-blekk-dempet"
-        }`}
-      >
-        {elev.notat ?? "+ notat"}
-      </button>
+      <span className="w-12 shrink-0 truncate text-blekk-dempet">
+        {elev.klasse ?? ""}
+      </span>
+
+      {/*
+        Notatet fra denne økta, i egen kolonne. N åpner feltet rett i raden.
+        Står markøren på en elev uten notat, vises forrige notat i grått —
+        det man skrev sist er ofte det man trenger å huske nå.
+      */}
+      {skriverNotat ? (
+        <Notatfelt start={elev.notat ?? ""} onFerdig={onNotatFerdig} />
+      ) : (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onNotat();
+          }}
+          title={
+            elev.notat ??
+            (elev.forrigeNotat
+              ? `Forrige økt: ${elev.forrigeNotat}`
+              : "Legg til notat (N)")
+          }
+          className="min-w-0 flex-1 truncate text-left text-liten"
+        >
+          {elev.notat ? (
+            <span className="text-blekk">{elev.notat}</span>
+          ) : markert && elev.forrigeNotat ? (
+            <span className="italic text-blekk-svak">{elev.forrigeNotat}</span>
+          ) : (
+            <span className="text-blekk-svakest opacity-0 group-hover:opacity-100">
+              + notat
+            </span>
+          )}
+        </button>
+      )}
 
       <div className="flex gap-1">
         {verdier.map((v) => (
@@ -781,41 +812,41 @@ function Logg({ okt, onEndret }: { okt: Okt; onEndret: () => void }) {
   );
 }
 
-function Notat({
-  elev,
-  onLukk,
+/**
+ * Notatfeltet i raden. Én linje, samme høyde som raden: Enter lagrer, Esc
+ * angrer. Tom tekst fjerner notatet.
+ */
+function Notatfelt({
+  start,
+  onFerdig,
 }: {
-  elev: OktElev;
-  oktId: string;
-  onLukk: (tekst: string | null) => void;
+  start: string;
+  onFerdig: (tekst: string | null) => void;
 }) {
-  const [tekst, setTekst] = useState(elev.notat ?? "");
-
+  const [tekst, setTekst] = useState(start);
+  // Esc og Enter flytter fokus tilbake til lista, og da mister feltet
+  // fokus. Uten vakta ville blur-en lagre teksten man nettopp angret.
+  const ferdig = useRef(false);
+  const avslutt = (t: string | null) => {
+    if (ferdig.current) return;
+    ferdig.current = true;
+    onFerdig(t);
+  };
   return (
-    <div className="border-t border-linje bg-flate px-5 py-3">
-      <p className="mb-1 text-etikett uppercase tracking-etikett text-blekk-dempet">
-        Notat · {elev.fornavn} {elev.etternavn}
-      </p>
-      <textarea
-        autoFocus
-        value={tekst}
-        rows={2}
-        onChange={(e) => setTekst(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Escape") onLukk(null);
-          if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) onLukk(tekst);
-        }}
-        className={feltStil}
-      />
-      <div className="mt-1 flex gap-3 text-liten text-blekk-dempet">
-        <button onClick={() => onLukk(tekst)} className="hover:text-blekk">
-          Lagre (⌘↵)
-        </button>
-        <button onClick={() => onLukk(null)} className="hover:text-blekk">
-          Avbryt (Esc)
-        </button>
-      </div>
-    </div>
+    <input
+      autoFocus
+      value={tekst}
+      placeholder="Notat — Enter lagrer, Esc angrer"
+      onClick={(e) => e.stopPropagation()}
+      onChange={(e) => setTekst(e.target.value)}
+      onKeyDown={(e) => {
+        e.stopPropagation();
+        if (e.key === "Escape") avslutt(null);
+        if (e.key === "Enter") avslutt(tekst);
+      }}
+      onBlur={() => avslutt(tekst)}
+      className="h-5 min-w-0 flex-1 rounded-vanlig border border-aksent bg-ark px-1.5 text-liten outline-none placeholder:text-blekk-svak"
+    />
   );
 }
 

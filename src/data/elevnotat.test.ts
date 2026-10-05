@@ -401,4 +401,26 @@ describe("øktnotatet uten skåring", () => {
     await settSkaringsnotat(elev, o, "  ");
     expect((await hentOktElever(o, fag))[0].notat).toBeNull();
   });
+
+  it("gir siste notat fra en tidligere økt i faget, ikke fra senere eller slettede", async () => {
+    base.nullstill();
+    const { hentOktElever } = await import("./okter");
+    const { koblePaFag } = await import("./elever");
+    const ar = await opprettSkolear("2026/27", "2026-08-17", "2027-06-20");
+    const fag = await leggFagIAr(ar, "MFL1", "Markedsføring", null);
+    const elev = await opprettElev("Tony", "Soprano");
+    await koblePaFag(elev, fag);
+    const a = await opprettOkt(fag, "MFL1", "2026-09-01", "08:15", 90);
+    const b = await opprettOkt(fag, "MFL1", "2026-09-08", "08:15", 90);
+    const c = await opprettOkt(fag, "MFL1", "2026-09-15", "08:15", 90);
+    const d = await opprettOkt(fag, "MFL1", "2026-09-22", "08:15", 90);
+
+    await settSkaringsnotat(elev, a, "Sov i timen");
+    await settSkaringsnotat(elev, b, "Kom for sent");
+    await slettOkt(b);
+    await settSkaringsnotat(elev, d, "Senere");
+
+    expect((await hentOktElever(c, fag))[0].forrigeNotat).toBe("Sov i timen");
+    expect((await hentOktElever(a, fag))[0].forrigeNotat).toBeNull();
+  });
 });

@@ -48,9 +48,16 @@ export type OktElev = {
   fornavn: string;
   etternavn: string;
   kode: string | null;
+  /** klassen eleven går i det året faget hører til */
+  klasse: string | null;
   /** null = ingen skåringsrad. Vises som 0 hvis økta er avholdt. */
   skalaverdiId: string | null;
   notat: string | null;
+  /**
+   * Siste notat på eleven fra en tidligere økt i faget. Vises i grått på
+   * raden når markøren står på en elev uten notat i denne økta (§4.4).
+   */
+  forrigeNotat: string | null;
 };
 
 /**
@@ -142,10 +149,27 @@ export async function hentOktElever(
   return hent<OktElev>(
     `SELECT e.id        AS elevId,
             e.fornavn, e.etternavn, e.kode,
+            k.navn AS klasse,
             s.skalaverdi_id AS skalaverdiId,
-            n.tekst AS notat
+            n.tekst AS notat,
+            (SELECT fn.tekst
+               FROM oktnotat fn
+               JOIN okt fo ON fo.id = fn.okt_id AND fo.slettet IS NULL
+               JOIN okt denne ON denne.id = $1
+              WHERE fn.elev_id = e.id AND fn.slettet IS NULL
+                AND fo.skolear_fag_id = $2 AND fo.id <> $1
+                AND TRIM(fn.tekst) <> ''
+                AND fo.dato || ' ' || COALESCE(fo.klokkeslett, '')
+                  < denne.dato || ' ' || COALESCE(denne.klokkeslett, '')
+              ORDER BY fo.dato DESC, fo.klokkeslett DESC
+              LIMIT 1) AS forrigeNotat
        FROM elev_fag ef
        JOIN elev e ON e.id = ef.elev_id AND e.slettet IS NULL
+       JOIN skolear_fag sf ON sf.id = ef.skolear_fag_id
+       LEFT JOIN elev_klasse ek
+              ON ek.elev_id = e.id AND ek.skolear_id = sf.skolear_id
+             AND ek.slettet IS NULL
+       LEFT JOIN klasse k ON k.id = ek.klasse_id AND k.slettet IS NULL
        LEFT JOIN skaring s
               ON s.elev_id = e.id AND s.okt_id = $1 AND s.slettet IS NULL
        LEFT JOIN oktnotat n
