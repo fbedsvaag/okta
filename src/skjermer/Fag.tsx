@@ -23,10 +23,13 @@ import { Fagvelger } from "./Fagvelger";
 export function Fag({
   skolearId,
   fag,
+  startFag,
   onEndret,
 }: {
   skolearId: string;
   fag: FagIAr[];
+  /** faget som åpnes som kort med en gang — fra «Fag i år» i sidemenyen */
+  startFag?: string | null;
   onEndret: () => void;
 }) {
   const [globalVarighet, setGlobalVarighet] = useState("180");
@@ -42,6 +45,11 @@ export function Fag({
     setValgtFag(id);
     ark.apneFag(id);
   }
+
+  useEffect(() => {
+    if (startFag) apne(startFag);
+    // Bare når et nytt fag velges i sidemenyen, ikke ved hver tegning.
+  }, [startFag]);
 
   useEffect(() => {
     void hentInnstilling("standard_varighet_min").then((v) =>

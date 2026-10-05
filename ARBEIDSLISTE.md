@@ -158,7 +158,7 @@ committes alene, og så det som alt annet bygger på kommer først.
   helfylt overalt (skåringsliste, heatmap, tegnforklaring) — én endring i
   `Ikon`/`farger.ts` hvis det er gjort riktig. Ny `Fagfirkant`-komponent i
   `felles.tsx`, og bytt ut alle fargestreker i venstremarg.
-- [ ] **5.3 Sidemeny.** Erstatt menyraden med sidemeny (DESIGN §6), med
+- [x] **5.3 Sidemeny.** Erstatt menyraden med sidemeny (DESIGN §6), med
   G-snarveier. Hovedflaten som ark med 10 px radius.
 - [ ] **5.4 Glass.** Fargeteppe i vinduet, glass på sidemeny, verktøylinje,
   ⌘K og kontekstmeny (DESIGN §7). Innstilling `glass` (på/av) i

@@ -489,13 +489,21 @@ html {
    * ellers klippes alt som ikke fikk plass i første vindushøyde.
    */
   .app-skall,
-  .app-skall > main,
-  .app-skall > main > div {
+  .app-skall > .ark-flate,
+  .app-skall > .ark-flate > main,
+  .app-skall > .ark-flate > main > div {
     display: block !important;
     height: auto !important;
     max-height: none !important;
     overflow: visible !important;
     padding: 0 !important;
+  }
+
+  /* Arket ved siden av sidemenyen er en skjermform. Papiret er arket. */
+  .app-skall > .ark-flate {
+    margin: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
   }
 
   /* Ingen rad skal deles på tvers av to sider. */

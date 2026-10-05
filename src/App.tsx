@@ -27,9 +27,9 @@ import { Vurderinger } from "./skjermer/Vurderinger";
 import { Samtaler } from "./skjermer/Samtaler";
 import { ElevPanel } from "./skjermer/ElevPanel";
 import { Knapp, Ikon } from "./ui/felles";
+import { G_SNARVEIER, Sidemeny, type Menypunkt } from "./ui/Sidemeny";
 import { Sokevindu } from "./ui/Sokevindu";
 import { ArkKobling, Arkstabel, type ArkApi } from "./ui/Arkstabel";
-import { Ordmerke } from "./ui/logo";
 
 /**
  * Et sted i historikken.
@@ -109,9 +109,38 @@ export default function App() {
   // ⌘K: søk på elev eller økt, hvor som helst i appen (§4.4).
   const [sokApent, setSokApent] = useState(false);
 
+  // G-snarveiene (DESIGN.md §6): G, så en bokstav innen et lite øyeblikk.
+  // Aldri mens man skriver i et felt — da er G bare en bokstav.
+  const ventG = useRef<number | null>(null);
+
   useEffect(() => {
     const taster = (e: KeyboardEvent) => {
-      if (!(e.metaKey || e.ctrlKey)) return;
+      if (!(e.metaKey || e.ctrlKey)) {
+        if (e.altKey || e.repeat) return;
+        const mal = e.target as HTMLElement;
+        if (mal.closest?.("input, textarea, select, [contenteditable]")) return;
+        const tast = e.key.toLowerCase();
+        if (ventG.current !== null) {
+          window.clearTimeout(ventG.current);
+          ventG.current = null;
+          const punkt = G_SNARVEIER[tast];
+          if (punkt) {
+            e.preventDefault();
+            ark.current?.lukkAlle();
+            ga(punkt);
+          }
+          return;
+        }
+        if (tast === "g") {
+          ventG.current = window.setTimeout(() => (ventG.current = null), 1200);
+        }
+        return;
+      }
+      if (e.key === ",") {
+        e.preventDefault();
+        ark.current?.lukkAlle();
+        ga("innstillinger");
+      }
       if (e.key === "k" || e.key === "K") {
         e.preventDefault();
         setSokApent(true);
@@ -127,7 +156,7 @@ export default function App() {
     };
     window.addEventListener("keydown", taster);
     return () => window.removeEventListener("keydown", taster);
-  }, [tilbake, fram]);
+  }, [tilbake, fram, ga]);
 
   const last = useCallback(async () => {
     try {
@@ -207,7 +236,7 @@ export default function App() {
       onFagEndret={last}
     >
       <ArkKobling til={ark} />
-      <div className="app-skall flex h-full flex-col overflow-clip bg-bord text-blekk">
+      <div className="app-skall flex h-full overflow-clip bg-bord text-blekk">
         {sokApent && (
           <Sokevindu
             skolearId={skolear.id}
@@ -217,292 +246,196 @@ export default function App() {
             onLukk={() => setSokApent(false)}
           />
         )}
-        <header className="ikkeutskrift flex shrink-0 flex-wrap items-center gap-x-1 gap-y-1 border-b border-linje px-4 py-2">
-          <span className="mr-3">
-            <Ordmerke />
-          </span>
-          <Pil
-            retning="tilbake"
-            av={peker === 0}
-            onKlikk={tilbake}
-            hint="Tilbake (⌘[)"
-          />
-          <Pil
-            retning="fram"
-            av={peker >= steder.length - 1}
-            onKlikk={fram}
-            hint="Fram (⌘])"
-          />
-          <span className="mx-2 h-4 w-px bg-linje-medium" />
-          {/*
-          Én rad. Kalender og Perioder er visninger av øktene og står som en
-          bryter i Økter; Skoleruta ligger under Innstillinger.
-        */}
-          <Fane
-            navn="I dag"
-            aktiv={visning === "idag"}
-            onKlikk={() => ga("idag")}
-          />
-          <Fane
-            navn="Økter"
-            aktiv={erOktvisning(visning)}
-            onKlikk={() => ga("okter")}
-          />
-          <Fane
-            navn="Elever"
-            aktiv={
-              visning === "elever" || visning === "elev" || visning === "liminn"
-            }
-            onKlikk={() => ga("elever")}
-          />
-          <Fane
-            navn="Vurderinger"
-            aktiv={visning === "vurderinger"}
-            onKlikk={() => ga("vurderinger")}
-          />
-          <Fane
-            navn="Samtaler"
-            aktiv={visning === "samtaler"}
-            onKlikk={() => ga("samtaler")}
-          />
-          <Fane
-            navn="Fag"
-            aktiv={visning === "fag"}
-            onKlikk={() => ga("fag")}
-          />
-          <span className="grow" />
-          {/* Synlig inngang til ⌘K, så snarveien kan oppdages. */}
-          <button
-            onClick={() => setSokApent(true)}
-            className="mr-2 flex items-center gap-2 rounded border border-linje px-2 py-0.5 text-liten text-blekk-svak hover:border-linje-sterk hover:text-blekk"
-          >
-            Søk
-            <kbd className="font-sans text-blekk-svakest">⌘K</kbd>
-          </button>
-          <button
-            onClick={() => ga("innstillinger")}
-            title="Skoleåret — bytt eller endre i Innstillinger"
-            className="mr-1 px-1 text-liten tabular-nums text-blekk-svak hover:text-blekk"
-          >
-            {skolear.navn}
-          </button>
-          <Fane
-            navn="Innstillinger"
-            aktiv={visning === "innstillinger" || visning === "skoleruta"}
-            onKlikk={() => ga("innstillinger")}
-          />
-        </header>
-
-        {melding && (
-          <div className="ikkeutskrift flex shrink-0 items-center gap-3 border-b border-linje-medium bg-flate-svak px-6 py-1.5 text-brod text-aksent">
-            <span className="inline-flex items-center gap-1.5">
-              <Ikon navn="hake" />
-              {melding}
-            </span>
-            <Knapp variant="stille" onClick={() => setMelding(null)}>
-              Lukk
-            </Knapp>
-          </div>
-        )}
+        <Sidemeny
+          skolearNavn={skolear.navn}
+          aktiv={aktivtPunkt(visning)}
+          fag={fag}
+          apentFagId={visning === "fag" ? apneId : null}
+          kanTilbake={peker > 0}
+          kanFram={peker < steder.length - 1}
+          onGa={(p) => ga(p)}
+          onSok={() => setSokApent(true)}
+          onApneFag={(id) => ga("fag", id)}
+          onAlleFag={() => ga("fag")}
+          onInnstillinger={() => ga("innstillinger")}
+          onTilbake={tilbake}
+          onFram={fram}
+        />
 
         {/*
-        Flex hele veien ned, ingen prosenthøyder. `h-full` krever at hver
-        forelder har en definert høyde, og brister det ett sted vokser
-        innholdet forbi skallet — som da lar seg rulle med hjulet selv om
-        det er satt til overflow-clip. Da flytter fanene på seg.
+          Hovedflaten er et hvitt ark ved siden av sidemenyen, 8 px fra
+          kanten og med 10 px radius (DESIGN.md §6). Innholdet står alltid
+          på hel flate — glass kommer bare på det som ligger over (§7).
+        */}
+        <div className="ark-flate my-2 mr-2 flex min-w-0 flex-1 flex-col overflow-clip rounded-ark bg-ark shadow-[var(--shadow-panel)]">
+          {melding && (
+            <div className="ikkeutskrift flex shrink-0 items-center gap-3 border-b border-linje-medium bg-flate-svak px-6 py-1.5 text-brod text-aksent">
+              <span className="inline-flex items-center gap-1.5">
+                <Ikon navn="hake" />
+                {melding}
+              </span>
+              <Knapp variant="stille" onClick={() => setMelding(null)}>
+                Lukk
+              </Knapp>
+            </div>
+          )}
 
-        `min-h-0` er det som lar en flex-boks bli mindre enn innholdet sitt.
-        Uten den nekter den å krympe, og rullesonen under får aldri en
-        begrenset høyde å rulle innenfor.
-      */}
-        <main className="flex min-h-0 flex-1 flex-col overflow-clip">
-          {/*
+          <main className="flex min-h-0 flex-1 flex-col overflow-clip">
+            {/*
           Samme padding på alle skjermer. Den var før avhengig av om skjermen
           hadde sidepanel, og da hoppet innholdet 8 px både sidelengs og ned
           hver gang man byttet fane. Skjermene med panel er de tetteste — de
           skal ikke miste bredde — så det er den strammeste verdien som gjelder
           for alle.
         */}
-          <div className="flex min-h-0 flex-1 flex-col px-6 py-4">
-            {visning === "idag" && (
-              <IDag
-                skolear={skolear}
-                fag={fag}
-                onGaTil={(v, id) => ga(v, id ?? null)}
-                onApneOkt={apneOktSomArk}
-              />
-            )}
+            <div className="flex min-h-0 flex-1 flex-col px-6 py-4">
+              {visning === "idag" && (
+                <IDag
+                  skolear={skolear}
+                  fag={fag}
+                  onGaTil={(v, id) => ga(v, id ?? null)}
+                  onApneOkt={apneOktSomArk}
+                />
+              )}
 
-            {visning === "kalender" && (
-              <Skolekalender
-                bryter={<Visningsbryter visning={visning} ga={ga} />}
-                key={versjon}
-                skolear={skolear}
-                fag={fag}
-                onApneOkt={apneOktSomArk}
-              />
-            )}
+              {visning === "kalender" && (
+                <Skolekalender
+                  bryter={<Visningsbryter visning={visning} ga={ga} />}
+                  key={versjon}
+                  skolear={skolear}
+                  fag={fag}
+                  onApneOkt={apneOktSomArk}
+                />
+              )}
 
-            {visning === "skoleruta" && (
-              <Skoleruta key={versjon} skolear={skolear} onEndret={last} />
-            )}
+              {visning === "skoleruta" && (
+                <Skoleruta key={versjon} skolear={skolear} onEndret={last} />
+              )}
 
-            {visning === "samtaler" && (
-              <Samtaler
-                key={versjon}
-                skolear={skolear}
-                fag={fag}
-                startFagId={apneId ?? undefined}
-              />
-            )}
+              {visning === "samtaler" && (
+                <Samtaler
+                  key={versjon}
+                  skolear={skolear}
+                  fag={fag}
+                  startFagId={apneId ?? undefined}
+                />
+              )}
 
-            {visning === "innstillinger" && (
-              <Innstillinger
-                skolear={skolear}
-                fag={fag}
-                onEndret={last}
-                onApneSkoleruta={() => ga("skoleruta")}
-              />
-            )}
+              {visning === "innstillinger" && (
+                <Innstillinger
+                  skolear={skolear}
+                  fag={fag}
+                  onEndret={last}
+                  onApneSkoleruta={() => ga("skoleruta")}
+                />
+              )}
 
-            {/*
+              {/*
           Ingen key={versjon} her, med vilje. Fag får faglista som prop og
           trenger ikke bygges opp på nytt for å vise ferske data — og gjør den
           det, nullstilles Rediger-bryteren hver gang et felt lagrer.
         */}
-            {visning === "fag" && (
-              <Fag skolearId={skolear.id} fag={fag} onEndret={last} />
-            )}
+              {visning === "fag" && (
+                <Fag
+                  skolearId={skolear.id}
+                  fag={fag}
+                  startFag={apneId}
+                  onEndret={last}
+                />
+              )}
 
-            {visning === "elever" && (
-              <Elever
-                key={versjon}
-                startElev={apneId}
-                skolearId={skolear.id}
-                fag={fag}
-                onLimInn={() => ga("liminn")}
-              />
-            )}
+              {visning === "elever" && (
+                <Elever
+                  key={versjon}
+                  startElev={apneId}
+                  skolearId={skolear.id}
+                  fag={fag}
+                  onLimInn={() => ga("liminn")}
+                />
+              )}
 
-            {/*
+              {/*
             Elevkortet alene, over hele bredden. Lista ved siden av forstyrrer
             når man har søkt opp én bestemt elev. Lukk går dit man kom fra.
           */}
-            {visning === "elev" && apneId && (
-              <div className="mx-auto min-h-0 w-full max-w-5xl flex-1 overflow-auto rounded-vanlig border border-linje">
-                <ElevPanel
-                  key={apneId}
-                  elevId={apneId}
-                  aktivtSkolearId={skolear.id}
-                  onLukk={() => (peker > 0 ? tilbake() : ga("elever"))}
+              {visning === "elev" && apneId && (
+                <div className="mx-auto min-h-0 w-full max-w-5xl flex-1 overflow-auto rounded-vanlig border border-linje">
+                  <ElevPanel
+                    key={apneId}
+                    elevId={apneId}
+                    aktivtSkolearId={skolear.id}
+                    onLukk={() => (peker > 0 ? tilbake() : ga("elever"))}
+                    onApneOkt={apneOktSomArk}
+                  />
+                </div>
+              )}
+
+              {visning === "liminn" && (
+                <LimInn
+                  key={apneId ?? ""}
+                  skolearId={skolear.id}
+                  fag={fag}
+                  // Fra et fagkort: faget står valgt, og lista er hele faget.
+                  startFagId={apneId ?? undefined}
+                  erstatt={apneId !== null}
+                  onFerdig={(m) => {
+                    setMelding(m);
+                    setVersjon((v) => v + 1);
+                    if (apneId) {
+                      // Tilbake til faget, med kortet oppe igjen.
+                      ga("fag");
+                      ark.current?.apneFag(apneId);
+                    } else ga("elever");
+                  }}
+                  onAvbryt={() => {
+                    if (apneId) {
+                      ga("fag");
+                      ark.current?.apneFag(apneId);
+                    } else ga("elever");
+                  }}
+                />
+              )}
+
+              {visning === "okter" && (
+                <Okter
+                  bryter={<Visningsbryter visning={visning} ga={ga} />}
+                  key={versjon}
+                  skolear={skolear}
+                  fag={fag}
+                  startValgt={apneId}
+                  onApnePerioder={() => ga("perioder")}
+                />
+              )}
+
+              {visning === "perioder" && (
+                <Perioder
+                  bryter={<Visningsbryter visning={visning} ga={ga} />}
+                  key={versjon}
+                  skolear={skolear}
+                  fag={fag}
                   onApneOkt={apneOktSomArk}
                 />
-              </div>
-            )}
+              )}
 
-            {visning === "liminn" && (
-              <LimInn
-                key={apneId ?? ""}
-                skolearId={skolear.id}
-                fag={fag}
-                // Fra et fagkort: faget står valgt, og lista er hele faget.
-                startFagId={apneId ?? undefined}
-                erstatt={apneId !== null}
-                onFerdig={(m) => {
-                  setMelding(m);
-                  setVersjon((v) => v + 1);
-                  if (apneId) {
-                    // Tilbake til faget, med kortet oppe igjen.
-                    ga("fag");
-                    ark.current?.apneFag(apneId);
-                  } else ga("elever");
-                }}
-                onAvbryt={() => {
-                  if (apneId) {
-                    ga("fag");
-                    ark.current?.apneFag(apneId);
-                  } else ga("elever");
-                }}
-              />
-            )}
-
-            {visning === "okter" && (
-              <Okter
-                bryter={<Visningsbryter visning={visning} ga={ga} />}
-                key={versjon}
-                skolear={skolear}
-                fag={fag}
-                startValgt={apneId}
-                onApnePerioder={() => ga("perioder")}
-              />
-            )}
-
-            {visning === "perioder" && (
-              <Perioder
-                bryter={<Visningsbryter visning={visning} ga={ga} />}
-                key={versjon}
-                skolear={skolear}
-                fag={fag}
-                onApneOkt={apneOktSomArk}
-              />
-            )}
-
-            {visning === "vurderinger" && (
-              <Vurderinger key={versjon} skolearId={skolear.id} fag={fag} />
-            )}
-          </div>
-        </main>
+              {visning === "vurderinger" && (
+                <Vurderinger key={versjon} skolearId={skolear.id} fag={fag} />
+              )}
+            </div>
+          </main>
+        </div>
       </div>
     </Arkstabel>
   );
 }
 
-function Pil({
-  retning,
-  av,
-  onKlikk,
-  hint,
-}: {
-  retning: "tilbake" | "fram";
-  av: boolean;
-  onKlikk: () => void;
-  hint: string;
-}) {
-  return (
-    <button
-      onClick={onKlikk}
-      disabled={av}
-      title={hint}
-      className="rounded px-1.5 py-0.5 text-tittel leading-none text-blekk-svak hover:bg-flate hover:text-blekk disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-blekk-svak"
-    >
-      {retning === "tilbake" ? "\u2039" : "\u203a"}
-    </button>
-  );
-}
-
-function Fane({
-  navn,
-  aktiv,
-  onKlikk,
-  tabulaer,
-}: {
-  navn: string;
-  aktiv: boolean;
-  onKlikk: () => void;
-  tabulaer?: boolean;
-}) {
-  return (
-    <button
-      onClick={onKlikk}
-      className={`rounded px-2 py-0.5 text-brod ${tabulaer ? "tabular-nums" : ""} ${
-        aktiv
-          ? "bg-valgt font-medium text-aksent"
-          : "text-blekk-dempet hover:text-blekk"
-      }`}
-    >
-      {navn}
-    </button>
-  );
+/** Hvilket punkt i sidemenyen som står markert for en visning. */
+function aktivtPunkt(v: Visning): Menypunkt | "fag" | "innstillinger" | null {
+  if (v === "idag" || v === "vurderinger" || v === "samtaler") return v;
+  if (erOktvisning(v)) return "okter";
+  if (v === "elever" || v === "elev" || v === "liminn") return "elever";
+  if (v === "fag") return "fag";
+  if (v === "innstillinger" || v === "skoleruta") return "innstillinger";
+  return null;
 }
 
 /** Visningene som hører under Økter-fanen. */

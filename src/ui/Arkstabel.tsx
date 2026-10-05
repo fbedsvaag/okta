@@ -54,6 +54,8 @@ type Api = {
   ) => void;
   /** tar det øverste arket bort */
   lukk: () => void;
+  /** tar alle arkene bort — når man går til en annen skjerm */
+  lukkAlle: () => void;
 };
 
 const Kontekst = createContext<Api | null>(null);
@@ -161,6 +163,7 @@ export function Arkstabel({
     apneFag: (id) => legg({ type: "fag", id }),
     apneElev: (id, valg) => legg({ type: "elev", id, ...valg }),
     lukk,
+    lukkAlle,
   };
 
   // Esc tar ett nivå tilbake. Fanges før alt annet (capture), så elevkortets
