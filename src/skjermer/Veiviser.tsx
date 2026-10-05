@@ -11,58 +11,197 @@ import { hentFagIAr, leggFagIAr, type FagIAr } from "../data/fag";
 import { FAGFARGER } from "../ui/farger";
 import { Felt, Knapp, Fagfirkant, Ikon } from "../ui/felles";
 import { LimInn } from "./LimInn";
+import { Ordmerke } from "../ui/logo";
 
 /**
- * Førstegangsoppsett, SPEC §4.0. Tre steg, i denne rekkefølgen fordi hvert
- * steg avhenger av det forrige. Hvert steg lagrer med en gang, så veiviseren
- * kan avbrytes og gjenopptas.
+ * Førstegangsoppsett, SPEC §4.0 og DESIGN.md §10.
+ *
+ * Eget vindu med stegene til venstre: Velkommen · Skoleåret · Fagene dine ·
+ * Elevene · Ferdig. Større tekst enn resten av appen — dette er det første
+ * en kollega ser. Hvert steg lagrer med en gang, så veiviseren kan
+ * avbrytes og gjenopptas; «Fortsett senere» står alltid synlig. Stegene er
+ * snarveier gjennom skjermer som finnes uansett (Fag, Elever, Innstillinger).
  */
+const STEG = ["Velkommen", "Skoleåret", "Fagene dine", "Elevene", "Ferdig"];
+
 export function Veiviser({ onFerdig }: { onFerdig: () => void }) {
-  const [steg, setSteg] = useState<1 | 2 | 3>(1);
+  const [steg, setSteg] = useState(0);
   const [skolearId, setSkolearId] = useState<string | null>(null);
   const [fag, setFag] = useState<FagIAr[]>([]);
+  const [meldinger, setMeldinger] = useState<string[]>([]);
+
+  // Uten et skoleår finnes det ingen app å fortsette i senere — alt annet
+  // henger under det.
+  const kanFortsetteSenere = skolearId !== null;
 
   return (
-    <div className="mx-auto max-w-2xl px-8 py-12">
-      <ol className="mb-8 flex gap-6 text-liten">
-        {["Skoleår", "Fag", "Elever"].map((navn, i) => (
-          <li
-            key={navn}
-            className={
-              i + 1 === steg
-                ? "font-semibold text-blekk"
-                : i + 1 < steg
-                  ? "text-blekk-svak"
-                  : "text-blekk-svakest"
-            }
-          >
-            {i + 1}. {navn}
+    <div className="veiviser-tekst flex h-full bg-bord text-blekk">
+      <nav className="flex w-60 shrink-0 flex-col px-6 py-10">
+        <Ordmerke storrelse={24} />
+        <ol className="mt-10 space-y-1">
+          {STEG.map((navn, i) => (
+            <li
+              key={navn}
+              aria-current={i === steg ? "step" : undefined}
+              className={`flex items-center gap-2.5 rounded-stor px-2 py-1.5 text-brod ${
+                i === steg
+                  ? "bg-ark font-medium text-blekk shadow-[var(--shadow-lav)]"
+                  : i < steg
+                    ? "text-blekk-dempet"
+                    : "text-blekk-svak"
+              }`}
+            >
+              <span
+                className={`grid h-5 w-5 place-items-center rounded-full text-mikro tabular-nums ${
+                  i < steg
+                    ? "bg-aksent text-ark"
+                    : i === steg
+                      ? "border border-aksent text-aksent"
+                      : "border border-linje-sterk"
+                }`}
+              >
+                {i < steg ? <Ikon navn="hake" /> : i + 1}
+              </span>
+              {navn}
+            </li>
+          ))}
+        </ol>
+        <span className="grow" />
+        <button
+          onClick={onFerdig}
+          disabled={!kanFortsetteSenere}
+          title={
+            kanFortsetteSenere
+              ? "Det du har lagt inn er lagret. Resten finner du under Fag og Elever."
+              : "Opprett skoleåret først — alt annet henger under det."
+          }
+          className="text-left text-liten text-blekk-dempet hover:text-blekk disabled:opacity-40"
+        >
+          Fortsett senere
+        </button>
+      </nav>
+
+      <main className="my-4 mr-4 min-w-0 flex-1 overflow-auto rounded-ark bg-ark px-12 py-12 shadow-[var(--shadow-panel)]">
+        <div className="max-w-2xl">
+          {steg === 0 && <StegVelkommen onSelv={() => setSteg(1)} />}
+
+          {steg === 1 && (
+            <StegSkolear
+              onFerdig={(id) => {
+                setSkolearId(id);
+                setSteg(2);
+              }}
+            />
+          )}
+
+          {steg === 2 && skolearId && (
+            <StegFag
+              skolearId={skolearId}
+              fag={fag}
+              setFag={setFag}
+              onFerdig={() => setSteg(3)}
+            />
+          )}
+
+          {steg === 3 && skolearId && (
+            <StegElever
+              skolearId={skolearId}
+              fag={fag}
+              meldinger={meldinger}
+              setMeldinger={setMeldinger}
+              onFerdig={() => setSteg(4)}
+            />
+          )}
+
+          {steg === 4 && (
+            <StegFerdig fag={fag} meldinger={meldinger} onApne={onFerdig} />
+          )}
+        </div>
+      </main>
+    </div>
+  );
+}
+
+/**
+ * Første steg: oppsettfil fra en kollega, eller sett opp selv. Oppsettfila
+ * (ARBEIDSLISTE 5.13) er ikke bygget ennå; plassen står klar.
+ */
+function StegVelkommen({ onSelv }: { onSelv: () => void }) {
+  return (
+    <section>
+      <h1 className="text-[calc(30px*var(--tekst-skala))] font-light leading-tight tracking-overskrift">
+        Velkommen til Økta
+      </h1>
+      <p className="mt-2 text-brod text-blekk-dempet">
+        Her planlegger du skoleåret, skårer elevene underveis og ser hvordan det
+        går med dem over tid. Alt ligger på denne maskinen.
+      </p>
+
+      <div className="mt-8 grid gap-3">
+        <div className="rounded-stor border border-linje p-4 opacity-60">
+          <p className="text-brod font-medium">
+            Bruk en oppsettfil fra en kollega{" "}
+            <span className="font-normal text-blekk-dempet">· anbefalt</span>
+          </p>
+          <p className="mt-1 text-liten text-blekk-dempet">
+            Skoleåret, fagene og skoleruta som kollegaen har satt opp. Kommer
+            snart.
+          </p>
+        </div>
+        <button
+          onClick={onSelv}
+          className="rounded-stor border border-aksent p-4 text-left hover:bg-flate"
+        >
+          <p className="text-brod font-medium">Sett opp selv</p>
+          <p className="mt-1 text-liten text-blekk-dempet">
+            Skoleåret, fagene dine og elevene — tre korte steg.
+          </p>
+        </button>
+      </div>
+    </section>
+  );
+}
+
+/** Siste steg: hva som er lagt inn, og veien inn i appen. */
+function StegFerdig({
+  fag,
+  meldinger,
+  onApne,
+}: {
+  fag: FagIAr[];
+  meldinger: string[];
+  onApne: () => void;
+}) {
+  return (
+    <section>
+      <h1 className="text-[calc(30px*var(--tekst-skala))] font-light leading-tight tracking-overskrift">
+        Ferdig
+      </h1>
+      <p className="mt-2 text-brod text-blekk-dempet">
+        Alt er lagret. Økter legger du inn under Økter, én og én eller mange på
+        en gang.
+      </p>
+      <ul className="mt-6 space-y-1.5 text-brod">
+        <li className="flex items-center gap-2">
+          <Ikon navn="hake" /> Skoleåret er opprettet
+        </li>
+        <li className="flex items-center gap-2">
+          <Ikon navn="hake" />
+          {fag.length === 1 ? "Ett fag" : `${fag.length} fag`}:{" "}
+          {fag.map((f) => f.kode).join(", ")}
+        </li>
+        {meldinger.map((m, i) => (
+          <li key={i} className="flex items-center gap-2">
+            <Ikon navn="hake" /> {m}
           </li>
         ))}
-      </ol>
-
-      {steg === 1 && (
-        <StegSkolear
-          onFerdig={(id) => {
-            setSkolearId(id);
-            setSteg(2);
-          }}
-        />
-      )}
-
-      {steg === 2 && skolearId && (
-        <StegFag
-          skolearId={skolearId}
-          fag={fag}
-          setFag={setFag}
-          onFerdig={() => setSteg(3)}
-        />
-      )}
-
-      {steg === 3 && skolearId && (
-        <StegElever skolearId={skolearId} fag={fag} onFerdig={onFerdig} />
-      )}
-    </div>
+      </ul>
+      <div className="mt-8">
+        <Knapp variant="primar" onClick={onApne}>
+          Åpne Økta
+        </Knapp>
+      </div>
+    </section>
   );
 }
 
@@ -83,7 +222,9 @@ function StegSkolear({ onFerdig }: { onFerdig: (id: string) => void }) {
 
   return (
     <section>
-      <h1 className="text-overskrift font-light tracking-overskrift">Opprett skoleåret</h1>
+      <h1 className="text-[calc(30px*var(--tekst-skala))] font-light leading-tight tracking-overskrift">
+        Opprett skoleåret
+      </h1>
       <p className="mt-1 text-brod text-blekk-dempet">
         Alt annet i appen henger under et skoleår. Datoene kan endres senere.
       </p>
@@ -154,7 +295,9 @@ function StegFag({
 
   return (
     <section>
-      <h1 className="text-overskrift font-light tracking-overskrift">Hvilke fag har du i år?</h1>
+      <h1 className="text-[calc(30px*var(--tekst-skala))] font-light leading-tight tracking-overskrift">
+        Hvilke fag har du i år?
+      </h1>
       <p className="mt-1 text-brod text-blekk-dempet">
         Kode og navn skriver du selv — <code>MFL1</code>, <code>ENG1</code>,{" "}
         <code>Norsk</code>, hva du nå enn underviser i.
@@ -203,13 +346,16 @@ function StegFag({
 function StegElever({
   skolearId,
   fag,
+  meldinger,
+  setMeldinger,
   onFerdig,
 }: {
   skolearId: string;
   fag: FagIAr[];
+  meldinger: string[];
+  setMeldinger: (f: (tidligere: string[]) => string[]) => void;
   onFerdig: () => void;
 }) {
-  const [meldinger, setMeldinger] = useState<string[]>([]);
   const [limerInn, setLimerInn] = useState(false);
 
   if (limerInn) {
@@ -228,7 +374,9 @@ function StegElever({
 
   return (
     <section>
-      <h1 className="text-overskrift font-light tracking-overskrift">Legg inn klasselistene</h1>
+      <h1 className="text-[calc(30px*var(--tekst-skala))] font-light leading-tight tracking-overskrift">
+        Legg inn klasselistene
+      </h1>
       <p className="mt-1 text-brod text-blekk-dempet">
         Ett fag om gangen. Kjenner appen igjen et navn fra et fag du allerede
         har fylt, spør den om det er samme elev. Svarer du ja, blir eleven lagt

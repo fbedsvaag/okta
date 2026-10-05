@@ -511,6 +511,20 @@
 }
 
 /*
+ * Førstegangsoppsettet har større tekst enn resten av appen (DESIGN.md
+ * §10: 15–17 px). Tokenene regnes ut i :root, så det holder ikke å endre
+ * --tekst-skala her — gradene må settes på nytt for veiviseren.
+ */
+.veiviser-tekst {
+  --text-mikro: calc(12px * var(--tekst-skala));
+  --text-etikett: calc(13px * var(--tekst-skala));
+  --text-liten: calc(15px * var(--tekst-skala));
+  --text-brod: calc(17px * var(--tekst-skala));
+  --text-medium: calc(18px * var(--tekst-skala));
+  --text-tittel: calc(21px * var(--tekst-skala));
+}
+
+/*
  * Dokumentet selv skal ikke kunne bevege seg.
  *
  * macOS lar deg dra hele siden med styreflata og spretter den tilbake, selv

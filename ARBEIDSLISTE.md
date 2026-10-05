@@ -186,7 +186,7 @@ committes alene, og så det som alt annet bygger på kommer først.
 - [x] **5.11 Innstillinger.** Venstremeny med grupper. Generelt får
   tekststørrelse (Mindre / Vanlig / Større → `--tekst-skala`). Utseende får
   glass og paletter. Del oppsett kommer i 5.13.
-- [ ] **5.12 Oppsettveiviser.** Fire steg + Ferdig, større tekst,
+- [x] **5.12 Oppsettveiviser.** Fire steg + Ferdig, større tekst,
   «Fortsett senere», duplikatspørsmål med angre. Første steg har plass til
   oppsettfil, men knappen kan vente til 5.13.
 - [ ] **5.13 Oppsettfil.** Spec og oppskrift i `docs/oppsettfil.md`.

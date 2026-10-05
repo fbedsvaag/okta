@@ -13,7 +13,7 @@ import { settElevbilde } from "../data/elevbilde";
 import { lesInschool, navnenokkel, somLimInnTekst } from "../import/inschool";
 import { Elevbilde } from "../ui/Elevbilde";
 import type { FagIAr } from "../data/fag";
-import { Felt, Knapp } from "../ui/felles";
+import { Bryter, Felt, Knapp } from "../ui/felles";
 
 /**
  * Lim inn klasseliste, SPEC §7. Ingenting skrives til databasen før
@@ -490,27 +490,59 @@ function ForhandsvisRad({
           )
         ) : (
           <div className="flex items-center gap-2">
-            <select
-              value={rad.valgt}
-              onChange={(e) => {
-                const k = rad.kandidater.find((x) => x.id === e.target.value);
-                // Et fullere navn fra lista tas med av seg selv; et annet
-                // navn må velges med vilje.
-                onEndre({
-                  valgt: e.target.value,
-                  byttNavn: k ? erFullereNavn(rad.linje, k) : false,
-                });
-              }}
-              className="rounded border border-linje bg-ark px-1 py-0.5 text-liten"
-            >
-              <option value="ny">Ny elev</option>
-              {rad.kandidater.map((k) => (
-                <option key={k.id} value={k.id}>
-                  {k.fornavn} {k.etternavn}
-                  {k.klasse ? ` (${k.klasse})` : ""}
-                </option>
-              ))}
-            </select>
+            {/*
+              Én kandidat: et ja/nei-spørsmål (DESIGN.md §10). Valget kan
+              byttes fram og tilbake — ingenting skrives før importen
+              bekreftes. Flere kandidater: velg i lista.
+            */}
+            {rad.kandidater.length === 1 ? (
+              <Bryter
+                storrelse="liten"
+                verdi={rad.valgt === "ny" ? "ny" : "samme"}
+                settVerdi={(v) => {
+                  const k = rad.kandidater[0];
+                  onEndre(
+                    v === "ny"
+                      ? { valgt: "ny", byttNavn: false }
+                      : { valgt: k.id, byttNavn: erFullereNavn(rad.linje, k) },
+                  );
+                }}
+                valg={[
+                  {
+                    id: "samme",
+                    navn: "Ja, samme elev",
+                    tittel: `${rad.kandidater[0].fornavn} ${rad.kandidater[0].etternavn}${
+                      rad.kandidater[0].klasse
+                        ? ` (${rad.kandidater[0].klasse})`
+                        : ""
+                    }`,
+                  },
+                  { id: "ny", navn: "Nei, en annen" },
+                ]}
+              />
+            ) : (
+              <select
+                value={rad.valgt}
+                onChange={(e) => {
+                  const k = rad.kandidater.find((x) => x.id === e.target.value);
+                  // Et fullere navn fra lista tas med av seg selv; et annet
+                  // navn må velges med vilje.
+                  onEndre({
+                    valgt: e.target.value,
+                    byttNavn: k ? erFullereNavn(rad.linje, k) : false,
+                  });
+                }}
+                className="rounded border border-linje bg-ark px-1 py-0.5 text-liten"
+              >
+                <option value="ny">Ny elev</option>
+                {rad.kandidater.map((k) => (
+                  <option key={k.id} value={k.id}>
+                    {k.fornavn} {k.etternavn}
+                    {k.klasse ? ` (${k.klasse})` : ""}
+                  </option>
+                ))}
+              </select>
+            )}
             {rad.klassekonflikt && rad.valgt !== "ny" && (
               <label className="flex items-center gap-1 text-liten text-blekk-dempet">
                 <input
