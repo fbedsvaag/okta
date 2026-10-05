@@ -411,6 +411,89 @@
 }
 
 /*
+ * Paletter (DESIGN.md §4). Fiolett er standard og står i @theme over; de
+ * andre bytter bare aksent, valgt og bord. Aksentens mørkere trinn (hover,
+ * trykk) regnes ut fra aksenten, så de følger med. Hver palett har egne
+ * verdier i mørk modus. Fargeteppet bygger på aksent og valgt og følger av
+ * seg selv. Utskriften er alltid lys og bruker ikke paletten.
+ */
+@media screen {
+  :root[data-palett]:not([data-palett="fiolett"]) {
+    --color-aksent-mork: color-mix(in srgb, var(--color-aksent), black 18%);
+    --color-aksent-dyp: color-mix(in srgb, var(--color-aksent), black 30%);
+    --color-aksent-dypere: color-mix(in srgb, var(--color-aksent), black 24%);
+  }
+
+  :root[data-palett="skifer"] {
+    --color-aksent: #3d5a80;
+    --color-valgt: #dde5f0;
+    --color-bord: #e8ecf2;
+  }
+
+  :root[data-palett="mose"] {
+    --color-aksent: #4d6b3c;
+    --color-valgt: #e1ead8;
+    --color-bord: #eaede5;
+  }
+
+  :root[data-palett="rust"] {
+    --color-aksent: #8a4a2a;
+    --color-valgt: #f0e0d6;
+    --color-bord: #f1ebe6;
+  }
+
+  :root[data-palett="fjord"] {
+    --color-aksent: #2f6b6b;
+    --color-valgt: #d8ebe9;
+    --color-bord: #e6eeed;
+  }
+
+  :root[data-palett="grafitt"] {
+    --color-aksent: #3a3a40;
+    --color-valgt: #e2e2e6;
+    --color-bord: #ececee;
+  }
+}
+
+@media screen {
+  :root[data-tema="mork"][data-palett]:not([data-palett="fiolett"]) {
+    --color-aksent-mork: color-mix(in srgb, var(--color-aksent), white 15%);
+    --color-aksent-dyp: color-mix(in srgb, var(--color-aksent), white 30%);
+    --color-aksent-dypere: color-mix(in srgb, var(--color-aksent), white 15%);
+  }
+
+  :root[data-tema="mork"][data-palett="skifer"] {
+    --color-aksent: #9db7dd;
+    --color-valgt: #26324a;
+    --color-bord: #121620;
+  }
+
+  :root[data-tema="mork"][data-palett="mose"] {
+    --color-aksent: #a9c495;
+    --color-valgt: #2a3424;
+    --color-bord: #131711;
+  }
+
+  :root[data-tema="mork"][data-palett="rust"] {
+    --color-aksent: #e0a585;
+    --color-valgt: #3d2a21;
+    --color-bord: #1a1411;
+  }
+
+  :root[data-tema="mork"][data-palett="fjord"] {
+    --color-aksent: #8ccbc6;
+    --color-valgt: #1f3634;
+    --color-bord: #101817;
+  }
+
+  :root[data-tema="mork"][data-palett="grafitt"] {
+    --color-aksent: #c4c4cc;
+    --color-valgt: #2f2f35;
+    --color-bord: #141416;
+  }
+}
+
+/*
  * Dokumentet selv skal ikke kunne bevege seg.
  *
  * macOS lar deg dra hele siden med styreflata og spretter den tilbake, selv

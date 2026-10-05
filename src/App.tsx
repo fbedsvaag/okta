@@ -1,5 +1,6 @@
 import { brukTema } from "./ui/tema";
 import { brukGlass } from "./ui/glass";
+import { brukPalett } from "./ui/palett";
 import { ukenummer } from "./data/kalender";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -167,6 +168,7 @@ export default function App() {
       await brukTekstskala().catch((e) => console.error("tekstskala:", e));
       await brukTema().catch((e) => console.error("tema:", e));
       await brukGlass().catch((e) => console.error("glass:", e));
+      await brukPalett().catch((e) => console.error("palett:", e));
 
       // Sikkerhetskopi, før noe rekker å endres i denne økta.
       await daglingKopi().catch((e) => console.error("sikkerhetskopi:", e));

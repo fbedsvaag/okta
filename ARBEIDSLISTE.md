@@ -164,7 +164,7 @@ committes alene, og så det som alt annet bygger på kommer først.
   ⌘K og kontekstmeny (DESIGN §7). Innstilling `glass` (på/av) i
   `innstilling`-tabellen, og `prefers-reduced-transparency` overstyrer.
   Mørke verdier.
-- [ ] **5.5 Paletter.** Seks paletter som `data-palett` på `:root`, lys og
+- [x] **5.5 Paletter.** Seks paletter som `data-palett` på `:root`, lys og
   mørk. Velges i Utseende med forhåndsvisning. Fargeteppet følger paletten.
 - [ ] **5.6 I dag.** Dagens økter med tid i egen kolonne og fagfirkant på
   linje med tittelen. Notat fra forrige økt sammenleggbart. Fjern setningen

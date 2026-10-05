@@ -1,5 +1,6 @@
 import { lagreTema, TEMA, type Tema } from "../ui/tema";
 import { GLASS, lagreGlass, type Glass } from "../ui/glass";
+import { lagrePalett, PALETT, PALETTER, type Palett } from "../ui/palett";
 import { useEffect, useState } from "react";
 import {
   endreSkolear,
@@ -77,6 +78,7 @@ export function Innstillinger({
   const [tekstskala, setTekstskala] = useState("0.93");
   const [tema, setTema] = useState<Tema>("system");
   const [glass, setGlass] = useState<Glass>("pa");
+  const [palett, setPalett] = useState<Palett>("fiolett");
   const [davFeil, setDavFeil] = useState<string | null>(null);
   const [davJobber, setDavJobber] = useState(false);
   const [arkivmappe, setArkivmappe] = useState("");
@@ -139,6 +141,10 @@ export function Innstillinger({
       setTema(v === "lys" || v === "mork" ? v : "system"),
     );
     void hentInnstilling(GLASS).then((v) => setGlass(v === "av" ? "av" : "pa"));
+    void hentInnstilling(PALETT).then((v) => {
+      const p = PALETTER.find((x) => x.id === v);
+      setPalett(p ? p.id : "fiolett");
+    });
   }, []);
 
   useEffect(() => {
@@ -311,6 +317,55 @@ export function Innstillinger({
           <p className="mt-1 text-liten text-blekk-dempet">
             «Som macOS» skifter av seg selv når maskinen gjør det. Utskriften av
             årsplanen er alltid lys.
+          </p>
+        </div>
+        <div className="mb-4">
+          <Etikett>Palett</Etikett>
+          {/*
+            Forhåndsvisningen er paletten i miniatyr: grunnen, et hvitt ark
+            med en valgt rad, og en knapp i aksenten. Hexene står her og ikke
+            som tokens med vilje — alle seks skal vises samtidig, uavhengig
+            av hvilken som er på.
+          */}
+          <div className="grid max-w-xl grid-cols-3 gap-2">
+            {PALETTER.map((p) => (
+              <button
+                key={p.id}
+                onClick={() => {
+                  setPalett(p.id);
+                  void lagrePalett(p.id);
+                }}
+                aria-pressed={palett === p.id}
+                className={`rounded-stor border p-1.5 text-left text-liten ${
+                  palett === p.id
+                    ? "border-aksent ring-1 ring-aksent"
+                    : "border-linje hover:border-linje-sterk"
+                }`}
+              >
+                <span
+                  aria-hidden
+                  className="flex h-12 gap-1 rounded-liten p-1.5"
+                  style={{ background: p.bord }}
+                >
+                  <span className="flex flex-1 flex-col gap-1 rounded-[3px] bg-white p-1">
+                    <span
+                      className="h-1.5 rounded-[2px]"
+                      style={{ background: p.valgt }}
+                    />
+                    <span className="h-1.5 rounded-[2px] bg-[#f0eef6]" />
+                  </span>
+                  <span
+                    className="w-4 self-end rounded-[3px]"
+                    style={{ background: p.aksent, height: 12 }}
+                  />
+                </span>
+                <span className="mt-1 block px-0.5">{p.navn}</span>
+              </button>
+            ))}
+          </div>
+          <p className="mt-1 text-liten text-blekk-dempet">
+            Bytter aksenten, markeringen og grunnen. Trafikklyset og fagfargene
+            er like i alle.
           </p>
         </div>
         <div className="mb-4 max-w-sm">
