@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { useArk } from "../ui/Arkstabel";
 import { confirm as bekreft } from "@tauri-apps/plugin-dialog";
 import type { Skolear } from "../data/skolear";
@@ -25,9 +25,9 @@ import {
   leggDagIOkt,
   settTrekningensVurdering,
   slettTrekning,
+  settMotte,
   flyttInnenDagen,
   flyttMellomDager,
-  grupperTrekninger,
   somMarkdown,
   somTeamsHtml,
   hentHistorikk,
@@ -50,7 +50,6 @@ import {
   type Eksportdag,
   type Plassering,
   type Samtaledag,
-  type Trekning,
 } from "../data/samtale";
 import { invoke } from "@tauri-apps/api/core";
 import { mentorStatus, publiserMentor } from "../data/caldav";
@@ -61,6 +60,8 @@ import {
   type Elevnotat,
 } from "../data/elevnotat";
 import { Bryter, Felt, Ikon, Kappet, Knapp, Tomtilstand } from "../ui/felles";
+import { IVerktoylinja } from "../ui/Verktoylinje";
+import { TEMATEKST, temafarge } from "../ui/farger";
 
 /**
  * Samtaletrekkeren, SPEC §4.10.
@@ -109,14 +110,24 @@ export function Samtaler({
   skolear,
   fag,
   startFagId,
+  onEndret,
 }: {
   skolear: Skolear;
   fag: FagIAr[];
-  /** Faget man kom fra, f.eks. fra en muntlig vurdering. */
+  /**
+   * Trekningen som åpnes: et fag (fra sidemenyen eller en muntlig
+   * vurdering), eller «mentor» for mentorsamtalene.
+   */
   startFagId?: string;
+  /** samtaledagene er endret — sidemenyens liste skal oppdateres */
+  onEndret?: () => void;
 }) {
-  const [modus, setModus] = useState<Modus>(startFagId ? "fag" : "fag");
-  const [fagId, setFagId] = useState(startFagId ?? fag[0]?.id ?? "");
+  const [modus, setModus] = useState<Modus>(
+    startFagId === "mentor" ? "mentor" : "fag",
+  );
+  const [fagId, setFagId] = useState(
+    startFagId && startFagId !== "mentor" ? startFagId : (fag[0]?.id ?? ""),
+  );
   const [samtaletid, setSamtaletid] = useState("20");
   const [pause, setPause] = useState("5");
   const [temaer, setTemaer] = useState<string[]>([]);
@@ -141,9 +152,6 @@ export function Samtaler({
   const [visning, setVisning] = useState<Visning>("timeplan");
   const [kopiert, setKopiert] = useState<"teams" | "md" | null>(null);
   const [notater, setNotater] = useState<Map<string, Elevnotat>>(new Map());
-  // Alle samtaledagene i året, ikke bare de som hører til valget nå — det er
-  // dem oversikten øverst er til for.
-  const [alleDager, setAlleDager] = useState<Samtaledag[]>([]);
   const [kalender, setKalender] = useState<Awaited<
     ReturnType<typeof mentorStatus>
   > | null>(null);
@@ -181,7 +189,6 @@ export function Samtaler({
     setHistorikk(await hentHistorikk(skolear.id));
 
     const alle = await hentSamtaledager(skolear.id);
-    setAlleDager(alle);
     const mine = alle.filter((d) =>
       modus === "mentor" ? d.skolearFagId === null : d.skolearFagId === fagId,
     );
@@ -242,7 +249,6 @@ export function Samtaler({
         ...NY_DAG,
       });
       const etter = await hentSamtaledager(skolear.id);
-      setAlleDager(etter);
       setDager(
         etter.filter((d) =>
           modus === "mentor"
@@ -251,6 +257,7 @@ export function Samtaler({
         ),
       );
     }
+    onEndret?.();
   }
 
   useEffect(() => {
@@ -634,6 +641,14 @@ export function Samtaler({
   const plasserTrengs = antallEnheter(deltakere.length, storrelse);
   const plassord = storrelse > 1 ? "grupper" : "elever";
   const timer = dager.reduce((sum, d) => sum + timerPaDagen(d), 0);
+  // Elevene som ikke fikk plass i trekningen, når kapasiteten ikke rakk.
+  const plassert = new Set(
+    (trekning ?? []).flatMap((d) =>
+      d.rader.flatMap((r) => r.medlemmer.map((m) => m.id)),
+    ),
+  );
+  const utenPlass =
+    trekning === null ? [] : deltakere.filter((d) => !plassert.has(d.id));
 
   return (
     <div className="mx-auto flex min-h-0 w-full max-w-6xl flex-1 gap-6 overflow-clip">
@@ -643,26 +658,6 @@ export function Samtaler({
       */}
       <div className="flex w-80 shrink-0 flex-col overflow-clip">
         <div className="min-h-0 flex-1 space-y-5 overflow-auto pr-1">
-          {/*
-            Oversikten står øverst fordi den er inngangen: kommer du tilbake
-            til skjermen, er det den planlagte trekningen du leter etter — ikke
-            innstillingene til en ny.
-          */}
-          <Bolk tittel="Planlagte samtaler">
-            <Trekningsliste
-              trekninger={grupperTrekninger(alleDager)}
-              aktiv={modus === "mentor" ? null : fagId}
-              erMentor={modus === "mentor"}
-              onVelg={(skolearFagId) => {
-                setModus(skolearFagId === null ? "mentor" : "fag");
-                if (skolearFagId !== null) setFagId(skolearFagId);
-              }}
-              onSlett={(t) =>
-                void slettPlan(t.dager, t.fagKode ?? "mentorsamtalene")
-              }
-            />
-          </Bolk>
-
           <Bolk tittel="Modus">
             <div className="flex gap-1">
               <Modusknapp
@@ -699,7 +694,45 @@ export function Samtaler({
             )}
           </Bolk>
 
-          <Bolk tittel="Grunninnstillinger">
+          {modus === "fag" && (
+            <Bolk tittel="Vurdering">
+              {/*
+              Hvilken vurdering trekningen hører til. Uten den vises ikke
+              oppgaven eleven fikk under selve vurderingen (§4.6), og den
+              står ikke på øktene i årsplanen.
+            */}
+              {modus === "fag" && (
+                <label className="block">
+                  <span className="mb-1 block text-etikett uppercase tracking-etikett text-blekk-dempet">
+                    Hører til vurdering
+                  </span>
+                  <select
+                    value={valgtVurdering}
+                    onChange={async (e) => {
+                      setValgtVurdering(e.target.value);
+                      await settTrekningensVurdering(
+                        dager,
+                        e.target.value || null,
+                      );
+                      await last();
+                    }}
+                    className="w-full rounded border border-linje bg-ark px-2 py-1.5 text-brod"
+                  >
+                    <option value="">Ingen</option>
+                    {vurderinger
+                      .filter((v) => v.skolearFagId === fagId)
+                      .map((v) => (
+                        <option key={v.id} value={v.id}>
+                          {v.tittel}
+                        </option>
+                      ))}
+                  </select>
+                </label>
+              )}
+            </Bolk>
+          )}
+
+          <Bolk tittel="Samtalene">
             <div className="flex gap-2">
               <Felt
                 etikett="Minutter per samtale"
@@ -747,47 +780,46 @@ export function Samtaler({
                 gruppe for å flytte eleven.
               </p>
             )}
-          </Bolk>
-
-          <Bolk tittel="Elever">
-            {!brukEgen ? (
-              <>
-                <p className="text-brod text-blekk-dempet">
-                  {deltakere.length > 0
-                    ? `${deltakere.length} elever hentet fra ${
-                        modus === "mentor" ? "mentorgruppa" : "faget"
-                      }.`
-                    : modus === "mentor"
-                      ? "Ingen mentorelever i år ennå."
-                      : "Ingen elever er koblet til dette faget."}
-                </p>
-                <button
-                  onClick={() => setBrukEgen(true)}
-                  className="mt-1 text-liten text-blekk-svak hover:text-blekk"
-                >
-                  Lim inn en egen liste
-                </button>
-              </>
-            ) : (
-              <>
-                <textarea
-                  value={egenListe}
-                  onChange={(e) => setEgenListe(e.target.value)}
-                  rows={6}
-                  placeholder={"Tony Soprano\nCarmela Soprano"}
-                  className="w-full rounded border border-linje px-2 py-1.5 font-mono text-liten outline-none focus:border-aksent"
-                />
-                <button
-                  onClick={() => {
-                    setBrukEgen(false);
-                    setEgenListe("");
-                  }}
-                  className="mt-1 text-liten text-blekk-svak hover:text-blekk"
-                >
-                  Bruk elevene fra appen i stedet
-                </button>
-              </>
-            )}
+            <div className="mt-3 border-t border-linje-svak pt-3">
+              {!brukEgen ? (
+                <>
+                  <p className="text-brod text-blekk-dempet">
+                    {deltakere.length > 0
+                      ? `${deltakere.length} elever hentet fra ${
+                          modus === "mentor" ? "mentorgruppa" : "faget"
+                        }.`
+                      : modus === "mentor"
+                        ? "Ingen mentorelever i år ennå."
+                        : "Ingen elever er koblet til dette faget."}
+                  </p>
+                  <button
+                    onClick={() => setBrukEgen(true)}
+                    className="mt-1 text-liten text-blekk-svak hover:text-blekk"
+                  >
+                    Lim inn en egen liste
+                  </button>
+                </>
+              ) : (
+                <>
+                  <textarea
+                    value={egenListe}
+                    onChange={(e) => setEgenListe(e.target.value)}
+                    rows={6}
+                    placeholder={"Tony Soprano\nCarmela Soprano"}
+                    className="w-full rounded border border-linje px-2 py-1.5 font-mono text-liten outline-none focus:border-aksent"
+                  />
+                  <button
+                    onClick={() => {
+                      setBrukEgen(false);
+                      setEgenListe("");
+                    }}
+                    className="mt-1 text-liten text-blekk-svak hover:text-blekk"
+                  >
+                    Bruk elevene fra appen i stedet
+                  </button>
+                </>
+              )}
+            </div>
           </Bolk>
 
           {/* Mentorsamtalen har ikke oppgavenummer (§4.10). */}
@@ -833,43 +865,7 @@ export function Samtaler({
             </Bolk>
           )}
 
-          <Bolk
-            tittel={modus === "fag" ? "Vurdering og økter" : "Samtaledager"}
-          >
-            {/*
-              Hvilken vurdering trekningen hører til. Uten den vises ikke
-              oppgaven eleven fikk under selve vurderingen (§4.6), og den
-              står ikke på øktene i årsplanen.
-            */}
-            {modus === "fag" && (
-              <label className="mb-3 block">
-                <span className="mb-1 block text-etikett uppercase tracking-etikett text-blekk-dempet">
-                  Hører til vurdering
-                </span>
-                <select
-                  value={valgtVurdering}
-                  onChange={async (e) => {
-                    setValgtVurdering(e.target.value);
-                    await settTrekningensVurdering(
-                      dager,
-                      e.target.value || null,
-                    );
-                    await last();
-                  }}
-                  className="w-full rounded border border-linje bg-ark px-2 py-1.5 text-brod"
-                >
-                  <option value="">Ingen</option>
-                  {vurderinger
-                    .filter((v) => v.skolearFagId === fagId)
-                    .map((v) => (
-                      <option key={v.id} value={v.id}>
-                        {v.tittel}
-                      </option>
-                    ))}
-                </select>
-              </label>
-            )}
-
+          <Bolk tittel="Samtaledager">
             {modus === "fag" && (
               <Oktvelger
                 okter={oktvalg}
@@ -1031,13 +1027,24 @@ export function Samtaler({
       </div>
 
       <div className="min-h-0 flex-1 overflow-auto">
+        {/*
+          Gult varsel øverst når det er for få plasser, og det sier hvem som
+          mangler tid — når trekningen er gjort, står navnene der (§10).
+        */}
         {plasserTrengs > samletKapasitet && dager.length > 0 && (
-          <div className="mb-4 border border-varsel bg-fri-flate px-3 py-2 text-brod text-varsel">
-            Kapasiteten ({samletKapasitet} {plassord}) er lavere enn det som
-            trengs ({plasserTrengs} {plassord}).{" "}
-            {modus === "fag"
-              ? "Kryss av for flere økter, legg til en egen dag, eller reduser pausetiden."
-              : "Legg til flere dager, forleng øktene, eller reduser pausetiden."}
+          <div className="mb-4 rounded-stor border border-lys-gul bg-[color-mix(in_srgb,var(--color-lys-gul)_14%,var(--color-ark))] px-3 py-2 text-brod">
+            <p>
+              Kapasiteten ({samletKapasitet} {plassord}) er lavere enn det som
+              trengs ({plasserTrengs} {plassord}).{" "}
+              {modus === "fag"
+                ? "Kryss av for flere økter, legg til en egen dag, eller reduser pausetiden."
+                : "Legg til flere dager, forleng øktene, eller reduser pausetiden."}
+            </p>
+            {utenPlass.length > 0 && (
+              <p className="mt-1 text-blekk-dempet">
+                Mangler tid: {utenPlass.map((d) => d.navn).join(", ")}.
+              </p>
+            )}
           </div>
         )}
 
@@ -1055,48 +1062,26 @@ export function Samtaler({
           </div>
         )}
 
-        {trekning !== null && (
-          <div className="mb-4 flex items-center gap-2">
-            <Knapp onClick={() => void tilTeams()}>
-              {kopiert === "teams" ? (
-                <>
-                  <Ikon navn="hake" /> Kopiert
-                </>
-              ) : (
-                "Kopier til Teams"
-              )}
-            </Knapp>
-            <Knapp onClick={() => void tilMarkdown()}>
-              {kopiert === "md" ? (
-                <>
-                  <Ikon navn="hake" /> Kopiert
-                </>
-              ) : (
-                "Kopier som markdown"
-              )}
-            </Knapp>
-            <Knapp onClick={() => void invoke("skriv_ut")}>Skriv ut</Knapp>
-            <Knapp
-              variant="stille"
-              onClick={() =>
-                void slettPlan(
-                  dager,
-                  modus === "mentor"
-                    ? "mentorsamtalene"
-                    : (fag.find((f) => f.id === fagId)?.kode ?? "faget"),
-                )
-              }
-            >
-              Slett planen
-            </Knapp>
-
+        {/*
+          Trekningens navn og eksporten står i verktøylinja (DESIGN.md §10).
+        */}
+        <IVerktoylinja>
+          <span className="min-w-0 truncate text-brod text-blekk-dempet">
+            {modus === "mentor"
+              ? "Mentorsamtaler"
+              : (fag.find((f) => f.id === fagId)?.kode ?? "")}
+            {modus === "fag" &&
+              valgtVurdering &&
+              ` · ${vurderinger.find((v) => v.id === valgtVurdering)?.tittel ?? ""}`}
+          </span>
+          <span className="ml-auto flex shrink-0 items-center gap-1.5">
             {/*
               Publiseringen er en bevisst handling, ikke en bivirkning av at
               du dro en rad. Knappen sier hva som venter — og at noe er endret
               siden sist, så du vet at kalenderen er i utakt (§8.1).
             */}
-            {modus === "mentor" && kalender?.pa && (
-              <span className="ml-auto flex items-center gap-2">
+            {trekning !== null && modus === "mentor" && kalender?.pa && (
+              <>
                 <span className="text-liten text-blekk-dempet">
                   {kalendertekst(kalender)}
                 </span>
@@ -1113,10 +1098,48 @@ export function Samtaler({
                 >
                   {publiserer ? "Publiserer …" : "Publiser til kalender"}
                 </Knapp>
-              </span>
+              </>
             )}
-          </div>
-        )}
+            {trekning !== null && (
+              <>
+                <Knapp onClick={() => void tilTeams()}>
+                  {kopiert === "teams" ? (
+                    <>
+                      <Ikon navn="hake" /> Kopiert
+                    </>
+                  ) : (
+                    "Teams"
+                  )}
+                </Knapp>
+                <Knapp onClick={() => void tilMarkdown()}>
+                  {kopiert === "md" ? (
+                    <>
+                      <Ikon navn="hake" /> Kopiert
+                    </>
+                  ) : (
+                    "Markdown"
+                  )}
+                </Knapp>
+                <Knapp onClick={() => void invoke("skriv_ut")}>Skriv ut</Knapp>
+              </>
+            )}
+            {dager.length > 0 && (
+              <Knapp
+                variant="farlig"
+                onClick={() =>
+                  void slettPlan(
+                    dager,
+                    modus === "mentor"
+                      ? "mentorsamtalene"
+                      : (fag.find((f) => f.id === fagId)?.kode ?? "faget"),
+                  )
+                }
+              >
+                Slett
+              </Knapp>
+            )}
+          </span>
+        </IVerktoylinja>
 
         {trekning !== null && (
           <div className="mb-4 flex gap-1">
@@ -1154,6 +1177,12 @@ export function Samtaler({
             historikk={historikk}
             laste={lasteElever}
             notater={notater}
+            temaer={temaer}
+            onMotte={async (rad) => {
+              if (!rad.samtaleId) return;
+              await settMotte(rad.samtaleId, !rad.motte);
+              await last();
+            }}
             onNotat={(rad, dag, tekst, folgesOpp) =>
               void lagreNotat(rad, dag, tekst, folgesOpp)
             }
@@ -1461,7 +1490,9 @@ function Timeplan({
   historikk,
   laste,
   notater,
+  temaer,
   onLas,
+  onMotte,
   onNotat,
   onFlytt,
   onFlyttElev,
@@ -1470,7 +1501,11 @@ function Timeplan({
   historikk: Map<string, Plassering[]>;
   laste: ReadonlySet<string>;
   notater: Map<string, Elevnotat>;
+  /** temalista fra oppsettet, så oppgavenummeret blir det samme som der */
+  temaer: string[];
   onLas: (elevId: string) => void;
+  /** «møtte ikke» av og på for en samtale */
+  onMotte: (rad: Dagplan["rader"][number]) => void;
   onNotat: (
     rad: Dagplan["rader"][number],
     dag: Samtaledag,
@@ -1492,8 +1527,9 @@ function Timeplan({
     <div className="space-y-6">
       {plan.map((d, dagIdx) => (
         <section key={d.dag.id}>
-          <div className="mb-1 flex items-baseline justify-between border-b border-linje pb-1">
-            <h2 className="text-tittel font-medium first-letter:uppercase">
+          {/* Dagen i Light (DESIGN.md §10), med tid og antall. */}
+          <div className="mb-1 flex items-baseline justify-between border-b border-linje pb-1.5">
+            <h2 className="text-[calc(22px*var(--tekst-skala))] font-light leading-tight tracking-overskrift first-letter:uppercase">
               {langDato(d.dag.dato)}
             </h2>
             <span className="text-liten tabular-nums text-blekk-dempet">
@@ -1520,7 +1556,7 @@ function Timeplan({
             return (
               <Fragment key={`${r.elevId}-${r.fra}`}>
                 {lunsjHer && d.lunsj && (
-                  <div className="flex items-baseline gap-3 border-b border-linje-svak py-1.5 text-brod italic text-blekk-svak">
+                  <div className="flex items-baseline gap-3 border-b border-linje-svak bg-flate-svak py-1.5 text-brod text-blekk-dempet">
                     <span className="w-6 shrink-0 text-right">—</span>
                     <span className="w-24 shrink-0 tabular-nums">
                       {d.lunsj.fra}–{d.lunsj.til}
@@ -1560,8 +1596,8 @@ function Timeplan({
                       { dag: dagIdx, rad: radIdx, etter },
                     );
                   }}
-                  className={`flex items-baseline gap-3 border-b border-linje-svak py-1.5 text-brod ${
-                    r.motte ? "" : "text-blekk-svak line-through"
+                  className={`flex items-center gap-3 border-b border-linje-svak py-1.5 text-brod ${
+                    r.motte ? "" : "opacity-55"
                   } ${erLast ? "bg-flate-svak" : "cursor-grab"}`}
                 >
                   <span className="w-6 shrink-0 text-right tabular-nums text-blekk-svak">
@@ -1595,20 +1631,53 @@ function Timeplan({
                       onClick={() =>
                         r.medlemmer[0] && ark.apneElev(r.medlemmer[0].id)
                       }
-                      className="min-w-0 flex-1 text-left hover:text-aksent"
+                      className={`min-w-0 flex-1 text-left hover:text-aksent ${
+                        r.motte ? "" : "line-through"
+                      }`}
                     >
                       <Kappet verdi={r.navn} />
                     </button>
                   )}
                   {r.tema && (
-                    <Kappet
-                      verdi={r.tema}
-                      klasse="w-40 shrink-0 text-blekk-dempet"
-                    />
+                    <span className="flex w-48 min-w-0 shrink-0 items-center gap-2">
+                      {/* Oppgavenummeret som liten rute i temafargen. */}
+                      {temaer.indexOf(r.tema) >= 0 && (
+                        <span
+                          className="grid h-5 w-5 shrink-0 place-items-center rounded-[4px] text-mikro font-medium tabular-nums"
+                          style={{
+                            background: temafarge(temaer.indexOf(r.tema) + 1),
+                            color: TEMATEKST,
+                          }}
+                        >
+                          {temaer.indexOf(r.tema) + 1}
+                        </span>
+                      )}
+                      <Kappet verdi={r.tema} klasse="text-blekk-dempet" />
+                    </span>
                   )}
-                  <span className="w-32 shrink-0 text-right text-liten text-blekk-svak">
+                  <span className="w-32 shrink-0 text-right text-liten text-blekk-dempet">
                     {r.motte ? notis : "møtte ikke"}
                   </span>
+                  {r.samtaleId && r.medlemmer.length === 1 ? (
+                    <button
+                      onClick={() => onMotte(r)}
+                      aria-pressed={!r.motte}
+                      title={
+                        r.motte
+                          ? "Møtte ikke — raden blir stående med klokkeslettet sitt"
+                          : "Møtte likevel"
+                      }
+                      className={`grid h-6 w-6 shrink-0 place-items-center rounded-vanlig text-liten ${
+                        r.motte
+                          ? "text-blekk-svakest hover:bg-flate hover:text-blekk"
+                          : "bg-feil-flate text-feil"
+                      }`}
+                    >
+                      <Ikon navn="kryss" />
+                    </button>
+                  ) : (
+                    <span className="w-6 shrink-0" />
+                  )}
                   <button
                     onClick={() => onLas(r.elevId)}
                     title={
@@ -1616,10 +1685,10 @@ function Timeplan({
                         ? "Lås opp — eleven trekkes om igjen"
                         : "Lås — eleven beholder plass og tema"
                     }
-                    className={`w-5 shrink-0 text-liten ${
+                    className={`grid h-6 w-6 shrink-0 place-items-center rounded-vanlig text-liten ${
                       erLast
-                        ? "text-aksent"
-                        : "text-blekk-svakest hover:text-blekk"
+                        ? "bg-valgt text-aksent"
+                        : "text-blekk-svakest hover:bg-flate hover:text-blekk"
                     }`}
                   >
                     <Ikon navn={erLast ? "las" : "apen-las"} />
@@ -1876,126 +1945,6 @@ function Notatfelt({
       </label>
     </div>
   );
-}
-
-/**
- * Trekningene som finnes i året, med den du står i markert.
- *
- * Uten denne er en trekning bare synlig hvis man tilfeldigvis står på riktig
- * modus og fag når skjermen åpnes — og en mentortrekning er da usynlig, siden
- * skjermen alltid begynner på fagsamtale.
- */
-function Trekningsliste({
-  trekninger,
-  aktiv,
-  erMentor,
-  onVelg,
-  onSlett,
-}: {
-  trekninger: Trekning[];
-  /** skolear_fag-id-en man står i, eller null for mentormodus */
-  aktiv: string | null;
-  erMentor: boolean;
-  onVelg: (skolearFagId: string | null) => void;
-  onSlett: (t: Trekning) => void;
-}) {
-  if (trekninger.length === 0) {
-    return (
-      <p className="text-liten text-blekk-svak">
-        Ingen samtaler planlagt ennå. Sett opp dagene under, så står de her.
-      </p>
-    );
-  }
-
-  return (
-    <ul className="space-y-0.5">
-      {trekninger.map((t) => (
-        <Trekningsrad
-          key={t.skolearFagId ?? "mentor"}
-          t={t}
-          valgt={erMentor ? t.skolearFagId === null : t.skolearFagId === aktiv}
-          onVelg={() => onVelg(t.skolearFagId)}
-          onSlett={() => onSlett(t)}
-        />
-      ))}
-    </ul>
-  );
-}
-
-/**
- * Én planlagt trekning. Sveip til venstre med to fingre viser Slett-knappen,
- * som i Mail; sveip tilbake skjuler den.
- *
- * Sveipet kommer som vannrett rulling (deltaX). Det summeres over et kort
- * vindu, så et lite sidelengs dytt mens man ruller nedover ikke utløser noe.
- */
-function Trekningsrad({
-  t,
-  valgt,
-  onVelg,
-  onSlett,
-}: {
-  t: Trekning;
-  valgt: boolean;
-  onVelg: () => void;
-  onSlett: () => void;
-}) {
-  const [apen, setApen] = useState(false);
-  const sum = useRef(0);
-  const nullstill = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  return (
-    <li
-      className="relative overflow-hidden rounded-vanlig"
-      onWheel={(e) => {
-        if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return;
-        sum.current += e.deltaX;
-        if (nullstill.current) clearTimeout(nullstill.current);
-        nullstill.current = setTimeout(() => (sum.current = 0), 250);
-        if (sum.current > 40) {
-          setApen(true);
-          sum.current = 0;
-        } else if (sum.current < -40) {
-          setApen(false);
-          sum.current = 0;
-        }
-      }}
-    >
-      <button
-        onClick={onSlett}
-        tabIndex={apen ? 0 : -1}
-        aria-hidden={!apen}
-        className="absolute inset-y-0 right-0 w-20 bg-feil text-liten font-medium text-ark"
-      >
-        Slett
-      </button>
-      <button
-        onClick={() => (apen ? setApen(false) : onVelg())}
-        style={{ transform: apen ? "translateX(-5rem)" : undefined }}
-        className={`relative flex w-full items-baseline gap-2 rounded-vanlig px-2 py-1 text-left text-brod transition-transform duration-150 ${
-          valgt ? "bg-valgt text-aksent" : "bg-bord hover:bg-flate"
-        }`}
-      >
-        <Kappet
-          verdi={t.fagKode ?? "Mentorsamtale"}
-          klasse="min-w-0 flex-1 font-medium"
-        />
-        <span className="shrink-0 text-liten tabular-nums text-blekk-dempet">
-          {spenn(t)}
-        </span>
-        <span className="w-14 shrink-0 text-right text-liten tabular-nums text-blekk-svak">
-          {t.antall > 0 ? `${t.antall} stk` : "ikke trukket"}
-        </span>
-      </button>
-    </li>
-  );
-}
-
-/** «24. nov» for én dag, «2.–3. des» for flere. */
-function spenn(t: Trekning): string {
-  if (!t.forste) return "dato mangler";
-  if (t.forste === t.siste) return kortDato(t.forste);
-  return `${kortDato(t.forste)}–${kortDato(t.siste)}`;
 }
 
 /**

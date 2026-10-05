@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import type { FagIAr } from "../data/fag";
+import type { Trekning } from "../data/samtale";
 import { Fagfirkant } from "./felles";
 import { Ordmerke } from "./logo";
 
@@ -50,6 +51,9 @@ export function Sidemeny({
   kanTilbake,
   kanFram,
   onGa,
+  trekninger,
+  apenTrekning,
+  onApneTrekning,
   onSok,
   onApneFag,
   onAlleFag,
@@ -66,6 +70,11 @@ export function Sidemeny({
   kanTilbake: boolean;
   kanFram: boolean;
   onGa: (p: Menypunkt) => void;
+  /** de planlagte samtaletrekningene, under Samtaler (DESIGN.md §10) */
+  trekninger: Trekning[];
+  /** trekningen som er åpen: fag-id, «mentor», null = ingen valgt; undefined = ikke i Samtaler */
+  apenTrekning: string | null | undefined;
+  onApneTrekning: (id: string) => void;
   onSok: () => void;
   onApneFag: (id: string) => void;
   onAlleFag: () => void;
@@ -111,6 +120,33 @@ export function Sidemeny({
             >
               {p.navn}
             </Rad>
+            {p.id === "samtaler" && trekninger.length > 0 && (
+              <ul className="mb-1 ml-[1.625rem] mt-px space-y-px border-l border-[var(--glass-kant)] pl-1.5">
+                {trekninger.map((t) => {
+                  const id = t.skolearFagId ?? "mentor";
+                  const valgt = apenTrekning === id;
+                  return (
+                    <li key={id}>
+                      <button
+                        onClick={() => onApneTrekning(id)}
+                        className={`flex h-7 w-full min-w-0 items-baseline gap-2 rounded-[10px] px-2 text-left text-liten ${
+                          valgt
+                            ? "glass-valgt font-medium text-blekk"
+                            : "text-blekk-dempet hover:bg-[var(--glass-valgt)] hover:text-blekk"
+                        }`}
+                      >
+                        <span className="min-w-0 flex-1 truncate">
+                          {t.fagKode ?? "Mentorsamtaler"}
+                        </span>
+                        <span className="shrink-0 tabular-nums text-blekk-svak">
+                          {spenn(t)}
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
           </li>
         ))}
       </ul>
@@ -225,6 +261,18 @@ function Pil({
       {retning === "tilbake" ? "‹" : "›"}
     </button>
   );
+}
+
+/** «24. nov» for én dag, «2.–3. des» for flere. */
+function spenn(t: Trekning): string {
+  if (!t.forste) return "uten dato";
+  const kort = (d: string) =>
+    new Date(`${d}T00:00:00`)
+      .toLocaleDateString("nb-NO", { day: "numeric", month: "short" })
+      .replace(/\.$/, "");
+  return t.forste === t.siste
+    ? kort(t.forste)
+    : `${kort(t.forste)}–${kort(t.siste)}`;
 }
 
 // ------------------------------------------------------------------ ikoner

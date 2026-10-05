@@ -110,3 +110,26 @@ export function skalategn(farge: string | null, sett: Tegnsett): string | null {
 export function fagfarge(hex: string): string {
   return `color-mix(in srgb, ${hex}, white var(--fag-lys))`;
 }
+
+/**
+ * Temafargene i samtaletrekkeren (DESIGN.md §10): svake pastelltoner, bare
+ * til å kjenne igjen oppgaven. Oppgavenummeret står i en liten rute i
+ * fargen, med mørk tekst — også i mørk modus, siden flaten er lys.
+ */
+export const TEMAFARGER = [
+  "#f3dfc6",
+  "#d6eadc",
+  "#dbe1f4",
+  "#f2d9e2",
+  "#e4ddf2",
+  "#f2ebc4",
+  "#d4e9e8",
+  "#ecddd2",
+] as const;
+
+export const TEMATEKST = "#241f33";
+
+/** Fargen til oppgave nummer `nr` (fra 1). */
+export function temafarge(nr: number): string {
+  return TEMAFARGER[(nr - 1) % TEMAFARGER.length];
+}

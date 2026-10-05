@@ -201,7 +201,7 @@ committes alene, og så det som alt annet bygger på kommer først.
   tegnes bare plate og felt der, uten glass. Kjør skriptet og sjekk
   ikonet i Dock. Kommentaren i `logo.tsx` om fargestreken i venstremarg er
   utdatert — feltene finnes igjen i fagfirkanten og heatmapet.
-- [ ] **5.15 Samtaletrekkeren.** Samme oppbygning som før (§4.10), strammet
+- [x] **5.15 Samtaletrekkeren.** Samme oppbygning som før (§4.10), strammet
   opp etter DESIGN §10: planlagte trekninger i sidemenyen, eksport i
   verktøylinja, oppsettet i én kolonne med blokker (modus, vurdering,
   samtalene, temaer, samtaledager med kapasitet, historikk, Generer + låser),

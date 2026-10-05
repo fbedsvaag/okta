@@ -16,6 +16,12 @@ import {
 import { startAuto as startCaldav } from "./data/caldav";
 import { skrivArkiv, skrivArkivTilBackup } from "./data/arkiv";
 import { hentFagIAr, type FagIAr } from "./data/fag";
+import {
+  grupperTrekninger,
+  hentSamtaledager,
+  type Trekning,
+} from "./data/samtale";
+import { Verktoylinjespor } from "./ui/Verktoylinje";
 import { Veiviser } from "./skjermer/Veiviser";
 import { IDag } from "./skjermer/IDag";
 import { Fag } from "./skjermer/Fag";
@@ -62,6 +68,14 @@ export default function App() {
   const [feil, setFeil] = useState<string | null>(null);
   const [melding, setMelding] = useState<string | null>(null);
   const [versjon, setVersjon] = useState(0);
+  // De planlagte trekningene, til sidemenyen under Samtaler (DESIGN.md §10).
+  const [trekninger, setTrekninger] = useState<Trekning[]>([]);
+  // Plassen i verktøylinja som skjermene kan fylle (ui/Verktoylinje).
+  const [spor, setSpor] = useState<HTMLElement | null>(null);
+
+  const lastTrekninger = useCallback(async (skolearId: string) => {
+    setTrekninger(grupperTrekninger(await hentSamtaledager(skolearId)));
+  }, []);
 
   // Navigasjonshistorikk, som i Obsidian: hvert sted du har vært ligger i en
   // liste, og pilene flytter markøren i den. Går du et nytt sted midt i
@@ -174,6 +188,10 @@ export default function App() {
       const ar = await hentAktivtSkolear();
       setSkolear(ar);
       setFag(ar ? await hentFagIAr(ar.id) : []);
+      if (ar)
+        await lastTrekninger(ar.id).catch((e) =>
+          console.error("trekninger:", e),
+        );
 
       // Kalenderstrømmen holdes fersk ved hver innlasting, men bare hvis
       // brukeren har slått den på. Er den av, lytter ingenting.
@@ -197,7 +215,7 @@ export default function App() {
     } finally {
       setLaster(false);
     }
-  }, []);
+  }, [lastTrekninger]);
 
   useEffect(() => {
     void last();
@@ -258,6 +276,9 @@ export default function App() {
           kanTilbake={peker > 0}
           kanFram={peker < steder.length - 1}
           onGa={(p) => ga(p)}
+          trekninger={trekninger}
+          apenTrekning={visning === "samtaler" ? (apneId ?? null) : undefined}
+          onApneTrekning={(id) => ga("samtaler", id)}
           onSok={() => setSokApent(true)}
           onApneFag={(id) => ga("fag", id)}
           onAlleFag={() => ga("fag")}
@@ -273,7 +294,7 @@ export default function App() {
           på hel flate — glass kommer bare på det som ligger over (§7).
         */}
         <div className="ark-flate m-2.5 flex min-w-0 flex-1 flex-col overflow-clip rounded-ark bg-ark shadow-[var(--shadow-panel)]">
-          <Verktoylinje visning={visning} />
+          <Verktoylinje visning={visning} onSpor={setSpor} />
           {melding && (
             <div className="ikkeutskrift flex shrink-0 items-center gap-3 border-b border-linje-medium bg-flate-svak px-6 py-1.5 text-brod text-aksent">
               <span className="inline-flex items-center gap-1.5">
@@ -286,6 +307,7 @@ export default function App() {
             </div>
           )}
 
+          <Verktoylinjespor.Provider value={spor}>
           <main className="flex min-h-0 flex-1 flex-col overflow-clip">
             {/*
           Samme padding på alle skjermer. Den var før avhengig av om skjermen
@@ -320,10 +342,11 @@ export default function App() {
 
               {visning === "samtaler" && (
                 <Samtaler
-                  key={versjon}
+                  key={`${versjon}-${apneId ?? ""}`}
                   skolear={skolear}
                   fag={fag}
                   startFagId={apneId ?? undefined}
+                  onEndret={() => void lastTrekninger(skolear.id)}
                 />
               )}
 
@@ -419,6 +442,7 @@ export default function App() {
               )}
             </div>
           </main>
+          </Verktoylinjespor.Provider>
         </div>
       </div>
     </Arkstabel>
@@ -444,15 +468,23 @@ const SKJERMNAVN: Record<Visning, string> = {
  * (DESIGN.md §6–7). Foreløpig står bare skjermnavnet her, og uka på «I dag»;
  * skjermenes egne knapper står fortsatt i skjermen.
  */
-function Verktoylinje({ visning }: { visning: Visning }) {
+function Verktoylinje({
+  visning,
+  onSpor,
+}: {
+  visning: Visning;
+  /** plassen skjermene fyller med `<IVerktoylinja>` */
+  onSpor: (el: HTMLElement | null) => void;
+}) {
   return (
-    <div className="glass-verktoy ikkeutskrift mx-2.5 mt-2.5 flex h-11 shrink-0 items-center gap-2.5 rounded-full px-5">
+    <div className="glass-verktoy ikkeutskrift mx-2.5 mt-2.5 flex h-11 shrink-0 items-center gap-2.5 rounded-full pl-5 pr-1.5">
       <span className="text-brod font-semibold">{SKJERMNAVN[visning]}</span>
       {visning === "idag" && (
         <span className="text-brod tabular-nums text-blekk-dempet">
           Uke {ukenummer(isoIDag())}
         </span>
       )}
+      <div ref={onSpor} className="flex min-w-0 flex-1 items-center gap-2" />
     </div>
   );
 }
