@@ -181,7 +181,7 @@ committes alene, og så det som alt annet bygger på kommer først.
   (`helligdag`, ingen migrasjon trengs — kolonnen har ingen CHECK) med egen
   tone, og årsheatmap i høyre kolonne. Uke: ny visning med heldagsrad,
   valgt-økt-panel og timer per fag.
-- [ ] **5.10 Elevkort.** Notater og møtelogg som tidslinje (gjenbruk
+- [x] **5.10 Elevkort.** Notater og møtelogg som tidslinje (gjenbruk
   `ui/Tidslinje.tsx` fra fagkortet).
 - [ ] **5.11 Innstillinger.** Venstremeny med grupper. Generelt får
   tekststørrelse (Mindre / Vanlig / Større → `--tekst-skala`). Utseende får

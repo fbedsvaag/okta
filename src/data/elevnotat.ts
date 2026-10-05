@@ -224,9 +224,11 @@ export type Oktnotat = {
   oktId: string;
   dato: string;
   fagKode: string;
+  /** fagets farge, til firkanten i tidslinja */
+  fagFarge: string | null;
   tema: string | null;
   tekst: string;
-  /** skalaverdiens fargenavn, til prikken i tidslinja; null når ikke skåret */
+  /** skalaverdiens fargenavn; null når ikke skåret */
   farge: string | null;
   verdi: string | null;
 };
@@ -235,6 +237,7 @@ export async function hentOktnotater(elevId: string): Promise<Oktnotat[]> {
   return hent<Oktnotat>(
     `SELECT n.id, o.id AS oktId, o.dato,
             COALESCE(NULLIF(f.alias, ''), f.kode) AS fagKode,
+            f.farge AS fagFarge,
             o.tema, n.tekst, sv.farge, sv.kode AS verdi
        FROM oktnotat n
        JOIN okt o          ON o.id = n.okt_id AND o.slettet IS NULL

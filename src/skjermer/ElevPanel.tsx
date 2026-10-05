@@ -1,6 +1,6 @@
 import { useApen } from "../ui/Sammenleggbar";
 import { useEffect, useState } from "react";
-import { Tidslinjedato } from "../ui/Tidslinje";
+import { Tidslinjedato, Tidslinjestrek } from "../ui/Tidslinje";
 import { useArk } from "../ui/Arkstabel";
 import { Elevbilde } from "../ui/Elevbilde";
 import { hentElevbilde, slettElevbilde } from "../data/elevbilde";
@@ -719,9 +719,7 @@ function Bolk({
             )}
           </button>
         ) : (
-          <h3 className="text-brod font-semibold text-blekk">
-            {tittel}
-          </h3>
+          <h3 className="text-brod font-semibold text-blekk">{tittel}</h3>
         )}
         {handling && <span className="ml-auto">{handling}</span>}
       </div>
@@ -876,8 +874,9 @@ function Motelogg({
 }
 
 /**
- * Et notat fra skåringen i en økt. Prikken har skåringens farge, så
- * tidslinja også viser hvordan timen gikk. Fag og tema åpner økta.
+ * Et notat fra skåringen i en økt. Merket er fagfirkanten (DESIGN.md §10);
+ * skåringen står som en liten prikk ved kilden, så tidslinja fortsatt viser
+ * hvordan timen gikk. Fag og tema åpner økta.
  */
 function Oktnotatrad({
   elevId,
@@ -896,18 +895,7 @@ function Oktnotatrad({
     <div className="flex gap-3">
       <Tidslinjedato dato={notat.dato} />
 
-      <div className="relative w-3 shrink-0" aria-hidden>
-        <span
-          className={`absolute left-1/2 top-0 w-px -translate-x-1/2 bg-linje ${
-            sist ? "h-2" : "h-full"
-          }`}
-        />
-        <span
-          className="absolute left-1/2 top-[0.4rem] h-2.5 w-2.5 -translate-x-1/2 rounded-full border-2 border-ark"
-          style={{ background: skalafarge(notat.farge) }}
-          title={notat.verdi ?? "Ikke skåret"}
-        />
-      </div>
+      <Tidslinjestrek sist={sist} fag={notat.fagFarge} />
 
       <div className="min-w-0 flex-1 pb-4">
         <div className="flex items-baseline gap-2 text-liten">
@@ -918,6 +906,13 @@ function Oktnotatrad({
             <span className="shrink-0 rounded-liten bg-flate px-1.5 text-blekk-dempet">
               Økt
             </span>
+            {notat.farge && (
+              <span
+                title={notat.verdi ?? undefined}
+                className="h-2 w-2 shrink-0 self-center rounded-full"
+                style={{ background: skalafarge(notat.farge) }}
+              />
+            )}
             <span className="shrink-0 text-blekk-svak">{notat.fagKode}</span>
             {notat.tema && (
               <Kappet verdi={notat.tema} klasse="text-blekk-svak" />
@@ -952,39 +947,20 @@ function Notatrad({
 }) {
   const apent = notat.skalFolgesOpp && notat.lukket === null;
   const forfalt = erForfalt(notat, idag);
-  const d = new Date(`${notat.dato}T12:00:00`);
-  const dag = d.toLocaleDateString("nb-NO", { day: "numeric", month: "short" });
-  const arOgUkedag = `${d.getFullYear()} · ${d.toLocaleDateString("nb-NO", {
-    weekday: "short",
-  })}`;
-  const prikk = forfalt
-    ? "border-feil bg-feil"
-    : apent
-      ? "border-aksent bg-aksent"
-      : "border-linje-sterk bg-ark";
 
   return (
     <div className="flex gap-3">
       {/* Datoen er det man leter etter i en logg, så den står for seg. */}
-      <div className="w-[4.75rem] shrink-0 pt-px text-right">
-        <div className="text-brod font-medium tabular-nums text-blekk">
-          {dag.replace(/\.$/, "")}
-        </div>
-        <div className="text-mikro tabular-nums text-blekk-svak">
-          {arOgUkedag.replace(/\.$/, "")}
-        </div>
-      </div>
+      <Tidslinjedato dato={notat.dato} />
 
-      <div className="relative w-3 shrink-0" aria-hidden>
-        <span
-          className={`absolute left-1/2 top-0 w-px -translate-x-1/2 bg-linje ${
-            sist ? "h-2" : "h-full"
-          }`}
-        />
-        <span
-          className={`absolute left-1/2 top-[0.4rem] h-2.5 w-2.5 -translate-x-1/2 rounded-full border-2 ${prikk}`}
-        />
-      </div>
+      {/*
+        Møteloggen har lilla prikk (DESIGN.md §10). Et forfalt
+        oppfølgingspunkt er rødt, så det synes når man skumleser.
+      */}
+      <Tidslinjestrek
+        sist={sist}
+        farge={forfalt ? "var(--color-feil)" : "var(--color-aksent)"}
+      />
 
       <div className="min-w-0 flex-1 pb-4">
         <div className="flex items-baseline gap-2 text-liten">
@@ -1175,7 +1151,7 @@ function Navnefelt({
           }
         }}
         size={Math.max(plassholder.length, verdi.length + 1)}
-        className={`rounded-vanlig border border-transparent px-1 py-0.5 text-tittel font-medium outline-none hover:border-linje focus:border-aksent ${
+        className={`rounded-vanlig border border-transparent px-1 py-0 text-[calc(30px*var(--tekst-skala))] font-light leading-tight tracking-overskrift outline-none hover:border-linje focus:border-aksent ${
           mangler ? "border-varsel" : ""
         }`}
       />

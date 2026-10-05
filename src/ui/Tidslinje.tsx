@@ -1,3 +1,5 @@
+import { fagfarge } from "./farger";
+
 /**
  * Tidslinja: dato til venstre, en loddrett strek med en prikk per punkt, og
  * innholdet til høyre. Brukes av notatene på elevkortet og øktloggen i
@@ -24,18 +26,41 @@ export function Tidslinjedato({ dato }: { dato: string }) {
 }
 
 /**
- * Streken og prikken. `farge` fyller prikken; uten farge er den et tomt
- * omriss. Det nederste punktet avslutter streken ved prikken.
+ * Streken og merket. `farge` fyller prikken; uten farge er den et tomt
+ * omriss. Med `fag` blir merket fagfirkanten i stedet for en prikk — for
+ * notater som kommer fra en økt (DESIGN.md §10). Det nederste punktet
+ * avslutter streken ved merket.
  */
 export function Tidslinjestrek({
   sist,
   farge,
+  fag,
   tittel,
 }: {
   sist: boolean;
   farge?: string | null;
+  /** fagfargen; gis den, tegnes en firkant */
+  fag?: string | null;
   tittel?: string;
 }) {
+  if (fag !== undefined) {
+    return (
+      <div className="relative w-3 shrink-0" aria-hidden={!tittel}>
+        <span
+          className={`absolute left-1/2 top-0 w-px -translate-x-1/2 bg-linje ${
+            sist ? "h-2" : "h-full"
+          }`}
+        />
+        <span
+          title={tittel}
+          className="absolute left-1/2 top-[0.45rem] h-2.5 w-2.5 -translate-x-1/2 rounded-[2px] ring-2 ring-ark"
+          style={{
+            background: fag ? fagfarge(fag) : "var(--color-linje-sterk)",
+          }}
+        />
+      </div>
+    );
+  }
   return (
     <div className="relative w-3 shrink-0" aria-hidden={!tittel}>
       <span
