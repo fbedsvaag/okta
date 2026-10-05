@@ -110,6 +110,8 @@ prioritering fra 30.09.
   strammere toppmeny — eieren synes det er for mange lister der. DESIGN.md
   må oppdateres til å beskrive serif-overskriftene og det som faktisk er
   valgt.
+  **05.10: erstattet av §5 under.** Redesignrunden la ny retning;
+  DESIGN.md er skrevet om etter den.
 
 - [x] **Samtaletrekkeren.** Bygget i seks deler, §4.10. Migrasjon 012 og
   013, egen fane pluss inngang fra muntlige vurderinger. Notater fra
@@ -118,7 +120,7 @@ prioritering fra 30.09.
   som egen linje uten måltall. Gjenstår: å vise hvilken oppgave eleven
   fikk under selve vurderingen — gjort, gjennom en vurderingsvelger i
   samtaleoppsettet.
-- [ ] Ukesvisning av økter — uavklart hva den skal være. Avventer.
+- [ ] Ukesvisning av økter — tegnet 05.10, se §5.9.
 - [x] **Elevbilder fra InSchool-PDF.** Bygget 30.09 (migrasjon 021), testet mot en ekte utskrift. Les den
   utskrevne klasselista (én–to sider PDF med navn og bilde) lokalt i appen:
   navnene blir klasseliste gjennom lim-inn-flyten (§7, duplikatsjekk og
@@ -137,6 +139,68 @@ prioritering fra 30.09.
   - Trenger en ekte (anonymisert) InSchool-utskrift å bygge mot.
 - [x] AND/OR i filtrering av elever. Flere fag kan velges, med bryter
   mellom «har alle» og «minst ett».
+
+## 5. Redesign fra lerretet (05.10)
+
+Alt er tegnet i Claude Design-lerretet «Økta — redesign» og beskrevet i
+DESIGN.md. Rekkefølgen er valgt så hvert steg kan bygges, testes og
+committes alene, og så det som alt annet bygger på kommer først.
+
+**Før du starter:** les DESIGN.md i sin helhet. Bestem om forslaget til ny
+§13 i `docs/spec-forslag-2026-10-05.md` skal inn i SPEC.md.
+
+- [ ] **5.1 Skrift.** Legg Geist (300/400/500/600, latin + latin-ext) i
+  `public/fonts/` med OFL-lisensen, og bytt `--font-sans`. Sjekk at `tnum`
+  virker. Fjern Fira, Fira Condensed og `--font-display` (Georgia).
+  Overskrifter over 24 px får Light. Seksjonsoverskrifter med versaler blir
+  vanlig skrift.
+- [ ] **5.2 Former og trafikklys.** Nye radier (4/6/10/22). Trafikklyset
+  helfylt overalt (skåringsliste, heatmap, tegnforklaring) — én endring i
+  `Ikon`/`farger.ts` hvis det er gjort riktig. Ny `Fagfirkant`-komponent i
+  `felles.tsx`, og bytt ut alle fargestreker i venstremarg.
+- [ ] **5.3 Sidemeny.** Erstatt menyraden med sidemeny (DESIGN §6), med
+  G-snarveier. Hovedflaten som ark med 10 px radius.
+- [ ] **5.4 Glass.** Fargeteppe i vinduet, glass på sidemeny, verktøylinje,
+  ⌘K og kontekstmeny (DESIGN §7). Innstilling `glass` (på/av) i
+  `innstilling`-tabellen, og `prefers-reduced-transparency` overstyrer.
+  Mørke verdier.
+- [ ] **5.5 Paletter.** Seks paletter som `data-palett` på `:root`, lys og
+  mørk. Velges i Utseende med forhåndsvisning. Fargeteppet følger paletten.
+- [ ] **5.6 I dag.** Dagens økter med tid i egen kolonne og fagfirkant på
+  linje med tittelen. Notat fra forrige økt sammenleggbart. Fjern setningen
+  over. Valget om sammenlagt huskes som de andre bolkene.
+- [ ] **5.7 Skåring.** Fjern symbol+tekst-kolonnen. Notat fra denne økta i
+  egen kolonne på raden; N åpner feltet i raden. Plottet viser valgt verdi
+  i full styrke. Raden holder 28 px.
+- [ ] **5.8 Økter og perioder.** Fjern periodevisningen og pensel/viskelær.
+  Perioden blir merkelapp på raden, radene fargelegges ikke. Periodene øverst
+  blir filtre. Marker rader + P setter periode. Sjekk
+  `periode-fargelegg.test.ts` — testene for pensel kan gå, logikken for å
+  sette periode på mange økter skal bestå.
+- [ ] **5.9 Kalender.** Måned: helligdager som egen type i `fridag.type`
+  (`helligdag`, ingen migrasjon trengs — kolonnen har ingen CHECK) med egen
+  tone, og årsheatmap i høyre kolonne. Uke: ny visning med heldagsrad,
+  valgt-økt-panel og timer per fag.
+- [ ] **5.10 Elevkort.** Notater og møtelogg som tidslinje (gjenbruk
+  `ui/Tidslinje.tsx` fra fagkortet).
+- [ ] **5.11 Innstillinger.** Venstremeny med grupper. Generelt får
+  tekststørrelse (Mindre / Vanlig / Større → `--tekst-skala`). Utseende får
+  glass og paletter. Del oppsett kommer i 5.13.
+- [ ] **5.12 Oppsettveiviser.** Fire steg + Ferdig, større tekst,
+  «Fortsett senere», duplikatspørsmål med angre. Første steg har plass til
+  oppsettfil, men knappen kan vente til 5.13.
+- [ ] **5.13 Oppsettfil.** Spec og oppskrift i `docs/oppsettfil.md`.
+  Spec-teksten må godkjennes inn i SPEC.md før koden skrives.
+- [ ] **5.14 Logo — Bolk med glass** (valgt 05.10). Kildene ligger i
+  `src/assets/logo-glass.svg` (mørk, appikon), `logo-glass-lys.svg` og
+  `logo-glass-tonet.svg`. Erstatt `logo.svg` og `logo-lys.svg` med dem.
+  Oppdater `Merke` i `src/ui/logo.tsx` til de nye formene (plate x/y 40,
+  rx 215; felt rx 44/40; lys variant har felt i aksenten) — glasskantene
+  kan droppes under 32 px, der de bare blir grums. `scripts/lag-ikoner.mjs`
+  må lære gjennomsiktighet og kantlinje for å tegne glasset; alternativt
+  tegnes bare plate og felt der, uten glass. Kjør skriptet og sjekk
+  ikonet i Dock. Kommentaren i `logo.tsx` om fargestreken i venstremarg er
+  utdatert — feltene finnes igjen i fagfirkanten og heatmapet.
 
 ## Ikke nå
 
