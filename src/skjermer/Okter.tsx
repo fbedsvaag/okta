@@ -25,6 +25,7 @@ import {
 } from "../data/kalender";
 import type { FagIAr } from "../data/fag";
 import {
+  Fagfirkant,
   Felt,
   Ikon,
   Kappet,
@@ -676,7 +677,7 @@ function Liste({
             Uke
           </span>
         )}
-        <span className="w-[3px] shrink-0" />
+        <span className="w-2 shrink-0" />
         <span className="w-20 shrink-0">Fag</span>
         <span className="w-24 shrink-0">Dato</span>
         {vis.has("tid") && <span className="w-12 shrink-0">Tid</span>}
@@ -773,13 +774,7 @@ function Liste({
                       {ukenummer(o.dato)}
                     </span>
                   )}
-                  <span
-                    aria-hidden
-                    className="h-3.5 w-[3px] shrink-0 rounded-full"
-                    style={{
-                      background: o.farge ?? "var(--color-linje-sterk)",
-                    }}
-                  />
+                  <Fagfirkant farge={o.farge} />
                   <Kappet
                     verdi={o.fagKode}
                     klasse="w-20 shrink-0 font-medium"

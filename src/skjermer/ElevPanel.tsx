@@ -615,8 +615,9 @@ function Heatmap({
 }
 
 /**
- * Form i tillegg til farge (§13). "Ikke i økta" er tomt omriss og skal aldri
- * kunne forveksles med rødt. Økter som ikke er avholdt tegnes som et hull.
+ * Helfylte, avrundede kvadrater (DESIGN.md §9). «Ikke i økta» er fylt lys
+ * grå, så den ikke kan forveksles med rødt. Økter som ikke er avholdt er et
+ * hull: ingen fyll og ingen kant, men plassen og verktøytipset står.
  */
 function Rute({ rute, onKlikk }: { rute: HeatmapRute; onKlikk: () => void }) {
   const avholdt = rute.avholdt > 0;
@@ -641,25 +642,14 @@ function Rute({ rute, onKlikk }: { rute: HeatmapRute; onKlikk: () => void }) {
     <button
       onClick={onKlikk}
       title={tittel}
-      className="h-3.5 w-3.5 rounded-[2px] border"
-      style={
-        !avholdt
-          ? {
-              borderColor: "var(--color-linje-medium)",
-              borderStyle: "dotted",
-              background: "transparent",
-            }
+      className="h-3.5 w-3.5 rounded-[2px]"
+      style={{
+        background: !avholdt
+          ? "transparent"
           : ikkeIOkta
-            ? {
-                borderColor: NOYTRAL,
-                borderStyle: "dashed",
-                background: "transparent",
-              }
-            : {
-                borderColor: farge ?? NOYTRAL,
-                background: farge ?? "transparent",
-              }
-      }
+            ? NOYTRAL
+            : (farge ?? NOYTRAL),
+      }}
     />
   );
 }

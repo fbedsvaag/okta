@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useArk } from "../ui/Arkstabel";
-import { Ikon, Kappet } from "../ui/felles";
+import { Fagfirkant, Ikon, Kappet } from "../ui/felles";
 import { confirm as bekreft } from "@tauri-apps/plugin-dialog";
 import {
   endreVurdering,
@@ -142,11 +142,7 @@ export function VurderingPanel({
   return (
     <aside className="flex h-full flex-col border-l border-linje bg-ark">
       <header className="flex items-baseline gap-3 border-b border-linje-medium px-5 py-3">
-        <span
-          aria-hidden
-          className="h-3.5 w-[3px] rounded-full"
-          style={{ background: vurdering.farge ?? "var(--color-linje-sterk)" }}
-        />
+        <Fagfirkant farge={vurdering.farge} storrelse={10} klasse="self-center" />
         <span className="text-brod font-semibold">{vurdering.fagKode}</span>
         <Kappet verdi={vurdering.tittel} klasse="text-brod text-blekk-dempet" />
         <button

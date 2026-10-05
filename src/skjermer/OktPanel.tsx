@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Ikon } from "../ui/felles";
+import { Fagfirkant, Ikon } from "../ui/felles";
 import { Markdown, Markdownfelt } from "../ui/Notattekst";
 import { useArk } from "../ui/Arkstabel";
 import { Elevbilde } from "../ui/Elevbilde";
@@ -181,11 +181,7 @@ export function OktPanel({
   return (
     <aside className="flex h-full flex-col border-l border-linje bg-ark">
       <header className="flex items-baseline gap-3 border-b border-linje-medium px-5 py-3">
-        <span
-          aria-hidden
-          className="h-3.5 w-[3px] rounded-full"
-          style={{ background: okt.farge ?? "var(--color-linje-sterk)" }}
-        />
+        <Fagfirkant farge={okt.farge} storrelse={10} klasse="self-center" />
         <span className="text-brod font-semibold">{okt.fagKode}</span>
         <span className="text-brod text-blekk-dempet">
           {langDato(okt.dato)}
@@ -382,8 +378,11 @@ function ElevRad({
 }
 
 /**
- * Form i tillegg til farge (§13): fylt, halvfylt, tom. Skal være lesbart uten
- * fargesyn og på avstand.
+ * Helfylt sirkel i verdiens farge (DESIGN.md §9). Valgt verdi står i full
+ * styrke, de andre er nesten usynlige. Formen bærer ikke lenger betydningen;
+ * det gjør den faste rekkefølgen i raden, verktøytipset og at gul er klart
+ * lysest. En verdi som bare er fylt ut ved visning — eleven er ikke trykket
+ * på — tegnes som ikke skåret: ingenting valgt.
  */
 function Merke({
   verdi,
@@ -407,15 +406,10 @@ function Merke({
       className="grid h-5 w-5 place-items-center rounded-sm hover:bg-linje-medium"
     >
       <span
-        className="block h-3 w-3 rounded-full border-2"
+        className="block h-3 w-3 rounded-full"
         style={{
-          borderColor: valgt ? farge : "var(--color-linje)",
-          background: valgt
-            ? eksplisitt
-              ? farge
-              : "transparent"
-            : "transparent",
-          borderStyle: verdi.teller_ikke === 1 ? "dashed" : "solid",
+          background: farge,
+          opacity: valgt && eksplisitt ? 1 : 0.18,
         }}
       />
     </button>

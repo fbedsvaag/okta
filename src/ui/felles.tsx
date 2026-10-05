@@ -238,12 +238,32 @@ export function Tomtilstand({
   );
 }
 
-export function Fagstrek({ farge }: { farge: string | null }) {
+/**
+ * Faget som en liten firkant i fagfargen — samme form som rutene i
+ * heatmapet og feltene i logoen (DESIGN.md §4). 8 px i lister, 10–12 px ved
+ * titler. Aldri som strek i venstremarg, aldri som flate.
+ *
+ * Står firkanten ved en tittel med fag over eller under, skal den ligge i
+ * egen kolonne på linje med tittelen — ikke skyves inn i tekstlinja.
+ */
+export function Fagfirkant({
+  farge,
+  storrelse = 8,
+  klasse = "",
+}: {
+  farge: string | null;
+  storrelse?: 8 | 10 | 12;
+  klasse?: string;
+}) {
   return (
     <span
       aria-hidden
-      className="inline-block h-3.5 w-[3px] shrink-0 rounded-full align-middle"
-      style={{ background: farge ?? "var(--color-linje-sterk)" }}
+      className={`inline-block shrink-0 rounded-[2px] ${klasse}`}
+      style={{
+        width: storrelse,
+        height: storrelse,
+        background: farge ? fagfarge(farge) : "var(--color-linje-sterk)",
+      }}
     />
   );
 }
@@ -268,7 +288,7 @@ export function Fagmerke({
   const f = farge ?? "#6b6b6b";
   return (
     <span
-      className={`inline-block whitespace-nowrap rounded-sm font-medium ${
+      className={`inline-block whitespace-nowrap rounded-stor font-medium ${
         liten ? "px-1 py-0 text-etikett" : "px-1.5 py-0.5 text-liten"
       }`}
       style={{ background: `${f}1f`, color: fagfarge(f) }}

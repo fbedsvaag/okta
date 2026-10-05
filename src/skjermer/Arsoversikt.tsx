@@ -15,6 +15,7 @@ import {
   type Kommende,
 } from "../data/dashbord";
 import {
+  Fagfirkant,
   Fagmerke,
   Kappet,
   Kontekstmeny,
@@ -228,13 +229,7 @@ function Innsats({
             return (
               <div key={l.skolearFagId} className="flex items-center gap-3">
                 <span className="flex w-20 shrink-0 items-center gap-1.5 text-liten font-medium">
-                  <span
-                    aria-hidden
-                    className="h-3 w-[3px] rounded-full"
-                    style={{
-                      background: l.farge ?? "var(--color-linje-sterk)",
-                    }}
-                  />
+                  <Fagfirkant farge={l.farge} />
                   <span className="truncate">{l.kode}</span>
                 </span>
                 <div className="relative flex h-4 flex-1 items-center">

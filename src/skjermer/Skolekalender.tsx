@@ -24,7 +24,8 @@ import {
   type Okt,
 } from "../data/okter";
 import type { FagIAr } from "../data/fag";
-import { Kappet } from "../ui/felles";
+import { Fagfirkant, Kappet } from "../ui/felles";
+import { fagfarge } from "../ui/farger";
 import { hentSamtaledager, type Samtaledag } from "../data/samtale";
 
 // --------------------------------------------------------------- cellehøyde
@@ -495,7 +496,8 @@ function Dag({
       {synlige.map((o) => (
         <div
           key={o.id}
-          className="group/okt mt-0.5 flex w-full items-center gap-1 rounded-[2px] px-0.5 text-mikro hover:bg-flate"
+          className="group/okt mt-0.5 flex w-full items-center gap-1 rounded-[2px] px-0.5 text-mikro hover:brightness-95"
+          style={{ background: o.farge ? `${o.farge}1c` : undefined }}
         >
           <button
             onClick={(e) => {
@@ -506,11 +508,11 @@ function Dag({
             className="flex min-w-0 flex-1 items-center gap-1 text-left"
           >
             <span
-              aria-hidden
-              className="h-2.5 w-[3px] shrink-0 rounded-full"
-              style={{ background: o.farge ?? "var(--color-linje-sterk)" }}
-            />
-            <Kappet verdi={o.fagKode} />
+              className="min-w-0 font-medium"
+              style={{ color: o.farge ? fagfarge(o.farge) : undefined }}
+            >
+              <Kappet verdi={o.fagKode} />
+            </span>
           </button>
           <button
             onClick={(e) => {
@@ -634,11 +636,7 @@ function Valgtlinje({
           onClick={() => leggTil(f)}
           className="flex items-center gap-1.5 rounded border border-linje bg-ark px-2 py-1 hover:bg-flate disabled:opacity-40"
         >
-          <span
-            aria-hidden
-            className="h-3 w-[3px] rounded-full"
-            style={{ background: f.farge ?? "var(--color-linje-sterk)" }}
-          />
+          <Fagfirkant farge={f.farge} />
           {f.kode}
         </button>
       ))}

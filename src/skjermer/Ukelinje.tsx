@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { Okt } from "../data/okter";
 import { Ikon } from "../ui/felles";
+import { fagfarge } from "../ui/farger";
 
 /**
  * Uka på forsiden, som en kalender: dagene bortover, klokka nedover.
@@ -373,18 +374,26 @@ function Blokk({
       title={`${okt.fagKode}${okt.tema ? ` — ${okt.tema}` : ""}${
         okt.klokkeslett ? ` · ${okt.klokkeslett}` : " · uten klokkeslett"
       }${okt.sted ? ` · ${okt.sted}` : ""}`}
-      className={`absolute overflow-hidden rounded-liten border bg-ark px-1.5 py-0.5 text-left text-mikro leading-tight shadow-[var(--shadow-lav)] hover:brightness-95 ${
-        utenTid ? "border-dashed border-linje-sterk" : "border-linje"
+      className={`absolute overflow-hidden rounded-liten bg-ark px-1.5 py-0.5 text-left text-mikro leading-tight hover:brightness-95 ${
+        utenTid ? "border border-dashed border-linje-sterk" : ""
       } ${dempet ? "opacity-55" : ""}`}
       style={{
         top: topp + 1,
         height: hoyde,
         left: `calc(${(bane / baner) * 100}% + 2px)`,
         width: `calc(${100 / baner}% - 4px)`,
-        borderLeft: `3px solid ${okt.farge ?? "var(--color-linje-sterk)"}`,
+        // Svak tone i fagfargen oppå arket (DESIGN.md §4) — gradienten er
+        // bare en måte å legge tonen over bg-ark på, så den ikke blir
+        // gjennomsiktig mot rutenettet under.
+        backgroundImage: okt.farge
+          ? `linear-gradient(${okt.farge}1c, ${okt.farge}1c)`
+          : undefined,
       }}
     >
-      <span className="block truncate font-medium text-blekk">
+      <span
+        className="block truncate font-medium"
+        style={{ color: okt.farge ? fagfarge(okt.farge) : undefined }}
+      >
         {okt.fagKode}
         {okt.klokkeslett && (
           <span className="ml-1 font-normal tabular-nums text-blekk-svak">

@@ -10,7 +10,7 @@ import {
 } from "../data/fag";
 import { hentInnstilling } from "../data/skolear";
 import { FAGFARGER } from "../ui/farger";
-import { Felt, Knapp, Tomtilstand } from "../ui/felles";
+import { Fagfirkant, Felt, Knapp, Tomtilstand } from "../ui/felles";
 import { Fagvelger } from "./Fagvelger";
 
 /**
@@ -154,11 +154,7 @@ function FagRad({
         onClick={onApne}
       >
         <td className="py-1.5">
-          <span
-            aria-hidden
-            className="block h-4 w-[3px] rounded-full"
-            style={{ background: fag.farge ?? "var(--color-linje-sterk)" }}
-          />
+          <Fagfirkant farge={fag.farge} klasse="block" />
         </td>
         <td className="py-1.5 font-medium">{fag.kode}</td>
         <td className="py-1.5">{fag.navn}</td>
@@ -182,9 +178,10 @@ function FagRad({
           <button
             onClick={() => setVisFarger((v) => !v)}
             title="Bytt farge"
-            className="block h-4 w-[3px] rounded-full"
-            style={{ background: fag.farge ?? "var(--color-linje-sterk)" }}
-          />
+            className="grid h-5 w-5 place-items-center rounded-vanlig hover:bg-flate"
+          >
+            <Fagfirkant farge={fag.farge} storrelse={10} />
+          </button>
           {visFarger && (
             <div className="absolute left-0 top-full z-20 mt-1 w-52 rounded border border-linje bg-ark p-2 shadow-lg">
               <div className="grid grid-cols-6 gap-1">

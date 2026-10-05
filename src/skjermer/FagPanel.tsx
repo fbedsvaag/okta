@@ -34,7 +34,7 @@ import {
   tellSkaringerIFag,
   type ElevRad,
 } from "../data/elever";
-import { Felt, Kappet, KONTROLL } from "../ui/felles";
+import { Fagfirkant, Felt, Kappet, KONTROLL } from "../ui/felles";
 import { finnFag, type GrepFag } from "../data/grep";
 import { hentDekkedeMal } from "../data/perioder";
 import type { FagIAr } from "../data/fag";
@@ -116,11 +116,7 @@ export function FagPanel({
   return (
     <aside className="flex h-full flex-col border-l border-linje bg-ark">
       <header className="flex items-baseline gap-3 border-b border-linje-medium px-5 py-3">
-        <span
-          aria-hidden
-          className="h-3.5 w-[3px] rounded-full"
-          style={{ background: fag.farge ?? "var(--color-linje-sterk)" }}
-        />
+        <Fagfirkant farge={fag.farge} storrelse={12} klasse="self-center" />
         <span className="text-tittel font-medium">{fag.kode}</span>
         <Kappet verdi={fag.navn} klasse="text-brod text-blekk-dempet" />
         <button

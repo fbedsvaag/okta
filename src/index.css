@@ -90,14 +90,14 @@
   /*
    * Trafikklyset, varianten guiden kaller «roligere» — dempet mot dagens
    * #2dc937/#cc3232. Fortsatt det eneste stedet i appen med mettet farge (§13).
-   * Formen bærer betydningen sammen med fargen: fylt, halvfylt, ring, tynn ring.
+   * Alle symbolene er helfylte (DESIGN.md §9); «ikke i økta» er lys grå.
    */
   --color-lys-gronn: #3f9d49;
   --color-lys-gronngul: #8ba33e;
   --color-lys-gul: #d9a92f;
   --color-lys-oransje: #cf7a35;
   --color-lys-rod: #c04a3d;
-  --color-lys-borte: #b6bcc4;
+  --color-lys-borte: #d5d8dd;
 
   --color-varsel: #8a5a00;
   --color-feil-flate: #fdf0ef;
@@ -130,10 +130,16 @@
   --text-overskrift: calc(24px * var(--tekst-skala));
   --tracking-etikett: 0.06em;
 
-  /* Radier. Skarpt, ikke avrundet — dette er et skjema, ikke et kort. */
-  --radius-liten: 3px;
+  /*
+   * Radier (DESIGN.md §6). 4 px på felt og knapper, 6 px på merkelapper og
+   * små flater, 10 px på hovedflaten (arket), 22 px på glassflater.
+   * Fagfirkanten og heatmaprutene har sine egne 2 px.
+   */
+  --radius-liten: 4px;
   --radius-vanlig: 4px;
   --radius-stor: 6px;
+  --radius-ark: 10px;
+  --radius-glass: 22px;
 
   /*
    * Bevegelse. Guiden bruker to kurver: én inn, én ut, og en egen for

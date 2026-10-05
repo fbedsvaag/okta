@@ -46,8 +46,8 @@ export function skalafarge(navn: string | null): string {
 }
 
 /**
- * Fargene fag skilles med. Dempede blekkfarger — de skal leses som en tynn
- * strek i venstremargen, ikke som en flate (§13). Trafikklyset skal fortsatt
+ * Fargene fag skilles med. Dempede blekkfarger — de vises som en liten
+ * firkant (`Fagfirkant`), ikke som strek eller flate (DESIGN.md §4). Trafikklyset skal fortsatt
  * være det eneste stedet i appen med mettet farge.
  */
 export const FAGFARGER = [

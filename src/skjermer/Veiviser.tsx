@@ -9,7 +9,7 @@ import {
 import { LAERERNAVN } from "../data/arsplanark";
 import { hentFagIAr, leggFagIAr, type FagIAr } from "../data/fag";
 import { FAGFARGER } from "../ui/farger";
-import { Felt, Knapp, Fagstrek, Ikon } from "../ui/felles";
+import { Felt, Knapp, Fagfirkant, Ikon } from "../ui/felles";
 import { LimInn } from "./LimInn";
 
 /**
@@ -164,7 +164,7 @@ function StegFag({
         <ul className="mt-5 divide-y divide-linje-svak border-y border-linje-medium">
           {fag.map((f) => (
             <li key={f.id} className="flex items-center gap-2 py-1.5 text-brod">
-              <Fagstrek farge={f.farge} />
+              <Fagfirkant farge={f.farge} />
               <span className="w-20 font-medium">{f.kode}</span>
               <span className="text-blekk-dempet">{f.navn}</span>
             </li>

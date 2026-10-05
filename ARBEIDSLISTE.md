@@ -154,7 +154,7 @@ committes alene, og så det som alt annet bygger på kommer først.
   virker. Fjern Fira, Fira Condensed og `--font-display` (Georgia).
   Overskrifter over 24 px får Light. Seksjonsoverskrifter med versaler blir
   vanlig skrift.
-- [ ] **5.2 Former og trafikklys.** Nye radier (4/6/10/22). Trafikklyset
+- [x] **5.2 Former og trafikklys.** Nye radier (4/6/10/22). Trafikklyset
   helfylt overalt (skåringsliste, heatmap, tegnforklaring) — én endring i
   `Ikon`/`farger.ts` hvis det er gjort riktig. Ny `Fagfirkant`-komponent i
   `felles.tsx`, og bytt ut alle fargestreker i venstremarg.

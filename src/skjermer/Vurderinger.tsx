@@ -8,7 +8,7 @@ import {
 } from "../data/vurderinger";
 import type { FagIAr } from "../data/fag";
 import type { Skala } from "../skala";
-import { Felt, Ikon, Kappet, Knapp, Tomtilstand } from "../ui/felles";
+import { Fagfirkant, Felt, Ikon, Kappet, Knapp, Tomtilstand } from "../ui/felles";
 import { useArk } from "../ui/Arkstabel";
 import { lyttVurderinger } from "../data/endringer";
 
@@ -213,11 +213,7 @@ function Rad({
         valgt ? "bg-valgt" : "hover:bg-flate"
       }`}
     >
-      <span
-        aria-hidden
-        className="h-3.5 w-[3px] shrink-0 rounded-full"
-        style={{ background: vurdering.farge ?? "var(--color-linje-sterk)" }}
-      />
+      <Fagfirkant farge={vurdering.farge} />
       <Kappet verdi={vurdering.fagKode} klasse="w-20 shrink-0 font-medium" />
       <span
         className={`w-24 shrink-0 tabular-nums ${
