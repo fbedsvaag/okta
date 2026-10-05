@@ -322,6 +322,17 @@ oppsett), Sjelden i bruk (Kalenderstrøm, Kalenderserver, Arkiv). Hvert valg
 er en rad med etikett til venstre og kontroll + hjelpetekst til høyre.
 Hjelpeteksten er hverdagsspråk.
 
+**Samtaletrekkeren.** De planlagte trekningene står i sidemenyen under
+Samtaler. Verktøylinja har trekningens navn og eksporten (Teams, markdown,
+utskrift, slett). Til venstre oppsettet i én kolonne med blokker; til høyre
+resultatet med Timeplan | Fordeling | Alfabetisk. Er det for få plasser,
+står et gult varsel øverst som sier hvem som mangler tid. Hver dag har
+overskrift i Light (22 px) med tid og antall. Raden: plass, tid, navn,
+oppgavenummer som liten rute i temafargen, tema, merknad i vanlig grå tekst
+(«tidlig 2× på rad»), lås og «møtte ikke» som ikonknapper. Møtte ikke gir
+gjennomstreket navn og tonet rad. Lunsj som egen, tonet rad. Temafargene er
+svake pastelltoner, bare til å kjenne igjen oppgaven.
+
 **Førstegangsoppsett.** Eget vindu med stegene til venstre: Velkommen ·
 Skoleåret · Fagene dine · Elevene · Ferdig. Større tekst (15–17 px) enn
 resten av appen. Første steg tilbyr oppsettfil fra en kollega (anbefalt)
