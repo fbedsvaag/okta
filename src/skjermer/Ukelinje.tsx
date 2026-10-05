@@ -22,8 +22,16 @@ import { fagfarge } from "../ui/farger";
 /** Klokka vises alltid minst fra 08 til 16, og utvides om øktene krever det. */
 const TIDLIGST = 8;
 const SENEST = 16;
-/** Piksler per time. */
+/** Piksler per time, når ikke noe annet er valgt. */
 const TIME = 28;
+/** Høyden på raden for heldagshendelser, når den vises. */
+const HELDAG = 24;
+
+/** Det som ligger over hele dagen: fridag, rød dag, hendelse, samtaler. */
+export type Heldag = {
+  navn: string;
+  type: "helligdag" | "fri" | "hendelse" | "samtale";
+};
 
 const DAGNAVN = ["man", "tir", "ons", "tor", "fre"];
 
@@ -33,6 +41,10 @@ export function Ukelinje({
   siste,
   idag,
   onApneOkt,
+  time = TIME,
+  heldag,
+  valgt = null,
+  onUke,
 }: {
   /** alle øktene i året */
   okter: Okt[];
@@ -41,6 +53,14 @@ export function Ukelinje({
   siste: string;
   idag: string;
   onApneOkt: (id: string) => void;
+  /** piksler per time; kalenderens ukevisning er høyere enn forsidens */
+  time?: number;
+  /** gis den, får hver dag en rad for det som ligger over hele dagen */
+  heldag?: (dato: string) => Heldag[];
+  /** økta som er valgt, og får en ring rundt seg */
+  valgt?: string | null;
+  /** mandagen i uka som står framme, når den endres */
+  onUke?: (mandag: string) => void;
 }) {
   const stripe = useRef<HTMLDivElement>(null);
   const naa = useNaa();
@@ -73,12 +93,14 @@ export function Ukelinje({
     }
     return [f, t];
   }, [okter]);
-  const hoyde = (til - fra) * TIME;
+  const hoyde = (til - fra) * time;
 
   const styrt = useRef(false);
   const slipp = useRef<ReturnType<typeof setTimeout> | null>(null);
   const denneUka = mandagFor(idag);
   const [synlig, setSynlig] = useState(denneUka);
+  useEffect(() => onUke?.(synlig), [synlig, onUke]);
+  const topp = heldag ? 28 + HELDAG : 28;
 
   // Uka som står framme, i en ref så bredde-lytteren under ser den ferske.
   const synligRef = useRef(synlig);
@@ -171,13 +193,16 @@ export function Ukelinje({
 
       <div className="flex">
         {/* Klokka står fast til venstre mens ukene glir forbi. */}
-        <div className="w-8 shrink-0 pt-7" style={{ height: hoyde + 28 }}>
+        <div
+          className="w-8 shrink-0"
+          style={{ height: hoyde + topp, paddingTop: topp }}
+        >
           <div className="relative" style={{ height: hoyde }}>
             {Array.from({ length: til - fra }, (_, i) => (
               <span
                 key={i}
                 className="absolute -translate-y-1/2 text-mikro tabular-nums text-blekk-svakest"
-                style={{ top: i * TIME }}
+                style={{ top: i * time }}
               >
                 {String(fra + i).padStart(2, "0")}
               </span>
@@ -208,6 +233,9 @@ export function Ukelinje({
                     hoyde={hoyde}
                     naa={mandag === mandagFor(idag) ? naa : null}
                     onApneOkt={onApneOkt}
+                    time={time}
+                    heldag={heldag ? heldag(dato) : null}
+                    valgt={valgt}
                   />
                 );
               })}
@@ -228,6 +256,9 @@ function Dag({
   hoyde,
   naa,
   onApneOkt,
+  time,
+  heldag,
+  valgt,
 }: {
   navn: string;
   dato: string;
@@ -238,6 +269,10 @@ function Dag({
   /** klokka nå i timer fra midnatt, når dagen er i inneværende uke */
   naa: number | null;
   onApneOkt: (id: string) => void;
+  time: number;
+  /** null = ingen heldagsrad */
+  heldag: Heldag[] | null;
+  valgt: string | null;
 }) {
   const erIdag = dato === idag;
   const passert = dato < idag;
@@ -256,17 +291,39 @@ function Dag({
       >
         {navn} {Number(dato.slice(8))}.
       </div>
+      {heldag && (
+        <div
+          className="flex items-center gap-1 overflow-hidden border-b border-linje-svak px-1"
+          style={{ height: HELDAG }}
+        >
+          {heldag.map((h, i) => (
+            <span
+              key={i}
+              title={h.navn}
+              className={`min-w-0 truncate rounded-liten px-1.5 text-mikro leading-5 ${HELDAGSTONE[h.type]}`}
+            >
+              {h.navn}
+            </span>
+          ))}
+        </div>
+      )}
       <div
         className={`relative ${erIdag ? "bg-valgt/40" : ""}`}
         style={{
           height: hoyde,
           // Timelinjer bak øktene, som linjene i en klassejournal.
-          backgroundImage: `repeating-linear-gradient(to bottom, var(--color-linje-svak) 0 1px, transparent 1px ${TIME}px)`,
+          backgroundImage: `repeating-linear-gradient(to bottom, var(--color-linje-svak) 0 1px, transparent 1px ${time}px)`,
         }}
       >
         {/* Den svake streken ligger bak øktene, den sterke over. */}
         {naa !== null && !erIdag && (
-          <Naalinje naa={naa} fra={fra} hoyde={hoyde} sterk={false} />
+          <Naalinje
+            naa={naa}
+            fra={fra}
+            hoyde={hoyde}
+            time={time}
+            sterk={false}
+          />
         )}
         {baner.map((bane, b) =>
           bane.map((o) => (
@@ -277,12 +334,14 @@ function Dag({
               bane={b}
               baner={baner.length}
               dempet={passert}
+              time={time}
+              valgt={valgt === o.id}
               onApne={() => onApneOkt(o.id)}
             />
           )),
         )}
         {naa !== null && erIdag && (
-          <Naalinje naa={naa} fra={fra} hoyde={hoyde} sterk />
+          <Naalinje naa={naa} fra={fra} hoyde={hoyde} time={time} sterk />
         )}
       </div>
     </div>
@@ -298,14 +357,16 @@ function Naalinje({
   naa,
   fra,
   hoyde,
+  time,
   sterk,
 }: {
   naa: number;
   fra: number;
   hoyde: number;
+  time: number;
   sterk: boolean;
 }) {
-  const topp = (naa - fra) * TIME;
+  const topp = (naa - fra) * time;
   if (topp < 0 || topp > hoyde) return null;
   const t = Math.floor(naa);
   const m = Math.floor((naa - t) * 60);
@@ -333,6 +394,14 @@ function Naalinje({
 }
 
 /** Klokka nå i timer fra midnatt, oppdatert hvert halve minutt. */
+const HELDAGSTONE: Record<Heldag["type"], string> = {
+  helligdag:
+    "bg-helligdag-flate text-blekk shadow-[inset_0_0_0_1px_var(--color-helligdag-kant)]",
+  fri: "bg-fri-flate text-blekk-dempet",
+  hendelse: "bg-hendelse-flate text-blekk-dempet",
+  samtale: "bg-ark text-aksent shadow-[inset_0_0_0_1px_var(--color-aksent)]",
+};
+
 function useNaa(): number {
   const les = () => {
     const d = new Date();
@@ -352,6 +421,8 @@ function Blokk({
   bane,
   baner,
   dempet,
+  time,
+  valgt,
   onApne,
 }: {
   okt: Okt;
@@ -359,14 +430,16 @@ function Blokk({
   bane: number;
   baner: number;
   dempet: boolean;
+  time: number;
+  valgt: boolean;
   onApne: () => void;
 }) {
   // Uten klokkeslett vet vi ikke hvor på dagen den hører hjemme. Da legges
   // den øverst med stiplet kant, framfor å stå et sted som ser presist ut.
   const utenTid = !okt.klokkeslett;
   const [start, slutt] = spennet(okt, fra);
-  const topp = (start - fra) * TIME;
-  const hoyde = Math.max((slutt - start) * TIME - 2, 16);
+  const topp = (start - fra) * time;
+  const hoyde = Math.max((slutt - start) * time - 2, 16);
 
   return (
     <button
@@ -376,7 +449,9 @@ function Blokk({
       }${okt.sted ? ` · ${okt.sted}` : ""}`}
       className={`absolute overflow-hidden rounded-liten bg-ark px-1.5 py-0.5 text-left text-mikro leading-tight hover:brightness-95 ${
         utenTid ? "border border-dashed border-linje-sterk" : ""
-      } ${dempet ? "opacity-55" : ""}`}
+      } ${dempet && !valgt ? "opacity-55" : ""} ${
+        valgt ? "z-10 ring-2 ring-aksent" : ""
+      }`}
       style={{
         top: topp + 1,
         height: hoyde,

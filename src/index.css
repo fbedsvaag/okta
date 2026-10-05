@@ -101,11 +101,13 @@
 
   --color-varsel: #8a5a00;
   --color-feil-flate: #fdf0ef;
-  --color-helligdag-flate: #fbf3f3;
-  --color-fri-flate: #f6f4f0;
+  /* Kalendertonene (DESIGN.md §4). */
+  --color-helligdag-flate: #f6e4df;
+  --color-helligdag-kant: #c98f80;
+  --color-fri-flate: #f3efe6;
   /* Hendelse er ikke fri: skolen går, men timen din er opptatt. Kjølig tone
      framfor feriens varme, så de to ikke leses som det samme. */
-  --color-hendelse-flate: #eef1f6;
+  --color-hendelse-flate: #eaeef5;
   --color-feil: #b3261e;
   --color-feil-mork: #7a1a14;
   /* Teppet bak ark og søkevinduet. Mørkner det under — i begge moduser. */
@@ -229,6 +231,7 @@
     --color-varsel: #e3b55c;
     --color-feil-flate: #3a2024;
     --color-helligdag-flate: #2d1f27;
+    --color-helligdag-kant: #7a4a40;
     --color-fri-flate: #24221f;
     --color-hendelse-flate: #1d2232;
     --color-feil: #f08378;
@@ -491,6 +494,20 @@
     --color-valgt: #2f2f35;
     --color-bord: #141416;
   }
+}
+
+/*
+ * Årsheatmapet i kalenderen (DESIGN.md §4): fem trinn etter hvor mye som
+ * skjer en dag. Bygger på aksenten og arket, så det følger paletten og
+ * mørk modus. I fiolett lys modus gir det omtrent #f4f2f9, #e3ddf0,
+ * #c4b8e3, #9584c8 og #5e4f9e.
+ */
+:root {
+  --varme-1: color-mix(in srgb, var(--color-aksent) 7%, var(--color-ark));
+  --varme-2: color-mix(in srgb, var(--color-aksent) 18%, var(--color-ark));
+  --varme-3: color-mix(in srgb, var(--color-aksent) 36%, var(--color-ark));
+  --varme-4: color-mix(in srgb, var(--color-aksent) 62%, var(--color-ark));
+  --varme-5: color-mix(in srgb, var(--color-aksent) 88%, var(--color-ark));
 }
 
 /*

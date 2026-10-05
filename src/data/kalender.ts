@@ -9,7 +9,13 @@ export type Fridag = {
   id: string;
   skolearId: string;
   navn: string;
-  type: "ferie" | "planlegging" | "annet" | "hendelse";
+  /**
+   * `helligdag` er en rød dag lagt inn for hånd — de vanlige regnes ut
+   * (roddager), men en lokal fridag som skal se ut som en rød dag, må
+   * kunne legges inn. Kolonnen har ingen CHECK, så det trengs ingen
+   * migrasjon for en ny verdi.
+   */
+  type: "ferie" | "planlegging" | "annet" | "hendelse" | "helligdag";
   fra: string;
   til: string;
 };

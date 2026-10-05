@@ -120,7 +120,7 @@ prioritering fra 30.09.
   som egen linje uten måltall. Gjenstår: å vise hvilken oppgave eleven
   fikk under selve vurderingen — gjort, gjennom en vurderingsvelger i
   samtaleoppsettet.
-- [ ] Ukesvisning av økter — tegnet 05.10, se §5.9.
+- [x] Ukesvisning av økter — tegnet 05.10, se §5.9.
 - [x] **Elevbilder fra InSchool-PDF.** Bygget 30.09 (migrasjon 021), testet mot en ekte utskrift. Les den
   utskrevne klasselista (én–to sider PDF med navn og bilde) lokalt i appen:
   navnene blir klasseliste gjennom lim-inn-flyten (§7, duplikatsjekk og
@@ -177,7 +177,7 @@ committes alene, og så det som alt annet bygger på kommer først.
   blir filtre. Marker rader + P setter periode. Sjekk
   `periode-fargelegg.test.ts` — testene for pensel kan gå, logikken for å
   sette periode på mange økter skal bestå.
-- [ ] **5.9 Kalender.** Måned: helligdager som egen type i `fridag.type`
+- [x] **5.9 Kalender.** Måned: helligdager som egen type i `fridag.type`
   (`helligdag`, ingen migrasjon trengs — kolonnen har ingen CHECK) med egen
   tone, og årsheatmap i høyre kolonne. Uke: ny visning med heldagsrad,
   valgt-økt-panel og timer per fag.

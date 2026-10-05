@@ -15,7 +15,12 @@ import {
   type Blokkering,
   type Fridag,
 } from "../data/kalender";
-import { hentFridager, hentInnstilling, type Skolear } from "../data/skolear";
+import {
+  hentFridager,
+  hentInnstilling,
+  settInnstilling,
+  type Skolear,
+} from "../data/skolear";
 import {
   hentOkter,
   opprettOkt,
@@ -24,7 +29,8 @@ import {
   type Okt,
 } from "../data/okter";
 import type { FagIAr } from "../data/fag";
-import { Fagfirkant, Kappet } from "../ui/felles";
+import { Bryter, Fagfirkant, Kappet, Knapp } from "../ui/felles";
+import { Kalenderuke } from "./Kalenderuke";
 import { fagfarge } from "../ui/farger";
 import { hentSamtaledager, type Samtaledag } from "../data/samtale";
 
@@ -211,62 +217,143 @@ export function Skolekalender({
     [valgte, perDag],
   );
 
+  // Uke eller måned (DESIGN.md §10). Valget huskes, som kolonnevalgene.
+  const [modus, setModus] = useState<"uke" | "maned">("maned");
+  useEffect(() => {
+    void hentInnstilling("kalender_modus").then((v) => {
+      if (v === "uke" || v === "maned") setModus(v);
+    });
+  }, []);
+  function byttModus(m: "uke" | "maned") {
+    setModus(m);
+    void settInnstilling("kalender_modus", m);
+  }
+
+  // Måneden som står framme. Starter på denne måneden, eller den nærmeste
+  // i skoleåret når i dag ligger utenfor.
+  const [visManed, setVisManed] = useState(() =>
+    narmesteManed(idag.slice(0, 7), maneder),
+  );
+  const ix = maneder.indexOf(visManed);
+
+  // Hvor mye som skjer hver dag, til årsheatmapet.
+  const mengde = useMemo(() => {
+    const kart = new Map<string, number>();
+    for (const o of okter) kart.set(o.dato, (kart.get(o.dato) ?? 0) + 1);
+    for (const d of samtaledager)
+      if (d.dato) kart.set(d.dato, (kart.get(d.dato) ?? 0) + 1);
+    return kart;
+  }, [okter, samtaledager]);
+
   return (
     <div className="mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col overflow-clip">
-      {/* Fagfargene og hjelpeteksten blir stående mens månedene ruller. */}
-      <div className="mb-4 flex shrink-0 flex-wrap items-center gap-4 text-liten text-blekk-dempet">
+      <div className="mb-3 flex shrink-0 flex-wrap items-center gap-3">
         {bryter}
-        <span>{okter.length} økter i året</span>
-        {fag.map((f) => (
-          <span key={f.id} className="flex items-center gap-1.5">
-            <span
-              aria-hidden
-              className="h-2.5 w-2.5 rounded-sm"
-              style={{ background: f.farge ?? "var(--color-linje-sterk)" }}
-            />
-            {f.kode}
-          </span>
-        ))}
-        <span className="ml-auto">
-          Klikk på dagene du vil ha økter på — så mange du vil — og velg fag
-          nederst.
-        </span>
+        <Bryter
+          valg={[
+            { id: "uke", navn: "Uke" },
+            { id: "maned", navn: "Måned" },
+          ]}
+          verdi={modus}
+          settVerdi={(v) => byttModus(v as "uke" | "maned")}
+        />
+        {modus === "maned" && (
+          <>
+            <h2 className="ml-2 text-[calc(26px*var(--tekst-skala))] font-light leading-none tracking-overskrift first-letter:uppercase">
+              {manedsnavn(visManed)}
+            </h2>
+            <span className="ml-auto flex items-center gap-1">
+              <button
+                onClick={() => ix > 0 && setVisManed(maneder[ix - 1])}
+                disabled={ix <= 0}
+                title="Forrige måned"
+                className="rounded-vanlig px-2 py-0.5 text-tittel leading-none text-blekk-dempet hover:bg-flate hover:text-blekk disabled:opacity-30"
+              >
+                ‹
+              </button>
+              <Knapp
+                onClick={() =>
+                  setVisManed(narmesteManed(idag.slice(0, 7), maneder))
+                }
+              >
+                I dag
+              </Knapp>
+              <button
+                onClick={() =>
+                  ix < maneder.length - 1 && setVisManed(maneder[ix + 1])
+                }
+                disabled={ix >= maneder.length - 1}
+                title="Neste måned"
+                className="rounded-vanlig px-2 py-0.5 text-tittel leading-none text-blekk-dempet hover:bg-flate hover:text-blekk disabled:opacity-30"
+              >
+                ›
+              </button>
+            </span>
+          </>
+        )}
       </div>
 
-      <div className="min-h-0 flex-1 overflow-auto">
-        <div
-          ref={rutenett}
-          className="grid gap-x-6 gap-y-7 [grid-template-columns:repeat(auto-fill,minmax(17rem,1fr))]"
-        >
-          {maneder.map((m) => (
-            <Maned
-              key={m}
-              maned={m}
-              cellehoyde={cellehoyde}
-              spennFra={skolear.start}
-              spennTil={skolear.slutt}
-              perDag={perDag}
-              samtalePerDag={samtalePerDag}
-              fridager={fridager}
-              rode={rode}
-              idag={idag}
-              valgte={valgte}
-              onVelgDag={(dato) =>
-                setValgte((f) => {
-                  const ny = new Set(f);
-                  if (ny.has(dato)) ny.delete(dato);
-                  else ny.add(dato);
-                  return ny;
-                })
-              }
-              onApneOkt={onApneOkt}
-              onSlettOkt={(o) => void slettValgte([o])}
-            />
-          ))}
+      {modus === "uke" ? (
+        <Kalenderuke
+          skolearId={skolear.id}
+          forste={skolear.start}
+          siste={skolear.slutt}
+          okter={okter}
+          fag={fag}
+          fridager={fridager}
+          rode={rode}
+          samtaledager={samtaledager}
+          onApneOkt={onApneOkt}
+          onEndret={() => void last()}
+        />
+      ) : (
+        <div className="flex min-h-0 flex-1 gap-8">
+          <div className="min-h-0 min-w-0 flex-1 overflow-auto">
+            <div ref={rutenett} className="grid grid-cols-1">
+              <Maned
+                key={visManed}
+                maned={visManed}
+                cellehoyde={cellehoyde}
+                spennFra={skolear.start}
+                spennTil={skolear.slutt}
+                perDag={perDag}
+                samtalePerDag={samtalePerDag}
+                fridager={fridager}
+                rode={rode}
+                idag={idag}
+                valgte={valgte}
+                onVelgDag={(dato) =>
+                  setValgte((f) => {
+                    const ny = new Set(f);
+                    if (ny.has(dato)) ny.delete(dato);
+                    else ny.add(dato);
+                    return ny;
+                  })
+                }
+                onApneOkt={onApneOkt}
+                onSlettOkt={(o) => void slettValgte([o])}
+              />
+            </div>
+            <p className="mt-2 text-liten text-blekk-dempet">
+              Klikk på dagene du vil ha økter på — også i flere måneder — og
+              velg fag nederst.
+            </p>
+          </div>
+
+          <Arsheatmap
+            maneder={maneder}
+            visManed={visManed}
+            mengde={mengde}
+            fridager={fridager}
+            rode={rode}
+            spennFra={skolear.start}
+            spennTil={skolear.slutt}
+            onVelg={setVisManed}
+          />
         </div>
-      </div>
+      )}
 
-      {valgte.size > 0 && (
+      {modus === "maned" && valgte.size > 0 && (
         <Valgtlinje
           datoer={[...valgte].sort()}
           fag={fag}
@@ -284,6 +371,89 @@ export function Skolekalender({
       )}
     </div>
   );
+}
+
+/**
+ * Skoleåret august–juni som heatmap, måned for måned (DESIGN.md §4, §10).
+ * Fem trinn etter hvor mye som skjer en dag, bygget på aksenten. Fridager
+ * og røde dager har kalendertonene sine. Et klikk hopper til måneden.
+ */
+function Arsheatmap({
+  maneder,
+  visManed,
+  mengde,
+  fridager,
+  rode,
+  spennFra,
+  spennTil,
+  onVelg,
+}: {
+  maneder: string[];
+  visManed: string;
+  mengde: Map<string, number>;
+  fridager: Fridag[];
+  rode: Map<string, string>;
+  spennFra: string;
+  spennTil: string;
+  onVelg: (maned: string) => void;
+}) {
+  return (
+    <aside className="w-60 shrink-0 overflow-y-auto">
+      <h3 className="mb-2 border-b border-linje-medium pb-1 text-brod font-semibold">
+        Skoleåret
+      </h3>
+      <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+        {maneder.map((m) => (
+          <button
+            key={m}
+            onClick={() => onVelg(m)}
+            className={`rounded-stor p-1 text-left ${
+              m === visManed ? "bg-valgt" : "hover:bg-flate"
+            }`}
+          >
+            <span className="mb-1 block text-mikro text-blekk-dempet first-letter:uppercase">
+              {new Date(`${m}-01T00:00:00`).toLocaleDateString("nb-NO", {
+                month: "short",
+              })}
+            </span>
+            <span className="grid grid-cols-5 gap-[2px]">
+              {ukerIManed(m)
+                .flat()
+                .map((dato, i) => {
+                  if (dato === null || dato < spennFra || dato > spennTil)
+                    return <span key={i} className="aspect-square" />;
+                  const b = blokkering(dato, fridager, rode);
+                  const n = mengde.get(dato) ?? 0;
+                  const bakgrunn =
+                    b?.type === "helligdag"
+                      ? "var(--color-helligdag-flate)"
+                      : b && b.type !== "hendelse"
+                        ? "var(--color-fri-flate)"
+                        : `var(--varme-${Math.min(n, 4) + 1})`;
+                  return (
+                    <span
+                      key={i}
+                      title={`${dato}${b ? ` · ${b.navn}` : ""}${
+                        n > 0 ? ` · ${n}` : ""
+                      }`}
+                      className="aspect-square rounded-[2px]"
+                      style={{ background: bakgrunn }}
+                    />
+                  );
+                })}
+            </span>
+          </button>
+        ))}
+      </div>
+    </aside>
+  );
+}
+
+/** Måneden i skoleåret nærmest den gitte. */
+function narmesteManed(maned: string, maneder: string[]): string {
+  if (maneder.length === 0) return maned;
+  if (maneder.includes(maned)) return maned;
+  return maned < maneder[0] ? maneder[0] : maneder[maneder.length - 1];
 }
 
 function Maned({
@@ -319,9 +489,6 @@ function Maned({
 
   return (
     <section>
-      <h3 className="mb-1 text-liten font-semibold first-letter:uppercase">
-        {manedsnavn(maned)}
-      </h3>
       <div className="grid grid-cols-[1.6rem_repeat(5,1fr)] gap-px border-b border-linje-medium pb-1 text-mikro uppercase tracking-etikett text-blekk-svak">
         <span className="px-1" title="Ukenummer">
           uke
@@ -419,7 +586,7 @@ function Dag({
       ? "bg-feil-flate"
       : blokkert
         ? blokkert.type === "helligdag"
-          ? "bg-helligdag-flate"
+          ? "bg-helligdag-flate shadow-[inset_0_0_0_1px_var(--color-helligdag-kant)]"
           : blokkert.type === "hendelse"
             ? "bg-hendelse-flate"
             : "bg-fri-flate"

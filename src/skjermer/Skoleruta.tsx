@@ -163,6 +163,7 @@ const TYPENAVN: Record<Fridag["type"], string> = {
   planlegging: "Planlegging",
   hendelse: "Hendelse",
   annet: "Annet",
+  helligdag: "Helligdag",
 };
 
 function NyFridag({
@@ -207,6 +208,7 @@ function NyFridag({
           <option value="ferie">Ferie</option>
           <option value="planlegging">Planleggingsdag</option>
           <option value="hendelse">Hendelse</option>
+          <option value="helligdag">Helligdag (rød dag)</option>
           <option value="annet">Annet</option>
         </select>
       </label>
