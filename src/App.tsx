@@ -22,7 +22,6 @@ import { Fag } from "./skjermer/Fag";
 import { Elever } from "./skjermer/Elever";
 import { LimInn } from "./skjermer/LimInn";
 import { Okter } from "./skjermer/Okter";
-import { Perioder } from "./skjermer/Perioder";
 import { Skoleruta } from "./skjermer/Skoleruta";
 import { Skolekalender } from "./skjermer/Skolekalender";
 import { Innstillinger } from "./skjermer/Innstillinger";
@@ -51,7 +50,6 @@ type Visning =
   /** én elev over hele skjermen, uten lista — der søket åpner */
   | "elev"
   | "okter"
-  | "perioder"
   | "vurderinger"
   | "samtaler"
   | "innstillinger"
@@ -410,17 +408,6 @@ export default function App() {
                   skolear={skolear}
                   fag={fag}
                   startValgt={apneId}
-                  onApnePerioder={() => ga("perioder")}
-                />
-              )}
-
-              {visning === "perioder" && (
-                <Perioder
-                  bryter={<Visningsbryter visning={visning} ga={ga} />}
-                  key={versjon}
-                  skolear={skolear}
-                  fag={fag}
-                  onApneOkt={apneOktSomArk}
                 />
               )}
 
@@ -439,7 +426,6 @@ const SKJERMNAVN: Record<Visning, string> = {
   idag: "I dag",
   okter: "Økter",
   kalender: "Økter",
-  perioder: "Økter",
   elever: "Elever",
   elev: "Elever",
   liminn: "Elever",
@@ -486,12 +472,13 @@ function aktivtPunkt(v: Visning): Menypunkt | "fag" | "innstillinger" | null {
 
 /** Visningene som hører under Økter-fanen. */
 function erOktvisning(v: Visning): boolean {
-  return v === "okter" || v === "kalender" || v === "perioder";
+  return v === "okter" || v === "kalender";
 }
 
 /**
- * Liste, Kalender og Perioder er tre måter å se øktene på. Bryteren står
- * først i verktøylinja i alle tre, på samme sted, så den ikke hopper.
+ * Liste og Kalender er to måter å se øktene på. Bryteren står først i
+ * verktøylinja i begge, på samme sted, så den ikke hopper. Periodevisningen
+ * er tatt bort: perioden er en merkelapp på økta (DESIGN.md §6).
  */
 function Visningsbryter({
   visning,
@@ -503,7 +490,6 @@ function Visningsbryter({
   const valg: [Visning, string][] = [
     ["okter", "Liste"],
     ["kalender", "Kalender"],
-    ["perioder", "Perioder"],
   ];
   return (
     <div className="inline-flex shrink-0 rounded border border-linje bg-ark p-0.5">

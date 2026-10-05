@@ -172,7 +172,7 @@ committes alene, og så det som alt annet bygger på kommer først.
 - [x] **5.7 Skåring.** Fjern symbol+tekst-kolonnen. Notat fra denne økta i
   egen kolonne på raden; N åpner feltet i raden. Plottet viser valgt verdi
   i full styrke. Raden holder 28 px.
-- [ ] **5.8 Økter og perioder.** Fjern periodevisningen og pensel/viskelær.
+- [x] **5.8 Økter og perioder.** Fjern periodevisningen og pensel/viskelær.
   Perioden blir merkelapp på raden, radene fargelegges ikke. Periodene øverst
   blir filtre. Marker rader + P setter periode. Sjekk
   `periode-fargelegg.test.ts` — testene for pensel kan gå, logikken for å

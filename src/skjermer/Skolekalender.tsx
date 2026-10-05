@@ -134,7 +134,7 @@ export function Skolekalender({
   onApneOkt,
   bryter,
 }: {
-  /** Liste | Kalender | Perioder, først i verktøylinja */
+  /** Liste | Kalender, først i verktøylinja */
   bryter?: React.ReactNode;
   skolear: Skolear;
   fag: FagIAr[];

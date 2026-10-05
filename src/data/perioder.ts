@@ -8,9 +8,9 @@ import type { Okt } from "./okter";
  * virker like godt uten. Legger du inn perioder, får du se om året henger
  * sammen — om november er overbooket eller et tema har fått for få timer.
  *
- * Perioden står på økta (`okt.periode_id`). Den settes ved å fargelegge
- * øktene i lista, og `start`/`slutt` følger det som er farget. Endres
- * spennet for hånd i periodevisningen, farges øktene i det nye spennet.
+ * Perioden står på økta (`okt.periode_id`), som en merkelapp. Den settes
+ * ved å merke øktene i lista og trykke P (`fargelegg` — navnet er fra da
+ * det var en pensel), og `start`/`slutt` følger øktene som har perioden.
  */
 
 export type Periode = {
