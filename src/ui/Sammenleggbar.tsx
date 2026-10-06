@@ -16,19 +16,21 @@ const kjent = new Map<string, boolean>();
 /** Åpen eller lagt sammen. Uten nøkkel er bolken alltid åpen. */
 export function useApen(
   nokkel: string | undefined,
+  /** før noe er valgt: åpen (standard) eller lagt sammen */
+  standard = true,
 ): [boolean, (apen: boolean) => void] {
   const [apen, setApenState] = useState(() =>
-    nokkel ? (kjent.get(nokkel) ?? true) : true,
+    nokkel ? (kjent.get(nokkel) ?? standard) : standard,
   );
 
   useEffect(() => {
     if (!nokkel || kjent.has(nokkel)) return;
     void hentInnstilling(`sammenlagt:${nokkel}`).then((v) => {
-      const svar = v !== "1";
+      const svar = v === null ? standard : v !== "1";
       kjent.set(nokkel, svar);
       setApenState(svar);
     });
-  }, [nokkel]);
+  }, [nokkel, standard]);
 
   function setApen(ny: boolean) {
     setApenState(ny);

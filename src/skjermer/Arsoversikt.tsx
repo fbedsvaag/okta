@@ -26,8 +26,12 @@ import {
 } from "../ui/felles";
 import type { Okt } from "../data/okter";
 import {
+  angreGjoremal,
+  angreLoggpost,
   fullforGjoremal,
   hentGjoremal,
+  hentLogg,
+  type Loggpost,
   nyttGjoremal,
   type Gjoremal,
 } from "../data/gjoremal";
@@ -503,10 +507,17 @@ const GJOREMAL_SYNLIGE = 6;
 function Gjoremalsliste({ skolearId }: { skolearId: string }) {
   const [liste, setListe] = useState<Gjoremal[]>([]);
   const [alle, setAlle] = useState(false);
+  // Loggen (ARBEIDSLISTE 9.5): det som er gjort siste 14 dager, og det du
+  // krysset av nettopp — det står øverst med «Angre».
+  const [logg, setLogg] = useState<Loggpost[]>([]);
+  const [nylig, setNylig] = useState<{ g: Gjoremal; klokke: string }[]>([]);
   const ark = useArk();
 
   useEffect(() => {
-    const last = () => void hentGjoremal(skolearId).then(setListe);
+    const last = () => {
+      void hentGjoremal(skolearId).then(setListe);
+      void hentLogg(skolearId).then(setLogg);
+    };
     last();
     const av = [lyttElever(last), lytt(last), lyttOktvisning(last)];
     return () => av.forEach((f) => f());
@@ -552,6 +563,10 @@ function Gjoremalsliste({ skolearId }: { skolearId: string }) {
                   title="Ferdig"
                   onChange={async () => {
                     setListe((l) => l.filter((x) => x !== g));
+                    setNylig((n) => [
+                      { g, klokke: new Date().toTimeString().slice(0, 5) },
+                      ...n,
+                    ]);
                     await fullforGjoremal(g);
                   }}
                   className="shrink-0 self-center"
@@ -604,6 +619,15 @@ function Gjoremalsliste({ skolearId }: { skolearId: string }) {
           {alle ? "Vis færre" : `Vis alle ${liste.length}`}
         </button>
       )}
+      <Logg
+        logg={logg}
+        nylig={nylig}
+        onAngre={async (n) => {
+          setNylig((l) => l.filter((x) => x !== n));
+          await angreGjoremal(n.g);
+        }}
+        onAngreLogg={(p) => void angreLoggpost(p)}
+      />
     </Panel>
   );
 }
@@ -767,4 +791,162 @@ function norskDato(dato: string): string {
     day: "2-digit",
     month: "2-digit",
   });
+}
+
+/**
+ * Loggen under Gjøremål (ARBEIDSLISTE 9.5, SPEC §4.1): det som er gjort de
+ * siste 14 dagene, gruppert per dag, med gjennomstreket tekst, hvem eller
+ * fag og klokkeslett. Det du krysset av nettopp står øverst med «Angre».
+ * Sammenleggbar, og lagt sammen som standard.
+ */
+function Logg({
+  logg,
+  nylig,
+  onAngre,
+  onAngreLogg,
+}: {
+  logg: Loggpost[];
+  nylig: { g: Gjoremal; klokke: string }[];
+  onAngre: (n: { g: Gjoremal; klokke: string }) => void;
+  onAngreLogg: (p: Loggpost) => void;
+}) {
+  const [apen, setApen] = useApen("forside-logg", false);
+  // Det som står i «nettopp», skal ikke stå en gang til lenger ned.
+  const nyligNokler = new Set(
+    nylig.map(({ g }) =>
+      g.slag === "oppfolging" ? g.notatId : g.slag === "eget" ? g.id : "",
+    ),
+  );
+  const resten = logg.filter(
+    (p) => !nyligNokler.has(p.slag === "oppfolging" ? p.notatId : p.id),
+  );
+  const perDag = new Map<string, Loggpost[]>();
+  for (const p of resten)
+    perDag.set(p.dato, [...(perDag.get(p.dato) ?? []), p]);
+  const antall = resten.length + nylig.length;
+
+  return (
+    <section className="mt-3 border-t border-linje-svak pt-2">
+      <Sammenleggknapp
+        tittel="Logg"
+        apen={apen}
+        onBytt={() => setApen(!apen)}
+        etter={`${antall} fullført siste 14 dager`}
+      />
+      <Utfold apen={apen}>
+        <div className="pt-1.5">
+          {nylig.length > 0 && (
+            <Logggruppe tittel="Nettopp">
+              {nylig.map((n, i) => (
+                <Loggrad
+                  key={i}
+                  tekst={n.g.tekst}
+                  hvem={
+                    n.g.slag === "oktboks"
+                      ? n.g.fagKode
+                      : n.g.slag === "eget"
+                        ? null
+                        : n.g.navn
+                  }
+                  klokke={n.klokke}
+                  onAngre={() => onAngre(n)}
+                />
+              ))}
+            </Logggruppe>
+          )}
+          {[...perDag].map(([dato, poster]) => (
+            <Logggruppe key={dato} tittel={dagnavn(dato)}>
+              {poster.map((p) => (
+                <Loggrad
+                  key={p.slag === "oppfolging" ? p.notatId : p.id}
+                  tekst={p.tekst}
+                  hvem={
+                    p.slag === "oppfolging"
+                      ? [p.navn, p.fagKode].filter(Boolean).join(" · ")
+                      : null
+                  }
+                  klokke={p.klokke}
+                  onAngre={() => onAngreLogg(p)}
+                  angreStille
+                />
+              ))}
+            </Logggruppe>
+          ))}
+          {antall === 0 && (
+            <p className="py-1 text-liten text-blekk-svak">
+              Ingenting fullført de siste 14 dagene. Eldre står i arkivet og på
+              elevkortet.
+            </p>
+          )}
+        </div>
+      </Utfold>
+    </section>
+  );
+}
+
+function Logggruppe({
+  tittel,
+  children,
+}: {
+  tittel: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="mb-1.5">
+      <p className="pb-0.5 pt-1 text-etikett text-blekk-dempet first-letter:uppercase">
+        {tittel}
+      </p>
+      <ul>{children}</ul>
+    </div>
+  );
+}
+
+function Loggrad({
+  tekst,
+  hvem,
+  klokke,
+  onAngre,
+  angreStille = false,
+}: {
+  tekst: string;
+  hvem: string | null;
+  klokke: string | null;
+  onAngre: () => void;
+  /** i loggen står «Angre» bare når musa er over raden */
+  angreStille?: boolean;
+}) {
+  return (
+    <li className="group flex items-baseline gap-2 py-0.5 text-liten">
+      <span className="min-w-0 flex-1 truncate text-blekk-svak line-through">
+        {tekst || "(uten tekst)"}
+      </span>
+      {hvem && (
+        <span className="shrink-0 truncate text-blekk-svak">{hvem}</span>
+      )}
+      {klokke && (
+        <span className="w-10 shrink-0 text-right tabular-nums text-blekk-svak">
+          {klokke}
+        </span>
+      )}
+      <button
+        onClick={onAngre}
+        className={`shrink-0 text-aksent hover:underline ${
+          angreStille ? "opacity-0 group-hover:opacity-100" : ""
+        }`}
+      >
+        Angre
+      </button>
+    </li>
+  );
+}
+
+/** «I dag», «I går», ellers «tor 1.10». */
+function dagnavn(dato: string): string {
+  const d = new Date(`${dato}T00:00:00`);
+  const idag = new Date();
+  idag.setHours(0, 0, 0, 0);
+  const dager = Math.round((idag.getTime() - d.getTime()) / 86_400_000);
+  if (dager === 0) return "I dag";
+  if (dager === 1) return "I går";
+  return `${d.toLocaleDateString("nb-NO", { weekday: "short" }).replace(/\.$/, "")} ${d.getDate()}.${d.getMonth() + 1}`;
 }

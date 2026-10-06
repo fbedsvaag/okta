@@ -132,3 +132,43 @@ describe("nyttGjoremal", () => {
     expect(await hentGjoremal(ar)).toEqual([]);
   });
 });
+
+describe("loggen under Gjøremål", () => {
+  it("viser det som er gjort de siste 14 dagene, nyeste først, og kan angres", async () => {
+    const { nyttGjoremal, hentLogg, angreLoggpost } =
+      await import("./gjoremal");
+    const { oppdater } = await import("../db");
+    await nyttGjoremal(ar, { tekst: "Ring foresatte", elevId: tony });
+    await nyttGjoremal(ar, { tekst: "Kopier prøvene" });
+    await nyttGjoremal(ar, { tekst: "Gammelt", elevId: tony });
+    for (const g of await hentGjoremal(ar)) await fullforGjoremal(g);
+
+    // Det gamle ble lukket for tre uker siden — det står i arkivet, ikke her.
+    const gammelt = (await hentElevnotater(tony)).find(
+      (n) => n.tekst === "Gammelt",
+    )!;
+    const tidlig = new Date();
+    tidlig.setDate(tidlig.getDate() - 21);
+    await oppdater("elevnotat", gammelt.id, {
+      lukket: tidlig.toLocaleDateString("sv-SE"),
+    });
+
+    const logg = await hentLogg(ar);
+    expect(logg.map((p) => p.tekst).sort()).toEqual([
+      "Kopier prøvene",
+      "Ring foresatte",
+    ]);
+    const ring = logg.find((p) => p.tekst === "Ring foresatte")!;
+    expect(ring).toMatchObject({ slag: "oppfolging", navn: "Tony Soprano" });
+    expect(ring.klokke).toMatch(/^\d\d:\d\d$/);
+
+    // Angre: oppfølgingen er åpen igjen og står blant gjøremålene.
+    await angreLoggpost(ring);
+    expect((await hentLogg(ar)).map((p) => p.tekst)).toEqual([
+      "Kopier prøvene",
+    ]);
+    expect((await hentGjoremal(ar)).map((g) => g.tekst)).toContain(
+      "Ring foresatte",
+    );
+  });
+});

@@ -248,3 +248,129 @@ export async function nyttGjoremal(
   await settInn("gjoremal", { skolear_id: skolearId, tekst, frist });
   varsleElever();
 }
+
+// ------------------------------------------------------------------ logg
+
+/** Et gjøremål som er gjort, til loggen under Gjøremål (§4.1). */
+export type Loggpost =
+  | {
+      slag: "oppfolging";
+      notatId: string;
+      elevId: string;
+      navn: string;
+      fagKode: string | null;
+      tekst: string;
+      /** dagen det ble lukket */
+      dato: string;
+      /** «14:05», fra når raden sist ble endret — som var da den ble lukket */
+      klokke: string | null;
+    }
+  | {
+      slag: "eget";
+      id: string;
+      tekst: string;
+      dato: string;
+      klokke: string | null;
+    };
+
+/**
+ * Det som er gjort de siste `dager` dagene, nyeste først. Leses fra
+ * `lukket` på oppfølgingsnotatene og `ferdig` på egne gjøremål — ingen
+ * egen tabell. Klokkeslettet er fra `endret`, når det er samme dag.
+ * Avkrysningsbokser i notater og øktlogger har ikke noe tidspunkt, og
+ * står derfor ikke her. Eldre står i arkivet og på elevkortet.
+ */
+export async function hentLogg(
+  skolearId: string,
+  dager = 14,
+  idag = new Date(),
+): Promise<Loggpost[]> {
+  const fra = new Date(idag);
+  fra.setDate(fra.getDate() - dager);
+  const grense = fra.toLocaleDateString("sv-SE");
+
+  const notater = await hent<{
+    notatId: string;
+    elevId: string;
+    fornavn: string;
+    etternavn: string;
+    fagKode: string | null;
+    tekst: string;
+    dato: string;
+    endret: string;
+  }>(
+    `SELECT n.id AS notatId, n.elev_id AS elevId, e.fornavn, e.etternavn,
+            COALESCE(NULLIF(f.alias, ''), f.kode) AS fagKode,
+            n.tekst, n.lukket AS dato, n.endret
+       FROM elevnotat n
+       JOIN elev e ON e.id = n.elev_id AND e.slettet IS NULL
+       LEFT JOIN skolear_fag sf ON sf.id = n.skolear_fag_id
+       LEFT JOIN fag f ON f.id = sf.fag_id
+      WHERE n.skolear_id = $1 AND n.slettet IS NULL
+        AND n.skal_folges_opp = 1 AND n.lukket IS NOT NULL
+        AND n.lukket >= $2`,
+    [skolearId, grense],
+  );
+  const egne = await hent<{
+    id: string;
+    tekst: string;
+    dato: string;
+    endret: string;
+  }>(
+    `SELECT id, tekst, ferdig AS dato, endret FROM gjoremal
+      WHERE skolear_id = $1 AND slettet IS NULL
+        AND ferdig IS NOT NULL AND ferdig >= $2`,
+    [skolearId, grense],
+  );
+
+  const klokke = (dato: string, endret: string) =>
+    endret.slice(0, 10) === dato ? endret.slice(11, 16) : null;
+
+  const ut: Loggpost[] = [
+    ...notater.map((n): Loggpost => ({
+      slag: "oppfolging",
+      notatId: n.notatId,
+      elevId: n.elevId,
+      navn: `${n.fornavn} ${n.etternavn}`,
+      fagKode: n.fagKode,
+      tekst: forsteLinje(n.tekst),
+      dato: n.dato,
+      klokke: klokke(n.dato, n.endret),
+    })),
+    ...egne.map((g): Loggpost => ({
+      slag: "eget",
+      id: g.id,
+      tekst: g.tekst,
+      dato: g.dato,
+      klokke: klokke(g.dato, g.endret),
+    })),
+  ];
+  return ut.sort(
+    (a, b) =>
+      b.dato.localeCompare(a.dato) ||
+      (b.klokke ?? "").localeCompare(a.klokke ?? ""),
+  );
+}
+
+/**
+ * Angrer et gjøremål som nettopp ble krysset av: oppfølgingen åpnes igjen,
+ * det egne gjøremålet får tilbake «ikke ferdig», og en boks i et notat
+ * eller en øktlogg krysses ut igjen.
+ */
+export async function angreGjoremal(g: Gjoremal): Promise<void> {
+  if (g.slag === "oppfolging") return settLukket(g.notatId, false);
+  if (g.slag === "eget") {
+    await oppdater("gjoremal", g.id, { ferdig: null });
+    varsleElever();
+    return;
+  }
+  // Boksene veksles: å krysse av en gang til setter dem tilbake.
+  await fullforGjoremal(g);
+}
+
+/** Angrer fra loggen. */
+export async function angreLoggpost(p: Loggpost): Promise<void> {
+  if (p.slag === "oppfolging") return settLukket(p.notatId, false);
+  await oppdater("gjoremal", p.id, { ferdig: null });
+  varsleElever();
+}
