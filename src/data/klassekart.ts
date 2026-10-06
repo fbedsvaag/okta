@@ -272,6 +272,8 @@ export type Innstillinger = {
   antallGrupper: number;
   /** «Fra kateteret» (false) eller «Fra elevene» (true) */
   fraElevene: boolean;
+  /** visningen kartet sist sto i */
+  visning: "plasser" | "grupper";
 };
 
 export const STANDARD: Innstillinger = {
@@ -280,6 +282,7 @@ export const STANDARD: Innstillinger = {
   unnga: true,
   antallGrupper: 6,
   fraElevene: false,
+  visning: "plasser",
 };
 
 export type Kart = {

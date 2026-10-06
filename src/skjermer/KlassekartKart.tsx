@@ -45,6 +45,7 @@ import {
   Menyvalg,
 } from "../ui/felles";
 import { Elevfoto } from "../ui/Elevfoto";
+import { KlassekartGrupper } from "./KlassekartGrupper";
 
 /**
  * Klassekartet — Plasser (SPEC §4.11, lerretet «Klassekart»).
@@ -271,6 +272,8 @@ export function KlassekartKart({
   useEffect(() => {
     const tast = (e: KeyboardEvent) => {
       if (!(e.metaKey || e.ctrlKey)) return;
+      // Gruppene har sine egne taster.
+      if (innst?.visning === "grupper") return;
       const iFelt = (e.target as HTMLElement).closest?.(
         "input, textarea, select, [contenteditable]",
       );
@@ -403,6 +406,17 @@ export function KlassekartKart({
 
   if (!kart || !innst) return null;
 
+  if (innst.visning === "grupper")
+    return (
+      <KlassekartGrupper
+        kart={kart}
+        innst={innst}
+        elever={elever}
+        regler={regler}
+        onEndreInnst={endreInnst}
+      />
+    );
+
   const ramme = romramme(rom?.deler ?? []);
   const skala = Math.min(1.5, Math.max(0.6, plassBredde / (ramme.b + 20)));
   const snu = (x: number, y: number, b = 0, h = 0) =>
@@ -442,6 +456,15 @@ export function KlassekartKart({
         <span className="text-liten text-blekk-dempet">
           {rom?.navn ?? "Uten rom"}
         </span>
+        <Bryter
+          storrelse="liten"
+          verdi="plasser"
+          settVerdi={(v) => endreInnst({ visning: v as "grupper" })}
+          valg={[
+            { id: "plasser", navn: "Plasser" },
+            { id: "grupper", navn: "Grupper" },
+          ]}
+        />
         {melding && (
           <span role="status" className="truncate text-liten text-aksent">
             {melding}
