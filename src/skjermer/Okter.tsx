@@ -59,6 +59,8 @@ import { useArk } from "../ui/Arkstabel";
 import { lytt, lyttOktvisning } from "../data/endringer";
 import type { Skolear } from "../data/skolear";
 import { NySerie } from "./NySerie";
+import { Utfold } from "../ui/Utfold";
+import { enLinje, forrigeOkt } from "../data/dagen";
 
 /**
  * Årsplan — økter, SPEC §4.2.
@@ -66,25 +68,18 @@ import { NySerie } from "./NySerie";
  * Alle fag i én kronologisk liste, med fagfilter og søk i tema. Klikk på en
  * rad åpner det utvidede viewet til høyre — ikke en ny side.
  */
+/**
+ * Kolonnene Uke · Dato · Tid · Tema · Periode · Vurdering står alltid
+ * (ARBEIDSLISTE 7.3, lerretet). Disse kan slås på i tillegg.
+ */
 export type KolonneId =
-  | "uke"
-  | "tid"
-  | "varighet"
-  | "periode"
-  | "vurdering"
-  | "logg"
-  | "innsats"
-  | "sted"
-  | "agenda";
+  "varighet" | "logg" | "innsats" | "oppmote" | "sted" | "agenda";
 
-const STANDARDKOLONNER: KolonneId[] = [
-  "uke",
-  "tid",
-  "varighet",
-  "periode",
-  "vurdering",
-  "innsats",
-];
+const STANDARDKOLONNER: KolonneId[] = [];
+
+/** Innstillingen kolonnevalget lagres under. Ny nøkkel med 7.3, så de
+ *  gamle valgene (der Uke, Tid og Periode kunne slås av) ikke henger igjen. */
+const KOLONNER = "okt_kolonner_ekstra";
 
 export function Okter({
   skolear,
@@ -191,7 +186,7 @@ export function Okter({
 
   useEffect(() => {
     void last();
-    void hentInnstilling("okt_kolonner").then((v) => {
+    void hentInnstilling(KOLONNER).then((v) => {
       if (v) setKolonner(new Set(JSON.parse(v) as KolonneId[]));
     });
     void hentInnstilling("utskrift_perioder").then((v) => {
@@ -204,7 +199,7 @@ export function Okter({
       const ny = new Set(f);
       if (pa) ny.add(id);
       else ny.delete(id);
-      void settInnstilling("okt_kolonner", JSON.stringify([...ny]));
+      void settInnstilling(KOLONNER, JSON.stringify([...ny]));
       return ny;
     });
   }
@@ -483,14 +478,17 @@ export function Okter({
             ) : (
               <Liste
                 okter={synlige}
+                alle={okter}
                 valgt={valgt}
                 merket={merket}
                 vis={kolonner}
+                visFag={!filterFag}
                 blokkert={blokkert}
                 vurderinger={vurderinger}
                 perioder={periodePerOkt}
                 onTema={(id, tema) => void lagreTema(id, tema)}
                 onVelg={apne}
+                onMarkor={setValgt}
                 onMerk={(id, pa) =>
                   setMerket((f) => {
                     const ny = new Set(f);
@@ -499,9 +497,20 @@ export function Okter({
                     return ny;
                   })
                 }
-                onMerkAlle={(pa) =>
-                  setMerket(pa ? new Set(synlige.map((o) => o.id)) : new Set())
-                }
+                onMerkSpenn={(fra, til) => {
+                  const a = synlige.findIndex((o) => o.id === fra);
+                  const b = synlige.findIndex((o) => o.id === til);
+                  if (a < 0 || b < 0) return;
+                  const [l, h] = a < b ? [a, b] : [b, a];
+                  setMerket(
+                    (f) =>
+                      new Set([
+                        ...f,
+                        ...synlige.slice(l, h + 1).map((o) => o.id),
+                      ]),
+                  );
+                }}
+                onMerkAlle={() => setMerket(new Set(synlige.map((o) => o.id)))}
                 onMeny={(okt, x, y) => setMeny({ okt, x, y })}
               />
             )}
@@ -628,95 +637,168 @@ export function Okter({
   );
 }
 
-/**
- * Kolonnene du kan slå av og på. Fag, dato, tema og skåret er alltid med —
- * uten dem er ikke raden en økt lenger.
- */
+/** Kolonnene som kan slås på i tillegg til de faste. */
 const VALGBARE: { id: KolonneId; navn: string }[] = [
-  { id: "uke", navn: "Uke" },
-  { id: "tid", navn: "Tid" },
   { id: "varighet", navn: "Varighet" },
-  { id: "periode", navn: "Periode" },
-  { id: "vurdering", navn: "Vurdering" },
+  { id: "sted", navn: "Rom" },
+  { id: "agenda", navn: "Agenda" },
   { id: "logg", navn: "Øktlogg" },
   { id: "innsats", navn: "Innsats" },
-  { id: "sted", navn: "Sted" },
-  { id: "agenda", navn: "Agenda" },
+  { id: "oppmote", navn: "Oppmøte" },
 ];
 
+/**
+ * Øktlista (ARBEIDSLISTE 7.3, lerretet «Utfolding»): Uke · Dato · Tid ·
+ * Tema · Periode · Vurdering, under månedsoverskrifter.
+ *
+ * Lista har en markør (↑↓). Mellomrom eller et klikk folder ut en rask titt
+ * under raden; ↑↓ flytter titten med til neste økt, Enter åpner økta, og
+ * Esc legger titten sammen. ⌘-klikk og ⇧-klikk merker rader — så kan de
+ * få periode (P) eller slettes. Temaet skrives rett i lista (§4.2).
+ */
 function Liste({
   okter,
+  alle,
   valgt,
   merket,
   vis,
+  visFag,
   blokkert,
   vurderinger,
   perioder,
   onTema,
   onVelg,
+  onMarkor,
   onMerk,
+  onMerkSpenn,
   onMerkAlle,
   onMeny,
 }: {
   okter: Okt[];
+  /** alle øktene i året, så titten finner forrige økt i faget */
+  alle: Okt[];
+  /** raden markøren står på */
   valgt: string | null;
   merket: Set<string>;
   vis: Set<KolonneId>;
+  /** «Alle fag»: da trengs en fagkolonne */
+  visFag: boolean;
   blokkert: Map<string, Blokkering>;
   vurderinger: Map<string, OktVurdering[]>;
   perioder: Map<string, Periode>;
   onTema: (id: string, tema: string | null) => void;
+  /** åpner økta (Enter, «Åpne økta») */
   onVelg: (id: string) => void;
+  onMarkor: (id: string) => void;
   onMerk: (id: string, pa: boolean) => void;
-  onMerkAlle: (pa: boolean) => void;
+  /** ⇧-klikk: alt mellom markøren og raden */
+  onMerkSpenn: (fra: string, til: string) => void;
+  /** ⌘A: alle radene i lista */
+  onMerkAlle: () => void;
   onMeny: (okt: Okt, x: number, y: number) => void;
 }) {
-  const alleMerket = okter.length > 0 && okter.every((o) => merket.has(o.id));
+  const [apen, setApen] = useState<string | null>(null);
+  const liste = useRef<HTMLDivElement>(null);
+
+  // Kolonnene: de faste, fag når alle fag vises, og tilleggene som er på.
+  const spor = [
+    "26px",
+    "44px",
+    "78px",
+    ...(visFag ? ["64px"] : []),
+    "minmax(0,1fr)",
+    "120px",
+    "128px",
+    ...(vis.has("varighet") ? ["64px"] : []),
+    ...(vis.has("sted") ? ["72px"] : []),
+    ...(vis.has("agenda") ? ["180px"] : []),
+    ...(vis.has("logg") ? ["160px"] : []),
+    ...(vis.has("innsats") ? ["88px"] : []),
+    ...(vis.has("oppmote") ? ["56px"] : []),
+  ].join(" ");
+  const kolonner = { gridTemplateColumns: spor };
 
   /** Enter hopper til neste rads tema, Shift+Enter til forrige. */
   function hopp(fra: HTMLInputElement, retning: 1 | -1) {
-    const alle = [
+    const felt = [
       ...document.querySelectorAll<HTMLInputElement>("input[data-tema]"),
     ];
-    const neste = alle[alle.indexOf(fra) + retning];
+    const neste = felt[felt.indexOf(fra) + retning];
     if (neste) {
       neste.focus();
       neste.select();
     } else fra.blur();
   }
 
+  function flytt(retning: 1 | -1) {
+    const i = okter.findIndex((o) => o.id === valgt);
+    const neste =
+      okter[i < 0 ? 0 : Math.min(Math.max(i + retning, 0), okter.length - 1)];
+    if (!neste) return;
+    onMarkor(neste.id);
+    // Titten følger med til neste økt.
+    if (apen) setApen(neste.id);
+  }
+
+  function tast(e: React.KeyboardEvent) {
+    if ((e.target as HTMLElement).closest("input, textarea, select")) return;
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "a") {
+      e.preventDefault();
+      onMerkAlle();
+      return;
+    }
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      flytt(1);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      flytt(-1);
+    } else if (e.key === " ") {
+      e.preventDefault();
+      if (valgt) setApen((a) => (a === valgt ? null : valgt));
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      if (valgt) onVelg(valgt);
+    } else if (e.key === "Escape" && apen) {
+      e.preventDefault();
+      e.stopPropagation();
+      setApen(null);
+    }
+  }
+
+  // Markøren står alltid synlig.
+  useEffect(() => {
+    if (!valgt) return;
+    liste.current
+      ?.querySelector<HTMLElement>(`[data-okt="${valgt}"]`)
+      ?.scrollIntoView({ block: "nearest" });
+  }, [valgt]);
+
   return (
-    <div>
-      <div className="flex items-center gap-3 border-b border-linje px-2 py-1 text-etikett uppercase tracking-etikett text-blekk-dempet">
-        <input
-          type="checkbox"
-          checked={alleMerket}
-          title={alleMerket ? "Fjern merkingen" : "Merk alle i lista"}
-          onChange={(e) => onMerkAlle(e.target.checked)}
-          className="shrink-0"
-        />
-        {vis.has("uke") && (
-          <span className="w-7 shrink-0" title="Ukenummer">
-            Uke
-          </span>
-        )}
-        <span className="w-2 shrink-0" />
-        <span className="w-20 shrink-0">Fag</span>
-        <span className="w-24 shrink-0">Dato</span>
-        {vis.has("tid") && <span className="w-12 shrink-0">Tid</span>}
-        {vis.has("varighet") && (
-          <span className="w-16 shrink-0 text-right">Varighet</span>
-        )}
-        <span className="flex-1">Tema</span>
-        {vis.has("periode") && <span className="w-36 shrink-0">Periode</span>}
-        {vis.has("vurdering") && (
-          <span className="w-40 shrink-0">Vurdering</span>
-        )}
-        {vis.has("sted") && <span className="w-24 shrink-0">Sted</span>}
-        {vis.has("agenda") && <span className="w-48 shrink-0">Agenda</span>}
-        {vis.has("logg") && <span className="w-40 shrink-0">Øktlogg</span>}
-        {vis.has("innsats") && <span className="w-24 shrink-0">Innsats</span>}
-        <span className="w-14 shrink-0 text-right">Oppmøte</span>
+    <div
+      ref={liste}
+      tabIndex={0}
+      onKeyDown={tast}
+      className="uten-fokusring outline-none"
+    >
+      <div
+        className="grid h-[26px] items-center gap-x-3 border-b border-linje px-2 text-etikett text-blekk-dempet"
+        style={kolonner}
+      >
+        <span title="Ukenummer">Uke</span>
+        <span>Dato</span>
+        <span>Tid</span>
+        {visFag && <span>Fag</span>}
+        <span>Tema</span>
+        <span>Periode</span>
+        <span>Vurdering</span>
+        {vis.has("varighet") && <span className="text-right">Varighet</span>}
+        {vis.has("sted") && <span>Rom</span>}
+        {vis.has("agenda") && <span>Agenda</span>}
+        {vis.has("logg") && <span>Øktlogg</span>}
+        {vis.has("innsats") && <span>Innsats</span>}
+        {vis.has("oppmote") && <span className="text-right">Oppmøte</span>}
       </div>
 
       {/*
@@ -727,78 +809,60 @@ function Liste({
       */}
       {perManed(okter).map(([maned, gruppe]) => (
         <div key={maned}>
-          <div className="sticky top-0 z-10 border-y border-linje-medium bg-flate px-2 py-1 text-etikett uppercase tracking-etikett text-blekk-dempet">
+          <div className="sticky top-0 z-10 border-b border-linje-medium bg-ark/95 px-2 pb-1 pt-3 text-liten font-semibold first-letter:uppercase">
             {manedsnavn(maned + "-01")}
           </div>
-          {gruppe.map((o) => (
-            <div key={o.id} data-okt={o.id}>
-              {/*
-                Avkrysningsboksen ligger utenfor knappen, ikke inni: en knapp
-                kan ikke inneholde en annen kontroll. Derfor bærer wrapperen
-                raden sin ramme, og knappen fyller resten av bredden.
-              */}
-              <div
-                onContextMenu={(e) => {
-                  e.preventDefault();
-                  onMeny(o, e.clientX, e.clientY);
-                }}
-                className={`flex w-full items-center gap-3 border-b border-linje-svak px-2 ${
-                  valgt === o.id
-                    ? "bg-valgt"
-                    : merket.has(o.id)
-                      ? "bg-flate-svak"
-                      : "hover:bg-flate"
-                }`}
-              >
-                <input
-                  type="checkbox"
-                  checked={merket.has(o.id)}
-                  onChange={(e) => onMerk(o.id, e.target.checked)}
-                  title="Merk — så kan du sette periode (P) eller slette"
-                  className="shrink-0"
-                />
-                {/*
-                  Raden er ikke en <button>: tema-feltet ligger inni, og en
-                  knapp kan ikke inneholde et felt. Klikk hvor som helst
-                  utenom feltet åpner økta.
-                */}
+          {gruppe.map((o) => {
+            const erApen = apen === o.id;
+            const vurd = vurderinger.get(o.id) ?? [];
+            const per = perioder.get(o.id);
+            return (
+              <div key={o.id} data-okt={o.id} className="px-0">
                 <div
-                  role="button"
                   onClick={(e) => {
+                    if ((e.target as HTMLElement).closest("input")) return;
+                    if (e.metaKey) return onMerk(o.id, !merket.has(o.id));
+                    if (e.shiftKey && valgt) return onMerkSpenn(valgt, o.id);
+                    onMarkor(o.id);
+                    setApen((a) => (a === o.id ? null : o.id));
+                    liste.current?.focus();
+                  }}
+                  onDoubleClick={(e) => {
                     if ((e.target as HTMLElement).closest("input")) return;
                     onVelg(o.id);
                   }}
-                  className="flex min-w-0 flex-1 cursor-default items-center gap-3 py-1 text-left text-brod"
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    onMeny(o, e.clientX, e.clientY);
+                  }}
+                  style={kolonner}
+                  className={`grid h-[30px] cursor-default items-center gap-x-3 px-2 text-[calc(13px*var(--tekst-skala))] tabular-nums ${
+                    erApen
+                      ? "rounded-t-lg bg-flate"
+                      : merket.has(o.id)
+                        ? "border-b border-linje-svak bg-valgt"
+                        : valgt === o.id
+                          ? "border-b border-linje-svak bg-flate-svak"
+                          : "border-b border-linje-svak hover:bg-flate-svak"
+                  }`}
                 >
-                  {vis.has("uke") && (
-                    <span className="w-7 shrink-0 tabular-nums text-blekk-svak">
-                      {ukenummer(o.dato)}
-                    </span>
-                  )}
-                  <Fagfirkant farge={o.farge} />
-                  <Kappet
-                    verdi={o.fagKode}
-                    klasse="w-20 shrink-0 font-medium"
-                  />
+                  <span className="text-blekk-dempet">{ukenummer(o.dato)}</span>
                   <span
-                    className={`w-24 shrink-0 tabular-nums ${
-                      blokkert.has(o.id)
-                        ? "font-medium text-feil"
-                        : "text-blekk-dempet"
-                    }`}
+                    className={
+                      blokkert.has(o.id) ? "font-medium text-feil" : ""
+                    }
                     title={blokkert.get(o.id)?.navn}
                   >
                     {kortDato(o.dato)}
                     {blokkert.has(o.id) && " !"}
                   </span>
-                  {vis.has("tid") && (
-                    <span className="w-12 shrink-0 tabular-nums text-blekk-dempet">
-                      {o.klokkeslett ?? "–"}
-                    </span>
-                  )}
-                  {vis.has("varighet") && (
-                    <span className="w-16 shrink-0 text-right tabular-nums text-blekk-dempet">
-                      {o.varighetMin} min
+                  <span className="truncate text-blekk-dempet">
+                    {ukedag(o.dato)} {o.klokkeslett ?? ""}
+                  </span>
+                  {visFag && (
+                    <span className="flex min-w-0 items-center gap-1.5">
+                      <Fagfirkant farge={o.farge} />
+                      <Kappet verdi={o.fagKode} klasse="font-medium" />
                     </span>
                   )}
                   <input
@@ -821,67 +885,146 @@ function Liste({
                       const ny = e.target.value.trim() || null;
                       if (ny !== o.tema) onTema(o.id, ny);
                     }}
-                    className="min-w-0 flex-1 truncate rounded border border-transparent bg-transparent px-1 py-0.5 outline-none placeholder:text-blekk-svakest hover:border-linje focus:border-aksent focus:bg-ark"
+                    className="-mx-1 min-w-0 truncate rounded border border-transparent bg-transparent px-1 py-0.5 outline-none placeholder:text-blekk-svakest hover:border-linje focus:border-aksent focus:bg-ark"
                   />
-                  {vis.has("periode") && (
-                    <span className="w-36 shrink-0 truncate">
-                      {perioder.has(o.id) ? (
-                        <Periodemerke
-                          navn={perioder.get(o.id)!.navn}
-                          farge={perioder.get(o.id)!.farge}
-                        />
-                      ) : (
-                        <span className="text-blekk-svakest">—</span>
-                      )}
+                  <span className="min-w-0">
+                    {per && <Periodemerke navn={per.navn} farge={per.farge} />}
+                  </span>
+                  <Kappet
+                    verdi={vurd.map((v) => v.tittel).join(", ")}
+                    tom=""
+                    klasse="text-[calc(12.5px*var(--tekst-skala))] font-semibold text-varsel"
+                  />
+                  {vis.has("varighet") && (
+                    <span className="text-right text-blekk-dempet">
+                      {o.varighetMin} min
                     </span>
-                  )}
-                  {vis.has("vurdering") && (
-                    <Kappet
-                      verdi={(vurderinger.get(o.id) ?? [])
-                        .map((v) => v.tittel)
-                        .join(", ")}
-                      tom=""
-                      klasse="w-40 shrink-0 text-blekk-dempet"
-                    />
                   )}
                   {vis.has("sted") && (
-                    <span
-                      className="w-24 shrink-0 truncate"
-                      title={o.sted ?? undefined}
-                    >
-                      {o.sted ?? ""}
-                    </span>
+                    <Kappet verdi={o.sted} tom="" klasse="text-blekk-dempet" />
                   )}
                   {vis.has("agenda") && (
-                    <span
-                      className="w-48 shrink-0 truncate text-liten text-blekk-dempet"
-                      title={o.agenda ?? undefined}
-                    >
-                      {o.agenda ?? ""}
-                    </span>
+                    <Kappet
+                      verdi={o.agenda}
+                      tom=""
+                      klasse="text-blekk-dempet"
+                    />
                   )}
                   {vis.has("logg") && (
-                    <span
-                      className="w-40 shrink-0 truncate text-liten italic text-blekk-dempet"
-                      title={o.logg ?? undefined}
-                    >
-                      {o.logg ?? ""}
-                    </span>
+                    <Kappet
+                      verdi={o.logg}
+                      tom=""
+                      klasse="italic text-blekk-dempet"
+                    />
                   )}
-                  {vis.has("innsats") && (
-                    <span className="w-24 shrink-0">
-                      <Innsats okt={o} />
-                    </span>
-                  )}
-                  <Status okt={o} />
+                  {vis.has("innsats") && <Innsats okt={o} />}
+                  {vis.has("oppmote") && <Status okt={o} />}
                 </div>
+
+                <Utfold apen={erApen}>
+                  <Titt
+                    okt={o}
+                    alle={alle}
+                    vurderinger={vurd}
+                    onApne={() => onVelg(o.id)}
+                  />
+                </Utfold>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       ))}
     </div>
   );
+}
+
+/**
+ * Den raske titten under en utfoldet rad: dato, tid, rom og vurdering,
+ * planen, og hva du skrev forrige gang i faget.
+ */
+function Titt({
+  okt,
+  alle,
+  vurderinger,
+  onApne,
+}: {
+  okt: Okt;
+  alle: Okt[];
+  vurderinger: OktVurdering[];
+  onApne: () => void;
+}) {
+  const forrige = forrigeOkt(okt, alle);
+  const slutt = okt.klokkeslett
+    ? leggTilMin(okt.klokkeslett, okt.varighetMin)
+    : null;
+  return (
+    <div className="mb-2 rounded-b-lg bg-flate pb-3 pl-[74px] pr-3.5 pt-2 text-[calc(12.5px*var(--tekst-skala))] leading-normal">
+      <div className="grid grid-cols-[96px_minmax(0,1fr)] gap-x-3 gap-y-1.5">
+        <span className="text-blekk-dempet">Dato</span>
+        <span className="first-letter:uppercase">{langDato(okt.dato)}</span>
+        <span className="text-blekk-dempet">Tid</span>
+        <span className="tabular-nums">
+          {okt.klokkeslett ? `${okt.klokkeslett}–${slutt}` : "Uten klokkeslett"}
+        </span>
+        <span className="text-blekk-dempet">Rom</span>
+        <span>{okt.sted ?? "—"}</span>
+        {vurderinger.length > 0 && (
+          <>
+            <span className="text-blekk-dempet">Vurdering</span>
+            <span className="font-medium text-varsel">
+              {vurderinger.map((v) => v.tittel).join(", ")}
+            </span>
+          </>
+        )}
+        <span className="text-blekk-dempet">Plan</span>
+        <span className={okt.plan ? "" : "text-blekk-svak"}>
+          {okt.plan ? enLinje(okt.plan) : "Ingen plan ennå"}
+        </span>
+        <span className="text-blekk-dempet">Fra forrige økt</span>
+        <span className={forrige?.logg ? "text-blekk" : "text-blekk-svak"}>
+          {!forrige
+            ? "Første økt i faget"
+            : forrige.logg
+              ? `«${enLinje(forrige.logg)}»`
+              : "Ingen notat"}
+        </span>
+      </div>
+      <div className="mt-2.5 flex items-center gap-2.5 border-t border-linje-medium pt-2.5">
+        <Knapp variant="primar" onClick={onApne}>
+          Åpne økta <span className="opacity-70">↵</span>
+        </Knapp>
+        <span className="text-etikett text-blekk-dempet">
+          <kbd className="rounded border border-linje bg-ark px-1.5 font-sans">
+            mellomrom
+          </kbd>{" "}
+          lukker
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function leggTilMin(kl: string, min: number): string {
+  const [t, m] = kl.split(":").map(Number);
+  const tot = t * 60 + m + min;
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${p(Math.floor(tot / 60) % 24)}:${p(tot % 60)}`;
+}
+
+/** «tor» */
+function ukedag(dato: string): string {
+  return new Date(`${dato}T00:00:00`)
+    .toLocaleDateString("nb-NO", { weekday: "short" })
+    .replace(/\.$/, "");
+}
+
+/** «torsdag 15. oktober» */
+function langDato(dato: string): string {
+  return new Date(`${dato}T00:00:00`).toLocaleDateString("nb-NO", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
 }
 
 /**
@@ -1031,12 +1174,10 @@ function iDag(): string {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
 }
 
+/** «8.10» */
 function kortDato(dato: string): string {
-  return new Date(`${dato}T00:00:00`).toLocaleDateString("nb-NO", {
-    weekday: "short",
-    day: "2-digit",
-    month: "2-digit",
-  });
+  const d = new Date(`${dato}T00:00:00`);
+  return `${d.getDate()}.${d.getMonth() + 1}`;
 }
 
 /** Øktene gruppert per måned, i den rekkefølgen de kom inn. */
