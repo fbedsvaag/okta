@@ -489,3 +489,19 @@ export async function tellSkaringerIFag(
   );
   return r?.n ?? 0;
 }
+
+/**
+ * Kjønn på eleven (SPEC §4.11): «j», «g» eller ikke satt. Valgfritt, og
+ * brukes bare til å blande i klassekartet. Vises bare i elevkortet og går
+ * aldri ut av appen. Satt for hånd overstyrer en gjetning fra importen.
+ */
+export async function settKjonn(
+  elevId: string,
+  kjonn: "j" | "g" | null,
+): Promise<void> {
+  await oppdater("elev", elevId, {
+    kjonn,
+    kjonn_kilde: kjonn === null ? null : "satt",
+  });
+  varsleElever();
+}

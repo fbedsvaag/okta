@@ -14,6 +14,10 @@ export type ElevGrunnlag = {
   kode: string | null;
   fornavn: string;
   etternavn: string;
+  /** valgfritt, bare til klassekartet (SPEC §4.11) */
+  kjonn: "j" | "g" | null;
+  /** «gjettet» fra fornavnet ved import, eller «satt» av læreren */
+  kjonnKilde: "gjettet" | "satt" | null;
 };
 
 export type ElevAr = {
@@ -61,7 +65,8 @@ export async function hentElevGrunnlag(
   elevId: string,
 ): Promise<ElevGrunnlag | null> {
   const rader = await hent<ElevGrunnlag>(
-    "SELECT id, kode, fornavn, etternavn FROM elev WHERE id = $1 AND slettet IS NULL",
+    `SELECT id, kode, fornavn, etternavn, kjonn, kjonn_kilde AS kjonnKilde
+       FROM elev WHERE id = $1 AND slettet IS NULL`,
     [elevId],
   );
   return rader[0] ?? null;

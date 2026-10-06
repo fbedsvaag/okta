@@ -575,8 +575,11 @@ export function Bryter({
   settVerdi,
   storrelse = "vanlig",
   fyll = false,
+  usikker = false,
 }: {
   valg: { id: string; navn: ReactNode; tittel?: string }[];
+  /** valget er gjettet og ikke bekreftet: tommelen er gjennomsiktig med kant */
+  usikker?: boolean;
   verdi: string;
   settVerdi: (id: string) => void;
   storrelse?: "vanlig" | "liten";
@@ -600,7 +603,11 @@ export function Bryter({
       <Glideflate
         beholder={beholder}
         mal={mal}
-        klasse="rounded-liten bg-ark shadow-lav"
+        klasse={
+          usikker
+            ? "rounded-liten bg-ark/60 shadow-[inset_0_0_0_1px_var(--color-linje-sterk)]"
+            : "rounded-liten bg-ark shadow-lav"
+        }
       />
       {valg.map((v) => (
         <button

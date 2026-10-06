@@ -44,6 +44,19 @@ export async function hentAlleElevbilder(): Promise<Map<string, string>> {
 }
 
 /**
+ * Kjønnet til alle elevene som har det satt — til plassholderen der bildet
+ * mangler (jente, gutt eller nøytral). Bor her fordi det hentes sammen med
+ * bildene og vises på samme sted.
+ */
+export async function hentAlleKjonn(): Promise<Map<string, "j" | "g">> {
+  const rader = await hent<{ id: string; kjonn: "j" | "g" }>(
+    `SELECT id, kjonn FROM elev
+      WHERE slettet IS NULL AND kjonn IN ('j', 'g')`,
+  );
+  return new Map(rader.map((r) => [r.id, r.kjonn]));
+}
+
+/**
  * Fjerner bildet. Raden soft-slettes som alt annet, men selve bildet tømmes
  * først — ansiktet skal ikke ligge igjen i basen.
  */

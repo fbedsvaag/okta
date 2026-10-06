@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { hentAlleElevbilder } from "../data/elevbilde";
+import { hentAlleElevbilder, hentAlleKjonn } from "../data/elevbilde";
 import { lyttElever } from "../data/endringer";
 import { Elevbilde } from "./Elevbilde";
 
@@ -13,13 +13,15 @@ import { Elevbilde } from "./Elevbilde";
  */
 
 let bilder: Map<string, string> | null = null;
+let kjonnene: Map<string, "j" | "g"> = new Map();
 let henter: Promise<void> | null = null;
 const abonnenter = new Set<() => void>();
 
 function hent() {
-  henter ??= hentAlleElevbilder()
-    .then((m) => {
+  henter ??= Promise.all([hentAlleElevbilder(), hentAlleKjonn()])
+    .then(([m, k]) => {
       bilder = m;
+      kjonnene = k;
       abonnenter.forEach((f) => f());
     })
     .catch((e) => console.error("elevbilder:", e))
@@ -54,7 +56,7 @@ export function Elevfoto({
   klasse = "",
 }: {
   elevId: string;
-  /** til plassholderen når bildet mangler */
+  /** til plassholderen når bildet mangler; ellers slås det opp */
   kjonn?: Kjonn;
   /** sidene i px */
   storrelse?: number;
@@ -64,6 +66,7 @@ export function Elevfoto({
 }) {
   const alle = useElevbilder();
   const src = alle.get(elevId);
+  kjonn ??= kjonnene.get(elevId) ?? null;
   if (src)
     return (
       <Elevbilde

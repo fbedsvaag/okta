@@ -34,6 +34,7 @@ import {
   frakobletekst,
   hentKlasser,
   koblePaFag,
+  settKjonn,
   settKlasse,
   settMentor,
   slettElevHelt,
@@ -447,7 +448,7 @@ export function ElevPanel({
           {bilde ? (
             <Elevbilde src={bilde} storrelse={76} hjorne={38} alt="" />
           ) : (
-            <Plassholder storrelse={76} />
+            <Plassholder storrelse={76} kjonn={elev.kjonn} />
           )}
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-3">
@@ -506,6 +507,43 @@ export function ElevPanel({
                   {a.klasse && ` · ${a.klasse}`}
                 </p>
               ))}
+
+            {/*
+              Kjønn (SPEC §4.11): vises når det er gjettet ved importen —
+              så det kan bekreftes — og i redigering. Ellers er det borte.
+            */}
+            {(rediger || elev.kjonnKilde === "gjettet") && (
+              <div className="mt-3 flex flex-wrap items-center gap-2.5">
+                <span className="text-[calc(12.5px*var(--tekst-skala))] text-blekk-dempet">
+                  Kjønn
+                </span>
+                <Bryter
+                  storrelse="liten"
+                  usikker={elev.kjonnKilde === "gjettet"}
+                  verdi={elev.kjonn ?? "ingen"}
+                  settVerdi={async (v) => {
+                    await settKjonn(elevId, v === "j" || v === "g" ? v : null);
+                    setElev(await hentElevGrunnlag(elevId));
+                  }}
+                  valg={[
+                    { id: "j", navn: "Jente" },
+                    { id: "g", navn: "Gutt" },
+                    { id: "ingen", navn: "Ikke satt" },
+                  ]}
+                />
+                <span
+                  className={`text-[calc(12px*var(--tekst-skala))] ${
+                    elev.kjonnKilde === "gjettet"
+                      ? "text-varsel"
+                      : "text-blekk-svak"
+                  }`}
+                >
+                  {elev.kjonnKilde === "gjettet"
+                    ? "Gjettet fra fornavnet ved import. Klikk for å bekrefte."
+                    : "Brukes bare til klassekartet"}
+                </span>
+              </div>
+            )}
 
             {rediger && (
               <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-stor bg-flate-svak px-3 py-2.5 text-liten">
