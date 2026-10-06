@@ -192,7 +192,11 @@ export function Arkstabel({
       {stabel.length > 0 && (
         <div
           className={`fixed inset-0 z-40 transition-colors ${
-            aktive.length > 0 ? "bg-teppe/15" : "bg-transparent"
+            aktive.length === 0
+              ? "bg-transparent"
+              : aktive.some((a) => a.type === "okt")
+                ? "bg-teppe/20"
+                : "bg-teppe/15"
           }`}
           style={{ transitionDuration: `${UT_MS}ms` }}
           onMouseDown={(e) => e.target === e.currentTarget && lukkAlle()}
@@ -210,15 +214,24 @@ export function Arkstabel({
               <div
                 key={ark.n}
                 aria-hidden={dybde > 0}
-                className={`ark absolute inset-y-0 right-0 flex w-full max-w-2xl flex-col bg-ark shadow-[var(--shadow-ark)] ${
+                role={ark.type === "okt" ? "dialog" : undefined}
+                className={`ark absolute flex flex-col ${
+                  // Økta er et ark midt over skjermen du står på, i matt
+                  // glass (DESIGN.md §7, «ark»). De andre glir inn fra høyre.
+                  ark.type === "okt"
+                    ? "glass-matt inset-y-7 left-[clamp(16px,10vw,150px)] right-[clamp(16px,10vw,150px)] overflow-hidden rounded-[24px]"
+                    : "inset-y-0 right-0 w-full max-w-2xl bg-ark shadow-[var(--shadow-ark)]"
+                } ${
                   paVeiUt
-                    ? "gli-ut pointer-events-none"
+                    ? `${ark.type === "okt" ? "okt-ut" : "gli-ut"} pointer-events-none`
                     : dybde > 0
                       ? "pointer-events-none"
                       : // Inngangen spilles bare for arket som nettopp ble
                         // åpnet — ikke for det under når det blir øverst igjen.
                         ark.n === teller.current
-                        ? "gli-inn"
+                        ? ark.type === "okt"
+                          ? "notat-vindu"
+                          : "gli-inn"
                         : ""
                 }`}
                 style={
@@ -240,7 +253,6 @@ export function Arkstabel({
                   <OktArk
                     oktId={ark.id}
                     skolearId={skolearId}
-                    underst={i === 0}
                     onLukk={lukk}
                     onApneElev={(id) => api.apneElev(id)}
                     onVisIOkter={() => gaTil("okter", ark.id)}
@@ -318,14 +330,12 @@ function Arkhode({
 function OktArk({
   oktId,
   skolearId,
-  underst,
   onLukk,
   onApneElev,
   onVisIOkter,
 }: {
   oktId: string;
   skolearId: string;
-  underst: boolean;
   onLukk: () => void;
   onApneElev: (id: string) => void;
   onVisIOkter: () => void;
@@ -347,22 +357,16 @@ function OktArk({
     };
   }, [oktId, skolearId]);
 
+  // Toppen og «Ferdig» står i selve arket; Esc lukker (alt er lagret).
   return (
     <>
-      <Arkhode underst={underst} onLukk={onLukk}>
-        <button
-          onClick={onVisIOkter}
-          className="text-liten text-blekk-svak hover:text-blekk"
-        >
-          Vis i Økter <Ikon navn="pil" />
-        </button>
-      </Arkhode>
-      <div className="min-h-0 flex-1 overflow-auto">
+      <div className="flex min-h-0 flex-1 flex-col">
         {okt && (
           <OktPanel
             key={okt.id}
             okt={okt}
             onLukk={onLukk}
+            onVisIOkter={onVisIOkter}
             onEndret={() => {
               void hentOkter(skolearId).then((o) =>
                 setOkt(o.find((x) => x.id === oktId) ?? null),

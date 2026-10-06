@@ -1,10 +1,18 @@
 import { useEffect, useRef, useState } from "react";
 import { Elevfoto } from "../ui/Elevfoto";
 import { Fagfirkant, Ikon } from "../ui/felles";
+import { Utfold } from "../ui/Utfold";
+import { Tastestripe, Tasthint } from "../ui/Tastestripe";
 import { Markdown, Markdownfelt } from "../ui/Notattekst";
 import { useArk } from "../ui/Arkstabel";
 import { lyttVurderinger } from "../data/endringer";
-import { hentOktmal, settOktmal, type Oktmal } from "../data/perioder";
+import {
+  hentOktmal,
+  hentPerioder,
+  settOktmal,
+  type Oktmal,
+  type Periode,
+} from "../data/perioder";
 import { Malvelger } from "./Malvelger";
 import { confirm as bekreft } from "@tauri-apps/plugin-dialog";
 import {
@@ -21,7 +29,7 @@ import {
   type OktElev,
 } from "../data/okter";
 import { taster, type Skalaverdi } from "../skala";
-import { skalafarge } from "../ui/farger";
+import { fagfarge, skalafarge } from "../ui/farger";
 import {
   hentVurderingsvalg,
   knyttOkt,
@@ -30,11 +38,13 @@ import {
 } from "../data/vurderinger";
 
 /**
- * Det utvidede viewet, SPEC §4.2 og §4.4.
+ * Økta som ark, SPEC §4.4 og DESIGN.md §10 (lerretet «OktArk»).
  *
- * Panelet glir inn fra høyre og dekker to tredeler. Lista blir stående til
- * venstre, så du ser hvor du er. Øktas egne felter øverst, elevlista i midten,
- * øktlogg nederst — alt på ett sted, ingen ny side.
+ * Et ark over skjermen du kom fra, ikke full skjerm. Topp med fag, tittel og
+ * «Pågår · n min igjen»; elevlista med skåringen til venstre; fra forrige
+ * økt, planen og øktloggen til høyre; tastene i en stripe nederst. Esc
+ * lukker og alt er lagret, ⌘↵ = Ferdig. Øktas øvrige felter står bak
+ * «Detaljer».
  *
  * Her skårer du. Tastene utledes av skalaen (§5), ikke hardkodet.
  */
@@ -43,12 +53,43 @@ export function OktPanel({
   onLukk,
   onEndret,
   onApneElev,
+  onVisIOkter,
 }: {
   okt: Okt;
   onLukk: () => void;
   onEndret: () => void;
   onApneElev: (elevId: string) => void;
+  onVisIOkter: () => void;
 }) {
+  // Eleven som nettopp fikk en verdi: prikken hans «popper» (DESIGN.md §8).
+  const [sistSatt, setSistSatt] = useState<string | null>(null);
+  const [detaljer, setDetaljer] = useState(false);
+  const [periode, setPeriode] = useState<Periode | null>(null);
+  useEffect(() => {
+    if (!okt.periodeId) return setPeriode(null);
+    void hentPerioder(okt.skolearFagId).then((p) =>
+      setPeriode(p.find((x) => x.id === okt.periodeId) ?? null),
+    );
+  }, [okt.periodeId, okt.skolearFagId]);
+  // «Pågår · n min igjen», oppdatert hvert halve minutt.
+  const [na, setNa] = useState(() => new Date());
+  useEffect(() => {
+    const t = window.setInterval(() => setNa(new Date()), 30_000);
+    return () => window.clearInterval(t);
+  }, []);
+  const pagar = minIgjen(okt, na);
+
+  // ⌘↵ = Ferdig, også fra et felt i arket.
+  useEffect(() => {
+    const tast = (e: KeyboardEvent) => {
+      if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        onLukk();
+      }
+    };
+    window.addEventListener("keydown", tast);
+    return () => window.removeEventListener("keydown", tast);
+  }, [onLukk]);
   const [elever, setElever] = useState<OktElev[]>([]);
   const [verdier, setVerdier] = useState<Skalaverdi[]>([]);
   const [markert, setMarkert] = useState(0);
@@ -122,6 +163,7 @@ export function OktPanel({
     setElever((f) =>
       f.map((e, i) => (i === indeks ? { ...e, skalaverdiId: verdi.id } : e)),
     );
+    setSistSatt(elev.elevId);
     setMarkert(Math.min(indeks + 1, elever.length - 1));
 
     await settSkaring(elev.elevId, okt.id, verdi.id);
@@ -180,42 +222,143 @@ export function OktPanel({
   }
 
   return (
-    <aside className="flex h-full flex-col border-l border-linje bg-ark">
-      <header className="flex items-baseline gap-3 border-b border-linje-medium px-5 py-3">
-        <Fagfirkant farge={okt.farge} storrelse={10} klasse="self-center" />
-        <span className="text-brod font-semibold">{okt.fagKode}</span>
-        <span className="text-brod text-blekk-dempet">
-          {langDato(okt.dato)}
-        </span>
-        <span className="font-mono text-etikett text-blekk-svak">
-          {okt.kode}
-        </span>
-        <button
-          onClick={onLukk}
-          className="ml-auto text-liten text-blekk-svak hover:text-blekk"
-        >
-          Lukk (Esc)
-        </button>
+    <section
+      aria-label={`Økt: ${okt.tema || okt.fagNavn}`}
+      className="flex h-full min-h-0 flex-col"
+    >
+      <header className="shrink-0 border-b border-linje-medium px-[26px] pb-4 pt-5">
+        <div className="flex min-w-0 items-center gap-3">
+          <Fagfirkant farge={okt.farge} storrelse={12} />
+          <span
+            className="shrink-0 text-[calc(15px*var(--tekst-skala))] font-semibold"
+            style={{ color: okt.farge ? fagfarge(okt.farge) : undefined }}
+          >
+            {okt.fagKode}
+          </span>
+          <h1 className="min-w-0 truncate text-[calc(28px*var(--tekst-skala))] font-light leading-tight tracking-overskrift">
+            {okt.tema || okt.fagNavn}
+          </h1>
+          <span className="flex-1" />
+          {pagar !== null && (
+            <span className="inline-flex shrink-0 items-center gap-[7px] rounded-full bg-flate px-2.5 py-1 text-[calc(12.5px*var(--tekst-skala))] font-medium text-aksent">
+              <span className="puls h-[7px] w-[7px] rounded-full bg-aksent" />
+              Pågår · {pagar} min igjen
+            </span>
+          )}
+          <button
+            onClick={() => setDetaljer((d) => !d)}
+            aria-expanded={detaljer}
+            className="shrink-0 rounded-full px-2.5 py-1 text-liten text-blekk-dempet hover:bg-flate hover:text-blekk"
+          >
+            Detaljer
+          </button>
+          <span className="shrink-0 rounded-full bg-flate px-2 py-0.5 text-etikett text-blekk-dempet">
+            esc
+          </span>
+          <button
+            onClick={onLukk}
+            className="flex h-8 shrink-0 items-center gap-2 rounded-full bg-aksent px-3.5 text-brod font-medium text-ark hover:bg-aksent-mork"
+          >
+            Ferdig <span className="text-etikett opacity-70">⌘↵</span>
+          </button>
+        </div>
+        <p className="ml-[24px] mt-1.5 flex flex-wrap items-center gap-x-1.5 text-[calc(13px*var(--tekst-skala))] text-blekk-dempet">
+          <span className="first-letter:uppercase">{langDato(okt.dato)}</span>
+          {okt.klokkeslett && (
+            <>
+              ·
+              <span className="tabular-nums">
+                {okt.klokkeslett}–
+                {sluttKlokke(okt.klokkeslett, okt.varighetMin)}
+              </span>
+            </>
+          )}
+          {okt.sted && (
+            <>
+              ·{" "}
+              <span>{/^\d/.test(okt.sted) ? `Rom ${okt.sted}` : okt.sted}</span>
+            </>
+          )}
+          {periode && (
+            <>
+              ·
+              <span className="inline-flex items-center gap-[5px]">
+                <span
+                  className="h-1.5 w-1.5 rounded-full"
+                  style={{
+                    background: periode.farge ?? "var(--color-linje-sterk)",
+                  }}
+                />
+                {periode.navn}
+              </span>
+            </>
+          )}
+        </p>
       </header>
 
-      <div className="overflow-y-auto">
-        <OktFelter okt={okt} onEndret={onEndret} />
-
-        <div className="flex items-baseline justify-between border-y border-linje-medium bg-flate px-5 py-1.5">
-          <span className="text-etikett uppercase tracking-etikett text-blekk-dempet">
-            Elever
-          </span>
-          <span className="text-liten tabular-nums text-blekk-dempet">
-            {antallSkaret} av {elever.length} skåret
-          </span>
+      {/*
+        Øktas øvrige felter — dato, tid, tema, rom, agenda, lekse, mål og
+        vurdering — står bak «Detaljer», så arket er skåringen først.
+      */}
+      <Utfold apen={detaljer}>
+        <div className="max-h-[45vh] overflow-y-auto border-b border-linje-medium bg-flate-svak">
+          <OktFelter okt={okt} onEndret={onEndret} />
+          <div className="flex gap-4 px-5 pb-3">
+            <button
+              onClick={onVisIOkter}
+              className="text-liten text-blekk-dempet hover:text-blekk"
+            >
+              Vis i <i>Økter</i> →
+            </button>
+            <button
+              onClick={async () => {
+                if (
+                  !(await bekreft(
+                    `Slette økta ${okt.fagKode} ${langDato(okt.dato)}?`,
+                  ))
+                )
+                  return;
+                await slettOkt(okt.id);
+                onEndret();
+                onLukk();
+              }}
+              className="text-liten text-blekk-svak hover:text-feil"
+            >
+              Slett økta
+            </button>
+          </div>
         </div>
+      </Utfold>
 
+      <div className="flex min-h-0 flex-1">
         <div
           ref={liste}
           tabIndex={0}
           onKeyDown={tastetrykk}
-          className="outline-none"
+          aria-label="Elevliste — skår med talltastene"
+          className="uten-fokusring min-w-0 flex-1 overflow-auto px-[22px] pt-3 outline-none"
         >
+          <div className="flex items-center gap-3 border-b border-linje pb-2.5">
+            <span className="text-[calc(13px*var(--tekst-skala))] font-semibold">
+              Elever
+            </span>
+            {/* Fremdrift, ikke statistikk (DESIGN.md §12): hvor mange som er skåret. */}
+            <span className="text-etikett tabular-nums text-blekk-dempet">
+              {antallSkaret} av {elever.length} skåret
+            </span>
+            <span className="h-1 w-[120px] overflow-hidden rounded-sm bg-stripe">
+              <span
+                className="block h-full rounded-sm bg-aksent transition-[width] duration-[var(--tid-inn)]"
+                style={{
+                  width: `${elever.length ? (antallSkaret / elever.length) * 100 : 0}%`,
+                }}
+              />
+            </span>
+            <span className="ml-auto text-etikett text-blekk-svak">
+              Alfabetisk på fornavn
+            </span>
+          </div>
+
           {elever.length === 0 && (
             <p className="px-5 py-6 text-center text-brod text-blekk-dempet">
               Ingen elever er koblet til {okt.fagKode} ennå. Legg dem inn under
@@ -224,46 +367,126 @@ export function OktPanel({
             </p>
           )}
 
-          {elever.map((elev, i) => (
-            <ElevRad
-              key={elev.elevId}
-              elev={elev}
-              verdier={plott}
-              tastekart={tastekart}
-              markert={i === markert}
-              radRef={i === markert ? markertRad : undefined}
-              avholdt={avholdt}
-              nullverdi={nullverdi}
-              onKlikk={() => {
-                setMarkert(i);
-                liste.current?.focus();
-              }}
-              onVelg={(v) => skaar(i, v)}
-              onNotat={() => setNotatFor(elev.elevId)}
-              skriverNotat={notatFor === elev.elevId}
-              onNotatFerdig={async (tekst) => {
-                if (tekst !== null) {
-                  await settSkaringsnotat(elev.elevId, okt.id, tekst);
-                  setElever((f) =>
-                    f.map((e) =>
-                      e.elevId === elev.elevId
-                        ? { ...e, notat: tekst.trim() || null }
-                        : e,
-                    ),
-                  );
-                }
-                setNotatFor(null);
-                liste.current?.focus();
-              }}
-              onApneElev={() => onApneElev(elev.elevId)}
-            />
-          ))}
+          <div className="relative">
+            {/*
+              Markøren er én flate som glir til neste elev (DESIGN.md §8),
+              ikke en bakgrunn som hopper. Skåringen venter aldri på den.
+            */}
+            {elever.length > 0 && (
+              <div
+                aria-hidden
+                className="markor-flate pointer-events-none absolute inset-x-0 top-0 z-0 h-[38px] rounded-lg"
+                style={{ transform: `translateY(${markert * RAD}px)` }}
+              />
+            )}
+            {elever.map((elev, i) => (
+              <ElevRad
+                key={elev.elevId}
+                elev={elev}
+                verdier={plott}
+                tastekart={tastekart}
+                markert={i === markert}
+                radRef={i === markert ? markertRad : undefined}
+                avholdt={avholdt}
+                nullverdi={nullverdi}
+                pop={sistSatt === elev.elevId}
+                onKlikk={() => {
+                  setMarkert(i);
+                  liste.current?.focus();
+                }}
+                onVelg={(v) => skaar(i, v)}
+                onNotat={() => setNotatFor(elev.elevId)}
+                skriverNotat={notatFor === elev.elevId}
+                onNotatFerdig={async (tekst) => {
+                  if (tekst !== null) {
+                    await settSkaringsnotat(elev.elevId, okt.id, tekst);
+                    setElever((f) =>
+                      f.map((e) =>
+                        e.elevId === elev.elevId
+                          ? { ...e, notat: tekst.trim() || null }
+                          : e,
+                      ),
+                    );
+                  }
+                  setNotatFor(null);
+                  liste.current?.focus();
+                }}
+                onApneElev={() => onApneElev(elev.elevId)}
+              />
+            ))}
+          </div>
+          <div className="h-4" />
         </div>
 
-        <Logg okt={okt} onEndret={onEndret} />
+        <aside className="flex w-80 shrink-0 flex-col gap-[22px] overflow-auto border-l border-linje-medium bg-flate-svak/70 px-[22px] py-[18px]">
+          <Forrigenotat okt={okt} />
+          <div>
+            <p className="mb-2 text-etikett font-semibold text-blekk">Plan</p>
+            {/* Avkrysning i planen lagres med en gang. */}
+            <Markdownfelt
+              key={`plan-${okt.id}`}
+              verdi={okt.plan}
+              minRader={3}
+              plassholder="- [ ] Det du skal gjennom i økta"
+              onLagre={async (v) => {
+                await endreOkt(okt.id, { plan: v });
+                onEndret();
+              }}
+            />
+          </div>
+          <div className="flex min-h-[200px] flex-1 flex-col">
+            <p className="mb-2 text-etikett font-semibold text-blekk">
+              Øktlogg
+            </p>
+            <Markdownfelt
+              key={`logg-${okt.id}`}
+              verdi={okt.logg}
+              minRader={6}
+              plassholder="Hvordan gikk det? - [ ] blir et gjøremål på I dag."
+              onLagre={async (v) => {
+                await endreOkt(okt.id, { logg: v });
+                onEndret();
+              }}
+            />
+          </div>
+        </aside>
       </div>
-    </aside>
+
+      <Tastestripe klasse="shrink-0 justify-start gap-4 px-[22px]">
+        <Tasthint
+          taster={plott
+            .filter((v) => v.rang > 0)
+            .map((v) => tastekart.get(v.id) ?? "")}
+        >
+          {plott
+            .filter((v) => v.rang > 0)
+            .map((v) => v.kode.toLowerCase())
+            .join(" · ")}
+        </Tasthint>
+        {nullverdi && (
+          <Tasthint taster={[tastekart.get(nullverdi.id) ?? "0"]}>
+            {nullverdi.kode.toLowerCase()}
+          </Tasthint>
+        )}
+        <Tasthint taster={["↑", "↓"]}>flytt</Tasthint>
+        <Tasthint taster={["N"]}>notat</Tasthint>
+        <Tasthint taster={["⌫"]}>fjern</Tasthint>
+        <span className="ml-auto">
+          <Tasthint taster={["esc"]}>lukk — alt er lagret</Tasthint>
+        </span>
+      </Tastestripe>
+    </section>
   );
+}
+
+/** Radhøyden i skåringslista (DESIGN.md §3: 38 px med 28 px bilde). */
+const RAD = 38;
+
+function sluttKlokke(kl: string, min: number): string {
+  const [t, m] = kl.split(":").map(Number);
+  const tot = t * 60 + m + min;
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${p(Math.floor(tot / 60) % 24)}:${p(tot % 60)}`;
 }
 
 function ElevRad({
@@ -274,6 +497,7 @@ function ElevRad({
   radRef,
   avholdt,
   nullverdi,
+  pop,
   onKlikk,
   onVelg,
   onNotat,
@@ -289,6 +513,8 @@ function ElevRad({
   radRef?: React.RefObject<HTMLDivElement | null>;
   avholdt: boolean;
   nullverdi: Skalaverdi | null;
+  /** verdien ble nettopp satt: prikken «popper» */
+  pop: boolean;
   onKlikk: () => void;
   onVelg: (v: Skalaverdi) => void;
   onNotat: () => void;
@@ -307,32 +533,25 @@ function ElevRad({
     <div
       ref={radRef}
       onClick={onKlikk}
-      // Skåringslista holder 28 px rader, så tretti elever får plass uten
-      // scrolling på en 14-tommer (DESIGN.md §3). Høyden er låst, så heller
-      // ikke notatfeltet i raden kan gjøre den høyere.
-      className={`group flex h-7 cursor-default items-center gap-2 border-b border-linje-svak px-5 text-liten ${
-        markert ? "bg-valgt" : "hover:bg-flate"
-      }`}
+      // 38 px rader med 28 px bilde (DESIGN.md §3, bestemt 06.10). Høyden
+      // er låst, så heller ikke notatfeltet i raden kan gjøre den høyere.
+      className="group relative z-[1] grid h-[38px] cursor-default grid-cols-[28px_minmax(150px,220px)_44px_minmax(0,1fr)_132px] items-center gap-x-3 border-b border-linje-svak pl-2.5 text-[calc(13.5px*var(--tekst-skala))] hover:bg-[color-mix(in_srgb,var(--color-aksent)_3.5%,transparent)]"
     >
-      <span className="w-3 text-etikett text-aksent">
-        {markert ? <Ikon navn="markor" /> : null}
-      </span>
-      {/* 20 px, så raden holder seg på 28 (DESIGN.md §3). */}
-      <Elevfoto elevId={elev.elevId} storrelse={20} />
+      <Elevfoto elevId={elev.elevId} storrelse={28} />
       <button
         onClick={(e) => {
           e.stopPropagation();
           onApneElev();
         }}
-        title="Åpne eleven"
-        className={`w-[clamp(150px,28%,230px)] shrink-0 truncate text-left text-liten hover:text-aksent hover:underline ${
-          eksplisitt ? "" : "text-blekk-dempet"
+        title={`${elev.fornavn} ${elev.etternavn} — åpne eleven`}
+        className={`truncate text-left hover:text-aksent ${
+          eksplisitt || markert ? "font-medium" : "text-blekk-dempet"
         }`}
       >
         {elev.fornavn} {elev.etternavn}
       </button>
 
-      <span className="w-12 shrink-0 truncate text-blekk-dempet">
+      <span className="truncate text-etikett text-blekk-dempet">
         {elev.klasse ?? ""}
       </span>
 
@@ -355,7 +574,7 @@ function ElevRad({
               ? `Forrige økt: ${elev.forrigeNotat}`
               : "Legg til notat (N)")
           }
-          className="min-w-0 flex-1 truncate text-left text-liten"
+          className="min-w-0 truncate text-left text-[calc(12.5px*var(--tekst-skala))]"
         >
           {elev.notat ? (
             <span className="text-blekk">{elev.notat}</span>
@@ -369,13 +588,14 @@ function ElevRad({
         </button>
       )}
 
-      <div className="flex gap-1">
+      <div className="flex justify-end gap-1">
         {verdier.map((v) => (
           <Merke
             key={v.id}
             verdi={v}
             valgt={visesSom === v.id}
             eksplisitt={eksplisitt}
+            pop={pop && visesSom === v.id}
             tast={tastekart.get(v.id)}
             onVelg={(e) => {
               e.stopPropagation();
@@ -390,38 +610,41 @@ function ElevRad({
 
 /**
  * Helfylt sirkel i verdiens farge (DESIGN.md §9). Valgt verdi står i full
- * styrke, de andre er nesten usynlige. Formen bærer ikke lenger betydningen;
- * det gjør den faste rekkefølgen i raden, verktøytipset og at gul er klart
- * lysest. En verdi som bare er fylt ut ved visning — eleven er ikke trykket
- * på — tegnes som ikke skåret: ingenting valgt.
+ * styrke, de andre er nesten usynlige. En verdi som nettopp ble satt,
+ * «popper» kort (§8). En verdi som bare er fylt ut ved visning — eleven
+ * er ikke trykket på — tegnes som ikke skåret: ingenting valgt.
  */
 function Merke({
   verdi,
   valgt,
   eksplisitt,
+  pop,
   tast,
   onVelg,
 }: {
   verdi: Skalaverdi;
   valgt: boolean;
   eksplisitt: boolean;
+  pop: boolean;
   tast?: string;
   onVelg: (e: React.MouseEvent) => void;
 }) {
   const farge = skalafarge(verdi.farge);
+  const pa = valgt && eksplisitt;
 
   return (
     <button
       onClick={onVelg}
       title={`${tast ? `${tast} — ` : ""}${verdi.kode}${verdi.etikett ? `: ${verdi.etikett}` : ""}`}
-      className="grid h-5 w-5 place-items-center rounded-sm hover:bg-linje-medium"
+      className={`grid h-6 w-7 place-items-center rounded-md ${
+        pa ? "" : "opacity-20 hover:bg-bord hover:opacity-70"
+      }`}
     >
       <span
-        className="block h-3 w-3 rounded-full"
-        style={{
-          background: farge,
-          opacity: valgt && eksplisitt ? 1 : 0.18,
-        }}
+        className={`block rounded-full ${pa ? "h-[15px] w-[15px]" : "h-[13px] w-[13px]"} ${
+          pa && pop ? "pop" : ""
+        }`}
+        style={{ background: farge }}
       />
     </button>
   );
@@ -565,21 +788,7 @@ function OktFelter({ okt, onEndret }: { okt: Okt; onEndret: () => void }) {
         trengs. Feltet vises bare der det allerede står noe, så ingenting
         som er skrevet blir borte.
       */}
-      {okt.plan && (
-        <Linje etikett="Plan">
-          <textarea
-            defaultValue={okt.plan ?? ""}
-            key={okt.plan ?? ""}
-            rows={3}
-            placeholder="Hva skal skje"
-            onBlur={async (e) => {
-              await endreOkt(okt.id, { plan: e.target.value.trim() || null });
-              onEndret();
-            }}
-            className={feltStil}
-          />
-        </Linje>
-      )}
+      {/* Planen står i høyre spalte, med avkrysning. */}
     </div>
   );
 }
@@ -752,46 +961,6 @@ function Forrigenotat({ okt }: { okt: Okt }) {
   );
 }
 
-function Logg({ okt, onEndret }: { okt: Okt; onEndret: () => void }) {
-  return (
-    <div className="px-5 py-3">
-      <Forrigenotat okt={okt} />
-      {/* Ikke en <label>: markdown-visningen er klikkbar i seg selv. */}
-      <div>
-        <span className="mb-0.5 block text-etikett uppercase tracking-etikett text-blekk-dempet">
-          Øktlogg
-        </span>
-        <Markdownfelt
-          key={okt.id}
-          verdi={okt.logg}
-          minRader={2}
-          plassholder="Hvordan gikk det med klassen samlet?"
-          onLagre={async (v) => {
-            await endreOkt(okt.id, { logg: v });
-            onEndret();
-          }}
-        />
-      </div>
-
-      <button
-        onClick={async () => {
-          if (
-            !(await bekreft(
-              `Slette økta ${okt.fagKode} ${langDato(okt.dato)}?`,
-            ))
-          )
-            return;
-          await slettOkt(okt.id);
-          onEndret();
-        }}
-        className="mt-4 text-liten text-blekk-svak hover:text-feil"
-      >
-        Slett økta
-      </button>
-    </div>
-  );
-}
-
 /**
  * Notatfeltet i raden. Én linje, samme høyde som raden: Enter lagrer, Esc
  * angrer. Tom tekst fjerner notatet.
@@ -856,4 +1025,16 @@ export function langDato(dato: string): string {
     day: "numeric",
     month: "long",
   });
+}
+
+/** Minutter igjen av økta, når den pågår nå; ellers null. */
+function minIgjen(okt: Okt, na: Date): number | null {
+  if (!okt.klokkeslett) return null;
+  const idag = `${na.getFullYear()}-${String(na.getMonth() + 1).padStart(2, "0")}-${String(na.getDate()).padStart(2, "0")}`;
+  if (okt.dato !== idag) return null;
+  const [t, m] = okt.klokkeslett.split(":").map(Number);
+  const start = t * 60 + m;
+  const naMin = na.getHours() * 60 + na.getMinutes();
+  const slutt = start + okt.varighetMin;
+  return naMin >= start && naMin < slutt ? slutt - naMin : null;
 }
