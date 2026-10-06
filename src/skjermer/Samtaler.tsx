@@ -164,6 +164,9 @@ export function Samtaler({
   const [kopiert, setKopiert] = useState<"teams" | "md" | null>(null);
   const [notater, setNotater] = useState<Map<string, Elevnotat>>(new Map());
   // Samtalen som har notatvinduet åpent (et klikk på navnet i timeplanen).
+  // Oppsettkolonnen: framme mens trekningen settes opp, skjult når den er
+  // trukket — til «Rediger» (7.4). null = ikke lastet ennå.
+  const [redigerer, setRedigerer] = useState<boolean | null>(null);
   const [notatFor, setNotatFor] = useState<{
     rad: Dagplan["rader"][number];
     dag: Samtaledag;
@@ -257,6 +260,9 @@ export function Samtaler({
       });
     }
     setTrekning(lagrede.length > 0 ? lagrede : null);
+    // Første gang trekningen lastes: oppsettet framme bare hvis den ikke er
+    // trukket. Etterpå står valget — Generer skal ikke skjule oppsettet.
+    setRedigerer((r) => r ?? lagrede.length === 0);
     setNotater(await notaterFor(lagrede));
     setKalender(await mentorStatus(skolear));
     setVurderinger(await hentVurderinger(skolear.id));
@@ -662,6 +668,7 @@ export function Samtaler({
   const kapasiteter = dager.map((d) => kapasitet(d, minutter, pausen));
   const samletKapasitet = kapasiteter.reduce((a, b) => a + b, 0);
   // Plassene som trengs: én per elev, eller én per gruppe.
+  const visOppsett = redigerer ?? true;
   const plasserTrengs = antallEnheter(deltakere.length, storrelse);
   const plassord = storrelse > 1 ? "grupper" : "elever";
   const timer = dager.reduce((sum, d) => sum + timerPaDagen(d), 0);
@@ -742,450 +749,463 @@ export function Samtaler({
         ingen faner, ingen steg. Alt som styrer trekningen er synlig samtidig,
         i blokker skilt med en linje (DESIGN.md §10).
       */}
-      <div className="flex w-[18rem] shrink-0 flex-col overflow-clip border-r border-linje-medium pr-5 xl:w-[22rem] xl:pr-6">
-        <div className="min-h-0 flex-1 divide-y divide-linje-medium overflow-auto pr-1 [&>*]:py-5 [&>*:first-child]:pt-0">
-          <div>
-            <Bryter
-              verdi={modus}
-              settVerdi={(v) => setModus(v as Modus)}
-              fyll
-              valg={[
-                { id: "fag", navn: "Fagsamtale" },
-                { id: "mentor", navn: "Mentorsamtale" },
-              ]}
-            />
-            {modus === "mentor" && (
-              <p className="mt-2 text-liten text-blekk-dempet">
-                Mentorsamtalen hører ikke til noe fag. Elevene er mentorelevene
-                dine i år.
-              </p>
-            )}
-          </div>
+      {visOppsett && (
+        <div className="flex w-[18rem] shrink-0 flex-col overflow-clip border-r border-linje-medium pr-5 xl:w-[22rem] xl:pr-6">
+          <div className="min-h-0 flex-1 divide-y divide-linje-medium overflow-auto pr-1 [&>*]:py-5 [&>*:first-child]:pt-0">
+            <div>
+              <Bryter
+                verdi={modus}
+                settVerdi={(v) => setModus(v as Modus)}
+                fyll
+                valg={[
+                  { id: "fag", navn: "Fagsamtale" },
+                  { id: "mentor", navn: "Mentorsamtale" },
+                ]}
+              />
+              {modus === "mentor" && (
+                <p className="mt-2 text-liten text-blekk-dempet">
+                  Mentorsamtalen hører ikke til noe fag. Elevene er
+                  mentorelevene dine i år.
+                </p>
+              )}
+            </div>
 
-          {/*
+            {/*
             Vurderingen trekningen hører til — og med den faget. Uten den
             vises ikke oppgaven eleven fikk under selve vurderingen (§4.6),
             og den står ikke på øktene i årsplanen.
           */}
-          {modus === "fag" && (
-            <Bolk tittel="Vurdering">
-              <select
-                value={`${fagId}|${valgtVurdering}`}
-                onChange={async (e) => {
-                  const [nyttFag, vurdering] = e.target.value.split("|");
-                  if (nyttFag !== fagId) {
-                    venterVurdering.current = vurdering;
-                    setFagId(nyttFag);
-                    return;
-                  }
-                  setValgtVurdering(vurdering);
-                  await settTrekningensVurdering(dager, vurdering || null);
-                  await last();
-                }}
-                className="h-[2.4em] w-full rounded-vanlig border border-linje bg-ark px-2.5 text-brod"
-              >
-                {fag.map((f) => (
-                  <optgroup key={f.id} label={`${f.kode} — ${f.navn}`}>
-                    {vurderinger
-                      .filter((v) => v.skolearFagId === f.id)
-                      .map((v) => (
-                        <option key={v.id} value={`${f.id}|${v.id}`}>
-                          {v.tittel} ({f.kode})
-                        </option>
-                      ))}
-                    <option value={`${f.id}|`}>
-                      Uten vurdering ({f.kode})
-                    </option>
-                  </optgroup>
-                ))}
-              </select>
-            </Bolk>
-          )}
-
-          <Bolk tittel="Samtalene">
-            <div className="grid grid-cols-3 gap-2">
-              <div>
-                <span className="mb-1 block text-liten text-blekk-dempet">
-                  Elever
-                </span>
-                {/* Et klikk viser lista, og der velges alle eller noen. */}
-                <button
-                  onClick={() => setVelgElever((v) => !v)}
-                  disabled={brukEgen}
-                  aria-expanded={velgElever}
-                  title={brukEgen ? undefined : "Velg hvem som skal ha samtale"}
-                  className={`flex h-[2.4em] w-full items-center justify-between rounded-vanlig border bg-ark px-2.5 text-brod tabular-nums disabled:bg-flate-svak ${
-                    velgElever
-                      ? "border-aksent"
-                      : "border-linje hover:border-linje-sterk"
-                  }`}
+            {modus === "fag" && (
+              <Bolk tittel="Vurdering">
+                <select
+                  value={`${fagId}|${valgtVurdering}`}
+                  onChange={async (e) => {
+                    const [nyttFag, vurdering] = e.target.value.split("|");
+                    if (nyttFag !== fagId) {
+                      venterVurdering.current = vurdering;
+                      setFagId(nyttFag);
+                      return;
+                    }
+                    setValgtVurdering(vurdering);
+                    await settTrekningensVurdering(dager, vurdering || null);
+                    await last();
+                  }}
+                  className="h-[2.4em] w-full rounded-vanlig border border-linje bg-ark px-2.5 text-brod"
                 >
-                  <span>
-                    {deltakere.length}
-                    {deltakere.length < alleDeltakere.length && (
-                      <span className="text-liten text-blekk-dempet">
-                        {" "}
-                        av {alleDeltakere.length}
+                  {fag.map((f) => (
+                    <optgroup key={f.id} label={`${f.kode} — ${f.navn}`}>
+                      {vurderinger
+                        .filter((v) => v.skolearFagId === f.id)
+                        .map((v) => (
+                          <option key={v.id} value={`${f.id}|${v.id}`}>
+                            {v.tittel} ({f.kode})
+                          </option>
+                        ))}
+                      <option value={`${f.id}|`}>
+                        Uten vurdering ({f.kode})
+                      </option>
+                    </optgroup>
+                  ))}
+                </select>
+              </Bolk>
+            )}
+
+            <Bolk tittel="Samtalene">
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <span className="mb-1 block text-liten text-blekk-dempet">
+                    Elever
+                  </span>
+                  {/* Et klikk viser lista, og der velges alle eller noen. */}
+                  <button
+                    onClick={() => setVelgElever((v) => !v)}
+                    disabled={brukEgen}
+                    aria-expanded={velgElever}
+                    title={
+                      brukEgen ? undefined : "Velg hvem som skal ha samtale"
+                    }
+                    className={`flex h-[2.4em] w-full items-center justify-between rounded-vanlig border bg-ark px-2.5 text-brod tabular-nums disabled:bg-flate-svak ${
+                      velgElever
+                        ? "border-aksent"
+                        : "border-linje hover:border-linje-sterk"
+                    }`}
+                  >
+                    <span>
+                      {deltakere.length}
+                      {deltakere.length < alleDeltakere.length && (
+                        <span className="text-liten text-blekk-dempet">
+                          {" "}
+                          av {alleDeltakere.length}
+                        </span>
+                      )}
+                    </span>
+                    {!brukEgen && (
+                      <span
+                        aria-hidden
+                        className={`text-blekk-svak transition-transform ${velgElever ? "-rotate-90" : "rotate-90"}`}
+                      >
+                        ›
                       </span>
                     )}
-                  </span>
-                  {!brukEgen && (
-                    <span
-                      aria-hidden
-                      className={`text-blekk-svak transition-transform ${velgElever ? "-rotate-90" : "rotate-90"}`}
-                    >
-                      ›
-                    </span>
-                  )}
-                </button>
-              </div>
-              <Tallfelt
-                etikett="Minutter"
-                verdi={samtaletid}
-                settVerdi={setSamtaletid}
-              />
-              <Tallfelt etikett="Pause" verdi={pause} settVerdi={setPause} />
-            </div>
-            {velgElever && !brukEgen && (
-              <div className="mt-2 rounded-vanlig border border-linje bg-ark">
-                <div className="flex items-center gap-3 border-b border-linje-svak px-2.5 py-1.5 text-liten">
-                  <span className="text-blekk-dempet">
-                    {deltakere.length} av {alleDeltakere.length} valgt
-                  </span>
-                  <button
-                    onClick={() => settUtelatt(new Set())}
-                    className="ml-auto text-blekk-dempet hover:text-blekk"
-                  >
-                    Alle
-                  </button>
-                  <button
-                    onClick={() =>
-                      settUtelatt(new Set(alleDeltakere.map((d) => d.id)))
-                    }
-                    className="text-blekk-dempet hover:text-blekk"
-                  >
-                    Ingen
                   </button>
                 </div>
-                <ul className="max-h-60 overflow-y-auto py-1">
-                  {alleDeltakere.map((d) => (
-                    <li key={d.id}>
-                      <label className="flex cursor-pointer items-center gap-2 px-2.5 py-1 text-brod hover:bg-flate">
-                        <input
-                          type="checkbox"
-                          checked={!utelatt.has(d.id)}
-                          onChange={(e) => {
-                            const ny = new Set(utelatt);
-                            if (e.target.checked) ny.delete(d.id);
-                            else ny.add(d.id);
-                            settUtelatt(ny);
-                          }}
-                          className="accent-[var(--color-aksent)]"
-                        />
-                        <span className="truncate">{d.navn}</span>
-                      </label>
-                    </li>
-                  ))}
-                </ul>
+                <Tallfelt
+                  etikett="Minutter"
+                  verdi={samtaletid}
+                  settVerdi={setSamtaletid}
+                />
+                <Tallfelt etikett="Pause" verdi={pause} settVerdi={setPause} />
               </div>
-            )}
-            <div className="mt-3 flex items-center gap-3">
-              <span className="text-brod text-blekk-dempet">Samtale</span>
-              <Bryter
-                storrelse="liten"
-                verdi={storrelse >= 4 ? "4" : String(storrelse)}
-                settVerdi={(v) => {
-                  const n = Number(v);
-                  setStorrelse(n);
-                  void settInnstilling(storrelseNokkel, String(n));
-                }}
-                valg={[
-                  { id: "1", navn: "Enkeltvis" },
-                  { id: "2", navn: "Par" },
-                  { id: "3", navn: "3" },
-                  { id: "4", navn: "4–6" },
-                ]}
-              />
-              {storrelse >= 4 && (
-                <select
-                  value={storrelse}
-                  onChange={(e) => {
-                    const n = Number(e.target.value);
+              {velgElever && !brukEgen && (
+                <div className="mt-2 rounded-vanlig border border-linje bg-ark">
+                  <div className="flex items-center gap-3 border-b border-linje-svak px-2.5 py-1.5 text-liten">
+                    <span className="text-blekk-dempet">
+                      {deltakere.length} av {alleDeltakere.length} valgt
+                    </span>
+                    <button
+                      onClick={() => settUtelatt(new Set())}
+                      className="ml-auto text-blekk-dempet hover:text-blekk"
+                    >
+                      Alle
+                    </button>
+                    <button
+                      onClick={() =>
+                        settUtelatt(new Set(alleDeltakere.map((d) => d.id)))
+                      }
+                      className="text-blekk-dempet hover:text-blekk"
+                    >
+                      Ingen
+                    </button>
+                  </div>
+                  <ul className="max-h-60 overflow-y-auto py-1">
+                    {alleDeltakere.map((d) => (
+                      <li key={d.id}>
+                        <label className="flex cursor-pointer items-center gap-2 px-2.5 py-1 text-brod hover:bg-flate">
+                          <input
+                            type="checkbox"
+                            checked={!utelatt.has(d.id)}
+                            onChange={(e) => {
+                              const ny = new Set(utelatt);
+                              if (e.target.checked) ny.delete(d.id);
+                              else ny.add(d.id);
+                              settUtelatt(ny);
+                            }}
+                            className="accent-[var(--color-aksent)]"
+                          />
+                          <span className="truncate">{d.navn}</span>
+                        </label>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              <div className="mt-3 flex items-center gap-3">
+                <span className="text-brod text-blekk-dempet">Samtale</span>
+                <Bryter
+                  storrelse="liten"
+                  verdi={storrelse >= 4 ? "4" : String(storrelse)}
+                  settVerdi={(v) => {
+                    const n = Number(v);
                     setStorrelse(n);
                     void settInnstilling(storrelseNokkel, String(n));
                   }}
-                  className="rounded-vanlig border border-linje bg-ark px-1.5 py-0.5 text-liten"
-                >
-                  <option value={4}>4</option>
-                  <option value={5}>5</option>
-                  <option value={6}>6</option>
-                </select>
-              )}
-            </div>
-            {storrelse > 1 && (
-              <p className="mt-2 text-liten text-blekk-svak">
-                {deltakere.length} elever i {plasserTrengs} grupper. Minuttene
-                gjelder hele gruppa; går det ikke opp, blir de siste gruppene én
-                større.
-              </p>
-            )}
-            {!brukEgen ? (
-              <p className="mt-3 text-liten text-blekk-dempet">
-                {deltakere.length > 0
-                  ? `Elevene hentes fra ${
-                      modus === "mentor"
-                        ? "mentorgruppa"
-                        : (fag.find((f) => f.id === fagId)?.kode ?? "faget")
-                    }. `
-                  : modus === "mentor"
-                    ? "Ingen mentorelever i år ennå. "
-                    : "Ingen elever er koblet til dette faget. "}
-                <button
-                  onClick={() => setBrukEgen(true)}
-                  className="text-blekk underline underline-offset-2 hover:text-aksent"
-                >
-                  Lim inn en annen liste
-                </button>
-              </p>
-            ) : (
-              <div className="mt-3">
-                <textarea
-                  value={egenListe}
-                  onChange={(e) => setEgenListe(e.target.value)}
-                  rows={6}
-                  placeholder={"Tony Soprano\nCarmela Soprano"}
-                  className="w-full rounded-vanlig border border-linje px-2 py-1.5 font-mono text-liten outline-none focus:border-aksent"
+                  valg={[
+                    { id: "1", navn: "Enkeltvis" },
+                    { id: "2", navn: "Par" },
+                    { id: "3", navn: "3" },
+                    { id: "4", navn: "4–6" },
+                  ]}
                 />
-                <button
-                  onClick={() => {
-                    setBrukEgen(false);
-                    setEgenListe("");
-                  }}
-                  className="mt-1 text-liten text-blekk-dempet underline underline-offset-2 hover:text-blekk"
-                >
-                  Bruk elevene fra appen i stedet
-                </button>
+                {storrelse >= 4 && (
+                  <select
+                    value={storrelse}
+                    onChange={(e) => {
+                      const n = Number(e.target.value);
+                      setStorrelse(n);
+                      void settInnstilling(storrelseNokkel, String(n));
+                    }}
+                    className="rounded-vanlig border border-linje bg-ark px-1.5 py-0.5 text-liten"
+                  >
+                    <option value={4}>4</option>
+                    <option value={5}>5</option>
+                    <option value={6}>6</option>
+                  </select>
+                )}
               </div>
-            )}
-          </Bolk>
-
-          {/* Mentorsamtalen har ikke oppgavenummer (§4.10). */}
-          {modus === "fag" && (
-            <Bolk
-              tittel="Temaer"
-              etter={temaer.length > 0 ? String(temaer.length) : undefined}
-            >
-              {temaer.length === 0 && (
-                <p className="mb-1 text-liten text-blekk-svak">
-                  Ingen temaer ennå. Uten temaer trekkes bare rekkefølgen.
+              {storrelse > 1 && (
+                <p className="mt-2 text-liten text-blekk-svak">
+                  {deltakere.length} elever i {plasserTrengs} grupper. Minuttene
+                  gjelder hele gruppa; går det ikke opp, blir de siste gruppene
+                  én større.
                 </p>
               )}
-              <ul className="space-y-1">
-                {temaer.map((t, i) => (
-                  <li key={i} className="group flex items-center gap-2.5">
-                    <Temarute nr={i + 1} />
-                    <input
-                      value={t}
-                      onChange={(e) =>
-                        lagreTemaer(
-                          temaer.map((x, j) => (j === i ? e.target.value : x)),
-                        )
-                      }
-                      placeholder={`Oppgave ${i + 1}`}
-                      className="min-w-0 flex-1 rounded-vanlig border border-transparent bg-transparent px-1 py-0.5 text-brod outline-none placeholder:text-blekk-svak hover:border-linje focus:border-aksent focus:bg-ark"
-                    />
-                    <button
-                      onClick={() =>
-                        lagreTemaer(temaer.filter((_, j) => j !== i))
-                      }
-                      className="shrink-0 px-1 text-blekk-svakest opacity-0 hover:text-feil group-hover:opacity-100"
-                      title="Fjern"
-                    >
-                      <Ikon navn="kryss" />
-                    </button>
-                  </li>
-                ))}
-              </ul>
-              <button
-                onClick={() => lagreTemaer([...temaer, ""])}
-                className="mt-2 text-liten text-blekk-dempet hover:text-blekk"
-              >
-                + Legg til tema
-              </button>
+              {!brukEgen ? (
+                <p className="mt-3 text-liten text-blekk-dempet">
+                  {deltakere.length > 0
+                    ? `Elevene hentes fra ${
+                        modus === "mentor"
+                          ? "mentorgruppa"
+                          : (fag.find((f) => f.id === fagId)?.kode ?? "faget")
+                      }. `
+                    : modus === "mentor"
+                      ? "Ingen mentorelever i år ennå. "
+                      : "Ingen elever er koblet til dette faget. "}
+                  <button
+                    onClick={() => setBrukEgen(true)}
+                    className="text-blekk underline underline-offset-2 hover:text-aksent"
+                  >
+                    Lim inn en annen liste
+                  </button>
+                </p>
+              ) : (
+                <div className="mt-3">
+                  <textarea
+                    value={egenListe}
+                    onChange={(e) => setEgenListe(e.target.value)}
+                    rows={6}
+                    placeholder={"Tony Soprano\nCarmela Soprano"}
+                    className="w-full rounded-vanlig border border-linje px-2 py-1.5 font-mono text-liten outline-none focus:border-aksent"
+                  />
+                  <button
+                    onClick={() => {
+                      setBrukEgen(false);
+                      setEgenListe("");
+                    }}
+                    className="mt-1 text-liten text-blekk-dempet underline underline-offset-2 hover:text-blekk"
+                  >
+                    Bruk elevene fra appen i stedet
+                  </button>
+                </div>
+              )}
             </Bolk>
-          )}
 
-          <Bolk
-            tittel="Samtaledager"
-            nokkel="samtaler-dager"
-            etter={
-              dager.length === 0
-                ? undefined
-                : `${dager.length} ${dager.length === 1 ? "dag" : "dager"} · plass til ${samletKapasitet}`
-            }
-          >
+            {/* Mentorsamtalen har ikke oppgavenummer (§4.10). */}
             {modus === "fag" && (
-              <Oktvelger
-                okter={oktvalg}
-                vurderingsokter={
-                  new Set(
-                    vurderinger
-                      .filter(
-                        (v) =>
-                          v.skolearFagId === fagId &&
-                          (!valgtVurdering || v.id === valgtVurdering),
-                      )
-                      .flatMap((v) => v.oktIder),
-                  )
-                }
-                dager={dager}
-                kapasiteter={kapasiteter}
-                minutter={minutter}
-                pause={pausen}
-                kollisjon={(dato: string) => {
-                  const b = blokkering(dato, fridager, rode);
-                  return b && b.type !== "helg" ? b.navn : null;
-                }}
-                onVelg={async (okt, pa) => {
-                  const dag = dager.find((d) => d.oktId === okt.id);
-                  if (pa) {
-                    await leggDagIOkt(
-                      skolear.id,
-                      okt.id,
-                      valgtVurdering || null,
-                    );
-                  } else if (dag) {
-                    if (
-                      dag.antall > 0 &&
-                      !(await bekreft(
-                        `Ta samtalene ut av økta ${kortDato(okt.dato)}?\n\n` +
-                          `${dag.antall} samtaler er trukket der. De forsvinner.`,
-                      ))
-                    )
-                      return;
-                    await fjernDagFraOkt(dag.id);
-                  }
-                  await last();
-                }}
-              />
+              <Bolk
+                tittel="Temaer"
+                etter={temaer.length > 0 ? String(temaer.length) : undefined}
+              >
+                {temaer.length === 0 && (
+                  <p className="mb-1 text-liten text-blekk-svak">
+                    Ingen temaer ennå. Uten temaer trekkes bare rekkefølgen.
+                  </p>
+                )}
+                <ul className="space-y-1">
+                  {temaer.map((t, i) => (
+                    <li key={i} className="group flex items-center gap-2.5">
+                      <Temarute nr={i + 1} />
+                      <input
+                        value={t}
+                        onChange={(e) =>
+                          lagreTemaer(
+                            temaer.map((x, j) =>
+                              j === i ? e.target.value : x,
+                            ),
+                          )
+                        }
+                        placeholder={`Oppgave ${i + 1}`}
+                        className="min-w-0 flex-1 rounded-vanlig border border-transparent bg-transparent px-1 py-0.5 text-brod outline-none placeholder:text-blekk-svak hover:border-linje focus:border-aksent focus:bg-ark"
+                      />
+                      <button
+                        onClick={() =>
+                          lagreTemaer(temaer.filter((_, j) => j !== i))
+                        }
+                        className="shrink-0 px-1 text-blekk-svakest opacity-0 hover:text-feil group-hover:opacity-100"
+                        title="Fjern"
+                      >
+                        <Ikon navn="kryss" />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+                <button
+                  onClick={() => lagreTemaer([...temaer, ""])}
+                  className="mt-2 text-liten text-blekk-dempet hover:text-blekk"
+                >
+                  + Legg til tema
+                </button>
+              </Bolk>
             )}
 
-            {/*
+            <Bolk
+              tittel="Samtaledager"
+              nokkel="samtaler-dager"
+              etter={
+                dager.length === 0
+                  ? undefined
+                  : `${dager.length} ${dager.length === 1 ? "dag" : "dager"} · plass til ${samletKapasitet}`
+              }
+            >
+              {modus === "fag" && (
+                <Oktvelger
+                  okter={oktvalg}
+                  vurderingsokter={
+                    new Set(
+                      vurderinger
+                        .filter(
+                          (v) =>
+                            v.skolearFagId === fagId &&
+                            (!valgtVurdering || v.id === valgtVurdering),
+                        )
+                        .flatMap((v) => v.oktIder),
+                    )
+                  }
+                  dager={dager}
+                  kapasiteter={kapasiteter}
+                  minutter={minutter}
+                  pause={pausen}
+                  kollisjon={(dato: string) => {
+                    const b = blokkering(dato, fridager, rode);
+                    return b && b.type !== "helg" ? b.navn : null;
+                  }}
+                  onVelg={async (okt, pa) => {
+                    const dag = dager.find((d) => d.oktId === okt.id);
+                    if (pa) {
+                      await leggDagIOkt(
+                        skolear.id,
+                        okt.id,
+                        valgtVurdering || null,
+                      );
+                    } else if (dag) {
+                      if (
+                        dag.antall > 0 &&
+                        !(await bekreft(
+                          `Ta samtalene ut av økta ${kortDato(okt.dato)}?\n\n` +
+                            `${dag.antall} samtaler er trukket der. De forsvinner.`,
+                        ))
+                      )
+                        return;
+                      await fjernDagFraOkt(dag.id);
+                    }
+                    await last();
+                  }}
+                />
+              )}
+
+              {/*
               Egne dager, utenfor øktene. I mentormodus er det de eneste —
               mentorsamtalen har ikke noe fag og dermed ingen økter.
             */}
-            {dager.map((dag, i) =>
-              dag.oktId ? null : (
-                <Dagkort
-                  key={dag.id}
-                  dag={dag}
-                  nr={i + 1}
-                  kapasitet={kapasiteter[i]}
-                  plassord={plassord}
-                  onEndre={async (felter) => {
-                    await endreSamtaledag(dag.id, felter);
-                    await last();
-                  }}
-                  onSlett={async () => {
-                    if (
-                      !(await bekreft(
-                        `Slette dag ${i + 1}?\n\nSamtalene som er trukket på den forsvinner.`,
-                      ))
-                    )
-                      return;
-                    await slettSamtaledag(dag.id);
-                    await last();
-                  }}
-                />
-              ),
-            )}
-            <button
-              onClick={async () => {
-                await opprettSamtaledag(skolear.id, {
-                  skolearFagId: modus === "mentor" ? null : fagId,
-                  dato: "",
-                  vurderingId: modus === "fag" ? valgtVurdering || null : null,
-                  ...NY_DAG,
-                });
-                await last();
-              }}
-              className="mt-1 text-liten text-blekk-dempet hover:text-blekk"
-            >
-              {modus === "fag" ? "+ Egen dag utenfor øktene" : "+ Legg til dag"}
-            </button>
+              {dager.map((dag, i) =>
+                dag.oktId ? null : (
+                  <Dagkort
+                    key={dag.id}
+                    dag={dag}
+                    nr={i + 1}
+                    kapasitet={kapasiteter[i]}
+                    plassord={plassord}
+                    onEndre={async (felter) => {
+                      await endreSamtaledag(dag.id, felter);
+                      await last();
+                    }}
+                    onSlett={async () => {
+                      if (
+                        !(await bekreft(
+                          `Slette dag ${i + 1}?\n\nSamtalene som er trukket på den forsvinner.`,
+                        ))
+                      )
+                        return;
+                      await slettSamtaledag(dag.id);
+                      await last();
+                    }}
+                  />
+                ),
+              )}
+              <button
+                onClick={async () => {
+                  await opprettSamtaledag(skolear.id, {
+                    skolearFagId: modus === "mentor" ? null : fagId,
+                    dato: "",
+                    vurderingId:
+                      modus === "fag" ? valgtVurdering || null : null,
+                    ...NY_DAG,
+                  });
+                  await last();
+                }}
+                className="mt-1 text-liten text-blekk-dempet hover:text-blekk"
+              >
+                {modus === "fag"
+                  ? "+ Egen dag utenfor øktene"
+                  : "+ Legg til dag"}
+              </button>
 
-            {dager.length > 0 && (
-              <p className="mt-2 text-liten text-blekk-svak">
-                {timer} timer satt av · plass til {samletKapasitet} {plassord}
-              </p>
-            )}
-          </Bolk>
+              {dager.length > 0 && (
+                <p className="mt-2 text-liten text-blekk-svak">
+                  {timer} timer satt av · plass til {samletKapasitet} {plassord}
+                </p>
+              )}
+            </Bolk>
 
-          {/*
+            {/*
             Historikken er synlig mens du trekker, ikke bare etterpå. Merknadene
             vises uansett om vektingen er på — de er opplysning, ikke konsekvens
             av en innstilling (§4.10).
           */}
-          <Bolk tittel="Historikk">
-            <label className="flex select-none items-center gap-2 text-brod">
-              <input
-                type="checkbox"
-                checked={vekting}
-                onChange={(e) => setVekting(e.target.checked)}
-              />
-              Veie mot sist (tidlig → senere)
-            </label>
-            <Historikkoversikt deltakere={deltakere} historikk={historikk} />
-          </Bolk>
+            <Bolk tittel="Historikk">
+              <label className="flex select-none items-center gap-2 text-brod">
+                <input
+                  type="checkbox"
+                  checked={vekting}
+                  onChange={(e) => setVekting(e.target.checked)}
+                />
+                Veie mot sist (tidlig → senere)
+              </label>
+              <Historikkoversikt deltakere={deltakere} historikk={historikk} />
+            </Bolk>
+          </div>
+
+          {/* Generer, og under den Trekk på nytt med de to låsene (§4.10). */}
+          <div className="shrink-0 space-y-2.5 border-t border-linje-medium pt-4">
+            <button
+              disabled={deltakere.length === 0 || dager.length === 0}
+              onClick={() => void generer()}
+              className="h-11 w-full rounded-full bg-aksent text-brod font-medium text-ark hover:bg-aksent-mork disabled:opacity-40"
+            >
+              Generer
+            </button>
+
+            {trekning && (
+              <>
+                <div className="flex gap-2">
+                  <Pilleknapp
+                    onKlikk={() => void trekkPaNytt()}
+                    av={lastTema && lastRekkefolge}
+                  >
+                    Trekk på nytt
+                  </Pilleknapp>
+                  <Pilleknapp
+                    pa={lastTema}
+                    onKlikk={() => setLastTema((v) => !v)}
+                    tittel="Lås temaene ved ny trekning"
+                  >
+                    <Ikon navn={lastTema ? "las" : "apen-las"} /> Tema
+                  </Pilleknapp>
+                  <Pilleknapp
+                    pa={lastRekkefolge}
+                    onKlikk={() => setLastRekkefolge((v) => !v)}
+                    tittel="Lås rekkefølgen ved ny trekning"
+                  >
+                    <Ikon navn={lastRekkefolge ? "las" : "apen-las"} />{" "}
+                    Rekkefølge
+                  </Pilleknapp>
+                </div>
+                {(lashint(lastTema, lastRekkefolge) ||
+                  lasteElever.size > 0) && (
+                  <p className="text-liten text-blekk-svak">
+                    {lashint(lastTema, lastRekkefolge)}
+                    {lasteElever.size > 0 &&
+                      ` ${lasteElever.size} ${lasteElever.size === 1 ? "elev" : "elever"} låst.`}
+                  </p>
+                )}
+              </>
+            )}
+          </div>
         </div>
+      )}
 
-        {/* Generer, og under den Trekk på nytt med de to låsene (§4.10). */}
-        <div className="shrink-0 space-y-2.5 border-t border-linje-medium pt-4">
-          <button
-            disabled={deltakere.length === 0 || dager.length === 0}
-            onClick={() => void generer()}
-            className="h-11 w-full rounded-full bg-aksent text-brod font-medium text-ark hover:bg-aksent-mork disabled:opacity-40"
-          >
-            Generer
-          </button>
-
-          {trekning && (
-            <>
-              <div className="flex gap-2">
-                <Pilleknapp
-                  onKlikk={() => void trekkPaNytt()}
-                  av={lastTema && lastRekkefolge}
-                >
-                  Trekk på nytt
-                </Pilleknapp>
-                <Pilleknapp
-                  pa={lastTema}
-                  onKlikk={() => setLastTema((v) => !v)}
-                  tittel="Lås temaene ved ny trekning"
-                >
-                  <Ikon navn={lastTema ? "las" : "apen-las"} /> Tema
-                </Pilleknapp>
-                <Pilleknapp
-                  pa={lastRekkefolge}
-                  onKlikk={() => setLastRekkefolge((v) => !v)}
-                  tittel="Lås rekkefølgen ved ny trekning"
-                >
-                  <Ikon navn={lastRekkefolge ? "las" : "apen-las"} /> Rekkefølge
-                </Pilleknapp>
-              </div>
-              {(lashint(lastTema, lastRekkefolge) || lasteElever.size > 0) && (
-                <p className="text-liten text-blekk-svak">
-                  {lashint(lastTema, lastRekkefolge)}
-                  {lasteElever.size > 0 &&
-                    ` ${lasteElever.size} ${lasteElever.size === 1 ? "elev" : "elever"} låst.`}
-                </p>
-              )}
-            </>
-          )}
-        </div>
-      </div>
-
-      <div className="@container min-h-0 min-w-0 flex-1 overflow-auto pl-5 xl:pl-6">
+      <div
+        className={`@container min-h-0 min-w-0 flex-1 overflow-auto ${visOppsett ? "pl-5 xl:pl-6" : ""}`}
+      >
         {/*
           Gult varsel øverst når det er for få plasser, og det sier hvem som
           mangler tid — når trekningen er gjort, står navnene der (§10).
@@ -1258,6 +1278,18 @@ export function Samtaler({
               .join(" · ")}
           </span>
           <span className="ml-auto flex shrink-0 items-center gap-1">
+            {/*
+              Rediger viser oppsettet (lerretet A). En trekning som er
+              trukket, vises som ren timeplan til du ber om å endre den.
+            */}
+            {trekning !== null && (
+              <Verktoyknapp
+                ramme={visOppsett}
+                onKlikk={() => setRedigerer(!visOppsett)}
+              >
+                {visOppsett ? "Ferdig" : "Rediger"}
+              </Verktoyknapp>
+            )}
             {/*
               Publiseringen er en bevisst handling, ikke en bivirkning av at
               du dro en rad. Knappen sier hva som venter — og at noe er endret

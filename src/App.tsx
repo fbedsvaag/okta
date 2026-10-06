@@ -516,6 +516,7 @@ export default function App() {
                     startValgt={apneId}
                     filterFag={oktFag}
                     onFilterFag={setOktFag}
+                    onRedigerFag={(id) => (id ? ga("fagside", id) : ga("fag"))}
                   />
                 )}
 

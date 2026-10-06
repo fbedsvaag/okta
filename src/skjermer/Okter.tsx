@@ -59,6 +59,7 @@ import { useArk } from "../ui/Arkstabel";
 import { lytt, lyttOktvisning } from "../data/endringer";
 import type { Skolear } from "../data/skolear";
 import { NySerie } from "./NySerie";
+import { IVerktoylinja } from "../ui/Verktoylinje";
 import { Utfold } from "../ui/Utfold";
 import { enLinje, forrigeOkt } from "../data/dagen";
 
@@ -88,7 +89,10 @@ export function Okter({
   bryter,
   filterFag,
   onFilterFag,
+  onRedigerFag,
 }: {
+  /** «Rediger fag» i verktøylinja: fagsiden, eller fagtabellen med alle fag */
+  onRedigerFag: (skolearFagId: string | null) => void;
   /** faget lista står filtrert på; "" = alle. Styres fra sidemenyen også. */
   filterFag: string;
   onFilterFag: (id: string) => void;
@@ -322,6 +326,27 @@ export function Okter({
     <>
       <Arsplan ark={ark} />
 
+      {/*
+        Verktøylinja (lerretet A): «Rediger fag» når et fag er valgt, og
+        «Ny økt» som hovedknapp.
+      */}
+      <IVerktoylinja>
+        <span className="ml-auto flex shrink-0 items-center gap-1.5">
+          <button
+            onClick={() => onRedigerFag(filterFag || null)}
+            className="flex h-8 items-center rounded-full border border-linje-sterk bg-ark/70 px-3.5 text-brod hover:bg-ark"
+          >
+            {filterFag ? "Rediger fag" : "Fagene i år"}
+          </button>
+          <button
+            onClick={() => setLagerNy(true)}
+            className="flex h-8 items-center rounded-full bg-aksent px-3.5 text-brod font-medium text-ark hover:bg-aksent-mork"
+          >
+            Ny økt
+          </button>
+        </span>
+      </IVerktoylinja>
+
       <div className="ikkeutskrift mx-auto flex min-h-0 w-full max-w-6xl flex-1 gap-0 overflow-clip">
         <div className="liste-bredde flex w-full min-w-0 flex-col">
           {/* Verktøylinja er header: den ruller ikke bort, og månedene
@@ -386,9 +411,6 @@ export function Okter({
                   }}
                 />
                 <Knapp onClick={() => setLagerSerie(true)}>+ Serie</Knapp>
-                <Knapp variant="primar" onClick={() => setLagerNy(true)}>
-                  + Ny økt
-                </Knapp>
               </div>
             </div>
           </div>
