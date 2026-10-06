@@ -209,6 +209,27 @@ committes alene, og så det som alt annet bygger på kommer først.
   dagen i Light-overskrift. Oppgavenummer som liten rute i temafargen.
   «Møtte ikke» og lås som ikonknapper på raden.
 
+## 6. Avvik etter §5 (06.10)
+
+Det som står igjen fra DESIGN.md etter redesignet. Listet i STATUS.md
+05.10. Samme arbeidsmåte: ett punkt, test, commit.
+
+- [ ] **6.1 Verktøylinja på alle skjermene.** Bruk `ui/Verktoylinje.tsx`
+  overalt, slik samtaletrekkeren gjør: skjermnavn til venstre, skjermens
+  egne knapper til høyre, i glasskapselen. Ingen verktøylinje inni arket.
+- [ ] **6.2 Skåringsskjermens høyre kolonne.** Forrige økt, plan, øktlogg
+  og taster i en kolonne til høyre for elevlista (DESIGN §10), i stedet for
+  feltene øverst i kortet. Lista holder fortsatt 28 px.
+- [ ] **6.3 Innstillinger: resten som rader.** Skoleår, Skalaer,
+  Sikkerhetskopi, Personvern, Del oppsett og de tre sjeldne sidene får
+  samme radoppsett som Generelt og Utseende: etikett til venstre, kontroll
+  og hjelpetekst til høyre. Sikkerhetskopi får den grønne statusboksen.
+- [ ] **6.4 Samtaledager i ukevisningen.** Som timeplan i dagkolonna:
+  elevene med klokkeslett, pause og lunsj, «+ n til» når det ikke får
+  plass. Heldagsraden beholder bare vurderingen.
+- [ ] **6.5 Bevegelse.** Bryteren På / Dempet / Av i Utseende, med
+  `prefers-reduced-motion` som utgangspunkt. Stagger og FLIP kan vente.
+
 ## Ikke nå
 
 Ting som er vurdert og lagt bort med vilje. Står her så de ikke dukker opp
