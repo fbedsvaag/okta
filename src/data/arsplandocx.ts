@@ -27,11 +27,11 @@ import {
 /**
  * Årsplanarket som Word-dokument.
  *
- * Samme innhold som utskriften, og samme uttrykk som appen: serif i
- * overskriftene, blekkfarge på tekst, aksentfargen på streken under tittelen
+ * Samme innhold som utskriften, og samme uttrykk som appen: én skrift
+ * hele veien, blekkfarge på tekst, aksentfargen på streken under tittelen
  * og tynne linjer mellom radene. Lesbart i svart-hvitt.
  *
- * Brødteksten står i Calibri og ikke i appens Fira Sans. Word har ingen
+ * Alt står i Calibri og ikke i appens Geist. Word har ingen
  * reserveskrift — mangler fonten på maskinen som åpner fila, bytter Word
  * den ut på egen hånd, og da er det bedre å ha valgt selv.
  */
@@ -40,7 +40,6 @@ const BLEKK = "241F33";
 const DEMPET = "645D7A";
 const AKSENT = "4A3D7D";
 const LINJE = "D9D4E8";
-const SERIF = "Georgia";
 const SANS = "Calibri";
 
 /** Halvpunkter, som Word vil ha dem. */
@@ -93,7 +92,7 @@ function avsnitt(barn: TextRun[], etter = 80, for_ = 0) {
 
 function overskrift(t: string) {
   return new Paragraph({
-    children: [tekst(t, { font: SERIF, str: 12.5, farge: AKSENT })],
+    children: [tekst(t, { font: SANS, str: 12.5, farge: AKSENT })],
     spacing: { before: 240, after: 80 },
     keepNext: true,
   });
@@ -175,7 +174,7 @@ function seksjon(ark: Ark) {
 
   innhold.push(
     new Paragraph({
-      children: [tekst(tittel(ark), { font: SERIF, str: 18 })],
+      children: [tekst(tittel(ark), { font: SANS, str: 18 })],
       border: {
         bottom: {
           style: BorderStyle.SINGLE,
