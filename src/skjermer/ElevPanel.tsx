@@ -1,12 +1,19 @@
 import { useApen } from "../ui/Sammenleggbar";
 import { Plassholder } from "../ui/Elevfoto";
 import { Utfold } from "../ui/Utfold";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Tidslinjedato, Tidslinjestrek } from "../ui/Tidslinje";
 import { useArk } from "../ui/Arkstabel";
 import { Elevbilde } from "../ui/Elevbilde";
-import { hentElevbilde, slettElevbilde } from "../data/elevbilde";
-import { lyttVurderinger } from "../data/endringer";
+import {
+  hentElevbilde,
+  settElevbilde,
+  slettElevbilde,
+} from "../data/elevbilde";
+import { elevfilFor } from "../data/arkiv";
+import { hentSkolear, type Skolear } from "../data/skolear";
+import { Vurderingsikon } from "../ui/Vurderingsikon";
+import { lyttElever, lyttVurderinger } from "../data/endringer";
 import { confirm as bekreft } from "@tauri-apps/plugin-dialog";
 import {
   hentElevAr,
@@ -37,8 +44,10 @@ import {
 import { hentFagIAr, type FagIAr } from "../data/fag";
 import {
   Bryter,
-  Fagfiltre,
+  Fagfirkant,
   Fagmerke,
+  Kontekstmeny,
+  Menyvalg,
   Ikon,
   Ikonknapp,
   Kappet,
@@ -58,15 +67,17 @@ import {
   type Oktnotat,
 } from "../data/elevnotat";
 import { settSkaringsnotat } from "../data/okter";
-import { lyttElever } from "../data/endringer";
 import { NOYTRAL, skalafarge } from "../ui/farger";
 import { Markdownfelt, MarkdownSkriv } from "../ui/Notattekst";
 
 /**
- * Elevportalen, SPEC §4.5.
+ * Elevkortet, SPEC §4.5 og DESIGN.md §10 (lerretet «ElevArk»).
  *
- * Ett spørsmål: hvordan har det gått med denne eleven i år? Heatmapet per
- * fag øverst, vurderingene under, notater nederst.
+ * Ett spørsmål: hvordan har det gått med denne eleven i år? Øverst hvem
+ * eleven er — bilde, navn, år, klasse og fag. Så innsatsen gjennom året,
+ * én linje per fag. Til venstre vurderingene og notatene, til høyre det som
+ * er åpent for eleven og fraværet. Navn, klasse, fag og mentor endres i
+ * «Rediger» (⌘E); resten av handlingene står bak «⋯».
  */
 export function ElevPanel({
   elevId,
@@ -80,7 +91,7 @@ export function ElevPanel({
   aktivtSkolearId: string;
   /**
    * Faget man kom fra. Har du filtrert på SAM3045 i Elever, eller åpnet
-   * eleven fra fagkortet, er kortet allerede filtrert på det faget.
+   * eleven fra fagkortet, gjelder «Ta ut av» det faget.
    */
   startFag?: string;
   onLukk: () => void;
@@ -98,103 +109,111 @@ export function ElevPanel({
   };
 }) {
   const ark = useArk();
-  // Bildet fra InSchool-utskriften, når det er lest inn (import/inschool).
   const [bilde, setBilde] = useState<string | null>(null);
   useEffect(() => {
     void hentElevbilde(elevId).then(setBilde);
   }, [elevId]);
   const [elev, setElev] = useState<ElevGrunnlag | null>(null);
   const [ar, setAr] = useState<ElevAr[]>([]);
-  const [valgtAr, setValgtAr] = useState(aktivtSkolearId);
-  const [fagRader, setFagRader] = useState<FagRad[]>([]);
-  const [tommeFag, setTommeFag] = useState<
+  const [skolearene, setSkolearene] = useState<Skolear[]>([]);
+  // I år | Alle år (§4.5): inneværende år når kortet åpnes.
+  const [alleAr, setAlleAr] = useState(false);
+  const [data, setData] = useState<
     {
-      skolearFagId: string;
-      fagKode: string;
-      fagNavn: string;
-      farge: string | null;
+      skolearId: string;
+      fagRader: FagRad[];
+      tommeFag: {
+        skolearFagId: string;
+        fagKode: string;
+        farge: string | null;
+      }[];
+      vurderinger: ElevVurdering[];
     }[]
   >([]);
-  const [vurderinger, setVurderinger] = useState<ElevVurdering[]>([]);
-  // Fagfilter for hele kortet — heatmap og vurderinger. Tom streng = alle fag.
-  const [vurderingsfag, setVurderingsfag] = useState(startFag);
-
-  const elevensFag = [
-    ...new Map(
-      [...fagRader, ...tommeFag].map((f) => [
-        f.skolearFagId,
-        { id: f.skolearFagId, kode: f.fagKode, farge: f.farge },
-      ]),
-    ).values(),
-  ].sort((a, b) => a.kode.localeCompare(b.kode, "nb-NO"));
-
-  const elevensFagIder = new Set(elevensFag.map((f) => f.id));
-  const passer = (id: string) => !vurderingsfag || id === vurderingsfag;
-  const synligeVurderinger = vurderinger.filter((v) => passer(v.skolearFagId));
-  const synligeFagRader = fagRader.filter((r) => passer(r.skolearFagId));
-  const synligeTommeFag = tommeFag.filter((f) => passer(f.skolearFagId));
   const [klasser, setKlasser] = useState<Klasse[]>([]);
   // Alle fagene i året, ikke bare elevens — man må kunne koble til et nytt.
   const [arsFag, setArsFag] = useState<FagIAr[]>([]);
+  const [apne, setApne] = useState<Elevnotat[]>([]);
+  const [rediger, setRediger] = useState(false);
+  const [meny, setMeny] = useState<{ x: number; y: number } | null>(null);
+  const [nyttNotat, setNyttNotat] = useState(0);
+  const [melding, setMelding] = useState<string | null>(null);
+  const bildefelt = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     let avbrutt = false;
     (async () => {
-      const [g, a] = await Promise.all([
+      const [g, a, s] = await Promise.all([
         hentElevGrunnlag(elevId),
         hentElevAr(elevId),
+        hentSkolear(),
       ]);
       if (avbrutt) return;
       setElev(g);
       setAr(a);
+      setSkolearene(s);
     })();
     return () => {
       avbrutt = true;
     };
   }, [elevId]);
 
-  // Et resultat ført i vurderingsarket over kortet, skal stå her når arket
-  // lukkes.
-  useEffect(() => lyttVurderinger(() => void lastFag()), [elevId, valgtAr]);
+  // Årene som vises: inneværende, eller alle eleven har vært i.
+  const arene = alleAr
+    ? [...ar].sort((a, b) => b.navn.localeCompare(a.navn))
+    : ar.filter((a) => a.skolearId === aktivtSkolearId);
+  const arIder = arene.map((a) => a.skolearId).join();
 
   async function lastFag() {
-    const [h, f, v] = await Promise.all([
-      hentHeatmap(elevId, valgtAr),
-      hentElevFag(elevId, valgtAr),
-      hentElevVurderinger(elevId, valgtAr),
-    ]);
-    setFagRader(h);
-    setTommeFag(
-      f.filter((x) => !h.some((r) => r.skolearFagId === x.skolearFagId)),
+    const ider = arIder ? arIder.split(",") : [aktivtSkolearId];
+    const ut = await Promise.all(
+      ider.map(async (skolearId) => {
+        const [h, f, v] = await Promise.all([
+          hentHeatmap(elevId, skolearId),
+          hentElevFag(elevId, skolearId),
+          hentElevVurderinger(elevId, skolearId),
+        ]);
+        return {
+          skolearId,
+          fagRader: h,
+          tommeFag: f.filter(
+            (x) => !h.some((r) => r.skolearFagId === x.skolearFagId),
+          ),
+          vurderinger: v,
+        };
+      }),
     );
-    setVurderinger(v);
+    setData(ut);
+    setApne(
+      (await hentElevnotater(elevId)).filter(
+        (n) => n.skalFolgesOpp && n.lukket === null,
+      ),
+    );
   }
 
   useEffect(() => {
-    let avbrutt = false;
-    (async () => {
-      const [h, f, v] = await Promise.all([
-        hentHeatmap(elevId, valgtAr),
-        hentElevFag(elevId, valgtAr),
-        hentElevVurderinger(elevId, valgtAr),
-      ]);
-      if (avbrutt) return;
-      setFagRader(h);
-      setTommeFag(
-        f.filter((x) => !h.some((r) => r.skolearFagId === x.skolearFagId)),
-      );
-      setVurderinger(v);
-      setKlasser(await hentKlasser(valgtAr));
-      setArsFag(await hentFagIAr(valgtAr));
-    })();
-    return () => {
-      avbrutt = true;
-    };
-  }, [elevId, valgtAr]);
+    void lastFag();
+    void hentKlasser(aktivtSkolearId).then(setKlasser);
+    void hentFagIAr(aktivtSkolearId).then(setArsFag);
+  }, [elevId, arIder, aktivtSkolearId]);
+  // Et resultat ført i vurderingsarket over kortet, eller et notat lukket,
+  // skal stå her når det andre lukkes.
+  useEffect(() => lyttVurderinger(() => void lastFag()), [elevId, arIder]);
+  useEffect(() => lyttElever(() => void lastFag()), [elevId, arIder]);
 
+  // Esc lukker, ⌘E bytter til redigering, ⌥↑/⌥↓ blar, N og M gir et nytt
+  // notat, ⇧⌘E eksporterer.
   useEffect(() => {
-    const lukkPaEsc = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onLukk();
+    const tast = (e: KeyboardEvent) => {
+      const iFelt = (e.target as HTMLElement).closest?.(
+        "input, textarea, select, [contenteditable]",
+      );
+      if (e.key === "Escape" && !iFelt) onLukk();
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "e") {
+        e.preventDefault();
+        if (e.shiftKey) void eksporter();
+        else setRediger((r) => !r);
+      }
       if (bla && e.altKey && e.key === "ArrowUp") {
         e.preventDefault();
         bla.forrige();
@@ -203,28 +222,142 @@ export function ElevPanel({
         e.preventDefault();
         bla.neste();
       }
+      if (!iFelt && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        if (e.key === "n" || e.key === "m") {
+          e.preventDefault();
+          setNyttNotat((n) => n + 1);
+        }
+      }
     };
-    window.addEventListener("keydown", lukkPaEsc);
-    return () => window.removeEventListener("keydown", lukkPaEsc);
-  }, [onLukk, bla]);
+    window.addEventListener("keydown", tast);
+    return () => window.removeEventListener("keydown", tast);
+  });
 
   if (!elev) return null;
 
-  const detteAret = ar.find((a) => a.skolearId === valgtAr);
+  const detteAret = ar.find((a) => a.skolearId === aktivtSkolearId);
+  const iAr = data.find((d) => d.skolearId === aktivtSkolearId);
+  const fagIAr = [
+    ...new Map(
+      [...(iAr?.fagRader ?? []), ...(iAr?.tommeFag ?? [])].map((f) => [
+        f.skolearFagId,
+        { id: f.skolearFagId, kode: f.fagKode, farge: f.farge },
+      ]),
+    ).values(),
+  ].sort((a, b) => a.kode.localeCompare(b.kode, "nb-NO"));
+  const elevensFagIder = new Set(fagIAr.map((f) => f.id));
+  const kontekstfag = arsFag.find((f) => f.id === startFag);
+
+  // Fraværet i år: avholdte økter der eleven står som «ikke i økta».
+  const avholdte = (iAr?.fagRader ?? []).flatMap((r) =>
+    r.ruter.filter((x) => x.avholdt > 0),
+  );
+  const borte = avholdte.filter(
+    (x) => x.tellerIkke === 1 || x.verdiKode === null,
+  );
+
+  async function eksporter() {
+    const s = skolearene.find((x) => x.id === aktivtSkolearId);
+    if (!s || !elev) return;
+    const md = await elevfilFor(s, elev.fornavn, elev.etternavn);
+    if (!md) return setMelding("Fant ikke eleven i arkivet for året.");
+    await navigator.clipboard.writeText(md);
+    setMelding("Elevens data er kopiert som markdown.");
+  }
+
+  async function slett() {
+    if (!elev) return;
+    const n = await tellForElev(elevId);
+    const hva = [
+      n.skaringer && `${n.skaringer} skåringer`,
+      n.vurderinger && `${n.vurderinger} vurderingsresultater`,
+      n.notater && `${n.notater} notater`,
+    ].filter(Boolean);
+    const ok = await bekreft(
+      `Slette ${elev.fornavn} ${elev.etternavn}?\n\n` +
+        (hva.length > 0
+          ? `Dette fjerner ${hva.join(", ")} — i alle skoleår, ikke bare dette.\n\n`
+          : "Eleven har ingen skåringer eller vurderinger registrert.\n\n") +
+        "Sikkerhetskopien fra i dag er veien tilbake.",
+    );
+    if (!ok) return;
+    await slettElevHelt(elevId);
+    onLukk();
+  }
 
   return (
-    <aside
-      className={`flex h-full flex-col border-l border-linje bg-ark ${
+    <section
+      aria-label={`Elevkort: ${elev.fornavn} ${elev.etternavn}`}
+      className={`flex h-full min-h-0 flex-col ${
         bla?.retning ? `flikk-${bla.retning}` : ""
       }`}
     >
-      <header className="flex items-start gap-4 border-b border-linje-medium px-5 py-3">
-        {!bilde && <Plassholder storrelse={60} />}
-        {bilde && (
-          <span className="group relative">
-            <Elevbilde src={bilde} storrelse={60} alt="" />
-            <button
-              onClick={async () => {
+      <header className="flex shrink-0 items-center gap-2.5 border-b border-linje-medium px-[22px] py-3 text-[calc(13px*var(--tekst-skala))] text-blekk-dempet">
+        <span className="rounded-full bg-flate px-2 py-0.5 text-etikett">
+          esc
+        </span>
+        {bla && bla.av > 1 && (
+          <span className="flex items-center gap-1">
+            <Ikonknapp onClick={bla.forrige} tittel="Forrige elev (⌥↑)">
+              <Ikon navn="opp" />
+            </Ikonknapp>
+            <span className="tabular-nums text-liten text-blekk-svak">
+              {bla.nr} av {bla.av}
+            </span>
+            <Ikonknapp onClick={bla.neste} tittel="Neste elev (⌥↓)">
+              <Ikon navn="ned" />
+            </Ikonknapp>
+          </span>
+        )}
+        {melding && (
+          <span className="truncate text-aksent">
+            <Ikon navn="hake" /> {melding}
+          </span>
+        )}
+        <span className="flex-1" />
+        <button
+          onClick={() => setRediger((r) => !r)}
+          className={`flex h-[30px] items-center gap-[7px] rounded-full border px-[13px] text-[calc(13px*var(--tekst-skala))] ${
+            rediger
+              ? "border-aksent bg-aksent font-medium text-ark"
+              : "border-linje bg-ark text-blekk hover:bg-flate"
+          }`}
+        >
+          {rediger ? "Ferdig" : "Rediger"}
+          <span className="text-etikett opacity-60">⌘E</span>
+        </button>
+        <button
+          aria-label="Mer"
+          onClick={(e) => {
+            const r = e.currentTarget.getBoundingClientRect();
+            setMeny(meny ? null : { x: r.right - 280, y: r.bottom + 6 });
+          }}
+          className={`grid h-[30px] w-[30px] place-items-center rounded-full text-blekk-dempet hover:bg-flate ${
+            meny ? "bg-flate" : ""
+          }`}
+        >
+          ⋯
+        </button>
+      </header>
+
+      {meny && (
+        <Kontekstmeny x={meny.x} y={meny.y} onLukk={() => setMeny(null)}>
+          <Menyvalg onKlikk={() => setNyttNotat((n) => n + 1)}>
+            <Menylinje tast="N">Nytt notat</Menylinje>
+          </Menyvalg>
+          <Menyvalg onKlikk={() => setNyttNotat((n) => n + 1)}>
+            <Menylinje tast="M">Ny møtelogg</Menylinje>
+          </Menyvalg>
+          <Menyvalg onKlikk={() => setRediger(true)}>
+            <Menylinje>Legg til i fag…</Menylinje>
+          </Menyvalg>
+          <Menyskille />
+          <Menyvalg onKlikk={() => bildefelt.current?.click()}>
+            <Menylinje>{bilde ? "Bytt bilde…" : "Legg til bilde…"}</Menylinje>
+          </Menyvalg>
+          {bilde && (
+            <Menyvalg
+              onKlikk={async () => {
                 if (
                   !(await bekreft(
                     `Fjerne bildet av ${elev.fornavn}? Det slettes fra basen.`,
@@ -234,294 +367,753 @@ export function ElevPanel({
                 await slettElevbilde(elevId);
                 setBilde(null);
               }}
-              className="absolute inset-x-0 bottom-0 bg-teppe/70 py-0.5 text-mikro text-white opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100"
             >
-              Fjern
-            </button>
-          </span>
-        )}
-        <div className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-3 gap-y-2">
-          {/*
-          Navnet redigeres der det står. Samme mønster som resten av appen:
-          skriv, og feltet lagrer når det forlates. Enter bekrefter, Escape
-          angrer.
-        */}
-          <Navnefelt
-            verdi={elev.fornavn}
-            plassholder="Fornavn"
-            onLagre={async (v) => {
-              await endreElev(elevId, { fornavn: v });
-              setElev(await hentElevGrunnlag(elevId));
-            }}
-          />
-          <Navnefelt
-            verdi={elev.etternavn}
-            plassholder="Etternavn"
-            manglerTekst="Mangler etternavn"
-            onLagre={async (v) => {
-              await endreElev(elevId, { etternavn: v });
-              setElev(await hentElevGrunnlag(elevId));
-            }}
-          />
-          <span className="font-mono text-etikett text-blekk-svak">
-            {elev.kode}
-          </span>
-          <Klassevelger
-            klasser={klasser}
-            valgt={detteAret?.klasse ?? null}
-            onVelg={async (klasseId) => {
-              await settKlasse(elevId, valgtAr, klasseId);
-              setAr(await hentElevAr(elevId));
-            }}
-            onNy={async (navn) => {
-              const id = await finnEllerOpprettKlasse(valgtAr, navn);
-              await settKlasse(elevId, valgtAr, id);
-              setKlasser(await hentKlasser(valgtAr));
-              setAr(await hentElevAr(elevId));
-            }}
-          />
-
-          {/*
-          Mentormerket hører hjemme her: det er når man står og ser på eleven
-          man vet at hen er mentoreleven sin. Uten klasse finnes ingen rad å
-          merke (§3.2), og da er boksen av.
-        */}
-          <label
-            title={
-              detteAret?.klasse
-                ? "Min mentorelev dette året"
-                : "Sett klasse først — mentormerket henger på klassen"
-            }
-            className={`flex shrink-0 select-none items-center gap-1.5 text-liten ${
-              detteAret?.klasse ? "text-blekk-dempet" : "text-blekk-svakest"
-            }`}
-          >
-            <input
-              type="checkbox"
-              checked={detteAret?.mentor ?? false}
-              disabled={!detteAret?.klasse}
-              onChange={async (e) => {
-                const ok = await settMentor(elevId, valgtAr, e.target.checked);
+              <Menylinje>Fjern bildet</Menylinje>
+            </Menyvalg>
+          )}
+          {detteAret?.klasse && (
+            <Menyvalg
+              onKlikk={async () => {
+                const ok = await settMentor(
+                  elevId,
+                  aktivtSkolearId,
+                  !detteAret.mentor,
+                );
                 if (ok) setAr(await hentElevAr(elevId));
               }}
-            />
-            Mentorelev
-          </label>
+            >
+              <Menylinje>
+                {detteAret.mentor ? "Ikke lenger mentorelev" : "Mentorelev"}
+              </Menylinje>
+            </Menyvalg>
+          )}
+          <Menyvalg onKlikk={() => setRediger(true)}>
+            <Menylinje under={`Nå ${detteAret?.klasse ?? "uten klasse"}`}>
+              Bytt klasse…
+            </Menylinje>
+          </Menyvalg>
+          <Menyskille />
+          <Menyvalg onKlikk={() => void eksporter()}>
+            <Menylinje tast="⇧⌘E" under="Innsyn, som markdown">
+              Eksporter elevens data
+            </Menylinje>
+          </Menyvalg>
+          <Menyskille />
+          {kontekstfag && elevensFagIder.has(kontekstfag.id) && (
+            <Menyvalg
+              farlig
+              onKlikk={async () => {
+                const n = await tellSkaringerIFag(elevId, kontekstfag.id);
+                if (
+                  !(await bekreft(
+                    n > 0
+                      ? frakobletekst(elev.fornavn, kontekstfag.kode, n)
+                      : `Ta ${elev.fornavn} ut av ${kontekstfag.kode}?`,
+                  ))
+                )
+                  return;
+                await frakobleFag(elevId, kontekstfag.id);
+                await lastFag();
+              }}
+            >
+              <Menylinje>Ta ut av {kontekstfag.kode}</Menylinje>
+            </Menyvalg>
+          )}
+          <Menyvalg farlig onKlikk={() => void slett()}>
+            <Menylinje>Slett eleven…</Menylinje>
+          </Menyvalg>
+        </Kontekstmeny>
+      )}
 
-          {/*
-          Fagene eleven har i året. Frakobling rører aldri skåringene — de
-          blir liggende, og kobler du til igjen kommer de tilbake i heatmapet.
-          Derfor er dette trygt å rette i, og spørsmålet stilles bare når det
-          faktisk finnes skåringer å forsvinne ut av lista med.
-        */}
-          {arsFag.length > 0 && (
-            <span className="flex flex-wrap items-center gap-1.5">
-              {arsFag.map((f) => {
-                const har = elevensFagIder.has(f.id);
-                return (
+      {/* «Legg til bilde…»: et bilde fra disk, i gråtoner som de fra InSchool. */}
+      <input
+        ref={bildefelt}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={async (e) => {
+          const fil = e.target.files?.[0];
+          e.target.value = "";
+          if (!fil) return;
+          const url = await somGratone(fil);
+          await settElevbilde(elevId, url, "Lagt til for hånd");
+          setBilde(url);
+        }}
+      />
+
+      <div className="min-h-0 flex-1 overflow-auto px-[30px] pb-[30px] pt-[22px]">
+        {/* Identitet */}
+        <div className="flex items-start gap-5">
+          {bilde ? (
+            <Elevbilde src={bilde} storrelse={76} hjorne={38} alt="" />
+          ) : (
+            <Plassholder storrelse={76} />
+          )}
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-3">
+              {rediger ? (
+                <span className="flex flex-wrap items-baseline gap-2">
+                  <Navnefelt
+                    verdi={elev.fornavn}
+                    plassholder="Fornavn"
+                    onLagre={async (v) => {
+                      await endreElev(elevId, { fornavn: v });
+                      setElev(await hentElevGrunnlag(elevId));
+                    }}
+                  />
+                  <Navnefelt
+                    verdi={elev.etternavn}
+                    plassholder="Etternavn"
+                    manglerTekst="Mangler etternavn"
+                    onLagre={async (v) => {
+                      await endreElev(elevId, { etternavn: v });
+                      setElev(await hentElevGrunnlag(elevId));
+                    }}
+                  />
+                </span>
+              ) : (
+                <h1 className="text-[calc(32px*var(--tekst-skala))] font-light leading-[1.15] tracking-overskrift">
+                  {elev.fornavn} {elev.etternavn}
+                </h1>
+              )}
+              {detteAret?.mentor && (
+                <span className="inline-flex h-6 items-center rounded-full bg-flate px-[9px] text-etikett font-medium text-aksent">
+                  Mentorelev
+                </span>
+              )}
+            </div>
+
+            {/* År, klasse og fag — inneværende år først, fjorårene i grått. */}
+            <p className="mt-1.5 flex flex-wrap items-center gap-x-1.5 text-[calc(13.5px*var(--tekst-skala))] text-blekk">
+              <b className="font-semibold">
+                {skolearene.find((s) => s.id === aktivtSkolearId)?.navn}
+              </b>
+              {detteAret?.klasse && <> · {detteAret.klasse}</>}
+              {fagIAr.map((f) => (
+                <span key={f.id} className="inline-flex items-center gap-1">
+                  · <Fagfirkant farge={f.farge} /> {f.kode}
+                </span>
+              ))}
+            </p>
+            {ar
+              .filter((a) => a.skolearId !== aktivtSkolearId)
+              .map((a) => (
+                <p
+                  key={a.skolearId}
+                  className="mt-0.5 text-[calc(12.5px*var(--tekst-skala))] text-blekk-svak"
+                >
+                  {a.navn}
+                  {a.klasse && ` · ${a.klasse}`}
+                </p>
+              ))}
+
+            {rediger && (
+              <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-stor bg-flate-svak px-3 py-2.5 text-liten">
+                <span className="flex items-center gap-2">
+                  <span className="text-blekk-dempet">Klasse</span>
+                  <Klassevelger
+                    klasser={klasser}
+                    valgt={detteAret?.klasse ?? null}
+                    onVelg={async (klasseId) => {
+                      await settKlasse(elevId, aktivtSkolearId, klasseId);
+                      setAr(await hentElevAr(elevId));
+                    }}
+                    onNy={async (navn) => {
+                      const id = await finnEllerOpprettKlasse(
+                        aktivtSkolearId,
+                        navn,
+                      );
+                      await settKlasse(elevId, aktivtSkolearId, id);
+                      setKlasser(await hentKlasser(aktivtSkolearId));
+                      setAr(await hentElevAr(elevId));
+                    }}
+                  />
+                </span>
+                {/*
+                  Mentormerket henger på klassen (§3.2). Uten klasse er det
+                  ingen rad å merke, og da er boksen av.
+                */}
+                <label
+                  className={`flex select-none items-center gap-1.5 ${
+                    detteAret?.klasse ? "" : "text-blekk-svakest"
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={detteAret?.mentor ?? false}
+                    disabled={!detteAret?.klasse}
+                    onChange={async (e) => {
+                      const ok = await settMentor(
+                        elevId,
+                        aktivtSkolearId,
+                        e.target.checked,
+                      );
+                      if (ok) setAr(await hentElevAr(elevId));
+                    }}
+                  />
+                  Mentorelev
+                </label>
+                {/*
+                  Frakobling rører aldri skåringene — de blir liggende, og
+                  kobler du til igjen kommer de tilbake.
+                */}
+                <span className="flex flex-wrap items-center gap-1.5">
+                  <span className="text-blekk-dempet">Fag</span>
+                  {arsFag.map((f) => {
+                    const har = elevensFagIder.has(f.id);
+                    return (
+                      <label
+                        key={f.id}
+                        title={
+                          har ? `Koble fra ${f.kode}` : `Koble til ${f.kode}`
+                        }
+                        className="flex cursor-pointer select-none items-center gap-1"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={har}
+                          onChange={async (e) => {
+                            if (e.target.checked) {
+                              if (
+                                !(await bekreft(
+                                  `Legge ${elev.fornavn} ${elev.etternavn} til i ${f.kode}? Hen kommer med i fagets elevliste og i øktene.`,
+                                ))
+                              ) {
+                                e.target.checked = false;
+                                return;
+                              }
+                              await koblePaFag(elevId, f.id);
+                            } else {
+                              const n = await tellSkaringerIFag(elevId, f.id);
+                              if (
+                                n > 0 &&
+                                !(await bekreft(
+                                  frakobletekst(elev.fornavn, f.kode, n),
+                                ))
+                              ) {
+                                e.target.checked = true;
+                                return;
+                              }
+                              await frakobleFag(elevId, f.id);
+                            }
+                            await lastFag();
+                          }}
+                        />
+                        <Fagmerke kode={f.kode} farge={f.farge} liten />
+                      </label>
+                    );
+                  })}
+                </span>
+                {elev.kode && (
+                  <span className="font-mono text-etikett text-blekk-svak">
+                    {elev.kode}
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+          {ar.length > 1 && (
+            <Bryter
+              storrelse="liten"
+              verdi={alleAr ? "alle" : "iar"}
+              settVerdi={(v) => setAlleAr(v === "alle")}
+              valg={[
+                { id: "iar", navn: "I år" },
+                { id: "alle", navn: "Alle år" },
+              ]}
+            />
+          )}
+        </div>
+
+        {/* Innsats gjennom året, i full bredde. */}
+        <section className="mt-[26px]">
+          <div className="flex flex-wrap items-center gap-3 border-b border-linje-medium pb-2">
+            <h2 className="text-[calc(13px*var(--tekst-skala))] font-semibold">
+              Innsats gjennom året
+            </h2>
+            <span className="flex-1" />
+            <Tegnforklaring />
+          </div>
+          {data.map((d) => {
+            const s = skolearene.find((x) => x.id === d.skolearId);
+            if (!s) return null;
+            return (
+              <div key={d.skolearId}>
+                {alleAr && (
+                  <p className="pt-3 text-etikett font-semibold text-blekk-dempet">
+                    {s.navn}
+                  </p>
+                )}
+                {d.fagRader.length === 0 && d.tommeFag.length === 0 ? (
+                  <Stille>Eleven har ingen fag dette skoleåret.</Stille>
+                ) : (
+                  d.fagRader.map((rad) => (
+                    <Innsatslinje
+                      key={rad.skolearFagId}
+                      rad={rad}
+                      skolear={s}
+                      onApneOkt={onApneOkt}
+                    />
+                  ))
+                )}
+              </div>
+            );
+          })}
+        </section>
+
+        <div className="mt-6 grid gap-8 lg:grid-cols-[minmax(0,1fr)_250px]">
+          <div className="min-w-0">
+            <div className="flex items-center gap-3 border-b border-linje-medium pb-2">
+              <h2 className="text-[calc(13px*var(--tekst-skala))] font-semibold">
+                Vurderinger
+              </h2>
+            </div>
+            {data.every((d) => d.vurderinger.length === 0) && (
+              <Stille>Ingen vurderinger i fagene hens ennå.</Stille>
+            )}
+            {data.flatMap((d) =>
+              [...new Set(d.vurderinger.map((v) => v.skolearFagId))].map(
+                (fagId) => {
+                  const vs = d.vurderinger.filter(
+                    (v) => v.skolearFagId === fagId,
+                  );
+                  const f =
+                    d.fagRader.find((r) => r.skolearFagId === fagId) ??
+                    d.tommeFag.find((r) => r.skolearFagId === fagId);
+                  return (
+                    <div
+                      key={`${d.skolearId}-${fagId}`}
+                      className="grid grid-cols-[64px_minmax(0,1fr)] gap-x-3.5 pb-1.5 pt-3.5"
+                    >
+                      <span className="flex h-5 items-center gap-[7px] text-[calc(13.5px*var(--tekst-skala))] font-semibold">
+                        <Fagfirkant farge={f?.farge ?? null} />
+                        {vs[0].fagKode}
+                      </span>
+                      <div className="mt-2">
+                        {vs.map((v) => (
+                          <Vurderingsrad
+                            key={v.vurderingId}
+                            v={v}
+                            onApne={() => ark.apneVurdering(v.vurderingId)}
+                            onSamtaler={() =>
+                              ark.gaTil("samtaler", v.skolearFagId)
+                            }
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  );
+                },
+              ),
+            )}
+
+            <div className="mt-4">
+              <Motelogg
+                elevId={elev.id}
+                skolearId={aktivtSkolearId}
+                nyttNotat={nyttNotat}
+              />
+            </div>
+          </div>
+
+          <aside className="flex flex-col gap-[22px]">
+            {apne.length > 0 && (
+              <div className="rounded-xl bg-flate px-3.5 py-3.5">
+                <h2 className="mb-2 text-[calc(13px*var(--tekst-skala))] font-semibold">
+                  Åpent for {elev.fornavn}
+                </h2>
+                {apne.map((n) => (
                   <label
-                    key={f.id}
-                    title={har ? `Koble fra ${f.kode}` : `Koble til ${f.kode}`}
-                    className="flex cursor-pointer select-none items-center gap-1"
+                    key={n.id}
+                    className="flex items-baseline gap-2 py-[3px] text-liten"
                   >
                     <input
                       type="checkbox"
-                      checked={har}
-                      onChange={async (e) => {
-                        if (e.target.checked) {
-                          if (
-                            !(await bekreft(
-                              `Legge ${elev.fornavn} ${elev.etternavn} til i ${f.kode}? Hen kommer med i fagets elevliste og i øktene.`,
-                            ))
-                          ) {
-                            e.target.checked = false;
-                            return;
-                          }
-                          await koblePaFag(elevId, f.id);
-                        } else {
-                          const n = await tellSkaringerIFag(elevId, f.id);
-                          if (
-                            n > 0 &&
-                            !(await bekreft(
-                              frakobletekst(elev.fornavn, f.kode, n),
-                            ))
-                          ) {
-                            e.target.checked = true;
-                            return;
-                          }
-                          await frakobleFag(elevId, f.id);
-                        }
+                      onChange={async () => {
+                        await settLukket(n.id, true);
                         await lastFag();
                       }}
+                      className="translate-y-0.5 accent-[var(--color-aksent)]"
                     />
-                    <Fagmerke kode={f.kode} farge={f.farge} liten />
+                    <span>
+                      {forsteLinje(n.tekst)}{" "}
+                      {n.frist && (
+                        <span
+                          className={`text-etikett ${
+                            n.frist <= idagIso()
+                              ? "text-feil"
+                              : "text-blekk-dempet"
+                          }`}
+                        >
+                          {n.frist === idagIso() ? "i dag" : kortDato(n.frist)}
+                        </span>
+                      )}
+                    </span>
                   </label>
-                );
-              })}
-            </span>
-          )}
-          {bla && bla.av > 1 && (
-            <span className="ml-auto flex shrink-0 items-center gap-1">
-              <Ikonknapp onClick={bla.forrige} tittel="Forrige elev (⌥↑)">
-                <Ikon navn="opp" />
-              </Ikonknapp>
-              <span className="tabular-nums text-liten text-blekk-svak">
-                {bla.nr} av {bla.av}
-              </span>
-              <Ikonknapp onClick={bla.neste} tittel="Neste elev (⌥↓)">
-                <Ikon navn="ned" />
-              </Ikonknapp>
-            </span>
-          )}
-          <button
-            onClick={onLukk}
-            className={`shrink-0 text-liten text-blekk-svak hover:text-blekk ${
-              bla && bla.av > 1 ? "ml-3" : "ml-auto"
-            }`}
-          >
-            Lukk (Esc)
-          </button>
-        </div>
-      </header>
-
-      <div className="overflow-y-auto px-5 py-4">
-        {ar.length > 1 && (
-          <div className="mb-4">
-            <Bryter
-              storrelse="liten"
-              verdi={valgtAr}
-              settVerdi={setValgtAr}
-              valg={ar.map((a) => ({
-                id: a.skolearId,
-                navn: `${a.navn}${a.klasse ? ` · ${a.klasse}` : ""}`,
-              }))}
-            />
-          </div>
-        )}
-
-        {/*
-          Fagfilteret gjelder hele kortet — både heatmapet og vurderingene.
-          Har eleven bare ett fag, er det ingenting å velge mellom.
-        */}
-        {elevensFag.length > 1 && (
-          <div className="mb-4">
-            <Fagfiltre
-              fag={elevensFag}
-              valgt={vurderingsfag}
-              settValgt={setVurderingsfag}
-            />
-          </div>
-        )}
-
-        <Bolk tittel="Innsats per økt" nokkel="elevkort-innsats">
-          {synligeFagRader.length === 0 && synligeTommeFag.length === 0 ? (
-            <Stille>
-              {fagRader.length === 0 && tommeFag.length === 0
-                ? "Eleven har ingen fag dette skoleåret."
-                : "Ingen økter i dette faget."}
-            </Stille>
-          ) : (
-            <>
-              {synligeFagRader.map((rad) => (
-                <Heatmap
-                  key={rad.skolearFagId}
-                  rad={rad}
-                  onApneOkt={onApneOkt}
-                />
-              ))}
-              {synligeTommeFag.map((f) => (
-                <div
-                  key={f.skolearFagId}
-                  className="flex items-center gap-2 py-1.5"
-                >
-                  <span className="w-16 shrink-0">
-                    <Fagmerke kode={f.fagKode} farge={f.farge} />
-                  </span>
-                  <Stille>Ingen økter lagt inn ennå</Stille>
-                </div>
-              ))}
-            </>
-          )}
-        </Bolk>
-
-        <Bolk tittel="Vurderinger" nokkel="elevkort-vurderinger">
-          {vurderinger.length === 0 ? (
-            <Stille>Ingen vurderinger i fagene hens ennå.</Stille>
-          ) : synligeVurderinger.length === 0 ? (
-            <Stille>Ingen vurderinger i dette faget.</Stille>
-          ) : (
-            <table className="w-full text-brod">
-              <tbody>
-                {synligeVurderinger.map((v) => (
-                  <tr
-                    key={v.vurderingId}
-                    className="border-b border-linje-svak align-top"
-                  >
-                    <td className="w-16 py-1.5">
-                      <Fagmerke kode={v.fagKode} farge={null} liten />
-                    </td>
-                    <td className="py-1.5">
-                      <button
-                        onClick={() => ark.apneVurdering(v.vurderingId)}
-                        className="text-left hover:text-aksent hover:underline"
-                      >
-                        {v.tittel}
-                      </button>
-                      {v.kommentar && (
-                        <p className="text-liten italic text-blekk-dempet">
-                          {v.kommentar}
-                        </p>
-                      )}
-                    </td>
-                    <td className="w-20 py-1.5 tabular-nums text-blekk-dempet">
-                      {v.frist ?? ""}
-                    </td>
-                    <td className="whitespace-nowrap py-1.5 text-right">
-                      {v.resultat ? (
-                        <span className="inline-block whitespace-nowrap rounded-liten border border-linje px-1.5 py-0.5 tabular-nums">
-                          {v.resultat}
-                        </span>
-                      ) : (
-                        <span className="text-blekk-svakest">
-                          {v.levert === 1 ? "levert" : "–"}
-                        </span>
-                      )}
-                    </td>
-                  </tr>
                 ))}
-              </tbody>
-            </table>
-          )}
-        </Bolk>
-
-        <Motelogg elevId={elev.id} skolearId={aktivtSkolearId} />
-
-        <button
-          onClick={async () => {
-            const n = await tellForElev(elevId);
-            const hva = [
-              n.skaringer && `${n.skaringer} skåringer`,
-              n.vurderinger && `${n.vurderinger} vurderingsresultater`,
-              n.notater && `${n.notater} notater`,
-            ].filter(Boolean);
-            const ok = await bekreft(
-              `Slette ${elev.fornavn} ${elev.etternavn}?\n\n` +
-                (hva.length > 0
-                  ? `Dette fjerner ${hva.join(", ")} — i alle skoleår, ikke bare dette.\n\n`
-                  : "Eleven har ingen skåringer eller vurderinger registrert.\n\n") +
-                "Sikkerhetskopien fra i dag er veien tilbake.",
-            );
-            if (!ok) return;
-            await slettElevHelt(elevId);
-            onLukk();
-          }}
-          className="mt-2 text-liten text-blekk-svak hover:text-feil"
-        >
-          Slett eleven
-        </button>
+              </div>
+            )}
+            <div>
+              <h2 className="mb-2 text-[calc(13px*var(--tekst-skala))] font-semibold">
+                Fravær i år
+              </h2>
+              {avholdte.length === 0 ? (
+                <p className="text-liten text-blekk-svak">
+                  Ingen økter er holdt ennå.
+                </p>
+              ) : (
+                <>
+                  <p className="text-liten text-blekk">
+                    Fraværende i{" "}
+                    <b className="font-semibold tabular-nums">{borte.length}</b>{" "}
+                    av {avholdte.length} økter
+                  </p>
+                  {borte.length > 0 && (
+                    <div className="mt-1.5 flex flex-wrap gap-[3px]">
+                      {borte.map((b) => (
+                        <button
+                          key={b.oktId}
+                          title={`${kortDato(b.dato)}${b.tema ? ` · ${b.tema}` : ""}`}
+                          onClick={() => onApneOkt(b.oktId)}
+                          className="h-3 w-2 rounded-[2px] bg-lys-borte"
+                        />
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </aside>
+        </div>
       </div>
-    </aside>
+
+      <footer className="shrink-0 whitespace-nowrap border-t border-linje-medium px-[30px] py-[9px] text-right text-[calc(11.5px*var(--tekst-skala))] text-blekk-svak">
+        Kjønn og bilde vises bare her og går aldri ut av appen.
+      </footer>
+    </section>
   );
+}
+
+/** En linje i ⋯-menyen: navnet, en forklaring under og tasten til høyre. */
+function Menylinje({
+  tast,
+  under,
+  children,
+}: {
+  tast?: string;
+  under?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <span className="flex w-64 items-center gap-2.5">
+      <span className="min-w-0 flex-1">
+        <span className="block">{children}</span>
+        {under && (
+          <span className="block text-etikett text-blekk-dempet">{under}</span>
+        )}
+      </span>
+      {tast && <span className="text-etikett text-blekk-svak">{tast}</span>}
+    </span>
+  );
+}
+
+function Menyskille() {
+  return <div className="mx-2 my-1 h-px bg-linje-medium" />;
+}
+
+/** Tegnforklaringen over innsatsen. */
+function Tegnforklaring() {
+  const rute = (bg: string, kant = false) => (
+    <span
+      className="h-2 w-2 rounded-[2px]"
+      style={{
+        background: bg,
+        boxShadow: kant ? "inset 0 0 0 1px var(--color-linje)" : undefined,
+      }}
+    />
+  );
+  return (
+    <span className="flex flex-wrap gap-2.5 text-[calc(11.5px*var(--tekst-skala))] text-blekk-dempet">
+      <span className="inline-flex items-center gap-[5px]">
+        {rute(skalafarge("gronn"))}Grønn
+      </span>
+      <span className="inline-flex items-center gap-[5px]">
+        {rute(skalafarge("gul"))}Gul
+      </span>
+      <span className="inline-flex items-center gap-[5px]">
+        {rute(skalafarge("rod"))}Rød
+      </span>
+      <span className="inline-flex items-center gap-[5px]">
+        {rute(NOYTRAL)}Ikke i økta
+      </span>
+      <span className="inline-flex items-center gap-[5px]">
+        {rute("transparent", true)}Kommer
+      </span>
+    </span>
+  );
+}
+
+/**
+ * Én linje per fag (DESIGN.md §10): hele skoleåret, aug–jun, uke for uke i
+ * felles kolonner (19 px per uke), så fagene står under hverandre. Én rute
+ * per økt (8 px), opptil to i en uke. Kommende økter er tomme ruter med
+ * tynn kant; en økt som er holdt uten at eleven er skåret, er et hull.
+ * Inneværende måned er uthevet.
+ */
+function Innsatslinje({
+  rad,
+  skolear,
+  onApneOkt,
+}: {
+  rad: FagRad;
+  skolear: Skolear;
+  onApneOkt: (oktId: string) => void;
+}) {
+  const idag = idagIso();
+  const maneder = manederIAret(skolear.start, skolear.slutt);
+  const perUke = new Map<string, HeatmapRute[]>();
+  for (const r of rad.ruter) {
+    const m = mandag(r.dato);
+    perUke.set(m, [...(perUke.get(m) ?? []), r]);
+  }
+  return (
+    <div className="grid grid-cols-[64px_minmax(0,1fr)] items-start gap-x-3.5 pb-1 pt-3">
+      <span className="flex h-[9px] items-center gap-[7px] text-[calc(13.5px*var(--tekst-skala))] font-semibold">
+        <Fagfirkant farge={rad.farge} />
+        {rad.fagKode}
+      </span>
+      <div className="flex gap-[5px] overflow-x-auto">
+        {maneder.map((m) => {
+          const naa = idag.slice(0, 7) === m.maned;
+          return (
+            <span key={m.maned} className="flex flex-col gap-1">
+              <span className="flex gap-[1.5px]">
+                {m.uker.map((u) => (
+                  <span key={u} className="flex w-[17.5px] gap-[1.5px]">
+                    {(perUke.get(u) ?? []).slice(0, 2).map((r) => (
+                      <Innsatsrute
+                        key={r.oktId}
+                        rute={r}
+                        idag={idag}
+                        onKlikk={() => onApneOkt(r.oktId)}
+                      />
+                    ))}
+                  </span>
+                ))}
+              </span>
+              <span
+                className={`text-[calc(10px*var(--tekst-skala))] ${
+                  naa ? "font-semibold text-aksent" : "text-blekk-svak"
+                }`}
+              >
+                {m.navn}
+              </span>
+            </span>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function Innsatsrute({
+  rute,
+  idag,
+  onKlikk,
+}: {
+  rute: HeatmapRute;
+  idag: string;
+  onKlikk: () => void;
+}) {
+  const kommer = rute.avholdt === 0 && rute.dato >= idag;
+  const avholdt = rute.avholdt > 0;
+  const ikkeIOkta =
+    rute.tellerIkke === 1 || (avholdt && rute.verdiKode === null);
+  const tittel = [
+    kortDato(rute.dato),
+    rute.tema,
+    kommer
+      ? "kommer"
+      : !avholdt
+        ? "ikke holdt"
+        : ikkeIOkta
+          ? "ikke i økta"
+          : (rute.verdiKode ?? ""),
+    rute.notat,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+  return (
+    <button
+      onClick={onKlikk}
+      title={tittel}
+      className="h-2 w-2 rounded-[2px]"
+      style={{
+        background: kommer
+          ? "transparent"
+          : !avholdt
+            ? "transparent"
+            : ikkeIOkta
+              ? NOYTRAL
+              : rute.verdiFarge
+                ? skalafarge(rute.verdiFarge)
+                : NOYTRAL,
+        boxShadow: kommer ? "inset 0 0 0 1px var(--color-linje)" : undefined,
+      }}
+    />
+  );
+}
+
+/**
+ * En vurdering på elevkortet: ikon, tittel og kommentar, dato og resultat.
+ * En kommende muntlig vurdering har gyllen strek og en vei til Samtaler.
+ */
+function Vurderingsrad({
+  v,
+  onApne,
+  onSamtaler,
+}: {
+  v: ElevVurdering;
+  onApne: () => void;
+  onSamtaler: () => void;
+}) {
+  const type = (v.type as "muntlig" | "skriftlig" | "praktisk" | null) ?? null;
+  const kommende = !v.resultat && !!v.frist && v.frist >= idagIso();
+  const gull = kommende && type === "muntlig";
+  return (
+    <div
+      className={`grid grid-cols-[16px_minmax(0,1fr)_56px_minmax(0,120px)] items-center gap-x-2.5 border-b border-linje-svak py-2.5 ${
+        gull ? "-mx-2.5 rounded-md bg-vurdering-flate px-2.5" : ""
+      }`}
+      style={
+        gull ? { boxShadow: "inset 3px 0 0 var(--color-vurdering)" } : undefined
+      }
+    >
+      <Vurderingsikon type={type} />
+      <button onClick={onApne} className="min-w-0 text-left">
+        <span
+          className={`block truncate hover:underline ${gull ? "font-semibold" : "font-medium"}`}
+        >
+          {v.tittel}
+        </span>
+        {v.kommentar && (
+          <span className="block truncate text-etikett text-blekk-dempet">
+            {v.kommentar}
+          </span>
+        )}
+      </button>
+      <span
+        className={`text-etikett tabular-nums ${gull ? "text-vurdering-tekst" : "text-blekk-dempet"}`}
+      >
+        {v.frist ? kortDato(v.frist) : ""}
+      </span>
+      {gull ? (
+        <button
+          onClick={onSamtaler}
+          className="whitespace-nowrap text-right text-[calc(12.5px*var(--tekst-skala))] font-medium text-vurdering-tekst hover:underline"
+        >
+          Åpne i <i>Samtaler</i> →
+        </button>
+      ) : (
+        <span className="text-right font-semibold tabular-nums">
+          {v.resultat ?? (
+            <span className="font-normal text-blekk-svakest">
+              {v.levert === 1 ? "levert" : "–"}
+            </span>
+          )}
+        </span>
+      )}
+    </div>
+  );
+}
+
+/** Månedene i skoleåret, med mandagene som hører til hver. */
+function manederIAret(
+  start: string,
+  slutt: string,
+): { maned: string; navn: string; uker: string[] }[] {
+  const ut: { maned: string; navn: string; uker: string[] }[] = [];
+  let m = mandag(start);
+  while (m <= slutt) {
+    const maned = m.slice(0, 7);
+    let siste = ut[ut.length - 1];
+    if (!siste || siste.maned !== maned) {
+      siste = {
+        maned,
+        navn: new Date(`${m}T00:00:00`)
+          .toLocaleDateString("nb-NO", { month: "short" })
+          .replace(/\.$/, ""),
+        uker: [],
+      };
+      ut.push(siste);
+    }
+    siste.uker.push(m);
+    const d = new Date(`${m}T00:00:00`);
+    d.setDate(d.getDate() + 7);
+    m = iso(d);
+  }
+  return ut;
+}
+
+function mandag(dato: string): string {
+  const d = new Date(`${dato}T00:00:00`);
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+  return iso(d);
+}
+
+function iso(d: Date): string {
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}
+
+function idagIso(): string {
+  return iso(new Date());
+}
+
+/** «24.9» */
+function kortDato(dato: string): string {
+  const d = new Date(`${dato}T00:00:00`);
+  return `${d.getDate()}.${d.getMonth() + 1}`;
+}
+
+/** Første linje av et notat, uten listetegn. */
+function forsteLinje(tekst: string): string {
+  return (
+    tekst
+      .split("\n")
+      .map((l) => l.replace(/^\s*([-*+]|\d+\.)\s+(\[[ xX]\]\s+)?/, "").trim())
+      .find(Boolean) ?? ""
+  );
+}
+
+/** Et bilde fra disk, i gråtoner og beskåret til et kvadrat, som JPEG. */
+async function somGratone(fil: File): Promise<string> {
+  const url = URL.createObjectURL(fil);
+  try {
+    const bilde = new Image();
+    bilde.src = url;
+    await bilde.decode();
+    const side = Math.min(bilde.width, bilde.height, 480);
+    const lerret = document.createElement("canvas");
+    lerret.width = lerret.height = side;
+    const g = lerret.getContext("2d")!;
+    const kilde = Math.min(bilde.width, bilde.height);
+    g.filter = "grayscale(1)";
+    g.drawImage(
+      bilde,
+      (bilde.width - kilde) / 2,
+      Math.max(0, (bilde.height - kilde) * 0.3),
+      kilde,
+      kilde,
+      0,
+      0,
+      side,
+      side,
+    );
+    return lerret.toDataURL("image/jpeg", 0.85);
+  } finally {
+    URL.revokeObjectURL(url);
+  }
 }
 
 /**
@@ -580,93 +1172,6 @@ function Klassevelger({
       <option value="__ny">Ny klasse …</option>
     </select>
   );
-}
-
-function Heatmap({
-  rad,
-  onApneOkt,
-}: {
-  rad: FagRad;
-  onApneOkt: (oktId: string) => void;
-}) {
-  const talt = tell(rad.ruter);
-
-  return (
-    <div className="py-2">
-      <div className="flex items-center gap-2">
-        <span className="w-16 shrink-0">
-          <Fagmerke kode={rad.fagKode} farge={rad.farge} />
-        </span>
-        <div className="flex flex-wrap gap-[3px]">
-          {rad.ruter.map((rute, i) => (
-            <Rute
-              key={rute.oktId + i}
-              rute={rute}
-              onKlikk={() => onApneOkt(rute.oktId)}
-            />
-          ))}
-        </div>
-      </div>
-      <p className="ml-[4.5rem] mt-1 text-liten tabular-nums text-blekk-dempet">
-        {rad.ruter.length} økter · {talt.gronn} grønne, {talt.gul} gule,{" "}
-        {talt.rod} røde
-        {talt.ikke > 0 && `, ${talt.ikke} ikke i økta`}
-        {talt.uavholdt > 0 && ` · ${talt.uavholdt} ikke avholdt`}
-      </p>
-    </div>
-  );
-}
-
-/**
- * Helfylte, avrundede kvadrater (DESIGN.md §9). «Ikke i økta» er fylt lys
- * grå, så den ikke kan forveksles med rødt. Økter som ikke er avholdt er et
- * hull: ingen fyll og ingen kant, men plassen og verktøytipset står.
- */
-function Rute({ rute, onKlikk }: { rute: HeatmapRute; onKlikk: () => void }) {
-  const avholdt = rute.avholdt > 0;
-  const ikkeIOkta =
-    rute.tellerIkke === 1 || (avholdt && rute.verdiKode === null);
-  const farge = rute.verdiFarge ? skalafarge(rute.verdiFarge) : null;
-
-  const tittel = [
-    rute.dato,
-    rute.tema,
-    !avholdt
-      ? "ikke avholdt"
-      : ikkeIOkta
-        ? "ikke i økta"
-        : (rute.verdiKode ?? ""),
-    rute.notat,
-  ]
-    .filter(Boolean)
-    .join(" · ");
-
-  return (
-    <button
-      onClick={onKlikk}
-      title={tittel}
-      className="h-3.5 w-3.5 rounded-[2px]"
-      style={{
-        background: !avholdt
-          ? "transparent"
-          : ikkeIOkta
-            ? NOYTRAL
-            : (farge ?? NOYTRAL),
-      }}
-    />
-  );
-}
-
-function tell(ruter: HeatmapRute[]) {
-  const t = { gronn: 0, gul: 0, rod: 0, ikke: 0, uavholdt: 0 };
-  for (const r of ruter) {
-    if (r.avholdt === 0) t.uavholdt++;
-    else if (r.tellerIkke === 1 || r.verdiKode === null) t.ikke++;
-    else if (r.verdiFarge === "gronn") t.gronn++;
-    else if (r.verdiFarge === "gul") t.gul++;
-    else if (r.verdiFarge === "rod") t.rod++;
-  }
-  return t;
 }
 
 function Bolk({
@@ -747,9 +1252,12 @@ function Stille({ children }: { children: React.ReactNode }) {
 function Motelogg({
   elevId,
   skolearId,
+  nyttNotat = 0,
 }: {
   elevId: string;
   skolearId: string;
+  /** øker når N, M eller ⋯-menyen ber om et nytt notat */
+  nyttNotat?: number;
 }) {
   const [notater, setNotater] = useState<Elevnotat[]>([]);
   // Notatene fra skåringen i øktene (§4.4). De bor på skåringsraden, men
@@ -777,6 +1285,12 @@ function Motelogg({
   }, [elevId]);
   // Et notat skrevet i en økt over kortet, skal stå her når økta lukkes.
   useEffect(() => lyttElever(() => void last()), [elevId]);
+
+  useEffect(() => {
+    if (nyttNotat === 0) return;
+    settApen(true);
+    setSkriver(true);
+  }, [nyttNotat]);
 
   const punkter = flettTidslinje(notater, oktnotater, filter);
 

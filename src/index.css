@@ -680,6 +680,24 @@ html {
 }
 
 /*
+ * Elevkortet (lerretet «ElevArk»): kort vei inn fra høyre og fram av
+ * ingenting, med litt sprett — 40 px og 380 ms.
+ */
+@keyframes elev-inn {
+  from {
+    transform: translateX(40px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+.elev-inn {
+  animation: elev-inn var(--tid-pop) var(--ease-sprett);
+}
+
+/*
  * Ut igjen: samme bevegelse som inn, baklengs — samme varighet og kurven
  * speilet (--ease-inn snudd). Arket fjernes først når den er ferdig.
  * `forwards` holder det ute til det tas bort, så det ikke blinker tilbake.
@@ -966,6 +984,7 @@ html {
   .flikk-opp,
   .flikk-ned,
   .gli-inn,
+  .elev-inn,
   .gli-ut {
     animation: none !important;
   }

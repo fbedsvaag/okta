@@ -52,6 +52,8 @@ type Api = {
     id: string,
     valg?: { liste?: string[]; startFag?: string },
   ) => void;
+  /** ut av arkene, til en skjerm — «Åpne i Samtaler» og lignende */
+  gaTil: (visning: Utgang, id?: string) => void;
   /** tar det øverste arket bort */
   lukk: () => void;
   /** tar alle arkene bort — når man går til en annen skjerm */
@@ -162,6 +164,7 @@ export function Arkstabel({
     apneVurdering: (id) => legg({ type: "vurdering", id }),
     apneFag: (id) => legg({ type: "fag", id }),
     apneElev: (id, valg) => legg({ type: "elev", id, ...valg }),
+    gaTil,
     lukk,
     lukkAlle,
   };
@@ -220,7 +223,11 @@ export function Arkstabel({
                   // glass (DESIGN.md §7, «ark»). De andre glir inn fra høyre.
                   ark.type === "okt"
                     ? "glass-matt inset-y-7 left-[clamp(16px,10vw,150px)] right-[clamp(16px,10vw,150px)] overflow-hidden rounded-[24px]"
-                    : "inset-y-0 right-0 w-full max-w-2xl bg-ark shadow-[var(--shadow-ark)]"
+                    : // Elevkortet er et ark i matt glass fra høyre, 880 px
+                      // (lerretet «ElevArk»).
+                      ark.type === "elev"
+                      ? "glass-matt inset-y-3 right-3 w-[min(880px,calc(100%-24px))] overflow-hidden rounded-[20px]"
+                      : "inset-y-0 right-0 w-full max-w-2xl bg-ark shadow-[var(--shadow-ark)]"
                 } ${
                   paVeiUt
                     ? `${ark.type === "okt" ? "okt-ut" : "gli-ut"} pointer-events-none`
@@ -231,7 +238,9 @@ export function Arkstabel({
                         ark.n === teller.current
                         ? ark.type === "okt"
                           ? "notat-vindu"
-                          : "gli-inn"
+                          : ark.type === "elev"
+                            ? "elev-inn"
+                            : "gli-inn"
                         : ""
                 }`}
                 style={
@@ -243,8 +252,12 @@ export function Arkstabel({
                       ? {
                           // Arket under skyves litt mot venstre, krymper og
                           // dempes — kanten stikker fram, så lagene kan leses.
-                          transform: `translateX(-${dybde * 32}px) scale(0.98)`,
-                          filter: "brightness(0.94)",
+                          // Økta blir stående midt på og krymper bare.
+                          transform:
+                            ark.type === "okt"
+                              ? "scale(0.97)"
+                              : `translateX(-${dybde * 32}px) scale(0.97)`,
+                          filter: "saturate(0.8) brightness(0.96)",
                         }
                       : undefined
                 }
@@ -284,7 +297,6 @@ export function Arkstabel({
                   <ElevArk
                     ark={ark}
                     skolearId={skolearId}
-                    underst={i === 0}
                     onLukk={lukk}
                     onApneOkt={api.apneOkt}
                   />
@@ -491,13 +503,11 @@ function FagArk({
 function ElevArk({
   ark,
   skolearId,
-  underst,
   onLukk,
   onApneOkt,
 }: {
   ark: Extract<Ark, { type: "elev" }>;
   skolearId: string;
-  underst: boolean;
   onLukk: () => void;
   onApneOkt: (id: string) => void;
 }) {
@@ -514,29 +524,24 @@ function ElevArk({
   }
 
   return (
-    <>
-      <Arkhode underst={underst} onLukk={onLukk} />
-      <div className="min-h-0 flex-1 overflow-auto">
-        <ElevPanel
-          key={elevId}
-          elevId={elevId}
-          aktivtSkolearId={skolearId}
-          startFag={ark.startFag}
-          onLukk={onLukk}
-          onApneOkt={onApneOkt}
-          bla={
-            nr >= 0 && liste.length > 1
-              ? {
-                  nr: nr + 1,
-                  av: liste.length,
-                  retning,
-                  forrige: () => bla(-1),
-                  neste: () => bla(1),
-                }
-              : undefined
-          }
-        />
-      </div>
-    </>
+    <ElevPanel
+      key={elevId}
+      elevId={elevId}
+      aktivtSkolearId={skolearId}
+      startFag={ark.startFag}
+      onLukk={onLukk}
+      onApneOkt={onApneOkt}
+      bla={
+        nr >= 0 && liste.length > 1
+          ? {
+              nr: nr + 1,
+              av: liste.length,
+              retning,
+              forrige: () => bla(-1),
+              neste: () => bla(1),
+            }
+          : undefined
+      }
+    />
   );
 }

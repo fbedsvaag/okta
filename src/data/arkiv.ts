@@ -820,3 +820,18 @@ export async function skrivArkivTilBackup(
     filer,
   });
 }
+
+/**
+ * Elevens fil fra arkivet, som markdown — til «Eksporter elevens data» på
+ * elevkortet (innsyn, §6). Bygges med samme kode som arkivet, så de to
+ * aldri sier noe forskjellig. Bildet er ikke med; det går aldri ut.
+ */
+export async function elevfilFor(
+  skolear: Skolear,
+  fornavn: string,
+  etternavn: string,
+): Promise<string | null> {
+  const filer = await byggArkiv(skolear);
+  const navn = `elever/${slugg(`${fornavn} ${etternavn}`)}.md`;
+  return filer.find((f) => f.sti.endsWith(navn))?.innhold ?? null;
+}
