@@ -111,7 +111,16 @@ export function Ikon({
   klasse = "",
 }: {
   navn:
-    "las" | "apen-las" | "kryss" | "hake" | "pil" | "markor" | "opp" | "ned";
+    | "las"
+    | "las-fylt"
+    | "apen-las"
+    | "kryss"
+    | "hake"
+    | "pil"
+    | "markor"
+    | "opp"
+    | "ned"
+    | "motte-ikke";
   klasse?: string;
 }) {
   const felles = {
@@ -131,6 +140,28 @@ export function Ikon({
         <svg {...felles}>
           <rect x="3.5" y="7" width="9" height="6.5" rx="1.2" />
           <path d="M5.5 7V4.8a2.5 2.5 0 0 1 5 0V7" />
+        </svg>
+      );
+    case "las-fylt":
+      return (
+        <svg {...felles}>
+          <rect
+            x="3.5"
+            y="7"
+            width="9"
+            height="6.5"
+            rx="1.2"
+            fill="currentColor"
+          />
+          <path d="M5.5 7V4.8a2.5 2.5 0 0 1 5 0V7" />
+        </svg>
+      );
+    case "motte-ikke":
+      // Sirkel med skråstrek: samtalen ble ikke noe av.
+      return (
+        <svg {...felles}>
+          <circle cx="8" cy="8" r="5.5" />
+          <path d="M4.2 11.8l7.6-7.6" />
         </svg>
       );
     case "apen-las":
@@ -521,22 +552,27 @@ export function Bryter({
   verdi,
   settVerdi,
   storrelse = "vanlig",
+  fyll = false,
 }: {
   valg: { id: string; navn: ReactNode; tittel?: string }[];
   verdi: string;
   settVerdi: (id: string) => void;
   storrelse?: "vanlig" | "liten";
+  /** full bredde, med like brede valg */
+  fyll?: boolean;
 }) {
   const tekst = storrelse === "liten" ? "text-liten" : "text-brod";
   return (
-    <span className="inline-flex items-center gap-0.5 rounded-vanlig bg-flate p-0.5">
+    <span
+      className={`${fyll ? "flex w-full" : "inline-flex"} items-center gap-0.5 rounded-vanlig bg-flate p-0.5`}
+    >
       {valg.map((v) => (
         <button
           key={v.id}
           onClick={() => settVerdi(v.id)}
           aria-pressed={verdi === v.id}
           title={v.tittel}
-          className={`rounded-liten px-2.5 py-1 ${tekst} whitespace-nowrap transition-colors ${
+          className={`${fyll ? "flex-1" : ""} rounded-liten px-2.5 py-1 ${tekst} whitespace-nowrap transition-colors ${
             verdi === v.id
               ? "bg-ark font-medium text-blekk shadow-lav"
               : "text-blekk-dempet hover:text-blekk"

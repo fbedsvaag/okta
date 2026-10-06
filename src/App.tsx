@@ -22,6 +22,7 @@ import {
   type Trekning,
 } from "./data/samtale";
 import { Verktoylinjespor } from "./ui/Verktoylinje";
+import { hentVurderinger } from "./data/vurderinger";
 import { Veiviser } from "./skjermer/Veiviser";
 import { IDag } from "./skjermer/IDag";
 import { Fag } from "./skjermer/Fag";
@@ -70,11 +71,20 @@ export default function App() {
   const [versjon, setVersjon] = useState(0);
   // De planlagte trekningene, til sidemenyen under Samtaler (DESIGN.md §10).
   const [trekninger, setTrekninger] = useState<Trekning[]>([]);
+  // Navnet på vurderingen hver trekning hører til — det er trekningens navn.
+  const [vurderingsnavn, setVurderingsnavn] = useState<Map<string, string>>(
+    new Map(),
+  );
   // Plassen i verktøylinja som skjermene kan fylle (ui/Verktoylinje).
   const [spor, setSpor] = useState<HTMLElement | null>(null);
 
   const lastTrekninger = useCallback(async (skolearId: string) => {
-    setTrekninger(grupperTrekninger(await hentSamtaledager(skolearId)));
+    const [dager, vurderinger] = await Promise.all([
+      hentSamtaledager(skolearId),
+      hentVurderinger(skolearId),
+    ]);
+    setTrekninger(grupperTrekninger(dager));
+    setVurderingsnavn(new Map(vurderinger.map((v) => [v.id, v.tittel])));
   }, []);
 
   // Navigasjonshistorikk, som i Obsidian: hvert sted du har vært ligger i en
@@ -277,6 +287,7 @@ export default function App() {
           kanFram={peker < steder.length - 1}
           onGa={(p) => ga(p)}
           trekninger={trekninger}
+          vurderingsnavn={vurderingsnavn}
           apenTrekning={visning === "samtaler" ? (apneId ?? null) : undefined}
           onApneTrekning={(id) => ga("samtaler", id)}
           onSok={() => setSokApent(true)}
@@ -308,140 +319,140 @@ export default function App() {
           )}
 
           <Verktoylinjespor.Provider value={spor}>
-          <main className="flex min-h-0 flex-1 flex-col overflow-clip">
-            {/*
+            <main className="flex min-h-0 flex-1 flex-col overflow-clip">
+              {/*
           Samme padding på alle skjermer. Den var før avhengig av om skjermen
           hadde sidepanel, og da hoppet innholdet 8 px både sidelengs og ned
           hver gang man byttet fane. Skjermene med panel er de tetteste — de
           skal ikke miste bredde — så det er den strammeste verdien som gjelder
           for alle.
         */}
-            <div className="flex min-h-0 flex-1 flex-col px-6 py-4">
-              {visning === "idag" && (
-                <IDag
-                  skolear={skolear}
-                  fag={fag}
-                  onGaTil={(v, id) => ga(v, id ?? null)}
-                  onApneOkt={apneOktSomArk}
-                />
-              )}
+              <div className="flex min-h-0 flex-1 flex-col px-6 py-4">
+                {visning === "idag" && (
+                  <IDag
+                    skolear={skolear}
+                    fag={fag}
+                    onGaTil={(v, id) => ga(v, id ?? null)}
+                    onApneOkt={apneOktSomArk}
+                  />
+                )}
 
-              {visning === "kalender" && (
-                <Skolekalender
-                  bryter={<Visningsbryter visning={visning} ga={ga} />}
-                  key={versjon}
-                  skolear={skolear}
-                  fag={fag}
-                  onApneOkt={apneOktSomArk}
-                />
-              )}
+                {visning === "kalender" && (
+                  <Skolekalender
+                    bryter={<Visningsbryter visning={visning} ga={ga} />}
+                    key={versjon}
+                    skolear={skolear}
+                    fag={fag}
+                    onApneOkt={apneOktSomArk}
+                  />
+                )}
 
-              {visning === "skoleruta" && (
-                <Skoleruta key={versjon} skolear={skolear} onEndret={last} />
-              )}
+                {visning === "skoleruta" && (
+                  <Skoleruta key={versjon} skolear={skolear} onEndret={last} />
+                )}
 
-              {visning === "samtaler" && (
-                <Samtaler
-                  key={`${versjon}-${apneId ?? ""}`}
-                  skolear={skolear}
-                  fag={fag}
-                  startFagId={apneId ?? undefined}
-                  onEndret={() => void lastTrekninger(skolear.id)}
-                />
-              )}
+                {visning === "samtaler" && (
+                  <Samtaler
+                    key={`${versjon}-${apneId ?? ""}`}
+                    skolear={skolear}
+                    fag={fag}
+                    startFagId={apneId ?? undefined}
+                    onEndret={() => void lastTrekninger(skolear.id)}
+                  />
+                )}
 
-              {visning === "innstillinger" && (
-                <Innstillinger
-                  skolear={skolear}
-                  fag={fag}
-                  onEndret={last}
-                  onApneSkoleruta={() => ga("skoleruta")}
-                  startSide={apneId ?? undefined}
-                  key={apneId ?? ""}
-                />
-              )}
+                {visning === "innstillinger" && (
+                  <Innstillinger
+                    skolear={skolear}
+                    fag={fag}
+                    onEndret={last}
+                    onApneSkoleruta={() => ga("skoleruta")}
+                    startSide={apneId ?? undefined}
+                    key={apneId ?? ""}
+                  />
+                )}
 
-              {/*
+                {/*
           Ingen key={versjon} her, med vilje. Fag får faglista som prop og
           trenger ikke bygges opp på nytt for å vise ferske data — og gjør den
           det, nullstilles Rediger-bryteren hver gang et felt lagrer.
         */}
-              {visning === "fag" && (
-                <Fag
-                  skolearId={skolear.id}
-                  fag={fag}
-                  startFag={apneId}
-                  onEndret={last}
-                />
-              )}
+                {visning === "fag" && (
+                  <Fag
+                    skolearId={skolear.id}
+                    fag={fag}
+                    startFag={apneId}
+                    onEndret={last}
+                  />
+                )}
 
-              {visning === "elever" && (
-                <Elever
-                  key={versjon}
-                  startElev={apneId}
-                  skolearId={skolear.id}
-                  fag={fag}
-                  onLimInn={() => ga("liminn")}
-                />
-              )}
+                {visning === "elever" && (
+                  <Elever
+                    key={versjon}
+                    startElev={apneId}
+                    skolearId={skolear.id}
+                    fag={fag}
+                    onLimInn={() => ga("liminn")}
+                  />
+                )}
 
-              {/*
+                {/*
             Elevkortet alene, over hele bredden. Lista ved siden av forstyrrer
             når man har søkt opp én bestemt elev. Lukk går dit man kom fra.
           */}
-              {visning === "elev" && apneId && (
-                <div className="mx-auto min-h-0 w-full max-w-5xl flex-1 overflow-auto rounded-vanlig border border-linje">
-                  <ElevPanel
-                    key={apneId}
-                    elevId={apneId}
-                    aktivtSkolearId={skolear.id}
-                    onLukk={() => (peker > 0 ? tilbake() : ga("elever"))}
-                    onApneOkt={apneOktSomArk}
+                {visning === "elev" && apneId && (
+                  <div className="mx-auto min-h-0 w-full max-w-5xl flex-1 overflow-auto rounded-vanlig border border-linje">
+                    <ElevPanel
+                      key={apneId}
+                      elevId={apneId}
+                      aktivtSkolearId={skolear.id}
+                      onLukk={() => (peker > 0 ? tilbake() : ga("elever"))}
+                      onApneOkt={apneOktSomArk}
+                    />
+                  </div>
+                )}
+
+                {visning === "liminn" && (
+                  <LimInn
+                    key={apneId ?? ""}
+                    skolearId={skolear.id}
+                    fag={fag}
+                    // Fra et fagkort: faget står valgt, og lista er hele faget.
+                    startFagId={apneId ?? undefined}
+                    erstatt={apneId !== null}
+                    onFerdig={(m) => {
+                      setMelding(m);
+                      setVersjon((v) => v + 1);
+                      if (apneId) {
+                        // Tilbake til faget, med kortet oppe igjen.
+                        ga("fag");
+                        ark.current?.apneFag(apneId);
+                      } else ga("elever");
+                    }}
+                    onAvbryt={() => {
+                      if (apneId) {
+                        ga("fag");
+                        ark.current?.apneFag(apneId);
+                      } else ga("elever");
+                    }}
                   />
-                </div>
-              )}
+                )}
 
-              {visning === "liminn" && (
-                <LimInn
-                  key={apneId ?? ""}
-                  skolearId={skolear.id}
-                  fag={fag}
-                  // Fra et fagkort: faget står valgt, og lista er hele faget.
-                  startFagId={apneId ?? undefined}
-                  erstatt={apneId !== null}
-                  onFerdig={(m) => {
-                    setMelding(m);
-                    setVersjon((v) => v + 1);
-                    if (apneId) {
-                      // Tilbake til faget, med kortet oppe igjen.
-                      ga("fag");
-                      ark.current?.apneFag(apneId);
-                    } else ga("elever");
-                  }}
-                  onAvbryt={() => {
-                    if (apneId) {
-                      ga("fag");
-                      ark.current?.apneFag(apneId);
-                    } else ga("elever");
-                  }}
-                />
-              )}
+                {visning === "okter" && (
+                  <Okter
+                    bryter={<Visningsbryter visning={visning} ga={ga} />}
+                    key={versjon}
+                    skolear={skolear}
+                    fag={fag}
+                    startValgt={apneId}
+                  />
+                )}
 
-              {visning === "okter" && (
-                <Okter
-                  bryter={<Visningsbryter visning={visning} ga={ga} />}
-                  key={versjon}
-                  skolear={skolear}
-                  fag={fag}
-                  startValgt={apneId}
-                />
-              )}
-
-              {visning === "vurderinger" && (
-                <Vurderinger key={versjon} skolearId={skolear.id} fag={fag} />
-              )}
-            </div>
-          </main>
+                {visning === "vurderinger" && (
+                  <Vurderinger key={versjon} skolearId={skolear.id} fag={fag} />
+                )}
+              </div>
+            </main>
           </Verktoylinjespor.Provider>
         </div>
       </div>
@@ -478,7 +489,10 @@ function Verktoylinje({
 }) {
   return (
     <div className="glass-verktoy ikkeutskrift mx-2.5 mt-2.5 flex h-11 shrink-0 items-center gap-2.5 rounded-full pl-5 pr-1.5">
-      <span className="text-brod font-semibold">{SKJERMNAVN[visning]}</span>
+      {/* Samtaletrekkeren har trekningens navn der i stedet (DESIGN §10). */}
+      {visning !== "samtaler" && (
+        <span className="text-brod font-semibold">{SKJERMNAVN[visning]}</span>
+      )}
       {visning === "idag" && (
         <span className="text-brod tabular-nums text-blekk-dempet">
           Uke {ukenummer(isoIDag())}

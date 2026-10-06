@@ -52,6 +52,7 @@ export function Sidemeny({
   kanFram,
   onGa,
   trekninger,
+  vurderingsnavn,
   apenTrekning,
   onApneTrekning,
   onSok,
@@ -72,6 +73,8 @@ export function Sidemeny({
   onGa: (p: Menypunkt) => void;
   /** de planlagte samtaletrekningene, under Samtaler (DESIGN.md §10) */
   trekninger: Trekning[];
+  /** vurderings-id → tittel; en trekning heter det vurderingen heter */
+  vurderingsnavn: Map<string, string>;
   /** trekningen som er åpen: fag-id, «mentor», null = ingen valgt; undefined = ikke i Samtaler */
   apenTrekning: string | null | undefined;
   onApneTrekning: (id: string) => void;
@@ -120,69 +123,116 @@ export function Sidemeny({
             >
               {p.navn}
             </Rad>
-            {p.id === "samtaler" && trekninger.length > 0 && (
-              <ul className="mb-1 ml-[1.625rem] mt-px space-y-px border-l border-[var(--glass-kant)] pl-1.5">
-                {trekninger.map((t) => {
-                  const id = t.skolearFagId ?? "mentor";
-                  const valgt = apenTrekning === id;
-                  return (
-                    <li key={id}>
-                      <button
-                        onClick={() => onApneTrekning(id)}
-                        className={`flex h-7 w-full min-w-0 items-baseline gap-2 rounded-[10px] px-2 text-left text-liten ${
-                          valgt
-                            ? "glass-valgt font-medium text-blekk"
-                            : "text-blekk-dempet hover:bg-[var(--glass-valgt)] hover:text-blekk"
-                        }`}
-                      >
-                        <span className="min-w-0 flex-1 truncate">
-                          {t.fagKode ?? "Mentorsamtaler"}
-                        </span>
-                        <span className="shrink-0 tabular-nums text-blekk-svak">
-                          {spenn(t)}
-                        </span>
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
           </li>
         ))}
       </ul>
 
-      <div className="min-h-0 flex-1 overflow-y-auto">
-        <p className="mb-1 px-2 text-etikett uppercase tracking-etikett text-blekk-dempet">
-          Fag i år
-        </p>
-        <ul className="space-y-px">
-          {fag.map((f) => (
-            <li key={f.id}>
-              <Rad
-                aktiv={aktiv === "fag" && apentFagId === f.id}
-                onKlikk={() => onApneFag(f.id)}
-                ikon={<Fagfirkant farge={f.farge} />}
-                tittel={`${f.kode} — ${f.navn}`}
+      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto">
+        {/*
+          De planlagte samtaletrekningene (DESIGN.md §10): vurderingens navn,
+          og fag og dager under. Et klikk åpner trekningen i Samtaler.
+        */}
+        <div>
+          <p className="mb-1 px-2 text-etikett uppercase tracking-etikett text-blekk-dempet">
+            Planlagte trekninger
+          </p>
+          <ul className="space-y-px">
+            {trekninger.map((t) => {
+              const id = t.skolearFagId ?? "mentor";
+              const f = fag.find((x) => x.id === t.skolearFagId);
+              const vurdering = t.dager.find((d) => d.vurderingId)?.vurderingId;
+              const navn =
+                t.skolearFagId === null
+                  ? "Mentorsamtaler"
+                  : ((vurdering && vurderingsnavn.get(vurdering)) ??
+                    t.fagKode ??
+                    "");
+              const under = [
+                t.skolearFagId !== null && navn !== t.fagKode
+                  ? t.fagKode
+                  : null,
+                spenn(t),
+              ]
+                .filter(Boolean)
+                .join(" · ");
+              return (
+                <li key={id}>
+                  <button
+                    onClick={() => onApneTrekning(id)}
+                    title={`${navn} — ${under}`}
+                    className={`grid w-full grid-cols-[1rem_minmax(0,1fr)] items-center gap-x-2.5 rounded-[10px] px-2 py-1.5 text-left ${
+                      apenTrekning === id
+                        ? "glass-valgt"
+                        : "hover:bg-[var(--glass-valgt)]"
+                    }`}
+                  >
+                    <span className="grid place-items-center">
+                      {t.skolearFagId === null ? (
+                        <span className="h-2 w-2 rounded-full bg-aksent" />
+                      ) : (
+                        <Fagfirkant farge={f?.farge ?? null} />
+                      )}
+                    </span>
+                    <span
+                      className={`truncate text-brod ${
+                        apenTrekning === id ? "font-medium" : ""
+                      }`}
+                    >
+                      {navn}
+                    </span>
+                    <span />
+                    <span className="truncate text-liten tabular-nums text-blekk-dempet">
+                      {under}
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+            <li>
+              <button
+                onClick={() => onApneTrekning("ny")}
+                className="flex h-8 w-full items-center gap-2.5 rounded-[10px] px-2 text-left text-brod text-blekk-dempet hover:bg-[var(--glass-valgt)] hover:text-blekk"
               >
-                <span className="font-medium">{f.kode}</span>
-                <span className="ml-2 truncate text-blekk-dempet">
-                  {f.navn}
+                <span className="grid w-4 place-items-center">+</span>
+                Ny trekning
+              </button>
+            </li>
+          </ul>
+        </div>
+
+        <div>
+          <p className="mb-1 px-2 text-etikett uppercase tracking-etikett text-blekk-dempet">
+            Fag i år
+          </p>
+          <ul className="space-y-px">
+            {fag.map((f) => (
+              <li key={f.id}>
+                <Rad
+                  aktiv={aktiv === "fag" && apentFagId === f.id}
+                  onKlikk={() => onApneFag(f.id)}
+                  ikon={<Fagfirkant farge={f.farge} />}
+                  tittel={`${f.kode} — ${f.navn}`}
+                >
+                  <span className="font-medium">{f.kode}</span>
+                  <span className="ml-2 truncate text-blekk-dempet">
+                    {f.navn}
+                  </span>
+                </Rad>
+              </li>
+            ))}
+            <li>
+              <Rad
+                aktiv={aktiv === "fag" && apentFagId === null}
+                onKlikk={onAlleFag}
+                ikon={<span className="text-blekk-svak">+</span>}
+              >
+                <span className="text-blekk-dempet">
+                  {fag.length === 0 ? "Legg til fag" : "Alle fag"}
                 </span>
               </Rad>
             </li>
-          ))}
-          <li>
-            <Rad
-              aktiv={aktiv === "fag" && apentFagId === null}
-              onKlikk={onAlleFag}
-              ikon={<span className="text-blekk-svak">+</span>}
-            >
-              <span className="text-blekk-dempet">
-                {fag.length === 0 ? "Legg til fag" : "Alle fag"}
-              </span>
-            </Rad>
-          </li>
-        </ul>
+          </ul>
+        </div>
       </div>
 
       <div className="flex items-center gap-1">
@@ -263,9 +313,19 @@ function Pil({
   );
 }
 
-/** «24. nov» for én dag, «2.–3. des» for flere. */
+/** «24. nov» for én dag, «15. og 19. okt» for to, «2.–9. des» for flere. */
 function spenn(t: Trekning): string {
   if (!t.forste) return "uten dato";
+  const datoer = [
+    ...new Set(t.dager.map((d) => d.dato).filter(Boolean)),
+  ].sort();
+  if (datoer.length === 2 && datoer[0].slice(0, 7) === datoer[1].slice(0, 7)) {
+    const [a, b] = datoer.map((d) => new Date(`${d}T00:00:00`));
+    const mnd = b
+      .toLocaleDateString("nb-NO", { month: "short" })
+      .replace(/\.$/, "");
+    return `${a.getDate()}. og ${b.getDate()}. ${mnd}`;
+  }
   const kort = (d: string) =>
     new Date(`${d}T00:00:00`)
       .toLocaleDateString("nb-NO", { day: "numeric", month: "short" })
