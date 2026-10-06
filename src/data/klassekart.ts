@@ -1,0 +1,636 @@
+import { hent, nyId, oppdater, settInn, slett } from "../db";
+
+/**
+ * Klassekart og gruppegenerator (SPEC §4.11, migrasjon 024).
+ *
+ * - **Rom**: tegnet én gang, brukt av mange kart. Oppsettet er en liste
+ *   deler — pulter, kateter, tavle, dør og vinduer — på et rutenett.
+ * - **Kart**: én elevgruppe (fag, klasse eller mentorgruppa) i ett rom.
+ * - **Plassering**: hvem som satt hvor, eller i hvilken gruppe, da kartet
+ *   ble brukt. Lagres når læreren trykker «Bruk», skriver ut eller kopierer.
+ * - **Elevregel**: «hold fra hverandre», per kilde.
+ *
+ * Kjønn, innsats og bilder brukes bare her inne og går aldri ut av appen.
+ */
+
+// ------------------------------------------------------------------- rommet
+
+export type Deltype =
+  | "enkelt"
+  | "dobbel"
+  | "gruppe4"
+  | "gruppe6"
+  | "kateter"
+  | "tavle"
+  | "dor"
+  | "vindu";
+
+export type Rotasjon = 0 | 90 | 180 | 270;
+
+export type Del = {
+  id: string;
+  type: Deltype;
+  /** øvre venstre hjørne i px, på rutenettet */
+  x: number;
+  y: number;
+  rot: Rotasjon;
+};
+
+/** Rutenettet i rom-editoren. Delene fester seg til det. */
+export const RUTE = 20;
+
+/**
+ * Størrelsen på hver del uten rotasjon, og plassene på den (midtpunkter,
+ * relativt til delens hjørne). Pultene er 100 × 60 per plass, som på
+ * lerretet.
+ */
+export const DELER: Record<
+  Deltype,
+  { navn: string; b: number; h: number; plasser: [number, number][] }
+> = {
+  enkelt: { navn: "Enkeltpult", b: 100, h: 60, plasser: [[50, 30]] },
+  dobbel: {
+    navn: "Dobbeltpult",
+    b: 200,
+    h: 60,
+    plasser: [
+      [50, 30],
+      [150, 30],
+    ],
+  },
+  gruppe4: {
+    navn: "Gruppebord (4)",
+    b: 200,
+    h: 120,
+    plasser: [
+      [50, 30],
+      [150, 30],
+      [50, 90],
+      [150, 90],
+    ],
+  },
+  gruppe6: {
+    navn: "Gruppebord (6)",
+    b: 300,
+    h: 120,
+    plasser: [
+      [50, 30],
+      [150, 30],
+      [250, 30],
+      [50, 90],
+      [150, 90],
+      [250, 90],
+    ],
+  },
+  kateter: { navn: "Kateter", b: 140, h: 60, plasser: [] },
+  tavle: { navn: "Tavle", b: 380, h: 20, plasser: [] },
+  dor: { navn: "Dør", b: 80, h: 80, plasser: [] },
+  vindu: { navn: "Vinduer", b: 380, h: 20, plasser: [] },
+};
+
+/** Bredde og høyde slik delen står, med rotasjonen. */
+export function storrelse(d: Pick<Del, "type" | "rot">): {
+  b: number;
+  h: number;
+} {
+  const { b, h } = DELER[d.type];
+  return d.rot % 180 === 0 ? { b, h } : { b: h, h: b };
+}
+
+export type Plass = {
+  /** 1, 2, 3 … forfra og fra venstre */
+  nr: number;
+  delId: string;
+  /** midtpunktet i rommet */
+  x: number;
+  y: number;
+  /** pulten plassen hører til, til «sitter ved samme pult» */
+  pult: string;
+};
+
+/**
+ * Plassene i rommet, nummerert forfra (nærmest tavla) og fra venstre.
+ * Uten tavle regnes toppen av rommet som foran. Plasser på samme rad
+ * (innenfor en halv pult i dybden) nummereres fra venstre.
+ */
+export function plasserIRom(deler: Del[]): Plass[] {
+  const tavle = deler.find((d) => d.type === "tavle");
+  const tavleY = tavle ? tavle.y + storrelse(tavle).h / 2 : 0;
+  const ut: Omit<Plass, "nr">[] = [];
+  for (const d of deler) {
+    const { b, h } = DELER[d.type];
+    for (const [px, py] of DELER[d.type].plasser) {
+      // Roter plassen rundt delens hjørne, og flytt den tilbake inn i
+      // rammen delen har etter rotasjonen.
+      const [rx, ry] =
+        d.rot === 0
+          ? [px, py]
+          : d.rot === 90
+            ? [h - py, px]
+            : d.rot === 180
+              ? [b - px, h - py]
+              : [py, b - px];
+      ut.push({ delId: d.id, pult: d.id, x: d.x + rx, y: d.y + ry });
+    }
+  }
+  const rad = (p: { y: number }) => Math.round(Math.abs(p.y - tavleY) / 30);
+  ut.sort((a, b) => rad(a) - rad(b) || a.x - b.x);
+  return ut.map((p, i) => ({ ...p, nr: i + 1 }));
+}
+
+/** Rommalene i editoren (SPEC §4.11). Plassert under en tavle øverst. */
+export function romMal(
+  mal: "par" | "hestesko" | "grupper4" | "enkelt",
+): Omit<Del, "id">[] {
+  const tavle: Omit<Del, "id"> = { type: "tavle", x: 300, y: 20, rot: 0 };
+  const kateter: Omit<Del, "id"> = { type: "kateter", x: 760, y: 80, rot: 0 };
+  const dor: Omit<Del, "id"> = { type: "dor", x: 40, y: 560, rot: 0 };
+  const deler: Omit<Del, "id">[] = [tavle, kateter, dor];
+  if (mal === "par") {
+    for (let r = 0; r < 5; r++)
+      for (let k = 0; k < 3; k++)
+        deler.push({
+          type: "dobbel",
+          x: 80 + k * 280,
+          y: 160 + r * 80,
+          rot: 0,
+        });
+  } else if (mal === "hestesko") {
+    for (let k = 0; k < 6; k++)
+      deler.push({ type: "dobbel", x: 80 + k * 200, y: 160, rot: 0 });
+    for (let r = 0; r < 3; r++) {
+      deler.push({ type: "dobbel", x: 60, y: 240 + r * 120, rot: 90 });
+      deler.push({ type: "dobbel", x: 1180, y: 240 + r * 120, rot: 90 });
+    }
+  } else if (mal === "grupper4") {
+    for (let r = 0; r < 2; r++)
+      for (let k = 0; k < 4; k++)
+        deler.push({
+          type: "gruppe4",
+          x: 80 + k * 260,
+          y: 160 + r * 200,
+          rot: 0,
+        });
+  } else {
+    for (let r = 0; r < 5; r++)
+      for (let k = 0; k < 6; k++)
+        deler.push({
+          type: "enkelt",
+          x: 80 + k * 160,
+          y: 160 + r * 80,
+          rot: 0,
+        });
+  }
+  return deler;
+}
+
+export type Rom = {
+  id: string;
+  navn: string;
+  deler: Del[];
+  /** kartene som bruker rommet */
+  brukesAv: number;
+};
+
+function tolkOppsett(json: string): Del[] {
+  try {
+    const d = JSON.parse(json);
+    return Array.isArray(d) ? d : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function hentRom(): Promise<Rom[]> {
+  const rader = await hent<{
+    id: string;
+    navn: string;
+    oppsett: string;
+    brukesAv: number;
+  }>(
+    `SELECT r.id, r.navn, r.oppsett,
+            (SELECT COUNT(*) FROM klassekart k
+              WHERE k.rom_id = r.id AND k.slettet IS NULL) AS brukesAv
+       FROM rom r
+      WHERE r.slettet IS NULL
+      ORDER BY r.navn COLLATE NOCASE`,
+  );
+  return rader.map((r) => ({
+    id: r.id,
+    navn: r.navn,
+    deler: tolkOppsett(r.oppsett),
+    brukesAv: r.brukesAv,
+  }));
+}
+
+export async function opprettRom(
+  navn: string,
+  deler: Omit<Del, "id">[] | Del[],
+): Promise<string> {
+  return settInn("rom", {
+    navn,
+    oppsett: JSON.stringify(
+      deler.map((d) => ({ id: "id" in d ? d.id : nyId(), ...d })),
+    ),
+  });
+}
+
+export async function endreRom(
+  id: string,
+  felter: { navn?: string; deler?: Del[] },
+): Promise<void> {
+  await oppdater("rom", id, {
+    ...(felter.navn !== undefined && { navn: felter.navn }),
+    ...(felter.deler !== undefined && {
+      oppsett: JSON.stringify(felter.deler),
+    }),
+  });
+}
+
+/**
+ * Sletter rommet. Kart som brukte det, mister rommet (rom_id blir tom), men
+ * beholder elevene og historikken. Kallstedet spør først når rommet er i bruk.
+ */
+export async function slettRom(id: string): Promise<void> {
+  const kart = await hent<{ id: string }>(
+    "SELECT id FROM klassekart WHERE rom_id = $1 AND slettet IS NULL",
+    [id],
+  );
+  for (const k of kart) await oppdater("klassekart", k.id, { rom_id: null });
+  await slett("rom", id);
+}
+
+// -------------------------------------------------------------------- kartet
+
+export type Kildetype = "fag" | "klasse" | "mentorgruppe";
+export type Fordelingsmodus = "tilfeldig" | "spre" | "samle";
+
+export type Innstillinger = {
+  fordeling: Fordelingsmodus;
+  bland: boolean;
+  unnga: boolean;
+  antallGrupper: number;
+  /** «Fra kateteret» (false) eller «Fra elevene» (true) */
+  fraElevene: boolean;
+};
+
+export const STANDARD: Innstillinger = {
+  fordeling: "tilfeldig",
+  bland: true,
+  unnga: true,
+  antallGrupper: 6,
+  fraElevene: false,
+};
+
+export type Kart = {
+  id: string;
+  skolearId: string;
+  kildeType: Kildetype;
+  kildeId: string;
+  /** «MFL2», «2STA» eller «Mentorgruppe» */
+  kildeNavn: string;
+  farge: string | null;
+  romId: string | null;
+  romNavn: string | null;
+  innstillinger: Innstillinger;
+  antall: number;
+};
+
+function tolkInnstillinger(json: string | null): Innstillinger {
+  try {
+    return { ...STANDARD, ...(json ? JSON.parse(json) : {}) };
+  } catch {
+    return STANDARD;
+  }
+}
+
+/** Kartene i skoleåret, med navnet på kilden og rommet. */
+export async function hentKart(skolearId: string): Promise<Kart[]> {
+  const rader = await hent<{
+    id: string;
+    skolearId: string;
+    kildeType: Kildetype;
+    kildeId: string;
+    fagKode: string | null;
+    farge: string | null;
+    klasse: string | null;
+    romId: string | null;
+    romNavn: string | null;
+    innstillinger: string | null;
+  }>(
+    `SELECT k.id, k.skolear_id AS skolearId, k.kilde_type AS kildeType,
+            k.kilde_id AS kildeId,
+            COALESCE(NULLIF(f.alias, ''), f.kode) AS fagKode, f.farge,
+            kl.navn AS klasse, r.id AS romId, r.navn AS romNavn,
+            k.innstillinger
+       FROM klassekart k
+       LEFT JOIN skolear_fag sf ON k.kilde_type = 'fag' AND sf.id = k.kilde_id
+       LEFT JOIN fag f ON f.id = sf.fag_id
+       LEFT JOIN klasse kl ON k.kilde_type = 'klasse' AND kl.id = k.kilde_id
+       LEFT JOIN rom r ON r.id = k.rom_id AND r.slettet IS NULL
+      WHERE k.skolear_id = $1 AND k.slettet IS NULL
+      ORDER BY k.opprettet`,
+    [skolearId],
+  );
+  const ut: Kart[] = [];
+  for (const r of rader) {
+    const elever = await hentKildeElever(r.kildeType, r.kildeId, skolearId);
+    ut.push({
+      id: r.id,
+      skolearId: r.skolearId,
+      kildeType: r.kildeType,
+      kildeId: r.kildeId,
+      kildeNavn:
+        r.kildeType === "fag"
+          ? (r.fagKode ?? "Fag")
+          : r.kildeType === "klasse"
+            ? (r.klasse ?? "Klasse")
+            : "Mentorgruppe",
+      farge: r.farge,
+      romId: r.romId,
+      romNavn: r.romNavn,
+      innstillinger: tolkInnstillinger(r.innstillinger),
+      antall: elever.length,
+    });
+  }
+  return ut.sort((a, b) => a.kildeNavn.localeCompare(b.kildeNavn, "nb-NO"));
+}
+
+export async function opprettKart(k: {
+  skolearId: string;
+  kildeType: Kildetype;
+  kildeId: string;
+  romId: string | null;
+}): Promise<string> {
+  return settInn("klassekart", {
+    skolear_id: k.skolearId,
+    kilde_type: k.kildeType,
+    kilde_id: k.kildeId,
+    rom_id: k.romId,
+    innstillinger: JSON.stringify(STANDARD),
+  });
+}
+
+export async function endreKart(
+  id: string,
+  felter: { romId?: string | null; innstillinger?: Innstillinger },
+): Promise<void> {
+  await oppdater("klassekart", id, {
+    ...(felter.romId !== undefined && { rom_id: felter.romId }),
+    ...(felter.innstillinger !== undefined && {
+      innstillinger: JSON.stringify(felter.innstillinger),
+    }),
+  });
+}
+
+export async function slettKart(id: string): Promise<void> {
+  await slett("klassekart", id);
+}
+
+// ------------------------------------------------------------------ elevene
+
+export type Kartelev = {
+  id: string;
+  fornavn: string;
+  etternavn: string;
+  kjonn: "j" | "g" | null;
+  /** 0 (rødt) til 1 (grønt); 0,5 uten skår */
+  innsats: number;
+};
+
+/**
+ * Elevene i kilden, med kjønn og innsats. Innsats er snittet av
+ * trafikklyset i de siste ti skåringene — i faget, eller på tvers av
+ * fagene for klasse og mentorgruppe. `teller_ikke` teller ikke (§5.1).
+ */
+export async function hentKildeElever(
+  kildeType: Kildetype,
+  kildeId: string,
+  skolearId: string,
+): Promise<Kartelev[]> {
+  const elever =
+    kildeType === "fag"
+      ? await hent<Omit<Kartelev, "innsats">>(
+          `SELECT e.id, e.fornavn, e.etternavn, e.kjonn
+             FROM elev_fag ef
+             JOIN elev e ON e.id = ef.elev_id AND e.slettet IS NULL
+            WHERE ef.skolear_fag_id = $1 AND ef.slettet IS NULL`,
+          [kildeId],
+        )
+      : kildeType === "klasse"
+        ? await hent<Omit<Kartelev, "innsats">>(
+            `SELECT e.id, e.fornavn, e.etternavn, e.kjonn
+               FROM elev_klasse ek
+               JOIN elev e ON e.id = ek.elev_id AND e.slettet IS NULL
+              WHERE ek.klasse_id = $1 AND ek.slettet IS NULL`,
+            [kildeId],
+          )
+        : await hent<Omit<Kartelev, "innsats">>(
+            `SELECT e.id, e.fornavn, e.etternavn, e.kjonn
+               FROM elev_klasse ek
+               JOIN elev e ON e.id = ek.elev_id AND e.slettet IS NULL
+              WHERE ek.skolear_id = $1 AND ek.mentor = 1
+                AND ek.slettet IS NULL`,
+            [skolearId],
+          );
+
+  const innsats = await hent<{ elevId: string; snitt: number }>(
+    `SELECT elevId, AVG(poeng) AS snitt FROM (
+       SELECT s.elev_id AS elevId,
+              CASE sv.farge WHEN 'gronn' THEN 1.0 WHEN 'gul' THEN 0.5 ELSE 0.0 END
+                AS poeng,
+              ROW_NUMBER() OVER (PARTITION BY s.elev_id
+                                 ORDER BY o.dato DESC, o.klokkeslett DESC) AS n
+         FROM skaring s
+         JOIN okt o ON o.id = s.okt_id AND o.slettet IS NULL
+         JOIN skolear_fag sf ON sf.id = o.skolear_fag_id
+         JOIN skalaverdi sv ON sv.id = s.skalaverdi_id
+        WHERE s.slettet IS NULL
+          AND sv.teller_ikke = 0
+          AND sv.farge IN ('gronn', 'gul', 'rod')
+          AND sf.skolear_id = $1
+          AND ($2 IS NULL OR o.skolear_fag_id = $2)
+     ) WHERE n <= 10
+     GROUP BY elevId`,
+    [skolearId, kildeType === "fag" ? kildeId : null],
+  );
+  const snitt = new Map(innsats.map((r) => [r.elevId, r.snitt]));
+  return elever
+    .map((e) => ({
+      ...e,
+      kjonn: e.kjonn === "j" || e.kjonn === "g" ? e.kjonn : null,
+      innsats: snitt.get(e.id) ?? 0.5,
+    }))
+    .sort(
+      (a, b) =>
+        a.fornavn.localeCompare(b.fornavn, "nb-NO") ||
+        a.etternavn.localeCompare(b.etternavn, "nb-NO"),
+    );
+}
+
+// ------------------------------------------------------- lagrede oppsett
+
+export type Oppsettrad = {
+  elevId: string;
+  plass?: number | null;
+  gruppe?: number | null;
+  gruppenavn?: string | null;
+  last?: boolean;
+};
+
+export type Oppsett = {
+  id: string;
+  /** når det ble lagret, lokal ISO */
+  tid: string;
+  rader: Required<Oppsettrad>[];
+};
+
+/** Lagrer et oppsett — «Bruk», utskrift eller kopiering. Gir id-en tilbake. */
+export async function lagreOppsett(
+  kartId: string,
+  type: "plass" | "gruppe",
+  rader: Oppsettrad[],
+): Promise<string> {
+  const oppsettId = nyId();
+  for (const r of rader)
+    await settInn("plassering", {
+      klassekart_id: kartId,
+      oppsett_id: oppsettId,
+      type,
+      elev_id: r.elevId,
+      plass: r.plass ?? null,
+      gruppe: r.gruppe ?? null,
+      gruppenavn: r.gruppenavn ?? null,
+      last: r.last ? 1 : 0,
+    });
+  return oppsettId;
+}
+
+/** De lagrede oppsettene i kartet, nyeste først. */
+export async function hentOppsett(
+  kartId: string,
+  type: "plass" | "gruppe",
+): Promise<Oppsett[]> {
+  const rader = await hent<{
+    oppsettId: string;
+    tid: string;
+    elevId: string;
+    plass: number | null;
+    gruppe: number | null;
+    gruppenavn: string | null;
+    last: number;
+  }>(
+    `SELECT p.oppsett_id AS oppsettId, p.opprettet AS tid, p.elev_id AS elevId,
+            p.plass, p.gruppe, p.gruppenavn, p.last
+       FROM plassering p
+       JOIN elev e ON e.id = p.elev_id AND e.slettet IS NULL
+      WHERE p.klassekart_id = $1 AND p.type = $2 AND p.slettet IS NULL
+      ORDER BY p.opprettet DESC, p.oppsett_id`,
+    [kartId, type],
+  );
+  const ut = new Map<string, Oppsett>();
+  for (const r of rader) {
+    let o = ut.get(r.oppsettId);
+    if (!o) {
+      o = { id: r.oppsettId, tid: r.tid, rader: [] };
+      ut.set(r.oppsettId, o);
+    }
+    o.rader.push({
+      elevId: r.elevId,
+      plass: r.plass,
+      gruppe: r.gruppe,
+      gruppenavn: r.gruppenavn,
+      last: r.last === 1,
+    });
+  }
+  return [...ut.values()];
+}
+
+/**
+ * Hvem som har delt pult eller gruppe før, og hvor mange ganger. Nøkkelen er
+ * de to id-ene sortert og skilt med «|». Vekten er størst for de siste
+ * oppsettene: det nyeste teller 1, det forrige 0,8, så 0,64 …
+ */
+export function sammenFor(
+  oppsett: Oppsett[],
+  samme: (a: Required<Oppsettrad>, b: Required<Oppsettrad>) => boolean,
+): { vekt: Map<string, number>; ganger: Map<string, number> } {
+  const vekt = new Map<string, number>();
+  const ganger = new Map<string, number>();
+  oppsett.forEach((o, i) => {
+    const v = Math.pow(0.8, i);
+    for (let a = 0; a < o.rader.length; a++)
+      for (let b = a + 1; b < o.rader.length; b++) {
+        if (!samme(o.rader[a], o.rader[b])) continue;
+        const k = parNokkel(o.rader[a].elevId, o.rader[b].elevId);
+        vekt.set(k, (vekt.get(k) ?? 0) + v);
+        ganger.set(k, (ganger.get(k) ?? 0) + 1);
+      }
+  });
+  return { vekt, ganger };
+}
+
+export function parNokkel(a: string, b: string): string {
+  return a < b ? `${a}|${b}` : `${b}|${a}`;
+}
+
+// ------------------------------------------------------------- reglene
+
+export type Elevregel = { id: string; elevA: string; elevB: string };
+
+export async function hentRegler(
+  kildeType: Kildetype,
+  kildeId: string,
+): Promise<Elevregel[]> {
+  return hent<Elevregel>(
+    `SELECT r.id, r.elev_a AS elevA, r.elev_b AS elevB
+       FROM elevregel r
+       JOIN elev a ON a.id = r.elev_a AND a.slettet IS NULL
+       JOIN elev b ON b.id = r.elev_b AND b.slettet IS NULL
+      WHERE r.kilde_type = $1 AND r.kilde_id = $2 AND r.slettet IS NULL
+      ORDER BY r.opprettet`,
+    [kildeType, kildeId],
+  );
+}
+
+/** «Hold fra hverandre». Finnes regelen fra før, gis den tilbake. */
+export async function leggTilRegel(
+  kildeType: Kildetype,
+  kildeId: string,
+  elevA: string,
+  elevB: string,
+): Promise<string> {
+  if (elevA === elevB) throw new Error("En elev kan ikke holdes fra seg selv.");
+  const [finnes] = await hent<{ id: string }>(
+    `SELECT id FROM elevregel
+      WHERE kilde_type = $1 AND kilde_id = $2 AND slettet IS NULL
+        AND ((elev_a = $3 AND elev_b = $4) OR (elev_a = $4 AND elev_b = $3))`,
+    [kildeType, kildeId, elevA, elevB],
+  );
+  if (finnes) return finnes.id;
+  return settInn("elevregel", {
+    kilde_type: kildeType,
+    kilde_id: kildeId,
+    elev_a: elevA,
+    elev_b: elevB,
+  });
+}
+
+export async function slettRegel(id: string): Promise<void> {
+  await slett("elevregel", id);
+}
+
+/** Til sletting av en elev: plasseringene og reglene går med. */
+export async function slettForElev(elevId: string): Promise<void> {
+  const plasseringer = await hent<{ id: string }>(
+    "SELECT id FROM plassering WHERE elev_id = $1 AND slettet IS NULL",
+    [elevId],
+  );
+  for (const r of plasseringer) await slett("plassering", r.id);
+  const regler = await hent<{ id: string }>(
+    `SELECT id FROM elevregel
+      WHERE (elev_a = $1 OR elev_b = $1) AND slettet IS NULL`,
+    [elevId],
+  );
+  for (const r of regler) await slett("elevregel", r.id);
+}

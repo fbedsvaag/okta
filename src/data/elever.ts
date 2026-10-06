@@ -1,3 +1,4 @@
+import { slettForElev } from "./klassekart";
 import { varsleElever } from "./endringer";
 import { slettElevbilde } from "./elevbilde";
 import { hent, oppdater, settInn, slett } from "../db";
@@ -468,6 +469,7 @@ export async function slettElevHelt(elevId: string): Promise<void> {
     for (const r of rader) await slett(tabell, r.id);
   }
   await slettElevbilde(elevId);
+  await slettForElev(elevId);
   await slett("elev", elevId);
   varsleElever();
 }
