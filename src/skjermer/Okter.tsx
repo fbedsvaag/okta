@@ -61,6 +61,7 @@ import type { Skolear } from "../data/skolear";
 import { NySerie } from "./NySerie";
 import { IVerktoylinja } from "../ui/Verktoylinje";
 import { Utfold } from "../ui/Utfold";
+import { Tastestripe, Tasthint } from "../ui/Tastestripe";
 import { enLinje, forrigeOkt } from "../data/dagen";
 
 /**
@@ -961,8 +962,9 @@ function Liste({
 }
 
 /**
- * Den raske titten under en utfoldet rad: dato, tid, rom og vurdering,
- * planen, og hva du skrev forrige gang i faget.
+ * Den raske titten under en utfoldet rad (variant F i lerretet): fakta til
+ * venstre, plan og forrige notat til høyre, og en tonet tastestripe nederst
+ * med tastene og «Åpne økta» samlet til høyre.
  */
 function Titt({
   okt,
@@ -980,48 +982,59 @@ function Titt({
     ? leggTilMin(okt.klokkeslett, okt.varighetMin)
     : null;
   return (
-    <div className="mb-2 rounded-b-lg bg-flate pb-3 pl-[74px] pr-3.5 pt-2 text-[calc(12.5px*var(--tekst-skala))] leading-normal">
-      <div className="grid grid-cols-[96px_minmax(0,1fr)] gap-x-3 gap-y-1.5">
-        <span className="text-blekk-dempet">Dato</span>
-        <span className="first-letter:uppercase">{langDato(okt.dato)}</span>
-        <span className="text-blekk-dempet">Tid</span>
-        <span className="tabular-nums">
-          {okt.klokkeslett ? `${okt.klokkeslett}–${slutt}` : "Uten klokkeslett"}
-        </span>
-        <span className="text-blekk-dempet">Rom</span>
-        <span>{okt.sted ?? "—"}</span>
-        {vurderinger.length > 0 && (
-          <>
-            <span className="text-blekk-dempet">Vurdering</span>
-            <span className="font-medium text-varsel">
-              {vurderinger.map((v) => v.tittel).join(", ")}
-            </span>
-          </>
-        )}
-        <span className="text-blekk-dempet">Plan</span>
-        <span className={okt.plan ? "" : "text-blekk-svak"}>
-          {okt.plan ? enLinje(okt.plan) : "Ingen plan ennå"}
-        </span>
-        <span className="text-blekk-dempet">Fra forrige økt</span>
-        <span className={forrige?.logg ? "text-blekk" : "text-blekk-svak"}>
-          {!forrige
-            ? "Første økt i faget"
-            : forrige.logg
-              ? `«${enLinje(forrige.logg)}»`
-              : "Ingen notat"}
-        </span>
+    <div className="mb-2 overflow-hidden rounded-b-lg bg-flate text-[calc(12.5px*var(--tekst-skala))] leading-normal shadow-[0_1px_0_var(--color-linje-medium)]">
+      <div className="grid grid-cols-2 gap-x-8 pb-3 pl-[74px] pr-3.5 pt-2">
+        <div className="grid grid-cols-[96px_minmax(0,1fr)] content-start gap-x-3 gap-y-1.5">
+          <span className="text-blekk-dempet">Dato</span>
+          <span className="first-letter:uppercase">{langDato(okt.dato)}</span>
+          <span className="text-blekk-dempet">Tid</span>
+          <span className="tabular-nums">
+            {okt.klokkeslett
+              ? `${okt.klokkeslett}–${slutt}`
+              : "Uten klokkeslett"}
+          </span>
+          <span className="text-blekk-dempet">Rom</span>
+          <span>{okt.sted ?? "—"}</span>
+          {vurderinger.length > 0 && (
+            <>
+              <span className="text-blekk-dempet">Vurdering</span>
+              <span className="font-medium text-varsel">
+                {vurderinger.map((v) => v.tittel).join(", ")}
+              </span>
+            </>
+          )}
+        </div>
+        <div className="flex min-w-0 flex-col gap-2.5">
+          <div>
+            <div className="mb-0.5 text-etikett text-blekk-dempet">Plan</div>
+            <div className={okt.plan ? "" : "text-blekk-svak"}>
+              {okt.plan ? enLinje(okt.plan) : "Ingen plan ennå"}
+            </div>
+          </div>
+          <div>
+            <div className="mb-0.5 text-etikett text-blekk-dempet">
+              Fra forrige økt
+            </div>
+            <div className={forrige?.logg ? "text-blekk" : "text-blekk-svak"}>
+              {!forrige
+                ? "Første økt i faget"
+                : forrige.logg
+                  ? `«${enLinje(forrige.logg)}»`
+                  : "Ingen notat"}
+            </div>
+          </div>
+        </div>
       </div>
-      <div className="mt-2.5 flex items-center gap-2.5 border-t border-linje-medium pt-2.5">
-        <Knapp variant="primar" onClick={onApne}>
+      <Tastestripe>
+        <Tasthint taster={["↑", "↓"]}>neste økt</Tasthint>
+        <Tasthint taster={["mellomrom"]}>lukk</Tasthint>
+        <button
+          onClick={onApne}
+          className="flex h-6 items-center gap-2 rounded-full bg-aksent px-3 text-etikett font-medium text-ark hover:bg-aksent-mork"
+        >
           Åpne økta <span className="opacity-70">↵</span>
-        </Knapp>
-        <span className="text-etikett text-blekk-dempet">
-          <kbd className="rounded border border-linje bg-ark px-1.5 font-sans">
-            mellomrom
-          </kbd>{" "}
-          lukker
-        </span>
-      </div>
+        </button>
+      </Tastestripe>
     </div>
   );
 }

@@ -74,6 +74,8 @@
   --color-flate: #f4f2f9;
   --color-flate-svak: #f0eef6;
   --color-valgt: #e3ddf0;
+  /* Tastestripa nederst på flater med egne taster (DESIGN.md §6). */
+  --color-stripe: #ece9f3;
 
   /* Linjer. Referansen er linjert papir, så disse bærer mye av uttrykket. */
   --color-linje-svak: #f0eef6;
@@ -210,6 +212,7 @@
     --color-flate: #262133;
     --color-flate-svak: #221e2e;
     --color-valgt: #352c50;
+    --color-stripe: #2a2539;
 
     --color-linje-svak: #252030;
     --color-linje: #3a3450;
