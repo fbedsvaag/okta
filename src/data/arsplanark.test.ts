@@ -140,6 +140,7 @@ describe("byggArk", () => {
             frist: null,
             oktId: o.id,
             skolearFagId: "sf1",
+            type: "skriftlig",
           },
         ],
       ],

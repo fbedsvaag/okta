@@ -61,6 +61,7 @@ import type { Skolear } from "../data/skolear";
 import { NySerie } from "./NySerie";
 import { IVerktoylinja } from "../ui/Verktoylinje";
 import { Utfold } from "../ui/Utfold";
+import { Vurderingsikon, vurderingstype } from "../ui/Vurderingsikon";
 import { Tastestripe, Tasthint } from "../ui/Tastestripe";
 import { enLinje, forrigeOkt } from "../data/dagen";
 
@@ -91,7 +92,10 @@ export function Okter({
   filterFag,
   onFilterFag,
   onRedigerFag,
+  onApneSamtaler,
 }: {
+  /** en muntlig vurdering: trekningen i Samtaler */
+  onApneSamtaler: (skolearFagId: string) => void;
   /** «Rediger fag» i verktøylinja: fagsiden, eller fagtabellen med alle fag */
   onRedigerFag: (skolearFagId: string | null) => void;
   /** faget lista står filtrert på; "" = alle. Styres fra sidemenyen også. */
@@ -534,6 +538,11 @@ export function Okter({
                   );
                 }}
                 onMerkAlle={() => setMerket(new Set(synlige.map((o) => o.id)))}
+                onApneVurdering={(v) =>
+                  v.type === "muntlig"
+                    ? onApneSamtaler(v.skolearFagId)
+                    : arkstabel.apneVurdering(v.id)
+                }
                 onMeny={(okt, x, y) => setMeny({ okt, x, y })}
               />
             )}
@@ -695,6 +704,7 @@ function Liste({
   onMerk,
   onMerkSpenn,
   onMerkAlle,
+  onApneVurdering,
   onMeny,
 }: {
   okter: Okt[];
@@ -718,6 +728,8 @@ function Liste({
   onMerkSpenn: (fra: string, til: string) => void;
   /** ⌘A: alle radene i lista */
   onMerkAlle: () => void;
+  /** muntlig: trekningen i Samtaler; ellers vurderingskortet */
+  onApneVurdering: (v: OktVurdering) => void;
   onMeny: (okt: Okt, x: number, y: number) => void;
 }) {
   const [apen, setApen] = useState<string | null>(null);
@@ -858,7 +870,14 @@ function Liste({
                     e.preventDefault();
                     onMeny(o, e.clientX, e.clientY);
                   }}
-                  style={kolonner}
+                  style={{
+                    ...kolonner,
+                    // Gyllen strek til venstre på økter med vurdering (§6).
+                    boxShadow:
+                      vurd.length > 0
+                        ? "inset 3px 0 0 var(--color-vurdering)"
+                        : undefined,
+                  }}
                   className={`grid h-[30px] cursor-default items-center gap-x-3 px-2 text-[calc(13px*var(--tekst-skala))] tabular-nums ${
                     erApen
                       ? "rounded-t-lg bg-flate"
@@ -866,7 +885,9 @@ function Liste({
                         ? "border-b border-linje-svak bg-valgt"
                         : valgt === o.id
                           ? "border-b border-linje-svak bg-flate-svak"
-                          : "border-b border-linje-svak hover:bg-flate-svak"
+                          : vurd.length > 0
+                            ? "border-b border-linje-svak bg-vurdering-flate hover:bg-flate-svak"
+                            : "border-b border-linje-svak hover:bg-flate-svak"
                   }`}
                 >
                   <span className="text-blekk-dempet">{ukenummer(o.dato)}</span>
@@ -888,35 +909,52 @@ function Liste({
                       <Kappet verdi={o.fagKode} klasse="font-medium" />
                     </span>
                   )}
-                  <input
-                    data-tema
-                    defaultValue={o.tema ?? ""}
-                    key={o.tema ?? ""}
-                    placeholder="Skriv tema …"
-                    title={o.tema ?? undefined}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        hopp(e.currentTarget, e.shiftKey ? -1 : 1);
-                      }
-                      if (e.key === "Escape") {
-                        e.currentTarget.value = o.tema ?? "";
-                        e.currentTarget.blur();
-                      }
-                    }}
-                    onBlur={(e) => {
-                      const ny = e.target.value.trim() || null;
-                      if (ny !== o.tema) onTema(o.id, ny);
-                    }}
-                    className="-mx-1 min-w-0 truncate rounded border border-transparent bg-transparent px-1 py-0.5 outline-none placeholder:text-blekk-svakest hover:border-linje focus:border-aksent focus:bg-ark"
-                  />
+                  {/*
+                    Vurderingsikonet henger ut i mellomrommet foran temaet,
+                    så alle titlene starter på samme linje (§6).
+                  */}
+                  <span className="relative flex min-w-0 items-center">
+                    {vurd.length > 0 && (
+                      <Vurderingsikon
+                        type={vurd[0].type}
+                        klasse="absolute -left-[21px] top-1/2 -mt-2"
+                      />
+                    )}
+                    <input
+                      data-tema
+                      defaultValue={o.tema ?? ""}
+                      key={o.tema ?? ""}
+                      placeholder="Skriv tema …"
+                      title={o.tema ?? undefined}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          hopp(e.currentTarget, e.shiftKey ? -1 : 1);
+                        }
+                        if (e.key === "Escape") {
+                          e.currentTarget.value = o.tema ?? "";
+                          e.currentTarget.blur();
+                        }
+                      }}
+                      onBlur={(e) => {
+                        const ny = e.target.value.trim() || null;
+                        if (ny !== o.tema) onTema(o.id, ny);
+                      }}
+                      className={`-mx-1 w-full min-w-0 truncate rounded border border-transparent bg-transparent px-1 py-0.5 outline-none placeholder:text-blekk-svakest hover:border-linje focus:border-aksent focus:bg-ark ${
+                        vurd.length > 0 ? "font-semibold" : ""
+                      }`}
+                    />
+                  </span>
                   <span className="min-w-0">
                     {per && <Periodemerke navn={per.navn} farge={per.farge} />}
                   </span>
+                  {/* Bare typen; temaet står i titten og på vurderingen. */}
                   <Kappet
-                    verdi={vurd.map((v) => v.tittel).join(", ")}
+                    verdi={[
+                      ...new Set(vurd.map((v) => vurderingstype(v.type))),
+                    ].join(", ")}
                     tom=""
-                    klasse="text-[calc(12.5px*var(--tekst-skala))] font-semibold text-varsel"
+                    klasse="text-[calc(12.5px*var(--tekst-skala))] font-semibold text-vurdering-tekst"
                   />
                   {vis.has("varighet") && (
                     <span className="text-right text-blekk-dempet">
@@ -950,6 +988,7 @@ function Liste({
                     alle={alle}
                     vurderinger={vurd}
                     onApne={() => onVelg(o.id)}
+                    onApneVurdering={onApneVurdering}
                   />
                 </Utfold>
               </div>
@@ -971,18 +1010,28 @@ function Titt({
   alle,
   vurderinger,
   onApne,
+  onApneVurdering,
 }: {
   okt: Okt;
   alle: Okt[];
   vurderinger: OktVurdering[];
   onApne: () => void;
+  onApneVurdering: (v: OktVurdering) => void;
 }) {
   const forrige = forrigeOkt(okt, alle);
   const slutt = okt.klokkeslett
     ? leggTilMin(okt.klokkeslett, okt.varighetMin)
     : null;
   return (
-    <div className="mb-2 overflow-hidden rounded-b-lg bg-flate text-[calc(12.5px*var(--tekst-skala))] leading-normal shadow-[0_1px_0_var(--color-linje-medium)]">
+    <div
+      className="mb-2 overflow-hidden rounded-b-lg bg-flate text-[calc(12.5px*var(--tekst-skala))] leading-normal"
+      style={{
+        boxShadow:
+          vurderinger.length > 0
+            ? "inset 3px 0 0 var(--color-vurdering), 0 1px 0 var(--color-linje-medium)"
+            : "0 1px 0 var(--color-linje-medium)",
+      }}
+    >
       <div className="grid grid-cols-2 gap-x-8 pb-3 pl-[74px] pr-3.5 pt-2">
         <div className="grid grid-cols-[96px_minmax(0,1fr)] content-start gap-x-3 gap-y-1.5">
           <span className="text-blekk-dempet">Dato</span>
@@ -998,8 +1047,17 @@ function Titt({
           {vurderinger.length > 0 && (
             <>
               <span className="text-blekk-dempet">Vurdering</span>
-              <span className="font-medium text-varsel">
-                {vurderinger.map((v) => v.tittel).join(", ")}
+              <span className="flex flex-col gap-0.5">
+                {vurderinger.map((v) => (
+                  <button
+                    key={v.id}
+                    onClick={() => onApneVurdering(v)}
+                    className="text-left font-medium text-vurdering-tekst hover:underline"
+                  >
+                    {v.tittel} — Åpne i{" "}
+                    <i>{v.type === "muntlig" ? "Samtaler" : "Vurderinger"}</i> →
+                  </button>
+                ))}
               </span>
             </>
           )}

@@ -74,6 +74,10 @@
   --color-flate: #f4f2f9;
   --color-flate-svak: #f0eef6;
   --color-valgt: #e3ddf0;
+  /* Vurderinger i lister og kort (DESIGN.md §6): ikon, strek og grunn. */
+  --color-vurdering: #c9922e;
+  --color-vurdering-flate: #fdf8ee;
+  --color-vurdering-tekst: #8a5a00;
   /* Tastestripa nederst på flater med egne taster (DESIGN.md §6). */
   --color-stripe: #ece9f3;
 
@@ -213,6 +217,9 @@
     --color-flate-svak: #221e2e;
     --color-valgt: #352c50;
     --color-stripe: #2a2539;
+    --color-vurdering: #d6a648;
+    --color-vurdering-flate: #2b2418;
+    --color-vurdering-tekst: #e3b55c;
 
     --color-linje-svak: #252030;
     --color-linje: #3a3450;

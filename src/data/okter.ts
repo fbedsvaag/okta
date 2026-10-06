@@ -493,6 +493,8 @@ export type OktVurdering = {
   frist: string | null;
   oktId: string;
   skolearFagId: string;
+  /** muntlig | skriftlig | praktisk; null når typen ikke er satt */
+  type: "skriftlig" | "muntlig" | "praktisk" | null;
 };
 
 /**
@@ -509,7 +511,7 @@ export async function hentOktVurderinger(
 ): Promise<Map<string, OktVurdering[]>> {
   const alle = await hent<OktVurdering>(
     `SELECT v.id, v.tittel, v.frist, vo.okt_id AS oktId,
-            v.skolear_fag_id AS skolearFagId
+            v.skolear_fag_id AS skolearFagId, v.type
        FROM vurdering_okt vo
        JOIN vurdering v ON v.id = vo.vurdering_id AND v.slettet IS NULL
        JOIN skolear_fag sf ON sf.id = v.skolear_fag_id AND sf.slettet IS NULL
