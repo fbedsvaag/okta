@@ -757,6 +757,17 @@ html {
 }
 
 /*
+ * Tiden som har gått i uka på I dag (ARBEIDSLISTE 9.3): fagfargene dempes
+ * og et lyst slør legges over. Ikke grått — øktene skal fortsatt kjennes
+ * igjen på fargen.
+ */
+.passert-slor {
+  -webkit-backdrop-filter: saturate(0.35);
+  backdrop-filter: saturate(0.35);
+  background: color-mix(in srgb, var(--color-ark) 35%, transparent);
+}
+
+/*
  * Matt glass: vinduer som legger seg over alt — ⌘K og notatet fra
  * samtalen. Tettere og nesten uten fargemetning, mer frostet enn flytende.
  * Teppet bak tones ned og blir bare så vidt uskarpt.

@@ -194,19 +194,39 @@ export function Ukelinje({
       <div className="flex">
         {/* Klokka står fast til venstre mens ukene glir forbi. */}
         <div
-          className="w-8 shrink-0"
+          className="w-10 shrink-0"
           style={{ height: hoyde + topp, paddingTop: topp }}
         >
           <div className="relative" style={{ height: hoyde }}>
-            {Array.from({ length: til - fra }, (_, i) => (
+            {Array.from({ length: til - fra }, (_, i) => {
+              // Timen nærmest nå skjules når klokkeslettet står i aksen,
+              // så de ikke ligger oppå hverandre.
+              const skjult =
+                synlig === denneUka &&
+                naa >= fra &&
+                naa <= til &&
+                Math.round(naa) === fra + i;
+              return (
+                <span
+                  key={i}
+                  className={`absolute right-1.5 -translate-y-1/2 text-mikro tabular-nums text-blekk-svak ${
+                    skjult ? "invisible" : ""
+                  }`}
+                  style={{ top: i * time }}
+                >
+                  {String(fra + i).padStart(2, "0")}
+                </span>
+              );
+            })}
+            {/* Klokka nå, i aksen (ARBEIDSLISTE 9.3). */}
+            {synlig === denneUka && naa >= fra && naa <= til && (
               <span
-                key={i}
-                className="absolute -translate-y-1/2 text-mikro tabular-nums text-blekk-svakest"
-                style={{ top: i * time }}
+                className="absolute right-0.5 z-10 -translate-y-1/2 rounded-liten bg-aksent px-1 text-mikro font-medium tabular-nums leading-tight text-ark"
+                style={{ top: (naa - fra) * time }}
               >
-                {String(fra + i).padStart(2, "0")}
+                {klokke(naa)}
               </span>
-            ))}
+            )}
           </div>
         </div>
 
@@ -333,12 +353,27 @@ function Dag({
               fra={fra}
               bane={b}
               baner={baner.length}
-              dempet={passert}
               time={time}
               valgt={valgt === o.id}
               onApne={() => onApneOkt(o.id)}
             />
           )),
+        )}
+        {/*
+          Tiden som har gått: fagfargene dempes og et lyst slør legges over
+          (ARBEIDSLISTE 9.3) — ikke grått. Hele dagen for dager som er
+          passert, fram til nå i dag.
+        */}
+        {(passert || (erIdag && naa !== null)) && (
+          <div
+            aria-hidden
+            className="passert-slor pointer-events-none absolute inset-x-0 top-0 z-[5]"
+            style={{
+              height: passert
+                ? hoyde
+                : Math.min(Math.max((naa! - fra) * time, 0), hoyde),
+            }}
+          />
         )}
         {naa !== null && erIdag && (
           <Naalinje naa={naa} fra={fra} hoyde={hoyde} time={time} sterk />
@@ -368,10 +403,8 @@ function Naalinje({
 }) {
   const topp = (naa - fra) * time;
   if (topp < 0 || topp > hoyde) return null;
-  const t = Math.floor(naa);
-  const m = Math.floor((naa - t) * 60);
-  const klokke = `${String(t).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
 
+  // Klokkeslettet står i aksen til venstre, ikke her (ARBEIDSLISTE 9.3).
   return (
     <div
       aria-hidden
@@ -380,17 +413,21 @@ function Naalinje({
     >
       {sterk ? (
         <>
-          <span className="absolute -top-px left-0 right-0 h-[2px] bg-aksent" />
-          <span className="absolute -left-[3px] -top-[3px] h-2 w-2 rounded-full bg-aksent" />
-          <span className="absolute -top-4 left-1 rounded-liten bg-aksent px-1 text-mikro font-medium tabular-nums leading-tight text-ark">
-            {klokke}
-          </span>
+          <span className="absolute -top-[1.5px] left-0 right-0 h-[3px] rounded-full bg-aksent" />
+          <span className="absolute -left-[4px] -top-[4px] h-[9px] w-[9px] rounded-full bg-aksent" />
         </>
       ) : (
-        <span className="absolute left-0 right-0 top-0 h-px bg-aksent/30" />
+        <span className="absolute left-0 right-0 top-0 h-px bg-aksent/40" />
       )}
     </div>
   );
+}
+
+/** «10:40» fra timer siden midnatt. */
+function klokke(naa: number): string {
+  const t = Math.floor(naa);
+  const m = Math.floor((naa - t) * 60);
+  return `${String(t).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
 }
 
 /** Klokka nå i timer fra midnatt, oppdatert hvert halve minutt. */
@@ -420,7 +457,6 @@ function Blokk({
   fra,
   bane,
   baner,
-  dempet,
   time,
   valgt,
   onApne,
@@ -429,7 +465,6 @@ function Blokk({
   fra: number;
   bane: number;
   baner: number;
-  dempet: boolean;
   time: number;
   valgt: boolean;
   onApne: () => void;
@@ -449,9 +484,7 @@ function Blokk({
       }${okt.sted ? ` · ${okt.sted}` : ""}`}
       className={`absolute overflow-hidden rounded-liten bg-ark px-1.5 py-0.5 text-left text-mikro leading-tight hover:brightness-95 ${
         utenTid ? "border border-dashed border-linje-sterk" : ""
-      } ${dempet && !valgt ? "opacity-55" : ""} ${
-        valgt ? "z-10 ring-2 ring-aksent" : ""
-      }`}
+      } ${valgt ? "z-10 ring-2 ring-aksent" : ""}`}
       style={{
         top: topp + 1,
         height: hoyde,
