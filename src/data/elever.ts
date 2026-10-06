@@ -498,10 +498,12 @@ export async function tellSkaringerIFag(
 export async function settKjonn(
   elevId: string,
   kjonn: "j" | "g" | null,
+  /** «gjettet» fra importen (9.8), ellers satt av læreren */
+  kilde: "satt" | "gjettet" = "satt",
 ): Promise<void> {
   await oppdater("elev", elevId, {
     kjonn,
-    kjonn_kilde: kjonn === null ? null : "satt",
+    kjonn_kilde: kjonn === null ? null : kilde,
   });
   varsleElever();
 }

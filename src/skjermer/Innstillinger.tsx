@@ -1043,6 +1043,10 @@ export function Innstillinger({
               Alle data ligger lokalt på denne maskinen.
             </span>
           </footer>
+          <p className="mt-2 text-etikett text-blekk-svak">
+            Kjønn gjettes fra fornavn med navnestatistikk fra Statistisk
+            sentralbyrå (SSB), CC BY 4.0.
+          </p>
         </Side.Provider>
       </div>
     </div>

@@ -66,6 +66,12 @@ describe("kjønn på eleven", () => {
     expect((await hentElevGrunnlag(tony))?.kjonnKilde).toBe("satt");
   });
 
+  it("merkes som gjettet når importen setter det", async () => {
+    await settKjonn(tony, "g", "gjettet");
+    const e = await hentElevGrunnlag(tony);
+    expect([e?.kjonn, e?.kjonnKilde]).toEqual(["g", "gjettet"]);
+  });
+
   it("er ikke med i årsarkivet", async () => {
     await settKjonn(tony, "g");
     const o = await opprettOkt(fag, "MFL1", "2026-09-01", "08:15", 90);

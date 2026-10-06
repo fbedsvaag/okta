@@ -8,7 +8,8 @@ import {
   type Importrad,
 } from "../import/utfor";
 import type { EksisterendeElev } from "../import/duplikat";
-import { frakobleFag, hentForDuplikatsjekk } from "../data/elever";
+import { frakobleFag, hentForDuplikatsjekk, settKjonn } from "../data/elever";
+import { gjettKjonn, nesteKjonn, type Kjonnsvalg } from "../import/kjonn";
 import { settElevbilde } from "../data/elevbilde";
 import { lesInschool, navnenokkel, somLimInnTekst } from "../import/inschool";
 import { Elevbilde } from "../ui/Elevbilde";
@@ -53,6 +54,9 @@ export function LimInn({
   // Lagres på elevene først når importen bekreftes.
   const [bilder, setBilder] = useState<Map<string, string>>(new Map());
   const [pdfMelding, setPdfMelding] = useState<string | null>(null);
+  // Kjønnet for hver linje (9.8): gjettet fra fornavnet, eller valgt. Bare
+  // nye elever får det — de som finnes fra før, beholder sitt.
+  const [kjonn, setKjonn] = useState<Map<number, Kjonnsvalg>>(new Map());
   const [leserPdf, setLeserPdf] = useState(false);
 
   /**
@@ -119,6 +123,14 @@ export function LimInn({
 
     const nye = tilImportrader(vurderinger, klasse.trim());
     setRader(nye);
+    setKjonn(
+      new Map(
+        nye.map((r) => [
+          r.linje.linjenr,
+          { k: gjettKjonn(r.linje.fornavn), bekreftet: false },
+        ]),
+      ),
+    );
     setHoppet(hoppetOver.length);
     const iFaget = fagId
       ? eksisterende.filter((e) => e.skolearFagIder.includes(fagId))
@@ -147,6 +159,13 @@ export function LimInn({
             ).filter((id) => tasUt.has(id))
           : [];
       for (const id of utIder) await frakobleFag(id, fagId);
+      // Kjønn bare på nye elever; de som fantes fra før, beholder sitt.
+      for (const rad of rader) {
+        const id = r.elevIder.get(rad.linje.linjenr);
+        const v = kjonn.get(rad.linje.linjenr);
+        if (id && rad.valgt === "ny" && !rad.hopp && v?.k)
+          await settKjonn(id, v.k, v.bekreftet ? "satt" : "gjettet");
+      }
       let medBilde = 0;
       for (const rad of rader) {
         const id = r.elevIder.get(rad.linje.linjenr);
@@ -188,6 +207,12 @@ export function LimInn({
       (r) => !r.hopp && r.status !== "allerede" && r.valgt !== "ny",
     );
     const over = rader.filter((r) => r.hopp || r.status === "allerede");
+    // Tellingen øverst: bare de nye elevene får kjønn fra importen.
+    const kjonnNye = nye.map(
+      (r) => kjonn.get(r.linje.linjenr) ?? { k: null, bekreftet: false },
+    );
+    const maVelges = kjonnNye.filter((v) => !v.k).length;
+    const gjettet = kjonnNye.filter((v) => v.k && !v.bekreftet).length;
 
     return (
       <div className="mx-auto min-h-0 w-full max-w-4xl flex-1 overflow-auto">
@@ -198,11 +223,53 @@ export function LimInn({
           {hoppet > 0 && ` · ${hoppet} overskriftslinjer ignorert`}
         </p>
 
+        {/*
+          Kjønn (9.8): gjettet fra fornavnet med SSBs navneliste, som følger
+          appen. Brukes bare til «Bland jenter og gutter» i klassekartet.
+        */}
+        {nye.length > 0 && (
+          <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-stor bg-flate px-3.5 py-2.5 text-liten">
+            <span className="min-w-0 flex-1 text-blekk-dempet">
+              Kjønn er gjettet fra fornavnet med SSBs navneliste, som følger med
+              appen. Ingenting sendes ut. Brukes bare til «bland jenter og
+              gutter» i klassekartet, og vises aldri på utskrift eller eksport.
+              Klikk for å bytte.
+            </span>
+            <span
+              className={maVelges > 0 ? "text-varsel" : "text-blekk-dempet"}
+            >
+              {maVelges > 0
+                ? `${maVelges} må velges · ${gjettet} gjettet`
+                : gjettet > 0
+                  ? `${gjettet} gjettet, resten bekreftet`
+                  : "Alle bekreftet"}
+            </span>
+            <button
+              disabled={gjettet === 0}
+              onClick={() =>
+                setKjonn(
+                  (m) =>
+                    new Map(
+                      [...m].map(([n, v]) => [
+                        n,
+                        v.k ? { ...v, bekreftet: true } : v,
+                      ]),
+                    ),
+                )
+              }
+              className="flex h-[30px] items-center rounded-full border border-linje bg-ark px-3 text-[13px] hover:bg-flate disabled:opacity-40"
+            >
+              Bekreft alle gjettede
+            </button>
+          </div>
+        )}
+
         <table className="mt-4 w-full text-brod">
           <thead>
             <tr className="border-b border-linje text-left text-etikett uppercase tracking-etikett text-blekk-dempet">
               <th className="py-1 font-normal">Navn</th>
               <th className="py-1 font-normal">Klasse</th>
+              <th className="py-1 font-normal">Kjønn</th>
               <th className="py-1 font-normal">Status</th>
               <th className="py-1 font-normal">Handling</th>
             </tr>
@@ -213,6 +280,24 @@ export function LimInn({
                 key={rad.linje.linjenr}
                 rad={rad}
                 bilde={bildeFor(rad)}
+                kjonn={
+                  kjonn.get(rad.linje.linjenr) ?? { k: null, bekreftet: false }
+                }
+                onKjonn={() =>
+                  setKjonn((m) => {
+                    const ny = new Map(m);
+                    ny.set(
+                      rad.linje.linjenr,
+                      nesteKjonn(
+                        m.get(rad.linje.linjenr) ?? {
+                          k: null,
+                          bekreftet: false,
+                        },
+                      ),
+                    );
+                    return ny;
+                  })
+                }
                 onEndre={(f) => endre(i, f)}
               />
             ))}
@@ -420,11 +505,15 @@ export function LimInn({
 function ForhandsvisRad({
   rad,
   bilde,
+  kjonn,
+  onKjonn,
   onEndre,
 }: {
   rad: Importrad;
   /** bildet fra PDF-en, når det finnes */
   bilde?: string;
+  kjonn: Kjonnsvalg;
+  onKjonn: () => void;
   onEndre: (felter: Partial<Importrad>) => void;
 }) {
   const merke = {
@@ -474,6 +563,18 @@ function ForhandsvisRad({
           onChange={(e) => onEndre({ klasse: e.target.value })}
           className="w-20 rounded border border-transparent px-1 py-0.5 tabular-nums hover:border-linje focus:border-aksent focus:outline-none"
         />
+      </td>
+      <td className="py-1.5">
+        {rad.valgt === "ny" && !rad.hopp ? (
+          <Kjonnspille verdi={kjonn} onKlikk={onKjonn} />
+        ) : (
+          <span
+            className="text-liten text-blekk-svak"
+            title="Eleven finnes fra før og beholder det som står der"
+          >
+            fra før
+          </span>
+        )}
       </td>
       <td className={`py-1.5 ${merke.stil}`}>
         {merke.tekst}
@@ -588,5 +689,33 @@ function Navnebytte({
       />
       bruk navnet fra lista
     </label>
+  );
+}
+
+/**
+ * Kjønnet i forhåndsvisningen (lerretet «Import»): stiplet pille = gjettet,
+ * fylt = bekreftet, gul «Velg» = navnet brukes om begge. Klikk bytter
+ * Jente → Gutt → Ikke satt.
+ */
+function Kjonnspille({
+  verdi,
+  onKlikk,
+}: {
+  verdi: Kjonnsvalg;
+  onKlikk: () => void;
+}) {
+  const stil = !verdi.k
+    ? "bg-[color-mix(in_srgb,var(--color-lys-gul)_18%,var(--color-ark))] text-varsel"
+    : verdi.bekreftet
+      ? "bg-valgt font-medium text-aksent"
+      : "border border-dashed border-linje-sterk text-blekk";
+  return (
+    <button
+      onClick={onKlikk}
+      title="Klikk for å bytte"
+      className={`inline-flex h-6 items-center rounded-full px-2.5 text-[12.5px] ${stil}`}
+    >
+      {!verdi.k ? "Velg" : verdi.k === "j" ? "Jente" : "Gutt"}
+    </button>
   );
 }
