@@ -1,7 +1,6 @@
 # Oppsettfil — spec og oppskrift
 
-Status: **forslag 05.10.2026, ikke godkjent.** Spec-teksten i del A skal inn
-i SPEC.md (forslag: ny §8.2) før koden skrives, slik arbeidsmåten sier.
+Status: **del A står i SPEC.md som §8.2** (lagt inn 06.10.2026 etter eierens ønske).
 Del B er oppskriften til Claude Code.
 
 Tegnet i lerretet «Økta — redesign»: Innstillinger › Del oppsett, og første

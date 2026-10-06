@@ -1761,6 +1761,111 @@ døgn, behold de siste 30.
 
 ---
 
+### 8.2 Oppsettfil
+
+Flere detaljer og oppskriften til Claude Code står i `docs/oppsettfil.md`.
+
+#### Hva og hvorfor
+
+En lærer som allerede bruker Økta kan lage en **oppsettfil** og gi den til en
+kollega. Kollegaen drar fila inn i første steg av oppsettet, og slipper å
+skrive inn skoleåret, fridagene og faglista på skolen selv. Målet er at en
+kollega som aldri har sett appen, kan sette den opp alene på ti minutter.
+
+#### Personvern — det viktigste
+
+Fila inneholder **aldri** noe om elever: ingen elever, klasser, fagvalg,
+skåringer, vurderinger, resultater, notater, møtelogg, gjøremål, samtaler,
+elevbilder eller elevkoder. Heller ikke øktene, øktlogger, planer eller
+lærerens navn på fagene.
+
+Dette sikres med en **hviteliste**, ikke en svarteliste: eksporten bygger
+fila felt for felt fra en fast liste. Importen avviser fila hvis den har
+nøkler som ikke står på lista. En test passer på at ingen elevtabell
+noen gang leses under eksport.
+
+#### Innhold
+
+| Del | Felt | Kilde |
+|---|---|---|
+| Skoleår | `navn`, `start`, `slutt` | `skolear` (det aktive) |
+| Fridager | `navn`, `type`, `fra`, `til` | `fridag` i det skoleåret |
+| Fag | `kode`, `navn`, `alias`, `grep_kode` | `fag` |
+| | `arstimetall`, `standard_varighet_min` | `skolear_fag` for samme år |
+| Innstillinger | `standard_varighet_min` | `innstilling` |
+| Skalaer (valgfritt) | `navn`, `bruksomrade`, `verdier[]` | `skala` + `skalaverdi`, bare ikke-innebygde |
+
+Fargen på fagene er med vilje **ikke** med: den velges automatisk hos
+mottakeren og er personlig. Rom er heller ikke med: rom er fritekst per fag
+og lærer i dag (`skolear_fag.rom`), ikke en liste for skolen.
+
+Fridager tar med `helligdag` når den typen finnes (ARBEIDSLISTE §5.9).
+
+#### Format
+
+Én fil, UTF-8, JSON, endelse `.okta`. Filnavn foreslås som
+`<skole>-oppsett <skoleår>.okta`, for eksempel `BPG-oppsett 2026-27.okta`.
+
+```json
+{
+  "format": "okta-oppsett",
+  "versjon": 1,
+  "laget": "2026-10-05T18:00:00+02:00",
+  "laget_av": "Fredrik Bedsvaag",
+  "skole": "BPG",
+  "skolear": { "navn": "2026/27", "start": "2026-08-19", "slutt": "2027-06-18" },
+  "fridager": [
+    { "navn": "Høstferie", "type": "ferie", "fra": "2026-09-28", "til": "2026-10-02" }
+  ],
+  "fag": [
+    { "kode": "MFL2", "navn": "Markedsføring og ledelse 2", "alias": null,
+      "grep_kode": "MFL1Z03", "arstimetall": 140, "standard_varighet_min": 180 }
+  ],
+  "innstillinger": { "standard_varighet_min": 180 },
+  "skalaer": []
+}
+```
+
+- Ingen `id`-er i fila. Mottakeren lager nye UUID-er og stempler (§3.1).
+- `laget_av` og `skole` er bare til visning («Fra Fredrik Bedsvaag»).
+  `skole` skrives inn i eksportdialogen; den finnes ikke i basen.
+- `versjon` økes bare når formatet endres. Importen avviser høyere
+  versjoner enn den kjenner, med en forståelig melding.
+
+#### Eksport (Innstillinger › Del oppsett)
+
+Avkrysning for hver del (skoleår og fridager, fag, øktlengde, skalaer).
+Elevlåsen står synlig under: «Elever, notater, skåringer og vurderinger blir
+aldri med.» Knappen «Lag oppsettfil …» åpner lagre-dialogen og skriver fila
+med den eksisterende `skriv_fil`-kommandoen.
+
+#### Import (oppsettets første steg, og Del oppsett › «Les inn oppsettfil …»)
+
+Fire trinn, i denne rekkefølgen:
+
+1. **Les** fila (filvelger eller dra og slipp, File API i webview, slik
+   InSchool-PDF-en leses i `LimInn.tsx`).
+2. **Sjekk** den: riktig `format`, kjent `versjon`, bare kjente nøkler,
+   gyldige ISO-datoer, `start` før `slutt`, fridager innenfor skoleåret,
+   ingen like fagkoder. Feil vises på norsk med hva som er galt.
+3. **Vis hva som skjer** før noe skrives: «Skoleåret 2026/27 opprettes.
+   9 fridager. 22 fag legges i fagbanken, 3 finnes fra før.»
+4. **Skriv** alt i én transaksjon. Går noe galt, skrives ingenting.
+
+Regler for det som finnes fra før:
+
+- **Skoleår** med samme `navn`: datoene endres ikke. Er de ulike, sies det i
+  trinn 3. Bare fridager som mangler (samme `navn` + `fra`) legges til.
+- **Fag** med samme `kode` (uten hensyn til store/små bokstaver) eller samme
+  `grep_kode`: hoppes over, og nevnes i trinn 3.
+- **Global øktlengde**: settes bare hvis den ikke er satt.
+- **Skalaer** med samme `navn`: hoppes over.
+
+Fagene havner i **fagbanken**, ikke automatisk i «fag i år». I oppsettet
+(steg 3) står de som forslag mottakeren krysser av for.
+
+Importen er trygg å kjøre to ganger: andre gang skjer ingenting.
+
 ## 9. Forberedt for synk (bygges ikke i v1)
 
 Synk mellom maskiner, og senere mellom kolleger, er et uttalt mål på sikt. Tre
