@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<title>Økta — bevegelse</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+:root{--pal:#4a3d7d;--pal-lys:#e3ddf0;--pal-mid:#b2a8d2;--ease-sprett:cubic-bezier(.34,1.32,.5,1)}
+.kort{position:relative;border-radius:18px;background:#fff;box-shadow:0 1px 3px rgba(36,31,51,.10),0 10px 30px rgba(36,31,51,.08);padding:22px 24px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.t{font-size:15px;font-weight:600}
+.s{font-size:12.5px;color:#645d7a;line-height:1.45}
+.glide{transition:transform 340ms var(--ease-sprett),width 340ms var(--ease-sprett)}
+.pt{all:unset;position:relative;z-index:1;display:flex;align-items:center;gap:9px;height:34px;padding:0 12px;border-radius:10px;color:#2e2840;font-size:14px;cursor:pointer;box-sizing:border-box;width:100%}
+.kbd{margin-left:auto;font-size:11px;color:#6b6482;letter-spacing:.04em}
+.seg{position:relative;display:inline-flex;padding:2px;border-radius:999px;background:rgba(36,31,51,.06)}
+.seg button{all:unset;position:relative;z-index:1;cursor:pointer;height:28px;width:92px;display:inline-flex;align-items:center;justify-content:center;font-size:13px;color:#645d7a;transition:color 200ms}
+.seg button.on{color:#241f33;font-weight:500}
+.tommel{position:absolute;top:2px;left:2px;height:28px;width:92px;border-radius:999px;background:#fff;box-shadow:0 1px 3px rgba(36,31,51,.16)}
+.treff{position:relative;z-index:1;display:flex;align-items:center;gap:12px;height:40px;padding:0 14px;font-size:14px;cursor:pointer}
+.av{width:26px;height:26px;border-radius:50%;overflow:hidden;flex:none;background:var(--pal-lys)}
+.plass{position:absolute;width:112px;height:40px;border-radius:8px;background:#fff;box-shadow:0 1px 2px rgba(36,31,51,.12),inset 0 0 0 1px #ece9f3;display:flex;align-items:center;gap:7px;padding:0 8px;box-sizing:border-box;font-size:12.5px;transition:transform 560ms var(--ease-sprett)}
+.pult{position:absolute;width:244px;height:52px;border-radius:10px;background:#f4f2f9;box-shadow:inset 0 0 0 1px #e5e2ee}
+.btn{display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 14px;border-radius:999px;border:1px solid #4a3d7d;background:#4a3d7d;color:#fff;font:inherit;font-size:13px;font-weight:500;cursor:pointer}
+.sub{display:grid;grid-template-rows:0fr;transition:grid-template-rows 420ms var(--ease-sprett)}
+.sub.apen{grid-template-rows:1fr}
+.sub>div{overflow:hidden;min-height:0}
+.ell{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.liste:focus{outline:none}
+@media (prefers-reduced-motion: reduce){.glide,.plass,.sub{transition:none!important}}
+</style>
+</helmet>
+<div style="width: 1440px; min-height: 900px; box-sizing: border-box; padding: 40px 48px; background: #f4f2f9; font-family: 'Geist', -apple-system, sans-serif; color: #241f33; display: flex; flex-direction: column; gap: 24px">
+<div style="display: flex; align-items: baseline; gap: 16px"><h1 style="margin: 0; font-size: 30px; font-weight: 300; letter-spacing: -0.015em">Bevegelse</h1><span style="font-size: 15px; color: #645d7a">Samme S-kurve overalt der noe flytter seg: <code style="font-size: 13px">cubic-bezier(.34, 1.32, .5, 1)</code>. Prøv i Play.</span></div>
+<div style="display: grid; grid-template-columns: 300px 1fr 1fr; grid-template-rows: auto auto; gap: 24px">
+
+<!-- 1 Sidemeny -->
+<div class="kort" style="grid-row: span 2">
+<div class="t">Sidemenyen</div>
+<div class="s">Det valgte punktet glir til det nye. Undermenyen åpner seg med samme kurve.</div>
+<div style="position: relative; padding: 10px 8px; border-radius: 20px; background: linear-gradient(160deg, #cfc7e6, #b9d6d2)">
+<div style="position: relative; display: flex; flex-direction: column; gap: 2px; padding: 8px; border-radius: 16px; background: rgba(255,255,255,.5); border: 1px solid rgba(255,255,255,.75)">
+<div class="glide" aria-hidden="true" style="position: absolute; left: 8px; right: 8px; top: 8px; height: 34px; border-radius: 10px; background: rgba(255,255,255,.92); box-shadow: 0 1px 3px rgba(36,31,51,.14), inset 0 1px 0 #fff; transform: translateY({{menyY}})"></div>
+<sc-for list="{{meny}}" as="m" hint-placeholder-count="6">
+<button class="pt" onClick="{{m.velg}}" style="font-weight: {{m.vekt}}">{{m.navn}}<span class="kbd">{{m.tast}}</span></button>
+<sc-if value="{{m.harSub}}" hint-placeholder-val="{{ false }}">
+<div class="sub {{m.subKlasse}}"><div><div style="padding: 2px 0 6px 22px; display: flex; flex-direction: column; gap: 2px; font-size: 13px">
+<div style="display: flex; align-items: center; gap: 8px; height: 26px; padding: 0 10px"><span style="width: 8px; height: 8px; border-radius: 2px; background: #c9c2dd"></span>Alle fag</div>
+<div style="display: flex; align-items: center; gap: 8px; height: 26px; padding: 0 10px"><span style="width: 8px; height: 8px; border-radius: 2px; background: #2e6a8e"></span>MFL1</div>
+<div style="display: flex; align-items: center; gap: 8px; height: 26px; padding: 0 10px"><span style="width: 8px; height: 8px; border-radius: 2px; background: #9a5a2c"></span>MFL2</div>
+<div style="display: flex; align-items: center; gap: 8px; height: 26px; padding: 0 10px"><span style="width: 8px; height: 8px; border-radius: 2px; background: #3d7a5a"></span>ENG1</div>
+</div></div></div>
+</sc-if>
+</sc-for>
+</div>
+</div>
+</div>
+
+<!-- 2 Segmentkontroller -->
+<div class="kort">
+<div class="t">Brytere</div>
+<div class="s">Den hvite «tommelen» glir under teksten. Gjelder Liste | Kalender, Uke | Måned, Plasser | Grupper, Fordel etter og alle andre brytere.</div>
+<div style="display: flex; flex-direction: column; gap: 12px; align-items: flex-start">
+<div class="seg"><span class="tommel glide" style="transform: translateX({{seg1X}})"></span><button class="{{s1a}}" onClick="{{velg1a}}">Liste</button><button class="{{s1b}}" onClick="{{velg1b}}">Kalender</button></div>
+<div class="seg"><span class="tommel glide" style="transform: translateX({{seg2X}})"></span><button class="{{s2a}}" onClick="{{velg2a}}">Tilfeldig</button><button class="{{s2b}}" onClick="{{velg2b}}">Spre</button><button class="{{s2c}}" onClick="{{velg2c}}">Samle</button></div>
+</div>
+</div>
+
+<!-- 3 ⌘K -->
+<div class="kort">
+<div class="t">Søk og lister med piltaster</div>
+<div class="s">Klikk i lista og bruk ↑ ↓. Samme markør i ⌘K, øktlista, elevlista og samtaletimeplanen.</div>
+<div class="liste" tabIndex="0" onKeyDown="{{sokTast}}" style="position: relative; border-radius: 16px; background: rgba(255,255,255,.8); box-shadow: inset 0 0 0 1px #ece9f3; padding: 6px 0">
+<div class="glide" aria-hidden="true" style="position: absolute; left: 6px; right: 6px; top: 6px; height: 40px; border-radius: 10px; background: rgba(74,61,125,.12); transform: translateY({{sokY}})"></div>
+<sc-for list="{{treff}}" as="t" hint-placeholder-count="4">
+<div class="treff" onClick="{{t.velg}}"><span class="av"><svg width="26" height="26" viewBox="0 0 28 28" aria-hidden="true"><path d="M4.8 28.5c.4-5 4.3-8.4 9.2-8.4s8.8 3.4 9.2 8.4z" fill="var(--pal-mid)"></path><circle cx="14" cy="12.6" r="4.5" fill="var(--pal-mid)"></circle></svg></span><span class="ell" style="flex: 1">{{t.navn}} <span style="color: #645d7a; font-size: 13px">· {{t.meta}}</span></span><span style="font-size: 12px; color: #645d7a; opacity: {{t.hint}}; transition: opacity 200ms">↵ åpne</span></div>
+</sc-for>
+</div>
+</div>
+
+<!-- 4 Klassekart -->
+<div class="kort" style="grid-column: span 2">
+<div style="display: flex; align-items: center; gap: 12px"><div class="t">Stokk på nytt</div><span style="flex: 1"></span><button class="btn" onClick="{{stokk}}">Stokk på nytt<span style="opacity: .65; font-size: 11px">⌘R</span></button></div>
+<div class="s">Elevene glir til de nye plassene samtidig, med et lite etterslep fra pult til pult, så du kan følge dem med øynene. Låste elever står stille.</div>
+<div style="position: relative; height: 196px">
+<sc-for list="{{pulter}}" as="p" hint-placeholder-count="6"><div class="pult" style="left: {{p.x}}; top: {{p.y}}"></div></sc-for>
+<sc-for list="{{elever}}" as="e" hint-placeholder-count="12">
+<div class="plass" style="transform: translate({{e.x}}, {{e.y}}); transition-delay: {{e.forsink}}; box-shadow: {{e.ring}}"><span class="av" style="width: 22px; height: 22px"><svg width="22" height="22" viewBox="0 0 28 28" aria-hidden="true"><path d="M4.8 28.5c.4-5 4.3-8.4 9.2-8.4s8.8 3.4 9.2 8.4z" fill="var(--pal-mid)"></path><circle cx="14" cy="12.6" r="4.5" fill="var(--pal-mid)"></circle></svg></span><span class="ell">{{e.navn}}</span><sc-if value="{{e.last}}" hint-placeholder-val="{{ false }}"><svg width="10" height="10" viewBox="0 0 16 16" style="margin-left: auto; flex: none"><rect x="3" y="7" width="10" height="7" rx="1.5" fill="#4a3d7d"></rect><path d="M5.5 7V5a2.5 2.5 0 015 0v2" fill="none" stroke="#4a3d7d" stroke-width="1.6"></path></svg></sc-if></div>
+</sc-for>
+</div>
+</div>
+
+</div>
+<div class="s" style="font-size: 13px">Også: utfolding av økter og undermenyer (høyde), ark som åpnes (inn fra under), og trafikklys som settes (pop). Aldri på tekst som skrives, scrolling eller tall som endres. Av med «Reduser bevegelse».</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+var MENY = [['I dag', 'G D'], ['Økter', 'G Ø'], ['Elever', 'G E'], ['Vurderinger', 'G V'], ['Samtaler', 'G S'], ['Klassekart', 'G K']];
+var TREFF = [['Christopher Moltisanti', '2STA · MFL2'], ['Christopher Moltisanti', 'ENG1'], ['Chrissy Lo Bianco', '2STB · MFL2'], ['Christian Bucco', '2STA · ENG1']];
+var NAVN = ['Adriana', 'Tony', 'Meadow', 'Silvio', 'Paulie', 'Carmela', 'Furio', 'Janice', 'Artie', 'Gloria', 'Bobby', 'Jackie'];
+var PULTER = [];
+for (var r = 0; r < 2; r++) for (var c = 0; c < 3; c++) PULTER.push({ x: 20 + c * 284, y: 20 + r * 92 });
+function seat(i) { var p = PULTER[Math.floor(i / 2)]; return { x: p.x + 6 + (i % 2) * 120, y: p.y + 6 }; }
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { m: 0, s1: 0, s2: 0, k: 0, fro: 1, last: { 0: 0, 7: 7 } }; }
+  renderVals() {
+    var self = this, st = this.state;
+    // sidemeny: økter-undermeny åpen når Økter er valgt; høyde 124 under Økter
+    var subH = 118, y = 0;
+    var pos = MENY.map(function (m, i) { var p = y; y += 36 + (i === 1 ? 2 + (st.m === 1 ? subH : 0) : 0); return p; });
+    // stokk: låste står, resten permuteres med frø
+    var fri = [], plass = {};
+    Object.keys(st.last).forEach(function (k) { plass[st.last[k]] = +k; });
+    for (var e = 0; e < NAVN.length; e++) if (!(e in plass)) fri.push(e);
+    var ledige = []; for (var s = 0; s < 12; s++) if (!Object.keys(st.last).some(function (k) { return +k === s; })) ledige.push(s);
+    var f = st.fro; fri.sort(function (a, b) { return ((a * 7 + f * 13) % 17) - ((b * 7 + f * 13) % 17); });
+    fri.forEach(function (e, i) { plass[e] = ledige[i]; });
+    return {
+      menyY: pos[st.m] + 'px',
+      meny: MENY.map(function (m, i) { return { navn: m[0], tast: m[1], vekt: i === st.m ? 500 : 400, harSub: i === 1, subKlasse: st.m === 1 ? 'apen' : '', velg: function () { self.setState({ m: i }); } }; }),
+      seg1X: (st.s1 * 92) + 'px', s1a: st.s1 === 0 ? 'on' : '', s1b: st.s1 === 1 ? 'on' : '',
+      velg1a: function () { self.setState({ s1: 0 }); }, velg1b: function () { self.setState({ s1: 1 }); },
+      seg2X: (st.s2 * 92) + 'px', s2a: st.s2 === 0 ? 'on' : '', s2b: st.s2 === 1 ? 'on' : '', s2c: st.s2 === 2 ? 'on' : '',
+      velg2a: function () { self.setState({ s2: 0 }); }, velg2b: function () { self.setState({ s2: 1 }); }, velg2c: function () { self.setState({ s2: 2 }); },
+      sokY: (st.k * 40) + 'px',
+      sokTast: function (ev) { if (ev.key === 'ArrowDown') { ev.preventDefault(); self.setState({ k: Math.min(st.k + 1, TREFF.length - 1) }); } if (ev.key === 'ArrowUp') { ev.preventDefault(); self.setState({ k: Math.max(st.k - 1, 0) }); } },
+      treff: TREFF.map(function (t, i) { return { navn: t[0], meta: t[1], hint: i === st.k ? 1 : 0, velg: function () { self.setState({ k: i }); } }; }),
+      pulter: PULTER.map(function (p) { return { x: p.x + 'px', y: p.y + 'px' }; }),
+      elever: NAVN.map(function (n, e) { var p = seat(plass[e]); var last = st.last[plass[e]] === e && (plass[e] in st.last); return { navn: n, x: p.x + 'px', y: p.y + 'px', forsink: (plass[e] * 18) + 'ms', last: last, ring: last ? 'inset 0 0 0 1.5px #4a3d7d' : '0 1px 2px rgba(36,31,51,.12), inset 0 0 0 1px #ece9f3' }; }),
+      stokk: function () { self.setState({ fro: st.fro + 1 }); }
+    };
+  }
+}
+</script>
+</body>
+</html>

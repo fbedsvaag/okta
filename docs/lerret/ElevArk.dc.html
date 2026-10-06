@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<title>Økta — elevkort</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#d4cee2}
+:root{--pal:#4a3d7d;--pal-lys:#e3ddf0;--pal-mid:#b2a8d2;--pal-svak:#f4f2f9;--ease-sprett:cubic-bezier(.34,1.32,.5,1)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;height:30px;padding:0 13px;border-radius:999px;border:1px solid #d9d4e8;background:#fff;color:#241f33;font:inherit;font-size:13px;cursor:pointer;white-space:nowrap}
+.btn.pri{background:var(--pal);border-color:var(--pal);color:#fff;font-weight:500}
+.btn.stille{border-color:transparent;background:transparent;color:#645d7a}
+.seg{position:relative;display:inline-flex;padding:2px;border-radius:999px;background:rgba(36,31,51,.06)}
+.seg button{all:unset;position:relative;z-index:1;cursor:pointer;height:26px;display:inline-flex;align-items:center;justify-content:center;font-size:12.5px;color:#645d7a;transition:color 200ms}
+.seg button.on{color:#241f33;font-weight:500}
+.tommel{position:absolute;top:2px;left:2px;height:26px;border-radius:999px;background:#fff;box-shadow:0 1px 3px rgba(36,31,51,.16);transition:transform 340ms var(--ease-sprett),width 340ms var(--ease-sprett)}
+.h{font-size:13px;font-weight:600;margin:0}
+.hm{width:14px;height:20px;border-radius:3px;display:inline-block}
+.g{background:#3f9d49}.y{background:#d9a92f}.r{background:#c04a3d}.o{background:#d5d8dd}
+.vk{width:16px;height:16px;border-radius:4px;background:#c9922e;display:inline-flex;align-items:center;justify-content:center;flex:none}
+.ell{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.num{font-variant-numeric:tabular-nums}
+.chip{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 9px;border-radius:12px;background:var(--pal-svak);font-size:12px}
+@keyframes inn{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion: reduce){.ark{animation:none!important}.tommel{transition:none!important}}
+</style>
+</helmet>
+<div style="position: relative; height: 1060px; padding: 24px; box-sizing: border-box; overflow: hidden; font-family: 'Geist', -apple-system, sans-serif; color: #241f33; font-size: 14px">
+<div aria-hidden="true" style="position: absolute; left: -120px; top: -80px; width: 620px; height: 620px; border-radius: 50%; background: #8a7bc2; filter: blur(70px); opacity: .75"></div>
+<div aria-hidden="true" style="position: absolute; left: -60px; top: 560px; width: 520px; height: 520px; border-radius: 50%; background: #5f9e98; filter: blur(80px); opacity: .7"></div>
+<div style="position: relative; height: 1012px; border-radius: 16px; overflow: hidden; background: rgba(236,234,241,.42); backdrop-filter: blur(40px); box-shadow: 0 24px 70px rgba(36,31,51,.28), 0 0 0 1px rgba(36,31,51,.14)">
+
+<!-- Bak: økta som ark -->
+<div aria-hidden="true" style="position: absolute; top: 28px; bottom: 28px; left: 150px; right: 150px; border-radius: 24px; background: rgba(255,255,255,.93); box-shadow: 0 30px 80px rgba(36,31,51,.3); padding: 22px 26px; transform: scale(.97); transform-origin: 30% 50%; filter: saturate(.8)">
+<div style="display: flex; align-items: center; gap: 12px"><span style="width: 11px; height: 11px; border-radius: 3px; background: #9a5a2c"></span><span style="font-size: 15px; font-weight: 600; color: #9a5a2c">MFL2</span><span style="font-size: 28px; font-weight: 300">Markedsføringsmiksen — pris</span></div>
+<div style="margin-top: 40px; display: flex; flex-direction: column; gap: 0">
+<div style="height: 38px; border-bottom: 1px solid #f0eef6"></div><div style="height: 38px; border-bottom: 1px solid #f0eef6"></div><div style="height: 38px; border-bottom: 1px solid #f0eef6"></div><div style="height: 38px; border-bottom: 1px solid #f0eef6"></div><div style="height: 38px; border-radius: 8px; background: rgba(74,61,125,.10)"></div><div style="height: 38px; border-bottom: 1px solid #f0eef6"></div><div style="height: 38px; border-bottom: 1px solid #f0eef6"></div>
+</div>
+</div>
+<div style="position: absolute; inset: 0; background: rgba(36,31,51,.22)"></div>
+
+<!-- Elevkortet: ark i stabel, inn fra høyre -->
+<section class="ark" role="dialog" aria-label="Elevkort: Christopher Moltisanti" style="position: absolute; z-index: 2; top: 16px; bottom: 16px; right: 16px; width: 880px; display: flex; flex-direction: column; border-radius: 24px; overflow: hidden; background: rgba(255,255,255,.93); backdrop-filter: blur(22px) saturate(105%); border: 1px solid rgba(255,255,255,.9); box-shadow: inset 0 1px 0 #fff, 0 30px 80px rgba(36,31,51,.34); animation: inn 380ms var(--ease-sprett)">
+
+<header style="display: flex; align-items: center; gap: 10px; padding: 14px 22px; border-bottom: 1px solid #ece9f3; font-size: 13px; color: #645d7a">
+<span style="display: inline-flex; align-items: center; gap: 6px; color: #241f33"><svg width="10" height="10" viewBox="0 0 10 10"><path d="M6.5 2l-3 3 3 3" fill="none" stroke="currentColor" stroke-width="1.5"></path></svg>Økta</span><span style="font-size: 11px; padding: 2px 7px; border-radius: 999px; background: #f4f2f9">esc</span>
+<span>MFL2 · Markedsføringsmiksen — pris</span>
+<span style="flex: 1"></span>
+<button class="btn {{redigKlasse}}" onClick="{{veksleRedig}}">{{redigTekst}}<span style="font-size: 11px; opacity: .6">⌘E</span></button><span style="position: relative"><button class="btn stille" aria-label="Mer" onClick="{{veksleMer}}" style="background: {{merBg}}">⋯</button><sc-if value="{{merApen}}" hint-placeholder-val="{{ false }}"><div role="menu" style="position: absolute; z-index: 5; top: 38px; right: 0; width: 280px; padding: 6px; border-radius: 14px; background: rgba(255,255,255,.9); backdrop-filter: blur(30px) saturate(180%); border: 1px solid rgba(255,255,255,.9); box-shadow: inset 0 1px 0 #fff, 0 18px 44px rgba(36,31,51,.26)"><div style="display: flex; align-items: center; gap: 10px; min-height: 32px; padding: 3px 10px; border-radius: 8px; font-size: 13.5px; color: #241f33"><span style="flex: 1"><span style="display: block">Nytt notat</span></span><span style="font-size: 11px; color: #9a90b8">N</span></div><div style="display: flex; align-items: center; gap: 10px; min-height: 32px; padding: 3px 10px; border-radius: 8px; font-size: 13.5px; color: #241f33"><span style="flex: 1"><span style="display: block">Ny møtelogg</span></span><span style="font-size: 11px; color: #9a90b8">M</span></div><div style="display: flex; align-items: center; gap: 10px; min-height: 32px; padding: 3px 10px; border-radius: 8px; font-size: 13.5px; color: #241f33"><span style="flex: 1"><span style="display: block">Legg til i fag…</span></span><span style="font-size: 11px; color: #9a90b8"></span></div><div style="height: 1px; margin: 4px 8px; background: #ece9f3"></div><div style="display: flex; align-items: center; gap: 10px; min-height: 32px; padding: 3px 10px; border-radius: 8px; font-size: 13.5px; color: #241f33"><span style="flex: 1"><span style="display: block">Legg til bilde…</span></span><span style="font-size: 11px; color: #9a90b8"></span></div><div style="display: flex; align-items: center; gap: 10px; min-height: 32px; padding: 3px 10px; border-radius: 8px; font-size: 13.5px; color: #241f33"><span style="flex: 1"><span style="display: block">Ikke lenger mentorelev</span></span><span style="font-size: 11px; color: #9a90b8"></span></div><div style="display: flex; align-items: center; gap: 10px; min-height: 32px; padding: 3px 10px; border-radius: 8px; font-size: 13.5px; color: #241f33"><span style="flex: 1"><span style="display: block">Bytt klasse…</span><span style="display: block; font-size: 11.5px; color: #645d7a">Nå 2STA</span></span><span style="font-size: 11px; color: #9a90b8"></span></div><div style="height: 1px; margin: 4px 8px; background: #ece9f3"></div><div style="display: flex; align-items: center; gap: 10px; min-height: 32px; padding: 3px 10px; border-radius: 8px; font-size: 13.5px; color: #241f33"><span style="flex: 1"><span style="display: block">Slå sammen med…</span><span style="display: block; font-size: 11.5px; color: #645d7a">Når samme elev står to ganger</span></span><span style="font-size: 11px; color: #9a90b8"></span></div><div style="display: flex; align-items: center; gap: 10px; min-height: 32px; padding: 3px 10px; border-radius: 8px; font-size: 13.5px; color: #241f33"><span style="flex: 1"><span style="display: block">Eksporter elevens data</span><span style="display: block; font-size: 11.5px; color: #645d7a">Innsyn, som markdown</span></span><span style="font-size: 11px; color: #9a90b8">⇧⌘E</span></div><div style="height: 1px; margin: 4px 8px; background: #ece9f3"></div><div style="display: flex; align-items: center; gap: 10px; min-height: 32px; padding: 3px 10px; border-radius: 8px; font-size: 13.5px; color: #b3261e"><span style="flex: 1"><span style="display: block">Ta ut av MFL2</span></span><span style="font-size: 11px; color: #9a90b8"></span></div><div style="display: flex; align-items: center; gap: 10px; min-height: 32px; padding: 3px 10px; border-radius: 8px; font-size: 13.5px; color: #b3261e"><span style="flex: 1"><span style="display: block">Slett eleven…</span></span><span style="font-size: 11px; color: #9a90b8"></span></div></div></sc-if></span>
+</header>
+
+<div style="flex: 1; overflow: auto; padding: 22px 30px 30px">
+<!-- Identitet -->
+<div style="display: flex; gap: 20px; align-items: flex-start">
+<span style="position: relative; width: 76px; height: 76px; border-radius: 50%; overflow: hidden; flex: none; background: var(--pal-lys)">
+<sc-if value="{{erGutt}}" hint-placeholder-val="{{ true }}"><svg width="76" height="76" viewBox="0 0 28 28" aria-hidden="true"><path d="M4.8 28.5c.4-5 4.3-8.4 9.2-8.4s8.8 3.4 9.2 8.4z" fill="var(--pal-mid)"></path><circle cx="14" cy="12.6" r="4.5" fill="var(--pal-mid)"></circle><path d="M9.4 11.6c.2-3.4 2.1-5.3 4.6-5.3s4.4 1.9 4.6 5.3c-1.2-1.2-2.7-1.8-4.6-1.8s-3.4.6-4.6 1.8z" fill="var(--pal)" fill-opacity=".7"></path></svg></sc-if>
+<sc-if value="{{erJente}}" hint-placeholder-val="{{ false }}"><svg width="76" height="76" viewBox="0 0 28 28" aria-hidden="true"><path d="M7.4 15.4c0-5.6 3-9.3 6.6-9.3s6.6 3.7 6.6 9.3v5.4H7.4z" fill="var(--pal)" fill-opacity=".7"></path><path d="M4.8 28.5c.4-5 4.3-8.4 9.2-8.4s8.8 3.4 9.2 8.4z" fill="var(--pal-mid)"></path><circle cx="14" cy="12.8" r="4.3" fill="var(--pal-mid)"></circle><path d="M9.7 11.9c.6-3 2.3-4.6 4.3-4.6s3.7 1.6 4.3 4.6c-1.4-1.4-2.7-2-4.3-2s-2.9.6-4.3 2z" fill="var(--pal)" fill-opacity=".7"></path></svg></sc-if>
+<sc-if value="{{erNoytral}}" hint-placeholder-val="{{ false }}"><svg width="76" height="76" viewBox="0 0 28 28" aria-hidden="true"><path d="M4.8 28.5c.4-5 4.3-8.4 9.2-8.4s8.8 3.4 9.2 8.4z" fill="var(--pal-mid)"></path><circle cx="14" cy="12.4" r="4.6" fill="var(--pal-mid)"></circle></svg></sc-if>
+</span>
+<div style="flex: 1; min-width: 0">
+<div style="display: flex; align-items: center; gap: 12px"><h1 style="margin: 0; font-size: 32px; line-height: 1.15; font-weight: 300; letter-spacing: -0.015em; border-bottom: 1px dashed {{redigKant}}">Christopher Moltisanti</h1><span class="chip" style="color: var(--pal); font-weight: 500; text-align: right">Mentorelev</span></div>
+<div style="margin-top: 6px; font-size: 13.5px; color: #3a3450"><b style="font-weight: 600">2026/27</b> · 2STA · <span style="display: inline-flex; align-items: center; gap: 5px"><span style="width: 8px; height: 8px; border-radius: 2px; background: #9a5a2c"></span>MFL2</span> · <span style="display: inline-flex; align-items: center; gap: 5px"><span style="width: 8px; height: 8px; border-radius: 2px; background: #3d7a5a"></span>ENG1</span></div>
+<div style="margin-top: 2px; font-size: 12.5px; color: #9a90b8">2025/26 · 1STA · MFL1, ENG1</div>
+<sc-if value="{{visKjonn}}" hint-placeholder-val="{{ true }}">
+<div style="display: flex; align-items: center; gap: 10px; margin-top: 12px">
+<span style="font-size: 12.5px; color: #645d7a">Kjønn</span>
+<div class="seg"><span class="tommel" style="width: 66px; transform: translateX({{kjX}}); box-shadow: {{kjSkygge}}; background: {{kjBg}}"></span><button class="{{kjJ}}" onClick="{{settJ}}" style="width: 66px">Jente</button><button class="{{kjG}}" onClick="{{settG}}" style="width: 66px">Gutt</button><button class="{{kjI}}" onClick="{{settI}}" style="width: 66px">Ikke satt</button></div>
+<span style="font-size: 12px; color: {{kjHintFarge}}">{{kjHint}}</span>
+</div>
+</sc-if>
+</div>
+<div class="seg" style="align-self: flex-start"><span class="tommel" style="width: 64px; transform: translateX({{arX}})"></span><button class="{{ar1}}" onClick="{{velgIAr}}" style="width: 64px">I år</button><button class="{{ar2}}" onClick="{{velgAlle}}" style="width: 64px">Alle år</button></div>
+</div>
+
+<div style="margin-top: 26px">
+<div style="display: flex; align-items: center; gap: 12px; padding-bottom: 8px; border-bottom: 1px solid #e5e2ee"><h2 class="h">Innsats gjennom året</h2><span style="flex: 1"></span><span style="display: inline-flex; gap: 10px; font-size: 11.5px; color: #645d7a"><span style="display: inline-flex; align-items: center; gap: 5px"><span class="hm g" style="width: 8px; height: 8px"></span>Grønn</span><span style="display: inline-flex; align-items: center; gap: 5px"><span class="hm y" style="width: 8px; height: 8px"></span>Gul</span><span style="display: inline-flex; align-items: center; gap: 5px"><span class="hm r" style="width: 8px; height: 8px"></span>Rød</span><span style="display: inline-flex; align-items: center; gap: 5px"><span class="hm o" style="width: 8px; height: 8px"></span>Ikke i økta</span><span style="display: inline-flex; align-items: center; gap: 5px"><span class="hm" style="width: 8px; height: 8px; box-shadow: inset 0 0 0 1px #d9d4e8"></span>Kommer</span></span></div>
+<sc-for list="{{aar}}" as="a" hint-placeholder-count="2">
+<div style="display: grid; grid-template-columns: 64px minmax(0, 1fr); column-gap: 14px; align-items: start; padding: 12px 0 4px">
+<span style="display: flex; align-items: center; gap: 7px; font-weight: 600; font-size: 13.5px; height: 9px; margin-top: 0"><span style="width: 9px; height: 9px; border-radius: 2px; background: {{a.farge}}"></span>{{a.kode}}</span>
+<div style="display: flex; gap: 5px">
+<sc-for list="{{a.mnd}}" as="m" hint-placeholder-count="11">
+<span style="display: flex; flex-direction: column; gap: 4px; position: relative"><span style="display: flex; gap: 1.5px">
+<sc-for list="{{m.uker}}" as="u" hint-placeholder-count="4"><span style="display: flex; gap: 1.5px; width: 17.5px">
+<sc-for list="{{u.celler}}" as="c" hint-placeholder-count="2"><span title="{{c.tittel}}" style="width: 8px; height: 8px; border-radius: 2px; background: {{c.bg}}; box-shadow: {{c.kant}}"></span></sc-for>
+</span></sc-for>
+</span><span style="font-size: 10px; color: {{m.farge}}; font-weight: {{m.vekt}}">{{m.navn}}</span></span>
+</sc-for>
+</div>
+</div>
+</sc-for>
+</div>
+
+<div style="display: grid; grid-template-columns: minmax(0, 1fr) 250px; gap: 32px; margin-top: 24px">
+<div>
+<!-- Innsats og vurderinger -->
+<div style="display: flex; align-items: center; gap: 12px; padding-bottom: 8px; border-bottom: 1px solid #e5e2ee"><h2 class="h">Vurderinger</h2><span style="flex: 1"></span><span style="display: none"><span style="display: inline-flex; align-items: center; gap: 5px"><span class="hm g" style="width: 9px; height: 9px"></span>Grønn</span><span style="display: inline-flex; align-items: center; gap: 5px"><span class="hm y" style="width: 9px; height: 9px"></span>Gul</span><span style="display: inline-flex; align-items: center; gap: 5px"><span class="hm r" style="width: 9px; height: 9px"></span>Rød</span><span style="display: inline-flex; align-items: center; gap: 5px"><span class="hm o" style="width: 9px; height: 9px"></span>Ikke i økta</span></span></div>
+
+<div style="display: grid; grid-template-columns: 64px minmax(0, 1fr); column-gap: 14px; padding: 14px 0 6px">
+<span style="display: flex; align-items: center; gap: 7px; font-weight: 600; font-size: 13.5px; height: 20px"><span style="width: 9px; height: 9px; border-radius: 2px; background: #9a5a2c"></span>MFL2</span>
+<div>
+<div style="display: grid; grid-template-columns: 16px minmax(0, 1fr) 56px 120px; column-gap: 10px; align-items: center; padding: 10px 0; border-bottom: 1px solid #f0eef6; margin-top: 8px">
+<span class="vk" title="Skriftlig vurdering"><svg width="11" height="11" viewBox="0 0 12 12"><path d="M8.2 1.6l2.2 2.2-5.9 5.9-2.8.6.6-2.8z" fill="#fff"></path><path d="M1.5 11h9" stroke="#fff" stroke-width="1.2" stroke-linecap="round"></path></svg></span>
+<span><span style="display: block; font-weight: 500">SWOT-analyse</span><span style="display: block; font-size: 12px; color: #645d7a">God analyse av styrker, svak på trusler. Levert to dager for sent.</span></span>
+<span class="num" style="font-size: 12px; color: #645d7a">24.9</span><span style="font-weight: 600; text-align: right">3/4</span>
+</div>
+<div style="display: grid; grid-template-columns: 16px minmax(0, 1fr) 56px 120px; column-gap: 10px; align-items: center; padding: 10px 0; border-bottom: 1px solid #f0eef6; background: #fdf8ee; box-shadow: inset 3px 0 0 #c9922e; margin: 0 -10px; padding-left: 10px; padding-right: 10px; border-radius: 6px">
+<span class="vk" title="Muntlig vurdering"><svg width="11" height="11" viewBox="0 0 12 12"><path d="M2 2.5h8a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1H5.5L3 10.5V8.5H2a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1z" fill="#fff"></path></svg></span>
+<span><span style="display: block; font-weight: 600">Muntlig — prisstrategi</span><span style="display: block; font-size: 12px; color: #8a5a00">Kommer torsdag kl. 09:40</span></span>
+<span class="num" style="font-size: 12px; color: #8a5a00">15.10</span><a style="text-align: right; font-size: 12.5px; color: #8a5a00; text-decoration: none; font-weight: 500; white-space: nowrap">Åpne i <i>Samtaler</i> →</a>
+</div>
+</div>
+</div>
+
+<div style="display: grid; grid-template-columns: 64px minmax(0, 1fr); column-gap: 14px; padding: 14px 0 6px">
+<span style="display: flex; align-items: center; gap: 7px; font-weight: 600; font-size: 13.5px; height: 20px"><span style="width: 9px; height: 9px; border-radius: 2px; background: #3d7a5a"></span>ENG1</span>
+<div>
+<div style="display: grid; grid-template-columns: 16px minmax(0, 1fr) 56px 120px; column-gap: 10px; align-items: center; padding: 10px 0; border-bottom: 1px solid #f0eef6; margin-top: 8px">
+<span class="vk"><svg width="11" height="11" viewBox="0 0 12 12"><path d="M8.2 1.6l2.2 2.2-5.9 5.9-2.8.6.6-2.8z" fill="#fff"></path><path d="M1.5 11h9" stroke="#fff" stroke-width="1.2" stroke-linecap="round"></path></svg></span>
+<span><span style="display: block; font-weight: 500">Short story analysis</span><span style="display: block; font-size: 12px; color: #645d7a">Tydelig tolkning, gode sitater.</span></span>
+<span class="num" style="font-size: 12px; color: #645d7a">18.9</span><span style="font-weight: 600; text-align: right">Godkjent</span>
+</div>
+</div>
+</div>
+
+<!-- Notater -->
+<div style="display: flex; align-items: center; gap: 12px; padding: 18px 0 8px; border-bottom: 1px solid #e5e2ee"><h2 class="h">Notater og møtelogg</h2><span style="flex: 1"></span>
+<div class="seg"><span class="tommel" style="width: {{fW}}; transform: translateX({{fX}})"></span><button class="{{f0}}" onClick="{{velgF0}}" style="width: 56px">Alle</button><button class="{{f1}}" onClick="{{velgF1}}" style="width: 84px">Møtelogg</button><button class="{{f2}}" onClick="{{velgF2}}" style="width: 96px">Fra øktene</button></div>
+<button class="btn">Nytt notat <span style="font-size: 11px; color: #9a90b8">N</span></button></div>
+<div style="position: relative; padding: 6px 0 0 70px">
+<div style="position: absolute; left: 74px; top: 18px; bottom: 10px; width: 1.5px; background: #e5e2ee"></div>
+<sc-for list="{{notater}}" as="n" hint-placeholder-count="4">
+<div style="position: relative; padding: 10px 0 10px 22px">
+<span class="num" style="position: absolute; left: -64px; top: 12px; width: 52px; text-align: right; font-size: 12px; color: #645d7a">{{n.dato}}</span>
+<span style="position: absolute; left: 0; top: 15px; width: 9px; height: 9px; border-radius: {{n.form}}; background: {{n.farge}}"></span>
+<div style="font-size: 12px; color: #645d7a"><b style="font-weight: 600; color: #241f33">{{n.kilde}}</b> · {{n.meta}}</div>
+<div style="font-size: 14px; margin-top: 3px">{{n.tekst}}</div>
+<sc-if value="{{n.oppf}}" hint-placeholder-val="{{ false }}"><label style="display: flex; gap: 8px; align-items: center; margin-top: 6px; font-size: 13px"><input type="checkbox" style="accent-color: #4a3d7d">Følge opp fravær <span style="color: #b3261e; font-size: 12px">frist 12.10</span></label></sc-if>
+</div>
+</sc-for>
+</div>
+</div>
+
+<!-- Høyre -->
+<aside style="display: flex; flex-direction: column; gap: 22px">
+<div style="padding: 14px; border-radius: 12px; background: var(--pal-svak)">
+<h2 class="h" style="margin-bottom: 8px">Åpent for Christopher</h2>
+<label style="display: flex; gap: 8px; align-items: baseline; font-size: 13px; padding: 3px 0"><input type="checkbox" style="accent-color: #4a3d7d; transform: translateY(2px)"><span>Snakke om fraværet <span style="color: #b3261e; font-size: 12px">i dag</span></span></label>
+<label style="display: flex; gap: 8px; align-items: baseline; font-size: 13px; padding: 3px 0"><input type="checkbox" style="accent-color: #4a3d7d; transform: translateY(2px)"><span>Følge opp fravær <span style="color: #645d7a; font-size: 12px">12.10</span></span></label>
+</div>
+<div>
+<h2 class="h" style="margin-bottom: 8px">Klassekart</h2>
+<div style="font-size: 13px; line-height: 1.6; color: #3a3450">MFL2 · Rom 214<br><span style="color: #645d7a">Sitter ved</span> Paulie G.<br><span style="color: #645d7a">Låst til</span> første rad</div>
+<div style="font-size: 12px; color: #645d7a; margin-top: 8px">Kan ikke sitte med:</div>
+<div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px"><span class="chip">Tony S.</span><span class="chip" style="background: transparent; box-shadow: inset 0 0 0 1px #d9d4e8; color: #645d7a">+ Legg til</span></div>
+</div>
+<div>
+<h2 class="h" style="margin-bottom: 8px">Fravær i år</h2>
+<div style="font-size: 13px; color: #3a3450">Fraværende i <b class="num" style="font-weight: 600">3</b> av 24 økter</div>
+<div style="display: flex; gap: 3px; margin-top: 6px"><span class="hm o" style="width: 8px; height: 12px"></span><span class="hm o" style="width: 8px; height: 12px"></span><span class="hm o" style="width: 8px; height: 12px"></span></div>
+</div>
+</aside>
+</div>
+</div>
+<footer style="padding: 9px 30px; border-top: 1px solid #ece9f3; font-size: 11.5px; color: #9a90b8; white-space: nowrap; text-align: end">Kjønn og bilde vises bare her og går aldri ut av appen.</footer>
+</section>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1060}}'>
+var MND = [['aug', 2], ['sep', 4], ['okt', 3], ['nov', 4], ['des', 3], ['jan', 4], ['feb', 3], ['mar', 4], ['apr', 3], ['mai', 4], ['jun', 2]];
+var FARGER = { g: '#3f9d49', y: '#d9a92f', r: '#c04a3d', o: '#d5d8dd' };
+function aarFor(kode, farge, perUke, monster) {
+  var k = 0, uke = 0;
+  return { kode: kode, farge: farge, mnd: MND.map(function (m, mi) {
+    var uker = [];
+    for (var w = 0; w < m[1]; w++) { uke++; var celler = []; for (var j = 0; j < perUke; j++) {
+      var ferdig = uke <= 7 || (uke === 8 && j === 0);
+      var v = ferdig ? monster[k++ % monster.length] : null;
+      celler.push({ bg: v ? FARGER[v] : 'transparent', kant: v ? 'none' : 'inset 0 0 0 1px #e1dcec', tittel: v ? ({ g: 'Grønn', y: 'Gul', r: 'Rød', o: 'Ikke i økta' })[v] : 'Kommer' });
+    } uker.push({ celler: celler }); }
+    return { navn: m[0], uker: uker, farge: mi === 2 ? '#4a3d7d' : '#9a90b8', vekt: mi === 2 ? 600 : 400 };
+  }) };
+}
+var NOT = [
+  ['1.10', 'Fra økta', 'MFL2 · Markedsføringsmiksen — pris', 'Kom 40 min for sent, jobbet godt etter pausen.', '#9a5a2c', '2px', 'okt', false],
+  ['28.9', 'Møtelogg', 'mentorsamtale', 'Snakket om fravær. Avtalt ny samtale om to uker.', '#4a3d7d', '50%', 'mote', true],
+  ['21.9', 'Fra økta', 'ENG1 · Short stories', 'Leste høyt for gruppa — første gang i år.', '#3d7a5a', '2px', 'okt', false],
+  ['2.9', 'Møtelogg', 'oppstartssamtale', 'Mål for året: bestå MFL2 med 4. Vil jobbe med struktur i skriftlige oppgaver.', '#4a3d7d', '50%', 'mote', false]
+];
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { kj: 'g', kilde: 'gjettet', ar: 0, f: 0, redig: false, mer: true }; }
+  renderVals() {
+    var self = this, st = this.state;
+    var idx = { j: 0, g: 1, '': 2 }[st.kj];
+    var FW = [56, 84, 96], FX = [0, 56, 140];
+    function sett(k) { return function () { self.setState({ kj: k, kilde: 'satt' }); }; }
+    return {
+      erGutt: st.kj === 'g', erJente: st.kj === 'j', erNoytral: !st.kj,
+      kjX: (idx * 66) + 'px', kjJ: idx === 0 ? 'on' : '', kjG: idx === 1 ? 'on' : '', kjI: idx === 2 ? 'on' : '',
+      settJ: sett('j'), settG: sett('g'), settI: sett(''),
+      merApen: st.mer, merBg: st.mer ? '#f4f2f9' : 'transparent', veksleMer: function () { self.setState({ mer: !st.mer }); },
+      visKjonn: st.kilde === 'gjettet' || st.redig,
+      redigTekst: st.redig ? 'Ferdig' : 'Rediger', redigKlasse: st.redig ? 'pri' : 'stille', redigKant: st.redig ? '#c9c2dd' : 'transparent',
+      veksleRedig: function () { self.setState({ redig: !st.redig }); },
+      kjSkygge: st.kilde === 'gjettet' ? 'inset 0 0 0 1px #b9b0d3' : '0 1px 3px rgba(36,31,51,.16)', kjBg: st.kilde === 'gjettet' ? 'rgba(255,255,255,.6)' : '#fff',
+      kjHint: st.kilde === 'gjettet' ? 'Gjettet fra fornavnet ved import. Klikk for å bekrefte.' : 'Brukes bare til klassekartet',
+      kjHintFarge: st.kilde === 'gjettet' ? '#8a5a00' : '#9a90b8',
+      arX: (st.ar * 64) + 'px', ar1: st.ar === 0 ? 'on' : '', ar2: st.ar === 1 ? 'on' : '',
+      velgIAr: function () { self.setState({ ar: 0 }); }, velgAlle: function () { self.setState({ ar: 1 }); },
+      fW: FW[st.f] + 'px', fX: FX[st.f] + 'px', f0: st.f === 0 ? 'on' : '', f1: st.f === 1 ? 'on' : '', f2: st.f === 2 ? 'on' : '',
+      velgF0: function () { self.setState({ f: 0 }); }, velgF1: function () { self.setState({ f: 1 }); }, velgF2: function () { self.setState({ f: 2 }); },
+      aar: [aarFor('MFL2', '#9a5a2c', 1, 'ggygyoyrryro'.split('')), aarFor('ENG1', '#3d7a5a', 2, 'gggygyygoyryg'.split(''))],
+      notater: NOT.filter(function (n) { return st.f === 0 || (st.f === 1 && n[6] === 'mote') || (st.f === 2 && n[6] === 'okt'); })
+        .map(function (n) { return { dato: n[0], kilde: n[1], meta: n[2], tekst: n[3], farge: n[4], form: n[5], oppf: n[7] }; })
+    };
+  }
+}
+</script>
+</body>
+</html>

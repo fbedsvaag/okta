@@ -651,7 +651,14 @@ eleven eller økta. Et nytt gjøremål skrives øverst i bolken: tekst, og
 valgfritt elev og frist. Med elev blir det et oppfølgingsnotat på eleven;
 uten et eget gjøremål (§3.5).
 
+Under de åpne står **Logg** — gjøremål og oppfølginger lukket de siste 14
+dagene, gruppert per dag, med klokkeslett og «Angre» på det som nettopp ble
+krysset av. Loggen leses fra `lukket`-tidspunktet; eldre står i arkivet og
+på elevkortet.
+
 Elever, vurderinger og fag fra forsiden åpnes også som kort over den.
+**Økta åpnes som et ark** over forsiden (og over øktlista eller kalenderen
+når den åpnes derfra), ikke som full skjerm — se §4.4.
 
 ### 4.2 Årsplan — økter per fag
 
@@ -847,14 +854,16 @@ Denne skjermen er der du bruker en time i august og fem minutter i måneden ette
 
 ### 4.4 Økt — elevlista med skåring
 
-Motstykket til Tracking-fanen, og den daglige bruken. Full skjerm, minimal ramme.
+Motstykket til Tracking-fanen, og den daglige bruken. Åpnes som et ark over
+skjermen man kom fra; Esc lukker og alt er lagret. Pågår økta, står det
+«Pågår · n min igjen» i toppen, og over lista hvor mange som er skåret.
 
 Øverst en kompakt topplinje: fag, dato, tema, periode, og planen for økta
 sammenklappet — ett trykk for å utvide.
 
 Under: elevlista for faget, alfabetisk på fornavn, én rad per elev. Har
-elevene bilde (§7), står et lite bilde (20 px) foran navnet; raden holder
-seg på 28 px.
+elevene bilde (§7), står et bilde (28 px) foran navnet, ellers en
+plassholder; raden er 38 px.
 
 ```
     Anna Reistad              ●  ○  ○  ○
@@ -1282,6 +1291,139 @@ feltgrense som §8.1.
 
 ---
 
+### 4.11 Klassekart og gruppegenerator
+
+Tegnet i lerretet (runde 7). Oppskriften står i `docs/klassekart.md`.
+
+#### Hva og hvorfor
+
+Klassekart plasserer elevene i et rom, og gruppegeneratoren deler dem i
+grupper. Begge bruker det Økta allerede vet: elevene i faget, klassen eller
+mentorgruppa, bildene, innsatsen fra trafikklyset og hvem som har sittet
+sammen før. Ingen lister limes inn.
+
+#### Begreper
+
+- **Rom** — et klasserom tegnet én gang og brukt av mange kart: tavle,
+  kateter, dør, vinduer og pulter på et rutenett. Fritt navn («Rom 214»).
+  Rommet er felles for alle fag og skoleår.
+- **Kart** — én elevgruppe i ett rom. Kilden er et fag (`skolear_fag`), en
+  klasse eller en mentorgruppe. Et kart har to visninger: **Plasser** og
+  **Grupper**.
+- **Plassering** — hvem som sitter hvor i et kart. Når læreren trykker
+  «Bruk» (eller kartet skrives ut / kopieres), lagres plasseringen med dato.
+  De lagrede plasseringene er historikken.
+- **Gruppesett** — en inndeling i grupper, lagret på samme måte.
+
+#### Personvern
+
+- Kjønn er valgfritt (`elev.kjonn`: `j`, `g` eller tomt; `elev.kjonn_kilde`:
+  `gjettet` eller `satt`). Det gjettes ved import (§7), brukes bare til
+  blanding og plassholderbildet, velges i elevkortet, og går aldri ut: ikke i eksport,
+  utskrift, Teams, CalDAV, arkiv eller oppsettfil.
+- Innsatsfarge på pultene vises bare på skjermen, aldri i utskrift eller Teams.
+- Elevbilder vises i appen, men er ikke med i utskrift eller Teams.
+- Utskrift og Teams viser fornavn og etternavnets forbokstav.
+
+#### Rom (rediger rom)
+
+- Start fra en mal: **Par i rader** (15 dobbeltpulter), **Hestesko**,
+  **Grupper á 4**, **Enkeltpulter**. Malen kan justeres etterpå.
+- Dra inn: enkeltpult, dobbeltpult, gruppebord (4), gruppebord (6),
+  kateter, tavle, dør, vinduer. Rutenett på 20 px; delene fester seg.
+- Valgt del får en liten verktøylinje: Roter, Dupliser, Slett. Tastene
+  ⌘D, ⌫, R og piltaster (én rute).
+- Plassene nummereres automatisk forfra (nærmest tavla) og fra venstre.
+- Et rom som brukes av kart, kan ikke slettes uten å spørre; endres det,
+  beholder kartene plasseringene sine der plassnummeret fortsatt finnes.
+
+#### Plasser
+
+- Rommet tegnes med tavle øverst. Bryteren **Fra kateteret / Fra elevene**
+  snur tegningen (for utskrift til elevene).
+- Hver plass viser bilde (eller initialer), fornavn og etternavn. Ledige
+  plasser vises tonet.
+- **Lås:** klikk på en plass låser eleven der. Låste blir sittende når det
+  stokkes. **Dra** en elev til en annen plass bytter dem.
+- **Ikke til stede i dag:** elever dras dit og får ingen plass denne gangen.
+  Gjelder bare til kartet lukkes; lagres ikke som fravær.
+- **Stokk på nytt** (⌘R) fordeler alle som ikke er låst.
+
+#### Fordeling (felles for Plasser og Grupper)
+
+- **Tilfeldig**, **Spre** (lav innsats ved siden av høy) eller **Samle**
+  (lav innsats samlet foran, nær kateteret; i grupper: likt nivå sammen).
+- Innsats = snitt av trafikklyset de siste 10 øktene i faget (for klasse og
+  mentorgruppe: på tvers av fagene). `teller_ikke`-verdier teller ikke
+  (§5.1). Elever uten skår regnes som midt.
+- **Bland jenter og gutter:** prøv å unngå at to av samme kjønn sitter ved
+  samme pult / er alene i en gruppe av samme kjønn. Elever uten kjønn er
+  nøytrale.
+- **Unngå dem som har sittet sammen:** straffer par som har delt pult eller
+  gruppe i de lagrede plasseringene, mest de siste. Panelet viser det
+  hyppigste paret («Meadow og Jackie, 3 ganger»).
+- **Hold fra hverandre:** par som aldri skal dele pult eller gruppe. Regelen
+  hører til kilden (faget/klassen) og gjelder i alle kart for den.
+- Reglene er ønsker med vekt, ikke absolutte, bortsett fra låser og «hold
+  fra hverandre», som alltid holdes. Går det ikke, sier appen hvilken regel
+  som ikke kunne holdes.
+
+Algoritme: tilfeldige forsøk (for eksempel 400) med straffepoeng for brudd
+på ønskene; det beste forsøket velges. Tilfeldigheten får et frø, så
+testene er deterministiske.
+
+#### Grupper
+
+- Antall grupper med − og +, størrelsen regnes ut («á 4–5»). Går det ikke
+  opp, blir noen grupper én større — ingen står alene.
+- Gruppene vises som kort med svak farge og nummer; navnet kan skrives om.
+- Elever dras mellom gruppene. **Unngå samme grupper som sist** bruker
+  gruppehistorikken.
+- Kopier til Teams (én liste per gruppe) og skriv ut.
+
+#### Sidemenyen og navigasjon
+
+Klassekart (G K) står i sidemenyen. Under det, som undermeny (DESIGN §6):
+kartene for skoleåret (fagfirkant, kilde, rom og antall) og «+ Nytt kart».
+Klikk på selve «Klassekart» gir en oversikt over kart og rom.
+
+#### Data
+
+Migrasjon 024:
+
+```
+ALTER TABLE elev ADD COLUMN kjonn TEXT;          -- 'j' | 'g' | NULL
+
+CREATE TABLE rom (
+  id TEXT PRIMARY KEY, navn TEXT NOT NULL,
+  oppsett TEXT NOT NULL,                         -- JSON: deler med type, x, y, rotasjon
+  opprettet TEXT NOT NULL, endret TEXT NOT NULL, slettet TEXT
+);
+CREATE TABLE klassekart (
+  id TEXT PRIMARY KEY, skolear_id TEXT NOT NULL REFERENCES skolear(id),
+  kilde_type TEXT NOT NULL,                      -- fag | klasse | mentorgruppe
+  kilde_id TEXT NOT NULL, rom_id TEXT REFERENCES rom(id),
+  innstillinger TEXT,                            -- JSON: fordeling, bland, unngå, antall grupper
+  opprettet TEXT NOT NULL, endret TEXT NOT NULL, slettet TEXT
+);
+CREATE TABLE plassering (                        -- én rad per elev per lagret oppsett
+  id TEXT PRIMARY KEY, klassekart_id TEXT NOT NULL REFERENCES klassekart(id),
+  oppsett_id TEXT NOT NULL,                      -- samme for alle rader i ett oppsett
+  type TEXT NOT NULL,                            -- plass | gruppe
+  elev_id TEXT NOT NULL REFERENCES elev(id),
+  plass INTEGER, gruppe INTEGER, gruppenavn TEXT, last INTEGER NOT NULL DEFAULT 0,
+  opprettet TEXT NOT NULL, endret TEXT NOT NULL, slettet TEXT
+);
+CREATE TABLE elevregel (                         -- «hold fra hverandre»
+  id TEXT PRIMARY KEY, kilde_type TEXT NOT NULL, kilde_id TEXT NOT NULL,
+  elev_a TEXT NOT NULL REFERENCES elev(id), elev_b TEXT NOT NULL REFERENCES elev(id),
+  opprettet TEXT NOT NULL, endret TEXT NOT NULL, slettet TEXT
+);
+```
+
+UUID, stempler og soft delete som resten (§3.1). Sletting av en elev tar
+plasseringer og regler med. Ingen av tabellene er med i oppsettfila (§8.2).
+
 ## 5. Skalaer
 
 Alle skalaer er data i basen, ikke kode. Rangeringen bruker tiere med luft mellom,
@@ -1515,6 +1657,15 @@ Regler:
 
 Etter parsing: forhåndsvisning med redigerbare felter *før* noe skrives til
 databasen.
+
+**Kjønn gjettes fra fornavnet** (§4.11). Appen har med en liten tabell fra
+SSBs navnestatistikk (fornavn → andel jenter), lokalt — ingen nettverkskall.
+Er ≥ 95 % av dem med navnet av samme kjønn, foreslås det, merket som gjettet
+(`elev.kjonn_kilde = 'gjettet'`). Ellers står feltet tomt («Velg»). I
+forhåndsvisningen kan forslaget byttes med ett klikk, og «Bekreft alle
+gjettede» gjør dem til `satt`. Elever som finnes fra før beholder sitt.
+Kjønn kan stå tomt; det betyr bare at eleven ikke telles med når
+klassekartet blander. Kilde: SSB, «Navn» (CC BY 4.0) — navngis under Om.
 
 **Faget er valgfritt ved import.** Limer du inn mentorgruppa di, er det ingen
 fagkobling å lage — elevene skal bare finnes, med klasse og mentormerke.
@@ -2000,9 +2151,8 @@ sekunder om gangen, i et lyst klasserom, ofte mens noen snakker til deg.
 - **Type:** Fira Sans til UI og tabeller, Fira Sans Condensed der bredden er
   knapp, Georgia til overskrifter. Tabulære sifre på alt som står i kolonner.
   Skriftene ligger lokalt (§1).
-- **Tetthet:** skåringslista holder 28 px rader, så 30 elever får plass uten
-  scrolling på en 14-tommer. Dette er den viktigste enkeltbeslutningen i hele
-  UI-et. Resten av appen har luftigere rader (34 px), men bredden brukes og
+- **Tetthet:** skåringslista har 38 px rader med 28 px bilde (endret 06.10
+  fra 28 px). Lista ruller og følger markøren. Resten av appen har luftigere rader (34 px), men bredden brukes og
   navn brekker aldri.
 - **Radier** er små (3–6 px) — et skjema, ikke kort med runde hjørner.
   Unntaket er ⌘K-vinduet, som er formet som Spotlight.

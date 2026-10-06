@@ -230,13 +230,135 @@ Det som står igjen fra DESIGN.md etter redesignet. Listet i STATUS.md
 - [ ] **6.5 Bevegelse.** Bryteren På / Dempet / Av i Utseende, med
   `prefers-reduced-motion` som utgangspunkt. Stagger og FLIP kan vente.
 
+## 7. Fra runde 6 i lerretet (06.10)
+
+- [ ] **7.1 Sidemeny med undermeny (A).** Fjern «Fag i år» og «Planlagte
+  trekninger» som faste bolker. Fagene blir undermeny under Økter (⌘0–9),
+  trekningene under Samtaler. Åpen under aktiv skjerm, ruller ut ved hover
+  ellers (DESIGN §6). Tynn strek foran, innrykk på markeringen.
+- [ ] **7.2 Samtaler-oversikt.** Klikk på «Samtaler» gir en side med
+  Planlagt · Utkast · Gjennomført: fag, datoer, plasser/elever, status.
+- [ ] **7.3 Øktlista.** Kolonnene Uke · Dato · Tid · Tema · Periode ·
+  Vurdering. Mellomrom (eller klikk) folder ut en rask titt under raden.
+  Utseendet er erstattet av **9.1** (variant F).
+- [ ] **7.4 Rediger i verktøylinja.** «Rediger fag» i Økter når et fag er
+  valgt, «Rediger» på en trekning i Samtaler.
+- [ ] **7.5 I dag.** Romnummer under hver økt i uka, i liten grå skrift.
+  «↵ åpne økta» som hint på dagens økter.
+- [ ] **7.6 Elevbilder overalt** der elevnavn står (DESIGN §6). Felles
+  komponent med bilde eller plassholder i fast størrelse, så radhøyden aldri
+  endres. Plassholderen er erstattet av **9.7** (illustrasjon, ikke initialer).
+
+## 8. Klassekart og gruppegenerator (06.10)
+
+Spec i SPEC §4.11, oppskrift i `docs/klassekart.md` del B. Tegnet i
+lerretet runde 7; markupen ligger i `docs/lerret/`. Bygges i én bolk, men
+ett steg og én commit om gangen.
+
+- [ ] **8.1 Data** — migrasjon 024, `data/klassekart.ts`, tester.
+- [ ] **8.2 Kjønn på eleven** — valgfritt felt, aldri i eksport. Gjettes ved
+  import (9.8), velges på elevkortet.
+- [ ] **8.3 Fordelingen** — `data/fordeling.ts`, ren funksjon med frø, tester.
+- [ ] **8.4 Rom-editoren** — maler, dra inn, rutenett, roter/dupliser/slett.
+- [ ] **8.5 Plasser** — lås, dra, ikke til stede, panelet, Stokk, Bruk, og
+  Del-menyen: Skriv ut (⌘P), Lagre som PDF, Kopier som bilde (PNG, ⌘C),
+  Lagre som PNG, Kopier som liste. Personvernlinja nederst i menyen.
+- [ ] **8.6 Grupper** — antall, kort, dra, navn, Stokk, Teams, utskrift.
+- [ ] **8.7 Sidemeny og oversikt** — Klassekart (G K) med kartene som undermeny.
+
+## 9. Fra runde 8–10 i lerretet (06.10)
+
+Tegnet i lerretet (`docs/lerret/`: `Utfolding`, `MenyA`, `Main`, `OktArk`,
+`Import`). DESIGN.md §6, §7 og §10 er oppdatert. Ett punkt og én commit om
+gangen, i denne rekkefølgen.
+
+- [ ] **9.1 Utfoldet økt = variant F.** To spalter: Dato · Tid · Rom ·
+  Vurdering til venstre, Plan og Fra forrige økt til høyre. Nederst en
+  tonet stripe (#ece9f3) med «↑↓ neste økt · mellomrom lukk · Åpne økta ↵»
+  samlet til høyre. Raden og feltet henger sammen (radius 8 8 0 0 / 0 0 8 8).
+- [ ] **9.2 Vurderinger i øktlista.** Økt med vurdering får et ikon på
+  16 × 16 i gull (#c9922e) foran tittelen: snakkeboble = muntlig,
+  blyant = skriftlig (egne SVG-er, ikke emoji). Ikonet henger ut i
+  mellomrommet foran Tema-kolonnen, så alle titler starter på samme linje.
+  Gyllen strek (inset 3 px) til venstre på raden og feltet, svak gylden
+  grunn (#fdf8ee) på lukkede rader, tittel i 600. Vurderingskolonnen viser
+  bare typen («Muntlig», «Skriftlig»), ikke temaet. I feltet:
+  «Vurdering — Åpne i *Samtaler* →» (skjermnavn i kursiv).
+- [ ] **9.3 Uka på I dag.** Tidsakse til venstre (09, 10 …; timen nærmest
+  nå skjules). Nå-strek: tykk lilla med prikk i dagens kolonne, tynn over
+  resten av uka, klokkeslettet i aksen. Tiden som har gått i dag tegnes
+  med fagfargene dempet (`backdrop-filter: saturate(.35)` + svakt lyst slør),
+  ikke grått. Oppdateres hvert minutt.
+- [ ] **9.4 Dagens økter viser fagkoden**, ikke fagnavnet:
+  «MFL2 · Rom 214 · Markedsmiks».
+- [ ] **9.5 Logg under Gjøremål.** «Logg · n fullført siste 14 dager»,
+  sammenleggbar. Gruppert per dag, gjennomstreket tekst, hvem/fag, klokkeslett.
+  Avkrysset nå havner øverst med «Angre». Eldre står i arkivet og på
+  elevkortet. Ingen ny tabell: bruker `lukket`-tidspunktet på notatet (§3.5).
+- [ ] **9.6 Økta som ark.** «Åpne økta» (fra I dag, øktlista, kalenderen)
+  åpner økta som et ark over skjermen du står på, ikke som full skjerm.
+  Samme matte glass og inngang som notatvinduet. Esc lukker (alt lagres
+  fortløpende), ⌘↵ = Ferdig. Topp: fagfirkant, kode i fagfarge, tittel i
+  Light 28 px, «Pågår · n min igjen» med rolig puls (av ved redusert
+  bevegelse), naturlig dato · tid · rom · periode. Over lista:
+  «n av 28 skåret» med tynn fremdriftslinje. Høyre spalte: Fra forrige økt,
+  Plan med avkrysning, Øktlogg. Taster i en stripe nederst (som 9.1).
+  Radhøyde 38 px med 28 px bilde (bestemt av eieren 06.10). Lista ruller
+  og følger markøren.
+  **Bevegelse:** markøren er én flate som glir til neste elev (translateY,
+  340 ms, `cubic-bezier(.34,1.32,.5,1)` — en S-kurve med lite overskudd).
+  Trafikklyset som settes «popper» (skala .4 → 1.18 → 1, 380 ms,
+  `cubic-bezier(.34,1.56,.64,1)`). Av ved redusert bevegelse.
+- [ ] **9.7 Plassholder for elevbilde.** Uten bilde: liten illustrasjon av
+  jente, gutt eller nøytral (etter `elev.kjonn`) i palettens farger
+  (`--pal`, `--pal-lys`, `--pal-mid`), så den følger fargevalget i
+  Utseende. Én komponent, `ui/Elevbilde.tsx`, overalt.
+- [ ] **9.8 Kjønn gjettes ved import.** SSBs navnestatistikk følger appen
+  som en liten lokal tabell (fornavn → andel jenter). ≥ 95 % ett kjønn =
+  gjettet; ellers tomt («Velg»). Ny kolonne i forhåndsvisningen: stiplet
+  pille = gjettet, fylt = bekreftet, gul «Velg» = brukes om begge. Klikk
+  bytter Jente → Gutt → Ikke satt. «Bekreft alle gjettede». Elever som
+  finnes fra før beholder sitt. Telling øverst («3 må velges · 8 gjettet»).
+  Krever `elev.kjonn_kilde` (`gjettet` | `satt`) i migrasjon 024.
+  **Navnelista:** et lite skript (`scripts/hent_navn.py`, kjøres av eieren,
+  ikke av appen) henter SSBs åpne navnestatistikk (fornavn med antall
+  jenter og gutter) og skriver `src/data/fornavn.json` (fornavn → andel
+  jenter, bare navn med ≥ 50 bærere). Fila committes. Appen gjør ingen
+  nettverkskall. **«Om» i Innstillinger** får linja «Kjønn gjettes fra
+  fornavn med navnestatistikk fra Statistisk sentralbyrå (SSB), CC BY 4.0.»
+- [ ] **9.10 S-kurven overalt** (DESIGN §8, lerretet `Bevegelse`):
+  `--ease-sprett` som token i `ui/bevegelse.ts`; sidemeny, brytere,
+  liste-markører, undermeny og Stokk på nytt (FLIP).
+- [ ] **9.11 Elevkortet som ark i stabel** (lerretet `ElevArk`). Åpnes over
+  økta eller lista og glir inn fra høyre; det bak skaleres litt ned.
+  Identitet: bilde/plassholder 76 px, navn Light 32 px, «Mentorelev»-pille,
+  år · klasse · fag med firkant, fjorårets linje i grått. **Kjønn som
+  bryter** Jente | Gutt | Ikke satt; gjettet = stiplet tommel og «Gjettet fra
+  fornavnet ved import. Klikk for å bekrefte.». Bekreftet kjønn skjules; det vises
+  igjen bare i **redigeringsmodus** («Rediger ⌘E» i verktøylinja → «Ferdig»),
+  der også navnet får stiplet strek. I år | Alle år. Over spaltene: **«Innsats gjennom året»** i
+  full bredde — én linje per fag, kvadratiske ruter (8 px, radius 2),
+  aug–jun på én linje, uke for uke i felles kolonner (19 px per uke) så
+  fagene står under hverandre; kommende økter som tomme ruter med tynn kant,
+  inneværende måned uthevet. Venstre: vurderinger per fag (med ikon; kommende muntlig med
+  gyllen strek og «Åpne i *Samtaler* →»), så notater og møtelogg med filter.
+  Høyre: «Åpent for <fornavn>» (oppfølginger), Klassekart (plass, sidemann,
+  låst, «Kan ikke sitte med:»), fravær i år («Fraværende i 3 av 24 økter»). Personvernlinje på én linje i bunnen av arket.
+  Verktøylinja: «Rediger ⌘E» og «⋯». Menyen bak ⋯: Nytt notat (N), Ny
+  møtelogg (M), Legg til i fag…, Legg til bilde…, Mentorelev av/på, Bytt
+  klasse…, Slå sammen med… (§4.3), Eksporter elevens data (⇧⌘E, innsyn §6),
+  og i rødt: Ta ut av <fag>, Slett eleven… (spør alltid).
+- [ ] **9.9 Glass på arkene:** notatvindu, samtalenotat og økta får
+  `blur(22px)` i stedet for 1,5 px — teksten bak skinte gjennom.
+
 ## Ikke nå
 
 Ting som er vurdert og lagt bort med vilje. Står her så de ikke dukker opp
 igjen som nye ideer.
 
-- Klassekart — kraftig nedprioritert 30.09. Bygges standalone først om det
-  kommer, og rom må kunne lages enkelt, ellers blir det ubrukt
+- Mørk modus for det nye fra runde 7–11 (arkene, vurderingsgull,
+  plassholdere, bevegelsesbrettet) — avventer eieren; bruk tokens så det
+  er lett å legge til
 - Klasseopprykk — avventer; eieren er usikker på om det trengs
 
 - Fagpresets fra Udirs Grep-API — `hent_grep.py` finnes, men hører til etter v1

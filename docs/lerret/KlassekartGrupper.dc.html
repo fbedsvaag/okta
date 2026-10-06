@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<title>Økta — Klassekart, grupper</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#d4cee2}
+.side{width:236px;flex:none;margin:10px;padding:12px 8px;box-sizing:border-box;display:flex;flex-direction:column;gap:2px;border-radius:22px;background:rgba(255,255,255,.5);backdrop-filter:blur(28px) saturate(170%);border:1px solid rgba(255,255,255,.75);box-shadow:inset 0 1px 0 rgba(255,255,255,.95),0 10px 30px rgba(36,31,51,.14)}
+.pt{display:flex;align-items:center;gap:9px;height:32px;padding:0 10px;border-radius:10px;color:#2e2840;font-size:14px}
+.pt.on{background:rgba(255,255,255,.88);box-shadow:0 1px 3px rgba(36,31,51,.14),inset 0 1px 0 #fff;color:#241f33;font-weight:500}
+.under{position:relative;display:flex;align-items:center;gap:8px;min-height:28px;margin-left:22px;padding:3px 10px;border-radius:8px;color:#2e2840;font-size:13px}
+.under.on{background:rgba(255,255,255,.7);color:#241f33;font-weight:500}
+.under::before{content:"";position:absolute;left:-11px;top:-1px;bottom:-1px;width:1.5px;border-radius:1px;background:rgba(36,31,51,.16)}
+.kbd{margin-left:auto;font-size:11px;color:#6b6482;letter-spacing:.04em;font-weight:400}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;height:30px;padding:0 12px;border-radius:999px;border:1px solid #d9d4e8;background:#fff;color:#241f33;font:inherit;font-size:13px;cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:#c9c2dd}
+.btn.pri{background:#4a3d7d;border-color:#4a3d7d;color:#fff;font-weight:500}
+.btn.stille{border-color:transparent;background:transparent;color:#645d7a}
+.seg{display:inline-flex;padding:2px;border-radius:999px;background:rgba(36,31,51,.06)}
+.seg button{all:unset;cursor:pointer;height:26px;padding:0 12px;border-radius:999px;font-size:13px;color:#645d7a;display:inline-flex;align-items:center}
+.seg button.on{background:#fff;color:#241f33;box-shadow:0 1px 2px rgba(36,31,51,.14);font-weight:500}
+.seg.firk{border-radius:6px}.seg.firk button{border-radius:4px}
+.pult{display:grid;grid-template-columns:1fr 1fr;gap:0;border-radius:10px;background:#f4f2f9;box-shadow:inset 0 0 0 1px #e5e2ee;padding:4px}
+.plass{all:unset;box-sizing:border-box;cursor:pointer;position:relative;display:flex;align-items:center;gap:8px;height:52px;padding:0 10px;border-radius:7px;min-width:0}
+.plass:hover{background:rgba(255,255,255,.7)}
+.av{width:26px;height:26px;border-radius:50%;flex:none;background:#ddd6ec;color:#4a3d7d;font-size:10px;font-weight:600;display:inline-flex;align-items:center;justify-content:center}
+.ell{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.num{font-variant-numeric:tabular-nums}
+.fk{width:8px;height:8px;border-radius:2px;flex:none;display:inline-block}
+.h{margin:0 0 8px;font-size:13px;font-weight:600}
+.blokk{padding:14px 0;border-bottom:1px solid #ece9f3}
+.chip{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px;border-radius:13px;background:#f4f2f9;font-size:12.5px}
+</style>
+</helmet>
+<div style="position: relative; min-height: 980px; padding: 24px; box-sizing: border-box; overflow: hidden; background: #d4cee2; font-family: 'Geist', -apple-system, sans-serif; color: #241f33; font-size: 14px">
+<div aria-hidden="true" style="position: absolute; left: -120px; top: -80px; width: 620px; height: 620px; border-radius: 50%; background: #8a7bc2; filter: blur(70px); opacity: .75"></div>
+<div aria-hidden="true" style="position: absolute; left: -60px; top: 560px; width: 520px; height: 520px; border-radius: 50%; background: #5f9e98; filter: blur(80px); opacity: .7"></div>
+<div aria-hidden="true" style="position: absolute; right: -100px; top: -60px; width: 700px; height: 500px; border-radius: 50%; background: #b8aee0; filter: blur(90px); opacity: .6"></div>
+<div style="position: relative; display: flex; min-height: 932px; border-radius: 16px; overflow: hidden; background: rgba(236,234,241,.42); backdrop-filter: blur(40px) saturate(160%); box-shadow: 0 24px 70px rgba(36,31,51,.28), 0 0 0 1px rgba(36,31,51,.14)">
+
+<nav class="side" aria-label="Hovedmeny">
+<div style="display: flex; align-items: center; gap: 8px; padding: 2px 8px 10px">
+<svg width="20" height="20" viewBox="0 0 1024 1024" aria-hidden="true"><rect x="40" y="40" width="944" height="944" rx="215" fill="#241F33"></rect><rect x="290" y="330" width="200" height="364" rx="44" fill="#EEEDFE"></rect><rect x="516" y="330" width="100" height="364" rx="40" fill="#C9C2DD"></rect><rect x="642" y="330" width="100" height="364" rx="40" fill="#9A90B8"></rect></svg>
+<span style="font-weight: 600; font-size: 14px">Økta</span><span class="num" style="margin-left: auto; font-size: 11px; color: #4b4560">2026/27</span>
+</div>
+<div style="display: flex; align-items: center; gap: 8px; height: 30px; padding: 0 12px; margin-bottom: 10px; border-radius: 999px; background: rgba(255,255,255,.55); border: 1px solid rgba(255,255,255,.75); font-size: 13px; color: #4b4560">Søk<span class="kbd">⌘K</span></div>
+<div class="pt">I dag<span class="kbd">G D</span></div>
+<div class="pt">Økter<span class="kbd">G Ø</span></div>
+<div class="pt">Elever<span class="kbd">G E</span></div>
+<div class="pt">Vurderinger<span class="kbd">G V</span></div>
+<div class="pt">Samtaler<span class="kbd">G S</span></div>
+<div class="pt on">Klassekart<span class="kbd">G K</span></div>
+<div class="under on"><span class="fk" style="background: #9a5a2c"></span><span style="min-width: 0"><span class="ell" style="display: block">MFL2</span><span class="ell" style="display: block; font-size: 11px; color: #4b4560; font-weight: 400">Rom 214 · 26 elever</span></span></div>
+<div class="under"><span class="fk" style="background: #3d7a5a"></span><span style="min-width: 0"><span class="ell" style="display: block">ENG1</span><span class="ell" style="display: block; font-size: 11px; color: #4b4560">Rom 108 · 27 elever</span></span></div>
+<div class="under"><span class="fk" style="background: #4a3d7d; border-radius: 50%"></span><span style="min-width: 0"><span class="ell" style="display: block">Mentorgruppe 2STA</span><span class="ell" style="display: block; font-size: 11px; color: #4b4560">Grupper · 16 elever</span></span></div>
+<div class="under" style="color: #4b4560">+ Nytt kart</div>
+<div style="flex: 1"></div>
+<div class="pt">Innstillinger<span class="kbd">⌘,</span></div>
+</nav>
+
+<main style="position: relative; flex: 1; min-width: 0; margin: 10px 10px 10px 0; background: #ffffff; border-radius: 16px; box-shadow: 0 1px 3px rgba(36,31,51,.10); display: flex; flex-direction: column; overflow: hidden">
+<header style="display: flex; align-items: center; gap: 10px; margin: 10px 12px 0; padding: 0 8px 0 20px; height: 50px; border-radius: 999px; background: rgba(255,255,255,.7); backdrop-filter: blur(28px) saturate(170%); border: 1px solid rgba(255,255,255,.8); box-shadow: inset 0 1px 0 rgba(255,255,255,.95), 0 6px 20px rgba(36,31,51,.10), 0 0 0 .5px rgba(36,31,51,.08)">
+<span class="fk" style="background: #9a5a2c; width: 10px; height: 10px"></span>
+<h2 style="margin: 0; font-size: 15px; font-weight: 600">MFL2</h2><span style="font-size: 13px; color: #645d7a">25 elever</span>
+<div class="seg" role="group" aria-label="Visning" style="margin-left: 8px"><a href="Klassekart.dc.html" style="all: unset; cursor: pointer; height: 26px; padding: 0 12px; border-radius: 999px; font-size: 13px; color: #645d7a; display: inline-flex; align-items: center">Plasser</a><button class="on">Grupper</button></div>
+<span style="flex: 1"></span>
+<button class="btn">Kopier til Teams</button>
+<button class="btn">Skriv ut</button>
+</header>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px; padding: 16px 28px 6px">
+<div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px"><span style="color: #645d7a">Grupper</span><span style="display: inline-flex; align-items: center; border-radius: 6px; box-shadow: inset 0 0 0 1px #d9d4e8"><button class="btn stille" style="height: 28px; width: 28px; padding: 0" onClick="{{faerre}}" aria-label="Færre grupper">−</button><span class="num" style="min-width: 22px; text-align: center; font-weight: 600">{{antall}}</span><button class="btn stille" style="height: 28px; width: 28px; padding: 0" onClick="{{flere}}" aria-label="Flere grupper">+</button></span><span class="num" style="color: #9a90b8; font-size: 12.5px">{{storrelse}}</span></div>
+<div class="seg firk" role="group" aria-label="Fordel etter"><button class="on">Tilfeldig</button><button>Spre</button><button>Samle</button></div>
+<label style="display: flex; align-items: center; gap: 8px; font-size: 13.5px"><input type="checkbox" checked style="width: 15px; height: 15px; margin: 0; accent-color: #4a3d7d">Bland jenter og gutter</label>
+<label style="display: flex; align-items: center; gap: 8px; font-size: 13.5px"><input type="checkbox" checked style="width: 15px; height: 15px; margin: 0; accent-color: #4a3d7d">Unngå samme grupper som sist</label>
+<span style="flex: 1"></span>
+<button class="btn pri" onClick="{{stokk}}">Stokk på nytt<span style="opacity: .65; font-size: 11px">⌘R</span></button>
+</div>
+<div style="flex: 1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; padding: 12px 28px 28px; align-content: start">
+<sc-for list="{{grupper}}" as="g" hint-placeholder-count="6">
+<section style="border-radius: 12px; background: {{g.bg}}; box-shadow: inset 0 0 0 1px {{g.kant}}; padding: 12px 12px 10px">
+<div style="display: flex; align-items: center; gap: 8px; padding: 0 4px 8px"><span style="width: 10px; height: 10px; border-radius: 50%; background: {{g.farge}}"></span><input value="{{g.navn}}" aria-label="Gruppenavn" readonly style="all: unset; font-size: 14px; font-weight: 600; width: 120px"><span class="num" style="margin-left: auto; font-size: 12px; color: #645d7a">{{g.n}} elever</span></div>
+<div style="display: flex; flex-direction: column; gap: 4px">
+<sc-for list="{{g.elever}}" as="e" hint-placeholder-count="4">
+<div style="display: flex; align-items: center; gap: 9px; height: 36px; padding: 0 8px; border-radius: 8px; background: #fff; box-shadow: {{e.skygge}}; transform: {{e.tf}}; cursor: grab"><span class="av">{{e.init}}</span><span class="ell" style="font-size: 13.5px">{{e.navn}}</span><span style="margin-left: auto; width: 8px; height: 8px; border-radius: 50%; background: {{e.prikk}}"></span></div>
+</sc-for>
+</div>
+</section>
+</sc-for>
+</div>
+</main>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":980}}'>
+var ELEVER = [['Adriana La Cerva', 'g'], ['Anthony Soprano Jr.', 'r'], ['Artie Bucco', 'g'], ['Benny Fazio', 'y'], ['Bobby Baccalieri', 'g'], ['Carlo Gervasi', 'y'], ['Carmela Soprano', 'g'], ['Charmaine Bucco', 'g'], ['Christopher Moltisanti', 'r'], ['Corrado Soprano', 'y'], ['Eugene Pontecorvo', 'g'], ['Furio Giunta', 'y'], ['Gloria Trillo', 'y'], ['Jackie Aprile Jr.', 'r'], ['Janice Soprano', 'g'], ['Jennifer Melfi', 'g'], ['Johnny Sacrimoni', 'y'], ['Livia Soprano', 'y'], ['Meadow Soprano', 'g'], ['Patsy Parisi', 'g'], ['Paulie Gualtieri', 'y'], ['Phil Leotardo', 'r'], ['Ralph Cifaretto', 'y'], ['Silvio Dante', 'g'], ['Tony Soprano', 'y']];
+var FARGER = ['#4f7fc0', '#c9922e', '#2f9a8a', '#c0607a', '#8a6fc8', '#6f8f3a', '#b0674a', '#3f7f9f'];
+var PRIKK = { g: '#3f9d49', y: '#d9a92f', r: '#c04a3d' };
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { antall: 6, fro: 1 }; }
+  renderVals() {
+    var self = this, st = this.state, n = st.antall;
+    var ord = ELEVER.map(function (e, i) { return i; }).sort(function (a, b) { return ((a * 11 + st.fro * 7) % 31) - ((b * 11 + st.fro * 7) % 31); });
+    var grupper = [];
+    for (var g = 0; g < n; g++) grupper.push({ navn: 'Gruppe ' + (g + 1), farge: FARGER[g % 8], bg: FARGER[g % 8] + '0f', kant: FARGER[g % 8] + '33', elever: [] });
+    ord.forEach(function (e, i) { grupper[i % n].elever.push(e); });
+    grupper.forEach(function (g, gi) {
+      g.n = g.elever.length;
+      g.elever = g.elever.map(function (e, k) {
+        var d = ELEVER[e][0].split(' '); var drag = gi === 1 && k === 1;
+        return { navn: ELEVER[e][0], init: (d[0][0] + d[d.length - 1][0]).toUpperCase(), prikk: PRIKK[ELEVER[e][1]], skygge: drag ? '0 10px 24px rgba(36,31,51,.22)' : '0 0 0 1px #ece9f3', tf: drag ? 'rotate(-1.5deg) translateX(6px)' : 'none' };
+      });
+    });
+    var min = Math.floor(25 / n), maks = Math.ceil(25 / n);
+    return {
+      grupper: grupper, antall: n, storrelse: min === maks ? 'á ' + min : 'á ' + min + '–' + maks,
+      faerre: function () { if (n > 2) self.setState({ antall: n - 1 }); },
+      flere: function () { if (n < 8) self.setState({ antall: n + 1 }); },
+      stokk: function () { self.setState({ fro: st.fro + 1 }); }
+    };
+  }
+}
+</script>
+</body>
+</html>

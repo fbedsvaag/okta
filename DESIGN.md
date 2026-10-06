@@ -3,6 +3,10 @@
 Slik appen skal se ut og oppføre seg. Utdyper §13 i `SPEC.md`. Tokenene står
 i `src/index.css`, og felleskomponentene i `src/ui/felles.tsx`.
 
+**Lerretet er fasit.** Det som er tegnet i lerretet «Økta — redesign» per
+06.10 er appens utseende (eieren). Markupen ligger i `docs/lerret/`. Er noe
+her uenig med lerretet, gjelder lerretet — si fra, så rettes denne fila.
+
 **Skrevet om 05.10.2026** etter redesignrunden i Claude Design-lerretet
 («Økta — redesign»). Lerretet viser alle skjermene og er referansen når
 noe her er uklart. Mye av dette er **bestemt, men ikke bygget ennå**. Det
@@ -47,11 +51,14 @@ Ingen CDN, ingen `@import url()` mot nett.
 **Skalafarger er data.** `skalaverdi.farge` lagrer et navn (`gronn`, `gul`,
 `rod`), ikke en hex. Oppslaget skjer i `src/ui/farger.ts`.
 
-**Skåringslista holder 28 px rader.** Tretti elever pluss tabellhode får
-plass uten å rulle på en 14-tommer. Resten av appen har 34 px.
+**Skåringslista har 38 px rader med 28 px bilde** (bestemt 06.10; før
+28 px). Lista ruller i arket og følger markøren, så den eleven du står på
+alltid er synlig. Resten av appen har 34 px.
 
-**Skåringen animeres aldri.** Tastetrykk → farge → neste elev er null
-millisekunder. Animer navigasjon, aldri inntasting.
+**Skåringen venter aldri på animasjonen.** Tastetrykk → farge → neste elev
+skjer i samme øyeblikk i dataene; neste tast virker med en gang. Det som
+beveger seg — markøren som glir, prikken som popper (§8) — er bare
+visuelt, kan avbrytes midt i, og er av med redusert bevegelse.
 
 **Innholdet er alltid tett.** Glass (§7) brukes bare på det som ligger over
 eller ved siden av innholdet. Lister, tabeller, skåringslista, elevkortet og
@@ -163,10 +170,25 @@ i verktøylinja kapselform. ⌘K-vinduet har 26 px.
 - Logo, «Økta» og skoleåret øverst
 - Søk (⌘K) som felt
 - I dag · Økter · Elever · Vurderinger · Samtaler, hver med snarvei til
-  høyre: G D, G Ø, G E, G V, G S. Klassekart (G K) kommer inn her når
-  skjermen finnes (ARBEIDSLISTE «Ikke nå»)
-- «Fag i år»: fagfirkant, kode og navn. Klikk åpner faget
+  høyre: G D, G Ø, G E, G V, G S, G K (Klassekart, med kartene som
+  undermeny — SPEC §4.11)
 - Innstillinger (⌘,) nederst
+
+**Undermeny som følger skjermen** (valgt 06.10, «A» i lerretet). Sidemenyen
+viser bare skjermene. Lister hører til en skjerm og står som innrykket
+undermeny under den, med en tynn loddrett strek foran:
+
+- under **Økter**: Alle fag og fagene i år (fagfirkant + kode), ⌘0–9
+- under **Samtaler**: trekningene (navn, fag og datoer) og «+ Ny trekning»
+
+Undermenyen er alltid åpen under skjermen du står i. Under de andre
+rulles den ut når musa holdes over punktet, etter 140 ms (så den ikke
+blafrer når musa bare passerer). Punktet og undermenyen får da en felles
+glassflate som vokser nedover: høyde, uskarphet (5 px → 0) og en liten
+forskyvning går samtidig, 260 ms med `--ease-inn`. Ingen sprett. Med
+redusert bevegelse åpnes den uten animasjon. Et klikk på selve
+skjermpunktet gir skjermens oversikt (Samtaler: Planlagt · Utkast ·
+Gjennomført).
 
 Hovedflaten ligger som et hvitt ark ved siden av, 8–10 px fra kanten, med
 radius 10 px. Verktøylinja øverst i arket.
@@ -176,6 +198,27 @@ bort. Kalenderen har sin egen bryter, Uke | Måned.
 
 **Merkelapper** (piller) brukes der noe skal kunne tas i: periodene, fagfilter,
 elevnavn i en gruppesamtale. Ikke som pynt.
+
+**Elevbilder der elever vises.** Har eleven bilde (fra InSchool), står det
+som en rund miniatyr foran navnet overalt der et navn står: skåringslista
+(20 px), elevlister og tabeller (20–24 px), «Elever som glipper», gjøremål
+med elev, samtaletimeplanen og fordelingen, kalenderens samtaletimeplan,
+⌘K-treff og elevkortet (56–72 px). Uten bilde vises en enkel illustrasjon
+— jente, gutt eller nøytral etter `elev.kjonn` — i palettens farger: lys
+grunn (`--pal-lys`), ansikt og kropp i mellomtone (`--pal-mid`), hår i
+aksenten med 70 % dekning. Den bytter farge med paletten. Ikke initialer. Bildet går aldri ut av
+appen (eksport, utskrift, CalDAV, oppsettfil).
+
+**Vurderinger merkes med ikon foran tittelen.** 16 × 16, radius 4, gull
+(`#c9922e`) med hvitt symbol: snakkeboble for muntlig, blyant for skriftlig.
+Ikonet henger ut i margen, så titlene står på linje. Raden får en gyllen
+strek (inset 3 px) til venstre. Kolonnen «Vurdering» viser bare typen.
+
+**Skjermnavn i lenketekst står i kursiv:** «Åpne i *Samtaler* →».
+
+**Tastestripe.** Der en flate har egne taster, står de i en tonet stripe
+nederst (`#ece9f3`, 11–11,5 px, tastene i små rammer), med hovedknappen
+til høyre i stripa. Ikke som egen tasteoversikt.
 
 **Fagfirkanten står i egen kolonne.** Der en tittel har fag over eller under
 seg, står firkanten på linje med tittelen, og begge tekstlinjene starter på
@@ -219,6 +262,9 @@ sidepanel   background: rgba(255,255,255,.50)
             radius 22px, 10px fra vinduskanten
 verktøylinje background: rgba(255,255,255,.68), kapsel, flyter 10px inn
 ⌘K          background: rgba(255,255,255,.74), blur(40px) saturate(180%)
+ark         background: rgba(255,255,255,.93), blur(22px) saturate(105%)
+            (økta, notatvindu, samtalenotat), radius 24px, slør
+            rgba(36,31,51,.20) bak
 valgt punkt rgba(255,255,255,.88) med skygge, radius 10px
 ```
 
@@ -258,6 +304,20 @@ kolonne, stiplet resten av uka.
 **Bevegelse** kan settes til På / Dempet / Av i Innstillinger › Utseende,
 med `prefers-reduced-motion` som utgangspunkt.
 
+**Markør som glir.** Der en markør flytter seg i en liste (skåringen,
+utfoldet økt), er den én flate som glir, ikke en bakgrunn som hopper fra rad
+til rad: 340 ms, `--ease-sprett: cubic-bezier(.34,1.32,.5,1)` — S-kurve med
+et lite overskudd. Det som settes, «popper» kort (skala .4 → 1.18 → 1,
+380 ms). Aldri mer enn det. Av med redusert bevegelse.
+
+Samme kurve brukes overalt der noe flytter seg (lerretet: `Bevegelse`):
+valgt punkt i sidemenyen glir, og undermenyen åpner seg (høyde, 420 ms);
+tommelen i alle brytere (Liste | Kalender, Uke | Måned, Plasser | Grupper,
+Fordel etter) glir under teksten; markøren i ⌘K, øktlista, elevlista og
+samtaletimeplanen glir med piltastene; ved «Stokk på nytt» glir elevene til
+de nye plassene (560 ms, 18 ms etterslep per plass, låste står stille).
+Aldri på tekst som skrives, scrolling eller tall som endres.
+
 ## 9. Trafikklyset
 
 **Alle symbolene er helfylte.** Grønn, gul og rød er fylte sirkler i
@@ -285,10 +345,12 @@ En økt ingen er skåret i, er et hull i heatmapet.
 ## 10. Skjermene
 
 **I dag.** Datoen (Light, 32 px). Under: «Dagens økter» — tid i egen kolonne
-(22 px, tabulær), så fagfirkant og tittel, med fag, rom og periode på linja
-under. «Notat fra forrige økt» er en sammenleggbar boks under tittelen,
+(22 px, tabulær), så fagfirkant og tittel, med fagkode, rom og periode på
+linja under (ikke fagnavnet). «Notat fra forrige økt» er en sammenleggbar boks under tittelen,
 med lister og avkrysning. Ingen oppsummeringssetning øverst — den gjentok
-bare «Dagens økter». Så uka som kalender. Til høyre: gjøremål,
+bare «Dagens økter». Så uka som kalender, med tidsakse og nå-strek; tiden
+som har gått i dag har dempede fagfarger (ikke grått). Til høyre:
+gjøremål med en sammenleggbar logg over det som er gjort siste 14 dager,
 vurderingsfrister, elever som glipper (med lite heatmap).
 
 **Økter — liste.** Fagfilter, søk, timeregnskap med en tynn stolpe delt på
@@ -306,14 +368,25 @@ i et panel til høyre (dato, tid, rom, periode, vurdering; Åpne, Flytt,
 Dupliser), og timer per fag den uka, med samtaletimer på egen linje.
 Samtaledager viser timeplanen med elever, pause og lunsj.
 
-**Økt — skåring.** Full skjerm, minimal ramme. Rad: markør, bilde,
-navn (150–230 px), klasse, **notat fra denne økta**, plottet. N åpner
-notatfeltet rett i raden; står markøren på en elev uten notat, vises
-forrige økts notat i grå kursiv. Høyre kolonne: forrige økt, plan,
-øktlogg, taster.
+**Økt — skåring.** Et ark over skjermen du kom fra (§7, «ark»), ikke full
+skjerm. Topp: fagfirkant, kode i fagfarge, tittel (Light, 28 px),
+«Pågår · n min igjen», naturlig dato · tid · rom · periode, Esc og
+«Ferdig ⌘↵». Over lista «n av 28 skåret» med tynn fremdriftslinje. Rad
+(38 px): markør, bilde (28 px), navn (150–230 px), klasse, **notat fra
+denne økta**, trafikklyset. N åpner notatfeltet i raden; uten notat vises
+forrige økts notat i grå kursiv. Høyre kolonne: forrige økt, plan med
+avkrysning, øktlogg. Tastene i stripa nederst.
 
-**Elevkort.** Navn (Light, 30 px), skoleår, klasse, fag. Heatmap per fag med
-måned for måned, vurderingene rett under. Notater og møtelogg som tidslinje:
+**Utfoldet økt i øktlista** (variant F): to spalter — fakta til venstre,
+plan og forrige notat til høyre — og tastestripa nederst med «Åpne økta ↵».
+
+**Elevkort.** Et ark i stabel som glir inn fra høyre over det du kom fra.
+Bilde eller plassholder (76 px), navn (Light, 32 px), skoleår, klasse, fag,
+og kjønn som en liten bryter (gjettet vises stiplet). Høyre spalte: åpne
+oppfølginger, klassekart, fravær. Heatmap per fag med
+måned for måned, vurderingene rett under. Heatmapet i elevkortet er kvadratiske ruter, hele
+skoleåret på én linje per fag, uke for uke i felles kolonner; kommende
+økter som tomme ruter. Notater og møtelogg som tidslinje:
 dato, prikk på en loddrett strek (fagfirkant for notater fra økta, lilla
 prikk for møtelogg), kilde, tekst, avkrysning.
 
@@ -366,7 +439,11 @@ Prøvd eller vurdert, og valgt bort. Står her så det ikke dukker opp igjen.
 - Store tall som «stat-kort», grafer på forsiden
 - Tailwinds standardpalett som identitet
 - Luftig midtstilt layout der innholdet ikke bruker bredden
-- Løpende statistikk mens man skårer
+- Løpende statistikk mens man skårer (fremdriften «n av 28 skåret» er ikke
+  statistikk og er med)
+- **Initialer som erstatning for elevbilde** (byttet til illustrasjon 06.10)
+- **Grå for passert tid** (byttet til dempede fagfarger 06.10)
+- **Emoji for muntlig/skriftlig** (egne ikoner)
 
 ## 13. Ikke bygget ennå
 

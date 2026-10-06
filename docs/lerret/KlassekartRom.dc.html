@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<title>Økta — Klassekart, rediger rom</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#d4cee2}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;height:30px;padding:0 12px;border-radius:999px;border:1px solid #d9d4e8;background:#fff;color:#241f33;font:inherit;font-size:13px;cursor:pointer;white-space:nowrap;text-decoration:none}
+.btn.pri{background:#4a3d7d;border-color:#4a3d7d;color:#fff;font-weight:500}
+.btn.stille{border-color:transparent;background:transparent;color:#645d7a}
+.mal{all:unset;cursor:pointer;box-sizing:border-box;display:flex;flex-direction:column;gap:6px;padding:8px;border-radius:8px;border:1.5px solid #e5e2ee;background:#fff}
+.mal:hover{border-color:#c9c2dd}
+.mini{display:grid;gap:3px;height:54px;align-content:center;justify-content:center}
+.mini span{background:#c9c2dd;border-radius:2px}
+.del{display:flex;align-items:center;gap:10px;height:34px;padding:0 10px;border-radius:7px;font-size:13px;color:#241f33;cursor:grab}
+.del:hover{background:#f4f2f9}
+.ikon{width:26px;display:flex;justify-content:center}
+.p{position:absolute;box-sizing:border-box;border-radius:7px;background:#f4f2f9;box-shadow:inset 0 0 0 1.5px #d9d4e8}
+.ell{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.kbd{display:inline-flex;align-items:center;height:18px;padding:0 5px;border-radius:4px;border:1px solid #d9d4e8;background:#fff;font-size:11px;color:#3a3450}
+</style>
+</helmet>
+<div style="position: relative; min-height: 980px; padding: 24px; box-sizing: border-box; overflow: hidden; background: #d4cee2; font-family: 'Geist', -apple-system, sans-serif; color: #241f33; font-size: 14px">
+<div aria-hidden="true" style="position: absolute; left: -120px; top: -80px; width: 620px; height: 620px; border-radius: 50%; background: #8a7bc2; filter: blur(70px); opacity: .75"></div>
+<div aria-hidden="true" style="position: absolute; right: -100px; top: -60px; width: 700px; height: 500px; border-radius: 50%; background: #b8aee0; filter: blur(90px); opacity: .6"></div>
+<div style="position: relative; display: flex; min-height: 932px; border-radius: 16px; overflow: hidden; background: rgba(236,234,241,.42); backdrop-filter: blur(40px) saturate(160%); box-shadow: 0 24px 70px rgba(36,31,51,.28), 0 0 0 1px rgba(36,31,51,.14)">
+
+<aside aria-label="Rommaler og møbler" style="width: 264px; flex: none; margin: 10px; padding: 16px 12px; box-sizing: border-box; border-radius: 22px; background: rgba(255,255,255,.5); backdrop-filter: blur(28px) saturate(170%); border: 1px solid rgba(255,255,255,.75); box-shadow: inset 0 1px 0 rgba(255,255,255,.95), 0 10px 30px rgba(36,31,51,.14); display: flex; flex-direction: column; gap: 14px">
+<a href="Klassekart.dc.html" class="btn stille" style="align-self: flex-start; padding: 0 6px"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M7.5 2.5L4 6l3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.5"></path></svg>Tilbake til kartet</a>
+<div>
+<div style="font-size: 13px; font-weight: 600; padding: 0 4px 8px">Start fra en mal</div>
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px">
+<button class="mal" style="border-color: #4a3d7d"><span class="mini" style="grid-template-columns: repeat(6, 10px); grid-auto-rows: 7px"><span></span><span></span><span style="visibility: hidden"></span><span></span><span></span><span style="visibility: hidden"></span><span></span><span></span><span style="visibility: hidden"></span><span></span><span></span><span style="visibility: hidden"></span><span></span><span></span><span style="visibility: hidden"></span><span></span><span></span><span style="visibility: hidden"></span></span><span style="font-size: 12px; font-weight: 500">Par i rader</span></button>
+<button class="mal"><span class="mini" style="grid-template-columns: repeat(5, 10px); grid-auto-rows: 7px"><span></span><span></span><span></span><span></span><span></span><span></span><span style="visibility: hidden"></span><span style="visibility: hidden"></span><span style="visibility: hidden"></span><span></span><span></span><span style="visibility: hidden"></span><span style="visibility: hidden"></span><span style="visibility: hidden"></span><span></span></span><span style="font-size: 12px; font-weight: 500">Hestesko</span></button>
+<button class="mal"><span class="mini" style="grid-template-columns: repeat(5, 10px); grid-auto-rows: 7px"><span></span><span></span><span style="visibility: hidden"></span><span></span><span></span><span></span><span></span><span style="visibility: hidden"></span><span></span><span></span><span style="visibility: hidden"></span><span style="visibility: hidden"></span><span style="visibility: hidden"></span><span style="visibility: hidden"></span><span style="visibility: hidden"></span><span></span><span></span><span style="visibility: hidden"></span><span></span><span></span></span><span style="font-size: 12px; font-weight: 500">Grupper á 4</span></button>
+<button class="mal"><span class="mini" style="grid-template-columns: repeat(5, 8px); column-gap: 6px; grid-auto-rows: 7px"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span><span style="font-size: 12px; font-weight: 500">Enkeltpulter</span></button>
+</div>
+</div>
+<div>
+<div style="font-size: 13px; font-weight: 600; padding: 0 4px 6px">Dra inn</div>
+<div class="del"><span class="ikon"><span style="width: 14px; height: 10px; border-radius: 2px; background: #c9c2dd"></span></span>Enkeltpult</div>
+<div class="del"><span class="ikon"><span style="width: 24px; height: 10px; border-radius: 2px; background: #c9c2dd"></span></span>Dobbeltpult</div>
+<div class="del"><span class="ikon"><span style="width: 18px; height: 18px; border-radius: 3px; background: #c9c2dd"></span></span>Gruppebord (4)</div>
+<div class="del"><span class="ikon"><span style="width: 24px; height: 16px; border-radius: 3px; background: #c9c2dd"></span></span>Gruppebord (6)</div>
+<div class="del"><span class="ikon"><span style="width: 22px; height: 12px; border-radius: 2px; box-shadow: inset 0 0 0 1.5px #9a90b8"></span></span>Kateter</div>
+<div class="del"><span class="ikon"><span style="width: 24px; height: 5px; border-radius: 2px; background: #9a90b8"></span></span>Tavle</div>
+<div class="del"><span class="ikon"><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M3 15V3h1M3 3a12 12 0 0112 12" fill="none" stroke="#9a90b8" stroke-width="1.5"></path></svg></span>Dør</div>
+<div class="del"><span class="ikon"><span style="width: 24px; height: 4px; background: repeating-linear-gradient(90deg,#9a90b8 0 6px,transparent 6px 9px)"></span></span>Vinduer</div>
+</div>
+<div style="margin-top: auto; font-size: 12px; color: #645d7a; line-height: 1.7; padding: 0 4px">
+<span class="kbd">⌘D</span> dupliser · <span class="kbd">⌫</span> slett<br><span class="kbd">R</span> roter · piltaster flytter én rute
+</div>
+</aside>
+
+<main style="position: relative; flex: 1; min-width: 0; margin: 10px 10px 10px 0; background: #ffffff; border-radius: 16px; box-shadow: 0 1px 3px rgba(36,31,51,.10); display: flex; flex-direction: column; overflow: hidden">
+<header style="display: flex; align-items: center; gap: 10px; margin: 10px 12px 0; padding: 0 8px 0 18px; height: 50px; border-radius: 999px; background: rgba(255,255,255,.7); backdrop-filter: blur(28px) saturate(170%); border: 1px solid rgba(255,255,255,.8); box-shadow: inset 0 1px 0 rgba(255,255,255,.95), 0 6px 20px rgba(36,31,51,.10), 0 0 0 .5px rgba(36,31,51,.08)">
+<input value="Rom 214" aria-label="Romnavn" readonly style="all: unset; font-size: 15px; font-weight: 600; width: 110px; padding: 4px 8px; margin-left: -8px; border-radius: 6px; box-shadow: inset 0 0 0 1px #e5e2ee">
+<span style="font-size: 13px; color: #645d7a">30 plasser · brukes av MFL2 og ENG1</span>
+<span style="flex: 1"></span>
+<a href="Klassekart.dc.html" class="btn stille">Avbryt</a>
+<a href="Klassekart.dc.html" class="btn pri">Lagre rom</a>
+</header>
+<div style="flex: 1; position: relative; margin: 18px 24px 24px; border-radius: 12px; background-color: #fbfafd; background-image: radial-gradient(#d9d4e8 1px, transparent 1px); background-size: 20px 20px; box-shadow: inset 0 0 0 1px #ece9f3; overflow: hidden">
+<div class="p" style="left: 300px; top: 30px; width: 380px; height: 16px; background: #9a90b8; box-shadow: none; border-radius: 4px"></div>
+<div style="position: absolute; left: 300px; top: 50px; width: 380px; text-align: center; font-size: 11px; color: #9a90b8; letter-spacing: .06em">TAVLE</div>
+<div class="p" style="left: 760px; top: 80px; width: 140px; height: 60px; background: #fff; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #9a90b8">Kateter</div>
+<div class="p" style="left: 0; top: 140px; width: 6px; height: 380px; background: transparent; box-shadow: none; border-left: 4px dashed #c9c2dd; border-radius: 0"></div>
+<sc-for list="{{pulter}}" as="d" hint-placeholder-count="15">
+<div class="p" style="left: {{d.x}}; top: {{d.y}}; width: 200px; height: 60px; display: grid; grid-template-columns: 1fr 1fr; box-shadow: {{d.ring}}; background: {{d.bg}}"><span style="border-right: 1px dashed #d9d4e8"></span><span></span></div>
+</sc-for>
+<div style="position: absolute; left: 372px; top: 304px; display: flex; gap: 4px; padding: 4px; border-radius: 999px; background: rgba(255,255,255,.8); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,.9); box-shadow: 0 8px 22px rgba(36,31,51,.18)">
+<button class="btn stille" style="height: 26px; padding: 0 10px; font-size: 12px; color: #241f33">Roter</button><button class="btn stille" style="height: 26px; padding: 0 10px; font-size: 12px; color: #241f33">Dupliser</button><button class="btn stille" style="height: 26px; padding: 0 10px; font-size: 12px; color: #b3261e">Slett</button>
+</div>
+<div style="position: absolute; left: 60px; bottom: 26px; width: 80px; height: 80px; border-left: 2px solid #c9c2dd; border-top: 2px solid #c9c2dd; border-top-left-radius: 80px; transform: scaleY(-1)"></div>
+<div style="position: absolute; left: 60px; bottom: 8px; font-size: 11px; color: #9a90b8">Dør</div>
+<div style="position: absolute; right: 16px; bottom: 12px; font-size: 12px; color: #9a90b8">Rutenett 20 px · pultene fester seg</div>
+</div>
+</main>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":980}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var pulter = [];
+    for (var r = 0; r < 5; r++) for (var c = 0; c < 3; c++) {
+      var valgt = r === 2 && c === 1;
+      pulter.push({ x: (90 + c * 270) + 'px', y: (170 + r * 90) + 'px', ring: valgt ? 'inset 0 0 0 2px #4a3d7d, 0 0 0 4px #e3ddf0' : 'inset 0 0 0 1.5px #d9d4e8', bg: valgt ? '#ffffff' : '#f4f2f9' });
+    }
+    return { pulter: pulter };
+  }
+}
+</script>
+</body>
+</html>
