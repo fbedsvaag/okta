@@ -788,3 +788,30 @@ export function Menyvalg({
     </button>
   );
 }
+
+/** En linje i ⋯-menyen: navnet, en forklaring under og tasten til høyre. */
+export function Menylinje({
+  tast,
+  under,
+  children,
+}: {
+  tast?: string;
+  under?: string;
+  children: ReactNode;
+}) {
+  return (
+    <span className="flex w-64 items-center gap-2.5">
+      <span className="min-w-0 flex-1">
+        <span className="block">{children}</span>
+        {under && (
+          <span className="block text-etikett text-blekk-dempet">{under}</span>
+        )}
+      </span>
+      {tast && <span className="text-etikett text-blekk-svak">{tast}</span>}
+    </span>
+  );
+}
+
+export function Menyskille() {
+  return <div className="mx-2 my-1 h-px bg-linje-medium" />;
+}

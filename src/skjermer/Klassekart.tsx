@@ -1,6 +1,13 @@
 import { useEffect, useState } from "react";
 import { confirm as bekreft } from "@tauri-apps/plugin-dialog";
-import { hentRom, plasserIRom, slettRom, type Rom } from "../data/klassekart";
+import {
+  endreKart,
+  hentRom,
+  plasserIRom,
+  slettRom,
+  type Rom,
+} from "../data/klassekart";
+import { KlassekartKart } from "./KlassekartKart";
 import { IVerktoylinja } from "../ui/Verktoylinje";
 import { KlassekartRom } from "./KlassekartRom";
 
@@ -22,16 +29,30 @@ export function Klassekart({
   onTilbake: () => void;
 }) {
   if (id?.startsWith("rom:")) {
-    const romId = id.slice(4);
+    // «rom:<id>», «rom:ny», eller «rom:ny:<kart>» — et nytt rom til et kart
+    // som ikke har noe, og som skal få det.
+    const [, romId, tilKart] = id.split(":");
     return (
       <KlassekartRom
         key={id}
         romId={romId === "ny" ? null : romId}
         skolearId={skolearId}
-        onFerdig={() => onTilbake()}
+        onFerdig={async (lagret) => {
+          if (lagret && tilKart) await endreKart(tilKart, { romId: lagret });
+          onTilbake();
+        }}
       />
     );
   }
+  if (id)
+    return (
+      <KlassekartKart
+        key={id}
+        kartId={id}
+        skolearId={skolearId}
+        onRedigerRom={(romId) => onGa(romId ? `rom:${romId}` : `rom:ny:${id}`)}
+      />
+    );
   return <Oversikt skolearId={skolearId} onGa={onGa} />;
 }
 

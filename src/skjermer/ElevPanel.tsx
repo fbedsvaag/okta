@@ -48,6 +48,8 @@ import {
   Fagfirkant,
   Fagmerke,
   Kontekstmeny,
+  Menylinje,
+  Menyskille,
   Menyvalg,
   Ikon,
   Ikonknapp,
@@ -830,33 +832,6 @@ export function ElevPanel({
       </footer>
     </section>
   );
-}
-
-/** En linje i ⋯-menyen: navnet, en forklaring under og tasten til høyre. */
-function Menylinje({
-  tast,
-  under,
-  children,
-}: {
-  tast?: string;
-  under?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <span className="flex w-64 items-center gap-2.5">
-      <span className="min-w-0 flex-1">
-        <span className="block">{children}</span>
-        {under && (
-          <span className="block text-etikett text-blekk-dempet">{under}</span>
-        )}
-      </span>
-      {tast && <span className="text-etikett text-blekk-svak">{tast}</span>}
-    </span>
-  );
-}
-
-function Menyskille() {
-  return <div className="mx-2 my-1 h-px bg-linje-medium" />;
 }
 
 /** Tegnforklaringen over innsatsen. */

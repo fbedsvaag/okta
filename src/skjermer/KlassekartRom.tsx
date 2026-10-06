@@ -343,7 +343,7 @@ export function KlassekartRom({
       </aside>
 
       {/* Rommet. */}
-      <div className="relative min-h-0 min-w-0 flex-1 overflow-auto rounded-xl bg-[#fbfafd] shadow-[inset_0_0_0_1px_var(--color-linje-medium)] dark:bg-flate-svak">
+      <div className="relative min-h-0 min-w-0 flex-1 overflow-auto rounded-xl bg-[color-mix(in_srgb,var(--color-flate)_40%,var(--color-ark))] shadow-[inset_0_0_0_1px_var(--color-linje-medium)]">
         <div
           ref={flate}
           onPointerDown={(e) => {

@@ -679,6 +679,14 @@ html {
   animation: gli-inn var(--tid-inn) var(--ease-inn);
 }
 
+/* Klassekartet: elevene glir til de nye plassene når kartet stokkes. */
+.kartelev {
+  transition:
+    left var(--tid-utfold) var(--ease-sprett),
+    top var(--tid-utfold) var(--ease-sprett),
+    background-color 160ms;
+}
+
 /*
  * Elevkortet (lerretet «ElevArk»): kort vei inn fra høyre og fram av
  * ingenting, med litt sprett — 40 px og 380 ms.
@@ -980,7 +988,8 @@ html {
 @media (prefers-reduced-motion: reduce) {
   .panel,
   .panel-ute,
-  .liste-bredde {
+  .liste-bredde,
+  .kartelev {
     transition: none !important;
   }
 
