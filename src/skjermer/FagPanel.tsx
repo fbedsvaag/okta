@@ -1,4 +1,5 @@
 import { Sammenleggknapp, useApen } from "../ui/Sammenleggbar";
+import { Utfold } from "../ui/Utfold";
 import { useEffect, useState } from "react";
 import { Tidslinjedato, Tidslinjestrek } from "../ui/Tidslinje";
 import { Markdownfelt } from "../ui/Notattekst";
@@ -651,9 +652,7 @@ function OmFaget({ grepKode }: { grepKode: string | null }) {
         onClick={() => setApen((v) => !v)}
         className="flex w-full items-baseline gap-2 border-b border-linje-medium pb-1 text-left"
       >
-        <span className="text-brod font-semibold text-blekk">
-          Om faget
-        </span>
+        <span className="text-brod font-semibold text-blekk">Om faget</span>
         <span className="ml-auto text-liten text-blekk-svak">
           {apen ? "Skjul" : "Vis"}
         </span>
@@ -974,13 +973,11 @@ function Bolk({
             onBytt={() => setApen(!apen)}
           />
         ) : (
-          <h3 className="text-brod font-semibold text-blekk">
-            {tittel}
-          </h3>
+          <h3 className="text-brod font-semibold text-blekk">{tittel}</h3>
         )}
         {apen && handling}
       </div>
-      {apen && children}
+      <Utfold apen={apen}>{children}</Utfold>
     </section>
   );
 }

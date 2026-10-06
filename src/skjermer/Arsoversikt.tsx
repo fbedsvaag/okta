@@ -1,4 +1,5 @@
 import { Sammenleggknapp, useApen } from "../ui/Sammenleggbar";
+import { Utfold } from "../ui/Utfold";
 import { useEffect, useState } from "react";
 import {
   hentGlipp,
@@ -159,7 +160,7 @@ function Panel({
         />
         {handling && apen && <span className="ml-auto">{handling}</span>}
       </div>
-      {apen && children}
+      <Utfold apen={apen}>{children}</Utfold>
     </section>
   );
 }

@@ -136,15 +136,15 @@ export function Sokevindu({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center bg-teppe/25 px-4 pt-[14vh]"
+      className="matt-teppe fixed inset-0 z-50 flex items-start justify-center px-4 pt-[14vh]"
       onMouseDown={(e) => e.target === e.currentTarget && onLukk()}
     >
       {/*
-        Formet som Spotlight: store, myke hjørner (26 px), glass over appen
-        (DESIGN.md §7), et stort søkefelt med lupe, og treff markert med en
-        avrundet flate innenfor kantene.
+        Formet som Spotlight: store, myke hjørner (26 px), matt glass over
+        appen (som notatet fra samtalen), et stort søkefelt med lupe, og treff
+        markert med en avrundet flate innenfor kantene.
       */}
-      <div className="glass-sok w-full max-w-xl overflow-hidden rounded-[26px]">
+      <div className="glass-matt notat-vindu w-full max-w-xl overflow-hidden rounded-[26px]">
         <div className="flex items-center gap-3 px-4">
           <svg
             aria-hidden

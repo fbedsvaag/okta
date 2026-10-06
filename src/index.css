@@ -693,6 +693,146 @@ html {
 }
 
 /*
+ * Utfold (ui/Utfold.tsx): høyden går fra 0fr til 1fr, innholdet glir litt
+ * ned og kommer til syne. Kurven har en liten sprett — leken, men så kort at
+ * den ikke forstyrrer.
+ */
+:root {
+  --ease-leken: cubic-bezier(0.34, 1.35, 0.64, 1);
+  --tid-utfold: 260ms;
+}
+
+.utfold {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition:
+    grid-template-rows var(--tid-utfold) var(--ease-leken),
+    opacity var(--tid-inn) var(--ease-inn);
+}
+
+.utfold[data-apen="true"] {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+.utfold-innhold {
+  min-height: 0;
+  overflow: hidden;
+  transform: translateY(-6px);
+  transition: transform var(--tid-utfold) var(--ease-leken);
+}
+
+.utfold[data-apen="true"] > .utfold-innhold {
+  transform: none;
+}
+
+/*
+ * Matt glass: vinduer som legger seg over alt — ⌘K og notatet fra
+ * samtalen. Tettere og nesten uten fargemetning, mer frostet enn flytende.
+ * Teppet bak tones ned og blir bare så vidt uskarpt.
+ */
+:root {
+  --glass-matt: rgba(250, 249, 252, 0.93);
+}
+
+@media screen {
+  :root[data-tema="mork"] {
+    --glass-matt: rgba(34, 30, 46, 0.94);
+  }
+}
+
+:root[data-glass="av"] {
+  --glass-matt: var(--glass-sok);
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  :root[data-glass] {
+    --glass-matt: var(--glass-sok);
+  }
+}
+
+.glass-matt {
+  --color-blekk-dempet: var(--glass-dempet);
+  background: var(--glass-matt);
+  border: 1px solid var(--glass-kant);
+  -webkit-backdrop-filter: blur(24px) saturate(105%);
+  backdrop-filter: blur(24px) saturate(105%);
+  box-shadow:
+    0 1px 0 var(--glass-innerlys) inset,
+    0 2px 8px var(--glass-skygge),
+    0 28px 64px -16px var(--glass-skygge);
+}
+
+.matt-teppe {
+  background: color-mix(in srgb, var(--color-teppe) 26%, transparent);
+  -webkit-backdrop-filter: blur(1.5px);
+  backdrop-filter: blur(1.5px);
+  animation: notat-teppe-inn var(--tid-inn) var(--ease-inn);
+}
+
+.notat-vindu {
+  animation: notat-inn var(--tid-utfold) var(--ease-leken);
+}
+
+@keyframes notat-teppe-inn {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes notat-inn {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+}
+
+/*
+ * Bevegelse (Innstillinger › Utseende, DESIGN.md §8). Dempet: kortere og
+ * uten sprett. Av: alt skjer umiddelbart. «Som macOS» følger «Reduser
+ * bevegelse» i systemet.
+ */
+:root[data-bevegelse="dempet"] {
+  --tid-inn: 110ms;
+  --tid-ut: 90ms;
+  --tid-markor: 60ms;
+  --tid-utfold: 140ms;
+  --ease-leken: var(--ease-inn);
+}
+
+:root[data-bevegelse="av"] {
+  --tid-inn: 0ms;
+  --tid-ut: 0ms;
+  --tid-markor: 0ms;
+  --tid-utfold: 0ms;
+}
+
+:root[data-bevegelse="av"] *,
+:root[data-bevegelse="av"] *::before,
+:root[data-bevegelse="av"] *::after {
+  transition-duration: 0ms !important;
+  animation-duration: 0ms !important;
+  scroll-behavior: auto !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root[data-bevegelse="system"] {
+    --tid-inn: 0ms;
+    --tid-ut: 0ms;
+    --tid-markor: 0ms;
+    --tid-utfold: 0ms;
+  }
+
+  :root[data-bevegelse="system"] *,
+  :root[data-bevegelse="system"] *::before,
+  :root[data-bevegelse="system"] *::after {
+    transition-duration: 0ms !important;
+    animation-duration: 0ms !important;
+  }
+}
+
+/*
  * Slår av all bevegelse for de som har bedt om det i systeminnstillingene.
  * Layouten er den samme, den skjer bare umiddelbart.
  */

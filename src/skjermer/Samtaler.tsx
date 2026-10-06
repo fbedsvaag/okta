@@ -53,16 +53,14 @@ import {
 } from "../data/samtale";
 import { invoke } from "@tauri-apps/api/core";
 import { mentorStatus, publiserMentor } from "../data/caldav";
-import {
-  hentNotatPerElev,
-  opprettElevnotat,
-  endreElevnotat,
-  type Elevnotat,
-} from "../data/elevnotat";
+import { hentNotatPerElev, type Elevnotat } from "../data/elevnotat";
 import { Bryter, Fagfirkant, Ikon, Kappet, Tomtilstand } from "../ui/felles";
 import { blokkering, rodekart, type Fridag } from "../data/kalender";
 import { hentFridager } from "../data/skolear";
 import { IVerktoylinja } from "../ui/Verktoylinje";
+import { Utfold } from "../ui/Utfold";
+import { useApen } from "../ui/Sammenleggbar";
+import { Samtalenotat } from "./Samtalenotat";
 import { TEMATEKST, temafarge } from "../ui/farger";
 
 /**
@@ -165,6 +163,11 @@ export function Samtaler({
   const [visning, setVisning] = useState<Visning>("timeplan");
   const [kopiert, setKopiert] = useState<"teams" | "md" | null>(null);
   const [notater, setNotater] = useState<Map<string, Elevnotat>>(new Map());
+  // Samtalen som har notatvinduet åpent (et klikk på navnet i timeplanen).
+  const [notatFor, setNotatFor] = useState<{
+    rad: Dagplan["rader"][number];
+    dag: Samtaledag;
+  } | null>(null);
   const [kalender, setKalender] = useState<Awaited<
     ReturnType<typeof mentorStatus>
   > | null>(null);
@@ -314,7 +317,23 @@ export function Samtaler({
   }
 
   /** Elevene trekningen gjelder — fra appen, eller fra lista du limte inn. */
-  const deltakere = useMemo(() => {
+  // Elevene som er tatt ut av samtalene (DESIGN §10: alle eller noen
+  // utvalgte). Lagret per fag, og for mentorsamtalene for seg. Lista er de
+  // som er tatt UT, så en ny elev i faget kommer med av seg selv.
+  const [utelatt, setUtelatt] = useState<Set<string>>(new Set());
+  const [velgElever, setVelgElever] = useState(false);
+  const utvalgNokkel = `samtale_utelatt_${modus === "mentor" ? "mentor" : fagId}`;
+  useEffect(() => {
+    void hentInnstilling(utvalgNokkel).then((v) =>
+      setUtelatt(new Set(v ? (JSON.parse(v) as string[]) : [])),
+    );
+  }, [utvalgNokkel]);
+  function settUtelatt(ny: Set<string>) {
+    setUtelatt(ny);
+    void settInnstilling(utvalgNokkel, JSON.stringify([...ny]));
+  }
+
+  const alleDeltakere = useMemo(() => {
     if (brukEgen) {
       return egenListe
         .split("\n")
@@ -330,6 +349,14 @@ export function Samtaler({
       .filter(passer)
       .map((e) => ({ id: e.id, navn: `${e.fornavn} ${e.etternavn}` }));
   }, [brukEgen, egenListe, elever, modus, fagId]);
+
+  const deltakere = useMemo(
+    () =>
+      brukEgen
+        ? alleDeltakere
+        : alleDeltakere.filter((d) => !utelatt.has(d.id)),
+    [alleDeltakere, utelatt, brukEgen],
+  );
 
   /** Legger ut dagene og bygger radene som vises. */
   function byggPlan(
@@ -506,38 +533,6 @@ export function Samtaler({
     return ut;
   }
 
-  /**
-   * Notatet fra samtalen lagres i møteloggen (§4.7), ikke på timeplanraden.
-   *
-   * Da står det på elevsiden sammen med alt annet du har notert om hen over
-   * tid — og det finnes fortsatt bare ett sted notater om en elev bor.
-   */
-  async function lagreNotat(
-    rad: Dagplan["rader"][number],
-    dag: Samtaledag,
-    tekst: string,
-    folgesOpp: boolean,
-  ) {
-    const finnes = notater.get(rad.elevId);
-
-    if (finnes) {
-      await endreElevnotat(finnes.id, { tekst, skalFolgesOpp: folgesOpp });
-    } else {
-      if (!rad.samtaleId) return;
-      await opprettElevnotat(rad.elevId, dag.skolearId, {
-        dato: dag.dato,
-        tekst,
-        // Fagsamtalens notat henger på faget, så det dukker opp når elevkortet
-        // filtreres på det. Mentorsamtalens står uten fag, som den skal.
-        skolearFagId: dag.skolearFagId,
-        skalFolgesOpp: folgesOpp,
-        samtaleId: rad.samtaleId,
-      });
-    }
-
-    setNotater(await notaterFor(trekning ?? []));
-  }
-
   async function publiser() {
     setPubliserer(true);
     try {
@@ -681,12 +676,73 @@ export function Samtaler({
 
   return (
     <div className="flex min-h-0 w-full flex-1 overflow-clip">
+      {notatFor && notatFor.rad.samtaleId && (
+        <Samtalenotat
+          key={notatFor.rad.samtaleId}
+          elevId={notatFor.rad.elevId}
+          navn={notatFor.rad.navn}
+          tid={`${storForbokstav(langDato(notatFor.dag.dato))} · ${notatFor.rad.fra}–${notatFor.rad.til}`}
+          oppgave={
+            notatFor.rad.tema
+              ? {
+                  nr:
+                    temaer.indexOf(notatFor.rad.tema) >= 0
+                      ? temaer.indexOf(notatFor.rad.tema) + 1
+                      : null,
+                  tema: notatFor.rad.tema,
+                  farge:
+                    temaer.indexOf(notatFor.rad.tema) >= 0
+                      ? temafarge(temaer.indexOf(notatFor.rad.tema) + 1)
+                      : undefined,
+                }
+              : null
+          }
+          samtaleId={notatFor.rad.samtaleId}
+          dag={notatFor.dag}
+          notat={(() => {
+            // Dagens notat på eleven, men aldri et fra en annen fags samtale
+            // samme dag — da ville vinduet skrevet over feil notat.
+            const n = notater.get(notatFor.rad.elevId);
+            return n &&
+              (n.samtaleId === notatFor.rad.samtaleId ||
+                n.skolearFagId === notatFor.dag.skolearFagId ||
+                n.skolearFagId === null)
+              ? n
+              : null;
+          })()}
+          vurdering={(() => {
+            const v =
+              modus === "fag"
+                ? vurderinger.find((x) => x.id === valgtVurdering)
+                : undefined;
+            return v
+              ? { id: v.id, skalaId: v.skalaId, tittel: v.tittel }
+              : null;
+          })()}
+          vurderingsvalg={
+            modus === "fag"
+              ? vurderinger
+                  .filter((v) => v.skolearFagId === fagId)
+                  .map((v) => ({ id: v.id, tittel: v.tittel }))
+              : []
+          }
+          onVelgVurdering={async (id) => {
+            setValgtVurdering(id);
+            await settTrekningensVurdering(dager, id);
+            await last();
+          }}
+          onLukk={async () => {
+            setNotatFor(null);
+            setNotater(await notaterFor(trekning ?? []));
+          }}
+        />
+      )}
       {/*
         Oppsettskolonnen. Én sammenhengende kolonne med sin egen rullesone —
         ingen faner, ingen steg. Alt som styrer trekningen er synlig samtidig,
         i blokker skilt med en linje (DESIGN.md §10).
       */}
-      <div className="flex w-[22rem] shrink-0 flex-col overflow-clip border-r border-linje-medium pr-6">
+      <div className="flex w-[18rem] shrink-0 flex-col overflow-clip border-r border-linje-medium pr-5 xl:w-[22rem] xl:pr-6">
         <div className="min-h-0 flex-1 divide-y divide-linje-medium overflow-auto pr-1 [&>*]:py-5 [&>*:first-child]:pt-0">
           <div>
             <Bryter
@@ -748,14 +804,41 @@ export function Samtaler({
 
           <Bolk tittel="Samtalene">
             <div className="grid grid-cols-3 gap-2">
-              <label className="block">
+              <div>
                 <span className="mb-1 block text-liten text-blekk-dempet">
                   Elever
                 </span>
-                <span className="flex h-[2.4em] items-center rounded-vanlig border border-linje bg-flate-svak px-2.5 text-brod tabular-nums">
-                  {deltakere.length}
-                </span>
-              </label>
+                {/* Et klikk viser lista, og der velges alle eller noen. */}
+                <button
+                  onClick={() => setVelgElever((v) => !v)}
+                  disabled={brukEgen}
+                  aria-expanded={velgElever}
+                  title={brukEgen ? undefined : "Velg hvem som skal ha samtale"}
+                  className={`flex h-[2.4em] w-full items-center justify-between rounded-vanlig border bg-ark px-2.5 text-brod tabular-nums disabled:bg-flate-svak ${
+                    velgElever
+                      ? "border-aksent"
+                      : "border-linje hover:border-linje-sterk"
+                  }`}
+                >
+                  <span>
+                    {deltakere.length}
+                    {deltakere.length < alleDeltakere.length && (
+                      <span className="text-liten text-blekk-dempet">
+                        {" "}
+                        av {alleDeltakere.length}
+                      </span>
+                    )}
+                  </span>
+                  {!brukEgen && (
+                    <span
+                      aria-hidden
+                      className={`text-blekk-svak transition-transform ${velgElever ? "-rotate-90" : "rotate-90"}`}
+                    >
+                      ›
+                    </span>
+                  )}
+                </button>
+              </div>
               <Tallfelt
                 etikett="Minutter"
                 verdi={samtaletid}
@@ -763,6 +846,49 @@ export function Samtaler({
               />
               <Tallfelt etikett="Pause" verdi={pause} settVerdi={setPause} />
             </div>
+            {velgElever && !brukEgen && (
+              <div className="mt-2 rounded-vanlig border border-linje bg-ark">
+                <div className="flex items-center gap-3 border-b border-linje-svak px-2.5 py-1.5 text-liten">
+                  <span className="text-blekk-dempet">
+                    {deltakere.length} av {alleDeltakere.length} valgt
+                  </span>
+                  <button
+                    onClick={() => settUtelatt(new Set())}
+                    className="ml-auto text-blekk-dempet hover:text-blekk"
+                  >
+                    Alle
+                  </button>
+                  <button
+                    onClick={() =>
+                      settUtelatt(new Set(alleDeltakere.map((d) => d.id)))
+                    }
+                    className="text-blekk-dempet hover:text-blekk"
+                  >
+                    Ingen
+                  </button>
+                </div>
+                <ul className="max-h-60 overflow-y-auto py-1">
+                  {alleDeltakere.map((d) => (
+                    <li key={d.id}>
+                      <label className="flex cursor-pointer items-center gap-2 px-2.5 py-1 text-brod hover:bg-flate">
+                        <input
+                          type="checkbox"
+                          checked={!utelatt.has(d.id)}
+                          onChange={(e) => {
+                            const ny = new Set(utelatt);
+                            if (e.target.checked) ny.delete(d.id);
+                            else ny.add(d.id);
+                            settUtelatt(ny);
+                          }}
+                          className="accent-[var(--color-aksent)]"
+                        />
+                        <span className="truncate">{d.navn}</span>
+                      </label>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
             <div className="mt-3 flex items-center gap-3">
               <span className="text-brod text-blekk-dempet">Samtale</span>
               <Bryter
@@ -889,7 +1015,15 @@ export function Samtaler({
             </Bolk>
           )}
 
-          <Bolk tittel="Samtaledager">
+          <Bolk
+            tittel="Samtaledager"
+            nokkel="samtaler-dager"
+            etter={
+              dager.length === 0
+                ? undefined
+                : `${dager.length} ${dager.length === 1 ? "dag" : "dager"} · plass til ${samletKapasitet}`
+            }
+          >
             {modus === "fag" && (
               <Oktvelger
                 okter={oktvalg}
@@ -1051,7 +1185,7 @@ export function Samtaler({
         </div>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-auto pl-6">
+      <div className="@container min-h-0 min-w-0 flex-1 overflow-auto pl-5 xl:pl-6">
         {/*
           Gult varsel øverst når det er for få plasser, og det sier hvem som
           mangler tid — når trekningen er gjort, står navnene der (§10).
@@ -1110,7 +1244,7 @@ export function Samtaler({
                 fag.find((f) => f.id === fagId)?.kode ??
                 "")}
           </span>
-          <span className="shrink-0 text-liten tabular-nums text-blekk-dempet">
+          <span className="hidden shrink-0 text-liten tabular-nums text-blekk-dempet xl:inline">
             {[
               modus === "fag" && valgtVurdering
                 ? fag.find((f) => f.id === fagId)?.kode
@@ -1200,7 +1334,8 @@ export function Samtaler({
             />
             {visning === "timeplan" && (
               <span className="text-liten text-blekk-svak">
-                Dra en rad for å flytte. Nederste halvdel = etter denne.
+                Klikk på et navn for å ta notat fra samtalen. Dra en rad for å
+                flytte; nederste halvdel = etter denne.
               </span>
             )}
           </div>
@@ -1232,8 +1367,11 @@ export function Samtaler({
               await settMotte(rad.samtaleId, !rad.motte);
               await last();
             }}
-            onNotat={(rad, dag, tekst, folgesOpp) =>
-              void lagreNotat(rad, dag, tekst, folgesOpp)
+            onApneNotat={(rad, dag) => setNotatFor({ rad, dag })}
+            kapasitetFor={(planIdx) =>
+              kapasiteter[
+                dager.findIndex((d) => d.id === trekning[planIdx]?.dag.id)
+              ] ?? 0
             }
             onFlytt={(fra, til) => void flytt(fra, til)}
             onFlyttElev={(elevId, dag, rad) => void flyttElev(elevId, dag, rad)}
@@ -1257,13 +1395,22 @@ export function Samtaler({
 function Bolk({
   tittel,
   etter,
+  nokkel,
   children,
 }: {
   tittel: string;
   /** står til høyre for overskriften, f.eks. antall */
   etter?: string;
+  /** gis den, kan bolken legges sammen, og valget huskes */
+  nokkel?: string;
   children: React.ReactNode;
 }) {
+  if (nokkel)
+    return (
+      <Sammenleggbolk tittel={tittel} etter={etter} nokkel={nokkel}>
+        {children}
+      </Sammenleggbolk>
+    );
   return (
     <section>
       <h2 className="mb-3 flex items-baseline text-brod font-semibold text-blekk">
@@ -1334,6 +1481,48 @@ function Varseltrekant() {
 function listeTekst(navn: string[]): string {
   if (navn.length <= 1) return navn.join("");
   return `${navn.slice(0, -1).join(", ")} og ${navn[navn.length - 1]}`;
+}
+
+/** En bolk som legges sammen med et klikk på overskriften. */
+function Sammenleggbolk({
+  tittel,
+  etter,
+  nokkel,
+  children,
+}: {
+  tittel: string;
+  etter?: string;
+  nokkel: string;
+  children: React.ReactNode;
+}) {
+  const [apen, setApen] = useApen(nokkel);
+  return (
+    <section>
+      <button
+        onClick={() => setApen(!apen)}
+        aria-expanded={apen}
+        className="group flex w-full items-baseline gap-2 text-left text-brod font-semibold text-blekk"
+      >
+        <span
+          aria-hidden
+          className={`inline-block w-2 text-blekk-svak transition-transform duration-[var(--tid-inn)] ${
+            apen ? "rotate-90" : ""
+          }`}
+        >
+          ›
+        </span>
+        {tittel}
+        {etter && (
+          <span className="ml-auto text-liten font-normal tabular-nums text-blekk-svak group-hover:text-blekk-dempet">
+            {etter}
+          </span>
+        )}
+      </button>
+      <Utfold apen={apen}>
+        <div className="pt-3">{children}</div>
+      </Utfold>
+    </section>
+  );
 }
 
 /** Et lite tallfelt med etiketten over. */
@@ -1472,7 +1661,9 @@ function Oktvelger({
           økta, eller vis alle øktene i faget.
         </p>
       ) : (
-        <ul className="space-y-3">
+        <ul
+          className={`space-y-3 ${visAlle ? "max-h-80 overflow-y-auto pr-1" : ""}`}
+        >
           {synlige.map((o) => {
             const v = valgt.get(o.id);
             const slutt = o.klokkeslett
@@ -1694,9 +1885,10 @@ function Timeplan({
   laste,
   notater,
   temaer,
+  kapasitetFor,
   onLas,
   onMotte,
-  onNotat,
+  onApneNotat,
   onFlytt,
   onFlyttElev,
 }: {
@@ -1709,12 +1901,10 @@ function Timeplan({
   onLas: (elevId: string) => void;
   /** «møtte ikke» av og på for en samtale */
   onMotte: (rad: Dagplan["rader"][number]) => void;
-  onNotat: (
-    rad: Dagplan["rader"][number],
-    dag: Samtaledag,
-    tekst: string,
-    folgesOpp: boolean,
-  ) => void;
+  /** hvor mange plasser dagen har, etter plassen i planen */
+  kapasitetFor: (planIdx: number) => number;
+  /** et klikk på navnet: notatet fra samtalen */
+  onApneNotat: (rad: Dagplan["rader"][number], dag: Samtaledag) => void;
   onFlytt: (
     fra: { dag: number; rad: number },
     til: { dag: number; rad: number; etter: boolean },
@@ -1722,16 +1912,186 @@ function Timeplan({
   /** en elev dras fra sin gruppe over på en annen plass */
   onFlyttElev: (elevId: string, dag: number, rad: number) => void;
 }) {
-  // Et navn åpner elevkortet som et ark over timeplanen.
+  // Et navn i en gruppe åpner elevkortet som et ark over timeplanen. En
+  // enkeltsamtale åpner notatet fra samtalen.
   const ark = useArk();
   let plass = 0;
+
+  // ------------------------------------------------------------ dra
+  //
+  // Raden følger musa, og de andre glir unna mens du drar — du ser hvor den
+  // havner før du slipper. Posisjonene måles én gang når draget begynner;
+  // forskyvningene regnes ut fra dem, ikke fra en DOM som flytter seg.
+  // Nederste halvdel av en rad betyr «etter denne». Er dagen det slippes på
+  // full, bytter de to plass (§4.10), og raden som byttes står markert.
+  type Mal = { dag: number; rad: number; etter: boolean; bytt: boolean };
+  const [dra, setDra] = useState<{
+    fra: { dag: number; rad: number };
+    dy: number;
+    h: number;
+    mal: Mal | null;
+  } | null>(null);
+  const radEl = useRef(new Map<string, HTMLElement>());
+  const malt = useRef<
+    { dag: number; rad: number; top: number; bunn: number }[]
+  >([]);
+  const draget = useRef(false);
+  // Målet slik det sto sist pekeren flyttet seg — det er dit eleven går.
+  const sisteMal = useRef<Mal | null>(null);
+
+  function begynnDra(e: React.PointerEvent, fra: { dag: number; rad: number }) {
+    if (e.button !== 0) return;
+    if ((e.target as HTMLElement).closest("[data-ikke-dra], input, textarea"))
+      return;
+    const startY = e.clientY;
+    const startX = e.clientX;
+    let pekerY = startY;
+    let aktiv = false;
+    let h = 0;
+    // Rullesonen timeplanen står i. Drar du mot kanten, ruller den, og
+    // rullingen regnes inn: posisjonene ble målt før den begynte.
+    const sone = (e.currentTarget as HTMLElement).closest<HTMLElement>(
+      ".overflow-auto",
+    );
+    const startRull = sone?.scrollTop ?? 0;
+    let ramme = 0;
+
+    const oppdater = () => {
+      const rullet = (sone?.scrollTop ?? 0) - startRull;
+      const mal = finnMal(pekerY + rullet, fra);
+      sisteMal.current = mal;
+      setDra({ fra, dy: pekerY - startY + rullet, h, mal });
+    };
+
+    const rull = () => {
+      ramme = 0;
+      if (!aktiv || !sone) return;
+      const r = sone.getBoundingClientRect();
+      const kant = 48;
+      const fart =
+        pekerY < r.top + kant
+          ? -Math.ceil((r.top + kant - pekerY) / 4)
+          : pekerY > r.bottom - kant
+            ? Math.ceil((pekerY - (r.bottom - kant)) / 4)
+            : 0;
+      if (fart === 0) return;
+      sone.scrollTop += fart;
+      oppdater();
+      ramme = requestAnimationFrame(rull);
+    };
+
+    const flytt = (ev: PointerEvent) => {
+      pekerY = ev.clientY;
+      if (!aktiv) {
+        if (Math.hypot(ev.clientX - startX, ev.clientY - startY) < 4) return;
+        aktiv = true;
+        draget.current = true;
+        malt.current = [...radEl.current].map(([k, el]) => {
+          const [dag, rad] = k.split(":").map(Number);
+          const r = el.getBoundingClientRect();
+          return { dag, rad, top: r.top, bunn: r.bottom };
+        });
+        const egen = malt.current.find(
+          (m) => m.dag === fra.dag && m.rad === fra.rad,
+        );
+        h = egen ? egen.bunn - egen.top : 0;
+      }
+      oppdater();
+      if (!ramme) ramme = requestAnimationFrame(rull);
+    };
+
+    const slipp = () => {
+      window.removeEventListener("pointermove", flytt);
+      window.removeEventListener("pointerup", slipp);
+      window.removeEventListener("pointercancel", slipp);
+      if (ramme) cancelAnimationFrame(ramme);
+      // Utføres her, ikke i en state-oppdatering: React kan kjøre dem to
+      // ganger, og da ville eleven blitt flyttet to ganger.
+      const mal = sisteMal.current;
+      sisteMal.current = null;
+      setDra(null);
+      if (aktiv && mal) utfor(fra, mal);
+      // Klikket som kommer etter slippet, skal ikke åpne notatet.
+      window.setTimeout(() => (draget.current = false), 0);
+    };
+
+    window.addEventListener("pointermove", flytt);
+    window.addEventListener("pointerup", slipp);
+    window.addEventListener("pointercancel", slipp);
+  }
+
+  function finnMal(y: number, fra: { dag: number; rad: number }): Mal | null {
+    const andre = malt.current
+      .filter((m) => !(m.dag === fra.dag && m.rad === fra.rad))
+      .sort((a, b) => a.top - b.top);
+    if (andre.length === 0) return null;
+    // Raden pekeren står over, eller den nærmeste.
+    const over =
+      andre.find((m) => y >= m.top && y < m.bunn) ??
+      andre.reduce((best, m) =>
+        Math.abs((m.top + m.bunn) / 2 - y) <
+        Math.abs((best.top + best.bunn) / 2 - y)
+          ? m
+          : best,
+      );
+    const etter = y > (over.top + over.bunn) / 2;
+    const bytt =
+      over.dag !== fra.dag &&
+      plan[over.dag].rader.length >= kapasitetFor(over.dag);
+    return { dag: over.dag, rad: over.rad, etter: bytt ? false : etter, bytt };
+  }
+
+  /** Slippet: samme regler som før — innen dagen, eller til en annen dag. */
+  function utfor(fra: { dag: number; rad: number }, mal: Mal) {
+    if (mal.dag === fra.dag) {
+      const t = mal.etter ? mal.rad + 1 : mal.rad;
+      const til = t > fra.rad ? t - 1 : t;
+      if (til !== fra.rad)
+        onFlytt(fra, { dag: mal.dag, rad: til, etter: false });
+    } else {
+      onFlytt(fra, mal);
+    }
+  }
+
+  /** Hvor langt en rad skal gli for å gi plass, mens det dras. */
+  function forskyvning(dag: number, rad: number): number {
+    if (!dra?.mal || dra.mal.bytt) return 0;
+    const { fra, mal, h } = dra;
+    const t = mal.etter ? mal.rad + 1 : mal.rad;
+    if (mal.dag === fra.dag) {
+      if (dag !== fra.dag) return 0;
+      if (t > fra.rad) return rad > fra.rad && rad < t ? -h : 0;
+      return rad >= t && rad < fra.rad ? h : 0;
+    }
+    if (dag === fra.dag && rad > fra.rad) return -h;
+    if (dag === mal.dag && rad >= t) return h;
+    return 0;
+  }
+
+  function erDratt(dag: number, rad: number): boolean {
+    return dra !== null && dra.fra.dag === dag && dra.fra.rad === rad;
+  }
+
+  function byttesMed(dag: number, rad: number): boolean {
+    return !!dra?.mal?.bytt && dra.mal.dag === dag && dra.mal.rad === rad;
+  }
+
+  function stil(dag: number, rad: number): React.CSSProperties | undefined {
+    if (!dra) return undefined;
+    if (erDratt(dag, rad))
+      return { transform: `translateY(${dra.dy}px)`, transition: "none" };
+    return {
+      transform: `translateY(${forskyvning(dag, rad)}px)`,
+      transition: "transform var(--tid-inn) var(--ease-inn)",
+    };
+  }
 
   return (
     <div className="space-y-6">
       {plan.map((d, dagIdx) => (
         <section key={d.dag.id}>
           {/* Dagen i Light (DESIGN.md §10), med tid og antall ved siden av. */}
-          <div className="flex items-baseline gap-3 border-b border-linje pb-2">
+          <div className="flex flex-wrap items-baseline gap-x-3 border-b border-linje pb-2">
             <h2 className="text-[calc(26px*var(--tekst-skala))] font-light leading-tight tracking-overskrift first-letter:uppercase">
               {langDato(d.dag.dato)}
             </h2>
@@ -1771,38 +2131,35 @@ function Timeplan({
                   </div>
                 )}
                 <div
-                  draggable={!erLast}
-                  onDragStart={(e) => {
-                    e.dataTransfer.setData(
-                      "text/plain",
-                      JSON.stringify({ dagIdx, radIdx }),
-                    );
-                    e.dataTransfer.effectAllowed = "move";
+                  ref={(el) => {
+                    const k = `${dagIdx}:${radIdx}`;
+                    if (el) radEl.current.set(k, el);
+                    else radEl.current.delete(k);
                   }}
+                  onPointerDown={(e) =>
+                    !erLast && begynnDra(e, { dag: dagIdx, rad: radIdx })
+                  }
+                  // Et navn dratt ut av en gruppe: eleven flyttes hit.
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={(e) => {
                     e.preventDefault();
-                    // Et navn dratt ut av en gruppe: eleven flyttes hit.
                     const elev = e.dataTransfer.getData(ELEVDRAG);
-                    if (elev) return onFlyttElev(elev, dagIdx, radIdx);
-                    const data = e.dataTransfer.getData("text/plain");
-                    if (!data) return;
-                    const kilde = JSON.parse(data) as {
-                      dagIdx: number;
-                      radIdx: number;
-                    };
-                    // Nedre halvdel av raden betyr «etter denne». Slik kan en
-                    // elev dras helt sist på en annen dag.
-                    const r = e.currentTarget.getBoundingClientRect();
-                    const etter = e.clientY > r.top + r.height / 2;
-                    onFlytt(
-                      { dag: kilde.dagIdx, rad: kilde.radIdx },
-                      { dag: dagIdx, rad: radIdx, etter },
-                    );
+                    if (elev) onFlyttElev(elev, dagIdx, radIdx);
                   }}
-                  className={`flex items-center gap-3 border-b border-linje-svak py-2 text-brod ${
+                  style={stil(dagIdx, radIdx)}
+                  className={`relative flex touch-none select-none items-center gap-3 border-b border-linje-svak py-2 text-brod ${
                     r.motte ? "" : "opacity-55"
-                  } ${erLast ? "bg-flate-svak" : "cursor-grab hover:bg-flate-svak"}`}
+                  } ${
+                    erLast
+                      ? "bg-flate-svak"
+                      : dra
+                        ? "cursor-grabbing"
+                        : "cursor-grab hover:bg-flate-svak"
+                  } ${erDratt(dagIdx, radIdx) ? "z-20 bg-ark shadow-[var(--shadow-ark)]" : ""} ${
+                    byttesMed(dagIdx, radIdx)
+                      ? "bg-valgt ring-1 ring-inset ring-aksent"
+                      : ""
+                  }`}
                 >
                   <span className="w-7 shrink-0 text-right text-liten tabular-nums text-blekk-svak">
                     {plass}
@@ -1819,6 +2176,7 @@ function Timeplan({
                       {r.medlemmer.map((m) => (
                         <span
                           key={m.id}
+                          data-ikke-dra
                           draggable={!erLast}
                           onDragStart={(e) => {
                             // Navnet, ikke hele raden: raden har sitt eget drag.
@@ -1836,10 +2194,20 @@ function Timeplan({
                     </span>
                   ) : (
                     <button
-                      onClick={() =>
-                        r.medlemmer[0] && ark.apneElev(r.medlemmer[0].id)
+                      onClick={() => {
+                        // Musa ble sluppet etter et drag: det var ikke et klikk.
+                        if (draget.current) return;
+                        if (r.samtaleId) onApneNotat(r, d.dag);
+                        else if (r.medlemmer[0])
+                          ark.apneElev(r.medlemmer[0].id);
+                      }}
+                      title={
+                        r.samtaleId
+                          ? (notater.get(r.elevId)?.tekst ??
+                            "Skriv notat fra samtalen")
+                          : undefined
                       }
-                      className={`min-w-0 flex-1 text-left font-medium hover:text-aksent ${
+                      className={`flex min-w-0 flex-1 items-center gap-2 text-left font-medium hover:text-aksent ${
                         r.motte ? "" : "line-through"
                       }`}
                     >
@@ -1847,18 +2215,44 @@ function Timeplan({
                     </button>
                   )}
                   {r.tema && (
-                    <span className="flex w-60 min-w-0 shrink-0 items-center gap-3">
+                    <span
+                      title={r.tema}
+                      className="flex w-6 min-w-0 shrink-0 items-center gap-3 @xl:w-44 @3xl:w-60"
+                    >
                       {/* Oppgavenummeret som liten rute i temafargen. */}
                       {temaer.indexOf(r.tema) >= 0 && (
                         <Temarute nr={temaer.indexOf(r.tema) + 1} />
                       )}
-                      <Kappet verdi={r.tema} />
+                      <Kappet verdi={r.tema} klasse="hidden @xl:block" />
                     </span>
                   )}
-                  <span className="w-28 shrink-0 text-right text-liten text-blekk-dempet">
+                  <span className="hidden w-28 shrink-0 text-right text-liten text-blekk-dempet @3xl:block">
                     {r.motte ? notis : "møtte ikke"}
                   </span>
+                  {r.samtaleId && r.medlemmer.length === 1 ? (
+                    <button
+                      data-ikke-dra
+                      onClick={() => onApneNotat(r, d.dag)}
+                      title={
+                        notater.has(r.elevId)
+                          ? "Notatet fra samtalen"
+                          : "Ta notat fra samtalen"
+                      }
+                      className={`grid h-7 w-7 shrink-0 place-items-center rounded-vanlig ${
+                        notater.has(r.elevId)
+                          ? "text-aksent hover:bg-flate"
+                          : "text-blekk-svakest hover:bg-flate hover:text-blekk"
+                      }`}
+                    >
+                      <Ikon
+                        navn={notater.has(r.elevId) ? "notat-fylt" : "notat"}
+                      />
+                    </button>
+                  ) : (
+                    <span className="w-7 shrink-0" />
+                  )}
                   <button
+                    data-ikke-dra
                     onClick={() => onLas(r.elevId)}
                     title={
                       erLast
@@ -1875,6 +2269,7 @@ function Timeplan({
                   </button>
                   {r.samtaleId && r.medlemmer.length === 1 ? (
                     <button
+                      data-ikke-dra
                       onClick={() => onMotte(r)}
                       aria-pressed={!r.motte}
                       title={
@@ -1894,16 +2289,6 @@ function Timeplan({
                     <span className="w-7 shrink-0" />
                   )}
                 </div>
-
-                {/* Notatet går til elevens møtelogg, så det hører til én elev. */}
-                {r.samtaleId && r.medlemmer.length === 1 && (
-                  <Notatfelt
-                    notat={notater.get(r.elevId) ?? null}
-                    onLagre={(tekst, folgesOpp) =>
-                      onNotat(r, d.dag, tekst, folgesOpp)
-                    }
-                  />
-                )}
               </Fragment>
             );
           })}
@@ -1967,6 +2352,10 @@ function lashint(tema: boolean, rekkefolge: boolean): string {
   if (tema) return "Temaer holdes — kun rekkefølge trekkes.";
   if (rekkefolge) return "Rekkefølge holdes — kun tema trekkes.";
   return "";
+}
+
+function storForbokstav(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
 function langDato(dato: string): string {
@@ -2066,67 +2455,6 @@ function kortDato(dato: string): string {
     day: "numeric",
     month: "short",
   });
-}
-
-/**
- * Notatet fra samtalen, skrevet der du står under dagen.
- *
- * Det lagres i møteloggen på elevsiden (§4.7), ikke på timeplanraden — så det
- * står sammen med alt annet du har notert om eleven over tid. Feltet er
- * sammenklappet til det finnes noe å vise, så en dag uten notater er rolig.
- */
-function Notatfelt({
-  notat,
-  onLagre,
-}: {
-  notat: Elevnotat | null;
-  onLagre: (tekst: string, folgesOpp: boolean) => void;
-}) {
-  const [apent, setApent] = useState(false);
-
-  if (!apent && !notat) {
-    return (
-      <div className="border-b border-linje-svak pb-1.5 pl-[7.5rem]">
-        <button
-          onClick={() => setApent(true)}
-          className="text-liten text-blekk-svakest hover:text-blekk"
-        >
-          + notat
-        </button>
-      </div>
-    );
-  }
-
-  return (
-    <div className="border-b border-linje-svak py-1.5 pl-[7.5rem]">
-      <textarea
-        defaultValue={notat?.tekst ?? ""}
-        key={notat?.id ?? "ny"}
-        autoFocus={apent && !notat}
-        rows={2}
-        placeholder="Hva ble sagt, og hva ble avtalt?"
-        onBlur={(e) => {
-          const tekst = e.target.value.trim();
-          if (tekst === "" || tekst === notat?.tekst) return;
-          onLagre(tekst, notat?.skalFolgesOpp ?? false);
-        }}
-        className="w-full rounded-vanlig border border-linje px-2 py-1 text-brod outline-none placeholder:text-blekk-svakest focus:border-aksent"
-      />
-      <label className="mt-1 flex select-none items-center gap-1.5 text-liten text-blekk-dempet">
-        <input
-          type="checkbox"
-          checked={notat?.skalFolgesOpp ?? false}
-          disabled={!notat}
-          title={notat ? undefined : "Skriv notatet først"}
-          onChange={(e) => notat && onLagre(notat.tekst, e.target.checked)}
-        />
-        Skal følges opp
-        <span className="ml-auto text-blekk-svakest">
-          {notat ? "lagret i møteloggen" : ""}
-        </span>
-      </label>
-    </div>
-  );
 }
 
 /**

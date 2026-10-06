@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { hentInnstilling, settInnstilling } from "../data/skolear";
 
 /**
  * Bevegelse, SPEC §13 og merkevareguiden.
@@ -34,4 +35,51 @@ export function useGlidende<T>(
   }, [verdi, msUt]);
 
   return { vist, apen: verdi !== null };
+}
+
+// ------------------------------------------------------- innstillingen
+
+/**
+ * Bevegelse på, dempet eller av (DESIGN.md §8), valgt i Innstillinger ›
+ * Utseende. «Som macOS» følger «Reduser bevegelse» i systemet. Som temaet:
+ * valget lagres i `innstilling`, en kopi i localStorage til første tegning,
+ * og selve virkningen står i index.css under `:root[data-bevegelse]`.
+ */
+export type Bevegelse = "system" | "pa" | "dempet" | "av";
+
+export const BEVEGELSE = "bevegelse";
+const KOPI = "okta-bevegelse";
+
+function gyldig(v: string | null): Bevegelse {
+  return v === "pa" || v === "dempet" || v === "av" ? v : "system";
+}
+
+export function settBevegelse(b: Bevegelse): void {
+  document.documentElement.dataset.bevegelse = b;
+  try {
+    localStorage.setItem(KOPI, b);
+  } catch {
+    // Uten localStorage gjelder systemvalget til basen er lest.
+  }
+}
+
+export function bevegelseFraKopi(): void {
+  let v: string | null = null;
+  try {
+    v = localStorage.getItem(KOPI);
+  } catch {
+    // Standard: som macOS.
+  }
+  settBevegelse(gyldig(v));
+}
+
+export async function brukBevegelse(): Promise<Bevegelse> {
+  const b = gyldig(await hentInnstilling(BEVEGELSE));
+  settBevegelse(b);
+  return b;
+}
+
+export async function lagreBevegelse(b: Bevegelse): Promise<void> {
+  settBevegelse(b);
+  await settInnstilling(BEVEGELSE, b);
 }

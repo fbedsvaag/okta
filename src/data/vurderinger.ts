@@ -43,6 +43,12 @@ export type VurderingElev = {
   oppgave: string | null;
   /** «24. nov 10:20» — når samtalen var */
   samtaletid: string | null;
+  /**
+   * Notatet fra samtalen. Det bor i elevens møtelogg (`elevnotat` med
+   * `samtale_id`), ikke på resultatet — her leses det bare, så det finnes
+   * ett sted og ikke to som kan komme i utakt.
+   */
+  samtalenotat: string | null;
 };
 
 export async function hentVurderinger(skolearId: string): Promise<Vurdering[]> {
@@ -109,7 +115,16 @@ export async function hentVurderingElever(
               WHERE sd.vurdering_id = $1 AND sa.elev_id = e.id
                 AND sa.slettet IS NULL
               ORDER BY sa.motte DESC, sd.dato DESC, sa.klokkeslett DESC
-              LIMIT 1) AS samtaletid
+              LIMIT 1) AS samtaletid,
+            -- Samtalenotatet står også når en ny trekning har erstattet
+            -- samtaleraden, så slettet-merket på samtalen sjekkes ikke.
+            (SELECT n.tekst FROM elevnotat n
+               JOIN samtale sa ON sa.id = n.samtale_id
+               JOIN samtaledag sd ON sd.id = sa.samtaledag_id
+              WHERE sd.vurdering_id = $1 AND n.elev_id = e.id
+                AND n.slettet IS NULL AND TRIM(n.tekst) <> ''
+              ORDER BY n.endret DESC
+              LIMIT 1) AS samtalenotat
        FROM elev_fag ef
        JOIN elev e ON e.id = ef.elev_id AND e.slettet IS NULL
        LEFT JOIN vurderingsresultat r

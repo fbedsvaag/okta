@@ -1,6 +1,7 @@
 import { brukTema } from "./ui/tema";
 import { brukGlass } from "./ui/glass";
 import { brukPalett } from "./ui/palett";
+import { brukBevegelse } from "./ui/bevegelse";
 import { ukenummer } from "./data/kalender";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -35,6 +36,7 @@ import { Innstillinger } from "./skjermer/Innstillinger";
 import { Vurderinger } from "./skjermer/Vurderinger";
 import { Samtaler } from "./skjermer/Samtaler";
 import { ElevPanel } from "./skjermer/ElevPanel";
+import { FagPanel } from "./skjermer/FagPanel";
 import { Knapp, Ikon } from "./ui/felles";
 import { G_SNARVEIER, Sidemeny, type Menypunkt } from "./ui/Sidemeny";
 import { Sokevindu } from "./ui/Sokevindu";
@@ -53,6 +55,8 @@ type Visning =
   | "skoleruta"
   | "kalender"
   | "fag"
+  /** ett fag over hele bredden — der «Fag i år» i sidemenyen åpner */
+  | "fagside"
   | "elever"
   /** én elev over hele skjermen, uten lista — der søket åpner */
   | "elev"
@@ -191,6 +195,7 @@ export default function App() {
       await brukTema().catch((e) => console.error("tema:", e));
       await brukGlass().catch((e) => console.error("glass:", e));
       await brukPalett().catch((e) => console.error("palett:", e));
+      await brukBevegelse().catch((e) => console.error("bevegelse:", e));
 
       // Sikkerhetskopi, før noe rekker å endres i denne økta.
       await daglingKopi().catch((e) => console.error("sikkerhetskopi:", e));
@@ -282,7 +287,7 @@ export default function App() {
           skolearNavn={skolear.navn}
           aktiv={aktivtPunkt(visning)}
           fag={fag}
-          apentFagId={visning === "fag" ? apneId : null}
+          apentFagId={visning === "fagside" ? apneId : null}
           kanTilbake={peker > 0}
           kanFram={peker < steder.length - 1}
           onGa={(p) => ga(p)}
@@ -291,7 +296,7 @@ export default function App() {
           apenTrekning={visning === "samtaler" ? (apneId ?? null) : undefined}
           onApneTrekning={(id) => ga("samtaler", id)}
           onSok={() => setSokApent(true)}
-          onApneFag={(id) => ga("fag", id)}
+          onApneFag={(id) => ga("fagside", id)}
           onAlleFag={() => ga("fag")}
           onInnstillinger={() => ga("innstillinger")}
           onSkolear={() => ga("innstillinger", "skolear")}
@@ -397,6 +402,30 @@ export default function App() {
                 )}
 
                 {/*
+              Faget alene, over hele bredden — fagsiden for året. Dit går
+              «Fag i år» i sidemenyen. Lukk går dit man kom fra.
+            */}
+                {visning === "fagside" &&
+                  apneId &&
+                  fag.find((f) => f.id === apneId) && (
+                    <div className="mx-auto min-h-0 w-full max-w-5xl flex-1 overflow-auto">
+                      <FagPanel
+                        key={apneId}
+                        fag={fag.find((f) => f.id === apneId)!}
+                        skolearId={skolear.id}
+                        onLukk={() => (peker > 0 ? tilbake() : ga("fag"))}
+                        onEndret={last}
+                        onApneElev={(id, liste) =>
+                          ark.current?.apneElev(id, { liste, startFag: apneId })
+                        }
+                        onApneVurdering={(id) => ark.current?.apneVurdering(id)}
+                        onApneVurderinger={() => ga("vurderinger")}
+                        onLimInn={() => ga("liminn", apneId)}
+                      />
+                    </div>
+                  )}
+
+                {/*
             Elevkortet alene, over hele bredden. Lista ved siden av forstyrrer
             når man har søkt opp én bestemt elev. Lukk går dit man kom fra.
           */}
@@ -470,6 +499,7 @@ const SKJERMNAVN: Record<Visning, string> = {
   vurderinger: "Vurderinger",
   samtaler: "Samtaler",
   fag: "Fag",
+  fagside: "Fag",
   innstillinger: "Innstillinger",
   skoleruta: "Skoleruta",
 };
@@ -514,7 +544,7 @@ function aktivtPunkt(v: Visning): Menypunkt | "fag" | "innstillinger" | null {
   if (v === "idag" || v === "vurderinger" || v === "samtaler") return v;
   if (erOktvisning(v)) return "okter";
   if (v === "elever" || v === "elev" || v === "liminn") return "elever";
-  if (v === "fag") return "fag";
+  if (v === "fag" || v === "fagside") return "fag";
   if (v === "innstillinger" || v === "skoleruta") return "innstillinger";
   return null;
 }

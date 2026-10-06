@@ -1,5 +1,6 @@
 import { lagreTema, TEMA, type Tema } from "../ui/tema";
 import { GLASS, lagreGlass, type Glass } from "../ui/glass";
+import { BEVEGELSE, lagreBevegelse, type Bevegelse } from "../ui/bevegelse";
 import { lagrePalett, PALETT, PALETTER, type Palett } from "../ui/palett";
 import { createContext, useContext, useEffect, useState } from "react";
 import {
@@ -86,6 +87,7 @@ export function Innstillinger({
   );
   const [tema, setTema] = useState<Tema>("system");
   const [glass, setGlass] = useState<Glass>("pa");
+  const [bevegelse, setBevegelse] = useState<Bevegelse>("system");
   const [palett, setPalett] = useState<Palett>("fiolett");
   const [davFeil, setDavFeil] = useState<string | null>(null);
   const [davJobber, setDavJobber] = useState(false);
@@ -149,6 +151,9 @@ export function Innstillinger({
       setTema(v === "lys" || v === "mork" ? v : "system"),
     );
     void hentInnstilling(GLASS).then((v) => setGlass(v === "av" ? "av" : "pa"));
+    void hentInnstilling(BEVEGELSE).then((v) =>
+      setBevegelse(v === "pa" || v === "dempet" || v === "av" ? v : "system"),
+    );
     void hentInnstilling(PALETT).then((v) => {
       const p = PALETTER.find((x) => x.id === v);
       setPalett(p ? p.id : "fiolett");
@@ -414,6 +419,24 @@ export function Innstillinger({
                 settVerdi={(v) => {
                   setGlass(v as Glass);
                   void lagreGlass(v as Glass);
+                }}
+              />
+            </Rad>
+            <Rad
+              etikett="Bevegelse"
+              hjelp="Kort, myk bevegelse når noe åpnes, foldes ut eller dras. Skåringen beveger seg aldri. «Som macOS» slår den av når «Reduser bevegelse» er på i systemet."
+            >
+              <Bryter
+                valg={[
+                  { id: "system", navn: "Som macOS" },
+                  { id: "pa", navn: "På" },
+                  { id: "dempet", navn: "Dempet" },
+                  { id: "av", navn: "Av" },
+                ]}
+                verdi={bevegelse}
+                settVerdi={(v) => {
+                  setBevegelse(v as Bevegelse);
+                  void lagreBevegelse(v as Bevegelse);
                 }}
               />
             </Rad>

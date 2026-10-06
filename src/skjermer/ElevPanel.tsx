@@ -1,4 +1,5 @@
 import { useApen } from "../ui/Sammenleggbar";
+import { Utfold } from "../ui/Utfold";
 import { useEffect, useState } from "react";
 import { Tidslinjedato, Tidslinjestrek } from "../ui/Tidslinje";
 import { useArk } from "../ui/Arkstabel";
@@ -723,7 +724,7 @@ function Bolk({
         )}
         {handling && <span className="ml-auto">{handling}</span>}
       </div>
-      {apen && children}
+      <Utfold apen={apen}>{children}</Utfold>
     </section>
   );
 }

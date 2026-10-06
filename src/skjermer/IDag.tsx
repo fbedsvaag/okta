@@ -1,4 +1,5 @@
 import { Sammenleggknapp, useApen } from "../ui/Sammenleggbar";
+import { Utfold } from "../ui/Utfold";
 import { useEffect, useState } from "react";
 import type { Skolear } from "../data/skolear";
 import type { FagIAr } from "../data/fag";
@@ -394,7 +395,7 @@ function Bolk({
           onBytt={() => setApen(!apen)}
         />
       </div>
-      {apen && children}
+      <Utfold apen={apen}>{children}</Utfold>
     </section>
   );
 }

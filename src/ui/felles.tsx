@@ -120,7 +120,9 @@ export function Ikon({
     | "markor"
     | "opp"
     | "ned"
-    | "motte-ikke";
+    | "motte-ikke"
+    | "notat"
+    | "notat-fylt";
   klasse?: string;
 }) {
   const felles = {
@@ -154,6 +156,25 @@ export function Ikon({
             fill="currentColor"
           />
           <path d="M5.5 7V4.8a2.5 2.5 0 0 1 5 0V7" />
+        </svg>
+      );
+    case "notat":
+      // Et ark med linjer: notatet fra samtalen.
+      return (
+        <svg {...felles}>
+          <path d="M4 2.5h6l2.5 2.5v8.5H4z" />
+          <path d="M6 7.5h4.5M6 10h3" />
+        </svg>
+      );
+    case "notat-fylt":
+      return (
+        <svg {...felles}>
+          <path
+            d="M4 2.5h6l2.5 2.5v8.5H4z"
+            fill="currentColor"
+            fillOpacity={0.18}
+          />
+          <path d="M6 7.5h4.5M6 10h3" />
         </svg>
       );
     case "motte-ikke":

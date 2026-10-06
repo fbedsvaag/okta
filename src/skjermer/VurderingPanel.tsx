@@ -142,7 +142,11 @@ export function VurderingPanel({
   return (
     <aside className="flex h-full flex-col border-l border-linje bg-ark">
       <header className="flex items-baseline gap-3 border-b border-linje-medium px-5 py-3">
-        <Fagfirkant farge={vurdering.farge} storrelse={10} klasse="self-center" />
+        <Fagfirkant
+          farge={vurdering.farge}
+          storrelse={10}
+          klasse="self-center"
+        />
         <span className="text-brod font-semibold">{vurdering.fagKode}</span>
         <Kappet verdi={vurdering.tittel} klasse="text-brod text-blekk-dempet" />
         <button
@@ -307,14 +311,26 @@ function ElevRad({
           e.stopPropagation();
           onKommentar();
         }}
-        title={elev.kommentar ?? "Legg til kommentar (K)"}
+        title={
+          [
+            elev.kommentar,
+            elev.samtalenotat && `Fra samtalen: ${elev.samtalenotat}`,
+          ]
+            .filter(Boolean)
+            .join("\n\n") || "Legg til kommentar (K)"
+        }
         className={`flex-1 truncate text-left text-liten italic ${
-          elev.kommentar
+          elev.kommentar || elev.samtalenotat
             ? "text-blekk-dempet hover:text-blekk"
             : "text-blekk-svakest hover:text-blekk-dempet"
         }`}
       >
-        {elev.kommentar ?? "+ kommentar"}
+        {/*
+          Notatet fra samtalen bor i møteloggen og vises her når det ikke
+          står noen kommentar (§4.10). Hele teksten ligger i verktøytipset.
+        */}
+        {elev.kommentar ??
+          (elev.samtalenotat ? `Samtale: ${elev.samtalenotat}` : "+ kommentar")}
       </button>
 
       <label
