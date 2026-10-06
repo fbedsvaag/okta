@@ -181,6 +181,29 @@ function Dagensokter({
   }, [fagIDag]);
 
   // «om 1 t 50 min» skal stemme uten at man laster forsiden på nytt.
+  // ↵ åpner økta som pågår, eller den neste i dag (ARBEIDSLISTE 7.5).
+  // Bare når ingenting annet har fokus — ikke i et felt eller et åpent kort.
+  useEffect(() => {
+    const tast = (e: KeyboardEvent) => {
+      if (e.key !== "Enter" || e.metaKey || e.ctrlKey || e.altKey) return;
+      if (document.activeElement && document.activeElement !== document.body)
+        return;
+      const naMin = new Date().getHours() * 60 + new Date().getMinutes();
+      const neste = d.linjer
+        .map((l) => okter.find((o) => o.id === l.okt.id)!)
+        .find((o) => {
+          if (!o.klokkeslett) return true;
+          const [t, m] = o.klokkeslett.split(":").map(Number);
+          return t * 60 + m + o.varighetMin > naMin;
+        });
+      if (!neste) return;
+      e.preventDefault();
+      onApne(neste.id);
+    };
+    window.addEventListener("keydown", tast);
+    return () => window.removeEventListener("keydown", tast);
+  });
+
   useEffect(() => {
     const t = window.setInterval(() => setNa(new Date()), 30_000);
     return () => window.clearInterval(t);
@@ -260,7 +283,16 @@ function Dagensokt({
                 {nar}
               </span>
             )}
-            <Knapp onClick={() => onApne(okt.id)}>Åpne</Knapp>
+            <button
+              onClick={() => onApne(okt.id)}
+              title="Åpne økta (↵)"
+              className="flex items-center gap-1.5 rounded-vanlig px-1 py-0.5 text-etikett text-blekk-dempet hover:text-blekk"
+            >
+              <kbd className="rounded border border-linje bg-ark px-1.5 font-sans leading-4">
+                ↵
+              </kbd>
+              åpne økta
+            </button>
           </span>
           <span />
           <p className="col-span-2 truncate text-liten text-blekk-dempet">

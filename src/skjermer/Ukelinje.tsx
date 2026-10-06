@@ -477,9 +477,11 @@ function Blokk({
         )}
       </span>
       {okt.tema && (
-        <span className="block text-blekk-dempet [overflow-wrap:anywhere]">
-          {okt.tema}
-        </span>
+        <span className="block truncate text-blekk">{okt.tema}</span>
+      )}
+      {/* Rommet i liten grå skrift (ARBEIDSLISTE 7.5). */}
+      {okt.sted && (
+        <span className="block truncate text-blekk-svak">{okt.sted}</span>
       )}
     </button>
   );
