@@ -1,4 +1,5 @@
 import { Sammenleggknapp, useApen } from "../ui/Sammenleggbar";
+import { Elevfoto } from "../ui/Elevfoto";
 import { Utfold } from "../ui/Utfold";
 import { useEffect, useState } from "react";
 import { Tidslinjedato, Tidslinjestrek } from "../ui/Tidslinje";
@@ -437,9 +438,12 @@ function Klasseliste({
                         elever.map((x) => x.elevId),
                       )
                     }
-                    className="text-left hover:text-aksent hover:underline"
+                    className="flex items-center gap-2 text-left hover:text-aksent"
                   >
-                    {e.fornavn} {e.etternavn}
+                    <Elevfoto elevId={e.elevId} storrelse={20} />
+                    <span className="hover:underline">
+                      {e.fornavn} {e.etternavn}
+                    </span>
                   </button>
                 </td>
                 <td className="w-16 py-1.5 tabular-nums text-blekk-dempet">

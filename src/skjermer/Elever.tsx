@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Elevfoto } from "../ui/Elevfoto";
 import { confirm as bekreft } from "@tauri-apps/plugin-dialog";
 import { lyttElever } from "../data/endringer";
 import {
@@ -774,6 +775,9 @@ function Rad({
             ●
           </span>
         )}
+        <span className="mr-2 inline-block align-middle">
+          <Elevfoto elevId={elev.id} storrelse={22} />
+        </span>
         <Navnefelt
           verdi={elev.fornavn}
           rediger={rediger}

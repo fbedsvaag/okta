@@ -1,4 +1,5 @@
 import { Sammenleggknapp, useApen } from "../ui/Sammenleggbar";
+import { Elevfoto } from "../ui/Elevfoto";
 import { Utfold } from "../ui/Utfold";
 import { useEffect, useState } from "react";
 import {
@@ -470,6 +471,7 @@ function Glipper({
                   className="h-2.5 w-2.5 shrink-0 rounded-full"
                   style={{ background: PRIKKFARGE[snittfarge(e.snitt)] }}
                 />
+                <Elevfoto elevId={e.elevId} storrelse={20} />
                 <Kappet verdi={`${e.fornavn} ${e.etternavn}`} />
                 {e.klasse && (
                   <span className="shrink-0 text-liten text-blekk-svak">
@@ -566,6 +568,13 @@ function Gjoremalsliste({ skolearId }: { skolearId: string }) {
                     g.slag === "eget" ? "cursor-default" : "hover:text-aksent"
                   }`}
                 >
+                  {g.slag !== "oktboks" && g.slag !== "eget" && (
+                    <Elevfoto
+                      elevId={g.elevId}
+                      storrelse={18}
+                      klasse="self-center"
+                    />
+                  )}
                   <Kappet verdi={g.tekst || "(uten tekst)"} />
                   {hvem && (
                     <span className="ml-auto shrink-0 text-liten text-blekk-svak">

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Elevfoto } from "../ui/Elevfoto";
 import { useArk } from "../ui/Arkstabel";
 import { Fagfirkant, Ikon, Kappet } from "../ui/felles";
 import { confirm as bekreft } from "@tauri-apps/plugin-dialog";
@@ -288,9 +289,12 @@ function ElevRad({
           onApneElev();
         }}
         title="Åpne eleven"
-        className="w-44 shrink-0 truncate text-left text-brod hover:text-aksent hover:underline"
+        className="flex w-52 shrink-0 items-center gap-2 text-left text-brod hover:text-aksent"
       >
-        {elev.fornavn} {elev.etternavn}
+        <Elevfoto elevId={elev.elevId} storrelse={20} />
+        <span className="truncate hover:underline">
+          {elev.fornavn} {elev.etternavn}
+        </span>
       </button>
 
       {/*

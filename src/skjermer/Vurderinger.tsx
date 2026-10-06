@@ -8,7 +8,14 @@ import {
 } from "../data/vurderinger";
 import type { FagIAr } from "../data/fag";
 import type { Skala } from "../skala";
-import { Fagfirkant, Felt, Ikon, Kappet, Knapp, Tomtilstand } from "../ui/felles";
+import {
+  Fagfirkant,
+  Felt,
+  Ikon,
+  Kappet,
+  Knapp,
+  Tomtilstand,
+} from "../ui/felles";
 import { useArk } from "../ui/Arkstabel";
 import { lyttVurderinger } from "../data/endringer";
 

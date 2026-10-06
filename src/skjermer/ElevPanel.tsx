@@ -1,4 +1,5 @@
 import { useApen } from "../ui/Sammenleggbar";
+import { Plassholder } from "../ui/Elevfoto";
 import { Utfold } from "../ui/Utfold";
 import { useEffect, useState } from "react";
 import { Tidslinjedato, Tidslinjestrek } from "../ui/Tidslinje";
@@ -218,6 +219,7 @@ export function ElevPanel({
       }`}
     >
       <header className="flex items-start gap-4 border-b border-linje-medium px-5 py-3">
+        {!bilde && <Plassholder storrelse={60} />}
         {bilde && (
           <span className="group relative">
             <Elevbilde src={bilde} storrelse={60} alt="" />

@@ -61,6 +61,7 @@ import { IVerktoylinja } from "../ui/Verktoylinje";
 import { Utfold } from "../ui/Utfold";
 import { useApen } from "../ui/Sammenleggbar";
 import { Samtalenotat } from "./Samtalenotat";
+import { Elevfoto } from "../ui/Elevfoto";
 import { TEMATEKST, temafarge } from "../ui/farger";
 
 /**
@@ -2243,6 +2244,10 @@ function Timeplan({
                         r.motte ? "" : "line-through"
                       }`}
                     >
+                      <Elevfoto
+                        elevId={r.medlemmer[0]?.id ?? r.elevId}
+                        storrelse={24}
+                      />
                       <Kappet verdi={r.navn} />
                     </button>
                   )}
@@ -2419,7 +2424,12 @@ function Fordeling({ plan }: { plan: Dagplan[] }) {
           <span className="text-liten tabular-nums text-blekk-svak">
             {i + 1}
           </span>
-          <p className="truncate text-brod font-medium">{r.navn}</p>
+          <p className="flex items-center gap-2 text-brod font-medium">
+            {r.medlemmer.length === 1 && (
+              <Elevfoto elevId={r.medlemmer[0].id} storrelse={22} />
+            )}
+            <span className="truncate">{r.navn}</span>
+          </p>
           {r.tema && (
             <p className="truncate text-liten text-blekk-dempet">{r.tema}</p>
           )}
@@ -2464,7 +2474,12 @@ function Alfabetisk({ plan, medTema }: { plan: Dagplan[]; medTema: boolean }) {
               r.motte ? "" : "text-blekk-svak line-through"
             }`}
           >
-            <td className="py-1.5">{r.navn}</td>
+            <td className="py-1.5">
+              <span className="flex items-center gap-2">
+                <Elevfoto elevId={r.elevId} storrelse={20} />
+                {r.navn}
+              </span>
+            </td>
             {medTema && (
               <td className="py-1.5 text-blekk-dempet">{r.tema ?? ""}</td>
             )}
