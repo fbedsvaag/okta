@@ -226,7 +226,7 @@ export function Arkstabel({
                     : // Elevkortet er et ark i matt glass fra høyre, 880 px
                       // (lerretet «ElevArk»).
                       ark.type === "elev"
-                      ? "glass-matt inset-y-3 right-3 w-[min(880px,calc(100%-24px))] overflow-hidden rounded-[20px]"
+                      ? "glass-matt inset-y-4 right-4 w-[min(880px,calc(100%-32px))] overflow-hidden rounded-[24px]"
                       : "inset-y-0 right-0 w-full max-w-2xl bg-ark shadow-[var(--shadow-ark)]"
                 } ${
                   paVeiUt

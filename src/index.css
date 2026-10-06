@@ -830,18 +830,21 @@ html {
   --color-blekk-dempet: var(--glass-dempet);
   background: var(--glass-matt);
   border: 1px solid var(--glass-kant);
-  -webkit-backdrop-filter: blur(24px) saturate(105%);
-  backdrop-filter: blur(24px) saturate(105%);
+  -webkit-backdrop-filter: blur(22px) saturate(105%);
+  backdrop-filter: blur(22px) saturate(105%);
   box-shadow:
     0 1px 0 var(--glass-innerlys) inset,
     0 2px 8px var(--glass-skygge),
     0 28px 64px -16px var(--glass-skygge);
 }
 
+/*
+ * Sløret bak notatvinduet, samtalenotatet og ⌘K. Ingen backdrop-filter her:
+ * et filter på sløret gjør det til «bakgrunnsrot» for glasset inni, og da
+ * ser glasset bare sløret — ikke teksten bak, som skinte rett gjennom.
+ */
 .matt-teppe {
-  background: color-mix(in srgb, var(--color-teppe) 26%, transparent);
-  -webkit-backdrop-filter: blur(1.5px);
-  backdrop-filter: blur(1.5px);
+  background: color-mix(in srgb, var(--color-teppe) 20%, transparent);
   animation: notat-teppe-inn var(--tid-inn) var(--ease-inn);
 }
 
