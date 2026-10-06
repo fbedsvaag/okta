@@ -69,10 +69,16 @@ type Visning =
 export default function App() {
   const [skolear, setSkolear] = useState<Skolear | null>(null);
   const [fag, setFag] = useState<FagIAr[]>([]);
+  // Lytteren for ⌘1–9 står fast; den leser fagene herfra.
+  const fagRef = useRef<FagIAr[]>([]);
+  fagRef.current = fag;
   const [laster, setLaster] = useState(true);
   const [feil, setFeil] = useState<string | null>(null);
   const [melding, setMelding] = useState<string | null>(null);
   const [versjon, setVersjon] = useState(0);
+  // Faget Økter står filtrert på ("" = alle). Bor her, ikke i Økter, fordi
+  // undermenyen i sidemenyen og ⌘0–9 velger det (DESIGN.md §6).
+  const [oktFag, setOktFag] = useState("");
   // De planlagte trekningene, til sidemenyen under Samtaler (DESIGN.md §10).
   const [trekninger, setTrekninger] = useState<Trekning[]>([]);
   // Navnet på vurderingen hver trekning hører til — det er trekningens navn.
@@ -112,6 +118,21 @@ export default function App() {
       // Samme sted to ganger på rad gir ingenting å gå tilbake gjennom.
       if (na.visning === visning && na.id === id) return h;
       const steder = [...h.steder.slice(0, h.peker + 1), { visning, id }];
+      return { steder, peker: steder.length - 1 };
+    });
+  }, []);
+
+  /** Et fag fra undermenyen eller ⌘0–9: Økter, filtrert på faget. */
+  const velgFag = useCallback((id: string) => {
+    setOktFag(id);
+    setHistorikk((h) => {
+      const na = h.steder[h.peker];
+      // Står du i Økter (liste eller kalender), blir du der.
+      if (na.visning === "okter" || na.visning === "kalender") return h;
+      const steder = [
+        ...h.steder.slice(0, h.peker + 1),
+        { visning: "okter" as Visning, id: null },
+      ];
       return { steder, peker: steder.length - 1 };
     });
   }, []);
@@ -165,6 +186,16 @@ export default function App() {
         }
         return;
       }
+      // ⌘0–9: fagene i undermenyen under Økter (⌘0 = alle fag).
+      if (/^[0-9]$/.test(e.key) && !e.shiftKey && !e.altKey) {
+        const n = Number(e.key);
+        if (n === 0 || fagRef.current[n - 1]) {
+          e.preventDefault();
+          ark.current?.lukkAlle();
+          velgFag(n === 0 ? "" : fagRef.current[n - 1].id);
+        }
+        return;
+      }
       if (e.key === ",") {
         e.preventDefault();
         ark.current?.lukkAlle();
@@ -185,7 +216,7 @@ export default function App() {
     };
     window.addEventListener("keydown", taster);
     return () => window.removeEventListener("keydown", taster);
-  }, [tilbake, fram, ga]);
+  }, [tilbake, fram, ga, velgFag]);
 
   const last = useCallback(async () => {
     try {
@@ -287,7 +318,8 @@ export default function App() {
           skolearNavn={skolear.navn}
           aktiv={aktivtPunkt(visning)}
           fag={fag}
-          apentFagId={visning === "fagside" ? apneId : null}
+          valgtFag={oktFag}
+          onVelgFag={velgFag}
           kanTilbake={peker > 0}
           kanFram={peker < steder.length - 1}
           onGa={(p) => ga(p)}
@@ -296,8 +328,6 @@ export default function App() {
           apenTrekning={visning === "samtaler" ? (apneId ?? null) : undefined}
           onApneTrekning={(id) => ga("samtaler", id)}
           onSok={() => setSokApent(true)}
-          onApneFag={(id) => ga("fagside", id)}
-          onAlleFag={() => ga("fag")}
           onInnstillinger={() => ga("innstillinger")}
           onSkolear={() => ga("innstillinger", "skolear")}
           onTilbake={tilbake}
@@ -474,6 +504,8 @@ export default function App() {
                     skolear={skolear}
                     fag={fag}
                     startValgt={apneId}
+                    filterFag={oktFag}
+                    onFilterFag={setOktFag}
                   />
                 )}
 
@@ -540,11 +572,11 @@ function isoIDag(): string {
 }
 
 /** Hvilket punkt i sidemenyen som står markert for en visning. */
-function aktivtPunkt(v: Visning): Menypunkt | "fag" | "innstillinger" | null {
+function aktivtPunkt(v: Visning): Menypunkt | "innstillinger" | null {
   if (v === "idag" || v === "vurderinger" || v === "samtaler") return v;
-  if (erOktvisning(v)) return "okter";
+  // Fagene er undermeny under Økter, så fagsiden hører til der.
+  if (erOktvisning(v) || v === "fag" || v === "fagside") return "okter";
   if (v === "elever" || v === "elev" || v === "liminn") return "elever";
-  if (v === "fag" || v === "fagside") return "fag";
   if (v === "innstillinger" || v === "skoleruta") return "innstillinger";
   return null;
 }

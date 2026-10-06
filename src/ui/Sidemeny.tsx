@@ -1,15 +1,18 @@
-import type { ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { FagIAr } from "../data/fag";
 import type { Trekning } from "../data/samtale";
-import { Fagfirkant } from "./felles";
+import { fagfarge } from "./farger";
 import { Ordmerke } from "./logo";
+import { Utfold } from "./Utfold";
 
 /**
- * Sidemenyen til venstre (DESIGN.md §6). Erstatter menyraden øverst.
+ * Sidemenyen til venstre (DESIGN.md §6, variant A i lerretet).
  *
- * Øverst merket og skoleåret, så søket, så skjermene med G-snarveiene
- * sine, så fagene i år. Innstillinger nederst. Hovedflaten ligger som et
- * hvitt ark ved siden av.
+ * Bare skjermene står fast. Lister hører til en skjerm og står som en
+ * innrykket undermeny under den, med en tynn strek foran: fagene under
+ * Økter (⌘0–9), trekningene under Samtaler. Undermenyen er åpen under
+ * skjermen du står i; under de andre rulles den ut når musa holdes over
+ * punktet en liten stund, på en felles glassflate. Innstillinger nederst.
  */
 
 export type Menypunkt =
@@ -25,39 +28,31 @@ export const G_SNARVEIER: Record<string, Menypunkt> = {
   s: "samtaler",
 };
 
-const PUNKTER: {
-  id: Menypunkt;
-  navn: string;
-  tast: string;
-  ikon: ReactNode;
-}[] = [
-  { id: "idag", navn: "I dag", tast: "G D", ikon: <IkonIDag /> },
-  { id: "okter", navn: "Økter", tast: "G Ø", ikon: <IkonOkter /> },
-  { id: "elever", navn: "Elever", tast: "G E", ikon: <IkonElever /> },
-  {
-    id: "vurderinger",
-    navn: "Vurderinger",
-    tast: "G V",
-    ikon: <IkonVurderinger />,
-  },
-  { id: "samtaler", navn: "Samtaler", tast: "G S", ikon: <IkonSamtaler /> },
+const PUNKTER: { id: Menypunkt; navn: string; tast: string }[] = [
+  { id: "idag", navn: "I dag", tast: "G D" },
+  { id: "okter", navn: "Økter", tast: "G Ø" },
+  { id: "elever", navn: "Elever", tast: "G E" },
+  { id: "vurderinger", navn: "Vurderinger", tast: "G V" },
+  { id: "samtaler", navn: "Samtaler", tast: "G S" },
 ];
+
+/** Så lenge musa må hvile på et punkt før undermenyen rulles ut. */
+const HOVER_MS = 140;
 
 export function Sidemeny({
   skolearNavn,
   aktiv,
   fag,
-  apentFagId,
+  valgtFag,
   kanTilbake,
   kanFram,
   onGa,
+  onVelgFag,
   trekninger,
   vurderingsnavn,
   apenTrekning,
   onApneTrekning,
   onSok,
-  onApneFag,
-  onAlleFag,
   onInnstillinger,
   onSkolear,
   onTilbake,
@@ -65,13 +60,16 @@ export function Sidemeny({
 }: {
   skolearNavn: string;
   /** hvilket punkt som er markert; null når ingen av dem er det */
-  aktiv: Menypunkt | "fag" | "innstillinger" | null;
+  aktiv: Menypunkt | "innstillinger" | null;
   fag: FagIAr[];
-  apentFagId: string | null;
+  /** faget Økter står filtrert på; "" = alle fag */
+  valgtFag: string;
   kanTilbake: boolean;
   kanFram: boolean;
   onGa: (p: Menypunkt) => void;
-  /** de planlagte samtaletrekningene, under Samtaler (DESIGN.md §10) */
+  /** et fag i undermenyen under Økter; "" = Alle fag */
+  onVelgFag: (id: string) => void;
+  /** de planlagte samtaletrekningene, under Samtaler */
   trekninger: Trekning[];
   /** vurderings-id → tittel; en trekning heter det vurderingen heter */
   vurderingsnavn: Map<string, string>;
@@ -79,22 +77,110 @@ export function Sidemeny({
   apenTrekning: string | null | undefined;
   onApneTrekning: (id: string) => void;
   onSok: () => void;
-  onApneFag: (id: string) => void;
-  onAlleFag: () => void;
   onInnstillinger: () => void;
   /** skoleåret øverst: Innstillinger › Skoleår */
   onSkolear: () => void;
   onTilbake: () => void;
   onFram: () => void;
 }) {
+  // Punktet musa hviler på. Settes etter en liten pause, så undermenyene
+  // ikke blafrer når musa bare passerer.
+  const [hover, setHover] = useState<Menypunkt | null>(null);
+  const tidtaker = useRef<number | null>(null);
+  useEffect(
+    () => () => {
+      if (tidtaker.current) window.clearTimeout(tidtaker.current);
+    },
+    [],
+  );
+
+  function inn(p: Menypunkt) {
+    if (tidtaker.current) window.clearTimeout(tidtaker.current);
+    tidtaker.current = window.setTimeout(() => setHover(p), HOVER_MS);
+  }
+  function ut() {
+    if (tidtaker.current) window.clearTimeout(tidtaker.current);
+    tidtaker.current = null;
+    setHover(null);
+  }
+
+  const undermeny: Partial<Record<Menypunkt, ReactNode>> = {
+    okter: (
+      <>
+        <Underpunkt
+          aktiv={aktiv === "okter" && valgtFag === ""}
+          merke={<Firkant farge="var(--color-linje-sterk)" />}
+          tast="⌘0"
+          onKlikk={() => onVelgFag("")}
+        >
+          Alle fag
+        </Underpunkt>
+        {fag.map((f, i) => (
+          <Underpunkt
+            key={f.id}
+            aktiv={aktiv === "okter" && valgtFag === f.id}
+            merke={<Firkant farge={f.farge ? fagfarge(f.farge) : null} />}
+            tast={i < 9 ? `⌘${i + 1}` : undefined}
+            tittel={`${f.kode} — ${f.navn}`}
+            onKlikk={() => onVelgFag(f.id)}
+          >
+            {f.kode}
+          </Underpunkt>
+        ))}
+      </>
+    ),
+    samtaler: (
+      <>
+        {trekninger.map((t) => {
+          const id = t.skolearFagId ?? "mentor";
+          const f = fag.find((x) => x.id === t.skolearFagId);
+          const vurdering = t.dager.find((d) => d.vurderingId)?.vurderingId;
+          const navn =
+            t.skolearFagId === null
+              ? "Mentorsamtaler"
+              : ((vurdering && vurderingsnavn.get(vurdering)) ??
+                t.fagKode ??
+                "");
+          const meta = [
+            t.skolearFagId !== null && navn !== t.fagKode ? t.fagKode : null,
+            spenn(t),
+          ]
+            .filter(Boolean)
+            .join(" · ");
+          return (
+            <Underpunkt
+              key={id}
+              aktiv={apenTrekning === id}
+              merke={
+                t.skolearFagId === null ? (
+                  <span className="h-2 w-2 shrink-0 rounded-full bg-aksent" />
+                ) : (
+                  <Firkant farge={f?.farge ? fagfarge(f.farge) : null} />
+                )
+              }
+              meta={meta}
+              tittel={`${navn} — ${meta}`}
+              onKlikk={() => onApneTrekning(id)}
+            >
+              {navn}
+            </Underpunkt>
+          );
+        })}
+        <Underpunkt dempet onKlikk={() => onApneTrekning("ny")}>
+          + Ny trekning
+        </Underpunkt>
+      </>
+    ),
+  };
+
   return (
-    <nav className="glass-sidepanel ikkeutskrift my-2.5 ml-2.5 flex w-56 shrink-0 flex-col gap-3 rounded-glass px-2.5 py-3">
-      <div className="flex items-center justify-between px-1.5">
-        <Ordmerke storrelse={20} />
+    <nav className="glass-sidepanel ikkeutskrift my-2.5 ml-2.5 flex w-56 shrink-0 flex-col rounded-glass px-2 py-3">
+      <div className="flex items-center gap-2 px-2 pb-2.5">
+        <Ordmerke storrelse={18} />
         <button
           onClick={onSkolear}
           title="Skoleåret — bytt eller endre i Innstillinger"
-          className="rounded-vanlig px-1 text-liten tabular-nums text-blekk-dempet hover:text-blekk"
+          className="ml-auto rounded-vanlig px-1 text-etikett tabular-nums text-blekk-dempet hover:text-blekk"
         >
           {skolearNavn}
         </button>
@@ -103,149 +189,67 @@ export function Sidemeny({
       {/* Synlig inngang til ⌘K, så snarveien kan oppdages. */}
       <button
         onClick={onSok}
-        className="flex h-8 items-center gap-2 rounded-[10px] border border-[var(--glass-kant)] bg-[var(--glass-valgt)] px-2.5 text-liten text-blekk-dempet hover:text-blekk"
+        className="mb-2.5 flex h-[30px] items-center gap-2 rounded-full border border-[var(--glass-kant)] bg-[var(--glass-valgt)]/60 px-3 text-liten text-blekk-dempet hover:text-blekk"
       >
         <IkonSok />
         Søk
-        <kbd className="ml-auto font-sans text-mikro text-blekk-svakest">
-          ⌘K
-        </kbd>
+        <Tast>⌘K</Tast>
       </button>
 
-      <ul className="space-y-px">
-        {PUNKTER.map((p) => (
-          <li key={p.id}>
-            <Rad
-              aktiv={aktiv === p.id}
-              onKlikk={() => onGa(p.id)}
-              ikon={p.ikon}
-              tast={p.tast}
+      <ul className="min-h-0 flex-1 space-y-px overflow-y-auto">
+        {PUNKTER.map((p) => {
+          const liste = undermeny[p.id];
+          const erAktiv = aktiv === p.id;
+          // Under skjermen du står i, er undermenyen alltid åpen. Under de
+          // andre rulles den ut når musa hviler på punktet.
+          const apen = !!liste && (erAktiv || hover === p.id);
+          const svever = !!liste && !erAktiv && hover === p.id;
+          return (
+            <li
+              key={p.id}
+              onMouseEnter={liste && !erAktiv ? () => inn(p.id) : undefined}
+              onMouseLeave={liste && !erAktiv ? ut : undefined}
+              className={`rounded-[10px] transition-[background-color,box-shadow] duration-[var(--tid-utfold)] ${
+                svever
+                  ? "bg-[var(--glass-valgt)]/55 shadow-[0_1px_3px_var(--glass-skygge)]"
+                  : ""
+              }`}
             >
-              {p.navn}
-            </Rad>
-          </li>
-        ))}
+              <button
+                onClick={() => onGa(p.id)}
+                aria-current={erAktiv ? "page" : undefined}
+                className={`flex h-[30px] w-full items-center gap-2.5 rounded-[9px] px-2.5 text-left text-[calc(13.5px*var(--tekst-skala))] ${
+                  erAktiv
+                    ? "glass-valgt font-medium text-blekk"
+                    : "text-blekk hover:bg-[var(--glass-valgt)]/70"
+                }`}
+              >
+                {p.navn}
+                <Tast>{p.tast}</Tast>
+              </button>
+              {liste && (
+                <Utfold apen={apen} variant="rolig">
+                  <ul className="space-y-px py-1">{liste}</ul>
+                </Utfold>
+              )}
+            </li>
+          );
+        })}
       </ul>
 
-      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto">
-        {/*
-          De planlagte samtaletrekningene (DESIGN.md §10): vurderingens navn,
-          og fag og dager under. Et klikk åpner trekningen i Samtaler.
-        */}
-        <div>
-          <p className="mb-1 px-2 text-etikett uppercase tracking-etikett text-blekk-dempet">
-            Planlagte trekninger
-          </p>
-          <ul className="space-y-px">
-            {trekninger.map((t) => {
-              const id = t.skolearFagId ?? "mentor";
-              const f = fag.find((x) => x.id === t.skolearFagId);
-              const vurdering = t.dager.find((d) => d.vurderingId)?.vurderingId;
-              const navn =
-                t.skolearFagId === null
-                  ? "Mentorsamtaler"
-                  : ((vurdering && vurderingsnavn.get(vurdering)) ??
-                    t.fagKode ??
-                    "");
-              const under = [
-                t.skolearFagId !== null && navn !== t.fagKode
-                  ? t.fagKode
-                  : null,
-                spenn(t),
-              ]
-                .filter(Boolean)
-                .join(" · ");
-              return (
-                <li key={id}>
-                  <button
-                    onClick={() => onApneTrekning(id)}
-                    title={`${navn} — ${under}`}
-                    className={`grid w-full grid-cols-[1rem_minmax(0,1fr)] items-center gap-x-2.5 rounded-[10px] px-2 py-1.5 text-left ${
-                      apenTrekning === id
-                        ? "glass-valgt"
-                        : "hover:bg-[var(--glass-valgt)]"
-                    }`}
-                  >
-                    <span className="grid place-items-center">
-                      {t.skolearFagId === null ? (
-                        <span className="h-2 w-2 rounded-full bg-aksent" />
-                      ) : (
-                        <Fagfirkant farge={f?.farge ?? null} />
-                      )}
-                    </span>
-                    <span
-                      className={`truncate text-brod ${
-                        apenTrekning === id ? "font-medium" : ""
-                      }`}
-                    >
-                      {navn}
-                    </span>
-                    <span />
-                    <span className="truncate text-liten tabular-nums text-blekk-dempet">
-                      {under}
-                    </span>
-                  </button>
-                </li>
-              );
-            })}
-            <li>
-              <button
-                onClick={() => onApneTrekning("ny")}
-                className="flex h-8 w-full items-center gap-2.5 rounded-[10px] px-2 text-left text-brod text-blekk-dempet hover:bg-[var(--glass-valgt)] hover:text-blekk"
-              >
-                <span className="grid w-4 place-items-center">+</span>
-                Ny trekning
-              </button>
-            </li>
-          </ul>
-        </div>
-
-        <div>
-          <p className="mb-1 px-2 text-etikett uppercase tracking-etikett text-blekk-dempet">
-            Fag i år
-          </p>
-          <ul className="space-y-px">
-            {fag.map((f) => (
-              <li key={f.id}>
-                <Rad
-                  aktiv={aktiv === "fag" && apentFagId === f.id}
-                  onKlikk={() => onApneFag(f.id)}
-                  ikon={<Fagfirkant farge={f.farge} />}
-                  tittel={`${f.kode} — ${f.navn}`}
-                >
-                  <span className="font-medium">{f.kode}</span>
-                  <span className="ml-2 truncate text-blekk-dempet">
-                    {f.navn}
-                  </span>
-                </Rad>
-              </li>
-            ))}
-            <li>
-              <Rad
-                aktiv={aktiv === "fag" && apentFagId === null}
-                onKlikk={onAlleFag}
-                ikon={<span className="text-blekk-svak">+</span>}
-              >
-                <span className="text-blekk-dempet">
-                  {fag.length === 0 ? "Legg til fag" : "Alle fag"}
-                </span>
-              </Rad>
-            </li>
-          </ul>
-        </div>
-      </div>
-
-      <div className="flex items-center gap-1">
-        <div className="min-w-0 flex-1">
-          <Rad
-            aktiv={aktiv === "innstillinger"}
-            onKlikk={onInnstillinger}
-            ikon={<IkonInnstillinger />}
-            tast="⌘,"
-          >
-            Innstillinger
-          </Rad>
-        </div>
+      <div className="flex items-center gap-1 pt-2">
+        <button
+          onClick={onInnstillinger}
+          aria-current={aktiv === "innstillinger" ? "page" : undefined}
+          className={`flex h-[30px] min-w-0 flex-1 items-center rounded-[9px] px-2.5 text-left text-[calc(13.5px*var(--tekst-skala))] ${
+            aktiv === "innstillinger"
+              ? "glass-valgt font-medium text-blekk"
+              : "text-blekk hover:bg-[var(--glass-valgt)]/70"
+          }`}
+        >
+          Innstillinger
+          <Tast>⌘,</Tast>
+        </button>
         <Pil retning="tilbake" av={!kanTilbake} onKlikk={onTilbake} />
         <Pil retning="fram" av={!kanFram} onKlikk={onFram} />
       </div>
@@ -253,42 +257,73 @@ export function Sidemeny({
   );
 }
 
-function Rad({
-  aktiv,
-  onKlikk,
-  ikon,
+/**
+ * Et punkt i undermenyen: innrykket, med en tynn loddrett strek foran.
+ * Valgt punkt får en lys flate og medium vekt.
+ */
+function Underpunkt({
+  aktiv = false,
+  dempet = false,
+  merke,
+  meta,
   tast,
   tittel,
+  onKlikk,
   children,
 }: {
-  aktiv: boolean;
-  onKlikk: () => void;
-  ikon: ReactNode;
+  aktiv?: boolean;
+  dempet?: boolean;
+  merke?: ReactNode;
+  meta?: string;
   tast?: string;
   tittel?: string;
+  onKlikk: () => void;
   children: ReactNode;
 }) {
   return (
-    <button
-      onClick={onKlikk}
-      title={tittel}
-      aria-current={aktiv ? "page" : undefined}
-      className={`flex h-8 w-full min-w-0 items-center gap-2.5 rounded-[10px] px-2 text-left text-brod ${
-        aktiv
-          ? "glass-valgt font-medium text-blekk"
-          : "text-blekk hover:bg-[var(--glass-valgt)]"
-      }`}
-    >
-      <span className="grid w-4 shrink-0 place-items-center text-blekk-dempet">
-        {ikon}
-      </span>
-      <span className="flex min-w-0 flex-1 items-baseline">{children}</span>
-      {tast && (
-        <kbd className="shrink-0 font-sans text-mikro tracking-etikett text-blekk-svak">
-          {tast}
-        </kbd>
-      )}
-    </button>
+    <li className="relative ml-[22px] before:absolute before:-bottom-px before:-left-[11px] before:-top-px before:w-[1.5px] before:rounded-[1px] before:bg-[color-mix(in_srgb,var(--color-blekk)_16%,transparent)]">
+      <button
+        onClick={onKlikk}
+        title={tittel}
+        aria-current={aktiv ? "true" : undefined}
+        className={`flex min-h-7 w-full items-center gap-2 rounded-lg px-2.5 py-[3px] text-left text-[calc(13px*var(--tekst-skala))] ${
+          aktiv
+            ? "bg-[var(--glass-valgt)]/80 font-medium text-blekk"
+            : dempet
+              ? "text-blekk-dempet hover:bg-[var(--glass-valgt)]/60 hover:text-blekk"
+              : "text-blekk hover:bg-[var(--glass-valgt)]/60"
+        }`}
+      >
+        {merke}
+        <span className="min-w-0 flex-1">
+          <span className="block truncate">{children}</span>
+          {meta && (
+            <span className="block truncate text-mikro font-normal tabular-nums text-blekk-dempet">
+              {meta}
+            </span>
+          )}
+        </span>
+        {tast && <Tast>{tast}</Tast>}
+      </button>
+    </li>
+  );
+}
+
+function Firkant({ farge }: { farge: string | null }) {
+  return (
+    <span
+      aria-hidden
+      className="h-2 w-2 shrink-0 rounded-[2px]"
+      style={{ background: farge ?? "var(--color-linje-sterk)" }}
+    />
+  );
+}
+
+function Tast({ children }: { children: ReactNode }) {
+  return (
+    <kbd className="ml-auto shrink-0 font-sans text-[calc(10.5px*var(--tekst-skala))] font-normal tracking-[0.04em] text-blekk-dempet">
+      {children}
+    </kbd>
   );
 }
 
@@ -306,7 +341,7 @@ function Pil({
       onClick={onKlikk}
       disabled={av}
       title={retning === "tilbake" ? "Tilbake (⌘[)" : "Fram (⌘])"}
-      className="grid h-8 w-6 shrink-0 place-items-center rounded-[10px] text-tittel leading-none text-blekk-dempet hover:bg-[var(--glass-valgt)] hover:text-blekk disabled:opacity-30 disabled:hover:bg-transparent"
+      className="grid h-[30px] w-6 shrink-0 place-items-center rounded-[9px] text-tittel leading-none text-blekk-dempet hover:bg-[var(--glass-valgt)] hover:text-blekk disabled:opacity-30 disabled:hover:bg-transparent"
     >
       {retning === "tilbake" ? "‹" : "›"}
     </button>
@@ -335,10 +370,7 @@ function spenn(t: Trekning): string {
     : `${kort(t.forste)}–${kort(t.siste)}`;
 }
 
-// ------------------------------------------------------------------ ikoner
-// Tegnet som strek i currentColor, som `Ikon` i felles.tsx. Ikke emoji.
-
-function Svg({ children }: { children: ReactNode }) {
+function IkonSok() {
   return (
     <svg
       aria-hidden
@@ -347,72 +379,10 @@ function Svg({ children }: { children: ReactNode }) {
       stroke="currentColor"
       strokeWidth={1.4}
       strokeLinecap="round"
-      strokeLinejoin="round"
-      className="h-4 w-4"
+      className="h-3.5 w-3.5 shrink-0"
     >
-      {children}
-    </svg>
-  );
-}
-
-function IkonIDag() {
-  return (
-    <Svg>
-      <rect x="2.5" y="3.5" width="11" height="10" rx="1.5" />
-      <path d="M2.5 6.5h11M5.5 2v3M10.5 2v3" />
-    </Svg>
-  );
-}
-
-function IkonOkter() {
-  return (
-    <Svg>
-      <path d="M3 4.5h10M3 8h10M3 11.5h10" />
-    </Svg>
-  );
-}
-
-function IkonElever() {
-  return (
-    <Svg>
-      <circle cx="8" cy="5.5" r="2.5" />
-      <path d="M3 13.5c.6-2.4 2.6-3.8 5-3.8s4.4 1.4 5 3.8" />
-    </Svg>
-  );
-}
-
-function IkonVurderinger() {
-  return (
-    <Svg>
-      <path d="M4 2.5h5.5L12 5v8.5H4z" />
-      <path d="M6 9l1.5 1.5L10.5 7.5" />
-    </Svg>
-  );
-}
-
-function IkonSamtaler() {
-  return (
-    <Svg>
-      <path d="M2.5 3.5h11v7h-6l-3 2.5v-2.5h-2z" />
-    </Svg>
-  );
-}
-
-function IkonInnstillinger() {
-  return (
-    <Svg>
-      <path d="M3 4.5h4M10 4.5h3M3 11.5h2M8 11.5h5" />
-      <circle cx="8.5" cy="4.5" r="1.5" />
-      <circle cx="6.5" cy="11.5" r="1.5" />
-    </Svg>
-  );
-}
-
-function IkonSok() {
-  return (
-    <Svg>
       <circle cx="7" cy="7" r="4" />
       <path d="M10 10l3.5 3.5" />
-    </Svg>
+    </svg>
   );
 }

@@ -727,6 +727,25 @@ html {
   transform: none;
 }
 
+.utfold[data-variant="rolig"] {
+  transition:
+    grid-template-rows 260ms var(--ease-inn),
+    opacity 260ms var(--ease-inn);
+}
+
+.utfold[data-variant="rolig"] > .utfold-innhold {
+  filter: blur(5px);
+  transform: translateY(-3px);
+  transition:
+    transform 260ms var(--ease-inn),
+    filter 260ms var(--ease-inn);
+}
+
+.utfold[data-variant="rolig"][data-apen="true"] > .utfold-innhold {
+  filter: none;
+  transform: none;
+}
+
 /*
  * Matt glass: vinduer som legger seg over alt — ⌘K og notatet fra
  * samtalen. Tettere og nesten uten fargemetning, mer frostet enn flytende.

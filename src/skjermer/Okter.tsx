@@ -91,7 +91,12 @@ export function Okter({
   fag,
   startValgt = null,
   bryter,
+  filterFag,
+  onFilterFag,
 }: {
+  /** faget lista står filtrert på; "" = alle. Styres fra sidemenyen også. */
+  filterFag: string;
+  onFilterFag: (id: string) => void;
   /** Liste | Kalender, først i verktøylinja */
   bryter?: React.ReactNode;
   skolear: Skolear;
@@ -101,7 +106,7 @@ export function Okter({
 }) {
   const [okter, setOkter] = useState<Okt[]>([]);
   const [valgt, setValgt] = useState<string | null>(startValgt);
-  const [filterFag, setFilterFag] = useState("");
+  const setFilterFag = onFilterFag;
   const [sok, setSok] = useState("");
   const [lagerNy, setLagerNy] = useState(false);
   const [lagerSerie, setLagerSerie] = useState(false);
