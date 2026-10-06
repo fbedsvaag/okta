@@ -518,6 +518,7 @@ export async function lagreOppsett(
       gruppenavn: r.gruppenavn ?? null,
       last: r.last ? 1 : 0,
     });
+  varsleKlassekart();
   return oppsettId;
 }
 
@@ -623,16 +624,19 @@ export async function leggTilRegel(
     [kildeType, kildeId, elevA, elevB],
   );
   if (finnes) return finnes.id;
-  return settInn("elevregel", {
+  const id = await settInn("elevregel", {
     kilde_type: kildeType,
     kilde_id: kildeId,
     elev_a: elevA,
     elev_b: elevB,
   });
+  varsleKlassekart();
+  return id;
 }
 
 export async function slettRegel(id: string): Promise<void> {
   await slett("elevregel", id);
+  varsleKlassekart();
 }
 
 /** Til sletting av en elev: plasseringene og reglene går med. */
@@ -648,4 +652,91 @@ export async function slettForElev(elevId: string): Promise<void> {
     [elevId],
   );
   for (const r of regler) await slett("elevregel", r.id);
+}
+
+// ------------------------------------------------------------ elevkortet
+
+type Navn = { id: string; fornavn: string; etternavn: string };
+
+export type ElevIKart = {
+  kartId: string;
+  kildeType: Kildetype;
+  kildeId: string;
+  kildeNavn: string;
+  romNavn: string | null;
+  /** plassen i sist brukte plassering; null når kartet ikke er brukt */
+  plass: number | null;
+  last: boolean;
+  /** raden plassen står på, forfra (1 = første rad) */
+  rad: number | null;
+  /** de som sitter ved samme pult */
+  sitterVed: Navn[];
+  /** «hold fra hverandre» med eleven, i kartets kilde */
+  regler: { id: string; andre: Navn }[];
+  /** de andre i kilden — til «+ Legg til» */
+  medelever: Navn[];
+};
+
+/**
+ * Hvor eleven sitter i kartene i året, til elevkortet (lerretet «ElevArk»):
+ * kartet, rommet, hvem eleven sitter ved, låsen og «kan ikke sitte med».
+ */
+export async function hentElevIKart(
+  elevId: string,
+  skolearId: string,
+): Promise<ElevIKart[]> {
+  const [kartene, rommene] = await Promise.all([
+    hentKart(skolearId),
+    hentRom(),
+  ]);
+  const ut: ElevIKart[] = [];
+  for (const k of kartene) {
+    const elever = await hentKildeElever(k.kildeType, k.kildeId, skolearId);
+    if (!elever.some((e) => e.id === elevId)) continue;
+    const navn = new Map<string, Navn>(
+      elever.map((e) => [
+        e.id,
+        { id: e.id, fornavn: e.fornavn, etternavn: e.etternavn },
+      ]),
+    );
+    const rom = rommene.find((r) => r.id === k.romId);
+    const plasser = plasserIRom(rom?.deler ?? []);
+    const [sist] = await hentOppsett(k.id, "plass");
+    const min = sist?.rader.find((r) => r.elevId === elevId);
+    const minPlass = plasser.find((p) => p.nr === min?.plass);
+    const rader = [...new Set(plasser.map((p) => Math.round(p.y / 30)))].sort(
+      (a, b) => a - b,
+    );
+    const sitterVed = minPlass
+      ? (sist?.rader ?? [])
+          .filter((r) => r.elevId !== elevId)
+          .filter(
+            (r) =>
+              plasser.find((p) => p.nr === r.plass)?.pult === minPlass.pult,
+          )
+          .map((r) => navn.get(r.elevId))
+          .filter((x): x is Navn => !!x)
+      : [];
+    const regler = (await hentRegler(k.kildeType, k.kildeId))
+      .filter((r) => r.elevA === elevId || r.elevB === elevId)
+      .map((r) => ({
+        id: r.id,
+        andre: navn.get(r.elevA === elevId ? r.elevB : r.elevA),
+      }))
+      .filter((r): r is { id: string; andre: Navn } => !!r.andre);
+    ut.push({
+      kartId: k.id,
+      kildeType: k.kildeType,
+      kildeId: k.kildeId,
+      kildeNavn: k.kildeNavn,
+      romNavn: k.romNavn,
+      plass: minPlass?.nr ?? null,
+      last: !!min?.last,
+      rad: minPlass ? rader.indexOf(Math.round(minPlass.y / 30)) + 1 : null,
+      sitterVed,
+      regler,
+      medelever: [...navn.values()].filter((e) => e.id !== elevId),
+    });
+  }
+  return ut;
 }

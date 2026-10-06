@@ -13,7 +13,13 @@ import {
 import { elevfilFor } from "../data/arkiv";
 import { hentSkolear, type Skolear } from "../data/skolear";
 import { Vurderingsikon } from "../ui/Vurderingsikon";
-import { lyttElever, lyttVurderinger } from "../data/endringer";
+import { lyttElever, lyttKlassekart, lyttVurderinger } from "../data/endringer";
+import {
+  hentElevIKart,
+  leggTilRegel,
+  slettRegel,
+  type ElevIKart,
+} from "../data/klassekart";
 import { confirm as bekreft } from "@tauri-apps/plugin-dialog";
 import {
   hentElevAr,
@@ -793,6 +799,7 @@ export function ElevPanel({
                 ))}
               </div>
             )}
+            <Klassekartboks elevId={elevId} skolearId={aktivtSkolearId} />
             <div>
               <h2 className="mb-2 text-[calc(13px*var(--tekst-skala))] font-semibold">
                 Fravær i år
@@ -831,6 +838,121 @@ export function ElevPanel({
         Kjønn og bilde vises bare her og går aldri ut av appen.
       </footer>
     </section>
+  );
+}
+
+/**
+ * Hvor eleven sitter (lerretet «ElevArk»): kartet og rommet, hvem eleven
+ * sitter ved, låsen — og «Kan ikke sitte med», som kan endres her.
+ */
+function Klassekartboks({
+  elevId,
+  skolearId,
+}: {
+  elevId: string;
+  skolearId: string;
+}) {
+  const [kart, setKart] = useState<ElevIKart[]>([]);
+  const [legger, setLegger] = useState<string | null>(null);
+  const last = () => void hentElevIKart(elevId, skolearId).then(setKart);
+  useEffect(last, [elevId, skolearId]);
+  useEffect(() => lyttKlassekart(last), [elevId, skolearId]);
+  if (kart.length === 0) return null;
+  const kort = (e: { fornavn: string; etternavn: string }) =>
+    `${e.fornavn} ${e.etternavn.charAt(0)}.`;
+  return (
+    <div>
+      <h2 className="mb-2 text-[calc(13px*var(--tekst-skala))] font-semibold">
+        Klassekart
+      </h2>
+      {kart.map((k) => (
+        <div key={k.kartId} className="mb-3 last:mb-0">
+          <p className="text-liten leading-[1.6] text-blekk">
+            {k.kildeNavn}
+            {k.romNavn && ` · ${k.romNavn}`}
+            {k.plass === null ? (
+              <>
+                <br />
+                <span className="text-blekk-dempet">
+                  Kartet er ikke brukt ennå
+                </span>
+              </>
+            ) : (
+              <>
+                {k.sitterVed.length > 0 && (
+                  <>
+                    <br />
+                    <span className="text-blekk-dempet">Sitter ved</span>{" "}
+                    {k.sitterVed.map(kort).join(", ")}
+                  </>
+                )}
+                {k.last && (
+                  <>
+                    <br />
+                    <span className="text-blekk-dempet">Låst til</span>{" "}
+                    {k.rad === 1 ? "første rad" : `rad ${k.rad}`}
+                  </>
+                )}
+              </>
+            )}
+          </p>
+          <p className="mt-2 text-etikett text-blekk-dempet">
+            Kan ikke sitte med:
+          </p>
+          <div className="mt-1 flex flex-wrap gap-1.5">
+            {k.regler.map((r) => (
+              <span
+                key={r.id}
+                className="inline-flex h-[26px] items-center gap-1.5 rounded-full bg-flate px-2.5 text-[calc(12.5px*var(--tekst-skala))]"
+              >
+                {kort(r.andre)}
+                <button
+                  aria-label={`Fjern ${r.andre.fornavn}`}
+                  onClick={() => void slettRegel(r.id)}
+                  className="text-blekk-svak hover:text-feil"
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+            {legger === k.kartId ? (
+              <select
+                autoFocus
+                defaultValue=""
+                onBlur={() => setLegger(null)}
+                onChange={async (e) => {
+                  if (e.target.value)
+                    await leggTilRegel(
+                      k.kildeType,
+                      k.kildeId,
+                      elevId,
+                      e.target.value,
+                    );
+                  setLegger(null);
+                }}
+                className="h-[26px] rounded-full border border-linje bg-ark px-2 text-[calc(12.5px*var(--tekst-skala))]"
+              >
+                <option value="">Velg elev</option>
+                {k.medelever
+                  .filter((m) => !k.regler.some((r) => r.andre.id === m.id))
+                  .map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.fornavn} {m.etternavn}
+                    </option>
+                  ))}
+              </select>
+            ) : (
+              <button
+                onClick={() => setLegger(k.kartId)}
+                className="inline-flex h-[26px] items-center rounded-full px-2.5 text-[calc(12.5px*var(--tekst-skala))] text-blekk-dempet shadow-[inset_0_0_0_1px_var(--color-linje)] hover:text-blekk"
+              >
+                + Legg til
+              </button>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }
 

@@ -232,3 +232,51 @@ describe("regler", () => {
     expect(r.every((x) => x.slettet !== null)).toBe(true);
   });
 });
+
+describe("hentElevIKart", () => {
+  it("viser kartet, hvem eleven sitter ved, låsen og reglene", async () => {
+    const paulie = await opprettElev("Paulie", "Gualtieri");
+    await koblePaFag(paulie, fag);
+    const rom = await k.opprettRom("Rom 214", k.romMal("par"));
+    const kart = await k.opprettKart({
+      skolearId: ar,
+      kildeType: "fag",
+      kildeId: fag,
+      romId: rom,
+    });
+    await k.lagreOppsett(kart, "plass", [
+      { elevId: tony, plass: 1, last: true },
+      { elevId: meadow, plass: 2 },
+      { elevId: paulie, plass: 7 },
+    ]);
+    await k.leggTilRegel("fag", fag, tony, paulie);
+
+    const [t] = await k.hentElevIKart(tony, ar);
+    expect(t.kildeNavn).toBe("MFL1");
+    expect(t.romNavn).toBe("Rom 214");
+    expect(t.plass).toBe(1);
+    expect(t.last).toBe(true);
+    expect(t.rad).toBe(1);
+    expect(t.sitterVed.map((e) => e.fornavn)).toEqual(["Meadow"]);
+    expect(t.regler.map((r) => r.andre.fornavn)).toEqual(["Paulie"]);
+    expect(t.medelever.map((e) => e.fornavn).sort()).toEqual([
+      "Meadow",
+      "Paulie",
+    ]);
+
+    const [p] = await k.hentElevIKart(paulie, ar);
+    expect(p.rad).toBe(2);
+    expect(p.last).toBe(false);
+  });
+
+  it("er tom for en elev som ikke er i noe kart", async () => {
+    const ny = await opprettElev("Bobby", "Baccalieri");
+    await k.opprettKart({
+      skolearId: ar,
+      kildeType: "fag",
+      kildeId: fag,
+      romId: null,
+    });
+    expect(await k.hentElevIKart(ny, ar)).toEqual([]);
+  });
+});
