@@ -35,6 +35,7 @@ import { Skolekalender } from "./skjermer/Skolekalender";
 import { Innstillinger } from "./skjermer/Innstillinger";
 import { Vurderinger } from "./skjermer/Vurderinger";
 import { Samtaler } from "./skjermer/Samtaler";
+import { Samtaleoversikt } from "./skjermer/Samtaleoversikt";
 import { ElevPanel } from "./skjermer/ElevPanel";
 import { FagPanel } from "./skjermer/FagPanel";
 import { Knapp, Ikon } from "./ui/felles";
@@ -386,7 +387,16 @@ export default function App() {
                   <Skoleruta key={versjon} skolear={skolear} onEndret={last} />
                 )}
 
-                {visning === "samtaler" && (
+                {visning === "samtaler" && !apneId && (
+                  <Samtaleoversikt
+                    skolearNavn={skolear.navn}
+                    trekninger={trekninger}
+                    vurderingsnavn={vurderingsnavn}
+                    fag={fag}
+                    onApne={(id) => ga("samtaler", id)}
+                  />
+                )}
+                {visning === "samtaler" && apneId && (
                   <Samtaler
                     key={`${versjon}-${apneId ?? ""}`}
                     skolear={skolear}
