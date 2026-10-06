@@ -507,6 +507,16 @@
 }
 
 /*
+ * Plassholderen for elevbilde (DESIGN.md §6): lys grunn, mellomtone og
+ * aksent, regnet ut fra paletten så den bytter farge med den.
+ */
+:root {
+  --pal: var(--color-aksent);
+  --pal-lys: var(--color-valgt);
+  --pal-mid: color-mix(in srgb, var(--color-aksent) 38%, var(--color-valgt));
+}
+
+/*
  * Årsheatmapet i kalenderen (DESIGN.md §4): fem trinn etter hvor mye som
  * skjer en dag. Bygger på aksenten og arket, så det følger paletten og
  * mørk modus. I fiolett lys modus gir det omtrent #f4f2f9, #e3ddf0,
