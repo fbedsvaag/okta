@@ -61,6 +61,7 @@ import type { Skolear } from "../data/skolear";
 import { NySerie } from "./NySerie";
 import { IVerktoylinja } from "../ui/Verktoylinje";
 import { Utfold } from "../ui/Utfold";
+import { Glideflate } from "../ui/Glideflate";
 import { Vurderingsikon, vurderingstype } from "../ui/Vurderingsikon";
 import { Tastestripe, Tasthint } from "../ui/Tastestripe";
 import { enLinje, forrigeOkt } from "../data/dagen";
@@ -734,6 +735,16 @@ function Liste({
 }) {
   const [apen, setApen] = useState<string | null>(null);
   const liste = useRef<HTMLDivElement>(null);
+  const [markorEl, setMarkorEl] = useState<HTMLElement | null>(null);
+  useLayoutEffect(() => {
+    setMarkorEl(
+      valgt
+        ? (liste.current?.querySelector<HTMLElement>(
+            `[data-okt="${valgt}"] > div:first-child`,
+          ) ?? null)
+        : null,
+    );
+  });
 
   // Kolonnene: de faste, fag når alle fag vises, og tilleggene som er på.
   const spor = [
@@ -815,8 +826,14 @@ function Liste({
       ref={liste}
       tabIndex={0}
       onKeyDown={tast}
-      className="uten-fokusring outline-none"
+      className="uten-fokusring relative outline-none"
     >
+      {/* Markøren glir med piltastene (DESIGN.md §8). */}
+      <Glideflate
+        beholder={liste}
+        mal={markorEl}
+        klasse="z-[2] rounded-lg bg-[color-mix(in_srgb,var(--color-aksent)_8%,transparent)]"
+      />
       <div
         className="grid h-[26px] items-center gap-x-3 border-b border-linje px-2 text-etikett text-blekk-dempet"
         style={kolonner}
@@ -883,11 +900,9 @@ function Liste({
                       ? "rounded-t-lg bg-flate"
                       : merket.has(o.id)
                         ? "border-b border-linje-svak bg-valgt"
-                        : valgt === o.id
-                          ? "border-b border-linje-svak bg-flate-svak"
-                          : vurd.length > 0
-                            ? "border-b border-linje-svak bg-vurdering-flate hover:bg-flate-svak"
-                            : "border-b border-linje-svak hover:bg-flate-svak"
+                        : vurd.length > 0
+                          ? "border-b border-linje-svak bg-vurdering-flate hover:bg-flate-svak"
+                          : "border-b border-linje-svak hover:bg-flate-svak"
                   }`}
                 >
                   <span className="text-blekk-dempet">{ukenummer(o.dato)}</span>

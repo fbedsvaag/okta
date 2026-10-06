@@ -1,9 +1,16 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import type { FagIAr } from "../data/fag";
 import type { Trekning } from "../data/samtale";
 import { fagfarge } from "./farger";
 import { Ordmerke } from "./logo";
 import { Utfold } from "./Utfold";
+import { Glideflate } from "./Glideflate";
 
 /**
  * Sidemenyen til venstre (DESIGN.md §6, variant A i lerretet).
@@ -86,6 +93,16 @@ export function Sidemeny({
   // Punktet musa hviler på. Settes etter en liten pause, så undermenyene
   // ikke blafrer når musa bare passerer.
   const [hover, setHover] = useState<Menypunkt | null>(null);
+  const meny = useRef<HTMLUListElement>(null);
+  const knapper = useRef(new Map<Menypunkt, HTMLButtonElement>());
+  const [aktivKnapp, setAktivKnapp] = useState<HTMLElement | null>(null);
+  useLayoutEffect(() => {
+    setAktivKnapp(
+      aktiv && aktiv !== "innstillinger"
+        ? (knapper.current.get(aktiv) ?? null)
+        : null,
+    );
+  }, [aktiv]);
   const tidtaker = useRef<number | null>(null);
   useEffect(
     () => () => {
@@ -196,7 +213,16 @@ export function Sidemeny({
         <Tast>⌘K</Tast>
       </button>
 
-      <ul className="min-h-0 flex-1 space-y-px overflow-y-auto">
+      <ul
+        ref={meny}
+        className="relative min-h-0 flex-1 space-y-px overflow-y-auto"
+      >
+        {/* Valgt punkt glir til det nye (DESIGN.md §8). */}
+        <Glideflate
+          beholder={meny}
+          mal={aktivKnapp}
+          klasse="glass-valgt rounded-[9px]"
+        />
         {PUNKTER.map((p) => {
           const liste = undermeny[p.id];
           const erAktiv = aktiv === p.id;
@@ -216,11 +242,15 @@ export function Sidemeny({
               }`}
             >
               <button
+                ref={(el) => {
+                  if (el) knapper.current.set(p.id, el);
+                  else knapper.current.delete(p.id);
+                }}
                 onClick={() => onGa(p.id)}
                 aria-current={erAktiv ? "page" : undefined}
-                className={`flex h-[30px] w-full items-center gap-2.5 rounded-[9px] px-2.5 text-left text-[calc(13.5px*var(--tekst-skala))] ${
+                className={`relative z-[1] flex h-[30px] w-full items-center gap-2.5 rounded-[9px] px-2.5 text-left text-[calc(13.5px*var(--tekst-skala))] ${
                   erAktiv
-                    ? "glass-valgt font-medium text-blekk"
+                    ? "font-medium text-blekk"
                     : "text-blekk hover:bg-[var(--glass-valgt)]/70"
                 }`}
               >

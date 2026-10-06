@@ -83,3 +83,10 @@ export async function lagreBevegelse(b: Bevegelse): Promise<void> {
   settBevegelse(b);
   await settInnstilling(BEVEGELSE, b);
 }
+
+/**
+ * S-kurven (DESIGN.md §8, lerretet «Bevegelse»): et lite overskudd, aldri
+ * mer. Brukes overalt der noe flytter seg. Samme verdi som `--ease-sprett`
+ * i index.css — der CSS-en kan bruke tokenet, gjør den det.
+ */
+export const EASE_SPRETT = "cubic-bezier(.34, 1.32, .5, 1)";

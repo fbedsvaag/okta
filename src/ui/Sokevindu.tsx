@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { Glideflate } from "./Glideflate";
 import { Elevfoto } from "./Elevfoto";
 import { hentElever } from "../data/elever";
 import type { FagIAr } from "../data/fag";
@@ -29,6 +30,13 @@ export function Sokevindu({
 }) {
   const [tekst, setTekst] = useState("");
   const [markor, setMarkor] = useState(0);
+  const [markorEl, setMarkorEl] = useState<HTMLElement | null>(null);
+  useLayoutEffect(() => {
+    setMarkorEl(
+      liste.current?.querySelector<HTMLElement>(`[data-nr="${markor}"]`) ??
+        null,
+    );
+  });
   const [elever, setElever] = useState<Sokeelev[]>([]);
   const [okter, setOkter] = useState<Sokeokt[]>([]);
   // Fagene hver elev har, med fargen, til linja under navnet.
@@ -163,10 +171,16 @@ export function Sokevindu({
 
         <div
           ref={liste}
-          className={`max-h-[55vh] overflow-y-auto pb-2 ${
+          className={`relative max-h-[55vh] overflow-y-auto pb-2 ${
             tekst.trim() === "" ? "" : "border-t border-linje-medium/70 pt-1"
           }`}
         >
+          {/* Markøren glir med piltastene (DESIGN.md §8). */}
+          <Glideflate
+            beholder={liste}
+            mal={markorEl}
+            klasse="glass-valgt rounded-[10px]"
+          />
           {tekst.trim() === "" ? (
             <p className="border-t border-linje-medium/70 px-4 pb-1 pt-3 text-liten text-blekk-svak">
               Navn, klasse, tema, fag (også aliaset) eller dato — 2026-10-12,
@@ -187,9 +201,7 @@ export function Sokevindu({
                   data-nr={i}
                   onMouseMove={() => setMarkor(i)}
                   onClick={() => apne(t)}
-                  className={`mx-2 flex w-[calc(100%-1rem)] items-baseline gap-3 rounded-[10px] px-3 py-1.5 text-left text-brod ${
-                    i === markor ? "glass-valgt" : ""
-                  }`}
+                  className={`mx-2 flex w-[calc(100%-1rem)] items-baseline gap-3 rounded-[10px] px-3 py-1.5 text-left text-brod ${""}`}
                 >
                   {t.type === "elev" ? (
                     <>

@@ -729,8 +729,9 @@ html {
  * den ikke forstyrrer.
  */
 :root {
-  --ease-leken: cubic-bezier(0.34, 1.35, 0.64, 1);
-  --tid-utfold: 260ms;
+  /* S-kurven, som alt annet som flytter seg (lerretet «Bevegelse»). */
+  --ease-leken: cubic-bezier(0.34, 1.32, 0.5, 1);
+  --tid-utfold: 420ms;
 }
 
 .utfold {
@@ -758,18 +759,12 @@ html {
   transform: none;
 }
 
-.utfold[data-variant="rolig"] {
-  transition:
-    grid-template-rows 260ms var(--ease-inn),
-    opacity 260ms var(--ease-inn);
-}
-
 .utfold[data-variant="rolig"] > .utfold-innhold {
   filter: blur(5px);
   transform: translateY(-3px);
   transition:
-    transform 260ms var(--ease-inn),
-    filter 260ms var(--ease-inn);
+    transform var(--tid-utfold) var(--ease-leken),
+    filter var(--tid-utfold) var(--ease-inn);
 }
 
 .utfold[data-variant="rolig"][data-apen="true"] > .utfold-innhold {
@@ -858,6 +853,14 @@ html {
   --ease-pop: cubic-bezier(0.34, 1.56, 0.64, 1);
   --tid-glid: 340ms;
   --tid-pop: 380ms;
+}
+
+/* Flaten som glir til det som er valgt (ui/Glideflate.tsx). */
+.glideflate[data-klar="true"] {
+  transition:
+    transform var(--tid-glid) var(--ease-sprett),
+    width var(--tid-glid) var(--ease-sprett),
+    height var(--tid-glid) var(--ease-sprett);
 }
 
 .markor-flate {

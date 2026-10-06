@@ -1,4 +1,5 @@
 import { fagfarge } from "./farger";
+import { Glideflate } from "./Glideflate";
 import {
   useEffect,
   useLayoutEffect,
@@ -583,19 +584,37 @@ export function Bryter({
   fyll?: boolean;
 }) {
   const tekst = storrelse === "liten" ? "text-liten" : "text-brod";
+  // Den hvite tommelen glir under teksten (DESIGN.md §8).
+  const beholder = useRef<HTMLSpanElement>(null);
+  const knapper = useRef(new Map<string, HTMLButtonElement>());
+  const [mal, setMal] = useState<HTMLElement | null>(null);
+  useLayoutEffect(() => {
+    setMal(knapper.current.get(verdi) ?? null);
+  }, [verdi, valg.length]);
+
   return (
     <span
-      className={`${fyll ? "flex w-full" : "inline-flex"} items-center gap-0.5 rounded-vanlig bg-flate p-0.5`}
+      ref={beholder}
+      className={`${fyll ? "flex w-full" : "inline-flex"} relative items-center gap-0.5 rounded-vanlig bg-flate p-0.5`}
     >
+      <Glideflate
+        beholder={beholder}
+        mal={mal}
+        klasse="rounded-liten bg-ark shadow-lav"
+      />
       {valg.map((v) => (
         <button
           key={v.id}
+          ref={(el) => {
+            if (el) knapper.current.set(v.id, el);
+            else knapper.current.delete(v.id);
+          }}
           onClick={() => settVerdi(v.id)}
           aria-pressed={verdi === v.id}
           title={v.tittel}
-          className={`${fyll ? "flex-1" : ""} rounded-liten px-2.5 py-1 ${tekst} whitespace-nowrap transition-colors ${
+          className={`${fyll ? "flex-1" : ""} relative z-[1] rounded-liten px-2.5 py-1 ${tekst} whitespace-nowrap transition-colors ${
             verdi === v.id
-              ? "bg-ark font-medium text-blekk shadow-lav"
+              ? "font-medium text-blekk"
               : "text-blekk-dempet hover:text-blekk"
           }`}
         >
