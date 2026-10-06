@@ -253,7 +253,10 @@ function Dagensokt({
     ? leggTilMinutter(okt.klokkeslett, okt.varighetMin)
     : null;
   const nar = narTekst(okt.klokkeslett, slutt, na);
-  const under = [okt.fagKode, okt.fagNavn, okt.sted, periode].filter(Boolean);
+  // Fagkoden, ikke fagnavnet (ARBEIDSLISTE 9.4): «MFL2 · Rom 214 · Markedsmiks».
+  // Et rom som bare er et nummer, får «Rom» foran.
+  const rom = okt.sted && /^\d/.test(okt.sted) ? `Rom ${okt.sted}` : okt.sted;
+  const under = [okt.fagKode, rom, periode].filter(Boolean);
 
   return (
     <li className="grid grid-cols-[5.5rem_minmax(0,1fr)] gap-x-4 py-4">
