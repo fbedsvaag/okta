@@ -23,7 +23,7 @@ import { Glideflate } from "./Glideflate";
  */
 
 export type Menypunkt =
-  "idag" | "okter" | "elever" | "vurderinger" | "samtaler";
+  "idag" | "okter" | "elever" | "vurderinger" | "samtaler" | "klassekart";
 
 /** G og en bokstav. Ø har O som reserve, for tastatur uten ø. */
 export const G_SNARVEIER: Record<string, Menypunkt> = {
@@ -33,6 +33,7 @@ export const G_SNARVEIER: Record<string, Menypunkt> = {
   e: "elever",
   v: "vurderinger",
   s: "samtaler",
+  k: "klassekart",
 };
 
 const PUNKTER: { id: Menypunkt; navn: string; tast: string }[] = [
@@ -41,6 +42,7 @@ const PUNKTER: { id: Menypunkt; navn: string; tast: string }[] = [
   { id: "elever", navn: "Elever", tast: "G E" },
   { id: "vurderinger", navn: "Vurderinger", tast: "G V" },
   { id: "samtaler", navn: "Samtaler", tast: "G S" },
+  { id: "klassekart", navn: "Klassekart", tast: "G K" },
 ];
 
 /** Så lenge musa må hvile på et punkt før undermenyen rulles ut. */

@@ -1,3 +1,4 @@
+import { Klassekart } from "./skjermer/Klassekart";
 import { brukTema } from "./ui/tema";
 import { brukGlass } from "./ui/glass";
 import { brukPalett } from "./ui/palett";
@@ -65,7 +66,9 @@ type Visning =
   | "vurderinger"
   | "samtaler"
   | "innstillinger"
-  | "liminn";
+  | "liminn"
+  /** oversikten; id = kart, eller «rom:<id>» / «rom:ny» for rom-editoren */
+  | "klassekart";
 
 export default function App() {
   const [skolear, setSkolear] = useState<Skolear | null>(null);
@@ -406,6 +409,16 @@ export default function App() {
                   />
                 )}
 
+                {visning === "klassekart" && (
+                  <Klassekart
+                    key={versjon}
+                    skolearId={skolear.id}
+                    id={apneId}
+                    onGa={(id) => ga("klassekart", id)}
+                    onTilbake={() => (peker > 0 ? tilbake() : ga("klassekart"))}
+                  />
+                )}
+
                 {visning === "innstillinger" && (
                   <Innstillinger
                     skolear={skolear}
@@ -546,6 +559,7 @@ const SKJERMNAVN: Record<Visning, string> = {
   fagside: "Fag",
   innstillinger: "Innstillinger",
   skoleruta: "Skoleruta",
+  klassekart: "Klassekart",
 };
 
 /**
@@ -585,7 +599,13 @@ function isoIDag(): string {
 
 /** Hvilket punkt i sidemenyen som står markert for en visning. */
 function aktivtPunkt(v: Visning): Menypunkt | "innstillinger" | null {
-  if (v === "idag" || v === "vurderinger" || v === "samtaler") return v;
+  if (
+    v === "idag" ||
+    v === "vurderinger" ||
+    v === "samtaler" ||
+    v === "klassekart"
+  )
+    return v;
   // Fagene er undermeny under Økter, så fagsiden hører til der.
   if (erOktvisning(v) || v === "fag" || v === "fagside") return "okter";
   if (v === "elever" || v === "elev" || v === "liminn") return "elever";
