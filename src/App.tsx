@@ -1,3 +1,5 @@
+import { hentKart, type Kart } from "./data/klassekart";
+import { lyttElever, lyttKlassekart } from "./data/endringer";
 import { Klassekart } from "./skjermer/Klassekart";
 import { brukTema } from "./ui/tema";
 import { brukGlass } from "./ui/glass";
@@ -89,6 +91,8 @@ export default function App() {
   const [vurderingsnavn, setVurderingsnavn] = useState<Map<string, string>>(
     new Map(),
   );
+  // Klassekartene i året, til undermenyen under Klassekart (SPEC §4.11).
+  const [kartene, setKartene] = useState<Kart[]>([]);
   // Plassen i verktøylinja som skjermene kan fylle (ui/Verktoylinje).
   const [spor, setSpor] = useState<HTMLElement | null>(null);
 
@@ -271,6 +275,23 @@ export default function App() {
     void last();
   }, [last]);
 
+  // Kartene i undermenyen: lastes med året, og på nytt når kart, rom eller
+  // elever endres (antallet elever står i undermenyen).
+  useEffect(() => {
+    if (!skolear) return;
+    const lastKart = () =>
+      void hentKart(skolear.id)
+        .then(setKartene)
+        .catch((e) => console.error("klassekart:", e));
+    lastKart();
+    const a = lyttKlassekart(lastKart);
+    const b = lyttElever(lastKart);
+    return () => {
+      a();
+      b();
+    };
+  }, [skolear?.id]);
+
   // Automatisk publisering til kalenderserveren, hvis den er slått på.
   // Lytteren står så lenge et skoleår er lastet.
   useEffect(() => {
@@ -331,6 +352,9 @@ export default function App() {
           vurderingsnavn={vurderingsnavn}
           apenTrekning={visning === "samtaler" ? (apneId ?? null) : undefined}
           onApneTrekning={(id) => ga("samtaler", id)}
+          klassekart={kartene}
+          apentKart={visning === "klassekart" ? (apneId ?? null) : undefined}
+          onApneKart={(id) => ga("klassekart", id)}
           onSok={() => setSokApent(true)}
           onInnstillinger={() => ga("innstillinger")}
           onSkolear={() => ga("innstillinger", "skolear")}

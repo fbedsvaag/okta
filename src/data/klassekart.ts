@@ -1,4 +1,5 @@
 import { hent, nyId, oppdater, settInn, slett } from "../db";
+import { varsleKlassekart } from "./endringer";
 
 /**
  * Klassekart og gruppegenerator (SPEC §4.11, migrasjon 024).
@@ -227,12 +228,14 @@ export async function opprettRom(
   navn: string,
   deler: Omit<Del, "id">[] | Del[],
 ): Promise<string> {
-  return settInn("rom", {
+  const id = await settInn("rom", {
     navn,
     oppsett: JSON.stringify(
       deler.map((d) => ({ id: "id" in d ? d.id : nyId(), ...d })),
     ),
   });
+  varsleKlassekart();
+  return id;
 }
 
 export async function endreRom(
@@ -245,6 +248,7 @@ export async function endreRom(
       oppsett: JSON.stringify(felter.deler),
     }),
   });
+  varsleKlassekart();
 }
 
 /**
@@ -258,6 +262,7 @@ export async function slettRom(id: string): Promise<void> {
   );
   for (const k of kart) await oppdater("klassekart", k.id, { rom_id: null });
   await slett("rom", id);
+  varsleKlassekart();
 }
 
 // -------------------------------------------------------------------- kartet
@@ -365,13 +370,15 @@ export async function opprettKart(k: {
   kildeId: string;
   romId: string | null;
 }): Promise<string> {
-  return settInn("klassekart", {
+  const id = await settInn("klassekart", {
     skolear_id: k.skolearId,
     kilde_type: k.kildeType,
     kilde_id: k.kildeId,
     rom_id: k.romId,
     innstillinger: JSON.stringify(STANDARD),
   });
+  varsleKlassekart();
+  return id;
 }
 
 export async function endreKart(
@@ -384,10 +391,12 @@ export async function endreKart(
       innstillinger: JSON.stringify(felter.innstillinger),
     }),
   });
+  varsleKlassekart();
 }
 
 export async function slettKart(id: string): Promise<void> {
   await slett("klassekart", id);
+  varsleKlassekart();
 }
 
 // ------------------------------------------------------------------ elevene

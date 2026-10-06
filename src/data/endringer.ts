@@ -101,3 +101,26 @@ export function varsleOktvisning(): void {
     }
   }
 }
+
+// ------------------------------------------------------------- klassekart
+
+/**
+ * Beskjed om at kart eller rom er endret — sidemenyen viser kartene i en
+ * undermeny, med rom og antall elever, og skal følge med.
+ */
+const kartlyttere = new Set<Lytter>();
+
+export function lyttKlassekart(fn: Lytter): () => void {
+  kartlyttere.add(fn);
+  return () => kartlyttere.delete(fn);
+}
+
+export function varsleKlassekart(): void {
+  for (const fn of kartlyttere) {
+    try {
+      fn();
+    } catch (e) {
+      console.error("kartlytter:", e);
+    }
+  }
+}

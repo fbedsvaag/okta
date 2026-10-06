@@ -1,3 +1,4 @@
+import type { Kart } from "../data/klassekart";
 import {
   useEffect,
   useLayoutEffect,
@@ -61,6 +62,9 @@ export function Sidemeny({
   vurderingsnavn,
   apenTrekning,
   onApneTrekning,
+  klassekart,
+  apentKart,
+  onApneKart,
   onSok,
   onInnstillinger,
   onSkolear,
@@ -85,6 +89,12 @@ export function Sidemeny({
   /** trekningen som er åpen: fag-id, «mentor», null = ingen valgt; undefined = ikke i Samtaler */
   apenTrekning: string | null | undefined;
   onApneTrekning: (id: string) => void;
+  /** kartene i skoleåret, under Klassekart */
+  klassekart: Kart[];
+  /** kartet som er åpent; undefined = ikke i Klassekart */
+  apentKart: string | null | undefined;
+  /** et kart, eller «nytt» */
+  onApneKart: (id: string) => void;
   onSok: () => void;
   onInnstillinger: () => void;
   /** skoleåret øverst: Innstillinger › Skoleår */
@@ -187,6 +197,38 @@ export function Sidemeny({
         })}
         <Underpunkt dempet onKlikk={() => onApneTrekning("ny")}>
           + Ny trekning
+        </Underpunkt>
+      </>
+    ),
+    klassekart: (
+      <>
+        {klassekart.map((k) => {
+          const meta = `${
+            k.innstillinger.visning === "grupper"
+              ? "Grupper"
+              : (k.romNavn ?? "Uten rom")
+          } · ${k.antall} elever`;
+          return (
+            <Underpunkt
+              key={k.id}
+              aktiv={apentKart === k.id}
+              merke={
+                k.kildeType === "mentorgruppe" ? (
+                  <span className="h-2 w-2 shrink-0 rounded-full bg-aksent" />
+                ) : (
+                  <Firkant farge={k.farge ? fagfarge(k.farge) : null} />
+                )
+              }
+              meta={meta}
+              tittel={`${k.kildeNavn} — ${meta}`}
+              onKlikk={() => onApneKart(k.id)}
+            >
+              {k.kildeNavn}
+            </Underpunkt>
+          );
+        })}
+        <Underpunkt dempet onKlikk={() => onApneKart("nytt")}>
+          + Nytt kart
         </Underpunkt>
       </>
     ),
