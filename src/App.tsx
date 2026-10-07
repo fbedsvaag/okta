@@ -331,7 +331,11 @@ export default function App() {
     >
       <ArkKobling til={ark} />
       <div className="app-skall relative isolate flex h-full overflow-clip bg-bord text-blekk">
-        <div aria-hidden className="fargeteppe ikkeutskrift" />
+        <div aria-hidden className="fargeteppe ikkeutskrift">
+          <i />
+          <i />
+          <i />
+        </div>
         {sokApent && (
           <Sokevindu
             skolearId={skolear.id}
@@ -615,7 +619,7 @@ function Verktoylinje({
   // Sveip med to fingre: til høyre tilbake, til venstre fram.
   const sveip = useSveip(onTilbake, onFram, kanTilbake, kanFram);
   return (
-    <div className="glass-verktoy ikkeutskrift mx-2.5 mt-2.5 flex h-11 shrink-0 items-center gap-2.5 rounded-full pl-1.5 pr-1.5">
+    <div className="glass-verktoy ikkeutskrift mx-3 mt-2.5 flex h-12 shrink-0 items-center gap-2.5 rounded-full pl-2 pr-2">
       {/*
         Tilbake og fram, som i en nettleser (⌘[ ⌘]). Sto før nederst i
         sidemenyen, der de var vanskelige å finne.

@@ -292,9 +292,8 @@ function Teppe({
 
 /**
  * Ett ark i stabelen, med inngang og utgang (10.1). Økta legger seg midt
- * over skjermen og elevkortet kommer et lite stykke fra høyre, begge i matt
- * glass (DESIGN.md §7, «ark»). Vurdering og fag er tette og glir hele veien
- * inn fra høyre. Utgangen er samme overgang baklengs; stabelen tar arket
+ * over skjermen og elevkortet kommer et lite stykke fra høyre. Vurdering og
+ * fag glir hele veien inn fra høyre. Alle er matt glass (DESIGN.md §7, «ark»). Utgangen er samme overgang baklengs; stabelen tar arket
  * bort når den er ferdig.
  */
 function Arkramme({
@@ -313,7 +312,9 @@ function Arkramme({
     <div
       aria-hidden={dybde > 0}
       role={type === "okt" ? "dialog" : undefined}
-      data-inngang={type === "okt" ? "midt" : type === "elev" ? "hoyre" : "side"}
+      data-inngang={
+        type === "okt" ? "midt" : type === "elev" ? "hoyre" : "side"
+      }
       data-inne={inne && !paVeiUt}
       className={`ark absolute flex flex-col ${
         type === "okt"
@@ -322,7 +323,8 @@ function Arkramme({
             // (lerretet «ElevArk»).
             type === "elev"
             ? "glass-matt inset-y-4 right-4 w-[min(880px,calc(100%-32px))] overflow-hidden rounded-[24px]"
-            : "inset-y-0 right-0 w-full max-w-2xl bg-ark shadow-[var(--shadow-ark)]"
+            : // Vurdering og fag: samme glassark fra høyre (10.4).
+              "glass-matt inset-y-4 right-4 w-[min(672px,calc(100%-32px))] overflow-hidden rounded-[24px]"
       } ${paVeiUt || dybde > 0 ? "pointer-events-none" : ""}`}
       style={
         dybde > 0

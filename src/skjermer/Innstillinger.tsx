@@ -201,9 +201,15 @@ export function Innstillinger({
 
   return (
     <div className="mx-auto flex min-h-0 w-full max-w-5xl flex-1 gap-8">
-      <nav ref={sidemeny} className="relative w-48 shrink-0 overflow-y-auto pt-1">
+      <nav
+        ref={sidemeny}
+        className="relative w-48 shrink-0 overflow-y-auto pt-1"
+      >
         {/* Hover glir fra side til side (10.3). */}
-        <Hovermarkor beholder={sidemeny} klasse="hovermarkor-tonet rounded-stor" />
+        <Hovermarkor
+          beholder={sidemeny}
+          klasse="hovermarkor-tonet rounded-stor"
+        />
         {SIDER.map((g) => (
           <div key={g.gruppe} className="mb-4">
             <p className="mb-1 px-2 text-etikett uppercase tracking-etikett text-blekk-dempet">

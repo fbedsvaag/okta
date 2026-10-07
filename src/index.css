@@ -286,6 +286,10 @@
   --glass-dempet: #4b4560;
   --glass-uskarp: blur(28px) saturate(170%);
   --glass-uskarp-sok: blur(40px) saturate(180%);
+  --glass-meny: rgba(255, 255, 255, 0.9);
+  --glass-meny-kant: rgba(255, 255, 255, 0.9);
+  --glass-meny-skygge: rgba(36, 31, 51, 0.26);
+  --glass-uskarp-meny: blur(30px) saturate(180%);
   --teppe-styrke: 1;
 }
 
@@ -299,6 +303,9 @@
     --glass-innerlys: rgba(255, 255, 255, 0.06);
     --glass-skygge: rgba(0, 0, 0, 0.4);
     --glass-dempet: #c0b8d8;
+    --glass-meny: rgba(40, 35, 54, 0.9);
+    --glass-meny-kant: rgba(255, 255, 255, 0.12);
+    --glass-meny-skygge: rgba(0, 0, 0, 0.5);
     --teppe-styrke: 0.45;
   }
 }
@@ -314,6 +321,9 @@
   --glass-dempet: var(--color-blekk-dempet);
   --glass-uskarp: none;
   --glass-uskarp-sok: none;
+  --glass-uskarp-meny: none;
+  --glass-meny: var(--glass-sok);
+  --glass-meny-kant: var(--color-linje);
   --teppe-styrke: 0;
 }
 
@@ -339,6 +349,9 @@
     --glass-dempet: var(--color-blekk-dempet);
     --glass-uskarp: none;
     --glass-uskarp-sok: none;
+    --glass-uskarp-meny: none;
+    --glass-meny: var(--glass-sok);
+    --glass-meny-kant: var(--color-linje);
     --teppe-styrke: 0;
   }
   :root[data-tema="mork"][data-glass] {
@@ -352,7 +365,8 @@
 
 .glass-sidepanel,
 .glass-verktoy,
-.glass-sok {
+.glass-sok,
+.glass-meny {
   --color-blekk-dempet: var(--glass-dempet);
   border: 1px solid var(--glass-kant);
   -webkit-backdrop-filter: var(--glass-uskarp);
@@ -366,11 +380,14 @@
     0 10px 30px var(--glass-skygge);
 }
 
+/* Verktøylinja som i lerretet: kapsel med lys innerkant, myk skygge og en
+   hårfin ytterkant, så den står fram også over det hvite arket. */
 .glass-verktoy {
   background: var(--glass-verktoy);
   box-shadow:
     inset 0 1px 0 var(--glass-innerlys),
-    0 4px 14px var(--glass-skygge);
+    0 6px 20px color-mix(in srgb, var(--glass-skygge) 70%, transparent),
+    0 0 0 0.5px color-mix(in srgb, var(--glass-skygge) 60%, transparent);
 }
 
 .glass-sok {
@@ -381,6 +398,20 @@
     inset 0 1px 0 var(--glass-innerlys),
     0 24px 60px -12px var(--glass-skygge),
     0 10px 30px var(--glass-skygge);
+}
+
+/*
+ * Menyene (kontekst, ⋯, Del) som ⋯-menyen i lerretet «ElevArk»: tettere
+ * glass enn sidepanelet og en tydelig skygge, så kanten synes mot hvitt.
+ */
+.glass-meny {
+  background: var(--glass-meny);
+  -webkit-backdrop-filter: var(--glass-uskarp-meny);
+  backdrop-filter: var(--glass-uskarp-meny);
+  border-color: var(--glass-meny-kant);
+  box-shadow:
+    inset 0 1px 0 var(--glass-innerlys),
+    0 18px 44px var(--glass-meny-skygge);
 }
 
 /* Valgt punkt på glass. */
@@ -440,9 +471,13 @@
     box-shadow 160ms var(--ease-inn);
 }
 
+/* Skjult: uten farge og uten uskarphet. Uskarpheten alene tegnet en lys
+   flekk på sidepanelet, og flaten så ut til å bli hengende. */
 .hovermarkor[data-synlig="false"] {
   background-color: transparent;
   box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 }
 
 :root[data-glass="av"] .hovermarkor {
@@ -451,37 +486,80 @@
 }
 
 /*
- * Fargeteppet: store, uskarpe flater i palettens farger, bak alt annet i
- * vinduet. Bygger på aksenten og valgt-fargen, så det følger paletten (§4).
- * Dempet i mørk modus, borte når glass er av.
+ * Fargeteppet: store, uskarpe flater bak alt annet i vinduet, som i
+ * lerretet: lilla oppe til venstre, blågrønn nede til venstre, lys lavendel
+ * oppe til høyre (10.4). Før var det fire svake toner, og glasset over så
+ * ut som grå flater. I lerretet ligger flatene under et vindu med
+ * rgba(236,234,241,.42) — derfor dempes de med et lag i bordfargen.
+ *
+ * Fiolett har lerretets farger. De andre palettene regner flatene ut fra
+ * aksenten, så teppet følger paletten (§4). Dempet i mørk modus, borte når
+ * glass er av.
  */
+:root {
+  --teppe-a: #8a7bc2;
+  --teppe-b: #5f9e98;
+  --teppe-c: #b8aee0;
+}
+
+:root[data-palett]:not([data-palett="fiolett"]) {
+  --teppe-a: color-mix(in srgb, var(--color-aksent) 62%, white);
+  --teppe-b: color-mix(in srgb, var(--color-aksent) 45%, #5f9e98);
+  --teppe-c: color-mix(in srgb, var(--color-aksent) 32%, white);
+}
+
 .fargeteppe {
   position: absolute;
   inset: 0;
   z-index: -1;
+  overflow: hidden;
   pointer-events: none;
   opacity: var(--teppe-styrke);
-  background:
-    radial-gradient(
-      38% 48% at 12% 18%,
-      color-mix(in srgb, var(--color-aksent) 38%, transparent),
-      transparent 72%
-    ),
-    radial-gradient(
-      45% 55% at 88% 12%,
-      color-mix(in srgb, var(--color-valgt) 95%, transparent),
-      transparent 70%
-    ),
-    radial-gradient(
-      50% 50% at 72% 92%,
-      color-mix(in srgb, var(--color-aksent) 26%, transparent),
-      transparent 70%
-    ),
-    radial-gradient(
-      42% 52% at 8% 88%,
-      color-mix(in srgb, var(--color-valgt) 90%, transparent),
-      transparent 70%
-    );
+}
+
+/*
+ * Flatene er myke radialgradienter, ikke sirkler med filter: blur. WebKit
+ * klipper uskarpheten ved boksens kant, og da fikk teppet en skarp, vannrett
+ * kant midt i vinduet. Boksene er større enn sirklene i lerretet, så
+ * overgangen får plass.
+ */
+.fargeteppe > i {
+  position: absolute;
+}
+
+.fargeteppe > i:nth-child(1) {
+  left: -260px;
+  top: -220px;
+  width: 900px;
+  height: 900px;
+  background: radial-gradient(closest-side, var(--teppe-a) 36%, transparent);
+  opacity: 0.75;
+}
+
+.fargeteppe > i:nth-child(2) {
+  left: -220px;
+  top: 400px;
+  width: 840px;
+  height: 840px;
+  background: radial-gradient(closest-side, var(--teppe-b) 26%, transparent);
+  opacity: 0.7;
+}
+
+.fargeteppe > i:nth-child(3) {
+  right: -280px;
+  top: -240px;
+  width: 1060px;
+  height: 860px;
+  background: radial-gradient(closest-side, var(--teppe-c) 22%, transparent);
+  opacity: 0.6;
+}
+
+/* Vinduet over flatene i lerretet. */
+.fargeteppe::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb, var(--color-bord) 42%, transparent);
 }
 
 /*
@@ -727,7 +805,6 @@ html {
   }
 }
 
-
 /* Klassekartet: elevene glir til de nye plassene når kartet stokkes. */
 .kartelev {
   transition:
@@ -735,8 +812,6 @@ html {
     top var(--tid-utfold) var(--ease-sprett),
     background-color 160ms;
 }
-
-
 
 /* Arket under glir tilbake på plass i samme tempo som det over glir ut. */
 .ark {

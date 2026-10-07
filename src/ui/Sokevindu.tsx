@@ -145,14 +145,14 @@ export function Sokevindu({
       onMouseDown={(e) => e.target === e.currentTarget && onLukk()}
     >
       {/*
-        Formet som Spotlight: store, myke hjørner (26 px), matt glass over
-        appen (som notatet fra samtalen), et stort søkefelt med lupe, og treff
+        Formet som Spotlight: store, myke hjørner (26 px), glass over appen
+        (DESIGN.md §7: .74, blur 40 px), et stort søkefelt med lupe, og treff
         markert med en avrundet flate innenfor kantene.
       */}
       <div
         data-inngang="midt"
         data-inne={inne}
-        className="glass-matt w-full max-w-xl overflow-hidden rounded-[26px]"
+        className="glass-sok w-full max-w-xl overflow-hidden rounded-[26px]"
       >
         <div className="flex items-center gap-3 px-4">
           <svg

@@ -64,11 +64,19 @@ export function Hovermarkor({
       inne = false;
       setSynlig(false);
     };
+    // Et ark eller en meny som legger seg over lista mens musa står i ro,
+    // gir ingen pointerleave. Da skjules flaten første gang musa er over
+    // noe annet.
+    const annet = (e: PointerEvent) => {
+      if (inne && !b.contains(e.target as Node)) ut();
+    };
     b.addEventListener("pointerover", over);
     b.addEventListener("pointerleave", ut);
+    document.addEventListener("pointerover", annet);
     return () => {
       b.removeEventListener("pointerover", over);
       b.removeEventListener("pointerleave", ut);
+      document.removeEventListener("pointerover", annet);
       cancelAnimationFrame(ramme);
     };
   }, [beholder]);

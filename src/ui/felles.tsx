@@ -9,6 +9,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { createPortal } from "react-dom";
 
 /**
  * Referansen er den norske klassejournalen: linjert, tett, uten pynt (§13).
@@ -727,7 +728,11 @@ export function Kontekstmeny({
   useLayoutEffect(() => {
     const el = meny.current;
     if (!el) return;
-    const { width, height } = el.getBoundingClientRect();
+    // offsetWidth, ikke getBoundingClientRect: menyen står krympet i
+    // inngangen (10.1), og da ville den målt seg for smal og havnet ute i
+    // kanten av vinduet.
+    const width = el.offsetWidth;
+    const height = el.offsetHeight;
     setPlass({
       venstre: Math.min(x, window.innerWidth - width - 8),
       topp: Math.min(y, window.innerHeight - height - 8),
@@ -755,7 +760,10 @@ export function Kontekstmeny({
     };
   }, [onLukk]);
 
-  return (
+  // Rett i <body>: inne i et ark med glass (backdrop-filter) eller
+  // transform blir «fixed» regnet fra arket og ikke fra vinduet, og ⋯-menyen
+  // i elevkortet havnet utenfor arket, usynlig.
+  return createPortal(
     <div
       ref={meny}
       role="menu"
@@ -764,12 +772,13 @@ export function Kontekstmeny({
       style={{ left: plass.venstre, top: plass.topp }}
       data-inngang="meny"
       data-inne={inne}
-      className="glass-sok fixed z-50 min-w-40 rounded-[10px] p-1"
+      className="glass-meny fixed z-50 min-w-40 rounded-[14px] p-1.5"
     >
       {/* Hover glir fra valg til valg (10.3). */}
-      <Hovermarkor beholder={meny} klasse="hovermarkor-tonet rounded-stor" />
+      <Hovermarkor beholder={meny} klasse="hovermarkor-tonet rounded-[8px]" />
       {children}
-    </div>
+    </div>,
+    document.body,
   );
 }
 
@@ -787,7 +796,7 @@ export function Menyvalg({
     <button
       role="menuitem"
       onClick={onKlikk}
-      className={`relative z-[1] block w-full rounded-stor px-3 py-1 text-left text-brod ${
+      className={`relative z-[1] block w-full rounded-[8px] px-3 py-1.5 text-left text-brod ${
         farlig ? "text-feil" : ""
       }`}
     >

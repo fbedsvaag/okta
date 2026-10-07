@@ -231,10 +231,10 @@ export function Sidemeny({
   return (
     <nav
       ref={nav}
-      className="glass-sidepanel ikkeutskrift relative my-2.5 ml-2.5 flex w-56 shrink-0 flex-col rounded-glass px-2 py-3"
+      className="glass-sidepanel ikkeutskrift relative my-2.5 ml-2.5 flex w-[236px] shrink-0 flex-col rounded-glass px-2 py-3"
     >
       {/* Hover glir fra punkt til punkt, også inn i undermenyene (10.3). */}
-      <Hovermarkor beholder={nav} />
+      <Hovermarkor beholder={nav} klasse="rounded-[10px]" />
       <div className="flex items-center gap-2 px-2 pb-2.5">
         <Ordmerke storrelse={18} />
         <button
@@ -264,7 +264,7 @@ export function Sidemeny({
         <Glideflate
           beholder={meny}
           mal={aktivKnapp}
-          klasse="glass-valgt rounded-[9px]"
+          klasse="glass-valgt rounded-[10px]"
         />
         {PUNKTER.map((p) => {
           const liste = undermeny[p.id];
@@ -292,7 +292,7 @@ export function Sidemeny({
                 onClick={() => onGa(p.id)}
                 aria-current={erAktiv ? "page" : undefined}
                 data-hover
-                className={`relative z-[1] flex h-[30px] w-full items-center gap-2.5 rounded-[9px] px-2.5 text-left text-[calc(13.5px*var(--tekst-skala))] text-blekk ${
+                className={`relative z-[1] flex h-8 w-full items-center gap-2.5 rounded-[10px] px-2.5 text-left text-[calc(14px*var(--tekst-skala))] text-blekk ${
                   erAktiv ? "font-medium" : ""
                 }`}
               >
@@ -314,7 +314,7 @@ export function Sidemeny({
           onClick={onInnstillinger}
           aria-current={aktiv === "innstillinger" ? "page" : undefined}
           data-hover
-          className={`relative z-[1] flex h-[30px] min-w-0 flex-1 items-center rounded-[9px] px-2.5 text-left text-[calc(13.5px*var(--tekst-skala))] ${
+          className={`relative z-[1] flex h-8 min-w-0 flex-1 items-center rounded-[10px] px-2.5 text-left text-[calc(14px*var(--tekst-skala))] ${
             aktiv === "innstillinger"
               ? "glass-valgt font-medium text-blekk"
               : "text-blekk"
