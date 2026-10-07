@@ -76,6 +76,17 @@ import {
   type Oktnotat,
 } from "../data/elevnotat";
 import { settSkaringsnotat } from "../data/okter";
+import {
+  fravaer,
+  fravaersmerke,
+  GRENSE,
+  hentFravaersgrunnlag,
+  hentOktrader,
+  prosent,
+  timer,
+  type Fagfravaer,
+} from "../data/oktrader";
+import { lytt } from "../data/endringer";
 import { NOYTRAL, skalafarge } from "../ui/farger";
 import { Markdownfelt, MarkdownSkriv } from "../ui/Notattekst";
 
@@ -256,14 +267,6 @@ export function ElevPanel({
   ].sort((a, b) => a.kode.localeCompare(b.kode, "nb-NO"));
   const elevensFagIder = new Set(fagIAr.map((f) => f.id));
   const kontekstfag = arsFag.find((f) => f.id === startFag);
-
-  // Fraværet i år: avholdte økter der eleven står som «ikke i økta».
-  const avholdte = (iAr?.fagRader ?? []).flatMap((r) =>
-    r.ruter.filter((x) => x.avholdt > 0),
-  );
-  const borte = avholdte.filter(
-    (x) => x.tellerIkke === 1 || x.verdiKode === null,
-  );
 
   async function eksporter() {
     const s = skolearene.find((x) => x.id === aktivtSkolearId);
@@ -801,36 +804,11 @@ export function ElevPanel({
               </div>
             )}
             <Klassekartboks elevId={elevId} skolearId={aktivtSkolearId} />
-            <div>
-              <h2 className="mb-2 text-[calc(13px*var(--tekst-skala))] font-semibold">
-                Fravær i år
-              </h2>
-              {avholdte.length === 0 ? (
-                <p className="text-liten text-blekk-svak">
-                  Ingen økter er holdt ennå.
-                </p>
-              ) : (
-                <>
-                  <p className="text-liten text-blekk">
-                    Fraværende i{" "}
-                    <b className="font-semibold tabular-nums">{borte.length}</b>{" "}
-                    av {avholdte.length} økter
-                  </p>
-                  {borte.length > 0 && (
-                    <div className="mt-1.5 flex flex-wrap gap-[3px]">
-                      {borte.map((b) => (
-                        <button
-                          key={b.oktId}
-                          title={`${kortDato(b.dato)}${b.tema ? ` · ${b.tema}` : ""}`}
-                          onClick={() => onApneOkt(b.oktId)}
-                          className="h-3 w-2 rounded-[2px] bg-lys-borte"
-                        />
-                      ))}
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
+            <Fravaersboks
+              elevId={elevId}
+              skolearId={aktivtSkolearId}
+              fag={fagIAr}
+            />
           </aside>
         </div>
       </div>
@@ -1814,5 +1792,112 @@ function Navnefelt({
         </span>
       )}
     </span>
+  );
+}
+
+/**
+ * «Fravær i år» (ARBEIDSLISTE 11.7, lerretet «ElevArk»): én rad per fag med
+ * prosent av fagets timer, en stolpe mot 10 %-grensen, «9 av 24 økter ·
+ * 15,8 t» og merket (Halvveis, Nær grensen, Over grensen). Fraværet er
+ * «ikke i økta» i avholdte økter, i timer mot fagets årstimetall.
+ */
+function Fravaersboks({
+  elevId,
+  skolearId,
+  fag,
+}: {
+  elevId: string;
+  skolearId: string;
+  fag: { id: string; kode: string; farge: string | null }[];
+}) {
+  const [liste, setListe] = useState<Fagfravaer[] | null>(null);
+  useEffect(() => {
+    let avbrutt = false;
+    const last = () =>
+      void Promise.all([
+        hentOktrader(skolearId),
+        hentFravaersgrunnlag(skolearId),
+      ]).then(([rader, grunnlag]) => {
+        if (!avbrutt) setListe(fravaer(rader, elevId, grunnlag));
+      });
+    last();
+    const slutt = lytt(last);
+    return () => {
+      avbrutt = true;
+      slutt();
+    };
+  }, [elevId, skolearId]);
+
+  const rader = (liste ?? [])
+    .map((f) => ({ f, fag: fag.find((x) => x.id === f.skolearFagId) }))
+    .filter((x) => x.fag)
+    .sort((a, b) => (b.f.andel ?? 0) - (a.f.andel ?? 0));
+
+  return (
+    <div>
+      <h2 className="mb-1 text-[calc(13px*var(--tekst-skala))] font-semibold">
+        Fravær i år
+      </h2>
+      <p className="mb-1 text-[calc(12px*var(--tekst-skala))] text-blekk-svak">
+        mot 10 %-grensen per fag
+      </p>
+      {liste !== null && rader.length === 0 && (
+        <p className="text-liten text-blekk-svak">Ingen økter er holdt ennå.</p>
+      )}
+      {rader.map(({ f, fag: x }) => {
+        const avGrensen = f.andel === null ? 0 : f.andel / GRENSE;
+        const merke = fravaersmerke(f.andel);
+        const farge =
+          avGrensen > 1
+            ? "var(--color-lys-rod)"
+            : avGrensen >= 0.5
+              ? "var(--color-lys-gul)"
+              : "var(--color-blekk-svak)";
+        return (
+          <div key={f.skolearFagId} className="py-1.5">
+            <div className="flex items-center gap-[7px] text-[calc(13px*var(--tekst-skala))]">
+              <Fagfirkant farge={x!.farge} />
+              <b className="font-semibold">{x!.kode}</b>
+              <span className="flex-1" />
+              <b
+                className={`font-semibold tabular-nums ${avGrensen > 1 ? "text-feil" : ""}`}
+              >
+                {f.andel === null ? "–" : prosent(f.andel)}
+              </b>
+            </div>
+            <div className="relative mb-1 mt-1.5 h-1.5 rounded-[3px] bg-flate">
+              <span
+                className="absolute inset-y-0 left-0 rounded-[3px]"
+                style={{
+                  width: `${Math.min(100, avGrensen * 100)}%`,
+                  background: farge,
+                }}
+              />
+            </div>
+            <div className="flex text-[calc(12px*var(--tekst-skala))] text-blekk-dempet">
+              <span className="tabular-nums">
+                {f.borte} av {f.okter} økter · {timer(f.borteMin)}
+              </span>
+              <span className="flex-1" />
+              {merke && (
+                <span
+                  className={
+                    merke.niva === "rod" ? "text-feil" : "text-[#8a5a00]"
+                  }
+                >
+                  {merke.tekst}
+                </span>
+              )}
+            </div>
+          </div>
+        );
+      })}
+      {rader.length > 0 && (
+        <p className="mt-1.5 text-[calc(11.5px*var(--tekst-skala))] leading-[1.45] text-blekk-svak">
+          Udokumentert fravær over 10 % av timene i faget kan gi IV. InSchool er
+          fasit; her regnes «ikke i økta».
+        </p>
+      )}
+    </div>
   );
 }
