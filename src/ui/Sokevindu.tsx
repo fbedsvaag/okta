@@ -183,11 +183,15 @@ export function Sokevindu({
             tekst.trim() === "" ? "" : "border-t border-linje-medium/70 pt-1"
           }`}
         >
-          {/* Markøren glir med piltastene (DESIGN.md §8). */}
+          {/*
+            Markøren glir med piltastene (DESIGN.md §8). Aksentflate under
+            teksten (10.2): før lå en hvit flate over treffet, og det valgte
+            ble det blekeste i lista.
+          */}
           <Glideflate
             beholder={liste}
             mal={markorEl}
-            klasse="glass-valgt rounded-[10px]"
+            klasse="rounded-[10px] bg-[color-mix(in_srgb,var(--color-aksent)_12%,transparent)]"
           />
           {tekst.trim() === "" ? (
             <p className="border-t border-linje-medium/70 px-4 pb-1 pt-3 text-liten text-blekk-svak">
@@ -209,7 +213,7 @@ export function Sokevindu({
                   data-nr={i}
                   onMouseMove={() => setMarkor(i)}
                   onClick={() => apne(t)}
-                  className={`mx-2 flex w-[calc(100%-1rem)] items-baseline gap-3 rounded-[10px] px-3 py-1.5 text-left text-brod ${""}`}
+                  className="relative z-[1] mx-2 flex w-[calc(100%-1rem)] items-baseline gap-3 rounded-[10px] px-3 py-1.5 text-left text-brod text-blekk"
                 >
                   {t.type === "elev" ? (
                     <>
