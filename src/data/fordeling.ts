@@ -219,7 +219,7 @@ export function fordelPlasser(
   if (utenPlass.length > 0)
     brudd.push({
       regel: "plass",
-      tekst: `${utenPlass.length} ${utenPlass.length === 1 ? "elev" : "elever"} fikk ikke plass — rommet har ${n} plasser.`,
+      tekst: `${utenPlass.length} ${utenPlass.length === 1 ? "elev" : "elever"} fikk ikke plass. Rommet har ${n} plasser.`,
     });
   for (const [a, b] of nabopar) {
     const x = best[a];

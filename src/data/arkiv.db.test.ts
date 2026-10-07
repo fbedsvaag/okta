@@ -90,7 +90,7 @@ describe("byggArkiv og egne gjøremål", () => {
     const [forste] = await hentGjoremal(skolear.id);
     await fullforGjoremal(forste);
     const ut = fil(await byggArkiv(skolear), "oppfolging.md");
-    expect(ut).toContain("- [x] Kopier prøvene — frist 2026-10-02 — ferdig");
+    expect(ut).toContain("- [x] Kopier prøvene, frist 2026-10-02, ferdig");
     expect(ut).toContain("- [ ] Bestill rom");
   });
 });

@@ -299,8 +299,8 @@ function NyttKart({
         Nytt kart
       </h1>
       <p className="mb-6 mt-1 text-liten text-blekk-dempet">
-        Elevene hentes fra faget, klassen eller mentorgruppa — ingen lister
-        limes inn.
+        Elevene hentes fra faget, klassen eller mentorgruppa. Ingen lister limes
+        inn.
       </p>
       <label className="mb-1.5 block text-liten font-semibold">Elevene</label>
       <select
@@ -313,7 +313,7 @@ function NyttKart({
           <optgroup label="Fag">
             {fag.map((f) => (
               <option key={f.id} value={`fag:${f.id}`}>
-                {f.kode} — {f.navn}
+                {f.kode} · {f.navn}
               </option>
             ))}
           </optgroup>
@@ -342,7 +342,7 @@ function NyttKart({
             {r.navn} ({plasserIRom(r.deler).length} plasser)
           </option>
         ))}
-        <option value="">Ingen ennå — tegn det etterpå</option>
+        <option value="">Ingen ennå, tegn det etterpå</option>
       </select>
       <div className="mt-6 flex justify-end gap-2">
         <button

@@ -487,7 +487,7 @@ export function Okter({
                 tekst={
                   fag.length === 0
                     ? "Legg inn fagene dine først, så kan du planlegge øktene."
-                    : "Ingen økter i dette skoleåret ennå — opprett den første."
+                    : "Ingen økter i dette skoleåret ennå. Opprett den første."
                 }
                 handling={
                   fag.length > 0 ? (
@@ -1058,7 +1058,7 @@ function Titt({
               : "Uten klokkeslett"}
           </span>
           <span className="text-blekk-dempet">Rom</span>
-          <span>{okt.sted ?? "—"}</span>
+          <span>{okt.sted ?? "–"}</span>
           {vurderinger.length > 0 && (
             <>
               <span className="text-blekk-dempet">Vurdering</span>
@@ -1069,7 +1069,7 @@ function Titt({
                     onClick={() => onApneVurdering(v)}
                     className="text-left font-medium text-vurdering-tekst hover:underline"
                   >
-                    {v.tittel} — Åpne i{" "}
+                    {v.tittel} · Åpne i{" "}
                     <i>{v.type === "muntlig" ? "Samtaler" : "Vurderinger"}</i> →
                   </button>
                 ))}
@@ -1142,7 +1142,7 @@ function langDato(dato: string): string {
 function Innsats({ okt }: { okt: Okt }) {
   const talt = okt.gronn + okt.gul + okt.rod;
   if (talt === 0)
-    return <span className="text-liten text-blekk-svakest">—</span>;
+    return <span className="text-liten text-blekk-svakest">–</span>;
 
   const deler = [
     { antall: okt.gronn, farge: TRAFIKKLYS.gronn },

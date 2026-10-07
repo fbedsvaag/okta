@@ -402,7 +402,7 @@ export function teamstekst(okt: {
 
   const lekse = okt.lekse?.trim();
   return [
-    `${okt.fagKode} — ${nar}`,
+    `${okt.fagKode}: ${nar}`,
     okt.tema?.trim(),
     okt.agenda?.trim(),
     lekse && `Lekse: ${lekse}`,

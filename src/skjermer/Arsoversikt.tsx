@@ -432,7 +432,7 @@ function Fagmaler({ fag }: { fag: Fagtimer }) {
 
       {mal === null && (
         <p className="mt-0.5 text-liten text-blekk-svak">
-          Årstimetall ikke satt — legg det inn i Fag for å se differansen.
+          Årstimetall ikke satt. Legg det inn i Fag for å se differansen.
         </p>
       )}
       {over && (
@@ -686,7 +686,7 @@ function NyttGjoremal({ skolearId }: { skolearId: string }) {
         value={tekst}
         onChange={(e) => setTekst(e.target.value)}
         onKeyDown={enter}
-        placeholder="Nytt gjøremål — Enter lagrer"
+        placeholder="Nytt gjøremål, Enter lagrer"
         className="min-w-0 flex-1 bg-transparent py-0.5 text-brod outline-none placeholder:text-blekk-svak"
       />
       {/* Elev og frist kommer fram når det skrives, så linja er rolig ellers. */}

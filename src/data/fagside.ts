@@ -35,10 +35,10 @@ export function tempo(
 export function tempotekst(timer: number): { tekst: string; bak: boolean } {
   if (timer >= -1)
     return {
-      tekst: timer <= 1 ? "I rute" : `I rute — ${timer} timer foran årsplanen`,
+      tekst: timer <= 1 ? "I rute" : `I rute, ${timer} timer foran årsplanen`,
       bak: false,
     };
-  return { tekst: `Bak — ${-timer} timer bak årsplanen`, bak: true };
+  return { tekst: `Bak, ${-timer} timer bak årsplanen`, bak: true };
 }
 
 export type Periodestolpe = {

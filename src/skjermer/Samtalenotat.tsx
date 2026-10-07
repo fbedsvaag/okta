@@ -403,7 +403,7 @@ export function Samtalenotat({
             {status === "lagrer"
               ? "Lagrer …"
               : status === "feil"
-                ? "Kunne ikke lagre — teksten står her ennå"
+                ? "Kunne ikke lagre. Teksten står her ennå"
                 : status === "lagret"
                   ? "Lagret"
                   : "Lagres mens du skriver"}
@@ -457,7 +457,7 @@ function Skala({
               if (pa) await fjernResultat(vurdering.id, elevId);
               else await settResultat(vurdering.id, elevId, v);
             }}
-            title={`${v.kode}${v.etikett ? ` — ${v.etikett}` : ""}${
+            title={`${v.kode}${v.etikett ? `: ${v.etikett}` : ""}${
               tast.get(v.id) ? ` (${tast.get(v.id)})` : ""
             }`}
             aria-pressed={pa}

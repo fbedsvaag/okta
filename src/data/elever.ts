@@ -340,7 +340,7 @@ export function frakobletekst(
     `Koble ${fornavn} fra ${fagKode}?\n\n` +
     `${skaringer} skåringer blir liggende i basen, men eleven forsvinner ` +
     "ut av fagets lister og heatmap.\n\n" +
-    "Du kan koble til igjen når som helst — da kommer de tilbake."
+    "Du kan koble til igjen når som helst. Da kommer de tilbake."
   );
 }
 
@@ -439,7 +439,7 @@ export function slettElevtekst(
 
   const omfang =
     hva.length > 0
-      ? `Dette fjerner ${hva.join(", ")} — i alle skoleår, ikke bare dette.`
+      ? `Dette fjerner ${hva.join(", ")}, i alle skoleår, ikke bare dette.`
       : navn.length === 1
         ? "Eleven har ingen skåringer eller vurderinger registrert."
         : "Ingen av dem har skåringer eller vurderinger registrert.";

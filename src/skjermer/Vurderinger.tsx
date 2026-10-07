@@ -128,7 +128,7 @@ export function Vurderinger({
               tekst={
                 fag.length === 0
                   ? "Legg inn fagene dine først."
-                  : "Ingen vurderinger ennå — prøver, innleveringer og framlegg legges inn her."
+                  : "Ingen vurderinger ennå. Prøver, innleveringer og framlegg legges inn her."
               }
               handling={
                 fag.length > 0 ? (
@@ -322,7 +322,7 @@ function NyVurdering({
           onChange={(e) => setType(e.target.value as Vurderingstype | "")}
           className={velgerStil}
         >
-          <option value="">—</option>
+          <option value="">–</option>
           <option value="skriftlig">Skriftlig</option>
           <option value="muntlig">Muntlig</option>
           <option value="praktisk">Praktisk</option>

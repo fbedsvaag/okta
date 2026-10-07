@@ -195,9 +195,9 @@ export function Sokevindu({
           />
           {tekst.trim() === "" ? (
             <p className="border-t border-linje-medium/70 px-4 pb-1 pt-3 text-liten text-blekk-svak">
-              Navn, klasse, tema, fag (også aliaset) eller dato — 2026-10-12,
-              12.10 eller 12.10.26. Flere ord snevrer inn, f.eks. «mfl1 2026-10»
-              for oktoberøktene i MFL1.
+              Navn, klasse, tema, fag (også aliaset) eller dato, for eksempel
+              2026-10-12, 12.10 eller 12.10.26. Flere ord snevrer inn, f.eks.
+              «mfl1 2026-10» for oktoberøktene i MFL1.
             </p>
           ) : treff.length === 0 ? (
             <p className="px-4 py-3 text-brod text-blekk-svak">Ingen treff.</p>

@@ -71,12 +71,12 @@ describe("timer på fagsiden", () => {
       2,
     );
     expect(tempotekst(2)).toEqual({
-      tekst: "I rute — 2 timer foran årsplanen",
+      tekst: "I rute, 2 timer foran årsplanen",
       bak: false,
     });
     expect(tempotekst(0)).toEqual({ tekst: "I rute", bak: false });
     expect(tempotekst(-4)).toEqual({
-      tekst: "Bak — 4 timer bak årsplanen",
+      tekst: "Bak, 4 timer bak årsplanen",
       bak: true,
     });
   });

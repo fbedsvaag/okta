@@ -43,19 +43,19 @@ describe("teamstekst", () => {
 
   it("setter fag, tidspunkt, tema og agenda under hverandre", () => {
     expect(teamstekst(okt)).toBe(
-      "MFL1 — tirsdag 15. september, 09:15\n\nMarkedsanalyse\n\nTa med PC.",
+      "MFL1: tirsdag 15. september, 09:15\n\nMarkedsanalyse\n\nTa med PC.",
     );
   });
 
   it("utelater klokkeslettet når økta ikke har et", () => {
     expect(teamstekst({ ...okt, klokkeslett: null })).toBe(
-      "MFL1 — tirsdag 15. september\n\nMarkedsanalyse\n\nTa med PC.",
+      "MFL1: tirsdag 15. september\n\nMarkedsanalyse\n\nTa med PC.",
     );
   });
 
   it("hopper over tomme felter i stedet for å legge igjen blanke linjer", () => {
     expect(teamstekst({ ...okt, tema: null, agenda: "   " })).toBe(
-      "MFL1 — tirsdag 15. september, 09:15",
+      "MFL1: tirsdag 15. september, 09:15",
     );
   });
 
@@ -65,13 +65,13 @@ describe("teamstekst", () => {
     const ut = teamstekst({ ...okt, agenda: "Ta med PC." });
     expect(ut).not.toContain("plan");
     expect(ut).toBe(
-      "MFL1 — tirsdag 15. september, 09:15\n\nMarkedsanalyse\n\nTa med PC.",
+      "MFL1: tirsdag 15. september, 09:15\n\nMarkedsanalyse\n\nTa med PC.",
     );
   });
 
   it("tar med leksa til slutt, merket som lekse", () => {
     expect(teamstekst({ ...okt, lekse: "Les kap. 3" })).toBe(
-      "MFL1 — tirsdag 15. september, 09:15\n\nMarkedsanalyse\n\nTa med PC.\n\nLekse: Les kap. 3",
+      "MFL1: tirsdag 15. september, 09:15\n\nMarkedsanalyse\n\nTa med PC.\n\nLekse: Les kap. 3",
     );
   });
 });

@@ -67,7 +67,7 @@ export function Fagvelger({
 
       {tomt && !leter && (
         <p className="mt-2 text-brod text-blekk-dempet">
-          Ingen treff. Fag uten treff i Udirs liste kan opprettes for hånd —
+          Ingen treff. Fag uten treff i Udirs liste kan opprettes for hånd:
           skriv kode og navn i feltene under.
         </p>
       )}

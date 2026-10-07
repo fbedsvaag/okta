@@ -315,7 +315,7 @@ export function FagPanel({
                 `Dette gjelder alle ${n.ar} skoleår faget er brukt i, og ` +
                 `fjerner ${n.okter} økter, ${n.skaringer} skåringer, ` +
                 `${n.perioder} perioder og ${n.vurderinger} vurderinger.\n\n` +
-                "Elevene blir stående — de lever på tvers av fag.\n\n" +
+                "Elevene blir stående. De lever på tvers av fag.\n\n" +
                 "Vil du bare ta faget ut av dette året, bruk Fjern i " +
                 "redigeringsmodus i stedet. Da blir øktene liggende.",
             );
@@ -400,8 +400,8 @@ function Klasseliste({
     const n = await tellSkaringerIFag(e.elevId, fag.id);
     const ok = await bekreft(
       `Ta ${e.fornavn} ${e.etternavn} ut av ${fag.kode}?\n\n` +
-        "Eleven slettes ikke. Hen blir stående under Elever — uten fag, " +
-        "om dette var det eneste — og kan slettes der." +
+        "Eleven slettes ikke. Hen blir stående under Elever (uten fag, " +
+        "om dette var det eneste) og kan slettes der." +
         (n > 0
           ? `\n\n${n} skåringer blir liggende og kommer tilbake om eleven ` +
             "legges i faget igjen."
@@ -492,7 +492,7 @@ function Klasseliste({
               setSok("");
             }
           }}
-          placeholder="+ Legg til elev — skriv navn eller klasse"
+          placeholder="+ Legg til elev: skriv navn eller klasse"
           className={`${KONTROLL} w-full rounded border border-linje bg-ark px-2 text-brod outline-none focus:border-aksent`}
         />
         {(treff.length > 0 || kanOpprette) && (
@@ -524,8 +524,7 @@ function Klasseliste({
                   onClick={() => void opprett()}
                   className="w-full bg-valgt px-2 py-1 text-left text-brod"
                 >
-                  Ny elev «{sok.trim()}» — Enter oppretter og legger i{" "}
-                  {fag.kode}
+                  Ny elev «{sok.trim()}»: Enter oppretter og legger i {fag.kode}
                 </button>
               </li>
             )}

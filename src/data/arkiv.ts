@@ -480,7 +480,7 @@ function lesMeg(
       const hode = tegn ? `${tegn} **${v.kode}**` : `**${v.kode}**`;
       const bit = v.etikett ? [punktum(v.etikett)] : [];
       if (v.tellerIkke) bit.push("Teller ikke med noe sted.");
-      ut.push(bit.length > 0 ? `- ${hode} — ${bit.join(" ")}` : `- ${hode}`);
+      ut.push(bit.length > 0 ? `- ${hode}: ${bit.join(" ")}` : `- ${hode}`);
     }
     ut.push(
       "",
@@ -494,7 +494,7 @@ function lesMeg(
   if (vurdering.size > 0) {
     ut.push("## Brukte vurderingsskalaer", "");
     for (const [navn, verdier] of vurdering) {
-      ut.push(`- **${navn}** — ${trinn(verdier.map((v) => v.kode))}`);
+      ut.push(`- **${navn}**: ${trinn(verdier.map((v) => v.kode))}`);
     }
     ut.push("");
   }
@@ -502,14 +502,14 @@ function lesMeg(
   ut.push(
     "## Mappene",
     "",
-    "- `elever/` — én fil per elev: skåringer, vurderinger, notater og møtelogg",
-    "- `fag/` — årsplanen per fag, med skåringer og vurderinger som CSV",
-    "- `oppfolging.md` — oppfølgingspunkter",
+    "- `elever/`: én fil per elev: skåringer, vurderinger, notater og møtelogg",
+    "- `fag/`: årsplanen per fag, med skåringer og vurderinger som CSV",
+    "- `oppfolging.md`: oppfølgingspunkter",
     "",
     "---",
     "",
     `Skrevet ut av Økta ${langDato(idag())}. Filene overskrives ved ` +
-      "hver eksport — rediger dem ikke. De kan leses uten appen.",
+      "hver eksport, så ikke rediger dem. De kan leses uten appen.",
   );
 
   return ut.join("\n") + "\n";
@@ -662,7 +662,7 @@ function fagfil(kode: string, okter: OktRad[], skolear: Skolear): string {
     `timer: ${timer}`,
     "---",
     "",
-    `# ${kode} — årsplan ${skolear.navn}`,
+    `# ${kode}: årsplan ${skolear.navn}`,
     "",
     `${okter.length} økter · ${timer} timer`,
     "",
@@ -712,8 +712,8 @@ function oppfolgingsfil(
     for (const g of gjoremal) {
       ut.push(
         `- [${g.ferdig ? "x" : " "}] ${g.tekst.replace(/\n+/g, " ")}` +
-          (g.frist ? ` — frist ${g.frist}` : "") +
-          (g.ferdig ? ` — ferdig ${g.ferdig}` : ""),
+          (g.frist ? `, frist ${g.frist}` : "") +
+          (g.ferdig ? `, ferdig ${g.ferdig}` : ""),
       );
     }
     ut.push("", "## Elever", "");

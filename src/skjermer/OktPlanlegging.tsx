@@ -138,7 +138,7 @@ export function OktPlanlegging({
         <Tasthint taster={["⌘", "←", "→"]}>forrige / neste økt</Tasthint>
         <Tasthint taster={["⇥"]}>neste felt</Tasthint>
         <span className="ml-auto">
-          <Tasthint taster={["esc"]}>lukk — alt er lagret</Tasthint>
+          <Tasthint taster={["esc"]}>lukk, alt er lagret</Tasthint>
         </span>
       </Tastestripe>
     </>
@@ -211,7 +211,7 @@ function Fakta({
         <input
           defaultValue={okt.sted ?? ""}
           key={okt.sted ?? ""}
-          placeholder="—"
+          placeholder="–"
           onBlur={(e) => void onLagre({ sted: e.target.value.trim() || null })}
           className={stille}
         />
@@ -648,7 +648,7 @@ function FolgOpp({ okt, skolearId }: { okt: Okt; skolearId: string }) {
                 }}
               />
               <span className="truncate">
-                {e.fornavn} —{" "}
+                {e.fornavn}:{" "}
                 {o.grunn === "rod"
                   ? "rød to ganger på rad"
                   : o.grunn === "borte"

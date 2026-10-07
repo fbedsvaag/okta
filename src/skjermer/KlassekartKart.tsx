@@ -684,7 +684,7 @@ export function KlassekartKart({
                   <button
                     key={id}
                     data-plass={nr}
-                    title={`${e.fornavn} ${e.etternavn}${last ? " — låst" : ""}`}
+                    title={`${e.fornavn} ${e.etternavn}${last ? " (låst)" : ""}`}
                     onPointerDown={(ev) => {
                       ev.preventDefault();
                       setDra({
@@ -898,7 +898,7 @@ export function KlassekartKart({
                   ? `${b.tekst
                       .split("|")
                       .map(navnPa)
-                      .join(" og ")} sitter sammen — begge er låst.`
+                      .join(" og ")} sitter sammen, og begge er låst.`
                   : b.tekst}
               </p>
             ))}

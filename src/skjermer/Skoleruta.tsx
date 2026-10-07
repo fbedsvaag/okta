@@ -93,7 +93,7 @@ export function Skoleruta({
         {fridager.length === 0 ? (
           <p className="py-1 text-brod text-blekk-svak">
             Ingen lagt inn ennå. Høstferie, juleferie, vinterferie og
-            planleggingsdager hører hjemme her — det samme gjør hendelser som
+            planleggingsdager hører hjemme her. Det samme gjør hendelser som
             eksamen i et annet fag.
           </p>
         ) : (

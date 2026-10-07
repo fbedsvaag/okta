@@ -107,7 +107,7 @@ export function Malvelger({
                     )}
                     {annetsteds && (
                       <span
-                        title="Dekket et annet sted i faget. Det er lov — repetisjon er ikke en dobbeltføring."
+                        title="Dekket et annet sted i faget. Det er lov: repetisjon er ikke en dobbeltføring."
                         className="ml-1.5 text-liten text-blekk-svak"
                       >
                         · dekket ellers

@@ -522,7 +522,7 @@ function Elevlinje({
       </span>
       <span className="flex gap-[2px]">
         {ruter.length === 0 ? (
-          <span className="text-blekk-svakest">—</span>
+          <span className="text-blekk-svakest">–</span>
         ) : (
           ruter.map((r, i) => (
             <span
@@ -558,7 +558,7 @@ function Elevlinje({
  */
 function Fravaersstolpe({ fravaer }: { fravaer: Fagfravaer | null }) {
   if (!fravaer || fravaer.andel === null || fravaer.borteMin === 0)
-    return <span className="pl-[42px] text-blekk-svakest">—</span>;
+    return <span className="pl-[42px] text-blekk-svakest">–</span>;
   const p = fravaer.andel;
   const farge =
     p > GRENSE
@@ -732,7 +732,7 @@ function Klasser({
                     onClick={async () => {
                       const svar = await bekreft(
                         k.antall > 0
-                          ? `${k.navn} har ${k.antall} elever. De blir stående uten klasse — ingen elever slettes. Slette klassen?`
+                          ? `${k.navn} har ${k.antall} elever. De blir stående uten klasse, og ingen elever slettes. Slette klassen?`
                           : `Slette ${k.navn}?`,
                       );
                       if (!svar) return;

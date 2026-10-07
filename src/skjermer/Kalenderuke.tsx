@@ -252,20 +252,20 @@ function Valgt({
           {okt.klokkeslett ? `${okt.klokkeslett}–${slutt}` : "uten klokkeslett"}
         </dd>
         <dt className="text-blekk-dempet">Rom</dt>
-        <dd>{okt.sted ?? "—"}</dd>
+        <dd>{okt.sted ?? "–"}</dd>
         <dt className="text-blekk-dempet">Periode</dt>
         <dd className="min-w-0">
           {periode ? (
             <Periodemerke navn={periode.navn} farge={periode.farge} />
           ) : (
-            "—"
+            "–"
           )}
         </dd>
         <dt className="text-blekk-dempet">Vurdering</dt>
         <dd>
           {vurderinger.length > 0
             ? vurderinger.map((v) => v.tittel).join(", ")
-            : "—"}
+            : "–"}
         </dd>
       </dl>
 

@@ -172,7 +172,7 @@ function FagRad({
           tallene man vil se mens man ser på faget.
         */}
         <td className="py-1.5 text-right tabular-nums text-blekk-dempet">
-          {fag.arstimetall ?? "—"}
+          {fag.arstimetall ?? "–"}
         </td>
         <td />
       </tr>
@@ -261,7 +261,7 @@ function FagRad({
       <td className="py-1.5 text-right">
         <Innfelt
           verdi={fag.arstimetall === null ? "" : String(fag.arstimetall)}
-          plassholder="—"
+          plassholder="–"
           hoyre
           lagre={async (v) => {
             await endreFagIAr(fag.id, { arstimetall: taltEllerNull(v) });
@@ -431,7 +431,7 @@ function NyttFag({
 
       {grepKode && (
         <p className="mt-2 text-liten text-blekk-dempet">
-          Knyttet til <span className="font-mono">{grepKode}</span> hos Udir —
+          Knyttet til <span className="font-mono">{grepKode}</span> hos Udir, og
           kompetansemålene følger med
           {timer !== null && (
             <>

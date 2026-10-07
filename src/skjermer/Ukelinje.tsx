@@ -488,7 +488,7 @@ function Blokk({
   return (
     <button
       onClick={onApne}
-      title={`${okt.fagKode}${okt.tema ? ` — ${okt.tema}` : ""}${
+      title={`${okt.fagKode}${okt.tema ? `: ${okt.tema}` : ""}${
         okt.klokkeslett ? ` · ${okt.klokkeslett}` : " · uten klokkeslett"
       }${okt.sted ? ` · ${okt.sted}` : ""}`}
       className={`absolute overflow-hidden rounded-liten bg-ark px-1.5 py-0.5 text-left text-mikro leading-tight hover:brightness-95 ${

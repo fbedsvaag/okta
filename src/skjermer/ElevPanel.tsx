@@ -288,7 +288,7 @@ export function ElevPanel({
     const ok = await bekreft(
       `Slette ${elev.fornavn} ${elev.etternavn}?\n\n` +
         (hva.length > 0
-          ? `Dette fjerner ${hva.join(", ")} — i alle skoleår, ikke bare dette.\n\n`
+          ? `Dette fjerner ${hva.join(", ")}, i alle skoleår, ikke bare dette.\n\n`
           : "Eleven har ingen skåringer eller vurderinger registrert.\n\n") +
         "Sikkerhetskopien fra i dag er veien tilbake.",
     );
@@ -553,7 +553,7 @@ export function ElevPanel({
                   ? "Gjettet fra fornavnet ved import. Klikk for å bekrefte."
                   : elev.kjonn
                     ? "Brukes bare til klassekartet"
-                    : "Ikke satt — velg for at klassekartet kan blande"}
+                    : "Ikke satt: velg for at klassekartet kan blande"}
               </span>
             </div>
 
@@ -1467,7 +1467,7 @@ function Motelogg({
 
       {notater.length === 0 && oktnotater.length === 0 && !skriver && (
         <Stille>
-          Ingen notater ennå. Her samles det du vil huske om eleven over tid —
+          Ingen notater ennå. Her samles det du vil huske om eleven over tid:
           samtaler, observasjoner, avtaler.
         </Stille>
       )}

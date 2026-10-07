@@ -794,7 +794,7 @@ export function Samtaler({
                   className="h-[2.4em] w-full rounded-vanlig border border-linje bg-ark px-2.5 text-brod"
                 >
                   {fag.map((f) => (
-                    <optgroup key={f.id} label={`${f.kode} — ${f.navn}`}>
+                    <optgroup key={f.id} label={`${f.kode} · ${f.navn}`}>
                       {vurderinger
                         .filter((v) => v.skolearFagId === f.id)
                         .map((v) => (
@@ -1379,7 +1379,7 @@ export function Samtaler({
             tekst={
               dager.length === 0
                 ? modus === "fag"
-                  ? "Kryss av for øktene samtalene skal ligge i, til venstre — eller legg til en egen dag."
+                  ? "Kryss av for øktene samtalene skal ligge i, til venstre, eller legg til en egen dag."
                   : "Legg til minst én samtaledag til venstre."
                 : "Sett opp trekningen til venstre og trykk Generer timeplan."
             }
@@ -1754,7 +1754,7 @@ function Oktvelger({
                       }`}
                     >
                       {kolliderer
-                        ? `${kolliderer} — kolliderer`
+                        ? `${kolliderer} kolliderer`
                         : o.klokkeslett
                           ? `Økt ${o.klokkeslett}–${slutt}${
                               v?.dag.lunsjFra
@@ -2293,8 +2293,8 @@ function Timeplan({
                     onClick={() => onLas(r.elevId)}
                     title={
                       erLast
-                        ? "Lås opp — eleven trekkes om igjen"
-                        : "Lås — eleven beholder plass og tema"
+                        ? "Lås opp: eleven trekkes om igjen"
+                        : "Lås: eleven beholder plass og tema"
                     }
                     className={`grid h-7 w-7 shrink-0 place-items-center rounded-vanlig ${
                       erLast
@@ -2311,7 +2311,7 @@ function Timeplan({
                       aria-pressed={!r.motte}
                       title={
                         r.motte
-                          ? "Møtte ikke — raden blir stående med klokkeslettet sitt"
+                          ? "Møtte ikke: raden blir stående med klokkeslettet sitt"
                           : "Møtte likevel"
                       }
                       className={`grid h-7 w-7 shrink-0 place-items-center rounded-vanlig ${
@@ -2385,9 +2385,9 @@ function Historikkoversikt({
 
 /** Ordlyden fra §4.10 — den sier hva «Trekk på nytt» faktisk gjør. */
 function lashint(tema: boolean, rekkefolge: boolean): string {
-  if (tema && rekkefolge) return "Begge er låst — ingenting endres.";
-  if (tema) return "Temaer holdes — kun rekkefølge trekkes.";
-  if (rekkefolge) return "Rekkefølge holdes — kun tema trekkes.";
+  if (tema && rekkefolge) return "Begge er låst, ingenting endres.";
+  if (tema) return "Temaer holdes, kun rekkefølge trekkes.";
+  if (rekkefolge) return "Rekkefølge holdes, kun tema trekkes.";
   return "";
 }
 
@@ -2497,7 +2497,7 @@ function Alfabetisk({ plan, medTema }: { plan: Dagplan[]; medTema: boolean }) {
 }
 
 function kortDato(dato: string): string {
-  if (!dato) return "—";
+  if (!dato) return "–";
   return new Date(`${dato}T00:00:00`).toLocaleDateString("nb-NO", {
     day: "numeric",
     month: "short",

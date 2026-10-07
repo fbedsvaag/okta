@@ -337,7 +337,7 @@ export function OktPanel({
               ref={liste}
               tabIndex={0}
               onKeyDown={tastetrykk}
-              aria-label="Elevliste — skår med talltastene"
+              aria-label="Elevliste: skår med talltastene"
               className="uten-fokusring min-w-0 flex-1 overflow-auto px-[22px] pt-3 outline-none"
             >
               <div className="flex items-center gap-3 border-b border-linje pb-2.5">
@@ -364,7 +364,7 @@ export function OktPanel({
               {elever.length === 0 && (
                 <p className="px-5 py-6 text-center text-brod text-blekk-dempet">
                   Ingen elever er koblet til {okt.fagKode} ennå. Legg dem inn
-                  under Elever, så dukker de opp her — også i økter som allerede
+                  under Elever, så dukker de opp her, også i økter som allerede
                   er skåret.
                 </p>
               )}
@@ -476,7 +476,7 @@ export function OktPanel({
             <Tasthint taster={["N"]}>notat</Tasthint>
             <Tasthint taster={["⌫"]}>fjern</Tasthint>
             <span className="ml-auto">
-              <Tasthint taster={["esc"]}>lukk — alt er lagret</Tasthint>
+              <Tasthint taster={["esc"]}>lukk, alt er lagret</Tasthint>
             </span>
           </Tastestripe>
         </>
@@ -569,7 +569,7 @@ function ElevRad({
           e.stopPropagation();
           onApneElev();
         }}
-        title={`${elev.fornavn} ${elev.etternavn} — åpne eleven`}
+        title={`${elev.fornavn} ${elev.etternavn}: åpne eleven`}
         className={`truncate text-left hover:text-aksent ${
           eksplisitt || markert ? "font-medium" : "text-blekk-dempet"
         }`}
@@ -644,7 +644,7 @@ function Merke({
   return (
     <button
       onClick={onVelg}
-      title={`${tast ? `${tast} — ` : ""}${verdi.kode}${verdi.etikett ? `: ${verdi.etikett}` : ""}`}
+      title={`${tast ? `${tast}: ` : ""}${verdi.kode}${verdi.etikett ? `: ${verdi.etikett}` : ""}`}
       className={`grid h-6 w-7 place-items-center rounded-md ${
         pa ? "" : "opacity-20 hover:bg-bord hover:opacity-70"
       }`}
@@ -723,7 +723,7 @@ function Notatfelt({
     <input
       autoFocus
       value={tekst}
-      placeholder="Notat — Enter lagrer, Esc angrer"
+      placeholder="Notat: Enter lagrer, Esc angrer"
       onClick={(e) => e.stopPropagation()}
       onChange={(e) => setTekst(e.target.value)}
       onKeyDown={(e) => {

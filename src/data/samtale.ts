@@ -635,8 +635,8 @@ export function somMarkdown(dager: Eksportdag[], medTema: boolean): string {
       if (rad.type === "lunsj") {
         ut.push(
           medTema
-            ? `| — | *Lunsj* | — | ${rad.fra}–${rad.til} |`
-            : `| — | *Lunsj* | ${rad.fra}–${rad.til} |`,
+            ? `| – | *Lunsj* | – | ${rad.fra}–${rad.til} |`
+            : `| – | *Lunsj* | ${rad.fra}–${rad.til} |`,
         );
         continue;
       }
@@ -667,7 +667,7 @@ export function somTeamsHtml(dager: Eksportdag[], medTema: boolean): string {
     let nr = 0;
     for (const rad of medLunsj(dag)) {
       if (rad.type === "lunsj") {
-        ut += `<tr><td>—</td><td><em>Lunsj</em></td>${medTema ? "<td>—</td>" : ""}<td>${rad.fra}–${rad.til}</td></tr>`;
+        ut += `<tr><td>–</td><td><em>Lunsj</em></td>${medTema ? "<td>–</td>" : ""}<td>${rad.fra}–${rad.til}</td></tr>`;
         continue;
       }
       nr++;

@@ -262,7 +262,7 @@ function Dagensokt({
     <li className="grid grid-cols-[5.5rem_minmax(0,1fr)] gap-x-4 py-4">
       <div className="tabular-nums">
         <p className="text-[calc(22px*var(--tekst-skala))] leading-tight">
-          {okt.klokkeslett ?? "—"}
+          {okt.klokkeslett ?? "–"}
         </p>
         {slutt && <p className="text-liten text-blekk-dempet">til {slutt}</p>}
       </div>

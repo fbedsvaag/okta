@@ -158,7 +158,7 @@ export function Sidemeny({
             aktiv={aktiv === "okter" && valgtFag === f.id}
             merke={<Firkant farge={f.farge ? fagfarge(f.farge) : null} />}
             tast={i < 9 ? `⌘${i + 1}` : undefined}
-            tittel={`${f.kode} — ${f.navn}`}
+            tittel={`${f.kode} · ${f.navn}`}
             onKlikk={() => onVelgFag(f.id)}
           >
             {f.kode}
@@ -196,7 +196,7 @@ export function Sidemeny({
                 )
               }
               meta={meta}
-              tittel={`${navn} — ${meta}`}
+              tittel={`${navn} · ${meta}`}
               onKlikk={() => onApneTrekning(id)}
             >
               {navn}
@@ -228,7 +228,7 @@ export function Sidemeny({
                 )
               }
               meta={meta}
-              tittel={`${k.kildeNavn} — ${meta}`}
+              tittel={`${k.kildeNavn} · ${meta}`}
               onKlikk={() => onApneKart(k.id)}
             >
               {k.kildeNavn}
@@ -253,7 +253,7 @@ export function Sidemeny({
         <Ordmerke storrelse={18} />
         <button
           onClick={onSkolear}
-          title="Skoleåret — bytt eller endre i Innstillinger"
+          title="Skoleåret: bytt eller endre i Innstillinger"
           className="ml-auto rounded-vanlig px-1 text-etikett tabular-nums text-blekk-dempet hover:text-blekk"
         >
           {skolearNavn}

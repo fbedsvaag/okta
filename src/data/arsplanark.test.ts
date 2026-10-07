@@ -315,7 +315,7 @@ describe("alias på arket", () => {
   it("viser aliaset med den offisielle koden i parentes", () => {
     const a = ark({ fag: { ...fag, kode: "MFL1", fagkode: "SAM3045" } });
     expect(somMarkdown(a)).toContain(
-      "# MFL1 (SAM3045) — Markedsføring og ledelse 1",
+      "# MFL1 (SAM3045) · Markedsføring og ledelse 1",
     );
     expect(filnavn([a], "pdf")).toBe("Årsplan MFL1 2026-27.pdf");
   });
@@ -330,7 +330,7 @@ describe("somMarkdown", () => {
   const md = somMarkdown(a);
 
   it("har hode med faglærer, rom og regnskap", () => {
-    expect(md).toContain("# MFL1 — Markedsføring og ledelse 1");
+    expect(md).toContain("# MFL1 · Markedsføring og ledelse 1");
     expect(md).toContain(
       "Årsplan 2026/27 · Faglærer: Fredrik Bedsvaag · Rom: R204",
     );
@@ -378,7 +378,7 @@ describe("lagDocx", () => {
     )
       .file("word/document.xml")!
       .async("string");
-    expect(xml).toContain("MFL1 — Markedsføring og ledelse 1");
+    expect(xml).toContain("MFL1 · Markedsføring og ledelse 1");
     expect(xml).toContain("analysere et marked");
     expect(xml).toContain("Les kap. 3");
     expect(xml).not.toContain("HEMMELIG");

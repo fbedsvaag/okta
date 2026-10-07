@@ -22,7 +22,7 @@ export function tittel(ark: Ark): string {
   const kode = ark.offisiellKode
     ? `${ark.fagKode} (${ark.offisiellKode})`
     : ark.fagKode;
-  return `${kode} — ${ark.fagNavn}`;
+  return `${kode} · ${ark.fagNavn}`;
 }
 
 /** Linja under tittelen: år, faglærer og rom — det som finnes av dem. */

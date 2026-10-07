@@ -357,7 +357,7 @@ function ElevRad({
               e.stopPropagation();
               onVelg(v);
             }}
-            title={`${tastekart.get(v.id) ?? ""} — ${v.kode}${v.etikett ? `: ${v.etikett}` : ""}`}
+            title={`${tastekart.get(v.id) ?? ""}: ${v.kode}${v.etikett ? `: ${v.etikett}` : ""}`}
             className={`min-w-7 rounded-sm border px-1.5 py-0.5 text-liten tabular-nums ${
               elev.skalaverdiId === v.id
                 ? "border-aksent bg-aksent text-ark"
@@ -423,7 +423,7 @@ function Felter({
             }}
             className={feltStil}
           >
-            <option value="">—</option>
+            <option value="">–</option>
             {TYPER.map((t) => (
               <option key={t.verdi} value={t.verdi}>
                 {t.navn}

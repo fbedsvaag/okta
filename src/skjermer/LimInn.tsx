@@ -322,7 +322,7 @@ export function LimInn({
               if (ute.length === 0)
                 return (
                   <p className="mt-1 text-brod text-blekk-svak">
-                    Ingen — alle i faget står på lista.
+                    Ingen. Alle i faget står på lista.
                   </p>
                 );
               return (
@@ -399,10 +399,10 @@ export function LimInn({
           >
             {fag.map((f) => (
               <option key={f.id} value={f.id}>
-                {f.kode} — {f.navn}
+                {f.kode} · {f.navn}
               </option>
             ))}
-            <option value="">Uten fag — mentorelever</option>
+            <option value="">Uten fag (mentorelever)</option>
           </select>
         </label>
         <Felt
@@ -415,7 +415,7 @@ export function LimInn({
       </div>
       <p className="mt-1 text-liten text-blekk-dempet">
         Klassen brukes på linjer som ikke har klasse selv. Står den tom, blir
-        elevene stående uten klasse — det er lov.
+        elevene stående uten klasse. Det er lov.
       </p>
 
       {fagId !== "" && (
@@ -425,7 +425,7 @@ export function LimInn({
             checked={erstatt}
             onChange={(e) => setErstatt(e.target.checked)}
           />
-          Lista er hele faget — ta ut dem som ikke står på den
+          Lista er hele faget: ta ut dem som ikke står på den
         </label>
       )}
 
@@ -524,7 +524,7 @@ function ForhandsvisRad({
   }[rad.status];
 
   const forklaring = {
-    "ulik-klasse": `Finnes i ${rad.klassekonflikt?.finnesI} — importen sier ${rad.klassekonflikt?.importenSier}`,
+    "ulik-klasse": `Finnes i ${rad.klassekonflikt?.finnesI}, importen sier ${rad.klassekonflikt?.importenSier}`,
     "naer-match": `Ligner ${rad.kandidater.map((k) => `${k.fornavn} ${k.etternavn}`).join(", ")}`,
     "flere-treff": `${rad.kandidater.length} elever heter dette`,
     "annet-fag": rad.kandidater[0]

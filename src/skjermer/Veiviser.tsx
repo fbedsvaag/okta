@@ -73,7 +73,7 @@ export function Veiviser({ onFerdig }: { onFerdig: () => void }) {
           title={
             kanFortsetteSenere
               ? "Det du har lagt inn er lagret. Resten finner du under Fag og Elever."
-              : "Opprett skoleåret først — alt annet henger under det."
+              : "Opprett skoleåret først. Alt annet henger under det."
           }
           className="text-left text-liten text-blekk-dempet hover:text-blekk disabled:opacity-40"
         >
@@ -154,7 +154,7 @@ function StegVelkommen({ onSelv }: { onSelv: () => void }) {
         >
           <p className="text-brod font-medium">Sett opp selv</p>
           <p className="mt-1 text-liten text-blekk-dempet">
-            Skoleåret, fagene dine og elevene — tre korte steg.
+            Skoleåret, fagene dine og elevene: tre korte steg.
           </p>
         </button>
       </div>
@@ -299,7 +299,7 @@ function StegFag({
         Hvilke fag har du i år?
       </h1>
       <p className="mt-1 text-brod text-blekk-dempet">
-        Kode og navn skriver du selv — <code>MFL1</code>, <code>ENG1</code>,{" "}
+        Kode og navn skriver du selv: <code>MFL1</code>, <code>ENG1</code>,{" "}
         <code>Norsk</code>, hva du nå enn underviser i.
       </p>
 
@@ -380,7 +380,7 @@ function StegElever({
       <p className="mt-1 text-brod text-blekk-dempet">
         Ett fag om gangen. Kjenner appen igjen et navn fra et fag du allerede
         har fylt, spør den om det er samme elev. Svarer du ja, blir eleven lagt
-        til i dette faget også — koblet til den som finnes, i stedet for
+        til i dette faget også, koblet til den som finnes, i stedet for
         opprettet på nytt. Eleven havner i faget uansett.
       </p>
 
@@ -400,7 +400,7 @@ function StegElever({
           Lim inn en liste
         </Knapp>
         <Knapp variant="stille" onClick={onFerdig}>
-          {meldinger.length > 0 ? "Ferdig" : "Hopp over — jeg gjør det senere"}
+          {meldinger.length > 0 ? "Ferdig" : "Hopp over, jeg gjør det senere"}
         </Knapp>
       </div>
 

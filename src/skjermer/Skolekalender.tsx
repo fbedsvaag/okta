@@ -265,8 +265,7 @@ export function Skolekalender({
     if (!flate || styrt.current) return;
     let funnet = maneder[0];
     for (const el of flate.querySelectorAll<HTMLElement>("[data-maned]")) {
-      if (el.offsetTop - flate.scrollTop <= 48)
-        funnet = el.dataset.maned!;
+      if (el.offsetTop - flate.scrollTop <= 48) funnet = el.dataset.maned!;
       else break;
     }
     if (funnet && funnet !== visManedRef.current) setVisManed(funnet);
@@ -393,8 +392,8 @@ export function Skolekalender({
               ))}
             </div>
             <p className="mt-2 pb-[40vh] text-liten text-blekk-dempet">
-              Klikk på dagene du vil ha økter på — også i flere måneder — og
-              velg fag nederst.
+              Klikk på dagene du vil ha økter på, også i flere måneder, og velg
+              fag nederst.
             </p>
           </div>
 
@@ -767,7 +766,7 @@ function Dag({
             .map(
               (o) =>
                 `${o.fagKode}${o.klokkeslett ? ` ${o.klokkeslett}` : ""}${
-                  o.tema ? ` — ${o.tema}` : ""
+                  o.tema ? `: ${o.tema}` : ""
                 }`,
             )
             .join("\n")}

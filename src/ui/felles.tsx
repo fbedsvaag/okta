@@ -549,7 +549,7 @@ export function Fagflervalg({
  */
 export function Kappet({
   verdi,
-  tom = "—",
+  tom = "–",
   klasse = "",
 }: {
   verdi: string | null | undefined;

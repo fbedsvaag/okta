@@ -241,11 +241,11 @@ export function Innstillinger({
         <Side.Provider value={side}>
           <Bolk id="skolear" tittel="Skoleår">
             <p className="mb-3 text-brod text-blekk-dempet">
-              Ett år er aktivt om gangen. Å bytte rører ingen data — det endrer
+              Ett år er aktivt om gangen. Å bytte rører ingen data. Det endrer
               bare hva appen viser.
             </p>
             <Knapp onClick={onApneSkoleruta}>
-              Skoleruta — ferier og fridager <Ikon navn="pil" />
+              Skoleruta: ferier og fridager <Ikon navn="pil" />
             </Knapp>
             <div className="mb-3" />
 
@@ -296,7 +296,7 @@ export function Innstillinger({
                                 `${n.skaringer} skåringer, ${n.vurderinger} vurderinger, ` +
                                 `${n.klasser} klasser.\n\n` +
                                 "Fagene blir stående i fagbanken, og elevene blir " +
-                                "stående — de lever på tvers av år. Det som " +
+                                "stående. De lever på tvers av år. Det som " +
                                 "forsvinner er dette årets økter og koblinger.\n\n" +
                                 "Sikkerhetskopien fra i dag er veien tilbake.",
                             );
@@ -461,7 +461,7 @@ export function Innstillinger({
         */}
             <Rad
               etikett="Tekststørrelse"
-              hjelp="Gjelder med en gang. Skåringslista er den tetteste skjermen — med Større får færre enn tretti elever plass uten å rulle."
+              hjelp="Gjelder med en gang. Skåringslista er den tetteste skjermen: med Større får færre enn tretti elever plass uten å rulle."
             >
               <Bryter
                 valg={TEKSTVALG.map((t) => ({ id: t.verdi, navn: t.navn }))}
@@ -521,7 +521,7 @@ export function Innstillinger({
             <p className="mb-3 text-liten text-blekk-dempet">
               Tastene utledes av rekkefølgen, ikke av kode. Verdien som betyr
               «ingenting her» får alltid <code>0</code>. Egne skalaer kan lages
-              senere — se §5.3.
+              senere, se §5.3.
             </p>
             {skalaer.map((skala) => (
               <div key={skala.id} className="mb-4">
@@ -565,7 +565,7 @@ export function Innstillinger({
                 {" "}
                 fagkode, tema, dato og varighet
               </strong>{" "}
-              — ingen elevnavn, skåringer eller notater.
+              og ingen elevnavn, skåringer eller notater.
             </p>
 
             <label className="flex items-center gap-2 text-brod">
@@ -615,7 +615,7 @@ export function Innstillinger({
                 <p className="mt-1 text-liten text-blekk-dempet">
                   Velger du <em>iCloud</em> som plassering, lastes timeplanen
                   opp til Apple og følger med til telefonen. Velger du{" "}
-                  <em>På min Mac</em>, blir den her — men da bare på denne
+                  <em>På min Mac</em>, blir den her, men da bare på denne
                   maskinen. Strømmen oppdaterer seg bare mens appen kjører.
                 </p>
               </div>
@@ -624,12 +624,12 @@ export function Innstillinger({
 
           <Bolk id="arkiv" tittel="Arkiv">
             <p className="mb-3 text-brod text-blekk-dempet">
-              Hele basen skrevet ut som markdown og CSV — én fil per elev, én
-              per fag. Kan åpnes i Obsidian eller hva som helst annet, også om
-              denne appen ikke finnes lenger. Skrives ved hver oppstart.
+              Hele basen skrevet ut som markdown og CSV: én fil per elev, én per
+              fag. Kan åpnes i Obsidian eller hva som helst annet, også om denne
+              appen ikke finnes lenger. Skrives ved hver oppstart.
             </p>
             <p className="mb-3 text-liten text-blekk-dempet">
-              Denne mappa <em>kan</em> ligge i en skytjeneste — det er vanlige
+              Denne mappa <em>kan</em> ligge i en skytjeneste. Det er vanlige
               tekstfiler. Databasen selv skal aldri det.
             </p>
 
@@ -722,7 +722,7 @@ export function Innstillinger({
                 />
               </label>
               <p className="text-liten text-blekk-dempet">
-                Bruk et app-passord, ikke hovedpassordet ditt — da kan du trekke
+                Bruk et app-passord, ikke hovedpassordet ditt. Da kan du trekke
                 det tilbake uten å bytte alt annet. Passordet lagres i systemets
                 nøkkelring, aldri i databasen.
               </p>
@@ -767,7 +767,7 @@ export function Innstillinger({
             </label>
             <p className="ml-6 text-liten text-blekk-dempet">
               Det eneste som går ut er{" "}
-              <strong className="font-medium">fornavn og klokkeslett</strong> —
+              <strong className="font-medium">fornavn og klokkeslett</strong>:
               «Mentorsamtale med Vera», på samtalens tidspunkt. Ikke etternavn,
               ikke klasse, ikke fag, ingen beskrivelse. Denne kalenderen bør
               ikke deles med andre.
@@ -793,14 +793,14 @@ export function Innstillinger({
             </label>
             {dav.mentorPa && !dav.mentorKalender.trim() && (
               <p className="ml-6 mt-1 text-liten text-varsel">
-                Publiseringen er på, men ingen kalender er satt — ingenting
+                Publiseringen er på, men ingen kalender er satt, så ingenting
                 sendes.
               </p>
             )}
             <p className="ml-6 mt-1 text-liten text-blekk-svak">
               Navnet på samlingen slik den heter på serveren, det som står sist
-              i adressen. Den må finnes fra før — appen oppretter ikke
-              kalendere, og leser aldri noe tilbake (§8.1).
+              i adressen. Den må finnes fra før. Appen oppretter ikke kalendere,
+              og leser aldri noe tilbake (§8.1).
             </p>
 
             <p className="mb-1 mt-5 text-etikett uppercase tracking-etikett text-blekk-dempet">
@@ -1018,7 +1018,7 @@ export function Innstillinger({
             )}
             {kopier.length > 8 && (
               <p className="mt-1 text-liten text-blekk-dempet">
-                og {kopier.length - 8} eldre — de ligger i mappa
+                og {kopier.length - 8} eldre. De ligger i mappa
               </p>
             )}
 
@@ -1048,7 +1048,7 @@ export function Innstillinger({
             <span>
               <span className="font-medium text-blekk">Økta</span>
               {versjon && <span className="tabular-nums"> {versjon}</span>}
-              {" — undervisningsplanlegging og elevoppfølging."}
+              {": undervisningsplanlegging og elevoppfølging."}
             </span>
             <span className="ml-auto">
               Alle data ligger lokalt på denne maskinen.
