@@ -47,6 +47,7 @@ import { Knapp, Ikon } from "./ui/felles";
 import { G_SNARVEIER, Sidemeny, type Menypunkt } from "./ui/Sidemeny";
 import { Sokevindu } from "./ui/Sokevindu";
 import { ArkKobling, Arkstabel, type ArkApi } from "./ui/Arkstabel";
+import { brukZoom, zoomInn, zoomNull, zoomUt } from "./ui/zoom";
 
 /**
  * Et sted i historikken.
@@ -85,7 +86,7 @@ export default function App() {
   const [melding, setMelding] = useState<string | null>(null);
   const [versjon, setVersjon] = useState(0);
   // Faget Økter står filtrert på ("" = alle). Bor her, ikke i Økter, fordi
-  // undermenyen i sidemenyen og ⌘0–9 velger det (DESIGN.md §6).
+  // undermenyen i sidemenyen og ⌘1–9 velger det (DESIGN.md §6).
   const [oktFag, setOktFag] = useState("");
   // De planlagte trekningene, til sidemenyen under Samtaler (DESIGN.md §10).
   const [trekninger, setTrekninger] = useState<Trekning[]>([]);
@@ -132,7 +133,7 @@ export default function App() {
     });
   }, []);
 
-  /** Et fag fra undermenyen eller ⌘0–9: Økter, filtrert på faget. */
+  /** Et fag fra undermenyen eller ⌘1–9: Økter, filtrert på faget. */
   const velgFag = useCallback((id: string) => {
     setOktFag(id);
     setHistorikk((h) => {
@@ -196,13 +197,30 @@ export default function App() {
         }
         return;
       }
-      // ⌘0–9: fagene i undermenyen under Økter (⌘0 = alle fag).
-      if (/^[0-9]$/.test(e.key) && !e.shiftKey && !e.altKey) {
+      // Zoom (10.6): ⌘+ og ⌘− i trinn, ⌘0 tilbake til 100 %. ⌘= tas med,
+      // for på amerikansk tastatur er + på samme tast.
+      if (!e.altKey && (e.key === "+" || e.key === "=")) {
+        e.preventDefault();
+        void zoomInn();
+        return;
+      }
+      if (!e.altKey && (e.key === "-" || e.key === "−")) {
+        e.preventDefault();
+        void zoomUt();
+        return;
+      }
+      if (e.key === "0" && !e.shiftKey && !e.altKey) {
+        e.preventDefault();
+        void zoomNull();
+        return;
+      }
+      // ⌘1–9: fagene i undermenyen under Økter. ⌘0 er zoom (10.6).
+      if (/^[1-9]$/.test(e.key) && !e.shiftKey && !e.altKey) {
         const n = Number(e.key);
-        if (n === 0 || fagRef.current[n - 1]) {
+        if (fagRef.current[n - 1]) {
           e.preventDefault();
           ark.current?.lukkAlle();
-          velgFag(n === 0 ? "" : fagRef.current[n - 1].id);
+          velgFag(fagRef.current[n - 1].id);
         }
         return;
       }
@@ -237,6 +255,7 @@ export default function App() {
       await brukGlass().catch((e) => console.error("glass:", e));
       await brukPalett().catch((e) => console.error("palett:", e));
       await brukBevegelse().catch((e) => console.error("bevegelse:", e));
+      await brukZoom().catch((e) => console.error("zoom:", e));
 
       // Sikkerhetskopi, før noe rekker å endres i denne økta.
       await daglingKopi().catch((e) => console.error("sikkerhetskopi:", e));

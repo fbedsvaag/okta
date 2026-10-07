@@ -19,7 +19,7 @@ import { Hovermarkor } from "./Hovermarkor";
  *
  * Bare skjermene står fast. Lister hører til en skjerm og står som en
  * innrykket undermeny under den, med en tynn strek foran: fagene under
- * Økter (⌘0–9), trekningene under Samtaler. Undermenyen er åpen under
+ * Økter (⌘1–9), trekningene under Samtaler. Undermenyen er åpen under
  * skjermen du står i; under de andre rulles den ut når musa holdes over
  * punktet en liten stund, på en felles glassflate. Innstillinger nederst.
  */
@@ -133,7 +133,6 @@ export function Sidemeny({
         <Underpunkt
           aktiv={aktiv === "okter" && valgtFag === ""}
           merke={<Firkant farge="var(--color-linje-sterk)" />}
-          tast="⌘0"
           onKlikk={() => onVelgFag("")}
         >
           Alle fag

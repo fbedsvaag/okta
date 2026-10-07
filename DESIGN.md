@@ -178,7 +178,7 @@ i verktøylinja kapselform. ⌘K-vinduet har 26 px.
 viser bare skjermene. Lister hører til en skjerm og står som innrykket
 undermeny under den, med en tynn loddrett strek foran:
 
-- under **Økter**: Alle fag og fagene i år (fagfirkant + kode), ⌘0–9
+- under **Økter**: Alle fag og fagene i år (fagfirkant + kode), ⌘1–9 (⌘0 er zoom, 10.6)
 - under **Samtaler**: trekningene (navn, fag og datoer) og «+ Ny trekning»
 
 Undermenyen er alltid åpen under skjermen du står i. Under de andre

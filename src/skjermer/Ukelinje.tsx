@@ -105,6 +105,9 @@ export function Ukelinje({
   // Uka som står framme, i en ref så bredde-lytteren under ser den ferske.
   const synligRef = useRef(synlig);
   synligRef.current = synlig;
+  // Bredden uka sist ble plassert etter. Endres den (zoom, smalere vindu),
+  // kommer det rulle-hendelser som ikke er blaing — de skal ikke leses.
+  const bredde = useRef(0);
 
   // Står på denne uka fra start, uten å gli dit. Og holder seg på uka når
   // bredden endrer seg: stripa kan være smalere i første bilde enn når
@@ -118,7 +121,13 @@ export function Ukelinje({
       // Rullingen dette gir, er ikke brukeren som blar. Uten sperren leste
       // lesPosisjon mellomposisjonen og satte uka én bakover.
       styrt.current = true;
+      bredde.current = el.clientWidth;
       el.scrollLeft = i * el.clientWidth;
+      // Snappingen kan flytte stripa etter at bredden har lagt seg (zoom,
+      // 10.6). Ett bilde senere settes den på plass igjen.
+      requestAnimationFrame(() => {
+        el.scrollLeft = mandager.indexOf(synligRef.current) * el.clientWidth;
+      });
       if (slipp.current) clearTimeout(slipp.current);
       slipp.current = setTimeout(() => (styrt.current = false), 150);
     };
@@ -154,7 +163,7 @@ export function Ukelinje({
 
   /** Uka som står framme etter et sveip på styreflata. */
   function lesPosisjon(el: HTMLDivElement) {
-    if (styrt.current) return;
+    if (styrt.current || el.clientWidth !== bredde.current) return;
     const i = Math.round(el.scrollLeft / el.clientWidth);
     if (mandager[i]) setSynlig(mandager[i]);
   }
