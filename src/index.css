@@ -390,6 +390,67 @@
 }
 
 /*
+ * Hover som glir (ui/Hovermarkor.tsx, ARBEIDSLISTE 10.3): én glassflate som
+ * følger musa fra punkt til punkt med S-kurven, 220 ms. Tones med bakgrunn
+ * og skygge, ikke opacity (se inngangen under). På hvit eller nesten hvit
+ * flate — menyene, Innstillinger — ville hvitt glass forsvunnet, så der får
+ * den en svak tone av aksenten (`hovermarkor-tonet`).
+ */
+:root {
+  --hover-glass: rgba(255, 255, 255, 0.55);
+  --hover-kant: rgba(255, 255, 255, 0.9);
+  --hover-skygge: rgba(36, 31, 51, 0.1);
+}
+
+@media screen {
+  :root[data-tema="mork"] {
+    --hover-glass: rgba(255, 255, 255, 0.08);
+    --hover-kant: rgba(255, 255, 255, 0.1);
+    --hover-skygge: rgba(0, 0, 0, 0.3);
+  }
+}
+
+.hovermarkor {
+  background-color: var(--hover-glass);
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
+  backdrop-filter: blur(12px) saturate(160%);
+  box-shadow:
+    inset 0 1px 0 var(--hover-kant),
+    0 0 0 0.5px var(--hover-skygge),
+    0 1px 3px var(--hover-skygge);
+  transition:
+    background-color 160ms var(--ease-inn),
+    box-shadow 160ms var(--ease-inn);
+}
+
+.hovermarkor-tonet {
+  background-color: color-mix(
+    in srgb,
+    var(--color-aksent) 7%,
+    var(--hover-glass)
+  );
+}
+
+.hovermarkor[data-glir="true"] {
+  transition:
+    transform 220ms var(--ease-sprett),
+    width 220ms var(--ease-sprett),
+    height 220ms var(--ease-sprett),
+    background-color 160ms var(--ease-inn),
+    box-shadow 160ms var(--ease-inn);
+}
+
+.hovermarkor[data-synlig="false"] {
+  background-color: transparent;
+  box-shadow: none;
+}
+
+:root[data-glass="av"] .hovermarkor {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+/*
  * Fargeteppet: store, uskarpe flater i palettens farger, bak alt annet i
  * vinduet. Bygger på aksenten og valgt-fargen, så det følger paletten (§4).
  * Dempet i mørk modus, borte når glass er av.

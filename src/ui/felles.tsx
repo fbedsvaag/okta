@@ -1,6 +1,7 @@
 import { fagfarge } from "./farger";
 import { Glideflate } from "./Glideflate";
 import { useInngang } from "./bevegelse";
+import { Hovermarkor } from "./Hovermarkor";
 import {
   useEffect,
   useLayoutEffect,
@@ -765,6 +766,8 @@ export function Kontekstmeny({
       data-inne={inne}
       className="glass-sok fixed z-50 min-w-40 rounded-[10px] p-1"
     >
+      {/* Hover glir fra valg til valg (10.3). */}
+      <Hovermarkor beholder={meny} klasse="hovermarkor-tonet rounded-stor" />
       {children}
     </div>
   );
@@ -784,7 +787,7 @@ export function Menyvalg({
     <button
       role="menuitem"
       onClick={onKlikk}
-      className={`block w-full rounded-stor px-3 py-1 text-left text-brod hover:bg-[var(--glass-valgt)] ${
+      className={`relative z-[1] block w-full rounded-stor px-3 py-1 text-left text-brod ${
         farlig ? "text-feil" : ""
       }`}
     >

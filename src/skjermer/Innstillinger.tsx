@@ -2,7 +2,8 @@ import { lagreTema, TEMA, type Tema } from "../ui/tema";
 import { GLASS, lagreGlass, type Glass } from "../ui/glass";
 import { BEVEGELSE, lagreBevegelse, type Bevegelse } from "../ui/bevegelse";
 import { lagrePalett, PALETT, PALETTER, type Palett } from "../ui/palett";
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
+import { Hovermarkor } from "../ui/Hovermarkor";
 import {
   endreSkolear,
   hentInnstilling,
@@ -68,6 +69,7 @@ export function Innstillinger({
       ville sendt deg tilbake til startskjermen */
   onEndret: () => void;
 }) {
+  const sidemeny = useRef<HTMLElement>(null);
   const [dav, setDav] = useState<caldav.Oppsett>({
     base: "",
     bruker: "",
@@ -199,7 +201,9 @@ export function Innstillinger({
 
   return (
     <div className="mx-auto flex min-h-0 w-full max-w-5xl flex-1 gap-8">
-      <nav className="w-48 shrink-0 overflow-y-auto pt-1">
+      <nav ref={sidemeny} className="relative w-48 shrink-0 overflow-y-auto pt-1">
+        {/* Hover glir fra side til side (10.3). */}
+        <Hovermarkor beholder={sidemeny} klasse="hovermarkor-tonet rounded-stor" />
         {SIDER.map((g) => (
           <div key={g.gruppe} className="mb-4">
             <p className="mb-1 px-2 text-etikett uppercase tracking-etikett text-blekk-dempet">
@@ -211,10 +215,11 @@ export function Innstillinger({
                   <button
                     onClick={() => setSide(sd.id)}
                     aria-current={side === sd.id ? "page" : undefined}
-                    className={`w-full rounded-stor px-2 py-1 text-left text-brod ${
+                    data-hover
+                    className={`relative z-[1] w-full rounded-stor px-2 py-1 text-left text-brod ${
                       side === sd.id
                         ? "bg-valgt font-medium text-blekk"
-                        : "text-blekk-dempet hover:bg-flate hover:text-blekk"
+                        : "text-blekk-dempet hover:text-blekk"
                     }`}
                   >
                     {sd.navn}

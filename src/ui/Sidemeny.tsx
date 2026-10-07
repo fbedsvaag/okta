@@ -12,6 +12,7 @@ import { fagfarge } from "./farger";
 import { Ordmerke } from "./logo";
 import { Utfold } from "./Utfold";
 import { Glideflate } from "./Glideflate";
+import { Hovermarkor } from "./Hovermarkor";
 
 /**
  * Sidemenyen til venstre (DESIGN.md §6, variant A i lerretet).
@@ -98,6 +99,7 @@ export function Sidemeny({
   // ikke blafrer når musa bare passerer.
   const [hover, setHover] = useState<Menypunkt | null>(null);
   const meny = useRef<HTMLUListElement>(null);
+  const nav = useRef<HTMLElement>(null);
   const knapper = useRef(new Map<Menypunkt, HTMLButtonElement>());
   const [aktivKnapp, setAktivKnapp] = useState<HTMLElement | null>(null);
   useLayoutEffect(() => {
@@ -227,7 +229,12 @@ export function Sidemeny({
   };
 
   return (
-    <nav className="glass-sidepanel ikkeutskrift my-2.5 ml-2.5 flex w-56 shrink-0 flex-col rounded-glass px-2 py-3">
+    <nav
+      ref={nav}
+      className="glass-sidepanel ikkeutskrift relative my-2.5 ml-2.5 flex w-56 shrink-0 flex-col rounded-glass px-2 py-3"
+    >
+      {/* Hover glir fra punkt til punkt, også inn i undermenyene (10.3). */}
+      <Hovermarkor beholder={nav} />
       <div className="flex items-center gap-2 px-2 pb-2.5">
         <Ordmerke storrelse={18} />
         <button
@@ -284,10 +291,9 @@ export function Sidemeny({
                 }}
                 onClick={() => onGa(p.id)}
                 aria-current={erAktiv ? "page" : undefined}
-                className={`relative z-[1] flex h-[30px] w-full items-center gap-2.5 rounded-[9px] px-2.5 text-left text-[calc(13.5px*var(--tekst-skala))] ${
-                  erAktiv
-                    ? "font-medium text-blekk"
-                    : "text-blekk hover:bg-[var(--glass-valgt)]/70"
+                data-hover
+                className={`relative z-[1] flex h-[30px] w-full items-center gap-2.5 rounded-[9px] px-2.5 text-left text-[calc(13.5px*var(--tekst-skala))] text-blekk ${
+                  erAktiv ? "font-medium" : ""
                 }`}
               >
                 {p.navn}
@@ -307,10 +313,11 @@ export function Sidemeny({
         <button
           onClick={onInnstillinger}
           aria-current={aktiv === "innstillinger" ? "page" : undefined}
-          className={`flex h-[30px] min-w-0 flex-1 items-center rounded-[9px] px-2.5 text-left text-[calc(13.5px*var(--tekst-skala))] ${
+          data-hover
+          className={`relative z-[1] flex h-[30px] min-w-0 flex-1 items-center rounded-[9px] px-2.5 text-left text-[calc(13.5px*var(--tekst-skala))] ${
             aktiv === "innstillinger"
               ? "glass-valgt font-medium text-blekk"
-              : "text-blekk hover:bg-[var(--glass-valgt)]/70"
+              : "text-blekk"
           }`}
         >
           Innstillinger
@@ -350,12 +357,13 @@ function Underpunkt({
         onClick={onKlikk}
         title={tittel}
         aria-current={aktiv ? "true" : undefined}
-        className={`flex min-h-7 w-full items-center gap-2 rounded-lg px-2.5 py-[3px] text-left text-[calc(13px*var(--tekst-skala))] ${
+        data-hover
+        className={`relative z-[1] flex min-h-7 w-full items-center gap-2 rounded-lg px-2.5 py-[3px] text-left text-[calc(13px*var(--tekst-skala))] ${
           aktiv
             ? "bg-[var(--glass-valgt)]/80 font-medium text-blekk"
             : dempet
-              ? "text-blekk-dempet hover:bg-[var(--glass-valgt)]/60 hover:text-blekk"
-              : "text-blekk hover:bg-[var(--glass-valgt)]/60"
+              ? "text-blekk-dempet hover:text-blekk"
+              : "text-blekk"
         }`}
       >
         {merke}
