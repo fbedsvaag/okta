@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 import { hentInnstilling, settInnstilling } from "../data/skolear";
 
 /**
@@ -35,6 +35,38 @@ export function useGlidende<T>(
   }, [verdi, msUt]);
 
   return { vist, apen: verdi !== null };
+}
+
+/**
+ * Inngangen til et ark, ⌘K eller en meny (ARBEIDSLISTE 10.1).
+ *
+ * Elementet monteres i starttilstanden (`data-inne="false"`), én frame får
+ * tegnes, og så går det over til sluttilstanden med en vanlig CSS-overgang.
+ * Før spilte en keyframe-animasjon fra en tilstand elementet aldri hadde
+ * vært i, med sprett, og det så ut som det hoppet.
+ *
+ * To bilder, ikke ett: effekten kan kjøre før første tegning, og da ville
+ * én requestAnimationFrame slå over til sluttilstanden før starttilstanden
+ * noen gang var vist.
+ *
+ * Selve bevegelsen står i index.css under `[data-inngang]`. Glass tones
+ * aldri med `opacity`: WebKit tegner ikke uskarpheten mens et element —
+ * eller noe over det — har opacity under 1, og da blinker det. Bakgrunnen
+ * og innholdet tones i stedet, så uskarpheten er på fra første bilde.
+ */
+export function useInngang(): boolean {
+  const [inne, setInne] = useState(false);
+  useLayoutEffect(() => {
+    let andre = 0;
+    const forste = requestAnimationFrame(() => {
+      andre = requestAnimationFrame(() => setInne(true));
+    });
+    return () => {
+      cancelAnimationFrame(forste);
+      cancelAnimationFrame(andre);
+    };
+  }, []);
+  return inne;
 }
 
 // ------------------------------------------------------- innstillingen

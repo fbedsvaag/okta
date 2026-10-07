@@ -16,6 +16,7 @@ import { hentVurderinger, type Vurdering } from "../data/vurderinger";
 import { FagPanel } from "../skjermer/FagPanel";
 import { hentFagIAr, type FagIAr } from "../data/fag";
 import { Ikon } from "./felles";
+import { useInngang } from "./bevegelse";
 
 /**
  * Ark over ark — kortlogikken (DESIGN.md §7).
@@ -193,74 +194,22 @@ export function Arkstabel({
       {children}
 
       {stabel.length > 0 && (
-        <div
-          className={`fixed inset-0 z-40 transition-colors ${
-            aktive.length === 0
-              ? "bg-transparent"
-              : aktive.some((a) => a.type === "okt")
-                ? "bg-teppe/20"
-                : "bg-teppe/15"
-          }`}
-          style={{ transitionDuration: `${UT_MS}ms` }}
-          onMouseDown={(e) => e.target === e.currentTarget && lukkAlle()}
+        <Teppe
+          dempet={aktive.length > 0}
+          okt={aktive.some((a) => a.type === "okt")}
+          onLukkAlle={lukkAlle}
         >
           {stabel.map((ark, i) => {
             const paVeiUt = lukkende.has(ark.n);
             // Dybden regnes blant arkene som blir stående, så arket under
             // begynner å gli tilbake samtidig som det øverste glir ut.
             const dybde = paVeiUt ? 0 : aktive.length - 1 - aktive.indexOf(ark);
-            // Et ark under som glir ut sammen med det over (klikk utenfor),
-            // starter utgangen der det står — forskjøvet og krympet — og
-            // ikke fra rett posisjon. Ellers hopper det først.
-            const utFra = stabel.slice(i + 1).length;
             return (
-              <div
+              <Arkramme
                 key={ark.n}
-                aria-hidden={dybde > 0}
-                role={ark.type === "okt" ? "dialog" : undefined}
-                className={`ark absolute flex flex-col ${
-                  // Økta er et ark midt over skjermen du står på, i matt
-                  // glass (DESIGN.md §7, «ark»). De andre glir inn fra høyre.
-                  ark.type === "okt"
-                    ? "glass-matt inset-y-7 left-[clamp(16px,10vw,150px)] right-[clamp(16px,10vw,150px)] overflow-hidden rounded-[24px]"
-                    : // Elevkortet er et ark i matt glass fra høyre, 880 px
-                      // (lerretet «ElevArk»).
-                      ark.type === "elev"
-                      ? "glass-matt inset-y-4 right-4 w-[min(880px,calc(100%-32px))] overflow-hidden rounded-[24px]"
-                      : "inset-y-0 right-0 w-full max-w-2xl bg-ark shadow-[var(--shadow-ark)]"
-                } ${
-                  paVeiUt
-                    ? `${ark.type === "okt" ? "okt-ut" : "gli-ut"} pointer-events-none`
-                    : dybde > 0
-                      ? "pointer-events-none"
-                      : // Inngangen spilles bare for arket som nettopp ble
-                        // åpnet — ikke for det under når det blir øverst igjen.
-                        ark.n === teller.current
-                        ? ark.type === "okt"
-                          ? "notat-vindu"
-                          : ark.type === "elev"
-                            ? "elev-inn"
-                            : "gli-inn"
-                        : ""
-                }`}
-                style={
-                  paVeiUt && utFra > 0
-                    ? ({
-                        "--fra": `translateX(-${utFra * 32}px) scale(0.98)`,
-                      } as React.CSSProperties)
-                    : dybde > 0
-                      ? {
-                          // Arket under skyves litt mot venstre, krymper og
-                          // dempes — kanten stikker fram, så lagene kan leses.
-                          // Økta blir stående midt på og krymper bare.
-                          transform:
-                            ark.type === "okt"
-                              ? "scale(0.97)"
-                              : `translateX(-${dybde * 32}px) scale(0.97)`,
-                          filter: "saturate(0.8) brightness(0.96)",
-                        }
-                      : undefined
-                }
+                type={ark.type}
+                dybde={dybde}
+                paVeiUt={paVeiUt}
               >
                 {ark.type === "okt" ? (
                   <OktArk
@@ -301,12 +250,97 @@ export function Arkstabel({
                     onApneOkt={api.apneOkt}
                   />
                 )}
-              </div>
+              </Arkramme>
             );
           })}
-        </div>
+        </Teppe>
       )}
     </Kontekst.Provider>
+  );
+}
+
+/**
+ * Sløret bak arkene. Monteres gjennomsiktig og tones inn (10.1) — før kom
+ * det på i full styrke i første bilde, og hele skjermen blinket. Bare
+ * fargen tones: opacity her ville slått av uskarpheten i glassarkene over.
+ */
+function Teppe({
+  dempet,
+  okt,
+  onLukkAlle,
+  children,
+}: {
+  /** minst ett ark blir stående */
+  dempet: boolean;
+  /** økta er åpen: litt tettere slør */
+  okt: boolean;
+  onLukkAlle: () => void;
+  children: ReactNode;
+}) {
+  const inne = useInngang();
+  return (
+    <div
+      data-inngang="teppe"
+      data-inne={inne && dempet}
+      className={`fixed inset-0 z-40 ${okt ? "bg-teppe/20" : "bg-teppe/15"}`}
+      onMouseDown={(e) => e.target === e.currentTarget && onLukkAlle()}
+    >
+      {children}
+    </div>
+  );
+}
+
+/**
+ * Ett ark i stabelen, med inngang og utgang (10.1). Økta legger seg midt
+ * over skjermen og elevkortet kommer et lite stykke fra høyre, begge i matt
+ * glass (DESIGN.md §7, «ark»). Vurdering og fag er tette og glir hele veien
+ * inn fra høyre. Utgangen er samme overgang baklengs; stabelen tar arket
+ * bort når den er ferdig.
+ */
+function Arkramme({
+  type,
+  dybde,
+  paVeiUt,
+  children,
+}: {
+  type: Ark["type"];
+  dybde: number;
+  paVeiUt: boolean;
+  children: ReactNode;
+}) {
+  const inne = useInngang();
+  return (
+    <div
+      aria-hidden={dybde > 0}
+      role={type === "okt" ? "dialog" : undefined}
+      data-inngang={type === "okt" ? "midt" : type === "elev" ? "hoyre" : "side"}
+      data-inne={inne && !paVeiUt}
+      className={`ark absolute flex flex-col ${
+        type === "okt"
+          ? "glass-matt inset-y-7 left-[clamp(16px,10vw,150px)] right-[clamp(16px,10vw,150px)] overflow-hidden rounded-[24px]"
+          : // Elevkortet er et ark i matt glass fra høyre, 880 px
+            // (lerretet «ElevArk»).
+            type === "elev"
+            ? "glass-matt inset-y-4 right-4 w-[min(880px,calc(100%-32px))] overflow-hidden rounded-[24px]"
+            : "inset-y-0 right-0 w-full max-w-2xl bg-ark shadow-[var(--shadow-ark)]"
+      } ${paVeiUt || dybde > 0 ? "pointer-events-none" : ""}`}
+      style={
+        dybde > 0
+          ? {
+              // Arket under skyves litt mot venstre, krymper og dempes —
+              // kanten stikker fram, så lagene kan leses. Økta blir
+              // stående midt på og krymper bare.
+              transform:
+                type === "okt"
+                  ? "scale(0.97)"
+                  : `translateX(-${dybde * 32}px) scale(0.97)`,
+              filter: "saturate(0.8) brightness(0.96)",
+            }
+          : undefined
+      }
+    >
+      {children}
+    </div>
   );
 }
 

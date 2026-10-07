@@ -16,6 +16,7 @@ import { skalafarge, TEMATEKST } from "../ui/farger";
 import { hentElevbilde } from "../data/elevbilde";
 import { hentInnstilling, settInnstilling } from "../data/skolear";
 import { Elevbilde } from "../ui/Elevbilde";
+import { useInngang } from "../ui/bevegelse";
 
 /** Hvor lenge det skal være stille i feltet før notatet lagres. */
 const PAUSE_MS = 400;
@@ -173,6 +174,7 @@ export function Samtalenotat({
   const [bilde, setBilde] = useState<string | null>(null);
   const { storrelse, forskyvning, begynnSkalering, tilbakestill } =
     useSkalerbar();
+  const inne = useInngang();
   useEffect(() => {
     void hentElevbilde(elevId).then(setBilde);
   }, [elevId]);
@@ -268,11 +270,17 @@ export function Samtalenotat({
     <div
       // Bakgrunnen tones ned og blir så vidt uskarp, så samtalen er det
       // eneste som står fram (glass, DESIGN.md §7).
+      data-inngang="teppe"
+      data-inne={inne}
       className="matt-teppe fixed inset-0 z-50 flex items-center justify-center p-6"
       onMouseDown={(e) => e.target === e.currentTarget && void lukk()}
     >
       <div
-        className="notat-vindu glass-matt relative flex flex-col overflow-hidden rounded-[26px]"
+        // Inngangen (10.1) tas bort når vinduet er flyttet: en overgang på
+        // transform ville gjort at det henger etter musa.
+        data-inngang={forskyvning.x || forskyvning.y ? undefined : "midt"}
+        data-inne={inne}
+        className="glass-matt relative flex flex-col overflow-hidden rounded-[26px]"
         style={{
           width: storrelse.w,
           height: storrelse.h,

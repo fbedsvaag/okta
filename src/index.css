@@ -666,18 +666,6 @@ html {
   }
 }
 
-/* Et ark som legges over siden glir inn fra høyre når det dukker opp. */
-@keyframes gli-inn {
-  from {
-    transform: translateX(calc(100% + 40px));
-  }
-  to {
-    transform: translateX(0);
-  }
-}
-.gli-inn {
-  animation: gli-inn var(--tid-inn) var(--ease-inn);
-}
 
 /* Klassekartet: elevene glir til de nye plassene når kartet stokkes. */
 .kartelev {
@@ -687,53 +675,7 @@ html {
     background-color 160ms;
 }
 
-/*
- * Elevkortet (lerretet «ElevArk»): kort vei inn fra høyre og fram av
- * ingenting, med litt sprett — 40 px og 380 ms.
- */
-@keyframes elev-inn {
-  from {
-    transform: translateX(40px);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
-}
-.elev-inn {
-  animation: elev-inn var(--tid-pop) var(--ease-sprett);
-}
 
-/*
- * Ut igjen: samme bevegelse som inn, baklengs — samme varighet og kurven
- * speilet (--ease-inn snudd). Arket fjernes først når den er ferdig.
- * `forwards` holder det ute til det tas bort, så det ikke blinker tilbake.
- */
-@keyframes gli-ut {
-  /* --fra settes på et ark som var dypere i stabelen, så det glir fra der
-     det sto. */
-  from {
-    transform: var(--fra, translateX(0));
-  }
-  to {
-    transform: translateX(calc(100% + 40px));
-  }
-}
-.gli-ut {
-  animation: gli-ut var(--tid-inn) cubic-bezier(0.75, 0, 0.8, 0.1) forwards;
-}
-
-/* Økta som ark lukkes med samme bevegelse som den kom inn, baklengs. */
-@keyframes okt-ut {
-  to {
-    opacity: 0;
-    transform: translateY(10px) scale(0.98);
-  }
-}
-.okt-ut {
-  animation: okt-ut var(--tid-ut) var(--ease-ut) forwards;
-}
 
 /* Arket under glir tilbake på plass i samme tempo som det over glir ut. */
 .ark {
@@ -853,24 +795,88 @@ html {
  */
 .matt-teppe {
   background: color-mix(in srgb, var(--color-teppe) 20%, transparent);
-  animation: notat-teppe-inn var(--tid-inn) var(--ease-inn);
 }
 
-.notat-vindu {
-  animation: notat-inn var(--tid-utfold) var(--ease-leken);
+/*
+ * Inngang og utgang (ARBEIDSLISTE 10.1, `useInngang` i ui/bevegelse.ts).
+ *
+ * Elementet monteres med data-inne="false" og går over til "true" etter
+ * én frame. Utgangen er samme overgang baklengs. Ingen sprett: det er
+ * S-kurven i det som glir mellom punkter, ikke i det som kommer til syne.
+ *
+ * Glass tones ALDRI med opacity, verken på seg selv eller på noe over seg.
+ * WebKit tegner ikke backdrop-filter mens opacity er under 1, så glasset
+ * kom skarpt inn og ble uskarpt først til slutt — det var blinket. I stedet
+ * tones bakgrunnen, kanten, skyggen og innholdet (barna), og uskarpheten er
+ * på fra første bilde. Prøvd i WKWebView 07.10.
+ *
+ *   midt   økta, ⌘K, samtalenotatet: litt ned og litt mindre
+ *   hoyre  elevkortet: 40 px fra høyre
+ *   side   tette ark (vurdering, fag): hele veien inn fra høyre
+ *   meny   kontekstmenyer og ⋯-menyer: litt opp og litt mindre
+ *   teppe  sløret bak: bare fargen
+ */
+[data-inngang] {
+  transition:
+    transform var(--tid-inn) var(--ease-inn),
+    background-color var(--tid-inn) var(--ease-inn),
+    border-color var(--tid-inn) var(--ease-inn),
+    box-shadow var(--tid-inn) var(--ease-inn),
+    filter var(--tid-inn) var(--ease-inn);
 }
 
-@keyframes notat-teppe-inn {
-  from {
-    opacity: 0;
-  }
+[data-inngang] > * {
+  transition: opacity var(--tid-inn) var(--ease-inn);
 }
 
-@keyframes notat-inn {
-  from {
-    opacity: 0;
-    transform: translateY(10px) scale(0.98);
-  }
+[data-inngang][data-inne="false"] {
+  transition-duration: var(--tid-ut);
+  transition-timing-function: var(--ease-ut);
+}
+
+[data-inngang][data-inne="false"] > * {
+  transition-duration: var(--tid-ut);
+  transition-timing-function: var(--ease-ut);
+}
+
+[data-inngang="midt"][data-inne="false"],
+[data-inngang="hoyre"][data-inne="false"],
+[data-inngang="meny"][data-inne="false"],
+[data-inngang="teppe"][data-inne="false"] {
+  background-color: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+[data-inngang="midt"][data-inne="false"] > *,
+[data-inngang="hoyre"][data-inne="false"] > *,
+[data-inngang="meny"][data-inne="false"] > * {
+  opacity: 0;
+}
+
+[data-inngang="midt"][data-inne="false"] {
+  transform: translateY(10px) scale(0.98);
+}
+
+[data-inngang="hoyre"][data-inne="false"] {
+  transform: translateX(40px);
+}
+
+[data-inngang="side"][data-inne="false"] {
+  transform: translateX(calc(100% + 40px));
+}
+
+[data-inngang="meny"] {
+  transform-origin: top left;
+  transition-duration: 140ms;
+}
+
+[data-inngang="meny"] > * {
+  transition-duration: 140ms;
+}
+
+[data-inngang="meny"][data-inne="false"] {
+  transform: translateY(-4px) scale(0.97);
 }
 
 /*
@@ -994,10 +1000,7 @@ html {
   }
 
   .flikk-opp,
-  .flikk-ned,
-  .gli-inn,
-  .elev-inn,
-  .gli-ut {
+  .flikk-ned {
     animation: none !important;
   }
 }

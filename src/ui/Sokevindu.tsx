@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Glideflate } from "./Glideflate";
+import { useInngang } from "./bevegelse";
 import { Elevfoto } from "./Elevfoto";
 import { hentElever } from "../data/elever";
 import type { FagIAr } from "../data/fag";
@@ -30,6 +31,7 @@ export function Sokevindu({
 }) {
   const [tekst, setTekst] = useState("");
   const [markor, setMarkor] = useState(0);
+  const inne = useInngang();
   const [markorEl, setMarkorEl] = useState<HTMLElement | null>(null);
   useLayoutEffect(() => {
     setMarkorEl(
@@ -137,6 +139,8 @@ export function Sokevindu({
 
   return (
     <div
+      data-inngang="teppe"
+      data-inne={inne}
       className="matt-teppe fixed inset-0 z-50 flex items-start justify-center px-4 pt-[14vh]"
       onMouseDown={(e) => e.target === e.currentTarget && onLukk()}
     >
@@ -145,7 +149,11 @@ export function Sokevindu({
         appen (som notatet fra samtalen), et stort søkefelt med lupe, og treff
         markert med en avrundet flate innenfor kantene.
       */}
-      <div className="glass-matt notat-vindu w-full max-w-xl overflow-hidden rounded-[26px]">
+      <div
+        data-inngang="midt"
+        data-inne={inne}
+        className="glass-matt w-full max-w-xl overflow-hidden rounded-[26px]"
+      >
         <div className="flex items-center gap-3 px-4">
           <svg
             aria-hidden

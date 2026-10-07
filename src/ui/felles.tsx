@@ -1,5 +1,6 @@
 import { fagfarge } from "./farger";
 import { Glideflate } from "./Glideflate";
+import { useInngang } from "./bevegelse";
 import {
   useEffect,
   useLayoutEffect,
@@ -720,6 +721,7 @@ export function Kontekstmeny({
 }) {
   const meny = useRef<HTMLDivElement>(null);
   const [plass, setPlass] = useState({ venstre: x, topp: y });
+  const inne = useInngang();
 
   useLayoutEffect(() => {
     const el = meny.current;
@@ -759,6 +761,8 @@ export function Kontekstmeny({
       // Et valg i menyen lukker den, etter at valget selv har gjort sitt.
       onClick={onLukk}
       style={{ left: plass.venstre, top: plass.topp }}
+      data-inngang="meny"
+      data-inne={inne}
       className="glass-sok fixed z-50 min-w-40 rounded-[10px] p-1"
     >
       {children}
