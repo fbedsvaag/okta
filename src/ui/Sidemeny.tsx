@@ -117,6 +117,21 @@ export function Sidemeny({
     [],
   );
 
+  // Undermenyen som er rullet ut ved hover, legges sammen igjen så snart
+  // musa er over noe annet. mouseleave alene kom ikke alltid — når et ark
+  // åpnet seg eller musa hoppet, ble den hengende ute.
+  useEffect(() => {
+    const sjekk = (e: PointerEvent) => {
+      const li = (e.target as HTMLElement).closest?.("[data-punkt]");
+      const her = li?.getAttribute("data-punkt");
+      if (her && her === hover) return;
+      if (tidtaker.current && her) return;
+      if (hover !== null || tidtaker.current) ut();
+    };
+    document.addEventListener("pointerover", sjekk);
+    return () => document.removeEventListener("pointerover", sjekk);
+  }, [hover]);
+
   function inn(p: Menypunkt) {
     if (tidtaker.current) window.clearTimeout(tidtaker.current);
     tidtaker.current = window.setTimeout(() => setHover(p), HOVER_MS);
@@ -275,6 +290,7 @@ export function Sidemeny({
           return (
             <li
               key={p.id}
+              data-punkt={p.id}
               onMouseEnter={liste && !erAktiv ? () => inn(p.id) : undefined}
               onMouseLeave={liste && !erAktiv ? ut : undefined}
               className={`rounded-[10px] transition-[background-color,box-shadow] duration-[var(--tid-utfold)] ${
