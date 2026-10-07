@@ -105,7 +105,10 @@ function ukedag(dato: string): number {
  * «man 08:30 og tor 12:30». Et tidspunkt må gå igjen minst to ganger for å
  * regnes som fast. Mandag først.
  */
-export function fasteTider(okter: Okt[], idag: string): string {
+export function fasteTider(
+  okter: Pick<Okt, "dato" | "klokkeslett">[],
+  idag: string,
+): string {
   const telling = new Map<string, number>();
   for (const o of okter) {
     if (o.dato < idag || !o.klokkeslett) continue;

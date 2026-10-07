@@ -15,7 +15,9 @@ import {
   periodeFor,
   type Periode,
 } from "./perioder";
-import { hentInnstilling, type Skolear } from "./skolear";
+import { hentFridager, hentInnstilling, type Skolear } from "./skolear";
+import type { Fridag } from "./kalender";
+import { fasteTider } from "./fagside";
 
 /** Innstillingen med lærerens navn — standard faglærer i alle fag. */
 export const LAERERNAVN = "laerer_navn";
@@ -133,6 +135,8 @@ export type Arkrad = {
   sted: string | null;
   agenda: string | null;
   vurderinger: string[];
+  /** typen til den første vurderingen, til ikonet og kolonnen på PDF-en */
+  vurderingType: OktVurdering["type"] | null;
   /** kompetansemålene økta selv er huket av for, som tekst */
   mal: string[];
   /** datert utenfor skoleåret; vises, men teller ikke i regnskapet */
@@ -142,6 +146,11 @@ export type Arkrad = {
 export type Arkbolk = {
   /** null = øktene står uten periodeinndeling, eller er uplassert */
   navn: string | null;
+  /** periodens farge, til prikken foran navnet på PDF-en */
+  farge: string | null;
+  periodeId: string | null;
+  /** nummeret (1, 2 …) på kompetansemålene perioden dekker: «Mål 1, 2, 4» */
+  malNr: number[];
   rader: Arkrad[];
   timer: number;
   /**
@@ -180,6 +189,16 @@ export type Ark = {
   kolonner: Kolonne[];
   /** liggende A4 på papir og i Word */
   liggende: boolean;
+  /** fagets farge, til koden øverst på PDF-en (11.6) */
+  farge: string | null;
+  /** «man 08:30 og tor 12:30» — de faste tidene; tom uten */
+  tider: string;
+  /** siste gang en økt i faget ble endret, ISO-dato */
+  sistOppdatert: string | null;
+  /** feriene i skoleåret, til kursivlinjene i tabellen */
+  ferier: { navn: string; fra: string; til: string }[];
+  /** læreplankoden hos Udir, til lenken over kompetansemålene */
+  laereplan: string | null;
 };
 
 export function byggArk(inn: {
@@ -197,6 +216,9 @@ export function byggArk(inn: {
   periodemal?: Map<string, string[]>;
   /** feltene som skal med. Utelatt = standardvalget */
   felt?: ReadonlySet<Arkfelt>;
+  /** skoleårets fridager; bare ferier kommer på arket */
+  fridager?: Fridag[];
+  laereplan?: string | null;
 }): Ark {
   const felt = inn.felt ?? standardFelt();
   const med = (f: Arkfelt) => felt.has(f);
@@ -229,6 +251,7 @@ export function byggArk(inn: {
     sted: tom(o.sted),
     agenda: tom(o.agenda),
     vurderinger: (inn.vurderinger.get(o.id) ?? []).map((v) => v.tittel),
+    vurderingType: inn.vurderinger.get(o.id)?.[0]?.type ?? null,
     mal: med("maal")
       ? [
           ...(inn.oktmal?.get(o.id) ?? []).map(tekstFor),
@@ -272,11 +295,30 @@ export function byggArk(inn: {
           samtaletimer: inn.samtaletimer,
         }
       : null,
-    bolker: inn.medPerioder
+    bolker: (inn.medPerioder
       ? grupper(egne, rader, perioderIFaget, (id) =>
           med("maal") ? periodensMal(id) : [],
         )
-      : [{ navn: null, rader, timer: timer(talte), mal: [] }],
+      : [
+          {
+            navn: null,
+            farge: null,
+            periodeId: null,
+            malNr: [],
+            rader,
+            timer: timer(talte),
+            mal: [],
+          },
+        ]
+    ).map((b) => ({
+      ...b,
+      malNr: b.periodeId
+        ? (inn.periodemal?.get(b.periodeId) ?? [])
+            .map((k) => inn.kompetansemal.findIndex((m) => m.kode === k) + 1)
+            .filter((n) => n > 0)
+            .sort((a, z) => a - z)
+        : [],
+    })),
     kolonner: ARKFELT.filter((f) => f.gruppe === "kolonne" && med(f.id))
       .map((f) => f.id as Kolonne)
       .filter((k) => {
@@ -292,6 +334,24 @@ export function byggArk(inn: {
         return !sjekk || rader.some(sjekk);
       }),
     liggende: med("liggende"),
+    farge: fag.farge,
+    tider: fasteTider(talte, skolear.start),
+    sistOppdatert:
+      egne
+        .reduce<string | null>(
+          (m, o) => (o.endret && (!m || o.endret > m) ? o.endret : m),
+          null,
+        )
+        ?.slice(0, 10) ?? null,
+    laereplan: inn.laereplan ?? null,
+    ferier: (inn.fridager ?? [])
+      .filter(
+        (f) =>
+          f.type === "ferie" &&
+          f.til >= skolear.start &&
+          f.fra <= skolear.slutt,
+      )
+      .map((f) => ({ navn: f.navn, fra: f.fra, til: f.til })),
   };
 }
 
@@ -311,6 +371,7 @@ export async function hentArk(
     samtale,
     oktmal,
     periodemal,
+    fridager,
   ] = await Promise.all([
     hentOkter(skolear.id),
     hentOktVurderinger(skolear.id),
@@ -320,6 +381,7 @@ export async function hentArk(
     hentVurderingstimer(skolear.id),
     hentOktmalForFag(fag.id),
     hentPeriodemal(fag.id),
+    hentFridager(skolear.id),
   ]);
   return byggArk({
     skolear,
@@ -334,6 +396,8 @@ export async function hentArk(
     oktmal,
     periodemal,
     felt,
+    fridager,
+    laereplan: grep?.laereplan ?? null,
   });
 }
 
@@ -353,14 +417,18 @@ function grupper(
   const rekkefolge: (string | null)[] = [];
   const kart = new Map<
     string | null,
-    { navn: string | null; rader: Arkrad[] }
+    { navn: string | null; farge: string | null; rader: Arkrad[] }
   >();
 
   okter.forEach((o, i) => {
     const p = periodeFor(o, perioder);
     const nokkel = p?.id ?? null;
     if (!kart.has(nokkel)) {
-      kart.set(nokkel, { navn: p?.navn ?? null, rader: [] });
+      kart.set(nokkel, {
+        navn: p?.navn ?? null,
+        farge: p?.farge ?? null,
+        rader: [],
+      });
       rekkefolge.push(nokkel);
     }
     kart.get(nokkel)!.rader.push(rader[i]);
@@ -378,6 +446,9 @@ function grupper(
     const navn = b.navn ?? (ordnet.length > 1 ? "Uten periode" : null);
     return {
       navn,
+      farge: b.farge,
+      periodeId: n,
+      malNr: [],
       rader: b.rader,
       timer: minutter / 60,
       mal: malFor(n ?? undefined),
