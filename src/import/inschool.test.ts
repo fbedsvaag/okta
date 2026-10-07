@@ -5,6 +5,8 @@ import {
   somLimInnTekst,
   type Side,
 } from "./inschool";
+import { parseListe } from "./parser";
+import { gjettKjonn } from "./kjonn";
 
 // Samme oppsett som InSchool-utskriften, med fiktive navn: en tabell på
 // første side, og bilder i rutenett med navn og klasse under på neste.
@@ -100,5 +102,19 @@ describe("navnenokkel", () => {
     expect(navnenokkel("Moltisanti- Aprile")).toBe(
       navnenokkel("moltisanti-aprile"),
     );
+  });
+});
+
+// 10.5: PDF-en går gjennom samme forhåndsvisning som limt tekst, og
+// kjønnet gjettes fra fornavnet derfra. Prøver hele veien fra utskriften.
+describe("kjønn fra InSchool-PDF", () => {
+  it("gjettes fra fornavnene i tabellen", () => {
+    const r = lesInschool([tabell, bilder]);
+    const { elever } = parseListe(somLimInnTekst(r.elever));
+    expect(elever.map((e) => [e.fornavn, gjettKjonn(e.fornavn)])).toEqual([
+      ["Tony", "g"],
+      ["Christopher", "g"],
+      ["Adriana", "j"],
+    ]);
   });
 });
