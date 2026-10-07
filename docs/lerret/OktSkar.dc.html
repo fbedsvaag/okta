@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<title>Økta — økta, skåring og logg</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#d4cee2}
+:root{--pal:#4a3d7d;--pal-lys:#e3ddf0;--pal-mid:#b2a8d2;--pal-svak:#f4f2f9}
+.pt{display:flex;align-items:center;gap:9px;height:32px;padding:0 10px;border-radius:10px;color:#2e2840;font-size:14px}
+.pt.on{background:rgba(255,255,255,.88);box-shadow:0 1px 3px rgba(36,31,51,.14),inset 0 1px 0 #fff;color:#241f33;font-weight:500}
+.kbd{margin-left:auto;font-size:11px;color:#6b6482;letter-spacing:.04em;font-weight:400}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:32px;padding:0 14px;border-radius:999px;border:1px solid #d9d4e8;background:#fff;color:#241f33;font:inherit;font-size:13px;cursor:pointer;white-space:nowrap}
+.btn.pri{background:var(--pal);border-color:var(--pal);color:#fff;font-weight:500}
+.k{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;box-sizing:border-box;border:1px solid #d9d4e8;border-radius:4px;font-size:10.5px;font-weight:500;color:#3a3450;background:#fff;font-variant-numeric:tabular-nums}
+.liste:focus{outline:none}
+.rad{display:grid;box-sizing:border-box;border-radius:8px;grid-template-columns:3px 132px 28px minmax(150px,240px) 44px minmax(0,1fr);column-gap:12px;align-items:center;height:38px;font-size:13.5px;border-bottom:1px solid #f0eef6;cursor:default}
+.rad:hover{background:rgba(74,61,125,.035)}
+.sk{all:unset;cursor:pointer;width:28px;height:24px;display:inline-flex;align-items:center;justify-content:center;border-radius:6px;opacity:.2}
+.sk:hover{opacity:.7;background:#eceaf1}
+.sk.valgt{opacity:1}
+.tl{width:13px;height:13px;border-radius:50%;display:inline-block;flex:none}
+.tl-r{background:#c04a3d}.tl-y{background:#d9a92f}.tl-g{background:#3f9d49}.tl-o{background:#d5d8dd}
+.sk.valgt .tl{width:15px;height:15px}
+.av{width:28px;height:28px;border-radius:50%;overflow:hidden;flex:none;display:inline-block;background:var(--pal-lys)}
+.lbl{font-size:12px;font-weight:600;color:#241f33;margin:0 0 8px}
+.ell{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.num{font-variant-numeric:tabular-nums}
+.markor{position:absolute;left:0;right:0;top:0;height:38px;border-radius:8px;background:rgba(74,61,125,.10);box-shadow:inset 0 0 0 1px rgba(74,61,125,.08);pointer-events:none;z-index:0;transition:transform 340ms cubic-bezier(.34,1.32,.5,1)}
+.markor::before{content:"";position:absolute;left:0;top:7px;bottom:7px;width:3px;border-radius:2px;background:var(--pal)}
+.rader{position:relative}
+.rader .rad{position:relative;z-index:1}
+.navn{transition:font-weight 0s,color 200ms ease}
+.sk .tl{transition:transform 260ms cubic-bezier(.34,1.56,.64,1),width 0s,height 0s}
+.sk.valgt .tl{animation:pop 380ms cubic-bezier(.34,1.56,.64,1)}
+@keyframes pop{0%{transform:scale(.4)}60%{transform:scale(1.18)}100%{transform:scale(1)}}
+@keyframes puls{0%,100%{opacity:1}50%{opacity:.35}}
+@keyframes inn{from{opacity:0;transform:translateY(14px) scale(.985)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion: reduce){.ark,.prikk,.sk.valgt .tl{animation:none!important}.markor{transition:none!important}}
+</style>
+</helmet>
+<div style="position: relative; height: 1060px; padding: 24px; box-sizing: border-box; overflow: hidden; font-family: 'Geist', -apple-system, sans-serif; color: #241f33; font-size: 14px">
+<div aria-hidden="true" style="position: absolute; left: -120px; top: -80px; width: 620px; height: 620px; border-radius: 50%; background: #8a7bc2; filter: blur(70px); opacity: .75"></div>
+<div aria-hidden="true" style="position: absolute; left: -60px; top: 560px; width: 520px; height: 520px; border-radius: 50%; background: #5f9e98; filter: blur(80px); opacity: .7"></div>
+<div aria-hidden="true" style="position: absolute; right: -100px; top: -60px; width: 700px; height: 500px; border-radius: 50%; background: #b8aee0; filter: blur(90px); opacity: .6"></div>
+
+<div style="position: relative; display: flex; height: 1012px; border-radius: 16px; overflow: hidden; background: rgba(236,234,241,.42); backdrop-filter: blur(40px) saturate(160%); box-shadow: 0 24px 70px rgba(36,31,51,.28), 0 0 0 1px rgba(36,31,51,.14)">
+<!-- Bakgrunn: I dag med sidemeny A -->
+<nav aria-label="Hovedmeny" style="width: 236px; flex: none; margin: 10px; padding: 12px 8px; box-sizing: border-box; display: flex; flex-direction: column; gap: 2px; border-radius: 22px; background: rgba(255,255,255,.5); backdrop-filter: blur(28px) saturate(170%); border: 1px solid rgba(255,255,255,.75); box-shadow: inset 0 1px 0 rgba(255,255,255,.95), 0 10px 30px rgba(36,31,51,.14)">
+<div style="display: flex; align-items: center; gap: 8px; padding: 2px 8px 10px"><svg width="20" height="20" viewBox="0 0 1024 1024" aria-hidden="true"><rect x="40" y="40" width="944" height="944" rx="215" fill="#241F33"></rect><rect x="290" y="330" width="200" height="364" rx="44" fill="#EEEDFE"></rect><rect x="516" y="330" width="100" height="364" rx="40" fill="#C9C2DD"></rect><rect x="642" y="330" width="100" height="364" rx="40" fill="#9A90B8"></rect></svg><span style="font-weight: 600; font-size: 14px">Økta</span><span class="num" style="margin-left: auto; font-size: 11px; color: #4b4560">2026/27</span></div>
+<div style="display: flex; align-items: center; gap: 8px; height: 30px; padding: 0 12px; margin-bottom: 10px; border-radius: 999px; background: rgba(255,255,255,.55); border: 1px solid rgba(255,255,255,.75); font-size: 13px; color: #4b4560">Søk<span class="kbd">⌘K</span></div>
+<div class="pt on">I dag<span class="kbd">G D</span></div>
+<div class="pt">Økter<span class="kbd">G Ø</span></div>
+<div class="pt">Elever<span class="kbd">G E</span></div>
+<div class="pt">Vurderinger<span class="kbd">G V</span></div>
+<div class="pt">Samtaler<span class="kbd">G S</span></div>
+<div class="pt">Klassekart<span class="kbd">G K</span></div>
+<div style="flex: 1"></div>
+<div class="pt">Innstillinger<span class="kbd">⌘,</span></div>
+</nav>
+<main aria-hidden="true" style="flex: 1; margin: 10px 10px 10px 0; background: #fff; border-radius: 16px; padding: 70px 36px 20px">
+<div style="font-size: 34px; font-weight: 300; letter-spacing: -0.015em">Mandag 5. oktober</div>
+<div style="display: flex; gap: 40px; margin-top: 26px"><div style="flex: 2; display: flex; flex-direction: column; gap: 12px"><div style="height: 120px; border-radius: 8px; background: #f7f6fb"></div><div style="height: 70px; border-radius: 8px; background: #f7f6fb"></div><div style="height: 330px; border-radius: 8px; background: #f7f6fb"></div></div><div style="flex: 1; display: flex; flex-direction: column; gap: 12px"><div style="height: 220px; border-radius: 8px; background: #f7f6fb"></div><div style="height: 160px; border-radius: 8px; background: #f7f6fb"></div></div></div>
+</main>
+
+<!-- Slør -->
+<div style="position: absolute; inset: 0; background: rgba(36,31,51,.20)"></div>
+
+<!-- Arket -->
+<section class="ark" role="dialog" aria-label="Økt: Markedsføringsmiksen — pris" style="position: absolute; z-index: 2; top: 28px; bottom: 28px; left: 150px; right: 150px; display: flex; flex-direction: column; border-radius: 24px; overflow: hidden; background: rgba(255,255,255,.93); backdrop-filter: blur(22px) saturate(105%); border: 1px solid rgba(255,255,255,.9); box-shadow: inset 0 1px 0 #fff, 0 30px 80px rgba(36,31,51,.32), 0 0 0 .5px rgba(36,31,51,.10); animation: inn 320ms cubic-bezier(.22,1,.36,1)">
+
+<header style="padding: 22px 28px 18px; border-bottom: 1px solid #ece9f3">
+<div style="display: flex; align-items: center; gap: 12px">
+<span style="width: 11px; height: 11px; border-radius: 3px; background: #9a5a2c; flex: none"></span>
+<span style="font-size: 15px; font-weight: 600; color: #9a5a2c">MFL2</span>
+<h1 style="margin: 0; white-space: nowrap; font-size: 28px; font-weight: 300; letter-spacing: -0.015em">Markedsføringsmiksen — pris</h1>
+
+<span style="flex: 1"></span>
+<span style="display: inline-flex; align-items: center; gap: 7px; height: 26px; padding: 0 10px; border-radius: 13px; background: var(--pal-svak); font-size: 12.5px; color: var(--pal); font-weight: 500; white-space: nowrap"><span class="prikk" style="width: 7px; height: 7px; border-radius: 50%; background: var(--pal); animation: puls 2s ease-in-out infinite"></span>Pågår · 50 min igjen</span>
+<span style="font-size: 12px; color: #4b4560; padding: 3px 8px; border-radius: 999px; background: #f4f2f9; margin-left: 6px">esc</span>
+<button class="btn pri" style="height: 28px; padding: 0 12px; font-size: 12.5px; gap: 6px; margin-left: 4px">Ferdig<span style="opacity: .7; font-size: 10.5px">⌘↵</span></button>
+</div>
+<div style="margin: 10px 0 0 23px; font-size: 13px; color: #645d7a; display: flex; align-items: center; gap: 8px"><span>Mandag 5. oktober</span>·<span class="num">08:30–11:30</span>·<span>Rom 214</span>·<span style="display: inline-flex; align-items: center; gap: 5px"><span style="width: 6px; height: 6px; border-radius: 50%; background: #2f9a8a"></span>Markedsmiks</span><span style="flex: 1"></span><div class="seg" style="position: relative; display: inline-flex; padding: 2px; border-radius: 999px; background: rgba(36,31,51,.06); margin-top: -4px"><span style="position: absolute; top: 2px; left: 2px; height: 26px; width: 128px; border-radius: 999px; background: #fff; box-shadow: 0 1px 3px rgba(36,31,51,.16)"></span><span style="position: relative; z-index: 1; height: 26px; width: 128px; display: inline-flex; align-items: center; justify-content: center; font-size: 12.5px; font-weight: 500">Skåring og logg</span><a href="OktPlan.dc.html" style="position: relative; z-index: 1; height: 26px; width: 100px; display: inline-flex; align-items: center; justify-content: center; font-size: 12.5px; color: #645d7a; text-decoration: none">Planlegging</a></div></div>
+</header>
+
+<div style="flex: 1; display: flex; min-height: 0">
+<div class="liste" tabIndex="0" onKeyDown="{{onKey}}" aria-label="Elevliste — skår med 1, 2, 3 og 0" style="flex: 1; min-width: 0; padding: 12px 22px 0; overflow: auto">
+<div style="display: flex; align-items: center; gap: 12px; padding: 0 0 10px; border-bottom: 1px solid #d9d4e8">
+<span style="font-size: 13px; font-weight: 600">Elever</span>
+<span class="num" style="font-size: 12px; color: #645d7a">{{skaret}} av 28 skåret</span>
+<span style="width: 120px; height: 4px; border-radius: 2px; background: #ece9f3; overflow: hidden"><span style="display: block; height: 100%; width: {{andel}}; background: var(--pal); border-radius: 2px"></span></span>
+<span style="margin-left: auto; font-size: 12px; color: #9a90b8">Alfabetisk på fornavn</span>
+</div>
+<div class="rader">
+<div class="markor" aria-hidden="true" style="transform: translateY({{markY}})"></div>
+<sc-for list="{{rader}}" as="r" hint-placeholder-count="28">
+<div class="rad" onClick="{{r.velg}}">
+<span></span>
+<span style="display: flex; gap: 4px; justify-content: flex-start; margin-left: -4px">
+<button class="sk {{r.cr}}" onClick="{{r.rod}}" aria-label="Rød for {{r.navn}}"><span class="tl tl-r"></span></button>
+<button class="sk {{r.cy}}" onClick="{{r.gul}}" aria-label="Gul for {{r.navn}}"><span class="tl tl-y"></span></button>
+<button class="sk {{r.cg}}" onClick="{{r.gronn}}" aria-label="Grønn for {{r.navn}}"><span class="tl tl-g"></span></button>
+<button class="sk {{r.co}}" onClick="{{r.borte}}" aria-label="Ikke i økta: {{r.navn}}"><span class="tl tl-o"></span></button>
+</span>
+<span class="av" title="{{r.avTittel}}">
+<sc-if value="{{r.jente}}" hint-placeholder-val="{{ false }}"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><path d="M7.4 15.4c0-5.6 3-9.3 6.6-9.3s6.6 3.7 6.6 9.3v5.4H7.4z" fill="var(--pal)" fill-opacity=".7"></path><path d="M4.8 28.5c.4-5 4.3-8.4 9.2-8.4s8.8 3.4 9.2 8.4z" fill="var(--pal-mid)"></path><circle cx="14" cy="12.8" r="4.3" fill="var(--pal-mid)"></circle><path d="M9.7 11.9c.6-3 2.3-4.6 4.3-4.6s3.7 1.6 4.3 4.6c-1.4-1.4-2.7-2-4.3-2s-2.9.6-4.3 2z" fill="var(--pal)" fill-opacity=".7"></path></svg></sc-if>
+<sc-if value="{{r.gutt}}" hint-placeholder-val="{{ false }}"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><path d="M4.8 28.5c.4-5 4.3-8.4 9.2-8.4s8.8 3.4 9.2 8.4z" fill="var(--pal-mid)"></path><circle cx="14" cy="12.6" r="4.5" fill="var(--pal-mid)"></circle><path d="M9.4 11.6c.2-3.4 2.1-5.3 4.6-5.3s4.4 1.9 4.6 5.3c-1.2-1.2-2.7-1.8-4.6-1.8s-3.4.6-4.6 1.8z" fill="var(--pal)" fill-opacity=".7"></path></svg></sc-if>
+<sc-if value="{{r.noytral}}" hint-placeholder-val="{{ false }}"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><path d="M4.8 28.5c.4-5 4.3-8.4 9.2-8.4s8.8 3.4 9.2 8.4z" fill="var(--pal-mid)"></path><circle cx="14" cy="12.4" r="4.6" fill="var(--pal-mid)"></circle></svg></sc-if>
+</span>
+<span class="ell" title="{{r.navn}}" style="font-weight: {{r.vekt}}">{{r.navn}}</span>
+<span style="font-size: 12px; color: #645d7a">{{r.klasse}}</span>
+<span style="min-width: 0; display: flex; align-items: center">
+<sc-if value="{{r.skriver}}" hint-placeholder-val="{{ false }}"><input type="text" autoFocus="{{ true }}" onKeyDown="{{r.lagre}}" placeholder="Notat til {{r.fornavn}} — Enter lagrer, Esc lukker" aria-label="Notat til {{r.navn}}" style="width: 100%; box-sizing: border-box; height: 26px; padding: 0 10px; border: 1px solid var(--pal); border-radius: 6px; font: inherit; font-size: 12.5px; background: #fff; color: #241f33"></sc-if>
+<sc-if value="{{r.visTekst}}" hint-placeholder-val="{{ false }}"><span class="ell" title="{{r.tekst}}" style="font-size: 12.5px; color: {{r.tekstfarge}}; font-style: {{r.stil}}">{{r.tekst}}</span></sc-if>
+</span>
+
+</div>
+</sc-for>
+</div>
+<div style="height: 16px"></div>
+</div>
+
+<aside style="width: 320px; flex: none; box-sizing: border-box; padding: 18px 22px; border-left: 1px solid #ece9f3; background: rgba(250,249,253,.7); display: flex; flex-direction: column; gap: 22px; overflow: auto">
+<div>
+<div class="lbl">Fra forrige økt <span style="font-weight: 400; color: #9a90b8">· tor 1.10</span></div>
+<div style="font-size: 13.5px; line-height: 1.5; color: #3a3450">Halve klassen ble ikke ferdig med SWOT. Start med ti minutter oppsummering før pris.</div>
+</div>
+<div>
+<div class="lbl">Plan</div>
+<label style="display: flex; gap: 9px; align-items: baseline; padding: 4px 0; font-size: 13.5px; color: #9a90b8"><input type="checkbox" checked style="accent-color: #4a3d7d; transform: translateY(2px)"><span style="text-decoration: line-through">Oppsummering SWOT — 10 min</span></label>
+<label style="display: flex; gap: 9px; align-items: baseline; padding: 4px 0; font-size: 13.5px"><input type="checkbox" style="accent-color: #4a3d7d; transform: translateY(2px)"><span>Pris: kostnads-, konkurranse- og verdibasert</span></label>
+<label style="display: flex; gap: 9px; align-items: baseline; padding: 4px 0; font-size: 13.5px"><input type="checkbox" style="accent-color: #4a3d7d; transform: translateY(2px)"><span>Case i grupper: Kiwi mot Meny</span></label>
+<label style="display: flex; gap: 9px; align-items: baseline; padding: 4px 0; font-size: 13.5px"><input type="checkbox" style="accent-color: #4a3d7d; transform: translateY(2px)"><span>Exit-lapp</span></label>
+</div>
+<div style="flex: 1; display: flex; flex-direction: column; min-height: 200px">
+<div class="lbl">Øktlogg</div>
+<textarea placeholder="Hvordan gikk det? - [ ] blir et gjøremål på I dag." style="flex: 1; resize: none; box-sizing: border-box; padding: 10px 12px; border-radius: 10px; border: 1px solid #e5e2ee; background: #fff; font: inherit; font-size: 13.5px; line-height: 1.5; color: #241f33; outline: none"></textarea>
+</div>
+</aside>
+</div>
+
+<footer style="display: flex; align-items: center; gap: 16px; padding: 9px 22px; background: #ece9f3; font-size: 11.5px; color: #645d7a">
+<span style="display: inline-flex; align-items: center; gap: 5px"><span class="k">1</span><span class="k">2</span><span class="k">3</span> rød · gul · grønn</span>
+<span style="display: inline-flex; align-items: center; gap: 5px"><span class="k">0</span> ikke i økta</span>
+<span style="display: inline-flex; align-items: center; gap: 5px"><span class="k">↑</span><span class="k">↓</span> flytt</span>
+<span style="display: inline-flex; align-items: center; gap: 5px"><span class="k">N</span> notat</span>
+<span style="display: inline-flex; align-items: center; gap: 5px"><span class="k">⌫</span> fjern</span>
+<span style="margin-left: auto; display: inline-flex; align-items: center; gap: 5px"><span class="k">esc</span> lukk — alt er lagret</span>
+</footer>
+</section>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1060}}'>
+// [navn, klasse, kjønn j/g/null] — ingen har bilde her, så alle får plassholder
+var ELEVER = [
+  ['Adriana La Cerva', '2STB', 'j'], ['Anthony Soprano Jr.', '2STB', 'g'], ['Artie Bucco', '2STA', 'g'], ['Benny Fazio', '2STB', 'g'],
+  ['Bobby Baccalieri', '2STA', 'g'], ['Carlo Gervasi', '2STB', 'g'], ['Carmela Soprano', '2STA', 'j'], ['Charmaine Bucco', '2STA', 'j'],
+  ['Christopher Moltisanti', '2STA', 'g'], ['Corrado «Junior» Soprano', '2STB', 'g'], ['Eugene Pontecorvo', '2STB', 'g'], ['Furio Giunta', '2STA', 'g'],
+  ['Gloria Trillo', '2STB', 'j'], ['Jackie Aprile Jr.', '2STA', null], ['Janice Soprano', '2STB', 'j'], ['Jennifer Melfi', '2STA', 'j'],
+  ['Johnny Sacrimoni', '2STB', 'g'], ['Livia Soprano', '2STA', 'j'], ['Meadow Soprano', '2STA', 'j'], ['Patsy Parisi', '2STB', 'g'],
+  ['Paulie Gualtieri', '2STB', 'g'], ['Phil Leotardo', '2STB', 'g'], ['Ralph Cifaretto', '2STA', 'g'], ['Richie Aprile', '2STB', 'g'],
+  ['Rosalie Aprile', '2STA', 'j'], ['Silvio Dante', '2STA', 'g'], ['Tony Soprano', '2STA', 'g'], ['Vito Spatafore', '2STB', 'g']
+];
+var HINT = { 8: 'Sist 1.10: «Kom 40 min for sent, jobbet godt etter pausen.»', 13: 'Sist 21.9: «Mobil hele første time.»', 1: 'Sist 1.10: «Trenger hjelp med struktur i SWOT.»' };
+var TAST = { '1': 'r', '2': 'y', '3': 'g', '0': 'o' };
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { cur: 8, notat: false, s: { 0: 'g', 1: 'y', 2: 'g', 3: 'g', 4: 'o', 5: 'y', 6: 'g', 7: 'r' }, n: { 0: 'Ledet gruppa, god på pris', 6: 'Hjalp sidemannen med SWOT', 7: 'Mobil — fikk beskjed to ganger' } };
+  }
+  sett(i, v) {
+    var s = Object.assign({}, this.state.s);
+    if (v) s[i] = v; else delete s[i];
+    this.setState({ s: s, cur: v ? Math.min(i + 1, ELEVER.length - 1) : i, notat: false });
+  }
+  renderVals() {
+    var self = this, st = this.state, n = ELEVER.length;
+    var antall = Object.keys(st.s).length;
+    return {
+      markY: (st.cur * 38) + 'px', skaret: antall, andel: Math.round(antall / n * 100) + '%',
+      onKey: function (e) {
+        if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+        var k = e.key;
+        if (TAST[k]) { e.preventDefault(); self.sett(st.cur, TAST[k]); return; }
+        if (k === 'ArrowDown') { e.preventDefault(); self.setState({ cur: Math.min(st.cur + 1, n - 1), notat: false }); return; }
+        if (k === 'ArrowUp') { e.preventDefault(); self.setState({ cur: Math.max(st.cur - 1, 0), notat: false }); return; }
+        if (k === 'Backspace') { e.preventDefault(); self.sett(st.cur, null); return; }
+        if (k === 'n' || k === 'N') { e.preventDefault(); self.setState({ notat: true }); }
+      },
+      rader: ELEVER.map(function (el, i) {
+        var v = st.s[i] || '', cur = i === st.cur;
+        var deler = el[0].replace(/[«»]/g, '').split(' ');
+        var egen = st.n[i] || '', skriver = cur && st.notat;
+        var tekst = egen || (cur && HINT[i] ? HINT[i] : '');
+        return {
+          navn: el[0], fornavn: deler[0], klasse: el[1],
+          jente: el[2] === 'j', gutt: el[2] === 'g', noytral: !el[2],
+          avTittel: 'Ingen bilde av ' + deler[0],
+          bg: cur ? 'rgba(74,61,125,.10)' : 'transparent', markor: cur ? 'var(--pal)' : 'transparent', vekt: cur ? 500 : 400,
+          skriver: skriver, visTekst: !skriver && !!tekst, tekst: tekst,
+          tekstfarge: egen ? '#3a3450' : '#9a90b8', stil: egen ? 'normal' : 'italic',
+          cr: v === 'r' ? 'valgt' : '', cy: v === 'y' ? 'valgt' : '', cg: v === 'g' ? 'valgt' : '', co: v === 'o' ? 'valgt' : '',
+          lagre: function (e) {
+            e.stopPropagation();
+            if (e.key === 'Enter') { var nn = Object.assign({}, st.n); if (e.target.value) nn[i] = e.target.value; self.setState({ n: nn, notat: false }); }
+            if (e.key === 'Escape') self.setState({ notat: false });
+          },
+          velg: function () { self.setState({ cur: i, notat: false }); },
+          rod: function (e) { e.stopPropagation(); self.sett(i, 'r'); },
+          gul: function (e) { e.stopPropagation(); self.sett(i, 'y'); },
+          gronn: function (e) { e.stopPropagation(); self.sett(i, 'g'); },
+          borte: function (e) { e.stopPropagation(); self.sett(i, 'o'); }
+        };
+      })
+    };
+  }
+}
+</script>
+</body>
+</html>

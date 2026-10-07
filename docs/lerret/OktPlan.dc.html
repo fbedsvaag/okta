@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<title>Økta — økta, planlegging</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#d4cee2}
+:root{--pal:#4a3d7d;--pal-lys:#e3ddf0;--pal-mid:#b2a8d2;--pal-svak:#f4f2f9}
+.pt{display:flex;align-items:center;gap:9px;height:32px;padding:0 10px;border-radius:10px;color:#2e2840;font-size:14px}
+.pt.on{background:rgba(255,255,255,.88);box-shadow:0 1px 3px rgba(36,31,51,.14),inset 0 1px 0 #fff;color:#241f33;font-weight:500}
+.kbd{margin-left:auto;font-size:11px;color:#6b6482;letter-spacing:.04em;font-weight:400}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:32px;padding:0 14px;border-radius:999px;border:1px solid #d9d4e8;background:#fff;color:#241f33;font:inherit;font-size:13px;cursor:pointer;white-space:nowrap}
+.btn.pri{background:var(--pal);border-color:var(--pal);color:#fff;font-weight:500}
+.k{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;box-sizing:border-box;border:1px solid #d9d4e8;border-radius:4px;font-size:10.5px;font-weight:500;color:#3a3450;background:#fff;font-variant-numeric:tabular-nums}
+.liste:focus{outline:none}
+.rad{display:grid;box-sizing:border-box;border-radius:8px;grid-template-columns:3px 132px 28px minmax(150px,240px) 44px minmax(0,1fr);column-gap:12px;align-items:center;height:38px;font-size:13.5px;border-bottom:1px solid #f0eef6;cursor:default}
+.rad:hover{background:rgba(74,61,125,.035)}
+.sk{all:unset;cursor:pointer;width:28px;height:24px;display:inline-flex;align-items:center;justify-content:center;border-radius:6px;opacity:.2}
+.sk:hover{opacity:.7;background:#eceaf1}
+.sk.valgt{opacity:1}
+.tl{width:13px;height:13px;border-radius:50%;display:inline-block;flex:none}
+.tl-r{background:#c04a3d}.tl-y{background:#d9a92f}.tl-g{background:#3f9d49}.tl-o{background:#d5d8dd}
+.sk.valgt .tl{width:15px;height:15px}
+.av{width:28px;height:28px;border-radius:50%;overflow:hidden;flex:none;display:inline-block;background:var(--pal-lys)}
+.lbl{font-size:12px;font-weight:600;color:#241f33;margin:0 0 8px}
+.ell{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.num{font-variant-numeric:tabular-nums}
+.markor{position:absolute;left:0;right:0;top:0;height:38px;border-radius:8px;background:rgba(74,61,125,.10);box-shadow:inset 0 0 0 1px rgba(74,61,125,.08);pointer-events:none;z-index:0;transition:transform 340ms cubic-bezier(.34,1.32,.5,1)}
+.markor::before{content:"";position:absolute;left:0;top:7px;bottom:7px;width:3px;border-radius:2px;background:var(--pal)}
+.rader{position:relative}
+.rader .rad{position:relative;z-index:1}
+.navn{transition:font-weight 0s,color 200ms ease}
+.sk .tl{transition:transform 260ms cubic-bezier(.34,1.56,.64,1),width 0s,height 0s}
+.sk.valgt .tl{animation:pop 380ms cubic-bezier(.34,1.56,.64,1)}
+@keyframes pop{0%{transform:scale(.4)}60%{transform:scale(1.18)}100%{transform:scale(1)}}
+@keyframes puls{0%,100%{opacity:1}50%{opacity:.35}}
+@keyframes inn{from{opacity:0;transform:translateY(14px) scale(.985)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion: reduce){.ark,.prikk,.sk.valgt .tl{animation:none!important}.markor{transition:none!important}}
+</style>
+</helmet>
+<div style="position: relative; height: 1060px; padding: 24px; box-sizing: border-box; overflow: hidden; font-family: 'Geist', -apple-system, sans-serif; color: #241f33; font-size: 14px">
+<div aria-hidden="true" style="position: absolute; left: -120px; top: -80px; width: 620px; height: 620px; border-radius: 50%; background: #8a7bc2; filter: blur(70px); opacity: .75"></div>
+<div aria-hidden="true" style="position: absolute; left: -60px; top: 560px; width: 520px; height: 520px; border-radius: 50%; background: #5f9e98; filter: blur(80px); opacity: .7"></div>
+<div aria-hidden="true" style="position: absolute; right: -100px; top: -60px; width: 700px; height: 500px; border-radius: 50%; background: #b8aee0; filter: blur(90px); opacity: .6"></div>
+
+<div style="position: relative; display: flex; height: 1012px; border-radius: 16px; overflow: hidden; background: rgba(236,234,241,.42); backdrop-filter: blur(40px) saturate(160%); box-shadow: 0 24px 70px rgba(36,31,51,.28), 0 0 0 1px rgba(36,31,51,.14)">
+<!-- Bakgrunn: I dag med sidemeny A -->
+<nav aria-label="Hovedmeny" style="width: 236px; flex: none; margin: 10px; padding: 12px 8px; box-sizing: border-box; display: flex; flex-direction: column; gap: 2px; border-radius: 22px; background: rgba(255,255,255,.5); backdrop-filter: blur(28px) saturate(170%); border: 1px solid rgba(255,255,255,.75); box-shadow: inset 0 1px 0 rgba(255,255,255,.95), 0 10px 30px rgba(36,31,51,.14)">
+<div style="display: flex; align-items: center; gap: 8px; padding: 2px 8px 10px"><svg width="20" height="20" viewBox="0 0 1024 1024" aria-hidden="true"><rect x="40" y="40" width="944" height="944" rx="215" fill="#241F33"></rect><rect x="290" y="330" width="200" height="364" rx="44" fill="#EEEDFE"></rect><rect x="516" y="330" width="100" height="364" rx="40" fill="#C9C2DD"></rect><rect x="642" y="330" width="100" height="364" rx="40" fill="#9A90B8"></rect></svg><span style="font-weight: 600; font-size: 14px">Økta</span><span class="num" style="margin-left: auto; font-size: 11px; color: #4b4560">2026/27</span></div>
+<div style="display: flex; align-items: center; gap: 8px; height: 30px; padding: 0 12px; margin-bottom: 10px; border-radius: 999px; background: rgba(255,255,255,.55); border: 1px solid rgba(255,255,255,.75); font-size: 13px; color: #4b4560">Søk<span class="kbd">⌘K</span></div>
+<div class="pt on">I dag<span class="kbd">G D</span></div>
+<div class="pt">Økter<span class="kbd">G Ø</span></div>
+<div class="pt">Elever<span class="kbd">G E</span></div>
+<div class="pt">Vurderinger<span class="kbd">G V</span></div>
+<div class="pt">Samtaler<span class="kbd">G S</span></div>
+<div class="pt">Klassekart<span class="kbd">G K</span></div>
+<div style="flex: 1"></div>
+<div class="pt">Innstillinger<span class="kbd">⌘,</span></div>
+</nav>
+<main aria-hidden="true" style="flex: 1; margin: 10px 10px 10px 0; background: #fff; border-radius: 16px; padding: 70px 36px 20px">
+<div style="font-size: 34px; font-weight: 300; letter-spacing: -0.015em">Mandag 5. oktober</div>
+<div style="display: flex; gap: 40px; margin-top: 26px"><div style="flex: 2; display: flex; flex-direction: column; gap: 12px"><div style="height: 120px; border-radius: 8px; background: #f7f6fb"></div><div style="height: 70px; border-radius: 8px; background: #f7f6fb"></div><div style="height: 330px; border-radius: 8px; background: #f7f6fb"></div></div><div style="flex: 1; display: flex; flex-direction: column; gap: 12px"><div style="height: 220px; border-radius: 8px; background: #f7f6fb"></div><div style="height: 160px; border-radius: 8px; background: #f7f6fb"></div></div></div>
+</main>
+
+<!-- Slør -->
+<div style="position: absolute; inset: 0; background: rgba(36,31,51,.20)"></div>
+
+<!-- Arket -->
+<section class="ark" role="dialog" aria-label="Økt: Markedsføringsmiksen — pris" style="position: absolute; z-index: 2; top: 28px; bottom: 28px; left: 150px; right: 150px; display: flex; flex-direction: column; border-radius: 24px; overflow: hidden; background: rgba(255,255,255,.93); backdrop-filter: blur(22px) saturate(105%); border: 1px solid rgba(255,255,255,.9); box-shadow: inset 0 1px 0 #fff, 0 30px 80px rgba(36,31,51,.32), 0 0 0 .5px rgba(36,31,51,.10); animation: inn 320ms cubic-bezier(.22,1,.36,1)">
+
+<header style="padding: 22px 28px 18px; border-bottom: 1px solid #ece9f3">
+<div style="display: flex; align-items: center; gap: 12px">
+<span style="width: 11px; height: 11px; border-radius: 3px; background: #9a5a2c; flex: none"></span>
+<span style="font-size: 15px; font-weight: 600; color: #9a5a2c">MFL2</span>
+<h1 style="margin: 0; white-space: nowrap; font-size: 28px; font-weight: 300; letter-spacing: -0.015em">Pris — case: Kiwi mot Meny</h1>
+
+<span style="flex: 1"></span>
+<span style="display: inline-flex; align-items: center; gap: 7px; height: 26px; padding: 0 10px; border-radius: 13px; background: var(--pal-svak); font-size: 12.5px; color: var(--pal); font-weight: 500; white-space: nowrap">om 3 dager</span>
+<span style="font-size: 12px; color: #4b4560; padding: 3px 8px; border-radius: 999px; background: #f4f2f9; margin-left: 6px">esc</span>
+<button class="btn pri" style="height: 28px; padding: 0 12px; font-size: 12.5px; gap: 6px; margin-left: 4px">Ferdig<span style="opacity: .7; font-size: 10.5px">⌘↵</span></button>
+</div>
+<div style="margin: 10px 0 0 23px; font-size: 13px; color: #645d7a; display: flex; align-items: center; gap: 8px"><span>Torsdag 8. oktober</span>·<span class="num">12:30–15:30</span>·<span>Rom 214</span>·<span style="display: inline-flex; align-items: center; gap: 5px"><span style="width: 6px; height: 6px; border-radius: 50%; background: #2f9a8a"></span>Markedsmiks</span><span style="flex: 1"></span><div class="seg" style="position: relative; display: inline-flex; padding: 2px; border-radius: 999px; background: rgba(36,31,51,.06); margin-top: -4px"><span style="position: absolute; top: 2px; left: 130px; height: 26px; width: 100px; border-radius: 999px; background: #fff; box-shadow: 0 1px 3px rgba(36,31,51,.16)"></span><a href="OktSkar.dc.html" style="position: relative; z-index: 1; height: 26px; width: 128px; display: inline-flex; align-items: center; justify-content: center; font-size: 12.5px; color: #645d7a; text-decoration: none">Skåring og logg</a><span style="position: relative; z-index: 1; height: 26px; width: 100px; display: inline-flex; align-items: center; justify-content: center; font-size: 12.5px; font-weight: 500">Planlegging</span></div></div>
+</header>
+
+<div style="flex: 1; display: flex; min-height: 0">
+<div style="flex: 1; min-width: 0; padding: 18px 26px; overflow: auto; display: flex; flex-direction: column; gap: 22px">
+<div style="display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 26px">
+<div>
+<div style="display: grid; grid-template-columns: 90px minmax(0,1fr); align-items: center; min-height: 32px; border-bottom: 1px solid #f3f1f8"><span style="font-size: 12px; color: #645d7a">Dato</span><span style="font-size: 13.5px">Torsdag 8. oktober</span></div>
+<div style="display: grid; grid-template-columns: 90px minmax(0,1fr); align-items: center; min-height: 32px; border-bottom: 1px solid #f3f1f8"><span style="font-size: 12px; color: #645d7a">Tid</span><span style="font-size: 13.5px"><span class="num">12:30–15:30</span> <span style="color:#9a90b8">· 3 t</span></span></div>
+<div style="display: grid; grid-template-columns: 90px minmax(0,1fr); align-items: center; min-height: 32px; border-bottom: 1px solid #f3f1f8"><span style="font-size: 12px; color: #645d7a">Rom</span><span style="font-size: 13.5px">214</span></div>
+<div style="display: grid; grid-template-columns: 90px minmax(0,1fr); align-items: center; min-height: 32px; border-bottom: 1px solid #f3f1f8"><span style="font-size: 12px; color: #645d7a">Periode</span><span style="font-size: 13.5px"><span style="display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 8px;border-radius:11px;background:#2f9a8a24;font-size:12px"><span style="width:6px;height:6px;border-radius:50%;background:#2f9a8a"></span>Markedsmiks ▾</span></span></div>
+<div style="display: grid; grid-template-columns: 90px minmax(0,1fr); align-items: center; min-height: 32px; border-bottom: 1px solid #f3f1f8"><span style="font-size: 12px; color: #645d7a">Vurdering</span><span style="font-size: 13.5px"><span style="color:#9a90b8">Ingen</span> <span style="color:#4a3d7d;font-size:12.5px">· + Knytt til vurdering</span></span></div>
+</div>
+<div>
+<div style="font-size: 12px; color: #645d7a">Lekse til neste gang</div>
+<div style="margin-top: 6px; padding: 8px 10px; border-radius: 8px; border: 1px solid #e5e2ee; font-size: 13.5px">Les kap. 6.4 om prisstrategier</div>
+<div style="font-size: 12px; color: #645d7a; margin-top: 16px">Agenda til elevene <span style="color:#9a90b8">· vises på årsplanen og i kalenderen elevene abonnerer på</span></div>
+<div style="margin-top: 6px; padding: 8px 10px; border-radius: 8px; border: 1px solid #e5e2ee; font-size: 13.5px; line-height: 1.5; color: #3a3450">Repetisjon · Case i grupper · Framlegg · Exit-lapp</div>
+</div>
+</div>
+<div>
+<div style="display: flex; align-items: baseline; gap: 8px; padding-bottom: 6px; border-bottom: 1px solid #e5e2ee"><h2 style="margin: 0; font-size: 13px; font-weight: 600">Plan</h2><span style="font-size: 12px; color: #9a90b8">bare for deg · 2 t av 3</span><span style="flex: 1"></span><span style="font-size: 12.5px; color: #4a3d7d">+ Nytt punkt</span></div>
+<div style="display: flex; align-items: center; gap: 10px; padding: 5px 0; font-size: 13.5px"><span style="color: #c9c2dd; cursor: grab">⋮⋮</span><input type="checkbox" style="accent-color: #4a3d7d"><span>Oppsummering pris fra mandag</span><span style="flex: 1"></span><span class="num" style="font-size: 12px; color: #9a90b8">10 min</span></div><div style="display: flex; align-items: center; gap: 10px; padding: 5px 0; font-size: 13.5px"><span style="color: #c9c2dd; cursor: grab">⋮⋮</span><input type="checkbox" style="accent-color: #4a3d7d"><span>Case: Kiwi mot Meny — les og diskuter i grupper</span><span style="flex: 1"></span><span class="num" style="font-size: 12px; color: #9a90b8">60 min</span></div><div style="display: flex; align-items: center; gap: 10px; padding: 5px 0; font-size: 13.5px"><span style="color: #c9c2dd; cursor: grab">⋮⋮</span><input type="checkbox" style="accent-color: #4a3d7d"><span>Gruppene legger fram</span><span style="flex: 1"></span><span class="num" style="font-size: 12px; color: #9a90b8">40 min</span></div><div style="display: flex; align-items: center; gap: 10px; padding: 5px 0; font-size: 13.5px"><span style="color: #c9c2dd; cursor: grab">⋮⋮</span><input type="checkbox" style="accent-color: #4a3d7d"><span>Exit-lapp: hvilken prisstrategi og hvorfor?</span><span style="flex: 1"></span><span class="num" style="font-size: 12px; color: #9a90b8">10 min</span></div>
+</div>
+<div>
+<div style="display: flex; align-items: baseline; gap: 8px; padding-bottom: 6px; border-bottom: 1px solid #e5e2ee"><h2 style="margin: 0; font-size: 13px; font-weight: 600">Kompetansemål i økta</h2><span style="font-size: 12px; color: #9a90b8">2 valgt · <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#2f9a8a;vertical-align:1px"></span> = periodens mål</span><span style="flex: 1"></span><a style="font-size: 12.5px; color: #4a3d7d; text-decoration: none">udir.no/lk20/mfl01-04 →</a></div>
+<div style="margin-top: 4px"><label style="display: flex; align-items: baseline; gap: 9px; padding: 4px 0; font-size: 13px; color: #8a83a0; cursor: pointer"><input type="checkbox"  style="accent-color: #4a3d7d; transform: translateY(2px)"><span style="width: 6px; flex: none"></span><span class="num" style="color: #9a90b8; width: 16px">1</span><span>gjøre rede for markedsføringens rolle i samfunnet og i virksomheter</span></label><label style="display: flex; align-items: baseline; gap: 9px; padding: 4px 0; font-size: 13px; color: #8a83a0; cursor: pointer"><input type="checkbox"  style="accent-color: #4a3d7d; transform: translateY(2px)"><span style="width: 6px; flex: none"></span><span class="num" style="color: #9a90b8; width: 16px">2</span><span>analysere markedssituasjonen til en virksomhet</span></label><label style="display: flex; align-items: baseline; gap: 9px; padding: 4px 0; font-size: 13px; color: #241f33; cursor: pointer"><input type="checkbox" checked style="accent-color: #4a3d7d; transform: translateY(2px)"><span title="Periodens mål" style="width: 6px; height: 6px; border-radius: 50%; background: #2f9a8a; flex: none"></span><span class="num" style="color: #9a90b8; width: 16px">3</span><span>utarbeide og vurdere tiltak i markedsføringsmiksen</span></label><label style="display: flex; align-items: baseline; gap: 9px; padding: 4px 0; font-size: 13px; color: #8a83a0; cursor: pointer"><input type="checkbox"  style="accent-color: #4a3d7d; transform: translateY(2px)"><span style="width: 6px; flex: none"></span><span class="num" style="color: #9a90b8; width: 16px">4</span><span>gjennomføre en markedsundersøkelse og presentere resultatene</span></label><label style="display: flex; align-items: baseline; gap: 9px; padding: 4px 0; font-size: 13px; color: #241f33; cursor: pointer"><input type="checkbox" checked style="accent-color: #4a3d7d; transform: translateY(2px)"><span title="Periodens mål" style="width: 6px; height: 6px; border-radius: 50%; background: #2f9a8a; flex: none"></span><span class="num" style="color: #9a90b8; width: 16px">5</span><span>drøfte prisstrategier og vurdere hvordan de påvirker etterspørselen</span></label><label style="display: flex; align-items: baseline; gap: 9px; padding: 4px 0; font-size: 13px; color: #3a3450; cursor: pointer"><input type="checkbox"  style="accent-color: #4a3d7d; transform: translateY(2px)"><span title="Periodens mål" style="width: 6px; height: 6px; border-radius: 50%; background: #2f9a8a; flex: none"></span><span class="num" style="color: #9a90b8; width: 16px">6</span><span>planlegge og vurdere distribusjons- og kommunikasjonstiltak</span></label><label style="display: flex; align-items: baseline; gap: 9px; padding: 4px 0; font-size: 13px; color: #8a83a0; cursor: pointer"><input type="checkbox"  style="accent-color: #4a3d7d; transform: translateY(2px)"><span style="width: 6px; flex: none"></span><span class="num" style="color: #9a90b8; width: 16px">7</span><span>gjøre rede for hva en merkevare er, og drøfte hvordan den bygges</span></label><label style="display: flex; align-items: baseline; gap: 9px; padding: 4px 0; font-size: 13px; color: #8a83a0; cursor: pointer"><input type="checkbox"  style="accent-color: #4a3d7d; transform: translateY(2px)"><span style="width: 6px; flex: none"></span><span class="num" style="color: #9a90b8; width: 16px">8</span><span>vurdere etiske sider ved merkevarebygging</span></label><label style="display: flex; align-items: baseline; gap: 9px; padding: 4px 0; font-size: 13px; color: #8a83a0; cursor: pointer"><input type="checkbox"  style="accent-color: #4a3d7d; transform: translateY(2px)"><span style="width: 6px; flex: none"></span><span class="num" style="color: #9a90b8; width: 16px">9</span><span>planlegge, gjennomføre og evaluere en kampanje</span></label><label style="display: flex; align-items: baseline; gap: 9px; padding: 4px 0; font-size: 13px; color: #8a83a0; cursor: pointer"><input type="checkbox"  style="accent-color: #4a3d7d; transform: translateY(2px)"><span style="width: 6px; flex: none"></span><span class="num" style="color: #9a90b8; width: 16px">10</span><span>gjøre rede for regelverk som gjelder markedsføring</span></label></div>
+</div>
+</div>
+<aside style="width: 300px; flex: none; box-sizing: border-box; padding: 18px 22px; border-left: 1px solid #ece9f3; background: rgba(250,249,253,.7); display: flex; flex-direction: column; gap: 22px">
+<div><div style="font-size: 12px; font-weight: 600; margin-bottom: 6px">Fra forrige økt <span style="font-weight: 400; color: #9a90b8">· man 5.10</span></div><div style="font-size: 13.5px; line-height: 1.5; color: #3a3450">Halve klassen ble ikke ferdig med SWOT. Start med ti minutter oppsummering før pris.</div></div>
+<div><div style="font-size: 12px; font-weight: 600; margin-bottom: 6px">Følg opp i økta</div>
+<div style="display: flex; flex-direction: column; gap: 6px; font-size: 13px">
+<div style="display: flex; gap: 8px; align-items: center"><span style="width:7px;height:7px;border-radius:50%;background:#c04a3d"></span>Christopher — rød to ganger på rad</div>
+<div style="display: flex; gap: 8px; align-items: center"><span style="width:7px;height:7px;border-radius:50%;background:#d5d8dd"></span>Vito — borte sist</div>
+<div style="display: flex; gap: 8px; align-items: center"><span style="width:7px;height:7px;border-radius:50%;background:#4a3d7d"></span>Jackie — snakke om fraværet</div>
+</div></div>
+<div><div style="font-size: 12px; font-weight: 600; margin-bottom: 6px">Perioden</div><div style="font-size: 13px; color: #3a3450">Markedsmiks · økt 5 av 16</div><div style="display:flex;gap:2px;margin-top:8px"><span style="flex:1;height:6px;border-radius:2px;background:#2f9a8a"></span><span style="flex:1;height:6px;border-radius:2px;background:#2f9a8a"></span><span style="flex:1;height:6px;border-radius:2px;background:#2f9a8a"></span><span style="flex:1;height:6px;border-radius:2px;background:#2f9a8a"></span><span style="flex:1;height:6px;border-radius:2px;background:#4a3d7d"></span><span style="flex:1;height:6px;border-radius:2px;background:#e9e5f2"></span><span style="flex:1;height:6px;border-radius:2px;background:#e9e5f2"></span><span style="flex:1;height:6px;border-radius:2px;background:#e9e5f2"></span><span style="flex:1;height:6px;border-radius:2px;background:#e9e5f2"></span><span style="flex:1;height:6px;border-radius:2px;background:#e9e5f2"></span><span style="flex:1;height:6px;border-radius:2px;background:#e9e5f2"></span><span style="flex:1;height:6px;border-radius:2px;background:#e9e5f2"></span><span style="flex:1;height:6px;border-radius:2px;background:#e9e5f2"></span><span style="flex:1;height:6px;border-radius:2px;background:#e9e5f2"></span><span style="flex:1;height:6px;border-radius:2px;background:#e9e5f2"></span><span style="flex:1;height:6px;border-radius:2px;background:#e9e5f2"></span></div></div>
+</aside>
+</div>
+<footer style="display: flex; align-items: center; gap: 16px; padding: 9px 22px; background: #ece9f3; font-size: 11.5px; color: #645d7a">
+<span style="display: inline-flex; align-items: center; gap: 5px"><span class="k">⌘</span><span class="k">←</span><span class="k">→</span> forrige / neste økt</span>
+<span style="display: inline-flex; align-items: center; gap: 5px"><span class="k">⇥</span> neste felt</span>
+<span style="margin-left: auto; display: inline-flex; align-items: center; gap: 5px"><span class="k">esc</span> lukk — alt er lagret</span>
+</footer>
+</section>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1060}}'>
+// [navn, klasse, kjønn j/g/null] — ingen har bilde her, så alle får plassholder
+var ELEVER = [
+  ['Adriana La Cerva', '2STB', 'j'], ['Anthony Soprano Jr.', '2STB', 'g'], ['Artie Bucco', '2STA', 'g'], ['Benny Fazio', '2STB', 'g'],
+  ['Bobby Baccalieri', '2STA', 'g'], ['Carlo Gervasi', '2STB', 'g'], ['Carmela Soprano', '2STA', 'j'], ['Charmaine Bucco', '2STA', 'j'],
+  ['Christopher Moltisanti', '2STA', 'g'], ['Corrado «Junior» Soprano', '2STB', 'g'], ['Eugene Pontecorvo', '2STB', 'g'], ['Furio Giunta', '2STA', 'g'],
+  ['Gloria Trillo', '2STB', 'j'], ['Jackie Aprile Jr.', '2STA', null], ['Janice Soprano', '2STB', 'j'], ['Jennifer Melfi', '2STA', 'j'],
+  ['Johnny Sacrimoni', '2STB', 'g'], ['Livia Soprano', '2STA', 'j'], ['Meadow Soprano', '2STA', 'j'], ['Patsy Parisi', '2STB', 'g'],
+  ['Paulie Gualtieri', '2STB', 'g'], ['Phil Leotardo', '2STB', 'g'], ['Ralph Cifaretto', '2STA', 'g'], ['Richie Aprile', '2STB', 'g'],
+  ['Rosalie Aprile', '2STA', 'j'], ['Silvio Dante', '2STA', 'g'], ['Tony Soprano', '2STA', 'g'], ['Vito Spatafore', '2STB', 'g']
+];
+var HINT = { 8: 'Sist 1.10: «Kom 40 min for sent, jobbet godt etter pausen.»', 13: 'Sist 21.9: «Mobil hele første time.»', 1: 'Sist 1.10: «Trenger hjelp med struktur i SWOT.»' };
+var TAST = { '1': 'r', '2': 'y', '3': 'g', '0': 'o' };
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { cur: 8, notat: false, s: { 0: 'g', 1: 'y', 2: 'g', 3: 'g', 4: 'o', 5: 'y', 6: 'g', 7: 'r' }, n: { 0: 'Ledet gruppa, god på pris', 6: 'Hjalp sidemannen med SWOT', 7: 'Mobil — fikk beskjed to ganger' } };
+  }
+  sett(i, v) {
+    var s = Object.assign({}, this.state.s);
+    if (v) s[i] = v; else delete s[i];
+    this.setState({ s: s, cur: v ? Math.min(i + 1, ELEVER.length - 1) : i, notat: false });
+  }
+  renderVals() {
+    var self = this, st = this.state, n = ELEVER.length;
+    var antall = Object.keys(st.s).length;
+    return {
+      markY: (st.cur * 38) + 'px', skaret: antall, andel: Math.round(antall / n * 100) + '%',
+      onKey: function (e) {
+        if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+        var k = e.key;
+        if (TAST[k]) { e.preventDefault(); self.sett(st.cur, TAST[k]); return; }
+        if (k === 'ArrowDown') { e.preventDefault(); self.setState({ cur: Math.min(st.cur + 1, n - 1), notat: false }); return; }
+        if (k === 'ArrowUp') { e.preventDefault(); self.setState({ cur: Math.max(st.cur - 1, 0), notat: false }); return; }
+        if (k === 'Backspace') { e.preventDefault(); self.sett(st.cur, null); return; }
+        if (k === 'n' || k === 'N') { e.preventDefault(); self.setState({ notat: true }); }
+      },
+      rader: ELEVER.map(function (el, i) {
+        var v = st.s[i] || '', cur = i === st.cur;
+        var deler = el[0].replace(/[«»]/g, '').split(' ');
+        var egen = st.n[i] || '', skriver = cur && st.notat;
+        var tekst = egen || (cur && HINT[i] ? HINT[i] : '');
+        return {
+          navn: el[0], fornavn: deler[0], klasse: el[1],
+          jente: el[2] === 'j', gutt: el[2] === 'g', noytral: !el[2],
+          avTittel: 'Ingen bilde av ' + deler[0],
+          bg: cur ? 'rgba(74,61,125,.10)' : 'transparent', markor: cur ? 'var(--pal)' : 'transparent', vekt: cur ? 500 : 400,
+          skriver: skriver, visTekst: !skriver && !!tekst, tekst: tekst,
+          tekstfarge: egen ? '#3a3450' : '#9a90b8', stil: egen ? 'normal' : 'italic',
+          cr: v === 'r' ? 'valgt' : '', cy: v === 'y' ? 'valgt' : '', cg: v === 'g' ? 'valgt' : '', co: v === 'o' ? 'valgt' : '',
+          lagre: function (e) {
+            e.stopPropagation();
+            if (e.key === 'Enter') { var nn = Object.assign({}, st.n); if (e.target.value) nn[i] = e.target.value; self.setState({ n: nn, notat: false }); }
+            if (e.key === 'Escape') self.setState({ notat: false });
+          },
+          velg: function () { self.setState({ cur: i, notat: false }); },
+          rod: function (e) { e.stopPropagation(); self.sett(i, 'r'); },
+          gul: function (e) { e.stopPropagation(); self.sett(i, 'y'); },
+          gronn: function (e) { e.stopPropagation(); self.sett(i, 'g'); },
+          borte: function (e) { e.stopPropagation(); self.sett(i, 'o'); }
+        };
+      })
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<title>Økta — Elever</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#d4cee2}
+:root{--pal:#4a3d7d;--pal-lys:#e3ddf0;--pal-mid:#b2a8d2;--pal-svak:#f4f2f9;--ease-sprett:cubic-bezier(.34,1.32,.5,1)}
+.pt{position:relative;z-index:1;display:flex;align-items:center;gap:9px;height:32px;padding:0 10px;border-radius:10px;color:#2e2840;font-size:14px}
+.pt.on{font-weight:500;color:#241f33}
+.under{position:relative;z-index:1;display:flex;align-items:center;gap:8px;min-height:28px;margin-left:22px;padding:3px 10px;border-radius:8px;color:#2e2840;font-size:13px}
+.under.on{font-weight:500}
+.under::before{content:"";position:absolute;left:-11px;top:-1px;bottom:-1px;width:1.5px;border-radius:1px;background:rgba(36,31,51,.16)}
+.kbd{margin-left:auto;font-size:11px;color:#6b6482;letter-spacing:.04em;font-weight:400}
+.navmark{position:absolute;left:8px;right:8px;border-radius:10px;background:rgba(255,255,255,.88);box-shadow:0 1px 3px rgba(36,31,51,.14),inset 0 1px 0 #fff;pointer-events:none}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;height:30px;padding:0 13px;border-radius:999px;border:1px solid #d9d4e8;background:#fff;color:#241f33;font:inherit;font-size:13px;cursor:pointer;white-space:nowrap}
+.btn.pri{background:var(--pal);border-color:var(--pal);color:#fff;font-weight:500}
+.btn.stille{border-color:transparent;background:transparent;color:#645d7a}
+.seg{position:relative;display:inline-flex;padding:2px;border-radius:999px;background:rgba(36,31,51,.06)}
+.seg button{all:unset;position:relative;z-index:1;cursor:pointer;height:26px;display:inline-flex;align-items:center;justify-content:center;font-size:12.5px;color:#645d7a;transition:color 200ms}
+.seg button.on{color:#241f33;font-weight:500}
+.tommel{position:absolute;top:2px;left:2px;height:26px;border-radius:999px;background:#fff;box-shadow:0 1px 3px rgba(36,31,51,.16);transition:transform 340ms var(--ease-sprett),width 340ms var(--ease-sprett)}
+.chip{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 9px;border-radius:12px;background:var(--pal-svak);font-size:12px;white-space:nowrap}
+.fk{width:8px;height:8px;border-radius:2px;flex:none;display:inline-block}
+.av{border-radius:50%;overflow:hidden;flex:none;display:inline-block;background:var(--pal-lys)}
+.ell{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.num{font-variant-numeric:tabular-nums}
+.h{font-size:13px;font-weight:600;margin:0}
+.kort{border-radius:14px;background:#fff;box-shadow:inset 0 0 0 1px #ece9f3;padding:16px 18px}
+.hm{border-radius:2px;display:inline-block}
+.g{background:#3f9d49}.y{background:#d9a92f}.r{background:#c04a3d}.o{background:#d5d8dd}
+.glide{transition:transform 260ms var(--ease-sprett),height 260ms var(--ease-sprett)}
+@media (prefers-reduced-motion: reduce){.glide,.tommel{transition:none!important}}
+
+</style>
+</helmet>
+<div style="position:relative;height:1060px;padding:24px;box-sizing:border-box;overflow:hidden;font-family:'Geist',-apple-system,sans-serif;color:#241f33;font-size:14px">
+<div aria-hidden="true" style="position:absolute;left:-120px;top:-80px;width:620px;height:620px;border-radius:50%;background:#8a7bc2;filter:blur(70px);opacity:.75"></div>
+<div aria-hidden="true" style="position:absolute;left:-60px;top:560px;width:520px;height:520px;border-radius:50%;background:#5f9e98;filter:blur(80px);opacity:.7"></div>
+<div aria-hidden="true" style="position:absolute;right:-100px;top:-60px;width:700px;height:500px;border-radius:50%;background:#b8aee0;filter:blur(90px);opacity:.6"></div>
+<div style="position:relative;display:flex;height:1012px;border-radius:16px;overflow:hidden;background:rgba(236,234,241,.42);backdrop-filter:blur(40px) saturate(160%);box-shadow:0 24px 70px rgba(36,31,51,.28),0 0 0 1px rgba(36,31,51,.14)">
+<nav aria-label="Hovedmeny" style="position:relative;width:236px;flex:none;margin:10px;padding:12px 8px;box-sizing:border-box;display:flex;flex-direction:column;gap:2px;border-radius:22px;background:rgba(255,255,255,.5);backdrop-filter:blur(28px) saturate(170%);border:1px solid rgba(255,255,255,.75);box-shadow:inset 0 1px 0 rgba(255,255,255,.95),0 10px 30px rgba(36,31,51,.14)">
+<div style="display:flex;align-items:center;gap:8px;padding:2px 8px 10px"><svg width="20" height="20" viewBox="0 0 1024 1024" aria-hidden="true"><rect x="40" y="40" width="944" height="944" rx="215" fill="#241F33"></rect><rect x="290" y="330" width="200" height="364" rx="44" fill="#EEEDFE"></rect><rect x="516" y="330" width="100" height="364" rx="40" fill="#C9C2DD"></rect><rect x="642" y="330" width="100" height="364" rx="40" fill="#9A90B8"></rect></svg><span style="font-weight:600;font-size:14px">Økta</span><span class="num" style="margin-left:auto;font-size:11px;color:#4b4560">2026/27</span></div>
+<div style="display:flex;align-items:center;gap:8px;height:30px;padding:0 12px;margin-bottom:10px;border-radius:999px;background:rgba(255,255,255,.55);border:1px solid rgba(255,255,255,.75);font-size:13px;color:#4b4560">Søk<span class="kbd">⌘K</span></div>
+<div class="navmark" style="top:159px;height:32px;"></div><div class="pt ">I dag<span class="kbd">G D</span></div><div class="pt ">Økter<span class="kbd">G Ø</span></div><div class="pt on">Elever<span class="kbd">G E</span></div><div class="pt ">Vurderinger<span class="kbd">G V</span></div><div class="pt ">Samtaler<span class="kbd">G S</span></div><div class="pt ">Klassekart<span class="kbd">G K</span></div>
+<div style="flex:1"></div><div class="pt">Innstillinger<span class="kbd">⌘,</span></div></nav>
+<main style="position:relative;flex:1;min-width:0;margin:10px 10px 10px 0;background:#fff;border-radius:16px;box-shadow:0 1px 3px rgba(36,31,51,.10);display:flex;flex-direction:column;overflow:hidden">
+<header style="display:flex;align-items:center;gap:10px;margin:10px 12px 0;padding:0 8px 0 18px;height:48px;border-radius:999px;background:rgba(255,255,255,.7);backdrop-filter:blur(28px) saturate(170%);border:1px solid rgba(255,255,255,.8);box-shadow:inset 0 1px 0 rgba(255,255,255,.95),0 6px 20px rgba(36,31,51,.10),0 0 0 .5px rgba(36,31,51,.08);flex:none"><span style="font-weight:600;font-size:14px">Elever</span>
+<span style="display:inline-flex;align-items:center;gap:8px;height:30px;width:220px;padding:0 12px;border-radius:999px;background:rgba(36,31,51,.05);font-size:13px;color:#8a83a0;margin-left:8px"><svg width="13" height="13" viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" stroke-width="1.5"></circle><path d="M10.5 10.5L14 14" stroke="currentColor" stroke-width="1.5"></path></svg>Søk etter navn</span>
+<span style="flex:1"></span>
+<button class="btn stille">Lim inn liste</button><button class="btn pri">Ny elev</button></header>
+<div style="flex:1;min-height:0;overflow:hidden;padding:18px 32px 28px"><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+<div class="seg"><span class="tommel" style="width:{{gW}};transform:translateX({{gX}})"></span><button class="{{g0}}" onClick="{{velg0}}" style="width:72px">Klasse</button><button class="{{g1}}" onClick="{{velg1}}" style="width:56px">Fag</button><button class="{{g2}}" onClick="{{velg2}}" style="width:92px">Alfabetisk</button></div>
+<span style="width:1px;height:20px;background:#e5e2ee;margin:0 4px"></span>
+<span class="chip" style="background:#241f33;color:#fff">Alle fag</span>
+<span class="chip"><span class="fk" style="background:#2e6a8e"></span>MFL1</span><span class="chip"><span class="fk" style="background:#9a5a2c"></span>MFL2</span><span class="chip"><span class="fk" style="background:#3d7a5a"></span>ENG1</span>
+<span class="chip" style="background:transparent;box-shadow:inset 0 0 0 1px #d9d4e8">Mentorelever</span>
+<span style="flex:1"></span>
+<span style="font-size:12.5px;color:#645d7a">14 elever · <span style="color:#b3261e">3 trenger oppfølging</span></span>
+</div>
+<div style="display:grid;grid-template-columns:30px minmax(0,1.6fr) 54px minmax(0,1.3fr) 150px 96px 40px;column-gap:16px;align-items:center;margin-top:16px;padding:0 10px 8px;border-bottom:1px solid #e5e2ee;font-size:11.5px;color:#645d7a"><span></span><span>Navn</span><span>Klasse</span><span>Fag</span><span>Innsats, siste 10</span><span title="Prosent av timene i faget. Grensen er 10 %.">Fravær · 10 %</span><span></span></div>
+<div style="position:relative">
+<div class="glide" aria-hidden="true" style="position:absolute;left:0;right:0;top:0;height:46px;border-radius:10px;background:rgba(74,61,125,.08);transform:translateY({{markY}});opacity:{{markOp}}"></div>
+<sc-for list="{{liste}}" as="r" hint-placeholder-count="16">
+<sc-if value="{{r.erGruppe}}" hint-placeholder-val="{{ false }}"><div style="display:flex;align-items:baseline;gap:8px;height:38px;padding:12px 10px 0;box-sizing:border-box;font-size:13px"><b style="font-weight:600">{{r.navn}}</b><span style="color:#9a90b8">{{r.antall}}</span></div></sc-if>
+<sc-if value="{{r.erRad}}" hint-placeholder-val="{{ true }}">
+<div onMouseEnter="{{r.hov}}" style="position:relative;display:grid;grid-template-columns:30px minmax(0,1.6fr) 54px minmax(0,1.3fr) 150px 96px 40px;column-gap:16px;align-items:center;height:46px;padding:0 10px;border-bottom:1px solid #f3f1f8;cursor:default">
+<span style="display:inline-flex"><sc-if value="{{r.j}}" hint-placeholder-val="{{ false }}"><span class="av" style="width:30px;height:30px"><svg width="30" height="30" viewBox="0 0 28 28" aria-hidden="true"><path d="M7.4 15.4c0-5.6 3-9.3 6.6-9.3s6.6 3.7 6.6 9.3v5.4H7.4z" fill="var(--pal)" fill-opacity=".7"></path><path d="M4.8 28.5c.4-5 4.3-8.4 9.2-8.4s8.8 3.4 9.2 8.4z" fill="var(--pal-mid)"></path><circle cx="14" cy="12.8" r="4.3" fill="var(--pal-mid)"></circle><path d="M9.7 11.9c.6-3 2.3-4.6 4.3-4.6s3.7 1.6 4.3 4.6c-1.4-1.4-2.7-2-4.3-2s-2.9.6-4.3 2z" fill="var(--pal)" fill-opacity=".7"></path></svg></span></sc-if><sc-if value="{{r.gu}}" hint-placeholder-val="{{ true }}"><span class="av" style="width:30px;height:30px"><svg width="30" height="30" viewBox="0 0 28 28" aria-hidden="true"><path d="M4.8 28.5c.4-5 4.3-8.4 9.2-8.4s8.8 3.4 9.2 8.4z" fill="var(--pal-mid)"></path><circle cx="14" cy="12.6" r="4.5" fill="var(--pal-mid)"></circle><path d="M9.4 11.6c.2-3.4 2.1-5.3 4.6-5.3s4.4 1.9 4.6 5.3c-1.2-1.2-2.7-1.8-4.6-1.8s-3.4.6-4.6 1.8z" fill="var(--pal)" fill-opacity=".7"></path></svg></span></sc-if><sc-if value="{{r.n}}" hint-placeholder-val="{{ false }}"><span class="av" style="width:30px;height:30px"><svg width="30" height="30" viewBox="0 0 28 28" aria-hidden="true"><path d="M4.8 28.5c.4-5 4.3-8.4 9.2-8.4s8.8 3.4 9.2 8.4z" fill="var(--pal-mid)"></path><circle cx="14" cy="12.4" r="4.6" fill="var(--pal-mid)"></circle></svg></span></sc-if></span>
+<span style="min-width:0;display:flex;align-items:center;gap:8px"><span class="ell"><span style="font-weight:500">{{r.fn}}</span> <span style="color:#3a3450">{{r.en}}</span></span><sc-if value="{{r.ment}}" hint-placeholder-val="{{ false }}"><span title="Mentorelev" style="flex:none;display:inline-flex;align-items:center;height:18px;padding:0 6px;border-radius:9px;background:var(--pal-svak);color:var(--pal);font-size:10.5px;font-weight:600;letter-spacing:.02em">M</span></sc-if></span>
+<span class="num" style="font-size:13px;color:#3a3450">{{r.kl}}</span>
+<span style="display:flex;gap:10px;font-size:12.5px;color:#3a3450"><sc-for list="{{r.fag}}" as="f" hint-placeholder-count="2"><span style="display:inline-flex;align-items:center;gap:5px"><span class="fk" style="background:{{f.farge}}"></span>{{f.kode}}</span></sc-for></span>
+<span style="display:flex;gap:2px"><sc-for list="{{r.inn}}" as="c" hint-placeholder-count="10"><span class="hm {{c}}" style="width:11px;height:11px"></span></sc-for></span>
+<span title="{{r.fravTittel}}" style="display:flex;align-items:center;gap:8px"><span style="position:relative;width:34px;height:5px;border-radius:3px;background:{{r.sporBg}}"><span style="position:absolute;left:0;top:0;bottom:0;width:{{r.fyll}};border-radius:3px;background:{{r.fravFarge}}"></span></span><span class="num" style="font-size:12.5px;color:{{r.fravFarge}};font-weight:{{r.fravVekt}}">{{r.frav}}</span></span>
+<span style="display:flex;justify-content:flex-end"><sc-if value="{{r.glipper}}" hint-placeholder-val="{{ false }}"><span title="Glipper: mange røde siste økter" style="width:8px;height:8px;border-radius:50%;background:#c04a3d"></span></sc-if></span>
+</div>
+</sc-if>
+</sc-for>
+</div></div>
+</main>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1060}}'>
+var E = [{"fn": "Adriana", "en": "La Cerva", "kl": "2STB", "k": "j", "fag": ["MFL2", "ENG1"], "inn": "ggygggyggg", "frav": 1, "ment": false}, {"fn": "Anthony", "en": "Soprano Jr.", "kl": "2STB", "k": "g", "fag": ["MFL2"], "inn": "yryyroyryy", "frav": 4, "ment": true}, {"fn": "Artie", "en": "Bucco", "kl": "2STA", "k": "g", "fag": ["MFL1", "MFL2"], "inn": "gggyggggyg", "frav": 0, "ment": false}, {"fn": "Carmela", "en": "Soprano", "kl": "2STA", "k": "j", "fag": ["MFL2", "ENG1"], "inn": "gggggggggy", "frav": 0, "ment": false}, {"fn": "Christopher", "en": "Moltisanti", "kl": "2STA", "k": "g", "fag": ["MFL2", "ENG1"], "inn": "yrorryoryr", "frav": 9, "ment": true}, {"fn": "Furio", "en": "Giunta", "kl": "2STA", "k": "g", "fag": ["MFL2"], "inn": "gygyggyggg", "frav": 1, "ment": false}, {"fn": "Gloria", "en": "Trillo", "kl": "2STB", "k": "j", "fag": ["ENG1"], "inn": "yggyyggyyg", "frav": 2, "ment": false}, {"fn": "Jackie", "en": "Aprile Jr.", "kl": "2STA", "k": "", "fag": ["MFL2"], "inn": "gyryyroyyr", "frav": 3, "ment": true}, {"fn": "Janice", "en": "Soprano", "kl": "2STB", "k": "j", "fag": ["MFL2"], "inn": "ggyggygggg", "frav": 0, "ment": false}, {"fn": "Meadow", "en": "Soprano", "kl": "2STA", "k": "j", "fag": ["MFL2", "ENG1"], "inn": "gggggggggg", "frav": 0, "ment": true}, {"fn": "Paulie", "en": "Gualtieri", "kl": "2STB", "k": "g", "fag": ["MFL2"], "inn": "yyyggyyogy", "frav": 2, "ment": false}, {"fn": "Silvio", "en": "Dante", "kl": "2STA", "k": "g", "fag": ["MFL2", "ENG1"], "inn": "ggggyggggg", "frav": 0, "ment": false}, {"fn": "Tony", "en": "Soprano", "kl": "2STA", "k": "g", "fag": ["MFL2"], "inn": "ygyyygyyyg", "frav": 1, "ment": true}, {"fn": "Vito", "en": "Spatafore", "kl": "2STB", "k": "g", "fag": ["MFL2"], "inn": "oyyrgyoyyo", "frav": 7, "ment": false}];
+var AV = {"j": "<span class=\"av\" style=\"width:30px;height:30px\"><svg width=\"30\" height=\"30\" viewBox=\"0 0 28 28\" aria-hidden=\"true\"><path d=\"M7.4 15.4c0-5.6 3-9.3 6.6-9.3s6.6 3.7 6.6 9.3v5.4H7.4z\" fill=\"var(--pal)\" fill-opacity=\".7\"></path><path d=\"M4.8 28.5c.4-5 4.3-8.4 9.2-8.4s8.8 3.4 9.2 8.4z\" fill=\"var(--pal-mid)\"></path><circle cx=\"14\" cy=\"12.8\" r=\"4.3\" fill=\"var(--pal-mid)\"></circle><path d=\"M9.7 11.9c.6-3 2.3-4.6 4.3-4.6s3.7 1.6 4.3 4.6c-1.4-1.4-2.7-2-4.3-2s-2.9.6-4.3 2z\" fill=\"var(--pal)\" fill-opacity=\".7\"></path></svg></span>", "g": "<span class=\"av\" style=\"width:30px;height:30px\"><svg width=\"30\" height=\"30\" viewBox=\"0 0 28 28\" aria-hidden=\"true\"><path d=\"M4.8 28.5c.4-5 4.3-8.4 9.2-8.4s8.8 3.4 9.2 8.4z\" fill=\"var(--pal-mid)\"></path><circle cx=\"14\" cy=\"12.6\" r=\"4.5\" fill=\"var(--pal-mid)\"></circle><path d=\"M9.4 11.6c.2-3.4 2.1-5.3 4.6-5.3s4.4 1.9 4.6 5.3c-1.2-1.2-2.7-1.8-4.6-1.8s-3.4.6-4.6 1.8z\" fill=\"var(--pal)\" fill-opacity=\".7\"></path></svg></span>", "": "<span class=\"av\" style=\"width:30px;height:30px\"><svg width=\"30\" height=\"30\" viewBox=\"0 0 28 28\" aria-hidden=\"true\"><path d=\"M4.8 28.5c.4-5 4.3-8.4 9.2-8.4s8.8 3.4 9.2 8.4z\" fill=\"var(--pal-mid)\"></path><circle cx=\"14\" cy=\"12.4\" r=\"4.6\" fill=\"var(--pal-mid)\"></circle></svg></span>"};
+var FARGE = {"MFL1": "#2e6a8e", "MFL2": "#9a5a2c", "ENG1": "#3d7a5a"};
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { g: 0, hov: -1 }; }
+  renderVals() {
+    var self = this, st = this.state, W = [72, 56, 92], X = [0, 72, 128];
+    var grupper = {}, orden = [];
+    function legg(nokkel, e) { if (!grupper[nokkel]) { grupper[nokkel] = []; orden.push(nokkel); } grupper[nokkel].push(e); }
+    var sortert = E.slice().sort(function (a, b) { return a.fn.localeCompare(b.fn); });
+    sortert.forEach(function (e) {
+      if (st.g === 0) legg(e.kl, e);
+      else if (st.g === 1) e.fag.forEach(function (f) { legg(f, e); });
+      else legg('Alle', e);
+    });
+    if (st.g === 0) orden.sort();
+    var liste = [], y = 0, markY = 0, idx = 0;
+    orden.forEach(function (g) {
+      if (st.g !== 2) { liste.push({ erGruppe: true, navn: g, antall: grupper[g].length + ' elever' }); y += 38; }
+      grupper[g].forEach(function (e) {
+        var i = idx++; if (i === st.hov) markY = y;
+        var rode = e.inn.split('').slice(-5).filter(function (c) { return c === 'r'; }).length;
+        liste.push({ erRad: true, j: e.k === 'j', gu: e.k === 'g', n: !e.k, fn: e.fn, en: e.en, kl: e.kl, ment: e.ment,
+          fag: e.fag.map(function (f) { return { kode: f, farge: FARGE[f] }; }),
+          inn: e.inn.split(''), frav: e.frav ? Math.round(e.frav * 1.75 / 140 * 100) + ' %' : '—',
+          fravFarge: (function (p) { return p > 10 ? '#c04a3d' : (p >= 7.5 ? '#d9a92f' : (p ? '#9a90b8' : '#b9b3c9')); })(e.frav * 1.75 / 140 * 100),
+          fravVekt: e.frav * 1.75 / 140 * 100 > 10 ? 600 : 400, fyll: Math.min(100, e.frav * 1.75 / 14 * 100) + '%', sporBg: e.frav ? '#efecf5' : 'transparent',
+          fravTittel: (e.frav * 1.75).toFixed(1).replace('.', ',') + ' t av 14 t tillatt (10 % av 140)',
+          glipper: rode >= 2, hov: function () { self.setState({ hov: i }); } });
+        y += 46;
+      });
+    });
+    return {
+      gW: W[st.g] + 'px', gX: X[st.g] + 'px', g0: st.g === 0 ? 'on' : '', g1: st.g === 1 ? 'on' : '', g2: st.g === 2 ? 'on' : '',
+      velg0: function () { self.setState({ g: 0, hov: -1 }); }, velg1: function () { self.setState({ g: 1, hov: -1 }); }, velg2: function () { self.setState({ g: 2, hov: -1 }); },
+      liste: liste, markY: markY + 'px', markOp: st.hov < 0 ? 0 : 1
+    };
+  }
+}
+</script>
+</body>
+</html>
