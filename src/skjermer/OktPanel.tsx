@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Elevfoto } from "../ui/Elevfoto";
 import { Bryter, Fagfirkant, Ikon } from "../ui/felles";
 import { narTekst, standardModus, type Oktmodus } from "../data/oktplan";
+import { kortDag } from "../data/fagside";
 import { Tastestripe, Tasthint } from "../ui/Tastestripe";
 import { Markdown, Markdownfelt } from "../ui/Notattekst";
 import { useArk } from "../ui/Arkstabel";
@@ -572,8 +573,28 @@ function ElevRad({
       onClick={onKlikk}
       // 38 px rader med 28 px bilde (DESIGN.md §3, bestemt 06.10). Høyden
       // er låst, så heller ikke notatfeltet i raden kan gjøre den høyere.
-      className="group relative z-[1] grid h-[38px] cursor-default grid-cols-[28px_minmax(150px,220px)_44px_minmax(0,1fr)_132px] items-center gap-x-3 border-b border-linje-svak pl-2.5 text-[calc(13.5px*var(--tekst-skala))] hover:bg-[color-mix(in_srgb,var(--color-aksent)_3.5%,transparent)]"
+      className="group relative z-[1] grid h-[38px] cursor-default grid-cols-[132px_28px_minmax(150px,220px)_44px_minmax(0,1fr)] items-center gap-x-3 border-b border-linje-svak pl-2.5 text-[calc(13.5px*var(--tekst-skala))] hover:bg-[color-mix(in_srgb,var(--color-aksent)_3.5%,transparent)]"
     >
+      {/*
+        Trafikklyset først (11.4), så blikket ikke må hoppe fra navnet og
+        ut til høyre kant. Fast rekkefølge: rød · gul · grønn · ikke i økta.
+      */}
+      <div className="flex gap-1">
+        {verdier.map((v) => (
+          <Merke
+            key={v.id}
+            verdi={v}
+            valgt={visesSom === v.id}
+            eksplisitt={eksplisitt}
+            pop={pop && visesSom === v.id}
+            tast={tastekart.get(v.id)}
+            onVelg={(e) => {
+              e.stopPropagation();
+              onVelg(v);
+            }}
+          />
+        ))}
+      </div>
       <Elevfoto elevId={elev.elevId} storrelse={28} />
       <button
         onClick={(e) => {
@@ -624,23 +645,6 @@ function ElevRad({
           )}
         </button>
       )}
-
-      <div className="flex justify-end gap-1">
-        {verdier.map((v) => (
-          <Merke
-            key={v.id}
-            verdi={v}
-            valgt={visesSom === v.id}
-            eksplisitt={eksplisitt}
-            pop={pop && visesSom === v.id}
-            tast={tastekart.get(v.id)}
-            onVelg={(e) => {
-              e.stopPropagation();
-              onVelg(v);
-            }}
-          />
-        ))}
-      </div>
     </div>
   );
 }
@@ -981,12 +985,16 @@ function Forrigenotat({ okt }: { okt: Okt }) {
     <div className="mb-3">
       <button
         onClick={() => ark.apneOkt(forrige.id)}
-        className="mb-0.5 block text-etikett uppercase tracking-etikett text-blekk-dempet hover:text-blekk"
+        className="mb-1.5 block text-left text-[calc(13px*var(--tekst-skala))] font-semibold text-blekk hover:underline"
       >
-        Notat fra forrige økt · {langDato(forrige.dato)}
+        Fra forrige økt
+        <span className="font-normal text-blekk-svak">
+          {" "}
+          · {kortDag(forrige.dato)}
+        </span>
       </button>
       {forrige.logg?.trim() ? (
-        <div className="rounded-vanlig border-l-2 border-linje-sterk bg-flate-svak px-3 py-1.5 text-blekk-dempet">
+        <div className="text-[calc(13.5px*var(--tekst-skala))] text-blekk">
           <Markdown tekst={forrige.logg} />
         </div>
       ) : (
