@@ -1,161 +1,86 @@
 # Status
 
-Kort status pr. 2026-09-30, versjon 0.1.3. Skrevet mot SPEC.md slik den er nå.
-Denne fila eies fritt — oppdater den løpende, i motsetning til SPEC.md.
+Pr. 2026-10-07, versjon 0.1.3. Beskriver hvor appen faktisk står, ikke hva
+den skal bli. Fila eies fritt, i motsetning til SPEC.md.
 
-**483 tester, alle grønne. `tsc --noEmit` er ren. `npm run build` går
-gjennom. 23 migrasjoner.**
+**578 tester, alle grønne. `tsc --noEmit` er ren. `npm run build` går
+gjennom. 24 migrasjoner.**
 
-## Redesign 05.10 (ARBEIDSLISTE §5)
+Utseendet står i `DESIGN.md`, som beskriver appen slik den er bygget.
+Lerretet (`docs/lerret/`) er fasit for det som er tegnet.
 
-Bygget natt til 06.10 etter DESIGN.md, ett punkt per commit: 5.1–5.12,
-5.14 og 5.15. **5.13 (oppsettfila) venter** på at spec-teksten er godkjent
-inn i SPEC.md. Ikke prøvd i `tauri dev` ennå — bare tester og bygg.
+## Siste runde (07.10, ARBEIDSLISTE §10 og §11)
 
-Der denne fila beskriver skjermene under, gjelder den tiden før redesignet.
-Det som er endret: Geist, sidemeny med G-snarveier, glass over fargeteppe,
-seks paletter, «I dag» med dagens økter og høyrekolonne, notat på raden i
-skåringslista, perioder som merkelapper og filtre (P setter periode;
-periodevisningen og penselen er borte), kalender med Uke | Måned og
-årsheatmap, elevkort med tidslinje, Innstillinger med venstremeny,
-veiviser med fem steg, ny logo og appikon, samtaletrekkeren med
-trekningene i sidemenyen.
+Prøvd i `npm run tauri dev`, skjerm for skjerm mot lerretet.
 
-Avvik fra DESIGN.md som eieren bør vite om:
-
-- Klassekart står ikke i sidemenyen — skjermen finnes ikke («Ikke nå»).
-- Verktøylinja viser skjermnavnet; bare samtaletrekkeren har flyttet
-  knappene sine inn i den (`ui/Verktoylinje.tsx`). De andre skjermene har
-  fortsatt verktøylinja si inni arket.
-- Innstillinger: Generelt og Utseende er bygget som rader (etikett til
-  venstre), de andre sidene har innholdet sitt som før.
-- Skåringsskjermens høyre kolonne (forrige økt, plan, øktlogg, taster) er
-  ikke bygget; økta er fortsatt et kort med feltene øverst.
-- Samtaledager i ukevisningen står i heldagsraden, ikke som timeplan med
-  elever, pause og lunsj.
-- Bevegelsesbryteren, stagger og FLIP (DESIGN §8, §13) er ikke en del av §5
-  og er ikke gjort.
+- **Bevegelse:** ark, elevkort, ⌘K og menyer kommer inn uten sprett og
+  uten blink (glass tones aldri med opacity). Hover er én glassflate som
+  glir. Zoom med ⌘+ ⌘− ⌘0.
+- **Glass:** fargeteppet som i lerretet, menyene og alle arkene i glass.
+- **Elever:** ny oversikt med gruppering, innsats siste 10 og fravær mot
+  10 %. Tabellen med avkrysning og skjemaet er borte.
+- **Fagsiden:** Oversikt | Økter | Kalender i Økter.
+- **Økta:** to moduser, Skåring og logg | Planlegging. Trafikklyset står
+  først i raden.
+- **Årsplanen som PDF:** egne A4-sider med sidetall og «fortsetter».
+- **Fravær** regnes i timer mot 10 % av fagets årstimetall, i lista, på
+  fagsiden og i elevkortet.
 
 ## Hva som virker
 
-Skjerm for skjerm (§4), med tilstand:
+- **Førstegangsoppsett (§4.0):** veiviser med fem steg, lagrer underveis.
+- **I dag (§4.1):** dagens økter, uka som kalender med nå-strek,
+  gjøremål med logg, vurderingsfrister, elever som glipper, innsats over
+  tid og timeregnskap. Økta åpnes i skåring herfra.
+- **Økter (§4.2):** liste med tema rett i raden, perioder som merkelapper
+  (P setter periode), utfoldet økt; kalender med Uke | Måned der måned
+  ruller gjennom hele året; fagsiden. Serieopprettelse finnes.
+- **Elever (§4.3):** oversikten over. Eleven endres i elevkortet. Klasser
+  bak ⋯. Lim inn liste og InSchool-PDF med bilder og kjønn gjettet fra
+  SSBs navneliste.
+- **Økt (§4.4):** skåring med tastene fra skalaen, notat på raden,
+  planlegging med sjekkliste og kompetansemål. ⌘← ⌘→ blar.
+- **Elev (§4.5):** elevkort med heatmap for hele året, vurderinger,
+  fravær per fag, klassekart og tidslinje med notater og møtelogg.
+- **Vurderinger (§4.6), notater (§4.7), innstillinger (§4.8):** ferdig,
+  med mørk modus, seks paletter, glass av/på og bevegelse.
+- **Årsplanen ut (§4.9):** PDF, Word, markdown og CSV fra samme innhold.
+- **Samtaletrekkeren (§4.10):** ferdig, med notat fra samtalen og
+  publisering av mentorsamtaler.
+- **Klassekart (§4.11):** rom, plasser, grupper, fordeling og historikk.
+- **Oppsettfil (§8.2), CalDAV (§8.1), arkiv og sikkerhetskopi (§8):**
+  ferdig.
 
-- **Førstegangsoppsett (§4.0)** — ferdig. Tre steg, lagrer underveis.
-- **I dag (§4.1)** — ferdig. Under datoen: hvor mange økter i dag, og
-  notatet fra forrige økt i hvert fag (eller at det ikke ble skrevet noe).
-  Så ukekalender, årsoversikt, og en setning om dagens samtaler når det er
-  noen. «Notat fra forrige økt» står også i øktkortet, over øktloggen.
-  En prikk i «Innsats over tid» åpner ukas økter.
-  «Gjøremål» samler åpne oppfølgingspunkter og ukryssede `- [ ]` fra
-  elevnotater og øktlogger (`data/gjoremal.ts`, ingen egen tabell);
-  krysses av rett på forsiden. Nye gjøremål skrives øverst i bolken (med
-  elev → oppfølgingsnotat; uten → tabellen `gjoremal`, migrasjon 023).
-  «Elever som glipper» viser lavest snitt først; elever og vurderinger
-  åpnes som ark over forsiden. Årsoversikten er et villet avvik fra §13,
-  kommentert i koden.
-- **Årsplan (§4.2)** — ferdig, men strukturert annerledes enn spec beskriver:
-  globale liste- og kalendervisninger under «Økter», perioder som egen fane,
-  per-fag-portal under «Fag». Serieopprettelse finnes. Begge deler avviker
-  fra spec-teksten, se under.
-- **Elever (§4.3)** — ferdig, bortsett fra klasseopprykk. Batch-slett,
-  mentorkolonne og -filter, AND/OR i fagfilteret, forfalt-merke ved navnet.
-- **Økt — skåring (§4.4)** — ferdig bortsett fra `⌘K`-søk.
-- **Elev — heatmap (§4.5)** — ferdig, og redigerbar: navn, klasse, mentorelev
-  og fag endres i panelet. Møteloggen ligger nederst.
-- **Vurderinger (§4.6)** — ferdig. Viser nå også hvilken oppgave eleven trakk,
-  når vurderingen har en samtaletrekning knyttet til seg.
-- **Notater og møtelogg (§4.7)** — ferdig. Tidslinja på elevkortet viser
-  også notatene fra øktene (§4.4), med filter Alle · Møtelogg · Fra øktene.
-  Øktnotatet bor i `oktnotat` (migrasjon 022), ikke på skåringsraden: før
-  ble et notat på en elev som ikke var skåret stille borte. Erstattet den gamle
-  oppfølgingsskjermen som aldri ble bygget.
-- **Innstillinger (§4.8)** — ferdig. Mørk modus (som macOS / lys / mørk) under Utseende, 02.10. Fagbank og «fag i år» ligger i Fag-fanen,
-  ikke her.
-- **Utskrift og eksport av årsplan (§4.9)** — ferdig, og utvidet. Ett fag
-  (eller alle) på papir/PDF, som Word, markdown (kopi eller fil) og CSV.
-  Hodet har faglærer, rom, timeregnskap, fritekst og kompetansemålene fra
-  Udir; tabellen har uke, dato, tema, lekse og vurdering. Feltene velges
-  av og på under «Velg felt …» (også klokkeslett, timer, sted og agenda),
-  og valget gjelder alle formatene. Utskriften kuttet
-  før alt etter første side — rettet 30.09.
-- **Vurdering knyttet til økt** — ferdig 30.09. Én vurdering kan ligge over
-  flere økter (migrasjon 016, koblingstabell). Automatisk når fristen faller
-  på en øktdag, og for hånd fra begge panelene.
-- **⌘K-søk** — ferdig 30.09. Globalt, ikke bare i skåringsflyten som §4.4
-  beskriver. Finner elever (navn, klasse, fag) og økter (tema, fag, alias,
-  dato i ISO og norske formater). Fag kan ha et alias (migrasjon 018).
-- **Elevbilder fra InSchool** — 30.09 (migrasjon 021, `elevbilde`). «Les
-  fra InSchool-PDF» i Lim inn: navn og klasse fra tabellen, fagkoden velger
-  faget, bildene klippes ut, trimmes og lagres som gråtoner. Looken
-  (myk tone fra blekk til lys lilla, og svakt korn — halvtone ble prøvd og
-  tatt bort) tegnes i `Elevbilde` når bildet vises. Vises
-  i elevkortet, kan fjernes der. pdf.js ligger i bygget, lastes bare ved
-  import. Bildet går aldri ut av appen; sletting tømmer det.
-- **Kortlogikken overalt** — 30.09/01.10. Økt, elev, vurdering og fag
-  åpnes som ark (`Arkstabel`) fra lister, forsiden, søket og hverandre.
-  Lista under beholder bredden. Skåringer i et øktark når lista via
-  `lyttOktvisning`, egen kanal så CalDAV-publiseringen ikke trigges.
-- **Øktlogg i fagkortet** — 02.10. Tidslinje som notatene på elevkortet
-  (felles `ui/Tidslinje.tsx`): økter med logg, nyeste først, prikk i
-  klassens skåringsfarge, tema åpner økta, loggen rettes rett der. Årsvelger
-  når faget er undervist flere år. Ikke beskrevet i SPEC.md ennå.
-- **Klasseliste i fagkortet** — 30.09. Ta ut (kobler fra, sletter ikke),
-  legg til med søk, eller opprett ny elev rett der. «Lim inn ny liste»
-  fra fagkortet: lista er hele faget, og de som ikke står på den tas ut
-  (valgbart per elev i forhåndsvisningen).
-- **Kompetansemål på økter** — ferdig 30.09 (migrasjon 020,
-  `okt_kompetansemal`). Økta arver periodens mål og kan få egne. Fag uten
-  Udir-kode får fritekstfeltet `okt.kompetansemal`. Periodens mål velges
-  også under penslene i Økter. Årsplanarket kan få en kolonne med øktas
-  mål, med periodens mål under periodenavnet, og kan skrives ut liggende.
-- **Samtaletrekkeren i økter** — ferdig 30.09. I fagmodus krysses fagets
-  økter av i stedet for å legge inn datoer — lista viser bare øktene som
-  er knyttet til en vurdering, til man ber om alle; øktas klokkeslett er rammen,
-  uten lunsj. Vurderingen knyttes til hver økt. Egne dager utenfor øktene
-  går fortsatt. Slike dager telles ikke dobbelt i timeregnskapet.
-- **Samtaletrekkeren (§4.10)** — ferdig. To modus, trekning med låser,
-  dra-og-slipp, tre visninger, tre eksporter, historikk på tidspunkt, og
-  publisering av mentorsamtaler til kalenderserveren.
+## Hva som ikke er bygget
 
-## Hva som ikke er bygget av det SPEC.md lover
+- **Masseredigering i Elever:** merke flere og endre fag, klasse eller
+  mentor samtidig. Skal tegnes i lerretet først.
+- **Klasseopprykk (§4.3):** avventer; eieren er usikker på om det trengs.
+- **Skalabygger (§5.3)** og **findelt karakterskala (§5.2):** hører til
+  §10 i spec-en.
+- **Klassekart med gruppefarger og logg, vurderinger som kalender:**
+  tegnes i neste runde.
 
-- **Klasseopprykk (§4.3/§4.8).** Datamodellen bærer det, skjermen finnes ikke.
-  Avventer — eieren er usikker på om det trengs.
-- **Skalabygger (§5.3).** Spec sier selv at den kommer etter rammeverket.
-- **Findelt karakterskala (§5.2).** Riktig — den hører til §10.
+## Hvor SPEC.md ikke stemmer med appen
 
-## Hva som er i stykker eller irriterer
+Forslag til ny tekst står i `docs/spec-forslag-2026-10-07.md`.
 
-- **Appen ser hjemmesnekra ut.** Eierens ord. Steg 1 av oppstrammingen er
-  gjort 21.09 (typografi med serif-overskrifter, tetthet, fokus, knapper).
-  DESIGN.md er ikke oppdatert etter det — den beskriver fortsatt
-  utgangspunktet fra august. Eieren synes toppmenyen har for mange lister;
-  det hører til neste steg.
-- **Skjermkomponentene har ingen tester.** `OktPanel`, `ElevPanel`,
-  `VurderingPanel` og `Samtaler` er utestet på komponentnivå. Datalaget under
-  dem er godt dekket — all trekningslogikk, kapasitetsregning,
-  lunsjplassering, historikk og eksport har egne tester — men tastaturflyten
-  og selve rendringen er bare manuelt prøvd.
-- **`caldav.ts` sin nettverksdel er utestet.** Feltgrensen i
-  `lagSamtaleHendelse` og `ical.ts` er testet; retry, avbrudd og
-  kontrollsummer er det ikke.
-- **To elever mangler etternavn** i basen: «Per» fra 7. august og «Kåre» fra
-  16. september. Begge uten skåringer. Panelet advarer nå om dem.
-- **Tabellen `oppfolging` står igjen tom** og uten kallsteder, erstattet av
-  `elevnotat`. Kan slippes i en senere migrasjon.
+- §4.3 beskriver en tabell med avkrysning, kolonnene Økter og Siste, og
+  manuell innlegging i en tom rad nederst. Appen har oversikten fra
+  lerretet. Eieren har bestemt at InSchool-import og lim inn er veien inn.
+- §4.4 har trafikklyset til høyre for navnet. Det står nå først i raden,
+  og økta har to moduser.
 
-## Hvor SPEC.md ikke stemmer med koden lenger
+## Kjent
 
-SPEC.md ble oppdatert 30.09, 01.10 og 02.10. §11 peker nå til
-ARBEIDSLISTE.md, og §13 beskriver appen slik den er (med DESIGN.md for
-detaljene), inkludert mørk modus og forsiden som villet unntak. Ingen kjente
-avvik står igjen.
+- **Under utvikling** (`tauri dev`) kan vinduet bli blankt etter at koden
+  er endret mens appen kjører. Lukk og start vinduet på nytt. Den ferdige
+  appen er ikke berørt.
+- **Skjermkomponentene har ingen tester.** Datalaget er godt dekket.
+- **`caldav.ts` sin nettverksdel er utestet**; feltgrensen er testet.
+- **Tabellen `oppfolging` står igjen tom**, erstattet av `elevnotat`.
 
 ## Tester
 
-36 testfiler, 482 tester, alle grønne. `tsc` ren.
-
-Dekningen er tung i datalaget og tynn i skjermlaget. Migrasjonene testes ved å
-kjøre dem i to omganger med data imellom — kjørt mot en tom base ville en
-datamigrering ikke hatt noe å flytte. Testbasen er ekte SQLite i minnet med de
-ekte migrasjonene, ikke en etterlikning.
+Testbasen er ekte SQLite i minnet med de ekte migrasjonene. Dekningen er
+tung i datalaget og tynn i skjermlaget.

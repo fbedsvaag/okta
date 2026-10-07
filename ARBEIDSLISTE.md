@@ -351,49 +351,49 @@ gangen, i denne rekkefølgen.
 - [ ] **9.9 Glass på arkene:** notatvindu, samtalenotat og økta får
   `blur(22px)` i stedet for 1,5 px — teksten bak skinte gjennom.
 
-## 10. Etter første kjøring (07.10)
+## 10. Etter første kjøring (07.10) ✱ ferdig
 
 Eieren har kjørt appen. Disse er feil eller mangler i det som er bygd, og
 skal rettes før noe nytt. Start appen (`npm run tauri dev`) og se på hver
 skjerm mot `docs/lerret/` — ikke bare tester.
 
-- [ ] **10.1 Animasjonene ved åpning.** Ark, elevkort, ⌘K og menyer
+- [x] **10.1 Animasjonene ved åpning.** Ark, elevkort, ⌘K og menyer
   «spretter» og skjermen blinker når de åpnes; lukking er fin. Sannsynlig
   årsak: elementet monteres i sluttilstand og animerer fra en tilstand det
   aldri hadde (eller `backdrop-filter` slås på midt i overgangen). Montér i
   starttilstand, la én frame gå (`requestAnimationFrame`), så overgang til
   slutt. Uskarpheten skal være på fra første frame, ikke tones inn.
-- [ ] **10.2 Valgt rad i ⌘K er nesten usynlig.** Valgt treff har hvit flate,
+- [x] **10.2 Valgt rad i ⌘K er nesten usynlig.** Valgt treff har hvit flate,
   men teksten blir lys grå (se skjermbilde: «Per Pålsen» i blek tekst).
   Valgt rad skal ha full tekstfarge og aksentflate `rgba(74,61,125,.12)`,
   ikke svakere enn de andre.
-- [ ] **10.3 Hover med glass og S-kurve.** Én markør-flate som glir (DESIGN §8,
+- [x] **10.3 Hover med glass og S-kurve.** Én markør-flate som glir (DESIGN §8,
   `--ease-sprett`, 220 ms) mellom punktene ved hover — i sidemenyen, i
   ⋯-menyer og kontekstmenyer, Del-menyen og Innstillinger-lista. Flaten er
   glass (`rgba(255,255,255,.55)`, `backdrop-filter: blur(12px) saturate(160%)`,
   lys innerkant). Den glir fra forrige punkt, ikke tones inn på hvert.
-- [ ] **10.4 Glass mangler flere steder.** Gå gjennom DESIGN §7 skjerm for
+- [x] **10.4 Glass mangler flere steder.** Gå gjennom DESIGN §7 skjerm for
   skjerm: verktøylinja i alle ark, ⌘K, menyer, sidemenyen, arkene. Det som
   står som glass i DESIGN skal være glass når glass er på.
-- [ ] **10.5 Kjønn vises ikke.** Elevkortet viser bryteren bare når kjønn er
+- [x] **10.5 Kjønn vises ikke.** Elevkortet viser bryteren bare når kjønn er
   gjettet eller i redigering, så elever uten kjønn (alle som fantes før 024)
   får aldri valget. Vis bryteren også når `kjonn` er tom, med teksten
   «Ikke satt — velg for at klassekartet kan blande». Lim inn: sjekk at
   kolonnen og gjettingen faktisk kjøres også for InSchool-PDF.
-- [ ] **10.6 Zoom.** ⌘+ og ⌘− gjør alt større og mindre, ⌘0 tilbake til 100 %
+- [x] **10.6 Zoom.** ⌘+ og ⌘− gjør alt større og mindre, ⌘0 tilbake til 100 %
   (Tauri: `webview.setZoom`, trinn 80–90–100–110–125–150 %). Valget huskes.
   Står også i Vis-menyen.
-- [ ] **10.7 Økter › Kalender › Måned ruller.** Månedene står under hverandre
+- [x] **10.7 Økter › Kalender › Måned ruller.** Månedene står under hverandre
   i én lang liste; rulling går fram og tilbake gjennom skoleåret, og
   månedsnavnet øverst følger med. Skoleåret til høyre markerer måneden som
   er synlig, og klikk der ruller dit.
 
-## 11. Fra runde 13 i lerretet (07.10)
+## 11. Fra runde 13 i lerretet (07.10) ✱ ferdig
 
 Tegnet i lerretet runde 13: `Elever`, `Fagside`, `OktSkar`, `OktPlan`
 (i `docs/lerret/`).
 
-- [ ] **11.1 Elever-oversikten.** Verktøylinje med søk, «Lim inn liste»,
+- [x] **11.1 Elever-oversikten.** Verktøylinje med søk, «Lim inn liste»,
   «Ny elev». Gruppering som bryter: Klasse | Fag | Alfabetisk. Filter-piller
   for fag og Mentorelever. Rad 46 px: bilde 30 px, **fornavn** + etternavn,
   M-merke for mentorelev, klasse, fag med fagfirkant, innsats siste 10 som
@@ -402,7 +402,7 @@ Tegnet i lerretet runde 13: `Elever`, `Fagside`, `OktSkar`, `OktPlan`
   timer), rød prikk når eleven glipper.
   Ingen avkrysningsbokser og ingen innebygd skjema nederst; redigering skjer
   i elevkortet. Glidende hover-markør (10.3). Klikk åpner elevkortet.
-- [ ] **11.2 Fagsiden.** Ny fane **Oversikt** i Økter når et fag er valgt:
+- [x] **11.2 Fagsiden.** Ny fane **Oversikt** i Økter når et fag er valgt:
   Oversikt | Økter | Kalender. Innhold: fagnavn (Light 32), klasser, antall
   elever, rom, tider og Udir-lenke. Kort: Timer (gjort av årstimetall,
   stolpe per periode, «i rute / bak»), Neste økter, Kommende vurderinger.
@@ -411,13 +411,13 @@ Tegnet i lerretet runde 13: `Elever`, `Fagside`, `OktSkar`, `OktPlan`
   (siste 6 økter) og Mye fravær. Kompetansemål: hvert mål med en ruterad
   (økter som dekker det, planlagt vs gjort) og Dekket / Påbegynt / Ikke ennå.
   Logg: øktloggene som tidslinje, med fordelingen av skåringene per økt.
-- [ ] **11.3 Økta har to moduser i samme ark.** Bryter øverst til høyre:
+- [x] **11.3 Økta har to moduser i samme ark.** Bryter øverst til høyre:
   **Skåring og logg** | **Planlegging**. Fra I dag (og når økta pågår eller
   er ferdig) åpner den i Skåring og logg; fra Økter (fram i tid) i
   Planlegging. Tidligere økter åpnes i Skåring og logg.
-- [ ] **11.4 Skåring: trafikklyset til venstre** for bilde og navn, så blikket
+- [x] **11.4 Skåring: trafikklyset til venstre** for bilde og navn, så blikket
   ikke må hoppe. Rad: markør · trafikklys · bilde · navn · klasse · notat.
-- [ ] **11.5 Planlegging.** Dato, tid, rom, periode, vurdering (knytt til);
+- [x] **11.5 Planlegging.** Dato, tid, rom, periode, vurdering (knytt til);
   lekse og agenda til elevene; Plan (sjekkliste med varighet og sum mot
   øktas lengde, dra for å flytte); **Kompetansemål i økta**: fagets mål med
   avkrysning, periodens mål markert med prikk, valgte mål i full farge.
@@ -425,7 +425,7 @@ Tegnet i lerretet runde 13: `Elever`, `Fagside`, `OktSkar`, `OktPlan`
   åpne oppfølginger), hvor i perioden økta ligger. Tastestripe:
   ⌘← / ⌘→ forrige og neste økt, ⇥ neste felt.
 
-- [ ] **11.6 Årsplanen som PDF** (lerretet `ArsplanPdf1–3`, SPEC §4.9): egen
+- [x] **11.6 Årsplanen som PDF** (lerretet `ArsplanPdf1–3`, SPEC §4.9): egen
   utskriftsvisning, A4. Side 1: logo, «Årsplan · skoleåret …», sist
   oppdatert; fagkode i fagfarge og fagnavn Light 38 px; faglærer, rom, tid
   til høyre; timeboks «140 av 140 timer · n økter · hele timetallet i
@@ -437,7 +437,7 @@ Tegnet i lerretet runde 13: `Elever`, `Fagside`, `OktSkar`, `OktPlan`
   topplinje, «<periode> fortsetter». Bunnlinje: «Årsplan <fag> · skoleåret
   <år>» og «Side n av N». Leses i svart-hvitt.
 
-- [ ] **11.7 Fravær mot 10 %-grensen.** Fravær regnes i timer: summen av
+- [x] **11.7 Fravær mot 10 %-grensen.** Fravær regnes i timer: summen av
   varigheten på øktene eleven er «ikke i økta», mot 10 % av fagets
   årstimetall (140 t → 14 t). Fagsiden: bolken «Fravær mot 10 %-grensen» med
   stolpe mot grensen, timer, og merket «Halvveis» (≥ 50 %, gul), «Nær
@@ -460,6 +460,8 @@ igjen som nye ideer.
 - Mørk modus for det nye fra runde 7–11 (arkene, vurderingsgull,
   plassholdere, bevegelsesbrettet) — avventer eieren; bruk tokens så det
   er lett å legge til
+- Lekse i kalenderen (CalDAV, SPEC §8.1) — avventer; i dag går bare
+  agendaen ut
 - Klasseopprykk — avventer; eieren er usikker på om det trengs
 
 - Fagpresets fra Udirs Grep-API — `hent_grep.py` finnes, men hører til etter v1
