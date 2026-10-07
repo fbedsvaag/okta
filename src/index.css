@@ -1272,3 +1272,11 @@ html {
   background: var(--color-ark);
   box-shadow: inset 0 -1px 0 var(--color-linje);
 }
+
+/* Hover på radene i Elever (11.1): en svak aksentflate som glir. */
+.hovermarkor.hovermarkor-rad:not([data-synlig="false"]) {
+  background-color: color-mix(in srgb, var(--color-aksent) 8%, transparent);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  box-shadow: none;
+}
