@@ -527,22 +527,7 @@ export function Fagoversikt({
                     <span className="truncate" title={m.tekst}>
                       {m.tekst}
                     </span>
-                    <span className="flex gap-[2px]">
-                      {m.dekning?.okter.map((holdt, j) => (
-                        <span
-                          key={j}
-                          className="h-1.5 flex-1 rounded-[2px]"
-                          style={{
-                            background: holdt
-                              ? "var(--color-aksent)"
-                              : "color-mix(in srgb, var(--color-aksent) 14%, transparent)",
-                          }}
-                        />
-                      ))}
-                      {m.dekning && m.dekning.okter.length === 0 && (
-                        <span className="h-1.5 flex-1 rounded-[2px] bg-flate" />
-                      )}
-                    </span>
+                    <Malstolpe okter={m.dekning?.okter ?? null} />
                     <span
                       className={`text-right text-[calc(12px*var(--tekst-skala))] ${
                         m.dekning?.status === "dekket"
@@ -654,6 +639,42 @@ function Kort({
       </div>
       {children}
     </section>
+  );
+}
+
+/**
+ * Øktene som dekker et mål: én strek per økt, fylt når den er holdt. Med
+ * mange økter blir strekene for tynne til å lese; da er det én stolpe som
+ * fylles med andelen som er holdt.
+ */
+function Malstolpe({ okter }: { okter: boolean[] | null }) {
+  if (okter === null) return <span />;
+  const fylt = "var(--color-aksent)";
+  const tom = "color-mix(in srgb, var(--color-aksent) 14%, transparent)";
+  if (okter.length === 0)
+    return <span className="h-1.5 rounded-[2px] bg-flate" />;
+  if (okter.length > 10) {
+    const andel = okter.filter(Boolean).length / okter.length;
+    return (
+      <span
+        title={`${okter.filter(Boolean).length} av ${okter.length} økter holdt`}
+        className="h-1.5 rounded-[2px]"
+        style={{
+          background: `linear-gradient(90deg, ${fylt} ${andel * 100}%, ${tom} ${andel * 100}%)`,
+        }}
+      />
+    );
+  }
+  return (
+    <span className="flex gap-[2px]">
+      {okter.map((holdt, j) => (
+        <span
+          key={j}
+          className="h-1.5 flex-1 rounded-[2px]"
+          style={{ background: holdt ? fylt : tom }}
+        />
+      ))}
+    </span>
   );
 }
 
