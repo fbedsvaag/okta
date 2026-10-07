@@ -90,15 +90,14 @@ export function skrivPlan(punkter: Planpunkt[], rest: string[]): string | null {
   return linjer.length ? linjer.join("\n") : null;
 }
 
-/** «2 t av 3», «40 min av 1,5 t» — planen mot øktas lengde. */
+/** «2 t av 3 t», «40 min av 1,5 t» — planen mot øktas lengde. */
 export function plansum(punkter: Planpunkt[], varighetMin: number): string {
   const sum = punkter.reduce((s, p) => s + (p.min ?? 0), 0);
   const t = (m: number) =>
     m < 60
       ? `${m} min`
       : `${String(Math.round((m / 60) * 10) / 10).replace(".", ",")} t`;
-  const lengde = t(varighetMin).replace(" t", "").replace(" min", "");
-  return `${t(sum)} av ${varighetMin < 60 ? `${lengde} min` : lengde}`;
+  return `${t(sum)} av ${t(varighetMin)}`;
 }
 
 // ------------------------------------------------------------ følg opp

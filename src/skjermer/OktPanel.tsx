@@ -1,21 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { Elevfoto } from "../ui/Elevfoto";
-import { Bryter, Fagfirkant, Ikon } from "../ui/felles";
+import { Bryter, Fagfirkant } from "../ui/felles";
 import { narTekst, standardModus, type Oktmodus } from "../data/oktplan";
 import { kortDag } from "../data/fagside";
+import { OktPlanlegging } from "./OktPlanlegging";
 import { Tastestripe, Tasthint } from "../ui/Tastestripe";
 import { Markdown, Markdownfelt } from "../ui/Notattekst";
 import { useArk } from "../ui/Arkstabel";
-import { lyttVurderinger } from "../data/endringer";
-import {
-  hentOktmal,
-  hentPerioder,
-  settOktmal,
-  type Oktmal,
-  type Periode,
-} from "../data/perioder";
-import { Malvelger } from "./Malvelger";
-import { confirm as bekreft } from "@tauri-apps/plugin-dialog";
+import { hentPerioder, type Periode } from "../data/perioder";
 import {
   endreOkt,
   hentForrigeOkt,
@@ -24,19 +16,11 @@ import {
   hentSkaringsskala,
   settSkaring,
   settSkaringsnotat,
-  slettOkt,
-  teamstekst,
   type Okt,
   type OktElev,
 } from "../data/okter";
 import { taster, type Skalaverdi } from "../skala";
 import { fagfarge, skalafarge } from "../ui/farger";
-import {
-  hentVurderingsvalg,
-  knyttOkt,
-  losOkt,
-  type Vurderingsvalg,
-} from "../data/vurderinger";
 
 /**
  * Økta som ark, SPEC §4.4 og DESIGN.md §10 (lerretet «OktArk»).
@@ -51,6 +35,8 @@ import {
  */
 export function OktPanel({
   okt,
+  skolearId,
+  fagOkter,
   startModus,
   onLukk,
   onEndret,
@@ -335,33 +321,15 @@ export function OktPanel({
       </header>
 
       {modus === "plan" ? (
-        <div className="min-h-0 flex-1 overflow-y-auto">
-          <OktFelter okt={okt} onEndret={onEndret} />
-          <div className="flex gap-4 px-5 pb-3">
-            <button
-              onClick={onVisIOkter}
-              className="text-liten text-blekk-dempet hover:text-blekk"
-            >
-              Vis i <i>Økter</i> →
-            </button>
-            <button
-              onClick={async () => {
-                if (
-                  !(await bekreft(
-                    `Slette økta ${okt.fagKode} ${langDato(okt.dato)}?`,
-                  ))
-                )
-                  return;
-                await slettOkt(okt.id);
-                onEndret();
-                onLukk();
-              }}
-              className="text-liten text-blekk-svak hover:text-feil"
-            >
-              Slett økta
-            </button>
-          </div>
-        </div>
+        <OktPlanlegging
+          okt={okt}
+          skolearId={skolearId}
+          fagOkter={fagOkter}
+          periode={periode}
+          onEndret={onEndret}
+          onLukk={onLukk}
+          onVisIOkter={onVisIOkter}
+        />
       ) : (
         <>
           <div className="flex min-h-0 flex-1">
@@ -691,281 +659,6 @@ function Merke({
   );
 }
 
-function OktFelter({ okt, onEndret }: { okt: Okt; onEndret: () => void }) {
-  const [kopiert, setKopiert] = useState(false);
-
-  return (
-    <div className="space-y-2 px-5 py-3">
-      <div className="flex gap-2">
-        <Linje etikett="Dato">
-          <input
-            type="date"
-            defaultValue={okt.dato}
-            key={okt.dato}
-            onBlur={async (e) => {
-              if (e.target.value && e.target.value !== okt.dato) {
-                await endreOkt(okt.id, { dato: e.target.value });
-                onEndret();
-              }
-            }}
-            className={feltStil}
-          />
-        </Linje>
-        <Linje etikett="Klokkeslett">
-          <input
-            type="time"
-            defaultValue={okt.klokkeslett ?? ""}
-            key={okt.klokkeslett ?? ""}
-            onBlur={async (e) => {
-              await endreOkt(okt.id, { klokkeslett: e.target.value || null });
-              onEndret();
-            }}
-            className={feltStil}
-          />
-        </Linje>
-        <Linje etikett="Varighet">
-          <input
-            type="number"
-            defaultValue={okt.varighetMin}
-            key={okt.varighetMin}
-            onBlur={async (e) => {
-              const n = Number(e.target.value);
-              if (n > 0 && n !== okt.varighetMin) {
-                await endreOkt(okt.id, { varighet_min: Math.round(n) });
-                onEndret();
-              }
-            }}
-            className={feltStil}
-          />
-        </Linje>
-      </div>
-
-      <Linje etikett="Tema">
-        <input
-          defaultValue={okt.tema ?? ""}
-          key={okt.tema ?? ""}
-          placeholder="Hva handler økta om?"
-          onBlur={async (e) => {
-            await endreOkt(okt.id, { tema: e.target.value.trim() || null });
-            onEndret();
-          }}
-          className={feltStil}
-        />
-      </Linje>
-
-      {/* Fylles ut fra fagets standard rom (Fag-panelet). */}
-      <Linje etikett="Rom">
-        <input
-          defaultValue={okt.sted ?? ""}
-          key={okt.sted ?? ""}
-          placeholder="Romnummer, sal, ute"
-          onBlur={async (e) => {
-            await endreOkt(okt.id, { sted: e.target.value.trim() || null });
-            onEndret();
-          }}
-          className={feltStil}
-        />
-      </Linje>
-
-      {/*
-        Agenda er skrevet for eleven og går ut i kalenderen som kommentar.
-        Plan og øktlogg lenger ned er lærerens egne notater og går aldri ut.
-      */}
-      <Linje etikett="Agenda">
-        <textarea
-          defaultValue={okt.agenda ?? ""}
-          key={okt.agenda ?? ""}
-          rows={2}
-          placeholder="Kort om økta — dette ser elevene i kalenderen"
-          onBlur={async (e) => {
-            await endreOkt(okt.id, { agenda: e.target.value.trim() || null });
-            onEndret();
-          }}
-          className={feltStil}
-        />
-        {/*
-          Kopien tar med akkurat det agendaen allerede er ment for — det
-          eleven skal se. Plan og øktlogg blir igjen her.
-        */}
-        <button
-          onClick={async () => {
-            await navigator.clipboard.writeText(teamstekst(okt));
-            setKopiert(true);
-            setTimeout(() => setKopiert(false), 1500);
-          }}
-          className="mt-1 text-liten text-blekk-svak hover:text-blekk"
-        >
-          {kopiert ? (
-            <>
-              <Ikon navn="hake" /> Kopiert
-            </>
-          ) : (
-            "Kopier til Teams"
-          )}
-        </button>
-      </Linje>
-
-      {/* Lekse står på årsplanarket og i Teams-kopien, aldri i kalenderen. */}
-      <Linje etikett="Lekse">
-        <textarea
-          defaultValue={okt.lekse ?? ""}
-          key={okt.lekse ?? ""}
-          rows={1}
-          placeholder="Til denne økta — står på årsplanen"
-          onBlur={async (e) => {
-            await endreOkt(okt.id, { lekse: e.target.value.trim() || null });
-            onEndret();
-          }}
-          className={feltStil}
-        />
-      </Linje>
-
-      <Kompetansemal okt={okt} />
-
-      <Vurderingskobling okt={okt} onEndret={onEndret} />
-
-      {/*
-        Plan er tatt ut av panelet — tema, agenda og lekse dekker det som
-        trengs. Feltet vises bare der det allerede står noe, så ingenting
-        som er skrevet blir borte.
-      */}
-      {/* Planen står i høyre spalte, med avkrysning. */}
-    </div>
-  );
-}
-
-/**
- * Kompetansemålene økta tar for seg. Målene perioden dekker, står huket av
- * av seg selv; her legges det økta tar for seg i tillegg. Fag uten Udir-kode
- * har ingen liste å velge fra, og får et fritekstfelt i stedet.
- */
-function Kompetansemal({ okt }: { okt: Okt }) {
-  const [mal, setMal] = useState<Oktmal | null>(null);
-  const last = () => void hentOktmal(okt.id).then(setMal);
-  useEffect(last, [okt.id, okt.periodeId]);
-
-  if (!mal) return null;
-
-  if (!mal.grepKode) {
-    return (
-      <Linje etikett="Kompetansemål">
-        <textarea
-          defaultValue={mal.fritekst ?? ""}
-          key={mal.fritekst ?? ""}
-          rows={1}
-          placeholder="Faget har ingen Udir-kode — skriv målet her"
-          onBlur={async (e) => {
-            await endreOkt(okt.id, {
-              kompetansemal: e.target.value.trim() || null,
-            });
-            last();
-          }}
-          className={feltStil}
-        />
-      </Linje>
-    );
-  }
-
-  return (
-    <div>
-      <Malvelger
-        grepKode={mal.grepKode}
-        valgte={mal.egne}
-        arvet={
-          mal.periodeNavn
-            ? { koder: mal.fraPeriode, fra: mal.periodeNavn }
-            : undefined
-        }
-        dekketAndreSteder={mal.dekketAndreSteder}
-        onBytt={async (kode, pa) => {
-          await settOktmal(okt.id, kode, pa);
-          last();
-        }}
-      />
-    </div>
-  );
-}
-
-/**
- * Vurderingene som holdes i økta, med mulighet til å knytte flere eller løse
- * dem. Står på årsplanen i Vurdering-kolonnen.
- *
- * Ikke en <label> som de andre linjene: den har flere knapper i seg, og et
- * klikk på en label sendes videre til første kontroll inni.
- */
-function Vurderingskobling({
-  okt,
-  onEndret,
-}: {
-  okt: Okt;
-  onEndret: () => void;
-}) {
-  const [valg, setValg] = useState<Vurderingsvalg[]>([]);
-  const ark = useArk();
-  const last = () => void hentVurderingsvalg(okt.skolearFagId).then(setValg);
-  useEffect(last, [okt.skolearFagId, okt.id]);
-  useEffect(() => lyttVurderinger(last), [okt.skolearFagId, okt.id]);
-
-  const her = valg.filter((v) => v.oktIder.includes(okt.id));
-  const andre = valg.filter((v) => !v.oktIder.includes(okt.id));
-
-  async function koble(vurderingId: string, pa: boolean) {
-    if (pa) await knyttOkt(vurderingId, okt.id);
-    else await losOkt(vurderingId, okt.id);
-    last();
-    onEndret();
-  }
-
-  return (
-    <div>
-      <span className="mb-0.5 block text-etikett uppercase tracking-etikett text-blekk-dempet">
-        Vurdering
-      </span>
-      {her.map((v) => (
-        <div key={v.id} className="flex items-baseline gap-2 text-brod">
-          <button
-            onClick={() => ark.apneVurdering(v.id)}
-            className="min-w-0 flex-1 truncate text-left hover:text-aksent hover:underline"
-          >
-            {v.tittel}
-          </button>
-          <button
-            onClick={() => void koble(v.id, false)}
-            className="shrink-0 text-liten text-blekk-svak hover:text-blekk"
-          >
-            Løs fra økta
-          </button>
-        </div>
-      ))}
-      {andre.length > 0 ? (
-        <select
-          value=""
-          onChange={(e) => e.target.value && void koble(e.target.value, true)}
-          className={`${feltStil} ${her.length > 0 ? "mt-1" : ""}`}
-        >
-          <option value="">
-            {her.length > 0 ? "Knytt enda en …" : "Knytt en vurdering …"}
-          </option>
-          {andre.map((v) => (
-            <option key={v.id} value={v.id}>
-              {v.tittel}
-              {v.oktIder.length > 0
-                ? ` (står også på ${v.oktIder.length} ${v.oktIder.length === 1 ? "annen økt" : "andre økter"})`
-                : ""}
-            </option>
-          ))}
-        </select>
-      ) : (
-        her.length === 0 && (
-          <p className="text-liten text-blekk-svak">
-            Ingen vurderinger i faget ennå.
-          </p>
-        )
-      )}
-    </div>
-  );
-}
-
 /**
  * Det du skrev i loggen forrige gang i faget, rett over dagens logg — så
  * beskjeden fra sist står der du er når timen begynner.
@@ -1041,26 +734,6 @@ function Notatfelt({
       onBlur={() => avslutt(tekst)}
       className="h-5 min-w-0 flex-1 rounded-vanlig border border-aksent bg-ark px-1.5 text-liten outline-none placeholder:text-blekk-svak"
     />
-  );
-}
-
-const feltStil =
-  "w-full rounded border border-linje bg-ark px-2 py-1 text-brod tabular-nums outline-none placeholder:text-blekk-svak focus:border-aksent";
-
-function Linje({
-  etikett,
-  children,
-}: {
-  etikett: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <label className="block w-full">
-      <span className="mb-0.5 block text-etikett uppercase tracking-etikett text-blekk-dempet">
-        {etikett}
-      </span>
-      {children}
-    </label>
   );
 }
 

@@ -68,9 +68,9 @@ describe("planen", () => {
 
   it("summerer mot øktas lengde", () => {
     const p = lesPlan("- [ ] a · 60 min\n- [ ] b · 60 min").punkter;
-    expect(plansum(p, 180)).toBe("2 t av 3");
+    expect(plansum(p, 180)).toBe("2 t av 3 t");
     expect(plansum(lesPlan("- [ ] a · 40 min").punkter, 90)).toBe(
-      "40 min av 1,5",
+      "40 min av 1,5 t",
     );
   });
 });
