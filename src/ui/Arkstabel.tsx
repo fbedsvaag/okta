@@ -17,6 +17,7 @@ import { FagPanel } from "../skjermer/FagPanel";
 import { hentFagIAr, type FagIAr } from "../data/fag";
 import { Ikon } from "./felles";
 import { useInngang } from "./bevegelse";
+import type { Oktmodus } from "../data/oktplan";
 
 /**
  * Ark over ark — kortlogikken (DESIGN.md §7).
@@ -32,7 +33,13 @@ import { useInngang } from "./bevegelse";
  */
 
 type Ark =
-  | { type: "okt"; id: string; n: number }
+  | {
+      type: "okt";
+      id: string;
+      n: number;
+      /** modusen økta åpnes i; uten den: etter tidspunktet (11.3) */
+      modus?: Oktmodus;
+    }
   | { type: "vurdering"; id: string; n: number }
   | { type: "fag"; id: string; n: number }
   | {
@@ -45,8 +52,12 @@ type Ark =
       startFag?: string;
     };
 
+/** Arket uten løpenummer — fordelt over hver variant, så feltene beholdes. */
+type UtenN<T> = T extends unknown ? Omit<T, "n"> : never;
+
 type Api = {
-  apneOkt: (id: string) => void;
+  /** «skaring» fra I dag; ellers åpner økta etter tidspunktet (11.3) */
+  apneOkt: (id: string, modus?: Oktmodus) => void;
   apneVurdering: (id: string) => void;
   apneFag: (id: string) => void;
   apneElev: (
@@ -102,7 +113,7 @@ export function Arkstabel({
   const [stabel, setStabel] = useState<Ark[]>([]);
   const teller = useRef(0);
 
-  const legg = useCallback((ark: Omit<Ark, "n">) => {
+  const legg = useCallback((ark: UtenN<Ark>) => {
     setStabel((s) => {
       const topp = s[s.length - 1];
       // Samme ting to ganger på rad gir ingenting nytt å se.
@@ -161,7 +172,7 @@ export function Arkstabel({
   };
 
   const api: Api = {
-    apneOkt: (id) => legg({ type: "okt", id }),
+    apneOkt: (id, modus) => legg({ type: "okt", id, modus }),
     apneVurdering: (id) => legg({ type: "vurdering", id }),
     apneFag: (id) => legg({ type: "fag", id }),
     apneElev: (id, valg) => legg({ type: "elev", id, ...valg }),
@@ -214,6 +225,7 @@ export function Arkstabel({
                 {ark.type === "okt" ? (
                   <OktArk
                     oktId={ark.id}
+                    modus={ark.modus}
                     skolearId={skolearId}
                     onLukk={lukk}
                     onApneElev={(id) => api.apneElev(id)}
@@ -377,24 +389,29 @@ function Arkhode({
 
 function OktArk({
   oktId,
+  modus,
   skolearId,
   onLukk,
   onApneElev,
   onVisIOkter,
 }: {
   oktId: string;
+  modus?: Oktmodus;
   skolearId: string;
   onLukk: () => void;
   onApneElev: (id: string) => void;
   onVisIOkter: () => void;
 }) {
-  const [okt, setOkt] = useState<Okt | null>(null);
+  // Økta som vises. ⌘← og ⌘→ blar til forrige og neste økt i faget (11.5)
+  // uten å legge et nytt ark i stabelen.
+  const [id, setId] = useState(oktId);
+  const [okter, setOkter] = useState<Okt[]>([]);
 
   useEffect(() => {
     let avbrutt = false;
     const last = () =>
       void hentOkter(skolearId).then((o) => {
-        if (!avbrutt) setOkt(o.find((x) => x.id === oktId) ?? null);
+        if (!avbrutt) setOkter(o);
       });
     last();
     // Endres økta — her eller et annet sted — hentes den på nytt.
@@ -403,30 +420,47 @@ function OktArk({
       avbrutt = true;
       slutt();
     };
-  }, [oktId, skolearId]);
+  }, [skolearId]);
+
+  const okt = okter.find((x) => x.id === id) ?? null;
+  const fagOkter = okt
+    ? okter
+        .filter((o) => o.skolearFagId === okt.skolearFagId)
+        .sort(
+          (a, b) =>
+            a.dato.localeCompare(b.dato) ||
+            (a.klokkeslett ?? "").localeCompare(b.klokkeslett ?? ""),
+        )
+    : [];
+  const i = fagOkter.findIndex((o) => o.id === id);
 
   // Toppen og «Ferdig» står i selve arket; Esc lukker (alt er lagret).
   return (
-    <>
-      <div className="flex min-h-0 flex-1 flex-col">
-        {okt && (
-          <OktPanel
-            key={okt.id}
-            okt={okt}
-            onLukk={onLukk}
-            onVisIOkter={onVisIOkter}
-            onEndret={() => {
-              void hentOkter(skolearId).then((o) =>
-                setOkt(o.find((x) => x.id === oktId) ?? null),
-              );
-              // Lista under — Økter, uka på forsiden — skal vise det.
-              varsleOktvisning();
-            }}
-            onApneElev={onApneElev}
-          />
-        )}
-      </div>
-    </>
+    <div className="flex min-h-0 flex-1 flex-col">
+      {okt && (
+        <OktPanel
+          key={okt.id}
+          okt={okt}
+          skolearId={skolearId}
+          fagOkter={fagOkter}
+          startModus={modus}
+          onLukk={onLukk}
+          onVisIOkter={onVisIOkter}
+          onForrige={i > 0 ? () => setId(fagOkter[i - 1].id) : undefined}
+          onNeste={
+            i >= 0 && i < fagOkter.length - 1
+              ? () => setId(fagOkter[i + 1].id)
+              : undefined
+          }
+          onEndret={() => {
+            void hentOkter(skolearId).then(setOkter);
+            // Lista under — Økter, uka på forsiden — skal vise det.
+            varsleOktvisning();
+          }}
+          onApneElev={onApneElev}
+        />
+      )}
+    </div>
   );
 }
 

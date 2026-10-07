@@ -213,7 +213,7 @@ function Innsats({
           a.dato.localeCompare(b.dato) ||
           (a.klokkeslett ?? "").localeCompare(b.klokkeslett ?? ""),
       );
-    if (ukas.length === 1) return ark.apneOkt(ukas[0].id);
+    if (ukas.length === 1) return ark.apneOkt(ukas[0].id, "skaring");
     if (ukas.length === 0) return;
     const r = el.getBoundingClientRect();
     setMeny({ x: r.left, y: r.bottom + 4, okter: ukas });
@@ -300,7 +300,7 @@ function Innsats({
                   key={o.id}
                   onKlikk={() => {
                     setMeny(null);
-                    ark.apneOkt(o.id);
+                    ark.apneOkt(o.id, "skaring");
                   }}
                 >
                   <span className="tabular-nums">{norskDato(o.dato)}</span>
@@ -574,7 +574,7 @@ function Gjoremalsliste({ skolearId }: { skolearId: string }) {
                 <button
                   onClick={() =>
                     g.slag === "oktboks"
-                      ? ark.apneOkt(g.oktId)
+                      ? ark.apneOkt(g.oktId, "skaring")
                       : g.slag === "eget"
                         ? undefined
                         : ark.apneElev(g.elevId)

@@ -211,6 +211,24 @@ export async function hentForfalte(skolearId: string): Promise<Set<string>> {
   return new Set(rader.map((r) => r.elevId));
 }
 
+/**
+ * Elevene med et åpent oppfølgingspunkt, og den nærmeste fristen — til
+ * «Følg opp i økta» (ARBEIDSLISTE 11.5). Bare at noe venter, aldri hva:
+ * økta står ofte på skjerm i klasserommet (§4.7).
+ */
+export async function hentApneOppfolginger(
+  skolearId: string,
+): Promise<{ elevId: string; frist: string | null }[]> {
+  return hent<{ elevId: string; frist: string | null }>(
+    `SELECT elev_id AS elevId, MIN(frist) AS frist
+       FROM elevnotat
+      WHERE skolear_id = $1 AND slettet IS NULL
+        AND skal_folges_opp = 1 AND lukket IS NULL
+      GROUP BY elev_id`,
+    [skolearId],
+  );
+}
+
 // ------------------------------------------------------------- øktnotater
 
 /**

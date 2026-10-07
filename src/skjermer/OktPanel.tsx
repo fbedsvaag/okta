@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Elevfoto } from "../ui/Elevfoto";
-import { Fagfirkant, Ikon } from "../ui/felles";
-import { Utfold } from "../ui/Utfold";
+import { Bryter, Fagfirkant, Ikon } from "../ui/felles";
+import { narTekst, standardModus, type Oktmodus } from "../data/oktplan";
 import { Tastestripe, Tasthint } from "../ui/Tastestripe";
 import { Markdown, Markdownfelt } from "../ui/Notattekst";
 import { useArk } from "../ui/Arkstabel";
@@ -50,20 +50,34 @@ import {
  */
 export function OktPanel({
   okt,
+  startModus,
   onLukk,
   onEndret,
   onApneElev,
   onVisIOkter,
+  onForrige,
+  onNeste,
 }: {
   okt: Okt;
+  skolearId: string;
+  /** øktene i faget, i rekkefølge — til perioden og blaingen */
+  fagOkter: Okt[];
+  /** fra I dag: skåring. Ellers etter tidspunktet (11.3). */
+  startModus?: Oktmodus;
   onLukk: () => void;
   onEndret: () => void;
   onApneElev: (elevId: string) => void;
   onVisIOkter: () => void;
+  /** ⌘← / ⌘→: forrige og neste økt i faget */
+  onForrige?: () => void;
+  onNeste?: () => void;
 }) {
   // Eleven som nettopp fikk en verdi: prikken hans «popper» (DESIGN.md §8).
   const [sistSatt, setSistSatt] = useState<string | null>(null);
-  const [detaljer, setDetaljer] = useState(false);
+  // To moduser i samme ark (11.3): skåring og logg, eller planlegging.
+  const [modus, setModus] = useState<Oktmodus>(
+    () => startModus ?? standardModus(okt, new Date()),
+  );
   const [periode, setPeriode] = useState<Periode | null>(null);
   useEffect(() => {
     if (!okt.periodeId) return setPeriode(null);
@@ -79,17 +93,30 @@ export function OktPanel({
   }, []);
   const pagar = minIgjen(okt, na);
 
-  // ⌘↵ = Ferdig, også fra et felt i arket.
+  // ⌘↵ = Ferdig, også fra et felt i arket. ⌘← / ⌘→ blar til forrige og
+  // neste økt i faget, men ikke i et felt — der flytter de markøren.
   useEffect(() => {
     const tast = (e: KeyboardEvent) => {
       if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
         onLukk();
+        return;
+      }
+      if (!(e.metaKey || e.ctrlKey) || e.shiftKey || e.altKey) return;
+      if ((e.target as HTMLElement).closest?.("input, textarea, select"))
+        return;
+      if (e.key === "ArrowLeft" && onForrige) {
+        e.preventDefault();
+        onForrige();
+      }
+      if (e.key === "ArrowRight" && onNeste) {
+        e.preventDefault();
+        onNeste();
       }
     };
     window.addEventListener("keydown", tast);
     return () => window.removeEventListener("keydown", tast);
-  }, [onLukk]);
+  }, [onLukk, onForrige, onNeste]);
   const [elever, setElever] = useState<OktElev[]>([]);
   const [verdier, setVerdier] = useState<Skalaverdi[]>([]);
   const [markert, setMarkert] = useState(0);
@@ -226,7 +253,7 @@ export function OktPanel({
       aria-label={`Økt: ${okt.tema || okt.fagNavn}`}
       className="flex h-full min-h-0 flex-col"
     >
-      <header className="shrink-0 border-b border-linje-medium px-[26px] pb-4 pt-5">
+      <header className="shrink-0 border-b border-linje-medium px-[26px] pb-[18px] pt-[26px]">
         <div className="flex min-w-0 items-center gap-3">
           <Fagfirkant farge={okt.farge} storrelse={12} />
           <span
@@ -239,69 +266,75 @@ export function OktPanel({
             {okt.tema || okt.fagNavn}
           </h1>
           <span className="flex-1" />
-          {pagar !== null && (
+          {pagar !== null ? (
             <span className="inline-flex shrink-0 items-center gap-[7px] rounded-full bg-flate px-2.5 py-1 text-[calc(12.5px*var(--tekst-skala))] font-medium text-aksent">
               <span className="puls h-[7px] w-[7px] rounded-full bg-aksent" />
               Pågår · {pagar} min igjen
             </span>
+          ) : (
+            <span className="shrink-0 rounded-full bg-flate px-2.5 py-1 text-[calc(12.5px*var(--tekst-skala))] text-aksent">
+              {narTekst(okt, na)}
+            </span>
           )}
-          <button
-            onClick={() => setDetaljer((d) => !d)}
-            aria-expanded={detaljer}
-            className="shrink-0 rounded-full px-2.5 py-1 text-liten text-blekk-dempet hover:bg-flate hover:text-blekk"
-          >
-            Detaljer
-          </button>
           <span className="shrink-0 rounded-full bg-flate px-2 py-0.5 text-etikett text-blekk-dempet">
             esc
           </span>
           <button
             onClick={onLukk}
-            className="flex h-8 shrink-0 items-center gap-2 rounded-full bg-aksent px-3.5 text-brod font-medium text-ark hover:bg-aksent-mork"
+            className="flex h-7 shrink-0 items-center gap-1.5 rounded-full bg-aksent px-3 text-[calc(13px*var(--tekst-skala))] font-medium text-ark hover:bg-aksent-mork"
           >
-            Ferdig <span className="text-etikett opacity-70">⌘↵</span>
+            Ferdig <span className="text-[10.5px] opacity-70">⌘↵</span>
           </button>
         </div>
-        <p className="ml-[24px] mt-1.5 flex flex-wrap items-center gap-x-1.5 text-[calc(13px*var(--tekst-skala))] text-blekk-dempet">
-          <span className="first-letter:uppercase">{langDato(okt.dato)}</span>
-          {okt.klokkeslett && (
-            <>
-              ·
-              <span className="tabular-nums">
-                {okt.klokkeslett}–
-                {sluttKlokke(okt.klokkeslett, okt.varighetMin)}
-              </span>
-            </>
-          )}
-          {okt.sted && (
-            <>
-              ·{" "}
-              <span>{/^\d/.test(okt.sted) ? `Rom ${okt.sted}` : okt.sted}</span>
-            </>
-          )}
-          {periode && (
-            <>
-              ·
-              <span className="inline-flex items-center gap-[5px]">
-                <span
-                  className="h-1.5 w-1.5 rounded-full"
-                  style={{
-                    background: periode.farge ?? "var(--color-linje-sterk)",
-                  }}
-                />
-                {periode.navn}
-              </span>
-            </>
-          )}
-        </p>
+        <div className="mt-2 flex items-center gap-3 pl-[24px]">
+          <p className="flex min-w-0 flex-1 flex-wrap items-center gap-x-1.5 text-[calc(13px*var(--tekst-skala))] text-blekk-dempet">
+            <span className="first-letter:uppercase">{langDato(okt.dato)}</span>
+            {okt.klokkeslett && (
+              <>
+                ·
+                <span className="tabular-nums">
+                  {okt.klokkeslett}–
+                  {sluttKlokke(okt.klokkeslett, okt.varighetMin)}
+                </span>
+              </>
+            )}
+            {okt.sted && (
+              <>
+                ·{" "}
+                <span>
+                  {/^\d/.test(okt.sted) ? `Rom ${okt.sted}` : okt.sted}
+                </span>
+              </>
+            )}
+            {periode && (
+              <>
+                ·
+                <span className="inline-flex items-center gap-[5px]">
+                  <span
+                    className="h-1.5 w-1.5 rounded-full"
+                    style={{
+                      background: periode.farge ?? "var(--color-linje-sterk)",
+                    }}
+                  />
+                  {periode.navn}
+                </span>
+              </>
+            )}
+          </p>
+          <Bryter
+            storrelse="liten"
+            verdi={modus}
+            settVerdi={(v) => setModus(v as Oktmodus)}
+            valg={[
+              { id: "skaring", navn: "Skåring og logg" },
+              { id: "plan", navn: "Planlegging" },
+            ]}
+          />
+        </div>
       </header>
 
-      {/*
-        Øktas øvrige felter — dato, tid, tema, rom, agenda, lekse, mål og
-        vurdering — står bak «Detaljer», så arket er skåringen først.
-      */}
-      <Utfold apen={detaljer}>
-        <div className="max-h-[45vh] overflow-y-auto border-b border-linje-medium bg-flate-svak">
+      {modus === "plan" ? (
+        <div className="min-h-0 flex-1 overflow-y-auto">
           <OktFelter okt={okt} onEndret={onEndret} />
           <div className="flex gap-4 px-5 pb-3">
             <button
@@ -328,153 +361,157 @@ export function OktPanel({
             </button>
           </div>
         </div>
-      </Utfold>
+      ) : (
+        <>
+          <div className="flex min-h-0 flex-1">
+            <div
+              ref={liste}
+              tabIndex={0}
+              onKeyDown={tastetrykk}
+              aria-label="Elevliste — skår med talltastene"
+              className="uten-fokusring min-w-0 flex-1 overflow-auto px-[22px] pt-3 outline-none"
+            >
+              <div className="flex items-center gap-3 border-b border-linje pb-2.5">
+                <span className="text-[calc(13px*var(--tekst-skala))] font-semibold">
+                  Elever
+                </span>
+                {/* Fremdrift, ikke statistikk (DESIGN.md §12): hvor mange som er skåret. */}
+                <span className="text-etikett tabular-nums text-blekk-dempet">
+                  {antallSkaret} av {elever.length} skåret
+                </span>
+                <span className="h-1 w-[120px] overflow-hidden rounded-sm bg-stripe">
+                  <span
+                    className="block h-full rounded-sm bg-aksent transition-[width] duration-[var(--tid-inn)]"
+                    style={{
+                      width: `${elever.length ? (antallSkaret / elever.length) * 100 : 0}%`,
+                    }}
+                  />
+                </span>
+                <span className="ml-auto text-etikett text-blekk-svak">
+                  Alfabetisk på fornavn
+                </span>
+              </div>
 
-      <div className="flex min-h-0 flex-1">
-        <div
-          ref={liste}
-          tabIndex={0}
-          onKeyDown={tastetrykk}
-          aria-label="Elevliste — skår med talltastene"
-          className="uten-fokusring min-w-0 flex-1 overflow-auto px-[22px] pt-3 outline-none"
-        >
-          <div className="flex items-center gap-3 border-b border-linje pb-2.5">
-            <span className="text-[calc(13px*var(--tekst-skala))] font-semibold">
-              Elever
-            </span>
-            {/* Fremdrift, ikke statistikk (DESIGN.md §12): hvor mange som er skåret. */}
-            <span className="text-etikett tabular-nums text-blekk-dempet">
-              {antallSkaret} av {elever.length} skåret
-            </span>
-            <span className="h-1 w-[120px] overflow-hidden rounded-sm bg-stripe">
-              <span
-                className="block h-full rounded-sm bg-aksent transition-[width] duration-[var(--tid-inn)]"
-                style={{
-                  width: `${elever.length ? (antallSkaret / elever.length) * 100 : 0}%`,
-                }}
-              />
-            </span>
-            <span className="ml-auto text-etikett text-blekk-svak">
-              Alfabetisk på fornavn
-            </span>
-          </div>
+              {elever.length === 0 && (
+                <p className="px-5 py-6 text-center text-brod text-blekk-dempet">
+                  Ingen elever er koblet til {okt.fagKode} ennå. Legg dem inn
+                  under Elever, så dukker de opp her — også i økter som allerede
+                  er skåret.
+                </p>
+              )}
 
-          {elever.length === 0 && (
-            <p className="px-5 py-6 text-center text-brod text-blekk-dempet">
-              Ingen elever er koblet til {okt.fagKode} ennå. Legg dem inn under
-              Elever, så dukker de opp her — også i økter som allerede er
-              skåret.
-            </p>
-          )}
-
-          <div className="relative">
-            {/*
+              <div className="relative">
+                {/*
               Markøren er én flate som glir til neste elev (DESIGN.md §8),
               ikke en bakgrunn som hopper. Skåringen venter aldri på den.
             */}
-            {elever.length > 0 && (
-              <div
-                aria-hidden
-                className="markor-flate pointer-events-none absolute inset-x-0 top-0 z-0 h-[38px] rounded-lg"
-                style={{ transform: `translateY(${markert * RAD}px)` }}
-              />
+                {elever.length > 0 && (
+                  <div
+                    aria-hidden
+                    className="markor-flate pointer-events-none absolute inset-x-0 top-0 z-0 h-[38px] rounded-lg"
+                    style={{ transform: `translateY(${markert * RAD}px)` }}
+                  />
+                )}
+                {elever.map((elev, i) => (
+                  <ElevRad
+                    key={elev.elevId}
+                    elev={elev}
+                    verdier={plott}
+                    tastekart={tastekart}
+                    markert={i === markert}
+                    radRef={i === markert ? markertRad : undefined}
+                    avholdt={avholdt}
+                    nullverdi={nullverdi}
+                    pop={sistSatt === elev.elevId}
+                    onKlikk={() => {
+                      setMarkert(i);
+                      liste.current?.focus();
+                    }}
+                    onVelg={(v) => skaar(i, v)}
+                    onNotat={() => setNotatFor(elev.elevId)}
+                    skriverNotat={notatFor === elev.elevId}
+                    onNotatFerdig={async (tekst) => {
+                      if (tekst !== null) {
+                        await settSkaringsnotat(elev.elevId, okt.id, tekst);
+                        setElever((f) =>
+                          f.map((e) =>
+                            e.elevId === elev.elevId
+                              ? { ...e, notat: tekst.trim() || null }
+                              : e,
+                          ),
+                        );
+                      }
+                      setNotatFor(null);
+                      liste.current?.focus();
+                    }}
+                    onApneElev={() => onApneElev(elev.elevId)}
+                  />
+                ))}
+              </div>
+              <div className="h-4" />
+            </div>
+
+            <aside className="flex w-80 shrink-0 flex-col gap-[22px] overflow-auto border-l border-linje-medium bg-flate-svak/70 px-[22px] py-[18px]">
+              <Forrigenotat okt={okt} />
+              <div>
+                <p className="mb-2 text-etikett font-semibold text-blekk">
+                  Plan
+                </p>
+                {/* Avkrysning i planen lagres med en gang. */}
+                <Markdownfelt
+                  key={`plan-${okt.id}`}
+                  verdi={okt.plan}
+                  minRader={3}
+                  plassholder="- [ ] Det du skal gjennom i økta"
+                  onLagre={async (v) => {
+                    await endreOkt(okt.id, { plan: v });
+                    onEndret();
+                  }}
+                />
+              </div>
+              <div className="flex min-h-[200px] flex-1 flex-col">
+                <p className="mb-2 text-etikett font-semibold text-blekk">
+                  Øktlogg
+                </p>
+                <Markdownfelt
+                  key={`logg-${okt.id}`}
+                  verdi={okt.logg}
+                  minRader={6}
+                  plassholder="Hvordan gikk det? - [ ] blir et gjøremål på I dag."
+                  onLagre={async (v) => {
+                    await endreOkt(okt.id, { logg: v });
+                    onEndret();
+                  }}
+                />
+              </div>
+            </aside>
+          </div>
+
+          <Tastestripe klasse="shrink-0 justify-start gap-4 px-[22px]">
+            <Tasthint
+              taster={plott
+                .filter((v) => v.rang > 0)
+                .map((v) => tastekart.get(v.id) ?? "")}
+            >
+              {plott
+                .filter((v) => v.rang > 0)
+                .map((v) => v.kode.toLowerCase())
+                .join(" · ")}
+            </Tasthint>
+            {nullverdi && (
+              <Tasthint taster={[tastekart.get(nullverdi.id) ?? "0"]}>
+                {nullverdi.kode.toLowerCase()}
+              </Tasthint>
             )}
-            {elever.map((elev, i) => (
-              <ElevRad
-                key={elev.elevId}
-                elev={elev}
-                verdier={plott}
-                tastekart={tastekart}
-                markert={i === markert}
-                radRef={i === markert ? markertRad : undefined}
-                avholdt={avholdt}
-                nullverdi={nullverdi}
-                pop={sistSatt === elev.elevId}
-                onKlikk={() => {
-                  setMarkert(i);
-                  liste.current?.focus();
-                }}
-                onVelg={(v) => skaar(i, v)}
-                onNotat={() => setNotatFor(elev.elevId)}
-                skriverNotat={notatFor === elev.elevId}
-                onNotatFerdig={async (tekst) => {
-                  if (tekst !== null) {
-                    await settSkaringsnotat(elev.elevId, okt.id, tekst);
-                    setElever((f) =>
-                      f.map((e) =>
-                        e.elevId === elev.elevId
-                          ? { ...e, notat: tekst.trim() || null }
-                          : e,
-                      ),
-                    );
-                  }
-                  setNotatFor(null);
-                  liste.current?.focus();
-                }}
-                onApneElev={() => onApneElev(elev.elevId)}
-              />
-            ))}
-          </div>
-          <div className="h-4" />
-        </div>
-
-        <aside className="flex w-80 shrink-0 flex-col gap-[22px] overflow-auto border-l border-linje-medium bg-flate-svak/70 px-[22px] py-[18px]">
-          <Forrigenotat okt={okt} />
-          <div>
-            <p className="mb-2 text-etikett font-semibold text-blekk">Plan</p>
-            {/* Avkrysning i planen lagres med en gang. */}
-            <Markdownfelt
-              key={`plan-${okt.id}`}
-              verdi={okt.plan}
-              minRader={3}
-              plassholder="- [ ] Det du skal gjennom i økta"
-              onLagre={async (v) => {
-                await endreOkt(okt.id, { plan: v });
-                onEndret();
-              }}
-            />
-          </div>
-          <div className="flex min-h-[200px] flex-1 flex-col">
-            <p className="mb-2 text-etikett font-semibold text-blekk">
-              Øktlogg
-            </p>
-            <Markdownfelt
-              key={`logg-${okt.id}`}
-              verdi={okt.logg}
-              minRader={6}
-              plassholder="Hvordan gikk det? - [ ] blir et gjøremål på I dag."
-              onLagre={async (v) => {
-                await endreOkt(okt.id, { logg: v });
-                onEndret();
-              }}
-            />
-          </div>
-        </aside>
-      </div>
-
-      <Tastestripe klasse="shrink-0 justify-start gap-4 px-[22px]">
-        <Tasthint
-          taster={plott
-            .filter((v) => v.rang > 0)
-            .map((v) => tastekart.get(v.id) ?? "")}
-        >
-          {plott
-            .filter((v) => v.rang > 0)
-            .map((v) => v.kode.toLowerCase())
-            .join(" · ")}
-        </Tasthint>
-        {nullverdi && (
-          <Tasthint taster={[tastekart.get(nullverdi.id) ?? "0"]}>
-            {nullverdi.kode.toLowerCase()}
-          </Tasthint>
-        )}
-        <Tasthint taster={["↑", "↓"]}>flytt</Tasthint>
-        <Tasthint taster={["N"]}>notat</Tasthint>
-        <Tasthint taster={["⌫"]}>fjern</Tasthint>
-        <span className="ml-auto">
-          <Tasthint taster={["esc"]}>lukk — alt er lagret</Tasthint>
-        </span>
-      </Tastestripe>
+            <Tasthint taster={["↑", "↓"]}>flytt</Tasthint>
+            <Tasthint taster={["N"]}>notat</Tasthint>
+            <Tasthint taster={["⌫"]}>fjern</Tasthint>
+            <span className="ml-auto">
+              <Tasthint taster={["esc"]}>lukk — alt er lagret</Tasthint>
+            </span>
+          </Tastestripe>
+        </>
+      )}
     </section>
   );
 }

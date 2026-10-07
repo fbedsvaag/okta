@@ -447,7 +447,7 @@ export default function App() {
                     skolear={skolear}
                     fag={fag}
                     onGaTil={(v, id) => ga(v, id ?? null)}
-                    onApneOkt={apneOktSomArk}
+                    onApneOkt={(id) => ark.current?.apneOkt(id, "skaring")}
                   />
                 )}
 
