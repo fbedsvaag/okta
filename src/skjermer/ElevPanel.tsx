@@ -1881,9 +1881,7 @@ function Fravaersboks({
               <span className="flex-1" />
               {merke && (
                 <span
-                  className={
-                    merke.niva === "rod" ? "text-feil" : "text-[#8a5a00]"
-                  }
+                  className={merke.niva === "rod" ? "text-feil" : "text-varsel"}
                 >
                   {merke.tekst}
                 </span>

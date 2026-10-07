@@ -355,7 +355,7 @@ export function Fagoversikt({
               </div>
             )}
             <p
-              className={`mt-2 text-[calc(12px*var(--tekst-skala))] ${t?.bak ? "text-varsel" : "text-[#2f7a4a]"}`}
+              className={`mt-2 text-[calc(12px*var(--tekst-skala))] ${t?.bak ? "text-varsel" : "text-god"}`}
             >
               {t
                 ? t.tekst
@@ -400,7 +400,7 @@ export function Fagoversikt({
                     <Vurderingsikon type={v.type} />
                     <span className="min-w-0 flex-1">
                       <b className="block truncate font-semibold">{v.tittel}</b>
-                      <span className="block text-[calc(12px*var(--tekst-skala))] text-[#8a5a00]">
+                      <span className="block text-[calc(12px*var(--tekst-skala))] text-varsel">
                         {[
                           v.frist ? langDato(v.frist) : "uten frist",
                           `${v.fort} av ${v.elever} ført`,
@@ -471,11 +471,7 @@ export function Fagoversikt({
           <div className="flex flex-col gap-3.5">
             <Kort tittel="Elevene nå" under="siste 6 økter">
               <div className="grid grid-cols-2 gap-4">
-                <Gruppe
-                  tittel="Går godt"
-                  farge="text-[#2f7a4a]"
-                  liste={naa.godt}
-                />
+                <Gruppe tittel="Går godt" farge="text-god" liste={naa.godt} />
                 <Gruppe
                   tittel="Trenger oppfølging"
                   farge="text-feil"
@@ -550,9 +546,9 @@ export function Fagoversikt({
                     <span
                       className={`text-right text-[calc(12px*var(--tekst-skala))] ${
                         m.dekning?.status === "dekket"
-                          ? "text-[#2f7a4a]"
+                          ? "text-god"
                           : m.dekning?.status === "pabegynt"
-                            ? "text-[#8a5a00]"
+                            ? "text-varsel"
                             : "text-blekk-svak"
                       }`}
                     >
@@ -759,7 +755,7 @@ function Fravaerslinje({
       </span>
       <span
         className={`text-right text-[calc(11.5px*var(--tekst-skala))] ${
-          merke?.niva === "rod" ? "text-feil" : "text-[#8a5a00]"
+          merke?.niva === "rod" ? "text-feil" : "text-varsel"
         }`}
       >
         {merke?.tekst ?? ""}

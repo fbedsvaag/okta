@@ -99,7 +99,7 @@ export function OktPlanlegging({
           </div>
 
           <Plan okt={okt} onLagre={(plan) => lagre({ plan })} />
-          <Mal okt={okt} />
+          <Mal okt={okt} periode={periode} />
 
           <div className="mt-6 flex gap-4">
             <button
@@ -456,7 +456,9 @@ function Plan({
  * merket med en prikk, og valgte mål i full farge. Fag uten Udir-kode får
  * et fritekstfelt.
  */
-function Mal({ okt }: { okt: Okt }) {
+function Mal({ okt, periode }: { okt: Okt; periode: Periode | null }) {
+  // Prikken for periodens mål har periodens farge.
+  const farge = periode?.farge ?? "var(--color-aksent)";
   const [mal, setMal] = useState<Oktmal | null>(null);
   const [liste, setListe] = useState<Kompetansemaal[]>([]);
   const [laereplan, setLaereplan] = useState<string | null>(null);
@@ -503,7 +505,7 @@ function Mal({ okt }: { okt: Okt }) {
           {periodens.size > 0 && (
             <>
               {" · "}
-              <span className="text-[#2f9a8a]">●</span> = periodens mål
+              <span style={{ color: farge }}>●</span> = periodens mål
             </>
           )}
         </span>
@@ -536,7 +538,7 @@ function Mal({ okt }: { okt: Okt }) {
                 last();
               }}
             />
-            <span className="text-[9px] text-[#2f9a8a]">
+            <span className="text-[9px]" style={{ color: farge }}>
               {fraPeriode ? "●" : ""}
             </span>
             <span className="tabular-nums text-blekk-svak">{i + 1}</span>

@@ -106,6 +106,8 @@
   --color-lys-borte: #d5d8dd;
 
   --color-varsel: #8a5a00;
+  /* «Går godt», «I rute», «Dekket» (fagsiden): grønt som tekst, ikke trafikklys. */
+  --color-god: #2f7a4a;
   --color-feil-flate: #fdf0ef;
   /* Kalendertonene (DESIGN.md §4). */
   --color-helligdag-flate: #f6e4df;
@@ -239,6 +241,7 @@
     --color-lys-borte: #6f6a80;
 
     --color-varsel: #e3b55c;
+    --color-god: #7cc285;
     --color-feil-flate: #3a2024;
     --color-helligdag-flate: #2d1f27;
     --color-helligdag-kant: #7a4a40;
