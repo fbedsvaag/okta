@@ -1,0 +1,282 @@
+{
+  "skolear": {
+    "navn": "2026/27",
+    "start": "2026-08-19",
+    "slutt": "2027-06-18",
+    "fridager": [
+      { "navn": "Høstferie", "type": "ferie", "fra": "2026-10-05", "til": "2026-10-09" },
+      { "navn": "Planleggingsdag", "type": "planlegging", "fra": "2026-11-13", "til": "2026-11-13" },
+      { "navn": "Juleferie", "type": "ferie", "fra": "2026-12-21", "til": "2027-01-01" },
+      { "navn": "Vinterferie", "type": "ferie", "fra": "2027-03-01", "til": "2027-03-05" },
+      { "navn": "Påskeferie", "type": "ferie", "fra": "2027-03-22", "til": "2027-03-29" },
+      { "navn": "Eksamensperiode", "type": "hendelse", "fra": "2027-05-24", "til": "2027-06-11" }
+    ]
+  },
+  "laerer": "Fredrik Bedsvaag",
+  "fag": [
+    {
+      "kode": "NOR1267",
+      "alias": "NOR3",
+      "navn": "Norsk vg3",
+      "grep": "NOR1267",
+      "farge": "#2f5d8a",
+      "rom": "214",
+      "klasse": "3STA",
+      "tider": [
+        { "ukedag": 2, "kl": "08:30", "min": 90 },
+        { "ukedag": 4, "kl": "10:15", "min": 90 },
+        { "ukedag": 5, "kl": "08:30", "min": 90 }
+      ],
+      "perioder": [
+        {
+          "navn": "Realismen og Ibsen",
+          "til": "2026-10-02",
+          "mal": [1, 2, 4],
+          "temaer": [
+            "Oppstart: hva vil vi med norsk vg3?",
+            "Realismen som prosjekt",
+            "Et dukkehjem: første akt",
+            "Et dukkehjem: Nora og Helmer",
+            "Et dukkehjem: slutten som skapte debatt",
+            "Kielland og samfunnskritikken",
+            "Amalie Skram: Karens jul",
+            "Litterær tolkning: slik bygger du teksten",
+            "Skriveøkt: tolkning av en realistisk novelle",
+            "Tilbakemelding og omskriving",
+            "Muntlig: realismen i dag"
+          ]
+        },
+        {
+          "navn": "Modernisme og lyrikk",
+          "til": "2026-11-27",
+          "mal": [1, 2, 3],
+          "temaer": [
+            "Hamsun: Sult og det moderne mennesket",
+            "Det modernistiske gjennombruddet",
+            "Obstfelder og storbyen",
+            "Lyrikk etter krigen: Bjørneboe og Vesaas",
+            "Gunvor Hofmo: Jeg vil hjem til menneskene",
+            "Rolf Jacobsen: Landskap med gravemaskiner",
+            "Hvordan leser vi et modernistisk dikt?",
+            "Essayet som sjanger",
+            "Skriveøkt: essay om tid og fremmedgjøring",
+            "Lesesirkel: modernistiske noveller",
+            "Sammenligning av to dikt"
+          ]
+        },
+        {
+          "navn": "Sakprosa og retorikk",
+          "til": "2027-02-12",
+          "mal": [6, 7, 9],
+          "temaer": [
+            "Retorikkens grunnbegreper",
+            "Appellformer i politiske taler",
+            "Retorisk analyse: slik går du fram",
+            "Kronikken som sjanger",
+            "Kildekritikk i en nyhetsstrøm",
+            "Fagartikkel: problemstilling og struktur",
+            "Skriveøkt: retorisk analyse av en tale",
+            "Debatt: skal skjermen ut av skolen?",
+            "Sammensatte tekster: reklamefilm og plakat",
+            "Mediekritikk og algoritmer"
+          ]
+        },
+        {
+          "navn": "Språk i dag",
+          "til": "2027-04-09",
+          "mal": [8, 10],
+          "temaer": [
+            "Talespråket i Norge i dag",
+            "Dialekter i endring",
+            "Kebabnorsk og multietnolekt",
+            "Engelsk i norsk: berikelse eller trussel?",
+            "Nynorsk som sidemål: formverk",
+            "Skriveøkt på sidemål",
+            "Språk og identitet",
+            "Språkpolitikk fra Aasen til i dag"
+          ]
+        },
+        {
+          "navn": "Fordypning og eksamen",
+          "til": "2027-06-18",
+          "mal": [3, 5, 6, 8],
+          "temaer": [
+            "Muntlig fordypning: velge tema",
+            "Fordypning: veiledning i grupper",
+            "Eksamensoppgaver fra i fjor",
+            "Repetisjon: epoker og hovedverk",
+            "Skrivetrening: kortsvar",
+            "Skrivetrening: langsvar",
+            "Prøveeksamen",
+            "Oppsummering og avslutning"
+          ]
+        }
+      ],
+      "vurderinger": [
+        { "tittel": "Litterær tolkning: realismen", "type": "skriftlig", "frist": "2026-09-25" },
+        { "tittel": "Essay: tid og fremmedgjøring", "type": "skriftlig", "frist": "2026-11-20" },
+        { "tittel": "Muntlig fordypning", "type": "muntlig", "frist": "2027-04-22" }
+      ]
+    },
+    {
+      "kode": "HIS1010",
+      "alias": "HIS3",
+      "navn": "Historie vg3",
+      "grep": "HIS1010",
+      "farge": "#7a4b2a",
+      "rom": "118",
+      "klasse": "3STB",
+      "tider": [
+        { "ukedag": 1, "kl": "12:30", "min": 90 },
+        { "ukedag": 3, "kl": "08:30", "min": 90 }
+      ],
+      "perioder": [
+        {
+          "navn": "Revolusjoner",
+          "til": "2026-10-16",
+          "mal": [6, 7],
+          "temaer": [
+            "Oppstart: hva er historie for?",
+            "Opplysningstiden og nye ideer",
+            "Den amerikanske revolusjonen",
+            "Den franske revolusjonen: årsaker",
+            "Terroren og Napoleon",
+            "1814 i Norge",
+            "Kildeøkt: menneskerettighetserklæringen"
+          ]
+        },
+        {
+          "navn": "Industrialisering",
+          "til": "2026-12-18",
+          "mal": [8, 9, 17],
+          "temaer": [
+            "Den industrielle revolusjonen i Storbritannia",
+            "Byene vokser: arbeid og bolig",
+            "Utvandringen til Amerika",
+            "Arbeiderbevegelsen tar form",
+            "Teknologi som endrer hverdagen",
+            "Kildeoppgave: industribyen",
+            "Natur og ressurser i industrialiseringen"
+          ]
+        },
+        {
+          "navn": "Imperialisme og verdenskriger",
+          "til": "2027-03-19",
+          "mal": [10, 11, 12],
+          "temaer": [
+            "Kappløpet om Afrika",
+            "Kolonimakt og motstand",
+            "Første verdenskrig: årsaker",
+            "Livet i skyttergravene",
+            "Mellomkrigstiden og krisen",
+            "Fascisme og nazisme",
+            "Andre verdenskrig i Europa",
+            "Norge under okkupasjonen",
+            "Holocaust og handlingsrom"
+          ]
+        },
+        {
+          "navn": "Etterkrigstid og velferd",
+          "til": "2027-06-18",
+          "mal": [13, 14, 15, 16],
+          "temaer": [
+            "Den kalde krigen",
+            "Velferdsstaten bygges",
+            "Kvinnekamp og likestilling",
+            "Samisk historie og fornorskning",
+            "Nasjonsbygging og minnekultur",
+            "Historiebruk i dag",
+            "Repetisjon før eksamen"
+          ]
+        }
+      ],
+      "vurderinger": [
+        { "tittel": "Kildeoppgave: revolusjonene", "type": "skriftlig", "frist": "2026-09-30" },
+        { "tittel": "Fagsamtale: en historisk person", "type": "muntlig", "frist": "2027-02-10" }
+      ]
+    },
+    {
+      "kode": "REL1003",
+      "alias": "REL3",
+      "navn": "Religion og etikk",
+      "grep": "REL1003",
+      "farge": "#3f6b4a",
+      "rom": "206",
+      "klasse": "3STC",
+      "tider": [{ "ukedag": 4, "kl": "12:30", "min": 135 }],
+      "perioder": [
+        {
+          "navn": "Religioner i verden",
+          "til": "2026-11-06",
+          "mal": [1, 3, 7],
+          "temaer": [
+            "Oppstart: hva er religion?",
+            "Hinduisme: mange veier",
+            "Buddhisme: lidelse og frigjøring",
+            "Jødedom: pakt og lov",
+            "Kristendom i Norge og verden",
+            "Islam: tro og praksis",
+            "Samisk religion og urfolksperspektiv"
+          ]
+        },
+        {
+          "navn": "Livssyn og kritikk",
+          "til": "2027-01-29",
+          "mal": [6, 8, 9],
+          "temaer": [
+            "Humanisme som livssyn",
+            "Religionskritikk fra Feuerbach til i dag",
+            "Kilder til kunnskap om religion",
+            "Eksistensielle spørsmål",
+            "Religion i film og spill"
+          ]
+        },
+        {
+          "navn": "Etikk og samfunn",
+          "til": "2027-06-18",
+          "mal": [10, 11, 12, 13, 14],
+          "temaer": [
+            "Etiske teorier: plikt og konsekvens",
+            "Dydsetikk og det gode liv",
+            "Teknologi og menneskeverd",
+            "Dyreetikk og naturens egenverdi",
+            "Fordommer og rasisme",
+            "Religion og politikk i dag",
+            "Debatt: ytringsfrihet og religion",
+            "Repetisjon og oppsummering"
+          ]
+        }
+      ],
+      "vurderinger": [
+        { "tittel": "Presentasjon: en religion", "type": "muntlig", "frist": "2026-10-29" },
+        { "tittel": "Drøftingsoppgave: etikk og teknologi", "type": "skriftlig", "frist": "2027-03-11" }
+      ]
+    }
+  ],
+  "logger": [
+    "God start. De fleste var i gang med en gang.\n- [ ] Ta opp igjen begrepene neste gang",
+    "Halve klassen ble ikke ferdig. Start med ti minutter oppsummering neste økt.",
+    "Fin diskusjon i gruppene. Gruppe 3 kom sent i gang.",
+    "Mye uro etter lunsj. Kortere arbeidsøkter fungerte bedre.",
+    "Flere spurte om vurderingen. Legg ut kriteriene i Teams.\n- [ ] Legge ut kriterier",
+    "Rolig økt med skriving. Gode spørsmål underveis.",
+    "Muntlig runde gikk bedre enn ventet. Flere som vanligvis er stille, sa noe.",
+    "Teknisk trøbbel med projektoren de første femten minuttene."
+  ],
+  "planer": [
+    "- [ ] Repetisjon fra sist · 10 min\n- [ ] Gjennomgang av nytt stoff · 30 min\n- [ ] Arbeid i grupper · 40 min\n- [ ] Exit-lapp · 10 min",
+    "- [ ] Oppstart og mål for økta · 10 min\n- [ ] Lesing i par · 35 min\n- [ ] Felles samtale · 30 min\n- [ ] Oppsummering · 15 min"
+  ],
+  "lekser": [
+    "Les kapittel 3",
+    "Les teksten vi startet på",
+    "Skriv et avsnitt om det vi snakket om",
+    "Se filmklippet i Teams"
+  ],
+  "elevnotater": [
+    "Kom for sent igjen. Avtalt samtale med kontaktlærer.",
+    "Jobbet godt i gruppa i dag, tok ansvar.",
+    "Lite innsats siste uker. Bør følges opp.",
+    "Spurte om ekstra lesestoff. Gi forslag neste gang."
+  ]
+}

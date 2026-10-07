@@ -10,7 +10,8 @@
     "tauri": "tauri",
     "test": "vitest run",
     "test:watch": "vitest",
-    "parse": "node scripts/parse.ts"
+    "parse": "node scripts/parse.ts",
+    "testdata": "vitest run --config scripts/testdata.config.ts"
   },
   "dependencies": {
     "@tauri-apps/api": "^2",
