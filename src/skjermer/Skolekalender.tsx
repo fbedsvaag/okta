@@ -236,6 +236,51 @@ export function Skolekalender({
   );
   const ix = maneder.indexOf(visManed);
 
+  // Alle månedene står under hverandre i én liste (10.7). Rullingen bestemmer
+  // hvilken måned som står framme; klikk i årsheatmapet, ‹ › og «I dag»
+  // ruller dit.
+  const rulleflate = useRef<HTMLDivElement>(null);
+  const styrt = useRef(false);
+  const slipp = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function rullTil(maned: string, glatt = true) {
+    const flate = rulleflate.current;
+    const mal = flate?.querySelector<HTMLElement>(`[data-maned="${maned}"]`);
+    if (!flate || !mal) return;
+    setVisManed(maned);
+    // Mens den glir, passerer den månedene imellom. De skal ikke vises i
+    // overskriften.
+    styrt.current = true;
+    if (slipp.current) clearTimeout(slipp.current);
+    slipp.current = setTimeout(() => (styrt.current = false), glatt ? 700 : 50);
+    flate.scrollTo({
+      top: mal.offsetTop,
+      behavior: glatt ? "smooth" : "auto",
+    });
+  }
+
+  /** Måneden som står øverst i lista. */
+  function lesManed() {
+    const flate = rulleflate.current;
+    if (!flate || styrt.current) return;
+    let funnet = maneder[0];
+    for (const el of flate.querySelectorAll<HTMLElement>("[data-maned]")) {
+      if (el.offsetTop - flate.scrollTop <= 48)
+        funnet = el.dataset.maned!;
+      else break;
+    }
+    if (funnet && funnet !== visManedRef.current) setVisManed(funnet);
+  }
+  const visManedRef = useRef(visManed);
+  visManedRef.current = visManed;
+
+  // Står på måneden fra start, uten å gli dit — og blir stående på den når
+  // cellehøyden er målt eller vinduet endrer størrelse. Før ble lista
+  // stående på august mens overskriften sa oktober.
+  useLayoutEffect(() => {
+    if (modus === "maned") rullTil(visManedRef.current, false);
+  }, [modus, cellehoyde]);
+
   // Hvor mye som skjer hver dag, til årsheatmapet.
   const mengde = useMemo(() => {
     const kart = new Map<string, number>();
@@ -264,7 +309,7 @@ export function Skolekalender({
             </h2>
             <span className="ml-auto flex items-center gap-1">
               <button
-                onClick={() => ix > 0 && setVisManed(maneder[ix - 1])}
+                onClick={() => ix > 0 && rullTil(maneder[ix - 1])}
                 disabled={ix <= 0}
                 title="Forrige måned"
                 className="rounded-vanlig px-2 py-0.5 text-tittel leading-none text-blekk-dempet hover:bg-flate hover:text-blekk disabled:opacity-30"
@@ -273,14 +318,14 @@ export function Skolekalender({
               </button>
               <Knapp
                 onClick={() =>
-                  setVisManed(narmesteManed(idag.slice(0, 7), maneder))
+                  rullTil(narmesteManed(idag.slice(0, 7), maneder))
                 }
               >
                 I dag
               </Knapp>
               <button
                 onClick={() =>
-                  ix < maneder.length - 1 && setVisManed(maneder[ix + 1])
+                  ix < maneder.length - 1 && rullTil(maneder[ix + 1])
                 }
                 disabled={ix >= maneder.length - 1}
                 title="Neste måned"
@@ -308,33 +353,46 @@ export function Skolekalender({
         />
       ) : (
         <div className="flex min-h-0 flex-1 gap-8">
-          <div className="min-h-0 min-w-0 flex-1 overflow-auto">
+          <div
+            ref={rulleflate}
+            onScroll={lesManed}
+            className="relative min-h-0 min-w-0 flex-1 overflow-auto"
+          >
             <div ref={rutenett} className="grid grid-cols-1">
-              <Maned
-                key={visManed}
-                maned={visManed}
-                cellehoyde={cellehoyde}
-                spennFra={skolear.start}
-                spennTil={skolear.slutt}
-                perDag={perDag}
-                samtalePerDag={samtalePerDag}
-                fridager={fridager}
-                rode={rode}
-                idag={idag}
-                valgte={valgte}
-                onVelgDag={(dato) =>
-                  setValgte((f) => {
-                    const ny = new Set(f);
-                    if (ny.has(dato)) ny.delete(dato);
-                    else ny.add(dato);
-                    return ny;
-                  })
-                }
-                onApneOkt={onApneOkt}
-                onSlettOkt={(o) => void slettValgte([o])}
-              />
+              {maneder.map((m, i) => (
+                <div key={m} data-maned={m} className={i > 0 ? "pt-7" : ""}>
+                  {/* Navnet over hver måned; det øverst i verktøylinja følger rullingen. */}
+                  {i > 0 && (
+                    <h3 className="mb-2 text-[calc(20px*var(--tekst-skala))] font-light leading-none tracking-overskrift first-letter:uppercase">
+                      {manedsnavn(m)}
+                    </h3>
+                  )}
+                  <Maned
+                    maned={m}
+                    cellehoyde={cellehoyde}
+                    spennFra={skolear.start}
+                    spennTil={skolear.slutt}
+                    perDag={perDag}
+                    samtalePerDag={samtalePerDag}
+                    fridager={fridager}
+                    rode={rode}
+                    idag={idag}
+                    valgte={valgte}
+                    onVelgDag={(dato) =>
+                      setValgte((f) => {
+                        const ny = new Set(f);
+                        if (ny.has(dato)) ny.delete(dato);
+                        else ny.add(dato);
+                        return ny;
+                      })
+                    }
+                    onApneOkt={onApneOkt}
+                    onSlettOkt={(o) => void slettValgte([o])}
+                  />
+                </div>
+              ))}
             </div>
-            <p className="mt-2 text-liten text-blekk-dempet">
+            <p className="mt-2 pb-[40vh] text-liten text-blekk-dempet">
               Klikk på dagene du vil ha økter på — også i flere måneder — og
               velg fag nederst.
             </p>
@@ -348,7 +406,7 @@ export function Skolekalender({
             rode={rode}
             spennFra={skolear.start}
             spennTil={skolear.slutt}
-            onVelg={setVisManed}
+            onVelg={(m) => rullTil(m)}
           />
         </div>
       )}
