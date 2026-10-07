@@ -1,3 +1,5 @@
+import { createPortal } from "react-dom";
+import { useSveip } from "./ui/sveip";
 import { hentKart, type Kart } from "./data/klassekart";
 import { lyttElever, lyttKlassekart } from "./data/endringer";
 import { Klassekart } from "./skjermer/Klassekart";
@@ -345,8 +347,6 @@ export default function App() {
           fag={fag}
           valgtFag={oktFag}
           onVelgFag={velgFag}
-          kanTilbake={peker > 0}
-          kanFram={peker < steder.length - 1}
           onGa={(p) => ga(p)}
           trekninger={trekninger}
           vurderingsnavn={vurderingsnavn}
@@ -358,8 +358,6 @@ export default function App() {
           onSok={() => setSokApent(true)}
           onInnstillinger={() => ga("innstillinger")}
           onSkolear={() => ga("innstillinger", "skolear")}
-          onTilbake={tilbake}
-          onFram={fram}
         />
 
         {/*
@@ -368,7 +366,14 @@ export default function App() {
           på hel flate — glass kommer bare på det som ligger over (§7).
         */}
         <div className="ark-flate m-2.5 flex min-w-0 flex-1 flex-col overflow-clip rounded-ark bg-ark shadow-[var(--shadow-panel)]">
-          <Verktoylinje visning={visning} onSpor={setSpor} />
+          <Verktoylinje
+            visning={visning}
+            onSpor={setSpor}
+            kanTilbake={peker > 0}
+            kanFram={peker < steder.length - 1}
+            onTilbake={tilbake}
+            onFram={fram}
+          />
           {melding && (
             <div className="ikkeutskrift flex shrink-0 items-center gap-3 border-b border-linje-medium bg-flate-svak px-6 py-1.5 text-brod text-aksent">
               <span className="inline-flex items-center gap-1.5">
@@ -594,13 +599,48 @@ const SKJERMNAVN: Record<Visning, string> = {
 function Verktoylinje({
   visning,
   onSpor,
+  kanTilbake,
+  kanFram,
+  onTilbake,
+  onFram,
 }: {
   visning: Visning;
   /** plassen skjermene fyller med `<IVerktoylinja>` */
   onSpor: (el: HTMLElement | null) => void;
+  kanTilbake: boolean;
+  kanFram: boolean;
+  onTilbake: () => void;
+  onFram: () => void;
 }) {
+  // Sveip med to fingre: til høyre tilbake, til venstre fram.
+  const sveip = useSveip(onTilbake, onFram, kanTilbake, kanFram);
   return (
-    <div className="glass-verktoy ikkeutskrift mx-2.5 mt-2.5 flex h-11 shrink-0 items-center gap-2.5 rounded-full pl-5 pr-1.5">
+    <div className="glass-verktoy ikkeutskrift mx-2.5 mt-2.5 flex h-11 shrink-0 items-center gap-2.5 rounded-full pl-1.5 pr-1.5">
+      {/*
+        Tilbake og fram, som i en nettleser (⌘[ ⌘]). Sto før nederst i
+        sidemenyen, der de var vanskelige å finne.
+      */}
+      <span className="flex shrink-0 items-center">
+        <Pil retning="tilbake" av={!kanTilbake} onKlikk={onTilbake} />
+        <Pil retning="fram" av={!kanFram} onKlikk={onFram} />
+      </span>
+      {/* Til body: glasset rundt gjør ellers «fixed» relativ til kapselen. */}
+      {sveip !== 0 &&
+        createPortal(
+          <span
+            aria-hidden
+            className={`pointer-events-none fixed top-1/2 z-50 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full bg-ark text-[22px] text-aksent shadow-[var(--shadow-ark)] ${
+              sveip > 0 ? "left-4" : "right-4"
+            }`}
+            style={{
+              opacity: Math.abs(sveip),
+              transform: `translateY(-50%) scale(${0.6 + 0.4 * Math.abs(sveip)})`,
+            }}
+          >
+            {sveip > 0 ? "‹" : "›"}
+          </span>,
+          document.body,
+        )}
       {/* Samtaletrekkeren har trekningens navn der i stedet (DESIGN §10). */}
       {visning !== "samtaler" && (
         <span className="text-brod font-semibold">{SKJERMNAVN[visning]}</span>
@@ -674,5 +714,31 @@ function Visningsbryter({
         </button>
       ))}
     </div>
+  );
+}
+
+function Pil({
+  retning,
+  av,
+  onKlikk,
+}: {
+  retning: "tilbake" | "fram";
+  av: boolean;
+  onKlikk: () => void;
+}) {
+  return (
+    <button
+      onClick={onKlikk}
+      disabled={av}
+      aria-label={retning === "tilbake" ? "Tilbake" : "Fram"}
+      title={
+        retning === "tilbake"
+          ? "Tilbake (⌘[ eller sveip til høyre med to fingre)"
+          : "Fram (⌘] eller sveip til venstre med to fingre)"
+      }
+      className="grid h-8 w-8 place-items-center rounded-full text-[20px] leading-none text-blekk hover:bg-[var(--glass-valgt)] disabled:text-blekk-svakest disabled:hover:bg-transparent"
+    >
+      {retning === "tilbake" ? "‹" : "›"}
+    </button>
   );
 }

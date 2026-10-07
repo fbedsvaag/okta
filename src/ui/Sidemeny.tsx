@@ -54,8 +54,6 @@ export function Sidemeny({
   aktiv,
   fag,
   valgtFag,
-  kanTilbake,
-  kanFram,
   onGa,
   onVelgFag,
   trekninger,
@@ -68,8 +66,6 @@ export function Sidemeny({
   onSok,
   onInnstillinger,
   onSkolear,
-  onTilbake,
-  onFram,
 }: {
   skolearNavn: string;
   /** hvilket punkt som er markert; null når ingen av dem er det */
@@ -77,8 +73,6 @@ export function Sidemeny({
   fag: FagIAr[];
   /** faget Økter står filtrert på; "" = alle fag */
   valgtFag: string;
-  kanTilbake: boolean;
-  kanFram: boolean;
   onGa: (p: Menypunkt) => void;
   /** et fag i undermenyen under Økter; "" = Alle fag */
   onVelgFag: (id: string) => void;
@@ -99,8 +93,6 @@ export function Sidemeny({
   onInnstillinger: () => void;
   /** skoleåret øverst: Innstillinger › Skoleår */
   onSkolear: () => void;
-  onTilbake: () => void;
-  onFram: () => void;
 }) {
   // Punktet musa hviler på. Settes etter en liten pause, så undermenyene
   // ikke blafrer når musa bare passerer.
@@ -324,8 +316,6 @@ export function Sidemeny({
           Innstillinger
           <Tast>⌘,</Tast>
         </button>
-        <Pil retning="tilbake" av={!kanTilbake} onKlikk={onTilbake} />
-        <Pil retning="fram" av={!kanFram} onKlikk={onFram} />
       </div>
     </nav>
   );
@@ -398,27 +388,6 @@ function Tast({ children }: { children: ReactNode }) {
     <kbd className="ml-auto shrink-0 font-sans text-[calc(10.5px*var(--tekst-skala))] font-normal tracking-[0.04em] text-blekk-dempet">
       {children}
     </kbd>
-  );
-}
-
-function Pil({
-  retning,
-  av,
-  onKlikk,
-}: {
-  retning: "tilbake" | "fram";
-  av: boolean;
-  onKlikk: () => void;
-}) {
-  return (
-    <button
-      onClick={onKlikk}
-      disabled={av}
-      title={retning === "tilbake" ? "Tilbake (⌘[)" : "Fram (⌘])"}
-      className="grid h-[30px] w-6 shrink-0 place-items-center rounded-[9px] text-tittel leading-none text-blekk-dempet hover:bg-[var(--glass-valgt)] hover:text-blekk disabled:opacity-30 disabled:hover:bg-transparent"
-    >
-      {retning === "tilbake" ? "‹" : "›"}
-    </button>
   );
 }
 
