@@ -43,7 +43,8 @@ import { Samtaler } from "./skjermer/Samtaler";
 import { Samtaleoversikt } from "./skjermer/Samtaleoversikt";
 import { ElevPanel } from "./skjermer/ElevPanel";
 import { FagPanel } from "./skjermer/FagPanel";
-import { Knapp, Ikon } from "./ui/felles";
+import { Bryter, Fagfirkant, Knapp, Ikon } from "./ui/felles";
+import { Fagoversikt } from "./skjermer/Fagoversikt";
 import { G_SNARVEIER, Sidemeny, type Menypunkt } from "./ui/Sidemeny";
 import { Sokevindu } from "./ui/Sokevindu";
 import { ArkKobling, Arkstabel, type ArkApi } from "./ui/Arkstabel";
@@ -68,6 +69,8 @@ type Visning =
   /** én elev over hele skjermen, uten lista — der søket åpner */
   | "elev"
   | "okter"
+  /** fagsiden: Oversikt i Økter når et fag er valgt (11.2) */
+  | "oversikt"
   | "vurderinger"
   | "samtaler"
   | "innstillinger"
@@ -122,6 +125,7 @@ export default function App() {
 
   const { steder, peker } = historikk;
   const { visning, id: apneId } = steder[peker];
+  const valgtFag = fag.find((f) => f.id === oktFag) ?? null;
 
   const ga = useCallback((visning: Visning, id: string | null = null) => {
     setHistorikk((h) => {
@@ -138,11 +142,14 @@ export default function App() {
     setOktFag(id);
     setHistorikk((h) => {
       const na = h.steder[h.peker];
-      // Står du i Økter (liste eller kalender), blir du der.
+      // Står du i liste eller kalender, blir du der. Fra fagsiden til «Alle
+      // fag» går du til lista, for alle fag har ingen fagside.
       if (na.visning === "okter" || na.visning === "kalender") return h;
+      if (na.visning === "oversikt" && id) return h;
+      // Ellers åpner et fag fagsiden (11.2), og «Alle fag» lista.
       const steder = [
         ...h.steder.slice(0, h.peker + 1),
-        { visning: "okter" as Visning, id: null },
+        { visning: (id ? "oversikt" : "okter") as Visning, id: null },
       ];
       return { steder, peker: steder.length - 1 };
     });
@@ -391,6 +398,22 @@ export default function App() {
         <div className="ark-flate m-2.5 flex min-w-0 flex-1 flex-col overflow-clip rounded-ark bg-ark shadow-[var(--shadow-panel)]">
           <Verktoylinje
             visning={visning}
+            fagTittel={
+              erOktvisning(visning) && valgtFag
+                ? { kode: valgtFag.kode, farge: valgtFag.farge }
+                : null
+            }
+            bryter={
+              erOktvisning(visning) ? (
+                <Visningsbryter
+                  visning={
+                    visning === "oversikt" && !valgtFag ? "okter" : visning
+                  }
+                  medFag={!!valgtFag}
+                  ga={ga}
+                />
+              ) : undefined
+            }
             onSpor={setSpor}
             kanTilbake={peker > 0}
             kanFram={peker < steder.length - 1}
@@ -428,9 +451,17 @@ export default function App() {
                   />
                 )}
 
+                {visning === "oversikt" && valgtFag && (
+                  <Fagoversikt
+                    key={`${versjon}-${valgtFag.id}`}
+                    skolear={skolear}
+                    fag={valgtFag}
+                    onRedigerFag={() => ga("fagside", valgtFag.id)}
+                  />
+                )}
+
                 {visning === "kalender" && (
                   <Skolekalender
-                    bryter={<Visningsbryter visning={visning} ga={ga} />}
                     key={versjon}
                     skolear={skolear}
                     fag={fag}
@@ -572,9 +603,9 @@ export default function App() {
                   />
                 )}
 
-                {visning === "okter" && (
+                {(visning === "okter" ||
+                  (visning === "oversikt" && !valgtFag)) && (
                   <Okter
-                    bryter={<Visningsbryter visning={visning} ga={ga} />}
                     key={versjon}
                     skolear={skolear}
                     fag={fag}
@@ -601,6 +632,7 @@ export default function App() {
 const SKJERMNAVN: Record<Visning, string> = {
   idag: "I dag",
   okter: "Økter",
+  oversikt: "Økter",
   kalender: "Økter",
   elever: "Elever",
   elev: "Elever",
@@ -621,6 +653,8 @@ const SKJERMNAVN: Record<Visning, string> = {
  */
 function Verktoylinje({
   visning,
+  fagTittel,
+  bryter,
   onSpor,
   kanTilbake,
   kanFram,
@@ -628,6 +662,10 @@ function Verktoylinje({
   onFram,
 }: {
   visning: Visning;
+  /** Økter med et fag valgt: fagfirkant og kode i stedet for «Økter» (11.2) */
+  fagTittel?: { kode: string; farge: string | null } | null;
+  /** Liste | Kalender, eller Oversikt | Økter | Kalender, rett etter tittelen */
+  bryter?: React.ReactNode;
   /** plassen skjermene fyller med `<IVerktoylinja>` */
   onSpor: (el: HTMLElement | null) => void;
   kanTilbake: boolean;
@@ -665,9 +703,17 @@ function Verktoylinje({
           document.body,
         )}
       {/* Samtaletrekkeren har trekningens navn der i stedet (DESIGN §10). */}
-      {visning !== "samtaler" && (
-        <span className="text-brod font-semibold">{SKJERMNAVN[visning]}</span>
+      {fagTittel ? (
+        <span className="flex shrink-0 items-center gap-2 text-brod font-semibold">
+          <Fagfirkant farge={fagTittel.farge} storrelse={10} />
+          {fagTittel.kode}
+        </span>
+      ) : (
+        visning !== "samtaler" && (
+          <span className="text-brod font-semibold">{SKJERMNAVN[visning]}</span>
+        )
       )}
+      {bryter && <span className="ml-1 shrink-0">{bryter}</span>}
       {visning === "idag" && (
         <span className="text-brod tabular-nums text-blekk-dempet">
           Uke {ukenummer(isoIDag())}
@@ -702,41 +748,42 @@ function aktivtPunkt(v: Visning): Menypunkt | "innstillinger" | null {
 
 /** Visningene som hører under Økter-fanen. */
 function erOktvisning(v: Visning): boolean {
-  return v === "okter" || v === "kalender";
+  return v === "okter" || v === "kalender" || v === "oversikt";
 }
 
 /**
- * Liste og Kalender er to måter å se øktene på. Bryteren står først i
- * verktøylinja i begge, på samme sted, så den ikke hopper. Periodevisningen
- * er tatt bort: perioden er en merkelapp på økta (DESIGN.md §6).
+ * Liste og Kalender er to måter å se øktene på; med et fag valgt kommer
+ * fagsiden først: Oversikt | Økter | Kalender (11.2, lerretet «Fagside»).
+ * Bryteren står i verktøylinja, rett etter tittelen, på samme sted i alle
+ * visningene (SPEC §4), så den ikke hopper.
  */
 function Visningsbryter({
   visning,
+  medFag,
   ga,
 }: {
   visning: Visning;
+  /** et fag er valgt: Oversikt kommer med, og lista heter Økter */
+  medFag: boolean;
   ga: (v: Visning) => void;
 }) {
-  const valg: [Visning, string][] = [
-    ["okter", "Liste"],
-    ["kalender", "Kalender"],
-  ];
+  const valg = medFag
+    ? [
+        { id: "oversikt", navn: "Oversikt" },
+        { id: "okter", navn: "Økter" },
+        { id: "kalender", navn: "Kalender" },
+      ]
+    : [
+        { id: "okter", navn: "Liste" },
+        { id: "kalender", navn: "Kalender" },
+      ];
   return (
-    <div className="inline-flex shrink-0 rounded border border-linje bg-ark p-0.5">
-      {valg.map(([v, navn]) => (
-        <button
-          key={v}
-          onClick={() => ga(v)}
-          className={`rounded-sm px-2.5 py-0.5 text-liten ${
-            visning === v
-              ? "bg-valgt font-medium text-aksent"
-              : "text-blekk-dempet hover:text-blekk"
-          }`}
-        >
-          {navn}
-        </button>
-      ))}
-    </div>
+    <Bryter
+      storrelse="liten"
+      valg={valg}
+      verdi={visning}
+      settVerdi={(v) => ga(v as Visning)}
+    />
   );
 }
 

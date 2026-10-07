@@ -20,6 +20,7 @@ export type Oktrad = {
   dato: string;
   klokkeslett: string | null;
   varighetMin: number;
+  tema: string | null;
   /** skalaverdiens farge (gronn | gul | rod), null uten farge eller uten skåring */
   farge: string | null;
   /** 1 = «ikke i økta» eller ikke skåret; teller ikke i noen sammenstilling */
@@ -29,7 +30,8 @@ export type Oktrad = {
 export async function hentOktrader(skolearId: string): Promise<Oktrad[]> {
   return hent<Oktrad>(
     `WITH avholdt AS (
-       SELECT o.id, o.skolear_fag_id, o.dato, o.klokkeslett, o.varighet_min
+       SELECT o.id, o.skolear_fag_id, o.dato, o.klokkeslett, o.varighet_min,
+              o.tema
          FROM okt o
          JOIN skolear_fag sf ON sf.id = o.skolear_fag_id
                             AND sf.slettet IS NULL AND sf.skolear_id = $1
@@ -45,6 +47,7 @@ export async function hentOktrader(skolearId: string): Promise<Oktrad[]> {
             a.dato            AS dato,
             a.klokkeslett     AS klokkeslett,
             a.varighet_min    AS varighetMin,
+            a.tema            AS tema,
             sv.farge          AS farge,
             CASE WHEN sv.id IS NULL OR sv.teller_ikke = 1 THEN 1 ELSE 0 END
                               AS borte
@@ -66,7 +69,7 @@ export async function hentOktrader(skolearId: string): Promise<Oktrad[]> {
 /** Én rute i «innsats, siste n»: g y r = trafikklyset, o = ikke i økta, n = verdi uten farge. */
 export type Rute = "g" | "y" | "r" | "o" | "n";
 
-function rute(r: Oktrad): Rute {
+export function rute(r: Oktrad): Rute {
   if (r.borte) return "o";
   return r.farge === "gronn"
     ? "g"
@@ -91,6 +94,17 @@ export function sisteRuter(
     .filter((r) => r.elevId === elevId && (!fag || fag.has(r.skolearFagId)))
     .slice(-n)
     .map(rute);
+}
+
+/**
+ * Snittet av rutene, fra 0 (rød) til 1 (grønn). «Ikke i økta» og verdier
+ * uten farge teller ikke (CLAUDE.md regel 5). null uten noe å regne av.
+ */
+export function snitt(ruter: Rute[]): number | null {
+  const tall = ruter.flatMap((r) =>
+    r === "g" ? [1] : r === "y" ? [0.5] : r === "r" ? [0] : [],
+  );
+  return tall.length ? tall.reduce((a, b) => a + b, 0) / tall.length : null;
 }
 
 /**
