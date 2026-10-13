@@ -1,0 +1,63 @@
+# Windows-versjonen av Økta (ARBEIDSLISTE §14).
+#
+# Fredrik har ingen Windows-maskin, så alt bygges og røyktestes her:
+# npm test og cargo test kjører på Windows før installeren bygges.
+#
+# - Når en release publiseres: NSIS-installeren (.exe) lastes opp til den
+#   samme releasen.
+# - Manuelt (Actions › Windows › Run workflow): bygger og legger
+#   installeren ved kjøringen som et artefakt, uten å røre noen release.
+#
+# Mac bygges fortsatt lokalt med `npm run dmg`. Se docs/release.md.
+name: Windows
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Installer avhengigheter
+        run: npm ci
+
+      - name: npm test
+        run: npm test
+
+      - name: cargo test
+        run: cargo test --manifest-path src-tauri/Cargo.toml
+
+      - name: Bygg installeren
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          args: --bundles nsis
+          # Tom ved manuell kjøring: da bygges det uten opplasting.
+          releaseId: ${{ github.event.release.id }}
+
+      - name: Legg installeren ved kjøringen
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: okta-windows
+          path: src-tauri/target/release/bundle/nsis/*.exe
+          if-no-files-found: error
