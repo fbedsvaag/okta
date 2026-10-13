@@ -4,6 +4,7 @@ import { BEVEGELSE, lagreBevegelse, type Bevegelse } from "../ui/bevegelse";
 import { lagrePalett, PALETT, PALETTER, type Palett } from "../ui/palett";
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { Hovermarkor } from "../ui/Hovermarkor";
+import { DelOppsett } from "./Oppsettfil";
 import {
   endreSkolear,
   hentInnstilling,
@@ -1029,6 +1030,10 @@ export function Innstillinger({
             </p>
           </Bolk>
 
+          <Bolk id="deloppsett" tittel="Del oppsett">
+            <DelOppsett harAr={!!skolear} onImportert={onEndret} />
+          </Bolk>
+
           <Bolk id="personvern" tittel="Personvern">
             <p className="text-brod text-blekk-dempet">
               Appen gjør ingen nettverkskall. Databasen ligger lokalt i{" "}
@@ -1096,10 +1101,7 @@ function Laerernavn() {
   );
 }
 
-/**
- * Sidene i venstremenyen, i grupper (DESIGN.md §10). Del oppsett under
- * Kollegaer kommer med oppsettfila (ARBEIDSLISTE 5.13).
- */
+/** Sidene i venstremenyen, i grupper (DESIGN.md §10). */
 const SIDER = [
   {
     gruppe: "Vanlig",
@@ -1116,6 +1118,10 @@ const SIDER = [
       { id: "sikkerhetskopi", navn: "Sikkerhetskopi" },
       { id: "personvern", navn: "Personvern" },
     ],
+  },
+  {
+    gruppe: "Kollegaer",
+    sider: [{ id: "deloppsett", navn: "Del oppsett" }],
   },
   {
     gruppe: "Sjelden i bruk",
