@@ -912,7 +912,13 @@ export async function slettSamtaledag(id: string): Promise<void> {
  * til alle som abonnerer.
  *
  * Samtaler der eleven ikke møtte blir stående urørt: de er en opplysning om
- * hva som skjedde, ikke en del av planen som trekkes om.
+ * hva som skjedde, ikke en del av planen som trekkes om. Unntaket er når
+ * eleven settes opp på nøyaktig samme klokkeslett igjen samme dag: da
+ * brukes den raden, siden det bare kan finnes én (se under).
+ *
+ * **Én rad per dag, elev og klokkeslett** (UNIQUE i 012_samtale.sql). Regelen
+ * gjelder også slettede rader, så en elev som får tilbake et klokkeslett fra
+ * en eldre trekning, får den gamle raden igjen i stedet for en ny (#3).
  */
 export async function lagreTrekning(
   samtaledagId: string,
@@ -923,35 +929,57 @@ export async function lagreTrekning(
     tema: string | null;
   }[],
 ): Promise<void> {
-  const gamle = await hent<{ id: string; elevId: string; motte: number }>(
-    `SELECT id, elev_id AS elevId, motte
-       FROM samtale WHERE samtaledag_id = $1 AND slettet IS NULL`,
+  const alle = await hent<{
+    id: string;
+    elevId: string;
+    klokkeslett: string;
+    motte: number;
+    slettet: string | null;
+  }>(
+    `SELECT id, elev_id AS elevId, klokkeslett, motte, slettet
+       FROM samtale WHERE samtaledag_id = $1`,
     [samtaledagId],
   );
+  const gamle = alle.filter((g) => g.slettet === null);
+  const pa = (elevId: string, klokkeslett: string) =>
+    alle.find((g) => g.elevId === elevId && g.klokkeslett === klokkeslett);
 
-  const ledige = new Map<string, string>();
+  // Planlagte samtaler per elev som kan flyttes til et nytt klokkeslett.
+  const ledige = new Map<string, string[]>();
   for (const g of gamle) {
-    if (g.motte === 1 && !ledige.has(g.elevId)) ledige.set(g.elevId, g.id);
+    if (g.motte === 1)
+      ledige.set(g.elevId, [...(ledige.get(g.elevId) ?? []), g.id]);
   }
 
   const brukt = new Set<string>();
+  const felter = (s: (typeof samtaler)[number]) => ({
+    klokkeslett: s.klokkeslett,
+    varighet_min: s.varighetMin,
+    tema: s.tema,
+  });
   for (const s of samtaler) {
-    const finnes = ledige.get(s.elevId);
-    if (finnes) {
-      brukt.add(finnes);
-      await oppdater("samtale", finnes, {
-        klokkeslett: s.klokkeslett,
-        varighet_min: s.varighetMin,
-        tema: s.tema,
+    // Først en rad som allerede står på dette klokkeslettet, også en slettet
+    // eller en der eleven ikke møtte. Ellers flyttes en planlagt rad hit.
+    const her = pa(s.elevId, s.klokkeslett);
+    if (her && !brukt.has(her.id)) {
+      brukt.add(her.id);
+      await oppdater("samtale", her.id, {
+        ...felter(s),
+        motte: 1,
+        slettet: null,
       });
+      continue;
+    }
+    const flytt = (ledige.get(s.elevId) ?? []).find((id) => !brukt.has(id));
+    if (flytt) {
+      brukt.add(flytt);
+      await oppdater("samtale", flytt, felter(s));
       continue;
     }
     await settInn("samtale", {
       samtaledag_id: samtaledagId,
       elev_id: s.elevId,
-      klokkeslett: s.klokkeslett,
-      varighet_min: s.varighetMin,
-      tema: s.tema,
+      ...felter(s),
       motte: 1,
     });
   }

@@ -708,3 +708,58 @@ describe("elev tatt ut av faget", () => {
     expect((await hentOkter(skolearId))[0].gronn).toBe(1);
   });
 });
+
+describe("samme elev på samme klokkeslett igjen (#3)", () => {
+  const paa = (elevId: string, klokkeslett: string) => ({
+    elevId,
+    klokkeslett,
+    varighetMin: 20,
+    tema: null,
+  });
+
+  it("tåler at en elev får tilbake et klokkeslett fra en eldre trekning", async () => {
+    const dagId = await dagMed("2026-11-24");
+    const [a, b] = elever;
+    await lagreTrekning(dagId, [paa(a, "10:00")]); // A får 10:00
+    await lagreTrekning(dagId, [paa(b, "10:00")]); // A faller ut (slettes)
+    await lagreTrekning(dagId, [paa(a, "10:00")]); // A får 10:00 igjen
+
+    const samtaler = await hentSamtaler(dagId);
+    expect(samtaler).toHaveLength(1);
+    expect(samtaler[0]).toMatchObject({
+      elevId: a,
+      klokkeslett: "10:00",
+      motte: true,
+    });
+  });
+
+  it("tåler at en som ikke møtte settes opp på samme klokkeslett", async () => {
+    const dagId = await dagMed("2026-11-24");
+    const [a] = elever;
+    await lagreTrekning(dagId, [paa(a, "10:00")]);
+    const [forste] = await hentSamtaler(dagId);
+    await settMotte(forste.id, false);
+
+    await lagreTrekning(dagId, [paa(a, "10:00")]);
+
+    const samtaler = await hentSamtaler(dagId);
+    expect(samtaler).toHaveLength(1);
+    expect(samtaler[0]).toMatchObject({ elevId: a, motte: true });
+  });
+
+  it("gjenbruker raden som allerede har riktig klokkeslett", async () => {
+    // A står to ganger samme dag; ny trekning beholder 11:00. Flyttes feil
+    // rad dit, kolliderer den med raden som står der fra før.
+    const dagId = await dagMed("2026-11-24");
+    const [a] = elever;
+    await lagreTrekning(dagId, [paa(a, "10:00"), paa(a, "11:00")]);
+    const for_ = await hentSamtaler(dagId);
+    const elleve = for_.find((s) => s.klokkeslett === "11:00")!;
+
+    await lagreTrekning(dagId, [paa(a, "11:00")]);
+
+    const samtaler = await hentSamtaler(dagId);
+    expect(samtaler).toHaveLength(1);
+    expect(samtaler[0].id).toBe(elleve.id);
+  });
+});
