@@ -243,11 +243,10 @@ klasser samme år er nesten alltid to personer.
 
 ### 3.3 Perioder, økter og skåring
 
-**Perioden står på økta.** `okt.periode_id` bestemmer, alltid. Perioder legges
-på ved å fargelegge øktene i lista (§4.2), og `periode.start` og `periode.slutt`
-følger det som er farget: første og siste økt i perioden. Settes spennet for
-hånd i periodevisningen, farges øktene innenfor. En ny økt som legges midt i
-en farget periode, får periodens farge med én gang.
+**Perioden står på økta.** `okt.periode_id` bestemmer, alltid. Perioden er en
+merkelapp: man markerer økter i lista og trykker P (§4.2). `periode.start` og
+`periode.slutt` følger øktene: første og siste økt i perioden. En ny økt som
+legges midt i en periode, får perioden med én gang.
 
 Perioden utledes ikke av datoene. Gjorde den det, kunne en økt ikke tas ut av
 en periode uten å flytte periodegrensene.
