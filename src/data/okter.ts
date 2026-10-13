@@ -302,7 +302,31 @@ export async function endreOkt(
     periode_id?: string | null;
   },
 ): Promise<void> {
+  // Datoen før flyttingen, så vurderingsfristen kan følge med (under).
+  const [for_] =
+    felter.dato !== undefined
+      ? await hent<{ dato: string }>("SELECT dato FROM okt WHERE id = $1", [id])
+      : [];
+
   await oppdater("okt", id, felter);
+
+  // En vurdering med frist på økta flytter med når koblingen er enkel: økta
+  // er vurderingens eneste, og fristen sto på den gamle datoen. Samme regel
+  // som settFrist, bare andre veien. En vurdering over flere økter, eller
+  // med en frist en annen dag, beholder fristen sin.
+  if (for_ && felter.dato && felter.dato !== for_.dato) {
+    const flytt = await hent<{ id: string }>(
+      `SELECT v.id FROM vurdering v
+         JOIN vurdering_okt vo ON vo.vurdering_id = v.id AND vo.slettet IS NULL
+        WHERE vo.okt_id = $1 AND v.slettet IS NULL AND v.frist = $2
+          AND (SELECT COUNT(*) FROM vurdering_okt x
+                 JOIN okt o ON o.id = x.okt_id AND o.slettet IS NULL
+                WHERE x.vurdering_id = v.id AND x.slettet IS NULL) = 1`,
+      [id, for_.dato],
+    );
+    for (const v of flytt)
+      await oppdater("vurdering", v.id, { frist: felter.dato });
+  }
 
   // Samtaledager som ligger i økta, følger den når den flyttes eller endrer
   // lengde. Samtalene som alt er trukket, står på sine klokkeslett — de må
