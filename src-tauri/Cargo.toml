@@ -41,3 +41,8 @@ os_info = { version = "3", default-features = false }
 # sørger systemet selv for at det bare kjører én app.
 [target.'cfg(not(target_os = "macos"))'.dependencies]
 tauri-plugin-single-instance = "2"
+
+[dev-dependencies]
+# Bare i testene: sjekker at SQL-pluginens mappe og appens datamappe er den
+# samme på Mac og Windows (sikkerhetskopi.rs).
+dirs = "6"

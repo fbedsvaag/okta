@@ -2649,6 +2649,7 @@ name = "okta"
 version = "0.3.0"
 dependencies = [
  "base64 0.22.1",
+ "dirs",
  "keyring",
  "os_info",
  "serde",

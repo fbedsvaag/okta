@@ -205,3 +205,17 @@ pub fn gjenopprett_fra(
 
     app.restart();
 }
+
+#[cfg(test)]
+mod tester {
+    /// Databasen ligger der SQL-pluginen legger den (`app_config_dir`), men
+    /// gjenopprettingen og kopiene bruker `app_data_dir`. Det går bare fordi
+    /// de to er samme mappe: Application Support på Mac, AppData\Roaming på
+    /// Windows. Ellers ville gjenopprettingen skrevet til feil fil.
+    #[cfg(any(target_os = "macos", target_os = "windows"))]
+    #[test]
+    fn databasen_og_kopiene_er_i_samme_mappe() {
+        assert_eq!(dirs::config_dir(), dirs::data_dir());
+        assert!(dirs::data_dir().is_some());
+    }
+}

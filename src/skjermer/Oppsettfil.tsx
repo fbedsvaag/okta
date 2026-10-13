@@ -14,6 +14,7 @@ import {
   type Oppsett,
 } from "../data/oppsettfil";
 import { Felt, Ikon, Knapp } from "../ui/felles";
+import { filbehandler } from "../ui/plattformord";
 
 /**
  * Oppsettfila i Innstillinger › Del oppsett (SPEC §8.2, ARBEIDSLISTE 5.13).
@@ -160,7 +161,7 @@ export function DelOppsett({
               onClick={() => void revealItemInDir(melding.sti!)}
               className="text-aksent hover:underline"
             >
-              Vis i Finder
+              Vis i {filbehandler()}
             </button>
           )}
         </p>

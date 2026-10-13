@@ -24,6 +24,8 @@ import {
   type Kopi,
 } from "../data/sikkerhetskopi";
 import { revealItemInDir } from "@tauri-apps/plugin-opener";
+import { appDataDir } from "@tauri-apps/api/path";
+import { erMac } from "../ui/taster";
 import {
   hentSkalaer,
   hentVerdier,
@@ -45,7 +47,14 @@ import {
 } from "@tauri-apps/plugin-dialog";
 import type { FagIAr } from "../data/fag";
 import { Bryter, Felt, Knapp, Ikon } from "../ui/felles";
-import { nokkelringen } from "../ui/plattformord";
+import {
+  bevegelseshjelp,
+  filbehandler,
+  glasshjelp,
+  nokkelringen,
+  synkadvarsel,
+  systemnavn,
+} from "../ui/plattformord";
 
 /**
  * Globale innstillinger, SPEC §4.8.
@@ -117,6 +126,9 @@ export function Innstillinger({
   const [skalaer, setSkalaer] = useState<Skala[]>([]);
   const [kopier, setKopier] = useState<Kopi[]>([]);
   const [kopimappe, setKopimappe] = useState("");
+  // Der databasen faktisk ligger, fra Tauri: Application Support på Mac,
+  // AppData\Roaming på Windows (14.5).
+  const [datamappe, setDatamappe] = useState<string | null>(null);
   const [tarKopi, setTarKopi] = useState(false);
   // Beskjed etter «Ta kopi nå»: at det gikk, og hva fila heter.
   const [kopimelding, setKopimelding] = useState<{
@@ -197,6 +209,9 @@ export function Innstillinger({
 
   useEffect(() => {
     void lastKopier();
+    void appDataDir()
+      .then(setDatamappe)
+      .catch(() => {});
     void hentInnstilling("standard_varighet_min").then((v) =>
       setVarighet(v ?? "180"),
     );
@@ -365,11 +380,11 @@ export function Innstillinger({
           <Bolk id="utseende" tittel="Utseende">
             <Rad
               etikett="Lys eller mørk"
-              hjelp="«Som macOS» skifter av seg selv når maskinen gjør det. Utskriften av årsplanen er alltid lys."
+              hjelp={`«Som ${systemnavn()}» skifter av seg selv når maskinen gjør det. Utskriften av årsplanen er alltid lys.`}
             >
               <Bryter
                 valg={[
-                  { id: "system", navn: "Som macOS" },
+                  { id: "system", navn: `Som ${systemnavn()}` },
                   { id: "lys", navn: "Lys" },
                   { id: "mork", navn: "Mørk" },
                 ]}
@@ -427,10 +442,7 @@ export function Innstillinger({
                 ))}
               </div>
             </Rad>
-            <Rad
-              etikett="Glass"
-              hjelp="Sidemenyen og søket er gjennomsiktige, med farge bak. Av gir hele flater. Står «Reduser gjennomsiktighet» på i macOS, er glasset av uansett."
-            >
+            <Rad etikett="Glass" hjelp={glasshjelp()}>
               <Bryter
                 valg={[
                   { id: "pa", navn: "På" },
@@ -443,13 +455,10 @@ export function Innstillinger({
                 }}
               />
             </Rad>
-            <Rad
-              etikett="Bevegelse"
-              hjelp="Kort, myk bevegelse når noe åpnes, foldes ut eller dras. Skåringen beveger seg aldri. «Som macOS» slår den av når «Reduser bevegelse» er på i systemet."
-            >
+            <Rad etikett="Bevegelse" hjelp={bevegelseshjelp()}>
               <Bryter
                 valg={[
-                  { id: "system", navn: "Som macOS" },
+                  { id: "system", navn: `Som ${systemnavn()}` },
                   { id: "pa", navn: "På" },
                   { id: "dempet", navn: "Dempet" },
                   { id: "av", navn: "Av" },
@@ -618,16 +627,27 @@ export function Innstillinger({
                     {kopiert ? "Kopiert" : "Kopier"}
                   </Knapp>
                 </div>
-                <p className="mt-2 text-liten text-blekk-dempet">
-                  I Kalender: <em>Arkiv → Nytt kalenderabonnement</em>, lim inn
-                  adressen, og velg oppdatering hvert femte minutt.
-                </p>
-                <p className="mt-1 text-liten text-blekk-dempet">
-                  Velger du <em>iCloud</em> som plassering, lastes timeplanen
-                  opp til Apple og følger med til telefonen. Velger du{" "}
-                  <em>På min Mac</em>, blir den her, men da bare på denne
-                  maskinen. Strømmen oppdaterer seg bare mens appen kjører.
-                </p>
+                {erMac ? (
+                  <>
+                    <p className="mt-2 text-liten text-blekk-dempet">
+                      I Kalender: <em>Arkiv → Nytt kalenderabonnement</em>, lim
+                      inn adressen, og velg oppdatering hvert femte minutt.
+                    </p>
+                    <p className="mt-1 text-liten text-blekk-dempet">
+                      Velger du <em>iCloud</em> som plassering, lastes
+                      timeplanen opp til Apple og følger med til telefonen.
+                      Velger du <em>På min Mac</em>, blir den her, men da bare
+                      på denne maskinen. Strømmen oppdaterer seg bare mens appen
+                      kjører.
+                    </p>
+                  </>
+                ) : (
+                  <p className="mt-2 text-liten text-blekk-dempet">
+                    Lim inn adressen som et kalenderabonnement i
+                    kalenderprogrammet på denne maskinen. Adressen virker bare
+                    her, og strømmen oppdaterer seg bare mens appen kjører.
+                  </p>
+                )}
               </div>
             )}
           </Bolk>
@@ -978,7 +998,7 @@ export function Innstillinger({
                   onClick={() => void revealItemInDir(kopimappe)}
                   className="text-liten text-blekk-dempet underline hover:text-blekk"
                 >
-                  Vis mappa i Finder
+                  Vis mappa i {filbehandler()}
                 </button>
               )}
             </div>
@@ -1035,9 +1055,7 @@ export function Innstillinger({
             )}
 
             <p className="mt-3 text-liten text-blekk-dempet">
-              Mappa skal aldri legges i iCloud, Dropbox eller annen
-              synktjeneste. Synk kan skrive delvis tilbake i ei åpen SQLite-fil,
-              og da blir den ødelagt uten forvarsel.
+              {synkadvarsel()}
             </p>
           </Bolk>
 
@@ -1055,8 +1073,8 @@ export function Innstillinger({
           <Bolk id="personvern" tittel="Personvern">
             <p className="text-brod text-blekk-dempet">
               Appen gjør ingen nettverkskall. Databasen ligger lokalt i{" "}
-              <code className="text-liten">
-                ~/Library/Application Support/no.elevtracking.app/
+              <code className="text-liten break-all">
+                {datamappe ?? "appens datamappe"}
               </code>
               .
             </p>
