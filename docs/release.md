@@ -34,16 +34,22 @@ Beta (testversjon for kolleger) får `--prerelease`:
 
 ```
 gh release create v0.3.0 "dist-dmg/Økta 0.3.0.dmg" \
+  docs/guide/guide_read_me_windows.pdf \
+  docs/guide/betatest.pdf \
+  docs/guide/oppdiktet-klasseliste-1STA-1STB.pdf \
   --prerelease --title "Økta 0.3.0 beta" \
-  --notes "Testversjon. Se testheftet i dmg-en."
+  --notes "Testversjon. Mac: last ned dmg-en, guiden og testheftet ligger inni. Windows: last ned -setup.exe (kommer etter 15–20 minutter), guide_read_me_windows.pdf, betatest.pdf og den oppdiktede klasselista."
 ```
+
+PDF-ene ligger ved siden av dmg-en fordi Windows-brukerne ikke åpner
+dmg-en. `npm run dmg` skriver dem ut på nytt hver gang.
 
 En ferdig versjon er den samme kommandoen uten `--prerelease`, og med en
 tittel uten «beta».
 
 Når releasen er publisert, starter Windows-bygget av seg selv på GitHub
 (`.github/workflows/windows.yml`). Etter 15–20 minutter ligger
-`.exe`-installeren og Windows-guiden i den samme releasen. Følg med på
+`.exe`-installeren i den samme releasen. Følg med på
 <https://github.com/fbedsvaag/okta/actions>.
 
 ## Aldri

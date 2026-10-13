@@ -24,7 +24,9 @@ fi
 # Guiden og testheftet, skrevet ut på nytt så de alltid følger HTML-en.
 chrome="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 [[ -x "$chrome" ]] || { echo "Trenger Google Chrome for å skrive ut PDF-ene"; exit 1; }
-for navn in guide_read_me betatest; do
+# Windows-guiden følger ikke dmg-en, men lastes opp til releasen
+# (docs/release.md).
+for navn in guide_read_me guide_read_me_windows betatest; do
   "$chrome" --headless=new --disable-gpu --no-pdf-header-footer \
     --print-to-pdf="docs/guide/$navn.pdf" \
     "file://$PWD/docs/guide/$navn.html" >/dev/null 2>&1
