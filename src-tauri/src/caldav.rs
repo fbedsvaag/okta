@@ -95,12 +95,44 @@ fn passord() -> Result<String, String> {
 }
 
 /// Samlingens URL, med skråstrek på slutten så sammenslåing blir riktig.
-fn samling(url: &str) -> String {
-    if url.ends_with('/') {
+///
+/// Bare `https://` (#9). Basic auth er passordet i klartekst over `http://`,
+/// og hendelsene har elevenes fornavn (mentorsamtaler). Unntaket er en
+/// server på denne maskinen, til testing.
+fn samling(url: &str) -> Result<String, String> {
+    let url = url.trim();
+    let liten = url.to_ascii_lowercase();
+    let lokal = ["http://localhost", "http://127.0.0.1", "http://[::1]"]
+        .iter()
+        .any(|p| {
+            liten.strip_prefix(p).is_some_and(|rest| {
+                rest.is_empty() || rest.starts_with(':') || rest.starts_with('/')
+            })
+        });
+    if !liten.starts_with("https://") && !lokal {
+        return Err("Adressen må begynne med https://.".into());
+    }
+    Ok(if url.ends_with('/') {
         url.to_string()
     } else {
         format!("{url}/")
+    })
+}
+
+/// Ressursen for én hendelse. ID-ene lages av appen, men tegn utenfor det
+/// trygge settet prosentkodes likevel, så de aldri kan endre stien (#9).
+fn ressurs(base: &str, uid: &str) -> String {
+    let mut ut = String::with_capacity(base.len() + uid.len() + 4);
+    ut.push_str(base);
+    for b in uid.bytes() {
+        if b.is_ascii_alphanumeric() || matches!(b, b'-' | b'_' | b'.' | b'@') {
+            ut.push(b as char);
+        } else {
+            ut.push_str(&format!("%{b:02X}"));
+        }
     }
+    ut.push_str(".ics");
+    ut
 }
 
 /// Sjekker at adressen svarer og at innlogingen holder.
@@ -120,9 +152,10 @@ pub async fn caldav_test(url: String, bruker: String) -> Result<String, String> 
 }
 
 fn test_blokkerende(url: String, bruker: String) -> Result<String, String> {
+    let base = samling(&url)?;
     let pw = passord()?;
     let svar = klient()
-        .request("OPTIONS", &samling(&url))
+        .request("OPTIONS", &base)
         .set("Authorization", &basic(&bruker, &pw))
         .call();
 
@@ -139,16 +172,16 @@ fn test_blokkerende(url: String, bruker: String) -> Result<String, String> {
         }
         Err(ureq::Error::Status(401, _)) => Err(format!(
             "Serveren avviste innloggingen (401).\n\nPrøvde: {}\nBrukernavn: {}\n\nSjekk at brukernavnet er det du logger inn med, ikke visningsnavnet eller e-postadressen, og at app-passordet er kopiert i sin helhet.",
-            samling(&url),
+            base,
             bruker
         )),
         Err(ureq::Error::Status(404, _)) => Err(format!(
             "Fant ingenting på {}.\n\nAdressen skal slutte med brukernavnet ditt, \
              uten kalendernavn.",
-            samling(&url)
+            base
         )),
         Err(ureq::Error::Status(kode, _)) => {
-            Err(format!("Serveren svarte {kode} på {}.", samling(&url)))
+            Err(format!("Serveren svarte {kode} på {base}."))
         }
         Err(e) => Err(format!("Fikk ikke kontakt: {e}")),
     }
@@ -194,14 +227,14 @@ fn publiser_blokkerende(
     hendelser: Vec<Hendelse>,
     fjern: Vec<String>,
 ) -> Result<Resultat, String> {
+    let base = samling(&url)?;
     let pw = passord()?;
     let agent = klient();
     let auth = basic(&bruker, &pw);
-    let base = samling(&url);
     let mut ut = Resultat::default();
 
     for h in hendelser {
-        let mal = format!("{base}{}.ics", h.uid);
+        let mal = ressurs(&base, &h.uid);
         match agent
             .put(&mal)
             .set("Authorization", &auth)
@@ -225,7 +258,7 @@ fn publiser_blokkerende(
     }
 
     for uid in fjern {
-        let mal = format!("{base}{uid}.ics");
+        let mal = ressurs(&base, &uid);
         match agent.delete(&mal).set("Authorization", &auth).call() {
             Ok(_) => ut.slettet += 1,
             // Borte fra før er et greit utfall for en sletting.
@@ -301,5 +334,32 @@ mod tester {
             .unwrap()
             .delete_credential();
         assert_eq!(lest.unwrap(), "hemmelig");
+    }
+
+    #[test]
+    fn bare_https_eller_denne_maskinen() {
+        use super::samling;
+        assert_eq!(
+            samling("https://cal.example.no/dav/okta").unwrap(),
+            "https://cal.example.no/dav/okta/"
+        );
+        assert!(samling("HTTPS://cal.example.no/").is_ok());
+        assert!(samling("http://localhost:5232/okta").is_ok());
+        assert!(samling("http://127.0.0.1/okta/").is_ok());
+        let feil = samling("http://cal.example.no/okta").unwrap_err();
+        assert!(feil.contains("https://"), "{feil}");
+        // localhost som del av et annet navn er ikke denne maskinen.
+        assert!(samling("http://localhost.example.no/").is_err());
+        assert!(samling("ftp://cal.example.no/").is_err());
+        assert!(samling("").is_err());
+    }
+
+    #[test]
+    fn hendelses_id_kan_ikke_endre_stien() {
+        use super::ressurs;
+        let b = "https://x.no/k/";
+        assert_eq!(ressurs(b, "abc-123@okta"), "https://x.no/k/abc-123@okta.ics");
+        assert_eq!(ressurs(b, "../hemmelig"), "https://x.no/k/..%2Fhemmelig.ics");
+        assert_eq!(ressurs(b, "a b?c#d"), "https://x.no/k/a%20b%3Fc%23d.ics");
     }
 }
