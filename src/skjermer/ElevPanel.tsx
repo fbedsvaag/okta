@@ -232,9 +232,13 @@ export function ElevPanel({
   useEffect(() => lyttElever(() => void lastFag()), [elevId, arIder]);
 
   // Esc lukker, ⌘E bytter til redigering, ⌥↑/⌥↓ blar, N og M gir et nytt
-  // notat, ⇧⌘E eksporterer.
+  // notat, ⇧⌘E eksporterer. Lytteren legges på én gang og leser de nyeste
+  // verdiene fra en ref, som fagRef i App (#13).
+  const siste = useRef({ onLukk, eksporter, bla });
+  siste.current = { onLukk, eksporter, bla };
   useEffect(() => {
     const tast = (e: KeyboardEvent) => {
+      const { onLukk, eksporter, bla } = siste.current;
       const iFelt = (e.target as HTMLElement).closest?.(
         "input, textarea, select, [contenteditable]",
       );
@@ -261,7 +265,7 @@ export function ElevPanel({
     };
     window.addEventListener("keydown", tast);
     return () => window.removeEventListener("keydown", tast);
-  });
+  }, []);
 
   if (!elev) return null;
 
