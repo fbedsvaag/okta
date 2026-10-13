@@ -211,10 +211,65 @@ fn les_oppsettfil(sti: String) -> Result<String, String> {
     std::fs::read_to_string(&sti).map_err(|e| format!("Kunne ikke lese fila: {e}"))
 }
 
+/// Stien til en .okta-fil blant argumentene programmet fikk (14.4). På
+/// Windows kommer en dobbeltklikket fil slik, både ved oppstart og når
+/// en ny prosess sender den videre. En relativ sti gjøres om fra `mappe`.
+fn oppsettfil_i_argumenter(argumenter: &[String], mappe: &std::path::Path) -> Option<String> {
+    argumenter
+        .iter()
+        .skip(1) // programmet selv
+        .find(|a| a.to_lowercase().ends_with(".okta"))
+        .map(|a| {
+            let sti = std::path::Path::new(a);
+            if sti.is_absolute() {
+                a.clone()
+            } else {
+                mappe.join(sti).to_string_lossy().into_owned()
+            }
+        })
+}
+
+/// Hold stien til en åpnet oppsettfil, og si fra til vinduet.
+fn ta_imot_oppsettfil(app: &tauri::AppHandle, sti: String) {
+    use tauri::{Emitter, Manager};
+    if let Ok(mut f) = app.state::<ApnetFil>().0.lock() {
+        *f = Some(sti);
+    }
+    let _ = app.emit("oppsettfil-apnet", ());
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
-        .manage(ApnetFil::default())
+    let bygger = tauri::Builder::default();
+
+    // Windows og Linux: en ny prosess (dobbeltklikk på en .okta-fil mens
+    // appen kjører) sender argumentene hit og avslutter. Pluginen må stå
+    // først. Mac gjør dette selv, med RunEvent::Opened lenger ned.
+    #[cfg(not(target_os = "macos"))]
+    let bygger = bygger.plugin(tauri_plugin_single_instance::init(
+        |app, argumenter, mappe| {
+            use tauri::Manager;
+            if let Some(sti) = oppsettfil_i_argumenter(&argumenter, std::path::Path::new(&mappe)) {
+                ta_imot_oppsettfil(app, sti);
+            }
+            if let Some(vindu) = app.get_webview_window("main") {
+                let _ = vindu.unminimize();
+                let _ = vindu.set_focus();
+            }
+        },
+    ));
+
+    // Windows og Linux: appen startet med dobbeltklikk på en .okta-fil.
+    let ved_oppstart = if cfg!(target_os = "macos") {
+        None
+    } else {
+        let argumenter: Vec<String> = std::env::args().collect();
+        let mappe = std::env::current_dir().unwrap_or_default();
+        oppsettfil_i_argumenter(&argumenter, &mappe)
+    };
+
+    bygger
+        .manage(ApnetFil(std::sync::Mutex::new(ved_oppstart)))
         .plugin(
             tauri_plugin_sql::Builder::default()
                 .add_migrations("sqlite:elevtracking.sqlite", migrations())
@@ -253,20 +308,73 @@ pub fn run() {
             // vinduet hvis det allerede kjører.
             #[cfg(any(target_os = "macos", target_os = "ios"))]
             if let tauri::RunEvent::Opened { urls } = hendelse {
-                use tauri::{Emitter, Manager};
                 if let Some(sti) = urls
                     .iter()
                     .filter_map(|u| u.to_file_path().ok())
                     .map(|p| p.to_string_lossy().into_owned())
                     .find(|p| p.to_lowercase().ends_with(".okta"))
                 {
-                    if let Ok(mut f) = app.state::<ApnetFil>().0.lock() {
-                        *f = Some(sti);
-                    }
-                    let _ = app.emit("oppsettfil-apnet", ());
+                    ta_imot_oppsettfil(app, sti);
                 }
             }
             #[cfg(not(any(target_os = "macos", target_os = "ios")))]
             let _ = (app, hendelse);
         });
+}
+
+#[cfg(test)]
+mod tester {
+    use super::oppsettfil_i_argumenter;
+    use std::path::Path;
+
+    fn arg(a: &[&str]) -> Vec<String> {
+        a.iter().map(|s| s.to_string()).collect()
+    }
+
+    #[test]
+    fn finner_oppsettfila_blant_argumentene() {
+        let mappe = std::env::temp_dir();
+        let full = mappe.join("Skolen.okta").to_string_lossy().into_owned();
+        assert_eq!(
+            oppsettfil_i_argumenter(&arg(&["okta.exe", &full]), &mappe),
+            Some(full.clone())
+        );
+        // Store bokstaver i endelsen, og andre argumenter foran.
+        let stor = mappe.join("SKOLEN.OKTA").to_string_lossy().into_owned();
+        assert_eq!(
+            oppsettfil_i_argumenter(&arg(&["okta.exe", "--flagg", &stor]), &mappe),
+            Some(stor)
+        );
+    }
+
+    #[test]
+    fn relativ_sti_gjores_om_fra_mappa() {
+        let mappe = std::env::temp_dir();
+        assert_eq!(
+            oppsettfil_i_argumenter(&arg(&["okta.exe", "Skolen.okta"]), &mappe),
+            Some(mappe.join("Skolen.okta").to_string_lossy().into_owned())
+        );
+    }
+
+    #[test]
+    fn ingen_oppsettfil() {
+        let mappe = Path::new(".");
+        assert_eq!(oppsettfil_i_argumenter(&arg(&["okta.exe"]), mappe), None);
+        assert_eq!(
+            oppsettfil_i_argumenter(&arg(&["okta.exe", "notat.txt"]), mappe),
+            None
+        );
+        // Programmet selv teller ikke, selv om det skulle hete noe.okta.
+        assert_eq!(oppsettfil_i_argumenter(&arg(&["app.okta"]), mappe), None);
+    }
+
+    #[cfg(target_os = "windows")]
+    #[test]
+    fn windows_sti_med_mellomrom_og_stasjon() {
+        let sti = r"C:\Users\Lærer Navn\Downloads\Skolen 2026.okta";
+        assert_eq!(
+            oppsettfil_i_argumenter(&arg(&["okta.exe", sti]), Path::new(r"C:\")),
+            Some(sti.to_string())
+        );
+    }
 }

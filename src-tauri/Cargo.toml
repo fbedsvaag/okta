@@ -36,3 +36,8 @@ keyring = { version = "3", features = ["apple-native", "windows-native"] }
 # Operativsystem og versjon til tilbakemeldingslinja (13.1). Leser lokalt.
 os_info = { version = "3", default-features = false }
 
+# Windows og Linux: dobbeltklikk på en .okta-fil starter en ny prosess.
+# Den sender stien til vinduet som kjører og avslutter (14.4). På Mac
+# sørger systemet selv for at det bare kjører én app.
+[target.'cfg(not(target_os = "macos"))'.dependencies]
+tauri-plugin-single-instance = "2"

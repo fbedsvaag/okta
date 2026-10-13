@@ -74,7 +74,10 @@ mod tester {
 
     #[test]
     fn windows_uten_utgave() {
-        assert_eq!(beskriv(Some("Windows"), "10.0.26100", None), "Windows (26100)");
+        assert_eq!(
+            beskriv(Some("Windows"), "10.0.26100", None),
+            "Windows (26100)"
+        );
     }
 
     #[test]
