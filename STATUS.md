@@ -3,7 +3,7 @@
 Pr. 2026-10-13, versjon 0.3.0 (beta, utgitt 13.10 som pre-release). Beskriver hvor appen faktisk står, ikke hva
 den skal bli. Fila eies fritt, i motsetning til SPEC.md.
 
-**645 tester i `npm test` og 25 i `cargo test`, alle grønne på Mac.
+**662 tester i `npm test` og 25 i `cargo test`, alle grønne på Mac.
 `tsc --noEmit` er ren. `npm run build` går gjennom. 24 migrasjoner.**
 
 Utseendet står i `DESIGN.md`, som beskriver appen slik den er bygget.
@@ -97,6 +97,18 @@ Prøvd i `npm run tauri dev`, skjerm for skjerm mot lerretet.
   §10 i spec-en.
 - **Klassekart med gruppefarger og logg, vurderinger som kalender:**
   tegnes i neste runde.
+
+## Gjennomgang 13.10 (funksjonelle feil)
+
+Rettet, med tester: ferdige vurderinger fylte fristlista på I dag;
+vurderingsfristen fulgte ikke med når en økt ble flyttet; kalenderstrømmen
+ble bare bygget ved oppstart; sikkerhetskopi og arkiv ble bare tatt ved
+oppstart, og I dag skiftet ikke dag over midnatt (useIdag); «Elever som
+glipper» på forsiden brukte en annen regel enn Elever-lista; antall elever
+i fristlista talte slettede elever; økt-koder kunne bli like etter en
+sletting; duplisering tok ikke med kompetansemål; klassekart for fjernede
+fag ble stående. Samme kveld: vektingen i samtaletrekningen, blinking ved
+dra-og-slipp i timeplanen, og at samtaletid og pause ikke ble husket.
 
 ## SPEC.md og DESIGN.md
 
