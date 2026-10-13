@@ -41,6 +41,7 @@ import { useArk } from "../ui/Arkstabel";
 import { Markdown } from "../ui/Notattekst";
 import { Tastestripe, Tasthint } from "../ui/Tastestripe";
 import { tast } from "../ui/taster";
+import { idag as dagensDato } from "../db";
 
 /**
  * Økta i planlegging (ARBEIDSLISTE 11.5, lerretet «OktPlan»).
@@ -675,7 +676,7 @@ function Perioden({
 }) {
   const p = iPerioden(okt, fagOkter);
   if (!periode || !p) return null;
-  const idag = new Date().toISOString().slice(0, 10);
+  const idag = dagensDato();
   const farge = periode.farge ?? "var(--color-aksent)";
   return (
     <div>

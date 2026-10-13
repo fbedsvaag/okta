@@ -43,6 +43,14 @@ export function naa(): string {
   );
 }
 
+/**
+ * Dagens dato i lokal tid: 2026-10-14. Aldri `toISOString()`, som er UTC
+ * og gir gårsdagen mellom midnatt og kl. 01 (vinter) eller 02 (sommer) (#7).
+ */
+export function idag(): string {
+  return naa().slice(0, 10);
+}
+
 export function nyId(): string {
   return crypto.randomUUID();
 }

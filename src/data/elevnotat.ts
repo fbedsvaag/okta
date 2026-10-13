@@ -1,4 +1,4 @@
-import { hent, oppdater, settInn, slett } from "../db";
+import { hent, oppdater, settInn, slett, idag as dagensDato } from "../db";
 // Notatene står i elevkortet og i gjøremålene på forsiden; begge lytter.
 import { varsleElever } from "./endringer";
 
@@ -158,7 +158,7 @@ export async function endreElevnotat(
 /** Lukker et oppfølgingspunkt, eller åpner det igjen. */
 export async function settLukket(id: string, lukket: boolean): Promise<void> {
   await oppdater("elevnotat", id, {
-    lukket: lukket ? new Date().toISOString().slice(0, 10) : null,
+    lukket: lukket ? dagensDato() : null,
   });
   varsleElever();
 }
@@ -199,7 +199,7 @@ export function erForfalt(n: Elevnotat, idag: string): boolean {
 
 /** Elevene med et åpent, forfalt punkt — til merket i elevtabellen (§4.3). */
 export async function hentForfalte(skolearId: string): Promise<Set<string>> {
-  const idag = new Date().toISOString().slice(0, 10);
+  const idag = dagensDato();
   const rader = await hent<{ elevId: string }>(
     `SELECT DISTINCT elev_id AS elevId
        FROM elevnotat

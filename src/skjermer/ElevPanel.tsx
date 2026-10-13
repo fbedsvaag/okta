@@ -91,6 +91,7 @@ import { NOYTRAL, skalafarge } from "../ui/farger";
 import { Markdownfelt, MarkdownSkriv } from "../ui/Notattekst";
 import { hovedtast, harModifikator, tast as visTast } from "../ui/taster";
 import { useSisteSvar } from "../ui/sisteSvar";
+import { idag as dagensDato } from "../db";
 
 /**
  * Elevkortet, SPEC §4.5 og DESIGN.md §10 (lerretet «ElevArk»).
@@ -1397,7 +1398,7 @@ function Motelogg({
   // Lagt sammen eller åpen huskes, for alle elever: det er en vane, ikke en
   // egenskap ved eleven.
   const [apen, settApen] = useApen("elevkort-notater");
-  const idag = new Date().toISOString().slice(0, 10);
+  const idag = dagensDato();
   const ark = useArk();
 
   const vakt = useSisteSvar();
@@ -1689,7 +1690,7 @@ function NyttNotat({
   onLagret: () => void;
   onAvbryt: () => void;
 }) {
-  const [dato, setDato] = useState(new Date().toISOString().slice(0, 10));
+  const [dato, setDato] = useState(dagensDato());
   const [tekst, setTekst] = useState("");
   const [folgesOpp, setFolgesOpp] = useState(false);
   const [frist, setFrist] = useState("");
