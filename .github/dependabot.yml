@@ -1,0 +1,11 @@
+# Foreslår oppdateringer av actions i workflowene, som er låst til en
+# commit (issue #10). Én samlet pull request i måneden.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      actions:
+        patterns: ["*"]
