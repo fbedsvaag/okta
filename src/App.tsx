@@ -401,6 +401,7 @@ export default function App() {
           onApneKart={(id) => ga("klassekart", id)}
           onSok={() => setSokApent(true)}
           onInnstillinger={() => ga("innstillinger")}
+          visning={visning}
           onSkolear={() => ga("innstillinger", "skolear")}
         />
 

@@ -13,6 +13,9 @@ import { Ordmerke } from "./logo";
 import { Utfold } from "./Utfold";
 import { Glideflate } from "./Glideflate";
 import { Hovermarkor } from "./Hovermarkor";
+import { invoke } from "@tauri-apps/api/core";
+import { getVersion } from "@tauri-apps/api/app";
+import { SKJEMA_URL, tilbakemeldingslinje } from "../tilbakemelding";
 
 /**
  * Sidemenyen til venstre (DESIGN.md §6, variant A i lerretet).
@@ -67,6 +70,7 @@ export function Sidemeny({
   onSok,
   onInnstillinger,
   onSkolear,
+  visning,
 }: {
   skolearNavn: string;
   /** hvilket punkt som er markert; null når ingen av dem er det */
@@ -94,6 +98,8 @@ export function Sidemeny({
   onInnstillinger: () => void;
   /** skoleåret øverst: Innstillinger › Skoleår */
   onSkolear: () => void;
+  /** skjermen man står på, til «Gi tilbakemelding» */
+  visning: string;
 }) {
   // Punktet musa hviler på. Settes etter en liten pause, så undermenyene
   // ikke blafrer når musa bare passerer.
@@ -324,6 +330,7 @@ export function Sidemeny({
         })}
       </ul>
 
+      {SKJEMA_URL && <GiTilbakemelding visning={visning} />}
       <div className="flex items-center gap-1 pt-2">
         <button
           onClick={onInnstillinger}
@@ -340,6 +347,47 @@ export function Sidemeny({
         </button>
       </div>
     </nav>
+  );
+}
+
+/**
+ * «Gi tilbakemelding» (13.1): kopierer versjon, system og skjerm til
+ * utklippstavla og åpner skjemaet i nettleseren. Samme stil som
+ * Innstillinger-raden under.
+ */
+function GiTilbakemelding({ visning }: { visning: string }) {
+  const [kopiert, setKopiert] = useState(false);
+  async function klikk() {
+    const [versjon, system] = await Promise.all([
+      getVersion(),
+      invoke<string>("systemversjon").catch(() => "ukjent system"),
+    ]);
+    await navigator.clipboard.writeText(
+      tilbakemeldingslinje(versjon, system, visning),
+    );
+    setKopiert(true);
+    setTimeout(() => setKopiert(false), 4000);
+    const { openUrl } = await import("@tauri-apps/plugin-opener");
+    await openUrl(SKJEMA_URL);
+  }
+  return (
+    <div className="flex items-center gap-1 pt-2">
+      <button
+        onClick={klikk}
+        data-hover
+        className="relative z-[1] flex h-8 min-w-0 flex-1 items-center rounded-[10px] px-2.5 text-left text-[calc(14px*var(--tekst-skala))] text-blekk"
+      >
+        <span className="truncate">
+          {kopiert ? (
+            <span className="text-blekk-dempet">
+              Kopiert. Lim inn i første felt.
+            </span>
+          ) : (
+            "Gi tilbakemelding"
+          )}
+        </span>
+      </button>
+    </div>
   );
 }
 

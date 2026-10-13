@@ -32,4 +32,6 @@ ureq = "2"
 base64 = "0.22"
 # Passordet hører hjemme i systemets nøkkelring, ikke i databasen.
 keyring = { version = "3", features = ["apple-native"] }
+# Operativsystem og versjon til tilbakemeldingslinja (13.1). Leser lokalt.
+os_info = { version = "3", default-features = false }
 

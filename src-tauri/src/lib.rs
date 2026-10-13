@@ -13,6 +13,7 @@ mod arkiv;
 mod caldav;
 mod kalenderfeed;
 mod sikkerhetskopi;
+mod system;
 
 use tauri_plugin_sql::{Migration, MigrationKind};
 
@@ -224,6 +225,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             skriv_ut,
             skriv_fil,
+            system::systemversjon,
             sikkerhetskopi::forbered_sikkerhetskopi,
             sikkerhetskopi::sikkerhetskopier,
             sikkerhetskopi::rydd_sikkerhetskopier,
