@@ -8,7 +8,7 @@ vi.mock("@tauri-apps/plugin-sql", () => ({
 
 const { leggFagIAr } = await import("./fag");
 const { opprettSkolear } = await import("./skolear");
-const { opprettOkt, endreOkt } = await import("./okter");
+const { opprettOkt, endreOkt, slettOkt } = await import("./okter");
 const { opprettVurdering, knyttOkt } = await import("./vurderinger");
 const { hent } = await import("../db");
 
@@ -71,5 +71,26 @@ describe("fristen følger økta (#2)", () => {
     await knyttOkt(v, okt);
     await endreOkt(okt, { dato: "2026-10-30" });
     expect(await frist(v)).toBe("2026-11-02");
+  });
+});
+
+describe("økt-koden (#8)", () => {
+  const kode = async (id: string) =>
+    (
+      await hent<{ kode: string }>("SELECT kode FROM okt WHERE id = $1", [id])
+    )[0].kode;
+
+  it("blir ikke lik en som finnes etter en sletting", async () => {
+    const a = await opprettOkt(fagId, "REL3", "2026-10-01", "08:30", 90);
+    const b = await opprettOkt(fagId, "REL3", "2026-10-08", "08:30", 90);
+    const c = await opprettOkt(fagId, "REL3", "2026-10-15", "08:30", 90);
+    expect([await kode(a), await kode(b), await kode(c)]).toEqual([
+      "2610-REL3-1",
+      "2610-REL3-2",
+      "2610-REL3-3",
+    ]);
+    await slettOkt(b);
+    const d = await opprettOkt(fagId, "REL3", "2026-10-22", "08:30", 90);
+    expect(await kode(d)).toBe("2610-REL3-4");
   });
 });

@@ -195,19 +195,30 @@ export async function hentSkaringsskala(
   );
 }
 
-/** Lesbar id: YYMM-fagkode-#, der # teller øktene i faget den måneden. */
+/**
+ * Lesbar id: YYMM-fagkode-#, der # er ett høyere enn det høyeste nummeret
+ * som er brukt i faget den måneden. Slettede økter er med: før ble antallet
+ * talt, og etter en sletting fikk neste økt samme kode som en som fantes.
+ */
 async function lagOktkode(
   skolearFagId: string,
   fagKode: string,
   dato: string,
 ): Promise<string> {
   const [ar, maned] = dato.split("-");
-  const iManeden = await hent<{ antall: number }>(
-    `SELECT COUNT(*) AS antall FROM okt
-      WHERE skolear_fag_id = $1 AND slettet IS NULL AND dato LIKE $2`,
+  const prefiks = `${ar.slice(2)}${maned}-${fagKode}-`;
+  const koder = await hent<{ kode: string | null }>(
+    `SELECT kode FROM okt
+      WHERE skolear_fag_id = $1 AND dato LIKE $2`,
     [skolearFagId, `${ar}-${maned}-%`],
   );
-  return `${ar.slice(2)}${maned}-${fagKode}-${(iManeden[0]?.antall ?? 0) + 1}`;
+  const hoyeste = koder.reduce((maks, k) => {
+    const n = k.kode?.startsWith(prefiks)
+      ? Number(k.kode.slice(prefiks.length))
+      : 0;
+    return Number.isFinite(n) && n > maks ? n : maks;
+  }, 0);
+  return `${prefiks}${hoyeste + 1}`;
 }
 
 export async function opprettOkt(
