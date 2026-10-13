@@ -54,8 +54,14 @@ fn ipv4_forst(netloc: &str) -> std::io::Result<Vec<std::net::SocketAddr>> {
 const TJENESTE: &str = "no.elevtracking.app";
 const KONTO: &str = "caldav";
 
+/// Navnet på stedet passordet lagres, slik brukeren kjenner det.
+#[cfg(target_os = "windows")]
+const NOKKELRING: &str = "Windows legitimasjonsbehandling";
+#[cfg(not(target_os = "windows"))]
+const NOKKELRING: &str = "nøkkelringen";
+
 fn nokkelring() -> Result<Entry, String> {
-    Entry::new(TJENESTE, KONTO).map_err(|e| format!("fikk ikke tilgang til nøkkelringen: {e}"))
+    Entry::new(TJENESTE, KONTO).map_err(|e| format!("fikk ikke tilgang til {NOKKELRING}: {e}"))
 }
 
 #[tauri::command]
@@ -266,5 +272,34 @@ mod tester {
         use std::net::ToSocketAddrs;
         let fasit = "localhost:443".to_socket_addrs().unwrap().count();
         assert_eq!(ipv4_forst("localhost:443").unwrap().len(), fasit);
+    }
+
+    #[test]
+    fn nokkelringen_har_riktig_navn() {
+        if cfg!(target_os = "windows") {
+            assert_eq!(super::NOKKELRING, "Windows legitimasjonsbehandling");
+        } else {
+            assert_eq!(super::NOKKELRING, "nøkkelringen");
+        }
+    }
+
+    /// Passordet må overleve til en ny oppføring leser det. Uten
+    /// `windows-native` bruker keyring et lager i minnet, og da finner den
+    /// nye oppføringen ingenting. Bare på Windows (Actions), så testen ikke
+    /// spør etter nøkkelringen på Mac.
+    #[cfg(target_os = "windows")]
+    #[test]
+    fn passordet_lagres_i_windows_legitimasjonsbehandling() {
+        use keyring::Entry;
+        let konto = "okta-test-14-3";
+        Entry::new(super::TJENESTE, konto)
+            .unwrap()
+            .set_password("hemmelig")
+            .unwrap();
+        let lest = Entry::new(super::TJENESTE, konto).unwrap().get_password();
+        let _ = Entry::new(super::TJENESTE, konto)
+            .unwrap()
+            .delete_credential();
+        assert_eq!(lest.unwrap(), "hemmelig");
     }
 }

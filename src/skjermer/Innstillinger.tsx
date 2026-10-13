@@ -45,6 +45,7 @@ import {
 } from "@tauri-apps/plugin-dialog";
 import type { FagIAr } from "../data/fag";
 import { Bryter, Felt, Knapp, Ikon } from "../ui/felles";
+import { nokkelringen } from "../ui/plattformord";
 
 /**
  * Globale innstillinger, SPEC §4.8.
@@ -717,7 +718,7 @@ export function Innstillinger({
               <label className="block">
                 <span className="mb-1 block text-etikett uppercase tracking-etikett text-blekk-dempet">
                   {davHarPassord
-                    ? "Passord (lagret i nøkkelringen)"
+                    ? `Passord (lagret i ${nokkelringen()})`
                     : "Passord"}
                 </span>
                 <input
@@ -732,8 +733,8 @@ export function Innstillinger({
               </label>
               <p className="text-liten text-blekk-dempet">
                 Bruk et app-passord, ikke hovedpassordet ditt. Da kan du trekke
-                det tilbake uten å bytte alt annet. Passordet lagres i systemets
-                nøkkelring, aldri i databasen.
+                det tilbake uten å bytte alt annet. Passordet lagres i{" "}
+                {nokkelringen()}, aldri i databasen.
               </p>
             </div>
 
@@ -913,7 +914,9 @@ export function Innstillinger({
                   onClick={async () => {
                     await caldav.glemPassord();
                     setDavHarPassord(false);
-                    setDavMelding("Passordet er slettet fra nøkkelringen.");
+                    setDavMelding(
+                      `Passordet er slettet fra ${nokkelringen()}.`,
+                    );
                   }}
                 >
                   Glem passordet
