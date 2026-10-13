@@ -3,7 +3,7 @@
 Pr. 2026-10-13, versjon 0.3.0 (beta, ikke utgitt ennå). Beskriver hvor appen faktisk står, ikke hva
 den skal bli. Fila eies fritt, i motsetning til SPEC.md.
 
-**630 tester i `npm test` og 19 i `cargo test`, alle grønne på Mac.
+**645 tester i `npm test` og 25 i `cargo test`, alle grønne på Mac.
 `tsc --noEmit` er ren. `npm run build` går gjennom. 24 migrasjoner.**
 
 Utseendet står i `DESIGN.md`, som beskriver appen slik den er bygget.
@@ -107,16 +107,19 @@ om sikkerhet i §8.
 
 ## Kjent
 
-- **Issues fra Torbjørn (GitHub), alle rettet 13.10:**
-  - #1: CSP er på. Lagre-dialogen og arkivmappa eies av Rust; vinduet kan
-    ikke lenger be om å få skrevet til en vilkårlig sti. Arkivmappa må
-    velges på nytt én gang (den gamle `eksportmappe` i databasen brukes
-    ikke). `sql:allow-execute` står fortsatt åpen: alle andre skrivinger
-    går den veien.
-  - #2: `slettElevHelt`, `lagreTrekning` og `importerOppsett` kjører i én
-    transaksjon gjennom Rust-kommandoen `transaksjon`. Andre operasjoner
-    med flere skrivinger kan flyttes over etter hvert.
-  - #3–#6: se commit-loggen.
+- **Issues fra Torbjørn (GitHub):** #1–#9 og #11–#13, #15, #16 er rettet
+  13.10. Det som merkes for brukeren:
+  - Arkivmappa må velges på nytt én gang (Innstillinger › Arkiv); den
+    huskes nå i `arkivmappe.txt`, ikke i databasen (#1).
+  - Kalenderstrømmen har ny adresse med en hemmelig nøkkel
+    (`/<nøkkel>/arsplan.ics`), og et eksisterende abonnement må legges inn
+    på nytt (#11).
+  - CalDAV godtar bare `https://` (#9).
+  - `sql:allow-execute` står fortsatt åpen; andre skrivinger med flere
+    steg kan flyttes til `transaksjon` etter hvert (#2).
+- **Åpent:** #10 signering (venter, koster penger; workflowen er låst og
+  delt i test og bygg) og #14 (Samtaler.tsx og ElevPanel.tsx er store;
+  deles opp litt om gangen).
 - **Under utvikling** (`tauri dev`) kan vinduet bli blankt etter at koden
   er endret mens appen kjører. Lukk og start vinduet på nytt. Den ferdige
   appen er ikke berørt.
