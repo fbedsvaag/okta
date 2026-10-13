@@ -34,3 +34,9 @@ __pycache__/
 # Ekte elevdata til utvikling (InSchool-utskrifter med navn og bilder).
 # Skal aldri inn i git eller til GitHub.
 privat/
+
+# Test-dmg til kolleger (npm run dmg)
+dist-dmg/
+
+# Skrives ut fra guide_read_me.html av npm run dmg
+docs/guide/guide_read_me.pdf

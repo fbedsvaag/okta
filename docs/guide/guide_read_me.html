@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<title>Økta: kom i gang</title>
+<style>
+  @page { size: A4; margin: 0; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    font-family: -apple-system, "SF Pro Text", "Helvetica Neue", Helvetica, sans-serif;
+    color: #1d1d1f;
+    -webkit-font-smoothing: antialiased;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .side {
+    width: 210mm;
+    height: 297mm;
+    padding: 22mm 22mm 18mm;
+    position: relative;
+    page-break-after: always;
+    overflow: hidden;
+  }
+  .side:last-child { page-break-after: auto; }
+  .merke { display: flex; align-items: center; gap: 10px; font-size: 13px; color: #6e6e73; }
+  .merke b { color: #1d1d1f; font-weight: 600; }
+  h1 {
+    font-family: -apple-system, "SF Pro Display", "Helvetica Neue", sans-serif;
+    font-size: 52px; font-weight: 600; letter-spacing: -0.025em;
+    line-height: 1.04; margin: 34mm 0 0;
+  }
+  .ingress { font-size: 21px; line-height: 1.4; color: #6e6e73; margin: 14px 0 0; max-width: 140mm; font-weight: 400; }
+  .innhold { margin-top: 30mm; display: grid; grid-template-columns: 1fr 1fr; gap: 12px 28px; }
+  .innhold div { font-size: 15px; color: #1d1d1f; padding: 12px 0; border-top: 0.5px solid #d2d2d7; }
+  .innhold span { color: #86868b; font-variant-numeric: tabular-nums; margin-right: 10px; }
+  .bunn { position: absolute; left: 22mm; right: 22mm; bottom: 14mm; display: flex; justify-content: space-between; font-size: 11px; color: #86868b; }
+  .steg { display: grid; grid-template-columns: 34px minmax(0,1fr); gap: 0 14px; margin-bottom: 15mm; }
+  .nr {
+    width: 34px; height: 34px; border-radius: 50%;
+    background: #f5f5f7; color: #1d1d1f;
+    display: grid; place-items: center;
+    font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums;
+  }
+  h2 {
+    font-family: -apple-system, "SF Pro Display", "Helvetica Neue", sans-serif;
+    font-size: 24px; font-weight: 600; letter-spacing: -0.015em;
+    margin: 4px 0 8px;
+  }
+  p, li { font-size: 14.5px; line-height: 1.55; color: #3a3a3c; margin: 0 0 8px; }
+  ol, ul { margin: 0 0 8px; padding-left: 20px; }
+  li { margin-bottom: 4px; }
+  .knapp {
+    display: inline-block; padding: 1px 8px; border-radius: 6px;
+    background: #f5f5f7; border: 0.5px solid #d2d2d7;
+    font-size: 13px; color: #1d1d1f; white-space: nowrap;
+  }
+  .sti { font-weight: 500; color: #1d1d1f; }
+  .eng { color: #86868b; }
+  kbd {
+    display: inline-block; min-width: 20px; text-align: center;
+    padding: 0 6px; border-radius: 5px; border: 0.5px solid #c7c7cc;
+    background: #fff; font-family: inherit; font-size: 12.5px; color: #1d1d1f;
+    box-shadow: 0 1px 0 #c7c7cc;
+  }
+  .boks { background: #f5f5f7; border-radius: 14px; padding: 16px 20px; margin-top: 4px; }
+  .boks p:last-child { margin-bottom: 0; }
+  .liten { font-size: 12.5px; color: #86868b; }
+</style>
+</head>
+<body>
+
+<section class="side">
+  <div class="merke">
+    <svg width="22" height="22" viewBox="0 0 1024 1024" aria-hidden="true"><rect x="40" y="40" width="944" height="944" rx="215" fill="#241F33"/><rect x="290" y="330" width="200" height="364" rx="44" fill="#EEEDFE"/><rect x="516" y="330" width="100" height="364" rx="40" fill="#C9C2DD"/><rect x="642" y="330" width="100" height="364" rx="40" fill="#9A90B8"/></svg>
+    <b>Økta</b> · versjon 0.2.0
+  </div>
+  <h1>Kom i gang<br>med Økta.</h1>
+  <p class="ingress">Planlegg skoleåret, skår elevene underveis og se hvordan det går med dem over tid. Alt ligger på din egen Mac.</p>
+
+  <div class="innhold">
+    <div><span>1</span>Installer</div>
+    <div><span>5</span>Til daglig</div>
+    <div><span>2</span>Åpne første gang</div>
+    <div><span>6</span>Dataene dine</div>
+    <div><span>3</span>Oppsettfila</div>
+    <div><span>7</span>Ny versjon</div>
+    <div><span>4</span>Elevene</div>
+    <div><span>8</span>Spørsmål</div>
+  </div>
+
+  <div class="bunn"><span>Økta · kom i gang</span><span>1</span></div>
+</section>
+
+<section class="side">
+  <div class="steg">
+    <div class="nr">1</div>
+    <div>
+      <h2>Installer</h2>
+      <p>Åpne <span class="sti">Økta 0.2.0.dmg</span>. Dra <span class="sti">Økta</span> over på <span class="sti">Programmer</span> <span class="eng">(Applications)</span>. Så kan du lukke vinduet og løse ut disken.</p>
+      <p class="liten">Krever macOS 13 Ventura eller nyere. Virker på både nye Mac-er med Apple-brikke og eldre med Intel.</p>
+    </div>
+  </div>
+
+  <div class="steg">
+    <div class="nr">2</div>
+    <div>
+      <h2>Åpne første gang</h2>
+      <p>Økta er ikke sendt gjennom Apples godkjenning, så macOS stopper den den første gangen. Slik åpner du den, bare én gang:</p>
+      <ol>
+        <li>Dobbeltklikk på Økta i Programmer. Du får en melding om at appen ikke kan åpnes. Trykk <span class="knapp">Ferdig</span> <span class="eng">(Done)</span>.</li>
+        <li>Åpne <span class="sti">Systeminnstillinger › Personvern og sikkerhet</span> <span class="eng">(System Settings › Privacy &amp; Security)</span>.</li>
+        <li>Rull ned. Ved «Økta ble blokkert» trykker du <span class="knapp">Åpne likevel</span> <span class="eng">(Open Anyway)</span>, og bekrefter med passordet eller Touch ID.</li>
+      </ol>
+      <p>Etter dette åpner Økta seg som alle andre apper.</p>
+    </div>
+  </div>
+
+  <div class="steg">
+    <div class="nr">3</div>
+    <div>
+      <h2>Oppsettfila</h2>
+      <p>Har du fått en oppsettfil fra en kollega (den slutter på <span class="sti">.okta</span>), dobbeltklikker du på den. Da får du skoleåret, fridagene og fagene på skolen ferdig lagt inn.</p>
+      <ol>
+        <li>Se over hva som legges inn, og trykk <span class="knapp">Legg inn og gå videre</span>.</li>
+        <li>Skriv navnet ditt. Det står som faglærer på årsplanene.</li>
+        <li>Kryss av for fagene du har i år. Mangler et fag, legger du det til selv.</li>
+      </ol>
+      <p class="liten">Uten oppsettfil velger du «Sett opp selv» og skriver inn skoleåret og fagene. Det tar et par minutter. Oppsettfila har aldri noe om elever.</p>
+    </div>
+  </div>
+
+  <div class="bunn"><span>Økta · kom i gang</span><span>2</span></div>
+</section>
+
+<section class="side">
+  <div class="steg">
+    <div class="nr">4</div>
+    <div>
+      <h2>Elevene</h2>
+      <p>Gå til <span class="sti">Elever › Lim inn liste</span>. Du har to veier:</p>
+      <ul>
+        <li><span class="knapp">Les fra InSchool-PDF</span> leser klasselista du skriver ut fra InSchool, med navn, klasse og bilder. Faget velges fra fagkoden i PDF-en.</li>
+        <li>Eller lim inn en liste, én elev per linje: <span class="sti">Tony Soprano; 3STA</span>.</li>
+      </ul>
+      <p>Trykk <span class="knapp">Forhåndsvis</span>, se over, og <span class="knapp">Importer</span>. Har du samme elev i flere fag, kjenner Økta henne igjen og spør.</p>
+    </div>
+  </div>
+
+  <div class="steg">
+    <div class="nr">5</div>
+    <div>
+      <h2>Til daglig</h2>
+      <p><span class="sti">I dag</span> viser dagens økter, uka og det som venter. Klikk på en økt for å åpne den.</p>
+      <p>I økta skårer du med tastene: <kbd>3</kbd> grønn, <kbd>2</kbd> gul, <kbd>1</kbd> rød og <kbd>0</kbd> ikke i økta. Markøren går videre av seg selv. <kbd>N</kbd> skriver et notat på eleven. <kbd>Esc</kbd> lukker, og alt er lagret.</p>
+      <p><kbd>⌘</kbd> <kbd>K</kbd> søker etter elever og økter, hvor som helst i appen.</p>
+    </div>
+  </div>
+
+  <div class="steg">
+    <div class="nr">6</div>
+    <div>
+      <h2>Dataene dine</h2>
+      <p>Alt ligger bare på din Mac. Ingenting sendes noe sted, med ett unntak du selv må slå på: timeplanen til din egen kalender.</p>
+      <div class="boks">
+        <p>· Slå på <span class="sti">FileVault</span> under Personvern og sikkerhet, så disken er kryptert.</p>
+        <p>· Økta tar en sikkerhetskopi hver dag og beholder de siste 30.</p>
+        <p>· Legg ikke arkivmappa (Innstillinger › Arkiv) i OneDrive eller iCloud når det er ekte elever i appen.</p>
+        <p>· Elevbildene forlater aldri appen: ikke i utskrift, eksport eller kalender.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="bunn"><span>Økta · kom i gang</span><span>3</span></div>
+</section>
+
+<section class="side">
+  <div class="steg">
+    <div class="nr">7</div>
+    <div>
+      <h2>Ny versjon</h2>
+      <p>Økta ser aldri etter oppdateringer selv. Når du får en ny dmg, drar du Økta til Programmer på nytt og velger <span class="knapp">Erstatt</span> <span class="eng">(Replace)</span>. Dataene dine blir liggende.</p>
+      <p>Ta gjerne en kopi først: <span class="sti">Innstillinger › Sikkerhetskopi › Ta kopi nå</span>.</p>
+    </div>
+  </div>
+
+  <div class="steg">
+    <div class="nr">8</div>
+    <div>
+      <h2>Spørsmål</h2>
+      <p>Økta er laget av Fredrik Bedsvaag. Si fra om det som ikke virker, og om det som mangler. Skriv gjerne hva du gjorde, og ta et skjermbilde med <kbd>⇧</kbd> <kbd>⌘</kbd> <kbd>4</kbd>.</p>
+      <p class="liten">Dette er en testversjon. Avklar med skolen før du legger inn ekte elever.</p>
+    </div>
+  </div>
+
+  <div class="bunn"><span>Økta · kom i gang</span><span>4</span></div>
+</section>
+
+</body>
+</html>

@@ -1,6 +1,6 @@
 # Status
 
-Pr. 2026-10-07, versjon 0.1.3. Beskriver hvor appen faktisk står, ikke hva
+Pr. 2026-10-13, versjon 0.2.0. Beskriver hvor appen faktisk står, ikke hva
 den skal bli. Fila eies fritt, i motsetning til SPEC.md.
 
 **578 tester, alle grønne. `tsc --noEmit` er ren. `npm run build` går
@@ -50,11 +50,22 @@ Prøvd i `npm run tauri dev`, skjerm for skjerm mot lerretet.
 - **Klassekart (§4.11):** rom, plasser, grupper, fordeling og historikk.
 - **CalDAV (§8.1), arkiv og sikkerhetskopi (§8):** ferdig.
 
+## Test-dmg til kolleger (0.2.0)
+
+- **Oppsettfila (§8.2, 5.13):** bygget, men ikke prøvd i appen ennå.
+  Innstillinger › Del oppsett lager og leser inn; veiviseren har «Bruk en
+  oppsettfil fra en kollega» med fagene som forslag; dobbeltklikk på
+  `.okta` åpner Økta (egen filtype `no.elevtracking.oppsett`).
+- **`npm run dmg`** bygger for Apple-brikke og Intel, signert lokalt (uten
+  Apple-konto), minst macOS 13, og legger `guide_read_me.pdf` i dmg-en ved
+  siden av appen. Resultatet havner i `dist-dmg/`. Kollegene må trykke
+  «Åpne likevel» første gang; guiden viser hvordan.
+- Ikke prøvd ennå: en tom brukerkonto, fra installasjon til første økt.
+- Rust-binæren har kildestier med brukernavnet i seg (vanlig for Rust),
+  ingen data. Kan vaskes med `--remap-path-prefix` om ønskelig.
+
 ## Hva som ikke er bygget
 
-- **Oppsettfila (§8.2, ARBEIDSLISTE 5.13):** veiviseren viser valget «Bruk
-  en oppsettfil fra en kollega», men verken eksport (Innstillinger › Del
-  oppsett) eller import er bygget.
 - **Masseredigering i Elever:** merke flere og endre fag, klasse eller
   mentor samtidig. Skal tegnes i lerretet først.
 - **Klasseopprykk (§4.3):** avventer; eieren er usikker på om det trengs.

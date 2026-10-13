@@ -1,7 +1,7 @@
 {
   "name": "okta",
   "private": true,
-  "version": "0.1.3",
+  "version": "0.2.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -11,7 +11,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "parse": "node scripts/parse.ts",
-    "testdata": "vitest run --config scripts/testdata.config.ts"
+    "testdata": "vitest run --config scripts/testdata.config.ts",
+    "dmg": "scripts/lag-dmg.sh"
   },
   "dependencies": {
     "@tauri-apps/api": "^2",
