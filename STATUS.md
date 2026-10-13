@@ -48,11 +48,13 @@ Prøvd i `npm run tauri dev`, skjerm for skjerm mot lerretet.
 - **Samtaletrekkeren (§4.10):** ferdig, med notat fra samtalen og
   publisering av mentorsamtaler.
 - **Klassekart (§4.11):** rom, plasser, grupper, fordeling og historikk.
-- **Oppsettfil (§8.2), CalDAV (§8.1), arkiv og sikkerhetskopi (§8):**
-  ferdig.
+- **CalDAV (§8.1), arkiv og sikkerhetskopi (§8):** ferdig.
 
 ## Hva som ikke er bygget
 
+- **Oppsettfila (§8.2, ARBEIDSLISTE 5.13):** veiviseren viser valget «Bruk
+  en oppsettfil fra en kollega», men verken eksport (Innstillinger › Del
+  oppsett) eller import er bygget.
 - **Masseredigering i Elever:** merke flere og endre fag, klasse eller
   mentor samtidig. Skal tegnes i lerretet først.
 - **Klasseopprykk (§4.3):** avventer; eieren er usikker på om det trengs.
