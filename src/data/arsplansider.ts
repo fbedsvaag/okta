@@ -1,4 +1,5 @@
-import { isoUke, type Ark, type Arkbolk, type Arkrad } from "./arsplanark";
+import type { Ark, Arkbolk, Arkrad } from "./arsplanark";
+import { ukenummer } from "./kalender";
 
 /**
  * Årsplanen delt i A4-sider (ARBEIDSLISTE 11.6, lerretet «ArsplanPdf1–3»).
@@ -48,7 +49,7 @@ export function bolkerMedFerier(
     const ferie: Arkelement = {
       type: "ferie",
       navn: f.navn,
-      uke: isoUke(f.fra),
+      uke: ukenummer(f.fra),
     };
     let plassert = false;
     for (let b = 0; b < ut.length && !plassert; b++) {

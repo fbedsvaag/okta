@@ -1,6 +1,6 @@
 import type { Oktrad } from "./oktrader";
 import type { Fridag } from "./kalender";
-import { blokkering } from "./kalender";
+import { blokkering, ukenummer } from "./kalender";
 import { mandagFor } from "./dashbord";
 
 /**
@@ -111,7 +111,7 @@ export function faginnsats(
           : "tom";
     return {
       mandag: m,
-      uke: isoUke(m),
+      uke: ukenummer(m),
       status,
       na: m === naMandag,
       g: d?.g ?? 0,
@@ -168,12 +168,4 @@ export function maneder(
 function leggTil(dato: string, dager: number): string {
   const [a, m, d] = dato.split("-").map(Number);
   return new Date(Date.UTC(a, m - 1, d + dager)).toISOString().slice(0, 10);
-}
-
-function isoUke(dato: string): number {
-  const [a, m, d] = dato.split("-").map(Number);
-  const t = new Date(Date.UTC(a, m - 1, d));
-  t.setUTCDate(t.getUTCDate() + 4 - (t.getUTCDay() || 7));
-  const nyttar = Date.UTC(t.getUTCFullYear(), 0, 1);
-  return Math.ceil(((t.getTime() - nyttar) / 86400000 + 1) / 7);
 }

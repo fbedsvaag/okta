@@ -16,7 +16,7 @@ import {
   type Periode,
 } from "./perioder";
 import { hentFridager, hentInnstilling, type Skolear } from "./skolear";
-import type { Fridag } from "./kalender";
+import { ukenummer, type Fridag } from "./kalender";
 import { fasteTider } from "./fagside";
 
 /** Innstillingen med lærerens navn — standard faglærer i alle fag. */
@@ -243,7 +243,7 @@ export function byggArk(inn: {
   const rad = (o: Okt): Arkrad => ({
     oktId: o.id,
     dato: o.dato,
-    uke: isoUke(o.dato),
+    uke: ukenummer(o.dato),
     klokkeslett: o.klokkeslett,
     varighetMin: o.varighetMin,
     tema: tom(o.tema),
@@ -486,14 +486,6 @@ function utc(dato: string): Date {
 
 export function ukedag(dato: string): string {
   return UKEDAGER[utc(dato).getUTCDay()];
-}
-
-/** ISO 8601-uke: uka tilhører året torsdagen ligger i. */
-export function isoUke(dato: string): number {
-  const d = utc(dato);
-  d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
-  const nyttar = Date.UTC(d.getUTCFullYear(), 0, 1);
-  return Math.ceil(((d.getTime() - nyttar) / 86400000 + 1) / 7);
 }
 
 /** «42 økter · 126 av 140 timer», med samtaledagene som egen hale. */

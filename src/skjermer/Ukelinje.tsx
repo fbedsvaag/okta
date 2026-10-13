@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { Okt } from "../data/okter";
 import { Ikon } from "../ui/felles";
 import { fagfarge } from "../ui/farger";
+import { ukenummer } from "../data/kalender";
 
 /**
  * Uka på forsiden, som en kalender: dagene bortover, klokka nedover.
@@ -576,15 +577,7 @@ export function ukeTekst(mandag: string): string {
     new Date(`${d}T12:00:00`)
       .toLocaleDateString("nb-NO", { day: "numeric", month: "short" })
       .replace(/\.$/, "");
-  return `Uke ${isoUke(mandag)} · ${kort(mandag)} – ${kort(fredag)}`;
-}
-
-function isoUke(dato: string): number {
-  const [a, m, d] = dato.split("-").map(Number);
-  const t = new Date(Date.UTC(a, m - 1, d));
-  t.setUTCDate(t.getUTCDate() + 4 - (t.getUTCDay() || 7));
-  const nyttar = Date.UTC(t.getUTCFullYear(), 0, 1);
-  return Math.ceil(((t.getTime() - nyttar) / 86400000 + 1) / 7);
+  return `Uke ${ukenummer(mandag)} · ${kort(mandag)} – ${kort(fredag)}`;
 }
 
 function timer(klokkeslett: string): number {

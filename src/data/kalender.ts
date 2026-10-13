@@ -213,16 +213,12 @@ export function rodekart(fra: string, til: string): Map<string, string> {
  * årets første torsdag. Det er den norske tellemåten.
  */
 export function ukenummer(dato: string): number {
-  const d = new Date(`${dato}T00:00:00`);
+  // Ren UTC-regning: sommertid kan ikke flytte en dag over midnatt. Den
+  // eneste utregningen av ukenummer i appen (#15).
+  const [a, m, d] = dato.slice(0, 10).split("-").map(Number);
+  const t = new Date(Date.UTC(a, m - 1, d));
   // Flytt til torsdagen i samme uke; da bestemmer året til torsdagen alt.
-  const torsdag = new Date(d);
-  torsdag.setDate(d.getDate() - ((d.getDay() + 6) % 7) + 3);
-  const forsteTorsdag = new Date(torsdag.getFullYear(), 0, 4);
-  forsteTorsdag.setDate(
-    forsteTorsdag.getDate() - ((forsteTorsdag.getDay() + 6) % 7) + 3,
-  );
-  const dager = Math.round(
-    (torsdag.getTime() - forsteTorsdag.getTime()) / 86_400_000,
-  );
-  return 1 + dager / 7;
+  t.setUTCDate(t.getUTCDate() + 4 - (t.getUTCDay() || 7));
+  const nyttar = Date.UTC(t.getUTCFullYear(), 0, 1);
+  return Math.ceil(((t.getTime() - nyttar) / 86_400_000 + 1) / 7);
 }

@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import {
   byggArk,
   filnavn,
-  isoUke,
   lesFelt,
   regnskapstekst,
   standardFelt,
@@ -13,6 +12,7 @@ import { somCsv, somMarkdown } from "./arsplaneksport";
 import type { FagIAr } from "./fag";
 import type { Okt, OktVurdering } from "./okter";
 import type { Periode } from "./perioder";
+import { ukenummer } from "./kalender";
 
 const skolear = {
   id: "ar",
@@ -277,9 +277,9 @@ describe("feltvalg", () => {
 
 describe("format", () => {
   it("regner ISO-uker, også over nyttår", () => {
-    expect(isoUke("2026-08-17")).toBe(34);
-    expect(isoUke("2027-01-01")).toBe(53);
-    expect(isoUke("2027-01-04")).toBe(1);
+    expect(ukenummer("2026-08-17")).toBe(34);
+    expect(ukenummer("2027-01-01")).toBe(53);
+    expect(ukenummer("2027-01-04")).toBe(1);
   });
 
   it("gir norsk ukedag", () => {

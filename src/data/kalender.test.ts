@@ -221,6 +221,15 @@ describe("ukenummer", () => {
     ["2027-05-17", 20],
     // 1. januar 2027 er en fredag og hører til uke 53 i 2026.
     ["2027-01-01", 53],
+    // Uke 53 over nyttår, og et år der 1. januar er i uke 1 året før.
+    ["2020-12-31", 53],
+    ["2021-01-03", 53],
+    ["2024-12-30", 1],
+    // Dagene sommertiden begynner og slutter (søndager).
+    ["2026-03-29", 13],
+    ["2026-03-30", 14],
+    ["2026-10-25", 43],
+    ["2026-10-26", 44],
   ])("%s er uke %i", (dato, forventet) => {
     expect(ukenummer(dato)).toBe(forventet);
   });
