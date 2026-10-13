@@ -448,6 +448,8 @@ Tegnet i lerretet runde 13: `Elever`, `Fagside`, `OktSkar`, `OktPlan`
   ikke dokumentert fra udokumentert fravær.
 
 **Tegnes i neste runde** (ikke bygg før det er tegnet):
+- Elever: merke flere elever og endre fag, klasse eller mentor på alle
+  samtidig, eller slette. Bestillingen står i `docs/bestilling-masseredigering.md`.
 - Klassekart: farge per gruppe; lag plasser fra gruppene (gruppene sitter
   samlet); logg over tidligere kart for klassen.
 - Vurderinger: kalendervisning med bare vurderingene.
