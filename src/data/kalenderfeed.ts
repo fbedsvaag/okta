@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { lagIcal } from "./ical";
+import { lytt } from "./endringer";
 import { hentOkter } from "./okter";
 import { hentAllePerioder, periodeFor, type Periode } from "./perioder";
 import { hentInnstilling, settInnstilling, type Skolear } from "./skolear";
@@ -49,11 +50,28 @@ export async function oppdater(skolear: Skolear): Promise<string> {
   return ics;
 }
 
+/** Ventetiden etter en endring før strømmen bygges på nytt. */
+export const VENT_MS = 2000;
+let avLytt: (() => void) | null = null;
+let timer: ReturnType<typeof setTimeout> | null = null;
+
 /**
  * Starter lytteren og fyller den. Kalles ved oppstart bare hvis brukeren
  * har slått strømmen på — ingenting lytter ellers.
+ *
+ * Strømmen bygges på nytt når øktene endres, litt etter siste endring. Før
+ * ble den bare bygget ved oppstart, og en flyttet økt nådde ikke kalenderen
+ * før appen ble startet på nytt.
  */
 export async function start(skolear: Skolear): Promise<string> {
   await oppdater(skolear);
+  avLytt?.();
+  avLytt = lytt(() => {
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(() => {
+      timer = null;
+      void oppdater(skolear).catch((e) => console.error("kalenderstrøm:", e));
+    }, VENT_MS);
+  });
   return invoke<string>("start_kalenderfeed");
 }
