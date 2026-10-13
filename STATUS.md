@@ -118,8 +118,9 @@ om sikkerhet i §8.
   - `sql:allow-execute` står fortsatt åpen; andre skrivinger med flere
     steg kan flyttes til `transaksjon` etter hvert (#2).
 - **Åpent:** #10 signering (venter, koster penger; workflowen er låst og
-  delt i test og bygg) og #14 (Samtaler.tsx og ElevPanel.tsx er store;
-  deles opp litt om gangen).
+  delt i test og bygg). #14 er gjort: elevkortet og Samtaler er delt i
+  `elevkort/` og `samtaler/`, med `useLagretInnstilling` for innstillinger
+  som hører til et fag.
 - **Under utvikling** (`tauri dev`) kan vinduet bli blankt etter at koden
   er endret mens appen kjører. Lukk og start vinduet på nytt. Den ferdige
   appen er ikke berørt.
