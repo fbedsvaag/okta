@@ -1,6 +1,7 @@
 #!/bin/zsh
-# Lager test-dmg-en til kolleger: Økta.app, en snarvei til Programmer og
-# guide_read_me.pdf i samme vindu.
+# Lager test-dmg-en til kolleger: Økta.app, en snarvei til Programmer,
+# guide_read_me.pdf, testheftet betatest.pdf og den oppdiktede klasselista
+# i samme vindu.
 #
 #   npm run dmg
 #
@@ -20,13 +21,14 @@ if [[ "${HOPP_OVER_BYGG:-}" != "1" ]]; then
 fi
 [[ -d "$app" ]] || { echo "Fant ikke $app"; exit 1; }
 
-# Guiden, skrevet ut på nytt så den alltid følger HTML-en.
+# Guiden og testheftet, skrevet ut på nytt så de alltid følger HTML-en.
 chrome="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
-if [[ -x "$chrome" ]]; then
+[[ -x "$chrome" ]] || { echo "Trenger Google Chrome for å skrive ut PDF-ene"; exit 1; }
+for navn in guide_read_me betatest; do
   "$chrome" --headless=new --disable-gpu --no-pdf-header-footer \
-    --print-to-pdf="docs/guide/guide_read_me.pdf" \
-    "file://$PWD/docs/guide/guide_read_me.html" >/dev/null 2>&1
-fi
+    --print-to-pdf="docs/guide/$navn.pdf" \
+    "file://$PWD/docs/guide/$navn.html" >/dev/null 2>&1
+done
 
 # Ingen data skal følge med: databasen ligger i Application Support, aldri
 # i appen. Sjekk det likevel.
@@ -37,7 +39,8 @@ fi
 rm -rf "$ut/innhold" && mkdir -p "$ut/innhold"
 cp -R "$app" "$ut/innhold/"
 ln -s /Applications "$ut/innhold/Programmer"
-cp docs/guide/guide_read_me.pdf "$ut/innhold/"
+cp docs/guide/guide_read_me.pdf docs/guide/betatest.pdf \
+  docs/guide/oppdiktet-klasseliste-1STA-1STB.pdf "$ut/innhold/"
 rm -f "$dmg"
 hdiutil create -volname "Økta $versjon" -srcfolder "$ut/innhold" -ov -format UDZO "$dmg" >/dev/null
 rm -rf "$ut/innhold"

@@ -38,5 +38,7 @@ privat/
 # Test-dmg til kolleger (npm run dmg)
 dist-dmg/
 
-# Skrives ut fra guide_read_me.html av npm run dmg
+# Skrives ut fra HTML-en av npm run dmg
 docs/guide/guide_read_me.pdf
+docs/guide/guide_read_me_windows.pdf
+docs/guide/betatest.pdf
