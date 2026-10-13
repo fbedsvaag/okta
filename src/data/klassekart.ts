@@ -337,6 +337,12 @@ export async function hentKart(skolearId: string): Promise<Kart[]> {
        LEFT JOIN klasse kl ON k.kilde_type = 'klasse' AND kl.id = k.kilde_id
        LEFT JOIN rom r ON r.id = k.rom_id AND r.slettet IS NULL
       WHERE k.skolear_id = $1 AND k.slettet IS NULL
+        -- Et kart for et fag som er tatt ut av året, eller en klasse som er
+        -- slettet, har ingen elever å vise og står ikke i lista.
+        AND NOT (k.kilde_type = 'fag'
+                 AND (sf.id IS NULL OR sf.slettet IS NOT NULL))
+        AND NOT (k.kilde_type = 'klasse'
+                 AND (kl.id IS NULL OR kl.slettet IS NOT NULL))
       ORDER BY k.opprettet`,
     [skolearId],
   );

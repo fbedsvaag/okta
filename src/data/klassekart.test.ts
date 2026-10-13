@@ -280,3 +280,18 @@ describe("hentElevIKart", () => {
     expect(await k.hentElevIKart(ny, ar)).toEqual([]);
   });
 });
+
+describe("kart for noe som er fjernet (#10)", () => {
+  it("står ikke i lista når faget er tatt ut av året", async () => {
+    await k.opprettKart({
+      skolearId: ar,
+      kildeType: "fag",
+      kildeId: fag,
+      romId: null,
+    });
+    expect(await k.hentKart(ar)).toHaveLength(1);
+    const { fjernFagFraAr } = await import("./fag");
+    await fjernFagFraAr(fag);
+    expect(await k.hentKart(ar)).toEqual([]);
+  });
+});
