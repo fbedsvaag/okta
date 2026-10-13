@@ -39,6 +39,15 @@ pub async fn transaksjon(
 /// Kjører setningene i én transaksjon. Feiler én, rulles alle tilbake.
 pub async fn kjor(pulje: &Pool<Sqlite>, setninger: Vec<Setning>) -> Result<(), String> {
     let mut tx = pulje.begin().await.map_err(|e| e.to_string())?;
+    // Fremmednøkler gjelder per tilkobling (#12). Denne tilkoblingen sjekkes
+    // før noe skrives, uansett hva puljen ellers gjør.
+    let pa: i64 = sqlx::query_scalar("PRAGMA foreign_keys")
+        .fetch_one(&mut *tx)
+        .await
+        .map_err(|e| e.to_string())?;
+    if pa != 1 {
+        return Err("fremmednøkler er av på denne tilkoblingen; skriver ingenting".into());
+    }
     for (i, s) in setninger.iter().enumerate() {
         let mut q = sqlx::query(&s.sql);
         // Samme binding som tauri-plugin-sql bruker for vanlige kall, så en
@@ -63,6 +72,29 @@ pub async fn kjor(pulje: &Pool<Sqlite>, setninger: Vec<Setning>) -> Result<(), S
 mod tester {
     use super::*;
     use sqlx::sqlite::SqlitePoolOptions;
+
+    /// Pluginen åpner basen med `Pool::connect("sqlite:…")` og standardvalgene
+    /// til sqlx. Holder flere tilkoblinger samtidig, så hver av dem er en egen
+    /// tilkobling, og sjekker at fremmednøklene er på i alle (#12).
+    #[tokio::test]
+    async fn fremmednokler_er_paa_i_hver_tilkobling_i_puljen() {
+        let fil = std::env::temp_dir().join(format!("okta-fk-{}.sqlite", std::process::id()));
+        let url = format!("sqlite:{}?mode=rwc", fil.display());
+        let p = SqlitePoolOptions::new().max_connections(4).connect(&url).await.unwrap();
+        let mut holdt = Vec::new();
+        for _ in 0..4 {
+            let mut t = p.acquire().await.unwrap();
+            let pa: i64 = sqlx::query_scalar("PRAGMA foreign_keys")
+                .fetch_one(&mut *t)
+                .await
+                .unwrap();
+            assert_eq!(pa, 1);
+            holdt.push(t);
+        }
+        drop(holdt);
+        p.close().await;
+        let _ = std::fs::remove_file(&fil);
+    }
 
     async fn pulje() -> Pool<Sqlite> {
         // Én tilkobling: en minnebase er privat for tilkoblingen sin.

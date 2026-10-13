@@ -17,8 +17,12 @@ export function db(): Promise<Database> {
 async function koble(): Promise<Database> {
   const d = await Database.load(FIL);
 
-  // SPEC §12: fremmednøkler skal være på. sqlx slår dem på for hver tilkobling
-  // i puljen, men vi stoler ikke på det uten å se det.
+  // SPEC §12: fremmednøkler skal være på. Innstillingen gjelder per
+  // tilkobling, og plugin-sql har en pulje (#12). sqlx slår dem på for hver
+  // ny tilkobling som standard; en Rust-test (transaksjon.rs) holder fire
+  // tilkoblinger samtidig og sjekker hver av dem, og transaksjonene sjekker
+  // sin egen tilkobling før de skriver. Sjekken her ser bare tilkoblingen
+  // som tilfeldigvis svarer, men stopper appen tidlig hvis noe er galt.
   await d.execute("PRAGMA foreign_keys = ON");
   const [{ foreign_keys }] = await d.select<{ foreign_keys: number }[]>(
     "PRAGMA foreign_keys",
