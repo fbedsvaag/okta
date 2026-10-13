@@ -43,6 +43,8 @@ cp -R "$app" "$ut/innhold/"
 ln -s /Applications "$ut/innhold/Programmer"
 cp docs/guide/guide_read_me.pdf docs/guide/betatest.pdf \
   docs/guide/oppdiktet-klasseliste-1STA-1STB.pdf "$ut/innhold/"
+# Lesbare for alle, også på en annen brukerkonto enn den som bygde.
+chmod 644 "$ut/innhold/"*.pdf
 rm -f "$dmg"
 hdiutil create -volname "Økta $versjon" -srcfolder "$ut/innhold" -ov -format UDZO "$dmg" >/dev/null
 rm -rf "$ut/innhold"
