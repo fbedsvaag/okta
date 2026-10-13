@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<title>Innsats over tid</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#f4f2f9}
+.num{font-variant-numeric:tabular-nums}
+.kol{position:relative;width:14px;height:52px;display:flex;flex-direction:column-reverse;gap:1px;cursor:default}
+.seg{width:100%;flex:none}
+.seg:last-child{border-radius:3px 3px 0 0}
+.kol:hover .seg{filter:brightness(1.08)}
+.lg{display:inline-flex;align-items:center;gap:5px}
+.lg i{width:9px;height:9px;border-radius:2px;display:inline-block}
+</style>
+</helmet>
+<div style="width:1240px;min-height:620px;box-sizing:border-box;padding:40px 48px;font-family:'Geist',-apple-system,sans-serif;color:#241f33">
+<div style="display:flex;align-items:baseline;gap:16px;margin-bottom:18px"><h1 style="margin:0;font-size:30px;font-weight:300;letter-spacing:-.015em">Innsats over tid</h1></div>
+<section style="position:relative;background:#fff;border-radius:16px;box-shadow:0 1px 3px rgba(36,31,51,.10);padding:22px 28px 24px">
+<div style="display:flex;align-items:baseline;gap:10px;padding-bottom:10px;border-bottom:1px solid #e5e2ee">
+<h2 style="margin:0;font-size:15px;font-weight:600">Innsats over tid</h2>
+<span style="flex:1"></span>
+<span style="display:flex;gap:12px;font-size:12px;color:#645d7a"><span class="lg"><i style="background:#3f9d49"></i>Grønn</span><span class="lg"><i style="background:#d9a92f"></i>Gul</span><span class="lg"><i style="background:#c04a3d"></i>Rød</span><span class="lg"><i style="background:#d5d8dd"></i>Ikke i økta</span></span>
+</div>
+<div style="display:grid;grid-template-columns:150px minmax(0,1fr) 120px;column-gap:20px;align-items:end;padding:8px 0 6px;font-size:11.5px;color:#9a90b8"><span></span><span></span><span style="text-align:right">Grønn, siste 4 uker</span></div>
+<sc-for list="{{fag}}" as="f" hint-placeholder-count="3">
+<div style="display:grid;grid-template-columns:150px minmax(0,1fr) 120px;column-gap:20px;align-items:end;padding:10px 0;border-bottom:1px solid #f3f1f8">
+<div style="align-self:center"><div style="display:flex;align-items:center;gap:7px;font-size:14px;font-weight:600"><span style="width:10px;height:10px;border-radius:2px;background:{{f.farge}}"></span>{{f.kode}}</div><div style="font-size:12px;color:#645d7a;margin:2px 0 0 17px">{{f.navn}}</div></div>
+<div style="display:flex;align-items:flex-end;gap:3px">
+<sc-for list="{{f.uker}}" as="u" hint-placeholder-count="40">
+<div class="kol" onMouseEnter="{{u.hov}}" onMouseLeave="{{u.ut}}" style="opacity:{{u.op}}">
+<sc-if value="{{u.harData}}" hint-placeholder-val="{{ true }}">
+<span class="seg" style="height:{{u.hg}};background:#3f9d49"></span><span class="seg" style="height:{{u.hy}};background:#d9a92f"></span><span class="seg" style="height:{{u.hr}};background:#c04a3d"></span><span class="seg" style="height:{{u.ho}};background:#d5d8dd"></span>
+</sc-if>
+<sc-if value="{{u.kommer}}" hint-placeholder-val="{{ false }}"><span style="width:100%;height:52px;border-radius:3px;box-shadow:inset 0 0 0 1px #ebe8f2"></span></sc-if>
+<sc-if value="{{u.ferie}}" hint-placeholder-val="{{ false }}"><span style="width:100%;height:2px;border-radius:1px;background:#d9d4e8;margin-bottom:0"></span></sc-if>
+<sc-if value="{{u.na}}" hint-placeholder-val="{{ false }}"><span style="position:absolute;left:-2px;right:-2px;bottom:-7px;height:2px;border-radius:1px;background:#4a3d7d"></span></sc-if>
+</div>
+</sc-for>
+</div>
+<div style="text-align:right;align-self:center"><div class="num" style="font-size:24px;font-weight:300;letter-spacing:-.02em">{{f.siste}}</div><div class="num" style="font-size:12px;color:{{f.deltaFarge}}">{{f.delta}}</div></div>
+</div>
+</sc-for>
+<div style="display:grid;grid-template-columns:150px minmax(0,1fr) 120px;column-gap:20px;padding-top:8px"><span></span>
+<div style="display:flex;gap:3px;font-size:11px;color:#9a90b8"><sc-for list="{{mnd}}" as="m" hint-placeholder-count="11"><span style="width:{{m.w}};flex:none;color:{{m.farge}};font-weight:{{m.vekt}}">{{m.navn}}</span></sc-for></div><span></span></div>
+<sc-if value="{{visTips}}" hint-placeholder-val="{{ false }}">
+<div style="position:absolute;left:{{tipX}};top:{{tipY}};transform:translate(-50%,-100%);pointer-events:none;padding:9px 12px;border-radius:10px;background:rgba(36,31,51,.92);color:#fff;font-size:12px;line-height:1.5;white-space:nowrap;box-shadow:0 8px 24px rgba(36,31,51,.25)">
+<div style="font-weight:600">{{tip.tittel}}</div><div style="color:#d9d4e8">{{tip.okter}}</div>
+<div class="num" style="display:flex;gap:10px;margin-top:2px"><span><span style="color:#7fd08a">●</span> {{tip.g}}</span><span><span style="color:#f0c75a">●</span> {{tip.y}}</span><span><span style="color:#ef7d70">●</span> {{tip.r}}</span><span><span style="color:#bfc3c9">●</span> {{tip.o}}</span></div>
+</div>
+</sc-if>
+</section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1240,"height":620}}'>
+var DATA = [{"kode": "HIS3", "farge": "#7a4f2e", "navn": "Historie vg3", "uker": [{"u": 34, "c": [26, 13, 6, 3], "okter": 2}, {"u": 35, "c": [43, 17, 8, 4], "okter": 3}, {"u": 36, "c": [28, 12, 5, 3], "okter": 2}, {"u": 37, "c": [26, 13, 7, 2], "okter": 2}, {"u": 38, "c": [29, 12, 5, 2], "okter": 2}, {"u": 39, "c": [28, 11, 7, 2], "okter": 2}, {"u": 40, "ferie": true}, {"u": 41, "c": [47, 14, 7, 4], "okter": 3}, {"u": 42, "c": [29, 10, 6, 3], "okter": 2}, {"u": 43, "kommer": true}, {"u": 44, "kommer": true}, {"u": 45, "kommer": true}, {"u": 46, "kommer": true}, {"u": 47, "kommer": true}, {"u": 48, "kommer": true}, {"u": 49, "kommer": true}, {"u": 50, "kommer": true}, {"u": 51, "kommer": true}, {"u": 1, "ferie": true}, {"u": 2, "kommer": true}, {"u": 3, "kommer": true}, {"u": 4, "kommer": true}, {"u": 5, "kommer": true}, {"u": 6, "kommer": true}, {"u": 7, "kommer": true}, {"u": 8, "kommer": true}, {"u": 9, "ferie": true}, {"u": 10, "kommer": true}, {"u": 11, "kommer": true}, {"u": 12, "kommer": true}, {"u": 13, "kommer": true}, {"u": 14, "ferie": true}, {"u": 15, "kommer": true}, {"u": 16, "kommer": true}, {"u": 17, "kommer": true}, {"u": 18, "kommer": true}, {"u": 19, "kommer": true}, {"u": 20, "kommer": true}, {"u": 21, "kommer": true}, {"u": 22, "kommer": true}, {"u": 23, "kommer": true}, {"u": 24, "kommer": true}, {"u": 25, "kommer": true}]}, {"kode": "NOR3", "farge": "#3f6a95", "navn": "Norsk vg3", "uker": [{"u": 34, "c": [20, 19, 7, 2], "okter": 2}, {"u": 35, "c": [23, 16, 6, 3], "okter": 2}, {"u": 36, "c": [20, 17, 8, 3], "okter": 2}, {"u": 37, "c": [21, 18, 7, 2], "okter": 2}, {"u": 38, "c": [31, 26, 12, 3], "okter": 3}, {"u": 39, "c": [29, 28, 11, 4], "okter": 3}, {"u": 40, "ferie": true}, {"u": 41, "c": [21, 18, 7, 2], "okter": 2}, {"u": 42, "c": [23, 35, 10, 4], "okter": 3}, {"u": 43, "kommer": true}, {"u": 44, "kommer": true}, {"u": 45, "kommer": true}, {"u": 46, "kommer": true}, {"u": 47, "kommer": true}, {"u": 48, "kommer": true}, {"u": 49, "kommer": true}, {"u": 50, "kommer": true}, {"u": 51, "kommer": true}, {"u": 1, "ferie": true}, {"u": 2, "kommer": true}, {"u": 3, "kommer": true}, {"u": 4, "kommer": true}, {"u": 5, "kommer": true}, {"u": 6, "kommer": true}, {"u": 7, "kommer": true}, {"u": 8, "kommer": true}, {"u": 9, "ferie": true}, {"u": 10, "kommer": true}, {"u": 11, "kommer": true}, {"u": 12, "kommer": true}, {"u": 13, "kommer": true}, {"u": 14, "ferie": true}, {"u": 15, "kommer": true}, {"u": 16, "kommer": true}, {"u": 17, "kommer": true}, {"u": 18, "kommer": true}, {"u": 19, "kommer": true}, {"u": 20, "kommer": true}, {"u": 21, "kommer": true}, {"u": 22, "kommer": true}, {"u": 23, "kommer": true}, {"u": 24, "kommer": true}, {"u": 25, "kommer": true}]}, {"kode": "REL3", "farge": "#3d7a5a", "navn": "Religion og etikk", "uker": [{"u": 34, "c": [29, 13, 4, 2], "okter": 2}, {"u": 35, "c": [32, 11, 3, 2], "okter": 2}, {"u": 36, "c": [50, 15, 3, 4], "okter": 3}, {"u": 37, "c": [51, 12, 5, 4], "okter": 3}, {"u": 38, "c": [49, 16, 3, 4], "okter": 3}, {"u": 39, "c": [34, 11, 1, 2], "okter": 2}, {"u": 40, "ferie": true}, {"u": 41, "c": [34, 10, 2, 2], "okter": 2}, {"u": 42, "c": [37, 7, 1, 3], "okter": 2}, {"u": 43, "kommer": true}, {"u": 44, "kommer": true}, {"u": 45, "kommer": true}, {"u": 46, "kommer": true}, {"u": 47, "kommer": true}, {"u": 48, "kommer": true}, {"u": 49, "kommer": true}, {"u": 50, "kommer": true}, {"u": 51, "kommer": true}, {"u": 1, "ferie": true}, {"u": 2, "kommer": true}, {"u": 3, "kommer": true}, {"u": 4, "kommer": true}, {"u": 5, "kommer": true}, {"u": 6, "kommer": true}, {"u": 7, "kommer": true}, {"u": 8, "kommer": true}, {"u": 9, "ferie": true}, {"u": 10, "kommer": true}, {"u": 11, "kommer": true}, {"u": 12, "kommer": true}, {"u": 13, "kommer": true}, {"u": 14, "ferie": true}, {"u": 15, "kommer": true}, {"u": 16, "kommer": true}, {"u": 17, "kommer": true}, {"u": 18, "kommer": true}, {"u": 19, "kommer": true}, {"u": 20, "kommer": true}, {"u": 21, "kommer": true}, {"u": 22, "kommer": true}, {"u": 23, "kommer": true}, {"u": 24, "kommer": true}, {"u": 25, "kommer": true}]}];
+var MND = [["aug", 2], ["sep", 4], ["okt", 5], ["nov", 4], ["des", 3], ["jan", 4], ["feb", 4], ["mar", 4], ["apr", 5], ["mai", 4], ["jun", 4]];
+var NA = 42, H = 52;
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { hov: null }; }
+  renderVals() {
+    var self = this, st = this.state;
+    var fag = DATA.map(function (f, fi) {
+      var med = f.uker.filter(function (u) { return u.c; });
+      function andel(arr) { var g = 0, n = 0; arr.forEach(function (u) { g += u.c[0]; n += u.c[0] + u.c[1] + u.c[2] + u.c[3]; }); return n ? g / n : 0; }
+      var s4 = andel(med.slice(-4)), f4 = andel(med.slice(-8, -4)), d = Math.round((s4 - f4) * 100);
+      return {
+        kode: f.kode, farge: f.farge, navn: f.navn,
+        siste: Math.round(s4 * 100) + ' %', delta: (d > 0 ? '↑ ' : (d < 0 ? '↓ ' : '')) + Math.abs(d) + ' poeng mot fire uker før', deltaFarge: d < 0 ? '#b3261e' : '#645d7a',
+        uker: f.uker.map(function (u, ui) {
+          var n = u.c ? u.c[0] + u.c[1] + u.c[2] + u.c[3] : 0;
+          var h = function (k) { return n ? Math.max(2, Math.round((H - 3) * u.c[k] / n)) + 'px' : '0px'; };
+          var aktiv = st.hov && st.hov.f === fi && st.hov.u === ui;
+          return { harData: !!u.c, kommer: !!u.kommer, ferie: !!u.ferie, na: u.u === NA,
+            hg: h(0), hy: h(1), hr: h(2), ho: h(3), op: st.hov && !aktiv && u.c ? .55 : 1,
+            hov: function (e) { var r = e.currentTarget.getBoundingClientRect(), p = e.currentTarget.closest('section').getBoundingClientRect(); self.setState({ hov: { f: fi, u: ui, x: r.left - p.left + 7, y: r.top - p.top - 8 } }); },
+            ut: function () { self.setState({ hov: null }); } };
+        })
+      };
+    });
+    var tip = { tittel: '', okter: '', g: '', y: '', r: '', o: '' }, vis = false;
+    if (st.hov) {
+      var f = DATA[st.hov.f], u = f.uker[st.hov.u];
+      vis = true;
+      if (u.c) { var n = u.c[0] + u.c[1] + u.c[2] + u.c[3]; tip = { tittel: f.kode + ' · uke ' + u.u, okter: u.okter + ' økter · ' + n + ' skåringer', g: u.c[0], y: u.c[1], r: u.c[2], o: u.c[3] }; }
+      else tip = { tittel: f.kode + ' · uke ' + u.u, okter: u.ferie ? 'Ferie' : 'Kommer', g: '', y: '', r: '', o: '' };
+    }
+    return {
+      fag: fag, visTips: vis, tip: tip, tipX: st.hov ? st.hov.x + 'px' : '0', tipY: st.hov ? st.hov.y + 'px' : '0',
+      mnd: MND.map(function (m, i) { return { navn: m[0], w: (m[1] * 17 - 3) + 'px', farge: m[0] === 'okt' ? '#4a3d7d' : '#9a90b8', vekt: m[0] === 'okt' ? 600 : 400 }; })
+    };
+  }
+}
+</script>
+</body>
+</html>

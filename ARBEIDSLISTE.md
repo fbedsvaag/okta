@@ -454,6 +454,21 @@ Tegnet i lerretet runde 13: `Elever`, `Fagside`, `OktSkar`, `OktPlan`
   samlet); logg over tidligere kart for klassen.
 - Vurderinger: kalendervisning med bare vurderingene.
 
+## 12. Innsats over tid (13.10)
+
+- [ ] **12.1 Ny bolk «Innsats over tid» på I dag** (lerretet `InnsatsTid`),
+  erstatter prikkene. Én rad per fag: fagfirkant, kode og navn til venstre.
+  I midten én søyle per skoleuke for hele året (aug–jun, felles kolonner for
+  alle fag): 100 % stablet andel grønn / gul / rød / fravær fra bunnen,
+  14 × 52 px, 1 px mellomrom mellom delene, 3 px avrundet topp. Uker som
+  kommer: tom søyle med tynn kant. Ferie: kort strek. Denne uka: lilla strek
+  under. Til høyre: andel grønn siste 4 uker (Light 24 px) og endringen i
+  prosentpoeng mot de fire ukene før (rød ved nedgang). Månedsnavn under,
+  inneværende uthevet. Forklaring for fargene øverst til høyre (Grønn, Gul, Rød, Fravær). Hover på en
+  søyle: mørk tooltip med «FAG · uke n», «3 økter · 72 skåringer» og tallene
+  per farge; de andre søylene dempes. Klikk: åpner ukas økter. Ingen
+  forklarende tekst under bolken – den skal forklare seg selv.
+
 ## Ikke nå
 
 Ting som er vurdert og lagt bort med vilje. Står her så de ikke dukker opp
