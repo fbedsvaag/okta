@@ -259,7 +259,10 @@ export function Timeplan({
             const notis = merknad(historikk.get(r.elevId) ?? []);
             const erLast = laste.has(r.elevId);
             return (
-              <Fragment key={`${r.elevId}-${r.fra}`}>
+              // Nøkkelen er eleven, ikke klokkeslettet: en flytting gir mange
+              // rader nytt klokkeslett, og da ble de laget på nytt og blinket.
+              // «motte» skiller en som ikke møtte fra samme elev satt opp igjen.
+              <Fragment key={`${r.elevId}${r.motte ? "" : "-ikke"}`}>
                 {lunsjHer && d.lunsj && (
                   <div className="flex items-baseline gap-3 border-b border-linje-svak bg-flate py-2 text-brod text-blekk-dempet">
                     <span className="w-7 shrink-0" />

@@ -422,6 +422,31 @@ export function finnLunsj(
   return null;
 }
 
+/**
+ * Samtaletid og pause slik de faktisk ligger i en lagret trekning.
+ *
+ * Feltene i oppsettet huskes ikke når skjermen åpnes på nytt. Uten dette ble
+ * en flytting eller «Trekk på nytt» lagt ut med standardverdiene, og hele
+ * dagen fikk nye klokkeslett. Pausen er det minste mellomrommet mellom to
+ * samtaler etter hverandre; lunsjen er lengre og teller derfor ikke.
+ */
+export function tiderITrekning(
+  dager: { fra: string; til: string }[][],
+): { minutter: number; pause: number } | null {
+  const forste = dager.find((d) => d.length > 0)?.[0];
+  if (!forste) return null;
+  const minutter = tilMin(forste.til) - tilMin(forste.fra);
+  let pause: number | null = null;
+  for (const d of dager) {
+    const sortert = [...d].sort((a, b) => a.fra.localeCompare(b.fra));
+    for (let i = 1; i < sortert.length; i++) {
+      const mellom = tilMin(sortert[i].fra) - tilMin(sortert[i - 1].til);
+      if (mellom >= 0 && (pause === null || mellom < pause)) pause = mellom;
+    }
+  }
+  return minutter > 0 ? { minutter, pause: pause ?? 0 } : null;
+}
+
 // ----------------------------------------------------------------- historikk
 
 export type Plassering = "tidlig" | "midt" | "sent";

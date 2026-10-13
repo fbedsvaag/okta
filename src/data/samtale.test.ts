@@ -28,6 +28,7 @@ import {
   timerPaDagen,
   trekkRekkefolge,
   vektetRekkefolge,
+  tiderITrekning,
   type Dagoppsett,
   type Eksportdag,
   type Plassering,
@@ -846,5 +847,37 @@ describe("gruppesamtaler", () => {
       rad: 1,
     });
     expect(perDag).toEqual([[enhetId(["b", "c", "a"])]]);
+  });
+});
+
+describe("tiderITrekning", () => {
+  it("leser samtaletid og pause av klokkeslettene, uten lunsjen", () => {
+    expect(
+      tiderITrekning([
+        [
+          { fra: "08:30", til: "08:40" },
+          { fra: "08:45", til: "08:55" },
+          { fra: "09:00", til: "09:10" },
+          // lunsj 09:10–12:00 er ikke en pause
+          { fra: "12:00", til: "12:10" },
+        ],
+      ]),
+    ).toEqual({ minutter: 10, pause: 5 });
+  });
+
+  it("tåler samtaler uten pause, og flere dager", () => {
+    expect(
+      tiderITrekning([
+        [],
+        [
+          { fra: "09:00", til: "09:20" },
+          { fra: "09:20", til: "09:40" },
+        ],
+      ]),
+    ).toEqual({ minutter: 20, pause: 0 });
+  });
+
+  it("gir null uten samtaler", () => {
+    expect(tiderITrekning([[], []])).toBeNull();
   });
 });

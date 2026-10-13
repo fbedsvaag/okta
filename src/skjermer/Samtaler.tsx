@@ -47,6 +47,7 @@ import {
   type Eksportdag,
   type Plassering,
   type Samtaledag,
+  tiderITrekning,
 } from "../data/samtale";
 import { invoke } from "@tauri-apps/api/core";
 import { mentorStatus, publiserMentor } from "../data/caldav";
@@ -202,6 +203,9 @@ export function Samtaler({
   const aktiveTemaer =
     modus === "fag" ? temaer.filter((t) => t.trim() !== "") : [];
 
+  // Trekningen samtaletid og pause sist ble lest ut av (se last()).
+  const tiderLest = useRef<string | null>(null);
+
   async function last() {
     setElever(await hentElever(skolear.id));
     setFridager(await hentFridager(skolear.id));
@@ -254,6 +258,17 @@ export function Samtaler({
       });
     }
     setTrekning(lagrede.length > 0 ? lagrede : null);
+    // Samtaletid og pause slik trekningen faktisk ligger, så en flytting
+    // ikke legger dagen ut på nytt med standardverdiene.
+    // Bare når trekningen åpnes: et tall man nettopp har skrevet i feltet,
+    // skal ikke overskrives av at skjermen leses inn på nytt.
+    const tider = tiderITrekning(lagrede.map((d) => d.rader));
+    const trekningen = `${modus}:${fagId}`;
+    if (tider && tiderLest.current !== trekningen) {
+      tiderLest.current = trekningen;
+      setSamtaletid(String(tider.minutter));
+      setPause(String(tider.pause));
+    }
     // Første gang trekningen lastes: oppsettet framme bare hvis den ikke er
     // trukket. Etterpå står valget — Generer skal ikke skjule oppsettet.
     setRedigerer((r) => r ?? lagrede.length === 0);
@@ -339,6 +354,14 @@ export function Samtaler({
     temakart: Map<string, string>,
   ): Dagplan[] {
     const navn = new Map(deltakere.map((d) => [d.id, d.navn]));
+    // Raden i basen følger eleven gjennom en flytting innen dagen
+    // (lagreTrekning gjenbruker den; til en annen dag blir det en ny rad). Uten dette forsvant notat- og låseikonene fra slippet til basen
+    // var lest inn igjen, og timeplanen blinket.
+    const radId = new Map(
+      (trekning ?? []).flatMap((d) =>
+        d.rader.map((r) => [`${d.dag.id}:${r.elevId}`, r.samtaleId] as const),
+      ),
+    );
     const plan: Dagplan[] = [];
 
     dager.forEach((dag, i) => {
@@ -359,7 +382,7 @@ export function Samtaler({
             navn: navn.get(id) ?? "",
           }));
           return {
-            samtaleId: null,
+            samtaleId: radId.get(`${dag.id}:${paDagen[j]}`) ?? null,
             elevId: paDagen[j],
             navn: medlemmer.map((m) => m.navn).join(", "),
             medlemmer,
