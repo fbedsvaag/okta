@@ -16,6 +16,7 @@ import { Hovermarkor } from "./Hovermarkor";
 import { invoke } from "@tauri-apps/api/core";
 import { getVersion } from "@tauri-apps/api/app";
 import { SKJEMA_URL, tilbakemeldingslinje } from "../tilbakemelding";
+import { tast as visTast } from "./taster";
 
 /**
  * Sidemenyen til venstre (DESIGN.md §6, variant A i lerretet).
@@ -163,7 +164,7 @@ export function Sidemeny({
             key={f.id}
             aktiv={aktiv === "okter" && valgtFag === f.id}
             merke={<Firkant farge={f.farge ? fagfarge(f.farge) : null} />}
-            tast={i < 9 ? `⌘${i + 1}` : undefined}
+            tast={i < 9 ? visTast(`⌘${i + 1}`) : undefined}
             tittel={`${f.kode} · ${f.navn}`}
             onKlikk={() => onVelgFag(f.id)}
           >
@@ -273,7 +274,7 @@ export function Sidemeny({
       >
         <IkonSok />
         Søk
-        <Tast>⌘K</Tast>
+        <Tast>{visTast("⌘K")}</Tast>
       </button>
 
       <ul
@@ -343,7 +344,7 @@ export function Sidemeny({
           }`}
         >
           Innstillinger
-          <Tast>⌘,</Tast>
+          <Tast>{visTast("⌘,")}</Tast>
         </button>
       </div>
     </nav>

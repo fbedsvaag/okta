@@ -9,6 +9,7 @@ import {
   type Punkt,
   type Redigering,
 } from "./markdown";
+import { hovedtast, harModifikator } from "./taster";
 
 /**
  * Markdown i notater og øktlogg.
@@ -209,13 +210,13 @@ export function MarkdownSkriv({
       onKeyDown={(e) => {
         const el = e.currentTarget;
         const [s, t] = [el.selectionStart, el.selectionEnd];
-        if (e.key === "Enter" && !e.shiftKey && !e.metaKey && s === t) {
+        if (e.key === "Enter" && !e.shiftKey && !harModifikator(e) && s === t) {
           bruk(enterIListe(verdi, s), e);
         } else if (e.key === "Tab") {
           bruk(rykk(verdi, s, t, !e.shiftKey), e);
-        } else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "b") {
+        } else if (hovedtast(e) && e.key.toLowerCase() === "b") {
           bruk(pakkInn(verdi, s, t, "**"), e);
-        } else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "i") {
+        } else if (hovedtast(e) && e.key.toLowerCase() === "i") {
           bruk(pakkInn(verdi, s, t, "*"), e);
         }
       }}

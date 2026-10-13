@@ -21,6 +21,7 @@ import { IVerktoylinja } from "../ui/Verktoylinje";
 import { Bryter, Fagfirkant } from "../ui/felles";
 import { Elevfoto } from "../ui/Elevfoto";
 import { Avkrysning, innsatsfarge } from "./KlassekartKart";
+import { hovedtast, tast as visTast } from "../ui/taster";
 
 /**
  * Klassekartet — Grupper (SPEC §4.11, lerretet «KlassekartGrupper»).
@@ -143,7 +144,7 @@ export function KlassekartGrupper({
 
   useEffect(() => {
     const tast = (e: KeyboardEvent) => {
-      if (!(e.metaKey || e.ctrlKey)) return;
+      if (!hovedtast(e)) return;
       const k = e.key.toLowerCase();
       if (k === "r" && !e.shiftKey) {
         e.preventDefault();
@@ -345,7 +346,7 @@ export function KlassekartGrupper({
           className="flex h-[30px] items-center gap-2 rounded-full bg-aksent px-3 text-[13px] font-medium text-ark hover:bg-aksent-mork"
         >
           Stokk på nytt
-          <span className="text-[11px] opacity-65">⌘R</span>
+          <span className="text-[11px] opacity-65">{visTast("⌘R")}</span>
         </button>
       </div>
       {brudd.length > 0 && (

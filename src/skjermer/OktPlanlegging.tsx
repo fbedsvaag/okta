@@ -40,6 +40,7 @@ import { lyttVurderinger } from "../data/endringer";
 import { useArk } from "../ui/Arkstabel";
 import { Markdown } from "../ui/Notattekst";
 import { Tastestripe, Tasthint } from "../ui/Tastestripe";
+import { tast } from "../ui/taster";
 
 /**
  * Økta i planlegging (ARBEIDSLISTE 11.5, lerretet «OktPlan»).
@@ -135,7 +136,7 @@ export function OktPlanlegging({
       </div>
 
       <Tastestripe klasse="shrink-0 justify-start gap-4 px-[22px]">
-        <Tasthint taster={["⌘", "←", "→"]}>forrige / neste økt</Tasthint>
+        <Tasthint taster={[tast("⌘"), "←", "→"]}>forrige / neste økt</Tasthint>
         <Tasthint taster={["⇥"]}>neste felt</Tasthint>
         <span className="ml-auto">
           <Tasthint taster={["esc"]}>lukk, alt er lagret</Tasthint>

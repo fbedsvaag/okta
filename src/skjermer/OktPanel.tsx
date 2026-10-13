@@ -21,6 +21,7 @@ import {
 } from "../data/okter";
 import { taster, type Skalaverdi } from "../skala";
 import { fagfarge, skalafarge } from "../ui/farger";
+import { hovedtast, harModifikator, tast as visTast } from "../ui/taster";
 
 /**
  * Økta som ark, SPEC §4.4 og DESIGN.md §10 (lerretet «OktArk»).
@@ -84,12 +85,12 @@ export function OktPanel({
   // neste økt i faget, men ikke i et felt — der flytter de markøren.
   useEffect(() => {
     const tast = (e: KeyboardEvent) => {
-      if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+      if (e.key === "Enter" && hovedtast(e)) {
         e.preventDefault();
         onLukk();
         return;
       }
-      if (!(e.metaKey || e.ctrlKey) || e.shiftKey || e.altKey) return;
+      if (!hovedtast(e) || e.shiftKey || e.altKey) return;
       if ((e.target as HTMLElement).closest?.("input, textarea, select"))
         return;
       if (e.key === "ArrowLeft" && onForrige) {
@@ -201,7 +202,7 @@ export function OktPanel({
   function tastetrykk(e: React.KeyboardEvent) {
     if (notatFor !== null) return;
     // ⌘-snarveiene (⌘K søk, ⌘[ tilbake) hører til appen, ikke lista.
-    if (e.metaKey || e.ctrlKey) return;
+    if (harModifikator(e)) return;
 
     if (e.key === "Escape") {
       onLukk();
@@ -270,7 +271,8 @@ export function OktPanel({
             onClick={onLukk}
             className="flex h-7 shrink-0 items-center gap-1.5 rounded-full bg-aksent px-3 text-[calc(13px*var(--tekst-skala))] font-medium text-ark hover:bg-aksent-mork"
           >
-            Ferdig <span className="text-[10.5px] opacity-70">⌘↵</span>
+            Ferdig{" "}
+            <span className="text-[10.5px] opacity-70">{visTast("⌘↵")}</span>
           </button>
         </div>
         <div className="mt-2 flex items-center gap-3 pl-[24px]">

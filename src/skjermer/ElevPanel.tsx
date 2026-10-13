@@ -89,6 +89,7 @@ import {
 import { lytt } from "../data/endringer";
 import { NOYTRAL, skalafarge } from "../ui/farger";
 import { Markdownfelt, MarkdownSkriv } from "../ui/Notattekst";
+import { hovedtast, harModifikator, tast as visTast } from "../ui/taster";
 
 /**
  * Elevkortet, SPEC §4.5 og DESIGN.md §10 (lerretet «ElevArk»).
@@ -229,7 +230,7 @@ export function ElevPanel({
         "input, textarea, select, [contenteditable]",
       );
       if (e.key === "Escape" && !iFelt) onLukk();
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "e") {
+      if (hovedtast(e) && e.key.toLowerCase() === "e") {
         e.preventDefault();
         if (e.shiftKey) void eksporter();
         else setRediger((r) => !r);
@@ -242,7 +243,7 @@ export function ElevPanel({
         e.preventDefault();
         bla.neste();
       }
-      if (!iFelt && !e.metaKey && !e.ctrlKey && !e.altKey) {
+      if (!iFelt && !harModifikator(e) && !e.altKey) {
         if (e.key === "n" || e.key === "m") {
           e.preventDefault();
           setNyttNotat((n) => n + 1);
@@ -310,13 +311,19 @@ export function ElevPanel({
         </span>
         {bla && bla.av > 1 && (
           <span className="flex items-center gap-1">
-            <Ikonknapp onClick={bla.forrige} tittel="Forrige elev (⌥↑)">
+            <Ikonknapp
+              onClick={bla.forrige}
+              tittel={`Forrige elev (${visTast("⌥↑")})`}
+            >
               <Ikon navn="opp" />
             </Ikonknapp>
             <span className="tabular-nums text-liten text-blekk-svak">
               {bla.nr} av {bla.av}
             </span>
-            <Ikonknapp onClick={bla.neste} tittel="Neste elev (⌥↓)">
+            <Ikonknapp
+              onClick={bla.neste}
+              tittel={`Neste elev (${visTast("⌥↓")})`}
+            >
               <Ikon navn="ned" />
             </Ikonknapp>
           </span>
@@ -336,7 +343,7 @@ export function ElevPanel({
           }`}
         >
           {rediger ? "Ferdig" : "Rediger"}
-          <span className="text-etikett opacity-60">⌘E</span>
+          <span className="text-etikett opacity-60">{visTast("⌘E")}</span>
         </button>
         <button
           aria-label="Mer"
@@ -406,7 +413,7 @@ export function ElevPanel({
           </Menyvalg>
           <Menyskille />
           <Menyvalg onKlikk={() => void eksporter()}>
-            <Menylinje tast="⇧⌘E" under="Innsyn, som markdown">
+            <Menylinje tast={visTast("⇧⌘E")} under="Innsyn, som markdown">
               Eksporter elevens data
             </Menylinje>
           </Menyvalg>

@@ -15,6 +15,7 @@ import { dagenssetning, hentSamtalerPaDato } from "../data/samtale";
 import { Ukelinje } from "./Ukelinje";
 import { lytt, lyttOktvisning } from "../data/endringer";
 import { dagen, type Dagslinje } from "../data/dagen";
+import { harModifikator } from "../ui/taster";
 
 /**
  * I dag — startskjermen, SPEC §4.1, med årsoversikten under.
@@ -187,7 +188,7 @@ function Dagensokter({
   // Bare når ingenting annet har fokus — ikke i et felt eller et åpent kort.
   useEffect(() => {
     const tast = (e: KeyboardEvent) => {
-      if (e.key !== "Enter" || e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.key !== "Enter" || harModifikator(e) || e.altKey) return;
       if (document.activeElement && document.activeElement !== document.body)
         return;
       const naMin = new Date().getHours() * 60 + new Date().getMinutes();

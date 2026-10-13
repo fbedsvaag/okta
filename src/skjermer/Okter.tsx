@@ -65,6 +65,7 @@ import { Glideflate } from "../ui/Glideflate";
 import { Vurderingsikon, vurderingstype } from "../ui/Vurderingsikon";
 import { Tastestripe, Tasthint } from "../ui/Tastestripe";
 import { enLinje, forrigeOkt } from "../data/dagen";
+import { hovedtast, harModifikator } from "../ui/taster";
 
 /**
  * Årsplan — økter, SPEC §4.2.
@@ -161,7 +162,7 @@ export function Okter({
       return;
     }
     const tast = (e: KeyboardEvent) => {
-      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (harModifikator(e) || e.altKey) return;
       const mal = e.target as HTMLElement;
       if (mal.closest?.("input, textarea, select, [contenteditable]")) return;
       if (e.key === "p" || e.key === "P") {
@@ -788,12 +789,12 @@ function Liste({
 
   function tast(e: React.KeyboardEvent) {
     if ((e.target as HTMLElement).closest("input, textarea, select")) return;
-    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "a") {
+    if (hovedtast(e) && e.key.toLowerCase() === "a") {
       e.preventDefault();
       onMerkAlle();
       return;
     }
-    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (harModifikator(e) || e.altKey) return;
     if (e.key === "ArrowDown") {
       e.preventDefault();
       flytt(1);
@@ -873,7 +874,7 @@ function Liste({
                 <div
                   onClick={(e) => {
                     if ((e.target as HTMLElement).closest("input")) return;
-                    if (e.metaKey) return onMerk(o.id, !merket.has(o.id));
+                    if (hovedtast(e)) return onMerk(o.id, !merket.has(o.id));
                     if (e.shiftKey && valgt) return onMerkSpenn(valgt, o.id);
                     onMarkor(o.id);
                     setApen((a) => (a === o.id ? null : o.id));

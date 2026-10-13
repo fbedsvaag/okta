@@ -50,6 +50,7 @@ import { G_SNARVEIER, Sidemeny, type Menypunkt } from "./ui/Sidemeny";
 import { Sokevindu } from "./ui/Sokevindu";
 import { ArkKobling, Arkstabel, type ArkApi } from "./ui/Arkstabel";
 import { brukZoom, zoomInn, zoomNull, zoomUt } from "./ui/zoom";
+import { hovedtast, harModifikator, tast as visTast } from "./ui/taster";
 
 /**
  * Et sted i historikken.
@@ -194,8 +195,8 @@ export default function App() {
 
   useEffect(() => {
     const taster = (e: KeyboardEvent) => {
-      if (!(e.metaKey || e.ctrlKey)) {
-        if (e.altKey || e.repeat) return;
+      if (!hovedtast(e)) {
+        if (harModifikator(e) || e.altKey || e.repeat) return;
         const mal = e.target as HTMLElement;
         if (mal.closest?.("input, textarea, select, [contenteditable]")) return;
         const tast = e.key.toLowerCase();
@@ -820,8 +821,8 @@ function Pil({
       aria-label={retning === "tilbake" ? "Tilbake" : "Fram"}
       title={
         retning === "tilbake"
-          ? "Tilbake (⌘[ eller sveip til høyre med to fingre)"
-          : "Fram (⌘] eller sveip til venstre med to fingre)"
+          ? `Tilbake (${visTast("⌘[")} eller sveip til høyre med to fingre)`
+          : `Fram (${visTast("⌘]")} eller sveip til venstre med to fingre)`
       }
       className="grid h-8 w-8 place-items-center rounded-full text-[20px] leading-none text-blekk hover:bg-[var(--glass-valgt)] disabled:text-blekk-svakest disabled:hover:bg-transparent"
     >

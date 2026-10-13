@@ -1,6 +1,7 @@
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import type { Submenu as Undermeny } from "@tauri-apps/api/menu";
 import { hentInnstilling, settInnstilling } from "../data/skolear";
+import { erMac } from "./taster";
 
 /**
  * Zoom (ARBEIDSLISTE 10.6): ⌘+ og ⌘− gjør alt større og mindre i faste
@@ -87,8 +88,12 @@ export const zoomNull = () => settZoom(1);
  * fra Tauri beholdes — Rediger med kopier og lim inn trengs — og zoom
  * legges til nederst i View. Tastene fanges av menyen når de passer;
  * ellers tar tastelytteren i App dem (⌘+ på norsk tastatur er ikke ⌘=).
+ *
+ * Bare på Mac. På Windows ville standardmenyen blitt en menylinje inne i
+ * vinduet (Fil, Rediger, Vis …); der tar tastelytteren Ctrl+ og Ctrl−.
  */
-export async function leggZoomIMenyen(): Promise<void> {
+export async function leggZoomIMenyen(mac: boolean = erMac): Promise<void> {
+  if (!mac) return;
   const { Menu, MenuItem, PredefinedMenuItem, Submenu } =
     await import("@tauri-apps/api/menu");
   const meny = await Menu.default();

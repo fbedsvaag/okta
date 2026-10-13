@@ -16,6 +16,7 @@ import {
 } from "../data/klassekart";
 import { nyId } from "../db";
 import { IVerktoylinja } from "../ui/Verktoylinje";
+import { hovedtast, harModifikator, tast as visTast } from "../ui/taster";
 
 /**
  * Rediger rom (SPEC §4.11, lerretet «KlassekartRom»).
@@ -212,13 +213,13 @@ export function KlassekartRom({
               : d,
           ),
         );
-      } else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "d") {
+      } else if (hovedtast(e) && e.key.toLowerCase() === "d") {
         e.preventDefault();
         dupliser(valgt);
       } else if (e.key === "Backspace" || e.key === "Delete") {
         e.preventDefault();
         slett(valgt);
-      } else if (e.key.toLowerCase() === "r" && !e.metaKey && !e.ctrlKey) {
+      } else if (e.key.toLowerCase() === "r" && !harModifikator(e)) {
         e.preventDefault();
         roter(valgt);
       } else if (e.key === "Escape") {
@@ -336,7 +337,7 @@ export function KlassekartRom({
           ))}
         </div>
         <p className="mt-auto px-1 text-[calc(12px*var(--tekst-skala))] leading-[1.7] text-blekk-dempet">
-          <Kbd>⌘D</Kbd> dupliser · <Kbd>⌫</Kbd> slett
+          <Kbd>{visTast("⌘D")}</Kbd> dupliser · <Kbd>⌫</Kbd> slett
           <br />
           <Kbd>R</Kbd> roter · piltaster flytter én rute
         </p>

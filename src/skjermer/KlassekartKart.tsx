@@ -46,6 +46,7 @@ import {
 } from "../ui/felles";
 import { Elevfoto } from "../ui/Elevfoto";
 import { KlassekartGrupper } from "./KlassekartGrupper";
+import { hovedtast, tast as visTast } from "../ui/taster";
 
 /**
  * Klassekartet — Plasser (SPEC §4.11, lerretet «Klassekart»).
@@ -271,7 +272,7 @@ export function KlassekartKart({
   // ⌘R stokker, ⌘P skriver ut, ⌘C kopierer bildet, ⇧⌘E lagrer PDF.
   useEffect(() => {
     const tast = (e: KeyboardEvent) => {
-      if (!(e.metaKey || e.ctrlKey)) return;
+      if (!hovedtast(e)) return;
       // Gruppene har sine egne taster.
       if (innst?.visning === "grupper") return;
       const iFelt = (e.target as HTMLElement).closest?.(
@@ -515,19 +516,19 @@ export function KlassekartKart({
           onLukk={() => setDelMeny(null)}
         >
           <Menyvalg onKlikk={() => void skrivUt()}>
-            <Menylinje tast="⌘P" under="A4 liggende, ett ark">
+            <Menylinje tast={visTast("⌘P")} under="A4 liggende, ett ark">
               Skriv ut…
             </Menylinje>
           </Menyvalg>
           <Menyvalg onKlikk={() => void skrivUt(true)}>
-            <Menylinje tast="⇧⌘E" under="Samme ark som utskriften">
+            <Menylinje tast={visTast("⇧⌘E")} under="Samme ark som utskriften">
               Lagre som PDF…
             </Menylinje>
           </Menyvalg>
           <Menyskille />
           <Menyvalg onKlikk={() => void kopierBilde()}>
             <Menylinje
-              tast="⌘C"
+              tast={visTast("⌘C")}
               under="PNG, lim rett inn i Teams eller OneNote"
             >
               Kopier som bilde
@@ -907,7 +908,7 @@ export function KlassekartKart({
             className="flex h-[38px] items-center justify-center gap-2 rounded-full bg-aksent text-[calc(14px*var(--tekst-skala))] font-medium text-ark hover:bg-aksent-mork"
           >
             Stokk på nytt
-            <span className="text-[11px] opacity-65">⌘R</span>
+            <span className="text-[11px] opacity-65">{visTast("⌘R")}</span>
           </button>
           <button
             onClick={() => void bruk()}

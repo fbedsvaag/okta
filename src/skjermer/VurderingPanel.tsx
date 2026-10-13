@@ -23,6 +23,7 @@ import {
   type Vurderingstype,
 } from "../data/vurderinger";
 import { taster, type Skala, type Skalaverdi } from "../skala";
+import { hovedtast, harModifikator, tast } from "../ui/taster";
 
 /**
  * Det utvidede viewet for en vurdering, SPEC §4.6.
@@ -113,7 +114,7 @@ export function VurderingPanel({
   function tastetrykk(e: React.KeyboardEvent) {
     if (kommentarFor !== null) return;
     // ⌘-snarveiene (⌘K søk, ⌘[ tilbake) hører til appen, ikke lista.
-    if (e.metaKey || e.ctrlKey) return;
+    if (harModifikator(e)) return;
 
     if (e.key === "Escape") return onLukk();
     if (e.key === "ArrowDown" || (e.key === "Tab" && !e.shiftKey)) {
@@ -532,13 +533,13 @@ function Kommentar({
         onChange={(e) => setTekst(e.target.value)}
         onKeyDown={(e) => {
           if (e.key === "Escape") onLukk(null);
-          if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) onLukk(tekst);
+          if (e.key === "Enter" && hovedtast(e)) onLukk(tekst);
         }}
         className={feltStil}
       />
       <div className="mt-1 flex gap-3 text-liten text-blekk-dempet">
         <button onClick={() => onLukk(tekst)} className="hover:text-blekk">
-          Lagre (⌘↵)
+          Lagre ({tast("⌘↵")})
         </button>
         <button onClick={() => onLukk(null)} className="hover:text-blekk">
           Avbryt (Esc)

@@ -17,6 +17,7 @@ import { hentElevbilde } from "../data/elevbilde";
 import { hentInnstilling, settInnstilling } from "../data/skolear";
 import { Elevbilde } from "../ui/Elevbilde";
 import { useInngang } from "../ui/bevegelse";
+import { hovedtast, tast as visTast } from "../ui/taster";
 
 /** Hvor lenge det skal være stille i feltet før notatet lagres. */
 const PAUSE_MS = 400;
@@ -257,7 +258,7 @@ export function Samtalenotat({
         e.stopImmediatePropagation();
         void lukk();
       }
-      if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+      if (e.key === "Enter" && hovedtast(e)) {
         e.preventDefault();
         void lukk();
       }
@@ -298,7 +299,7 @@ export function Samtalenotat({
             aria-hidden
             onPointerDown={(e) => begynnSkalering(e, h.sx, h.sy)}
             onDoubleClick={tilbakestill}
-            title="Dra for å endre størrelsen · ⌥ fra midten · ⇧ holder proporsjonene · dobbeltklikk for vanlig størrelse"
+            title={`Dra for å endre størrelsen · ${visTast("⌥")} fra midten · ${visTast("⇧")} holder proporsjonene · dobbeltklikk for vanlig størrelse`}
             className={`absolute z-10 h-5 w-5 touch-none ${h.plass}`}
             style={{ cursor: h.sx === h.sy ? "nwse-resize" : "nesw-resize" }}
           >
