@@ -12,10 +12,8 @@ her uenig med lerretet, gjelder lerretet — si fra, så rettes denne fila.
 §10 og §11). Fila beskriver appen slik den er bygget; det som fortsatt
 står igjen, står i §13.
 
-§13 i SPEC.md beskriver fortsatt den gamle retningen (Georgia, fargestreker,
-trafikklys med form). Forslag til ny tekst ligger i
-`docs/spec-forslag-2026-10-05.md`. Inntil eieren har bestemt seg, gjelder
-denne fila for det visuelle.
+Denne fila gjelder for det visuelle; §13 i SPEC.md viser hit. Den følger
+appen og oppdateres sammen med den.
 
 ---
 

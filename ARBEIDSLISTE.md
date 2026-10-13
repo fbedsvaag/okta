@@ -146,8 +146,8 @@ Alt er tegnet i Claude Design-lerretet «Økta — redesign» og beskrevet i
 DESIGN.md. Rekkefølgen er valgt så hvert steg kan bygges, testes og
 committes alene, og så det som alt annet bygger på kommer først.
 
-**Før du starter:** les DESIGN.md i sin helhet. Bestem om forslaget til ny
-§13 i `docs/spec-forslag-2026-10-05.md` skal inn i SPEC.md.
+**Før du starter:** les DESIGN.md i sin helhet. (Forslaget til ny §13 er
+tatt inn i SPEC.md 13.10.)
 
 - [x] **5.1 Skrift.** Legg Geist (300/400/500/600, latin + latin-ext) i
   `public/fonts/` med OFL-lisensen, og bytt `--font-sans`. Sjekk at `tnum`

@@ -597,8 +597,11 @@ Innstillinger.
 
 ### 4.0 Førstegangsoppsett
 
-Appen starter helt tom. Første gang den åpnes møter brukeren en veiviser med tre
-steg, i denne rekkefølgen fordi hvert steg avhenger av det forrige:
+Appen starter helt tom. Første gang den åpnes møter brukeren en veiviser.
+Første steg er **Velkommen**, med valget mellom å lese inn en oppsettfil fra
+en kollega (§8.2) og å sette opp selv. Stegene er da Velkommen, Skoleåret,
+Fagene dine, Elevene og Ferdig, i denne rekkefølgen fordi hvert steg avhenger
+av det forrige:
 
 1. **Opprett skoleåret** — navnet ditt, skoleårets navn, startdato, sluttdato.
    Det blir det aktive. Navnet ditt blir faglærer på årsplanen i alle fag
@@ -608,7 +611,7 @@ steg, i denne rekkefølgen fordi hvert steg avhenger av det forrige:
    navn og farge — `MFL1`, `EBU2`, `Norsk`, hva brukeren nå enn underviser i.
    Neste år velges de samme fagene inn på nytt uten å skrives inn igjen.
 3. **Legg inn klasselister i fagene.** Ett fag om gangen: lim inn lista (§7)
-   eller skriv navnene manuelt (§4.3). Klassen (`1STC`, `3STB`) settes i
+   (InSchool-PDF eller `fornavn etternavn; klasse`). Klassen (`1STC`, `3STB`) settes i
    forhåndsvisningen og opprettes der hvis den ikke finnes fra før.
 
 Klasser opprettes altså underveis, ikke som eget steg. En elev går i én klasse
@@ -631,17 +634,15 @@ første» er riktig; et blankt panel er ikke.
 
 ### 4.1 I dag (startskjerm)
 
-Øverst datoen, og under den én setning om dagen: hvor mange økter, i hvilke
-fag og når — «Én økt i dag: MFL1 kl. 09:15.» For hver økt står notatet fra
-forrige økt i faget på én linje, eller at det ikke ble skrevet noe. Et klikk
-åpner økta notatet ble skrevet i.
+Øverst datoen, og under den **Dagens økter**. Under hver økt står notatet fra
+forrige økt i faget, og det kan foldes ut. Et klikk åpner økta notatet ble
+skrevet i.
 
 Under: **uka** som kalender, fem dager med øktene på klokkeslettet sitt, blabar
 uke for uke. En strek viser klokka nå — tydelig i dagens kolonne, svak bak
 øktene resten av uka. En økt åpnes med et klikk, som et kort over forsiden.
 
-Under igjen: **årsoversikten** — innsats over tid (én prikk per uke og fag;
-et klikk åpner ukas økter), timeregnskap, **gjøremål**, vurderingsfrister og
+Under igjen: **årsoversikten** — timeregnskap, **gjøremål**, vurderingsfrister og
 elever som glipper (lavest snitt først, på tvers av skalaer).
 
 **Gjøremål** samler alt som venter: notater merket «skal følges opp» som ikke
@@ -656,6 +657,13 @@ dagene, gruppert per dag, med klokkeslett og «Angre» på det som nettopp ble
 krysset av. Loggen leses fra `lukket`-tidspunktet; eldre står i arkivet og
 på elevkortet.
 
+**Innsats over tid** går over hele bredden nederst: én rad per fag, én
+søyle per skoleuke, 100 % stablet grønn, gul, rød og fravær. Til høyre andelen
+grønn de siste fire ukene med økter, og endringen mot de fire før i
+prosentpoeng; ferie og uker som ikke har kommet, hoppes over, og «ikke i
+økta» holdes utenfor andelen (§5.1). Holder man over en søyle, vises ukas tall;
+et klikk åpner ukas økter.
+
 Elever, vurderinger og fag fra forsiden åpnes også som kort over den.
 **Økta åpnes som et ark** over forsiden (og over øktlista eller kalenderen
 når den åpnes derfra), ikke som full skjerm — se §4.4.
@@ -663,8 +671,12 @@ når den åpnes derfra), ikke som full skjerm — se §4.4.
 ### 4.2 Årsplan — økter per fag
 
 Alle fag i én kronologisk liste, med fagfilter og søk i tema, innenfor det
-aktive skoleåret. Tre visninger som veksles med en bryter øverst: liste,
-kalender, periode.
+aktive skoleåret. To visninger som veksles med en bryter øverst: **Liste |
+Kalender**.
+
+**Perioden er en merkelapp på økta**, ikke en fargelegging av datoer.
+Periodene står som filtre over lista med antall økter og timer. Marker økter
+og trykk P for å sette periode. Radene fargelegges ikke.
 
 Med et fag valgt har Økter en fjerde inngang først: **Oversikt**, fagsiden.
 Bryteren er da Oversikt | Økter | Kalender. Fagsiden viser timene mot
@@ -705,22 +717,6 @@ lørdag og søndag tar plass uten å inneholde noe.
 Kalenderen er for å se hvordan uka faktisk ser ut: fire økter i uka er det
 normale, noen uker flere. Klikk på en dag oppretter en økt der; klikk på en økt
 åpner den for redigering.
-
-#### Periodevisning
-
-Året som en vannrett tidslinje, med periodene som liggende felt. Under hvert
-felt: antall økter og sum timer.
-
-```
-  aug        sep        okt        nov        des        jan
-|----------|----------|----------|----------|----------|--------
-| Grunnleggende marked | Markedsanalyse      | Merkevare | ...
-| 8 økter · 24 t       | 11 økter · 33 t     | 6 · 18 t  |
-```
-
-Perioder kan også opprettes, navngis og endres i lengde her. Settes spennet for
-hånd, farges øktene innenfor (§3.3). Økter uten periode vises i et eget felt
-under tidslinja, så de ikke blir usynlige.
 
 #### Opprett ny økt
 
@@ -887,8 +883,9 @@ med 30 elever på under 20 sekunder. Notat er unntaket, ikke regelen. Et notat
 kan skrives på en elev som ikke er skåret, og står da i elevens tidslinje
 (§4.7).
 
-Har eleven skåringsnotat fra tidligere økter, vises det siste som grå
-hjelpetekst under raden når markøren står der.
+Notatet fra denne økta står i en egen kolonne på raden; N åpner feltet der.
+Står markøren på en elev uten notat, vises siste skåringsnotat i grått i den
+samme kolonnen.
 
 **Alle elever i en avholdt økt har en verdi mellom `0` og `3`.** Det finnes ingen
 fjerde tilstand. De du ikke har trykket på er `0` — «ikke i økta» — og det
@@ -2173,39 +2170,15 @@ skjermene kan komme senere.
 
 ## 13. Visuell retning
 
-Detaljene — tokens, komponenter, bevegelse — står i `DESIGN.md`. Her står
-retningen, og det som ikke skal fravikes.
+Den visuelle retningen står i `DESIGN.md`, som beskriver appen slik den er
+bygget, og tegningene i `docs/lerret/` er fasit for det som er tegnet. Begge
+følger appen.
 
-Referansen er den norske klassejournalen — linjert, tett, uten pynt — men
-skarpere, og med lag som beveger seg. Et arbeidsverktøy som blir sett på i
-sekunder om gangen, i et lyst klasserom, ofte mens noen snakker til deg.
+Det som ikke skal fravikes:
 
-- **Palett:** blekk med et kjølig fiolett stikk på en grå-lilla grunn, med
-  hvite kort og panel oppå. Én lilla aksent (`#4a3d7d`) for primærknapp,
-  markert rad og fokus. Fag skilles med tynne fargestreker i venstremarg og
-  små prikker, ikke med flater.
-- **Trafikklyset** er det eneste stedet i appen med mettet farge, og det er
-  grunnen til at alt annet er nedtonet. Formen bærer betydningen sammen med
-  fargen — fylt, halvfylt, ring, tynn ring — så det er lesbart uten fargesyn
-  og på avstand.
-- **Type:** Fira Sans til UI og tabeller, Fira Sans Condensed der bredden er
-  knapp, Georgia til overskrifter. Tabulære sifre på alt som står i kolonner.
-  Skriftene ligger lokalt (§1).
-- **Tetthet:** skåringslista har 38 px rader med 28 px bilde (endret 06.10
-  fra 28 px). Lista ruller og følger markøren. Resten av appen har luftigere rader (34 px), men bredden brukes og
-  navn brekker aldri.
-- **Radier** er små (3–6 px) — et skjema, ikke kort med runde hjørner.
-  Unntaket er ⌘K-vinduet, som er formet som Spotlight.
-- **Bevegelse:** navigasjonen er dybde, ikke sidebytte. Økter, elever,
-  vurderinger og fag åpnes som kort som glir inn over lista (180 ms) og ut
-  igjen med samme bevegelse baklengs; lista under beholder bredden. Skåringen
-  animeres aldri: tastetrykk → farge → neste elev er null millisekunder.
-- **Mørk modus:** bygget. Samme tokens med andre verdier, valgt i
-  Innstillinger (som macOS, lys eller mørk). Utskriften er alltid lys.
-
-Forsiden er et villet unntak fra den opprinnelige regelen om ingen
-sammendrag: under dagen og uka ligger en årsoversikt med innsats over tid,
-timeregnskap, gjøremål, vurderingsfrister og elever som glipper. Den er der
-fordi eieren har bestemt det. Ellers gjelder fortsatt: ingen kort med store
-tall, ingen grafer for grafenes skyld, og ingen løpende statistikk mens man
-skårer (§4.4).
+- **Trafikklyset** er det eneste stedet med mettet farge.
+- **Skåringen animeres aldri:** tastetrykk → farge → neste elev er null
+  millisekunder.
+- **Ingen kort med store tall og ingen grafer for grafenes skyld.** Forsidens
+  årsoversikt er et villet unntak.
+- **Utskriften er alltid lys.**
