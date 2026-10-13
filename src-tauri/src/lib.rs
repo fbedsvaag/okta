@@ -11,6 +11,7 @@
 
 mod arkiv;
 mod caldav;
+mod filer;
 mod kalenderfeed;
 mod sikkerhetskopi;
 mod system;
@@ -178,13 +179,6 @@ fn skriv_ut(vindu: tauri::WebviewWindow) -> Result<(), String> {
     vindu.print().map_err(|e| e.to_string())
 }
 
-/// Skriver en eksportfil (årsplan som .md, .csv eller .docx) dit brukeren
-/// valgte i lagre-dialogen. Stien kommer fra dialogen, ikke fra appen selv.
-#[tauri::command]
-fn skriv_fil(sti: String, innhold: Vec<u8>) -> Result<(), String> {
-    std::fs::write(&sti, innhold).map_err(|e| format!("klarte ikke skrive {sti}: {e}"))
-}
-
 /// Oppsettfila som er åpnet med dobbeltklikk (ARBEIDSLISTE 5.13), til
 /// appen spør etter den. macOS kan sende fila før vinduet er klart, så den
 /// holdes her i stedet for bare å sendes som hendelse.
@@ -279,25 +273,25 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![
             skriv_ut,
-            skriv_fil,
+            filer::lagre_fil,
             system::systemversjon,
             sikkerhetskopi::forbered_sikkerhetskopi,
             sikkerhetskopi::sikkerhetskopier,
             sikkerhetskopi::rydd_sikkerhetskopier,
             sikkerhetskopi::sikkerhetskopimappe,
-            sikkerhetskopi::arkivmappe,
             sikkerhetskopi::gjenopprett_fra,
             kalenderfeed::sett_kalenderfeed,
             kalenderfeed::kalenderfeed_url,
             kalenderfeed::kalenderfeed_kjorer,
             kalenderfeed::start_kalenderfeed,
-            kalenderfeed::skriv_kalenderfil,
             caldav::caldav_lagre_passord,
             caldav::caldav_har_passord,
             caldav::caldav_glem_passord,
             caldav::caldav_test,
             caldav::caldav_publiser,
             arkiv::skriv_arkiv,
+            arkiv::hent_arkivmappe,
+            arkiv::velg_arkivmappe,
             ta_apnet_oppsettfil,
             les_oppsettfil,
         ])

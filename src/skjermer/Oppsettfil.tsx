@@ -1,6 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { save } from "@tauri-apps/plugin-dialog";
-import { invoke } from "@tauri-apps/api/core";
 import { revealItemInDir } from "@tauri-apps/plugin-opener";
 import {
   filnavn,
@@ -15,6 +13,7 @@ import {
 } from "../data/oppsettfil";
 import { Felt, Ikon, Knapp } from "../ui/felles";
 import { filbehandler } from "../ui/plattformord";
+import { filnavnAv, lagreFil } from "../data/filer";
 
 /**
  * Oppsettfila i Innstillinger › Del oppsett (SPEC §8.2, ARBEIDSLISTE 5.13).
@@ -53,17 +52,15 @@ export function DelOppsett({
     setMelding(null);
     try {
       const oppsett = await lagOppsett({ skole, deler });
-      const sti = await save({
-        defaultPath: filnavn(oppsett),
-        filters: [{ name: "Oppsettfil for Økta", extensions: ["okta"] }],
+      const sti = await lagreFil({
+        filnavn: filnavn(oppsett),
+        filternavn: "Oppsettfil for Økta",
+        endelse: "okta",
+        innhold: new TextEncoder().encode(JSON.stringify(oppsett, null, 2)),
       });
       if (!sti) return;
-      const innhold = new TextEncoder().encode(
-        JSON.stringify(oppsett, null, 2),
-      );
-      await invoke("skriv_fil", { sti, innhold: Array.from(innhold) });
       setMelding({
-        tekst: `Lagret ${sti.split("/").pop()}. Send den til kollegene på Teams eller e-post. De dobbeltklikker på den, eller drar den inn i første steg av oppsettet.`,
+        tekst: `Lagret ${filnavnAv(sti)}. Send den til kollegene på Teams eller e-post. De dobbeltklikker på den, eller drar den inn i første steg av oppsettet.`,
         sti,
       });
     } catch (e) {

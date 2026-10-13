@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { save } from "@tauri-apps/plugin-dialog";
 import {
   DELER,
   endreKart,
@@ -47,6 +46,7 @@ import {
 import { Elevfoto } from "../ui/Elevfoto";
 import { KlassekartGrupper } from "./KlassekartGrupper";
 import { hovedtast, tast as visTast } from "../ui/taster";
+import { filnavnAv, lagreFil } from "../data/filer";
 
 /**
  * Klassekartet — Plasser (SPEC §4.11, lerretet «Klassekart»).
@@ -250,15 +250,16 @@ export function KlassekartKart({
   }
 
   async function lagrePng() {
-    const sti = await save({
-      defaultPath: `Klassekart ${tittel.replace(/[·/]/g, "-")}.png`,
-      filters: [{ name: "PNG", extensions: ["png"] }],
+    const png = new Uint8Array(await (await svgSomPng(svg())).arrayBuffer());
+    const sti = await lagreFil({
+      filnavn: `Klassekart ${tittel.replace(/[·/]/g, "-")}.png`,
+      filternavn: "PNG",
+      endelse: "png",
+      innhold: png,
     });
     if (!sti) return;
-    const png = new Uint8Array(await (await svgSomPng(svg())).arrayBuffer());
-    await invoke("skriv_fil", { sti, innhold: Array.from(png) });
-    if (!lagret) await bruk(`Lagret ${sti.split("/").pop()}`);
-    else setMelding(`Lagret ${sti.split("/").pop()}`);
+    if (!lagret) await bruk(`Lagret ${filnavnAv(sti)}`);
+    else setMelding(`Lagret ${filnavnAv(sti)}`);
   }
 
   async function kopierListe() {

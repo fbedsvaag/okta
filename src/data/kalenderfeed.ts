@@ -57,7 +57,3 @@ export async function start(skolear: Skolear): Promise<string> {
   await oppdater(skolear);
   return invoke<string>("start_kalenderfeed");
 }
-
-export async function skrivTilFil(sti: string): Promise<void> {
-  await invoke("skriv_kalenderfil", { sti });
-}

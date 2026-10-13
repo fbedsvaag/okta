@@ -1,7 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { hent } from "../db";
 import { skalategn } from "../ui/farger";
-import { hentInnstilling, type Skolear } from "./skolear";
+import type { Skolear } from "./skolear";
 
 /**
  * Arkivet, SPEC §8.
@@ -784,18 +784,16 @@ function ukedag(dato: string): string {
 /**
  * Skriver arkivet til mappa brukeren har valgt.
  *
- * `eksportmappe` er nøkkelen SPEC §4.8 setter av til dette. Er den ikke
- * satt, gjør vi ingenting — arkivet skal ikke finne på et sted selv.
+ * Mappa velges og huskes på Rust-siden (issue #1), ikke i databasen. Er den
+ * ikke valgt, gjør vi ingenting: arkivet skal ikke finne på et sted selv.
  */
 export async function skrivArkiv(
   skolear: Skolear,
 ): Promise<{ skrevet: number; feil: string[] } | null> {
-  const mappe = await hentInnstilling("eksportmappe");
-  if (!mappe) return null;
-
+  if (!(await invoke<string | null>("hent_arkivmappe"))) return null;
   const filer = await byggArkiv(skolear);
-  return invoke<{ skrevet: number; feil: string[] }>("skriv_arkiv", {
-    mappe,
+  return invoke<{ skrevet: number; feil: string[] } | null>("skriv_arkiv", {
+    hvor: "valgt",
     filer,
   });
 }
@@ -812,11 +810,10 @@ export async function skrivArkiv(
  */
 export async function skrivArkivTilBackup(
   skolear: Skolear,
-): Promise<{ skrevet: number; feil: string[] }> {
-  const mappe = await invoke<string>("arkivmappe");
+): Promise<{ skrevet: number; feil: string[] } | null> {
   const filer = await byggArkiv(skolear);
-  return invoke<{ skrevet: number; feil: string[] }>("skriv_arkiv", {
-    mappe,
+  return invoke<{ skrevet: number; feil: string[] } | null>("skriv_arkiv", {
+    hvor: "backup",
     filer,
   });
 }

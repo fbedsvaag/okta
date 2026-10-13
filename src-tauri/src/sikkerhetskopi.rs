@@ -114,11 +114,12 @@ pub fn rydd_sikkerhetskopier(app: AppHandle, behold: usize) -> Result<usize, Str
 ///
 /// Bare én utgave, som overskrives. De daterte `.sqlite`-filene er
 /// historikken; dette er en lesbar utgave av nåtilstanden.
-#[tauri::command]
-pub fn arkivmappe(app: AppHandle) -> Result<String, String> {
-    let mappe = backupmappe(&app)?.join("arkiv");
+///
+/// Ikke en kommando: `skriv_arkiv` slår opp mappa selv (issue #1).
+pub(crate) fn arkivmappe(app: &AppHandle) -> Result<PathBuf, String> {
+    let mappe = backupmappe(app)?.join("arkiv");
     fs::create_dir_all(&mappe).map_err(|e| format!("klarte ikke lage {mappe:?}: {e}"))?;
-    Ok(mappe.to_string_lossy().into_owned())
+    Ok(mappe)
 }
 
 /// Mappa kopiene ligger i, til «Vis i Finder» og til visning i innstillingene.

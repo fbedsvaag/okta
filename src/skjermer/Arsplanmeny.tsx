@@ -1,6 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { invoke } from "@tauri-apps/api/core";
-import { save } from "@tauri-apps/plugin-dialog";
 import {
   ARKFELT,
   FELTNOKKEL,
@@ -13,6 +11,7 @@ import {
 import { hentInnstilling, settInnstilling } from "../data/skolear";
 import { somCsv, somMarkdownFlere } from "../data/arsplaneksport";
 import { Knapp, Kontekstmeny, Menyvalg } from "../ui/felles";
+import { filnavnAv, lagreFil } from "../data/filer";
 
 /**
  * Årsplanen ut av appen: papir, utklippstavle eller fil.
@@ -75,13 +74,14 @@ export function Arsplanmeny({
     navn: string,
     innhold: Uint8Array,
   ): Promise<string | null> {
-    const sti = await save({
-      defaultPath: filnavn(ark, endelse),
-      filters: [{ name: navn, extensions: [endelse] }],
+    const sti = await lagreFil({
+      filnavn: filnavn(ark, endelse),
+      filternavn: navn,
+      endelse,
+      innhold,
     });
     if (!sti) return null; // avbrutt i dialogen
-    await invoke("skriv_fil", { sti, innhold: Array.from(innhold) });
-    return `Lagret ${sti.split("/").pop()}`;
+    return `Lagret ${filnavnAv(sti)}`;
   }
 
   const tekst = (s: string) => new TextEncoder().encode(s);

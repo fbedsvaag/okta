@@ -40,11 +40,7 @@ import { skrivArkiv } from "../data/arkiv";
 import { LAERERNAVN } from "../data/arsplanark";
 import { Merke } from "../ui/logo";
 import { getVersion } from "@tauri-apps/api/app";
-import {
-  open,
-  open as velgMappe,
-  confirm as bekreft,
-} from "@tauri-apps/plugin-dialog";
+import { open, confirm as bekreft } from "@tauri-apps/plugin-dialog";
 import type { FagIAr } from "../data/fag";
 import { Bryter, Felt, Knapp, Ikon } from "../ui/felles";
 import {
@@ -55,6 +51,7 @@ import {
   synkadvarsel,
   systemnavn,
 } from "../ui/plattformord";
+import { invoke } from "@tauri-apps/api/core";
 
 /**
  * Globale innstillinger, SPEC §4.8.
@@ -188,7 +185,7 @@ export function Innstillinger({
     void (async () => {
       setDav(await caldav.hentOppsett());
       setDavHarPassord(await caldav.harPassord());
-      setArkivmappe((await hentInnstilling("eksportmappe")) ?? "");
+      setArkivmappe((await invoke<string | null>("hent_arkivmappe")) ?? "");
       setVersjon(await getVersion().catch(() => ""));
       setAr(await hentSkolear());
     })();
@@ -666,9 +663,8 @@ export function Innstillinger({
             <div className="flex flex-wrap items-center gap-2">
               <Knapp
                 onClick={async () => {
-                  const valgt = await velgMappe({ directory: true });
-                  if (typeof valgt !== "string") return;
-                  await settInnstilling("eksportmappe", valgt);
+                  const valgt = await invoke<string | null>("velg_arkivmappe");
+                  if (!valgt) return;
                   setArkivmappe(valgt);
                   setArkivMelding(null);
                 }}

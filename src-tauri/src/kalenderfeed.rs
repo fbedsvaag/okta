@@ -98,11 +98,3 @@ pub fn start_kalenderfeed() -> Result<String, String> {
     Ok(kalenderfeed_url())
 }
 
-/// Skriver strømmen til en fil, til den som heller vil importere én gang
-/// enn å abonnere.
-#[tauri::command]
-pub fn skriv_kalenderfil(sti: String) -> Result<(), String> {
-    let tekst = innhold().lock().unwrap().clone();
-    std::fs::write(&sti, tekst).map_err(|e| format!("klarte ikke skrive {sti}: {e}"))?;
-    Ok(())
-}
