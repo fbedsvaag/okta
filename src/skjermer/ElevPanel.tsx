@@ -90,6 +90,7 @@ import { lytt } from "../data/endringer";
 import { NOYTRAL, skalafarge } from "../ui/farger";
 import { Markdownfelt, MarkdownSkriv } from "../ui/Notattekst";
 import { hovedtast, harModifikator, tast as visTast } from "../ui/taster";
+import { useSisteSvar } from "../ui/sisteSvar";
 
 /**
  * Elevkortet, SPEC §4.5 og DESIGN.md §10 (lerretet «ElevArk»).
@@ -131,8 +132,15 @@ export function ElevPanel({
 }) {
   const ark = useArk();
   const [bilde, setBilde] = useState<string | null>(null);
+  // Bildet tømmes med en gang man blar, og et tregt svar for forrige elev
+  // får ikke skrive over (#5): et ansikt skal aldri stå ved feil navn.
+  const bildevakt = useSisteSvar();
   useEffect(() => {
-    void hentElevbilde(elevId).then(setBilde);
+    setBilde(null);
+    const gjeldende = bildevakt();
+    void hentElevbilde(elevId).then((b) => {
+      if (gjeldende()) setBilde(b);
+    });
   }, [elevId]);
   const [elev, setElev] = useState<ElevGrunnlag | null>(null);
   const [ar, setAr] = useState<ElevAr[]>([]);
@@ -185,7 +193,9 @@ export function ElevPanel({
     : ar.filter((a) => a.skolearId === aktivtSkolearId);
   const arIder = arene.map((a) => a.skolearId).join();
 
+  const fagvakt = useSisteSvar();
   async function lastFag() {
+    const gjeldende = fagvakt();
     const ider = arIder ? arIder.split(",") : [aktivtSkolearId];
     const ut = await Promise.all(
       ider.map(async (skolearId) => {
@@ -204,12 +214,10 @@ export function ElevPanel({
         };
       }),
     );
+    const notater = await hentElevnotater(elevId);
+    if (!gjeldende()) return;
     setData(ut);
-    setApne(
-      (await hentElevnotater(elevId)).filter(
-        (n) => n.skalFolgesOpp && n.lukket === null,
-      ),
-    );
+    setApne(notater.filter((n) => n.skalFolgesOpp && n.lukket === null));
   }
 
   useEffect(() => {
@@ -1392,11 +1400,14 @@ function Motelogg({
   const idag = new Date().toISOString().slice(0, 10);
   const ark = useArk();
 
+  const vakt = useSisteSvar();
   async function last() {
+    const gjeldende = vakt();
     const [n, o] = await Promise.all([
       hentElevnotater(elevId),
       hentOktnotater(elevId),
     ]);
+    if (!gjeldende()) return;
     setNotater(n);
     setOktnotater(o);
   }
