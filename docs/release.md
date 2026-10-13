@@ -9,9 +9,10 @@ din egen Mac; Windows-versjonen bygges av GitHub når releasen publiseres.
 Hver release får et nytt nummer, også om det bare er en liten retting.
 Ellers kan ingen se forskjell på to filer med samme navn.
 
-Endre nummeret fire steder:
+Endre nummeret fem steder:
 
 - `package.json` (`"version"`)
+- `src-tauri/Cargo.toml` (`version`)
 - `src-tauri/tauri.conf.json` (`"version"`)
 - `docs/guide/guide_read_me.html` (forsiden og filnavnet i steg 1)
 - `docs/guide/betatest.html`
