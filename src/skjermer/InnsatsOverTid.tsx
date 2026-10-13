@@ -153,7 +153,7 @@ export function InnsatsOverTid({
               ["g", "Grønn"],
               ["y", "Gul"],
               ["r", "Rød"],
-              ["o", "Ikke i økta"],
+              ["o", "Fravær"],
             ] as const
           ).map(([k, navn]) => (
             <span key={k} className="inline-flex items-center gap-[5px]">

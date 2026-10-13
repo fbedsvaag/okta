@@ -51,6 +51,18 @@ fra den, foreslå en endring — bruker bestemmer om spec eller kode skal rettes
 **STATUS.md eier du og kan oppdatere fritt.** Den beskriver hvor prosjektet
 faktisk står, ikke hva det skal bli.
 
+## Repoet er offentlig
+
+Alt som committes, ligger åpent på GitHub. Derfor:
+
+- **Aldri ekte elevdata i git.** Ikke `privat/`, ikke navn, ikke
+  skjermbilder eller eksporter fra en database med ekte elever. Det gjelder
+  også tester, testdata og commit-meldinger.
+- **Sjekk `git diff --cached` for ekte navn før hver commit.**
+- **README-bildene i `docs/readme/` er laget fra lerretet.** Lag aldri nye
+  fra appen.
+- Releaser: se `docs/release.md`.
+
 ## Testdata
 
 `dummydata/` inneholder fire fiktive klasselister med navn fra The Sopranos, i
