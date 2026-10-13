@@ -6,6 +6,9 @@ Lages i Microsoft Forms, eller et annet skjemaverktøy der testerne ikke trenger
 
 ---
 
+**0. Mac eller Windows?** *(valg)*
+Mac · Windows
+
 **1. Versjon og skjerm** *(kort tekst, valgfritt)*
 Lim inn det appen kopierte da du trykket Gi tilbakemelding.
 
