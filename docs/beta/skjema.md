@@ -31,7 +31,7 @@ Kolonner: Lett · Gikk, men tungvint · Stod fast · Hoppet over
 Ingen · 1–2 · 3–5 · Flere enn 5
 
 **5. Hvilke tre ting ville du brukt hver uke?** *(flervalg, maks 3)*
-I dag-oversikten · Skåring i økta · Øktlogg og gjøremål · Søk (⌘K) · Elevkortet · Elevoversikten · Fagoversikten · Klassekart · Grupper · Samtaletrekkeren · Årsplanen som PDF · Timeplanen i kalenderen
+I dag-oversikten · Skåring i økta · Øktlogg og gjøremål · Søk (⌘K / Ctrl+K) · Elevkortet · Elevoversikten · Fagoversikten · Klassekart · Grupper · Samtaletrekkeren · Årsplanen som PDF · Timeplanen i kalenderen
 
 **6. Hva bruker du i dag til dette?** *(flervalg)*
 Excel eller Sheets · OneNote · Papir eller notatbok · InSchool · Teams · Ingenting fast · Annet

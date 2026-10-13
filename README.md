@@ -11,7 +11,7 @@
 
 <p align="center">
   <a href="https://github.com/fbedsvaag/okta/releases/latest"><b>Last ned siste versjon</b></a>
-  &nbsp;·&nbsp; macOS 13 eller nyere &nbsp;·&nbsp; Apple-brikke og Intel
+  &nbsp;·&nbsp; macOS 13 eller nyere &nbsp;·&nbsp; Apple-brikke og Intel &nbsp;·&nbsp; Windows 10 og 11 (beta)
 </p>
 
 <p align="center">
@@ -161,6 +161,8 @@ Dette er det eneste Økta sender ut, og det er av til du slår det på.
 3. Første gang du åpner appen stopper macOS den, fordi den ikke er sendt gjennom Apples godkjenning. Gå til **Systeminnstillinger › Personvern og sikkerhet**, rull ned og trykk **Åpne likevel**. Det trengs bare én gang.
 
 Ny versjon: dra den nye Økta til Programmer og velg **Erstatt**. Dataene dine blir liggende.
+
+**Windows (beta):** last ned **-setup.exe** fra samme side og kjør den. Windows advarer fordi appen ikke er signert: trykk **Mer informasjon › Kjør likevel**. Se `guide_read_me_windows.pdf` i releasen.
 
 ## Dataene dine
 
