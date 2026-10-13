@@ -522,12 +522,18 @@ export async function importerOppsett(
 ): Promise<{ skolearId: string | null }> {
   const lagt: { tabell: string; id: string }[] = [];
   const logg = (tabell: string, id: string) => (lagt.push({ tabell, id }), id);
-  let aktivFor: string | null = null;
+  // Skalaverdi har ingen slettet-kolonne; de tas bort med id ved feil.
+  const verdier: string[] = [];
+  // Innstillingene importen kan endre, slik de var før (#4). Settes de
+  // tilbake til det de var, også når de ikke fantes.
+  const for_ = {
+    aktivt_skolear: await hentInnstilling("aktivt_skolear"),
+    standard_varighet_min: await hentInnstilling("standard_varighet_min"),
+  };
   try {
     let skolearId: string | null =
       p.skolear?.status === "finnes" ? p.skolear.id : null;
     if (p.skolear?.status === "ny" && p.oppsett.skolear) {
-      aktivFor = await hentInnstilling("aktivt_skolear");
       const o = p.oppsett.skolear;
       skolearId = logg(
         "skolear",
@@ -576,7 +582,7 @@ export async function importerOppsett(
           `INSERT INTO skalaverdi (id, skala_id, kode, etikett, rang, farge, bestatt, teller_ikke)
            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
           [
-            nyId(),
+            (verdier.push(nyId()), verdier[verdier.length - 1]),
             id,
             v.kode,
             v.etikett ?? null,
@@ -590,16 +596,20 @@ export async function importerOppsett(
     return { skolearId };
   } catch (e) {
     // Tilbake til der vi startet.
+    const tilkobling = await db();
+    for (const id of verdier)
+      await tilkobling
+        .execute("DELETE FROM skalaverdi WHERE id = $1", [id])
+        .catch(() => {});
     for (const r of lagt.reverse())
       await oppdater(r.tabell, r.id, { slettet: naa() }).catch(() => {});
-    if (aktivFor !== null)
-      await settInnstilling("aktivt_skolear", aktivFor).catch(() => {});
-    else
-      await (
-        await db()
-      )
-        .execute("DELETE FROM innstilling WHERE nokkel = 'aktivt_skolear'")
-        .catch(() => {});
+    for (const [nokkel, verdi] of Object.entries(for_)) {
+      if (verdi !== null) await settInnstilling(nokkel, verdi).catch(() => {});
+      else
+        await tilkobling
+          .execute("DELETE FROM innstilling WHERE nokkel = $1", [nokkel])
+          .catch(() => {});
+    }
     throw e;
   }
 }

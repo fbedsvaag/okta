@@ -12,6 +12,7 @@ const {
   settInnstilling,
   hentSkolear,
   hentFridager,
+  hentInnstilling,
 } = await import("./skolear");
 const { leggFagIAr, hentFagbank, endreFag, endreFagIAr } =
   await import("./fag");
@@ -314,5 +315,31 @@ describe("import", () => {
     const plan = await planleggImport(o);
     expect(plan.fagFinnes.map((f) => f.kode)).toEqual(["ENG1"]);
     expect(plan.fagNye.map((f) => f.kode)).toEqual(["SAM3045"]);
+  });
+
+  it("en mislykket import rører ikke valgt skoleår, øktlengde eller skalaer (#4)", async () => {
+    const o = await fil();
+    const eldre = await opprettSkolear("2025/26", "2025-08-19", "2026-06-18");
+    await opprettSkolear("2026/27", "2026-08-19", "2027-06-18");
+    await settInnstilling("aktivt_skolear", eldre);
+    await settInnstilling("standard_varighet_min", "60");
+
+    const plan = await planleggImport(o);
+    expect(plan.skolear?.status).toBe("finnes");
+    expect(plan.settOktlengde).toBe(true);
+    // Andre verdi i skalaen mangler rang: importen feiler etter at den
+    // første verdien og øktlengden er skrevet.
+    (plan.skalaerNye[0].verdier[1] as { rang: unknown }).rang = null;
+
+    await expect(importerOppsett(plan)).rejects.toThrow();
+
+    expect(await hentInnstilling("aktivt_skolear")).toBe(eldre);
+    expect(await hentInnstilling("standard_varighet_min")).toBe("60");
+    const [{ n }] = await hent<{ n: number }>(
+      `SELECT COUNT(*) AS n FROM skalaverdi v
+       JOIN skala s ON s.id = v.skala_id WHERE s.navn = 'Lav til høy'`,
+    );
+    expect(n).toBe(0);
+    expect(await hentFagbank()).toHaveLength(0);
   });
 });
