@@ -7,7 +7,15 @@ import {
   settInnstilling,
 } from "../data/skolear";
 import { LAERERNAVN } from "../data/arsplanark";
-import { hentFagIAr, leggFagIAr, type FagIAr } from "../data/fag";
+import {
+  endreFagIAr,
+  fjernFagFraAr,
+  hentFagIAr,
+  leggFagIAr,
+  type FagIAr,
+} from "../data/fag";
+import { fagFraOppsett, type Oppsett } from "../data/oppsettfil";
+import { Oppsettimport } from "./Oppsettfil";
 import { FAGFARGER } from "../ui/farger";
 import { Felt, Knapp, Fagfirkant, Ikon } from "../ui/felles";
 import { LimInn } from "./LimInn";
@@ -24,9 +32,22 @@ import { Ordmerke } from "../ui/logo";
  */
 const STEG = ["Velkommen", "Skoleåret", "Fagene dine", "Elevene", "Ferdig"];
 
-export function Veiviser({ onFerdig }: { onFerdig: () => void }) {
+export function Veiviser({
+  onFerdig,
+  oppsettTekst,
+  oppsettFeil,
+  onOppsettLest,
+}: {
+  onFerdig: () => void;
+  /** en oppsettfil åpnet med dobbeltklikk før appen var satt opp (5.13) */
+  oppsettTekst?: string | null;
+  oppsettFeil?: string | null;
+  onOppsettLest?: () => void;
+}) {
   const [steg, setSteg] = useState(0);
   const [skolearId, setSkolearId] = useState<string | null>(null);
+  // Oppsettet fra en kollega, når det er lest inn: fagene står som forslag.
+  const [oppsett, setOppsett] = useState<Oppsett | null>(null);
   const [fag, setFag] = useState<FagIAr[]>([]);
   const [meldinger, setMeldinger] = useState<string[]>([]);
 
@@ -83,10 +104,27 @@ export function Veiviser({ onFerdig }: { onFerdig: () => void }) {
 
       <main className="my-4 mr-4 min-w-0 flex-1 overflow-auto rounded-ark bg-ark px-12 py-12 shadow-[var(--shadow-panel)]">
         <div className="max-w-2xl">
-          {steg === 0 && <StegVelkommen onSelv={() => setSteg(1)} />}
+          {steg === 0 && (
+            <StegVelkommen
+              onSelv={() => setSteg(1)}
+              startTekst={oppsettTekst}
+              startFeil={oppsettFeil}
+              onImportert={(r) => {
+                onOppsettLest?.();
+                setOppsett(r.oppsett);
+                setSkolearId(r.skolearId);
+                setSteg(1);
+              }}
+            />
+          )}
 
           {steg === 1 && (
             <StegSkolear
+              importert={
+                skolearId !== null && oppsett?.skolear
+                  ? { id: skolearId, ...oppsett.skolear }
+                  : null
+              }
               onFerdig={(id) => {
                 setSkolearId(id);
                 setSteg(2);
@@ -96,6 +134,7 @@ export function Veiviser({ onFerdig }: { onFerdig: () => void }) {
 
           {steg === 2 && skolearId && (
             <StegFag
+              oppsett={oppsett}
               skolearId={skolearId}
               fag={fag}
               setFag={setFag}
@@ -124,9 +163,21 @@ export function Veiviser({ onFerdig }: { onFerdig: () => void }) {
 
 /**
  * Første steg: oppsettfil fra en kollega, eller sett opp selv. Oppsettfila
- * (ARBEIDSLISTE 5.13) er ikke bygget ennå; plassen står klar.
+ * (SPEC §8.2) gir skoleåret, fridagene og fagene; resten gjøres i stegene
+ * etter. En fil som er åpnet med dobbeltklikk, står klar med en gang.
  */
-function StegVelkommen({ onSelv }: { onSelv: () => void }) {
+function StegVelkommen({
+  onSelv,
+  startTekst,
+  startFeil,
+  onImportert,
+}: {
+  onSelv: () => void;
+  startTekst?: string | null;
+  startFeil?: string | null;
+  onImportert: (r: { skolearId: string | null; oppsett: Oppsett }) => void;
+}) {
+  const [fil, setFil] = useState(!!startTekst || !!startFeil);
   return (
     <section>
       <h1 className="text-[calc(30px*var(--tekst-skala))] font-light leading-tight tracking-overskrift">
@@ -138,19 +189,37 @@ function StegVelkommen({ onSelv }: { onSelv: () => void }) {
       </p>
 
       <div className="mt-8 grid gap-3">
-        <div className="rounded-stor border border-linje p-4 opacity-60">
-          <p className="text-brod font-medium">
-            Bruk en oppsettfil fra en kollega{" "}
-            <span className="font-normal text-blekk-dempet">· anbefalt</span>
-          </p>
-          <p className="mt-1 text-liten text-blekk-dempet">
-            Skoleåret, fagene og skoleruta som kollegaen har satt opp. Kommer
-            snart.
-          </p>
+        <div
+          className={`rounded-stor border p-4 ${fil ? "border-aksent" : "border-linje"}`}
+        >
+          <button onClick={() => setFil(true)} className="w-full text-left">
+            <p className="text-brod font-medium">
+              Bruk en oppsettfil fra en kollega{" "}
+              <span className="font-normal text-blekk-dempet">· anbefalt</span>
+            </p>
+            <p className="mt-1 text-liten text-blekk-dempet">
+              Skoleåret, fridagene og fagene som kollegaen har satt opp. Fila
+              slutter på .okta.
+            </p>
+          </button>
+          {fil && (
+            <div className="mt-4">
+              {startFeil && (
+                <p className="mb-3 text-liten text-feil" role="alert">
+                  {startFeil}
+                </p>
+              )}
+              <Oppsettimport
+                startTekst={startTekst}
+                knappetekst="Legg inn og gå videre"
+                onImportert={onImportert}
+              />
+            </div>
+          )}
         </div>
         <button
           onClick={onSelv}
-          className="rounded-stor border border-aksent p-4 text-left hover:bg-flate"
+          className="rounded-stor border border-linje p-4 text-left hover:bg-flate"
         >
           <p className="text-brod font-medium">Sett opp selv</p>
           <p className="mt-1 text-liten text-blekk-dempet">
@@ -205,7 +274,14 @@ function StegFerdig({
   );
 }
 
-function StegSkolear({ onFerdig }: { onFerdig: (id: string) => void }) {
+function StegSkolear({
+  onFerdig,
+  importert,
+}: {
+  onFerdig: (id: string) => void;
+  /** skoleåret kom fra en oppsettfil: bare navnet ditt gjenstår */
+  importert?: { id: string; navn: string; start: string; slutt: string } | null;
+}) {
   const [navn, setNavn] = useState(foreslattSkolearnavn());
   const foreslatt = foreslatteDatoer(navn);
   const [start, setStart] = useState(foreslatt.start);
@@ -219,6 +295,41 @@ function StegSkolear({ onFerdig }: { onFerdig: (id: string) => void }) {
 
   const gyldig =
     navn.trim() !== "" && start !== "" && slutt !== "" && start < slutt;
+
+  if (importert)
+    return (
+      <section>
+        <h1 className="text-[calc(30px*var(--tekst-skala))] font-light leading-tight tracking-overskrift">
+          Skoleåret {importert.navn}
+        </h1>
+        <p className="mt-1 text-brod text-blekk-dempet">
+          Lagt inn fra oppsettfila: {langDato(importert.start)} til{" "}
+          {langDato(importert.slutt)}, med fridagene. Datoene kan endres senere
+          under Innstillinger.
+        </p>
+        <div className="mt-6">
+          <Felt
+            etikett="Ditt navn"
+            verdi={laerer}
+            settVerdi={setLaerer}
+            plassholder="Står som faglærer på årsplanen"
+            autoFocus
+          />
+        </div>
+        <div className="mt-6">
+          <Knapp
+            variant="primar"
+            onClick={async () => {
+              if (laerer.trim())
+                await settInnstilling(LAERERNAVN, laerer.trim());
+              onFerdig(importert.id);
+            }}
+          >
+            Videre
+          </Knapp>
+        </div>
+      </section>
+    );
 
   return (
     <section>
@@ -271,11 +382,14 @@ function StegSkolear({ onFerdig }: { onFerdig: (id: string) => void }) {
 }
 
 function StegFag({
+  oppsett,
   skolearId,
   fag,
   setFag,
   onFerdig,
 }: {
+  /** fagene fra en oppsettfil står som forslag å krysse av */
+  oppsett: Oppsett | null;
   skolearId: string;
   fag: FagIAr[];
   setFag: (f: FagIAr[]) => void;
@@ -283,6 +397,37 @@ function StegFag({
 }) {
   const [kode, setKode] = useState("");
   const [navn, setNavn] = useState("");
+  const [forslag, setForslag] = useState<
+    Awaited<ReturnType<typeof fagFraOppsett>>
+  >([]);
+  useEffect(() => {
+    if (oppsett) void fagFraOppsett(oppsett).then(setForslag);
+  }, [oppsett]);
+
+  // Fag lagt inn for hånd, utenom forslagene fra fila.
+  const egne = fag.filter((f) => !forslag.some((x) => x.fagId === f.fagId));
+
+  /** Et kryss legger faget til året med en gang; et nytt klikk tar det ut. */
+  async function byttForslag(f: (typeof forslag)[number], pa: boolean) {
+    if (pa) {
+      const id = await leggFagIAr(
+        skolearId,
+        f.kode,
+        f.navn,
+        f.farge,
+        f.grep_kode,
+        f.arstimetall,
+      );
+      if (f.standard_varighet_min)
+        await endreFagIAr(id, {
+          standard_varighet_min: f.standard_varighet_min,
+        });
+    } else {
+      const i = fag.find((x) => x.fagId === f.fagId);
+      if (i) await fjernFagFraAr(i.id);
+    }
+    setFag(await hentFagIAr(skolearId));
+  }
 
   async function leggTil() {
     if (kode.trim() === "") return;
@@ -303,9 +448,43 @@ function StegFag({
         <code>Norsk</code>, hva du nå enn underviser i.
       </p>
 
-      {fag.length > 0 && (
+      {forslag.length > 0 && (
+        <div className="mt-5">
+          <p className="mb-1.5 text-liten text-blekk-dempet">
+            Fra oppsettfila. Kryss av for fagene du har i år.
+          </p>
+          <ul className="divide-y divide-linje-svak border-y border-linje-medium">
+            {forslag.map((f) => {
+              const valgt = fag.some((x) => x.fagId === f.fagId);
+              return (
+                <li key={f.fagId}>
+                  <label className="flex cursor-pointer items-center gap-2.5 py-1.5 text-brod">
+                    <input
+                      type="checkbox"
+                      checked={valgt}
+                      onChange={(e) => void byttForslag(f, e.target.checked)}
+                    />
+                    <Fagfirkant farge={f.farge} />
+                    <span className="w-24 font-medium">
+                      {f.alias ?? f.kode}
+                    </span>
+                    <span className="min-w-0 truncate text-blekk-dempet">
+                      {f.navn}
+                    </span>
+                  </label>
+                </li>
+              );
+            })}
+          </ul>
+          <p className="mt-4 text-liten text-blekk-dempet">
+            Mangler et fag? Legg det til under.
+          </p>
+        </div>
+      )}
+
+      {egne.length > 0 && (
         <ul className="mt-5 divide-y divide-linje-svak border-y border-linje-medium">
-          {fag.map((f) => (
+          {egne.map((f) => (
             <li key={f.id} className="flex items-center gap-2 py-1.5 text-brod">
               <Fagfirkant farge={f.farge} />
               <span className="w-20 font-medium">{f.kode}</span>
@@ -411,4 +590,12 @@ function StegElever({
       </p>
     </section>
   );
+}
+
+function langDato(dato: string): string {
+  return new Date(`${dato}T00:00:00`).toLocaleDateString("nb-NO", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
 }

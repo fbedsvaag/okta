@@ -59,7 +59,12 @@ export function Innstillinger({
   onEndret,
   onApneSkoleruta,
   startSide,
+  oppsettTekst,
+  onOppsettLest,
 }: {
+  /** en oppsettfil åpnet med dobbeltklikk: vises under Del oppsett */
+  oppsettTekst?: string | null;
+  onOppsettLest?: () => void;
   skolear: Skolear;
   fag: FagIAr[];
   /** siden som står framme når skjermen åpnes, f.eks. «skolear» */
@@ -83,6 +88,9 @@ export function Innstillinger({
   const [davHarPassord, setDavHarPassord] = useState(false);
   const [davMelding, setDavMelding] = useState<string | null>(null);
   const [tekstskala, setTekstskala] = useState("0.93");
+  useEffect(() => {
+    if (oppsettTekst) setSide("deloppsett");
+  }, [oppsettTekst]);
   const [side, setSide] = useState<Sideid>(() =>
     SIDER.some((g) => g.sider.some((x) => x.id === startSide))
       ? (startSide as Sideid)
@@ -1031,7 +1039,14 @@ export function Innstillinger({
           </Bolk>
 
           <Bolk id="deloppsett" tittel="Del oppsett">
-            <DelOppsett harAr={!!skolear} onImportert={onEndret} />
+            <DelOppsett
+              harAr={!!skolear}
+              startTekst={oppsettTekst}
+              onImportert={() => {
+                onOppsettLest?.();
+                onEndret();
+              }}
+            />
           </Bolk>
 
           <Bolk id="personvern" tittel="Personvern">

@@ -45,6 +45,7 @@ import { ElevPanel } from "./skjermer/ElevPanel";
 import { FagPanel } from "./skjermer/FagPanel";
 import { Bryter, Fagfirkant, Knapp, Ikon } from "./ui/felles";
 import { Fagoversikt } from "./skjermer/Fagoversikt";
+import { useApnetOppsettfil } from "./ui/apnetOppsettfil";
 import { G_SNARVEIER, Sidemeny, type Menypunkt } from "./ui/Sidemeny";
 import { Sokevindu } from "./ui/Sokevindu";
 import { ArkKobling, Arkstabel, type ArkApi } from "./ui/Arkstabel";
@@ -176,6 +177,16 @@ export default function App() {
 
   // ⌘K: søk på elev eller økt, hvor som helst i appen (§4.4).
   const [sokApent, setSokApent] = useState(false);
+
+  // En oppsettfil åpnet med dobbeltklikk (5.13): i veiviseren uten
+  // skoleår, ellers i Innstillinger › Del oppsett.
+  const apnetFil = useApnetOppsettfil();
+  useEffect(() => {
+    if ((apnetFil.tekst || apnetFil.feil) && skolear) {
+      ark.current?.lukkAlle();
+      ga("innstillinger", "deloppsett");
+    }
+  }, [apnetFil.tekst, apnetFil.feil, skolear?.id, ga]);
 
   // G-snarveiene (DESIGN.md §6): G, så en bokstav innen et lite øyeblikk.
   // Aldri mens man skriver i et felt — da er G bare en bokstav.
@@ -341,6 +352,9 @@ export default function App() {
   if (!skolear) {
     return (
       <Veiviser
+        oppsettTekst={apnetFil.tekst}
+        oppsettFeil={apnetFil.feil}
+        onOppsettLest={apnetFil.glem}
         onFerdig={() => {
           setLaster(true);
           void last();
@@ -504,6 +518,8 @@ export default function App() {
 
                 {visning === "innstillinger" && (
                   <Innstillinger
+                    oppsettTekst={apnetFil.tekst}
+                    onOppsettLest={apnetFil.glem}
                     skolear={skolear}
                     fag={fag}
                     onEndret={last}

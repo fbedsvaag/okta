@@ -24,8 +24,11 @@ import { Felt, Ikon, Knapp } from "../ui/felles";
  */
 export function DelOppsett({
   harAr,
+  startTekst,
   onImportert,
 }: {
+  /** en oppsettfil åpnet med dobbeltklikk */
+  startTekst?: string | null;
   /** det finnes et aktivt skoleår å lage fila fra */
   harAr: boolean;
   /** noe er lagt inn: appen laster skoleår og fag på nytt */
@@ -167,6 +170,7 @@ export function DelOppsett({
         Les inn en oppsettfil
       </h3>
       <Oppsettimport
+        startTekst={startTekst}
         onImportert={() => onImportert()}
         etterpa="Fagene ligger nå i fagbanken. Legg dem til skoleåret under Fag."
       />

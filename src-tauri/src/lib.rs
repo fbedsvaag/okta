@@ -184,9 +184,36 @@ fn skriv_fil(sti: String, innhold: Vec<u8>) -> Result<(), String> {
     std::fs::write(&sti, innhold).map_err(|e| format!("klarte ikke skrive {sti}: {e}"))
 }
 
+/// Oppsettfila som er åpnet med dobbeltklikk (ARBEIDSLISTE 5.13), til
+/// appen spør etter den. macOS kan sende fila før vinduet er klart, så den
+/// holdes her i stedet for bare å sendes som hendelse.
+#[derive(Default)]
+struct ApnetFil(std::sync::Mutex<Option<String>>);
+
+/// Henter og glemmer stien til en oppsettfil som er åpnet med dobbeltklikk.
+#[tauri::command]
+fn ta_apnet_oppsettfil(tilstand: tauri::State<ApnetFil>) -> Option<String> {
+    tilstand.0.lock().ok()?.take()
+}
+
+/// Leser en oppsettfil. Bare `.okta`, og bare små filer: dette er ikke en
+/// generell måte å lese filer på disken.
+#[tauri::command]
+fn les_oppsettfil(sti: String) -> Result<String, String> {
+    if !sti.to_lowercase().ends_with(".okta") {
+        return Err("Det er ikke en oppsettfil (.okta).".into());
+    }
+    let meta = std::fs::metadata(&sti).map_err(|e| format!("Fant ikke fila: {e}"))?;
+    if meta.len() > 2_000_000 {
+        return Err("Fila er for stor til å være en oppsettfil.".into());
+    }
+    std::fs::read_to_string(&sti).map_err(|e| format!("Kunne ikke lese fila: {e}"))
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .manage(ApnetFil::default())
         .plugin(
             tauri_plugin_sql::Builder::default()
                 .add_migrations("sqlite:elevtracking.sqlite", migrations())
@@ -214,7 +241,30 @@ pub fn run() {
             caldav::caldav_test,
             caldav::caldav_publiser,
             arkiv::skriv_arkiv,
+            ta_apnet_oppsettfil,
+            les_oppsettfil,
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while running tauri application")
+        .run(|app, hendelse| {
+            // Dobbeltklikk på en .okta-fil: hold stien, og si fra til
+            // vinduet hvis det allerede kjører.
+            #[cfg(any(target_os = "macos", target_os = "ios"))]
+            if let tauri::RunEvent::Opened { urls } = hendelse {
+                use tauri::{Emitter, Manager};
+                if let Some(sti) = urls
+                    .iter()
+                    .filter_map(|u| u.to_file_path().ok())
+                    .map(|p| p.to_string_lossy().into_owned())
+                    .find(|p| p.to_lowercase().ends_with(".okta"))
+                {
+                    if let Ok(mut f) = app.state::<ApnetFil>().0.lock() {
+                        *f = Some(sti);
+                    }
+                    let _ = app.emit("oppsettfil-apnet", ());
+                }
+            }
+            #[cfg(not(any(target_os = "macos", target_os = "ios")))]
+            let _ = (app, hendelse);
+        });
 }
