@@ -74,5 +74,5 @@ Bygg mot disse fra dag 1. Ekte klasselister kommer først på første skoledag.
 
 ## Ikke i v1
 
-`hent_grep.py` henter læreplaner fra Udir og hører til §10 — det er et senere
+`scripts/hent_grep.py` henter læreplaner fra Udir og hører til §10 — det er et senere
 gjøremål. Ikke bruk tid på det før §4.2–4.5 står.

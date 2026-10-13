@@ -23,7 +23,7 @@ dist-ssr
 *.sln
 *.sw?
 
-# Mellomlager for hent_grep.py — hentes på nytt ved behov
+# Mellomlager for scripts/hent_grep.py — hentes på nytt ved behov
 .grep-cache/
 __pycache__/
 *.pyc

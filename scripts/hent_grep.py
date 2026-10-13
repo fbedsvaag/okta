@@ -12,10 +12,10 @@ Lisens: NLOD (Norsk lisens for offentlige data) — tillater kopiering,
         endring, videreformidling og kommersiell bruk.
 
 Bruk:
-    python3 hent_grep.py                      # alt, videregående + grunnskole
-    python3 hent_grep.py --bare-vgs           # kun videregående opplæring
-    python3 hent_grep.py --koder HIS01-03,ENG01-04   # test på noen få først
-    python3 hent_grep.py --delay 1.0          # roligere mot API-et
+    python3 scripts/hent_grep.py                      # alt, videregående + grunnskole
+    python3 scripts/hent_grep.py --bare-vgs           # kun videregående opplæring
+    python3 scripts/hent_grep.py --koder HIS01-03,ENG01-04   # test på noen få først
+    python3 scripts/hent_grep.py --delay 1.0          # roligere mot API-et
 
 Kun standardbibliotek. Ingen pip install.
 

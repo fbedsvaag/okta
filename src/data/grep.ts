@@ -1,7 +1,7 @@
 /**
  * Fagene fra Udirs Grep-database, SPEC §10.
  *
- * Fila er hentet på **byggetidspunktet** av `hent_grep.py` og pakkes med
+ * Fila er hentet på **byggetidspunktet** av `scripts/hent_grep.py` og pakkes med
  * appen. Appen gjør ingen nettverkskall for å lese den — det er hele
  * poenget: Udir krever API-nøkkel fra 1. september 2026, og ingen kollega
  * skal trenge en for å slå opp et fag.
@@ -59,7 +59,7 @@ export function hentGrepFag(): Promise<GrepFag[]> {
     lastet = import("../assets/grep-fag.json")
       // Gjennom unknown: formen kommer fra en fil som genereres utenfor
       // prosjektet, så typen her er en påstand, ikke noe kompilatoren kan
-      // utlede. `hent_grep.py` og `Fil` må holdes i takt for hånd.
+      // utlede. Formen sjekkes av grep.test.ts mot `GrepFag`.
       .then((m) => {
         const fag = (m.default as unknown as Fil).fag ?? [];
         // Fila genereres utenfor prosjektet. Har den feil form — en eldre
@@ -73,13 +73,13 @@ export function hentGrepFag(): Promise<GrepFag[]> {
         if (gyldig.length !== fag.length) {
           console.error(
             `grep-fag.json: ${fag.length - gyldig.length} av ${fag.length} rader ` +
-              "har feil form. Kjør hent_grep.py på nytt.",
+              "har feil form. Kjør scripts/hent_grep.py på nytt.",
           );
         }
         return gyldig;
       })
       .catch((e) => {
-        // Fila mangler hvis noen har bygget uten å kjøre hent_grep.py.
+        // Fila mangler hvis noen har bygget uten å kjøre scripts/hent_grep.py.
         // Da skal fagvelgeren si det, ikke krasje.
         console.error("grep-fag.json mangler eller er ugyldig:", e);
         return [];

@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useState } from "react";
 import { hentInnstilling, settInnstilling } from "../data/skolear";
 
 /**
- * Bevegelse, SPEC §13 og merkevareguiden.
+ * Bevegelse, SPEC §13 og merkevareguiden (docs/arkiv/merkevareguide.html).
  *
  * Appen skal nesten ikke bevege seg. Det som beveger seg, gjør det med
  * kurvene og varighetene som ligger som tokens i index.css: 180 ms inn,

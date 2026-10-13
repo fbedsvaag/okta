@@ -550,7 +550,7 @@ igjen som nye ideer.
   agendaen ut
 - Klasseopprykk — avventer; eieren er usikker på om det trengs
 
-- Fagpresets fra Udirs Grep-API — `hent_grep.py` finnes, men hører til etter v1
+- Fagpresets fra Udirs Grep-API — `scripts/hent_grep.py` finnes, men hører til etter v1
 - Synk mellom maskiner
 - Distribusjon utenfor egen maskin
 
