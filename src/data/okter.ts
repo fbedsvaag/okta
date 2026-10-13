@@ -373,6 +373,53 @@ export async function endreOkt(
   varsle();
 }
 
+/**
+ * En kopi av økta på en annen dato: tid, lengde, tema, rom, agenda, lekse,
+ * plan og kompetansemål (både de avkryssede fra Udir og fritekstfeltet).
+ * Skåringer, logg og vurderinger følger ikke med: de hører til økta som
+ * ble holdt. Perioden settes av den som kaller (fargelegg), som før.
+ */
+export async function dupliserOkt(
+  okt: Pick<
+    Okt,
+    | "id"
+    | "skolearFagId"
+    | "klokkeslett"
+    | "varighetMin"
+    | "tema"
+    | "sted"
+    | "agenda"
+    | "lekse"
+    | "plan"
+  > & { kompetansemal?: string | null },
+  fagKode: string,
+  dato: string,
+): Promise<string> {
+  const ny = await opprettOkt(
+    okt.skolearFagId,
+    fagKode,
+    dato,
+    okt.klokkeslett,
+    okt.varighetMin,
+  );
+  await endreOkt(ny, {
+    tema: okt.tema,
+    sted: okt.sted,
+    agenda: okt.agenda,
+    lekse: okt.lekse,
+    plan: okt.plan,
+    kompetansemal: okt.kompetansemal ?? null,
+  });
+  const mal = await hent<{ kode: string }>(
+    "SELECT kode FROM okt_kompetansemal WHERE okt_id = $1 AND slettet IS NULL",
+    [okt.id],
+  );
+  for (const m of mal)
+    await settInn("okt_kompetansemal", { okt_id: ny, kode: m.kode });
+  varsle();
+  return ny;
+}
+
 export async function slettOkt(id: string): Promise<void> {
   await slett("okt", id);
   varsle();

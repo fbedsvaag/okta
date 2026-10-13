@@ -8,7 +8,9 @@ vi.mock("@tauri-apps/plugin-sql", () => ({
 
 const { leggFagIAr } = await import("./fag");
 const { opprettSkolear } = await import("./skolear");
-const { opprettOkt, endreOkt, slettOkt } = await import("./okter");
+const { opprettOkt, endreOkt, slettOkt, dupliserOkt, hentOkter } =
+  await import("./okter");
+const { settOktmal } = await import("./perioder");
 const { opprettVurdering, knyttOkt } = await import("./vurderinger");
 const { hent } = await import("../db");
 
@@ -92,5 +94,42 @@ describe("økt-koden (#8)", () => {
     await slettOkt(b);
     const d = await opprettOkt(fagId, "REL3", "2026-10-22", "08:30", 90);
     expect(await kode(d)).toBe("2610-REL3-4");
+  });
+});
+
+describe("duplisering (#9)", () => {
+  it("tar med kompetansemålene, men ikke loggen", async () => {
+    const okt = await opprettOkt(fagId, "REL3", "2026-10-01", "08:30", 90);
+    await endreOkt(okt, {
+      tema: "Hinduisme",
+      kompetansemal: "Egne mål",
+      logg: "Gikk fint",
+    });
+    await settOktmal(okt, "KM1", true);
+    await settOktmal(okt, "KM2", true);
+    const [kilde] = (
+      await hentOkter(
+        (await hent<{ id: string }>("SELECT id FROM skolear"))[0].id,
+      )
+    ).filter((o) => o.id === okt);
+
+    const ny = await dupliserOkt(kilde, "REL3", "2026-10-08");
+    const [kopi] = await hent<{
+      tema: string;
+      kompetansemal: string;
+      logg: string | null;
+      dato: string;
+    }>("SELECT tema, kompetansemal, logg, dato FROM okt WHERE id = $1", [ny]);
+    expect(kopi).toEqual({
+      tema: "Hinduisme",
+      kompetansemal: "Egne mål",
+      logg: null,
+      dato: "2026-10-08",
+    });
+    const mal = await hent<{ kode: string }>(
+      "SELECT kode FROM okt_kompetansemal WHERE okt_id = $1 AND slettet IS NULL ORDER BY kode",
+      [ny],
+    );
+    expect(mal.map((m) => m.kode)).toEqual(["KM1", "KM2"]);
   });
 });

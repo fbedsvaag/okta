@@ -3,7 +3,7 @@ import { blokkering, type Fridag } from "../data/kalender";
 import {
   endreOkt,
   hentOktVurderinger,
-  opprettOkt,
+  dupliserOkt,
   type Okt,
   type OktVurdering,
 } from "../data/okter";
@@ -211,20 +211,7 @@ function Valgt({
     } else if (handling === "dupliser") {
       const f = fag.find((x) => x.id === okt.skolearFagId);
       if (!f) return;
-      const ny = await opprettOkt(
-        okt.skolearFagId,
-        f.fagkode,
-        dato,
-        okt.klokkeslett,
-        okt.varighetMin,
-      );
-      await endreOkt(ny, {
-        tema: okt.tema,
-        sted: okt.sted,
-        agenda: okt.agenda,
-        lekse: okt.lekse,
-        plan: okt.plan,
-      });
+      const ny = await dupliserOkt(okt, f.fagkode, dato);
       if (okt.periodeId) await fargelegg([ny], okt.periodeId);
     }
     setHandling(null);
