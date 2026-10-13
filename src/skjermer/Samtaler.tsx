@@ -1,8 +1,6 @@
-import { Fragment, useEffect, useMemo, useRef, useState } from "react";
-import { useArk } from "../ui/Arkstabel";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { confirm as bekreft } from "@tauri-apps/plugin-dialog";
 import type { Skolear } from "../data/skolear";
-import { hentInnstilling, settInnstilling } from "../data/skolear";
 import type { FagIAr } from "../data/fag";
 import { hentElever, type ElevRad } from "../data/elever";
 import {
@@ -36,7 +34,6 @@ import {
   kapasitet,
   lagreTrekning,
   leggUtDagen,
-  merknad,
   opprettSamtaledag,
   slettSamtaledag,
   stokk,
@@ -54,17 +51,26 @@ import {
 import { invoke } from "@tauri-apps/api/core";
 import { mentorStatus, publiserMentor } from "../data/caldav";
 import { hentNotatPerElev, type Elevnotat } from "../data/elevnotat";
-import { Bryter, Fagfirkant, Ikon, Kappet, Tomtilstand } from "../ui/felles";
+import { Bryter, Fagfirkant, Ikon, Tomtilstand } from "../ui/felles";
 import { blokkering, rodekart, type Fridag } from "../data/kalender";
 import { hentFridager } from "../data/skolear";
 import { IVerktoylinja } from "../ui/Verktoylinje";
 import { Utfold } from "../ui/Utfold";
 import { useApen } from "../ui/Sammenleggbar";
 import { Samtalenotat } from "./Samtalenotat";
-import { Elevfoto } from "../ui/Elevfoto";
-import { TEMATEKST, temafarge } from "../ui/farger";
-import { useSisteSvar } from "../ui/sisteSvar";
+import { temafarge } from "../ui/farger";
 import { lesJson } from "../data/json";
+import { useLagretInnstilling } from "../ui/useLagretInnstilling";
+import { Dagkort, Oktvelger, Pilleknapp, Tallfelt } from "./samtaler/Oppsett";
+import { Temarute, kortDato, langDato } from "./samtaler/deler";
+import { Timeplan } from "./samtaler/Timeplan";
+import { Alfabetisk, Fordeling, Historikkoversikt } from "./samtaler/Visninger";
+import {
+  NY_DAG,
+  type Dagplan,
+  type Modus,
+  type Visning,
+} from "./samtaler/deler";
 
 /**
  * Samtaletrekkeren, SPEC §4.10.
@@ -72,36 +78,6 @@ import { lesJson } from "../data/json";
  * Én sammenhengende kolonne til venstre og resultatet til høyre. Ingen faner,
  * ingen steg, ingen veiviser — alt som styrer trekningen er synlig samtidig.
  */
-
-export type Modus = "fag" | "mentor";
-
-/** Datatypen når et navn dras ut av en gruppe (ikke hele raden). */
-const ELEVDRAG = "application/x-okta-elev";
-type Visning = "timeplan" | "fordeling" | "alfabetisk";
-
-/** En dag slik den vises i timeplanen. */
-type Dagplan = {
-  dag: Samtaledag;
-  /** Utledes av hullet mellom to samtaler — lagres ikke som egen rad. */
-  lunsj: { fra: string; til: string } | null;
-  rader: {
-    /** raden i basen, når trekningen er lagret */
-    samtaleId: string | null;
-    /** eleven — eller gruppa, som én enhet (se `enhetId`) */
-    elevId: string;
-    /** navnene, kommaseparert når det er en gruppe */
-    navn: string;
-    /** elevene på plassen: én, eller flere i en gruppesamtale */
-    medlemmer: { id: string; navn: string }[];
-    tema: string | null;
-    fra: string;
-    til: string;
-    motte: boolean;
-  }[];
-};
-
-/** Standardverdier for en ny dag (§4.10). */
-const NY_DAG = { fra: "08:30", til: "15:00", lunsjFra: "11:45", lunsjMin: 30 };
 
 /**
  * Temalista har ingen egen tabell — `samtale.tema` lagrer resultatet, ikke
@@ -144,7 +120,14 @@ export function Samtaler({
   }, []);
   const [samtaletid, setSamtaletid] = useState("20");
   const [pause, setPause] = useState("5");
-  const [temaer, setTemaer] = useState<string[]>([]);
+  // Temaene hører til ett fag. Bytter man fag før svaret er kommet, skal
+  // verken et tregt svar eller en redigering havne under feil fag (#6).
+  const [temaer, lagreTemaer] = useLagretInnstilling<string[]>(
+    modus === "fag" && fagId ? temanokkel(fagId) : null,
+    [],
+    (v) => lesJson<string[]>(v, [], "samtaletemaene"),
+    (t) => JSON.stringify(t),
+  );
   const [dager, setDager] = useState<Samtaledag[]>([]);
   const [elever, setElever] = useState<ElevRad[]>([]);
   const [egenListe, setEgenListe] = useState("");
@@ -181,11 +164,14 @@ export function Samtaler({
   const [vurderinger, setVurderinger] = useState<Vurdering[]>([]);
   // Hvor mange som har samtale sammen: 1 = enkeltvis, 2 = par, osv.
   // Huskes per fag, og for mentorsamtalene for seg.
-  const [storrelse, setStorrelse] = useState(1);
-  const storrelseNokkel =
+  const [storrelse, settStorrelse] = useLagretInnstilling(
     modus === "mentor"
       ? "samtale_storrelse_mentor"
-      : `samtale_storrelse_${fagId}`;
+      : `samtale_storrelse_${fagId}`,
+    1,
+    (v) => (v ? Math.max(1, Number(v) || 1) : 1),
+    String,
+  );
   // Fagets økter, til avkrysningen. Samtalene legges i øktene (§4.10).
   const [oktvalg, setOktvalg] = useState<Oktvalg[]>([]);
   // Vurderingen trekningen hører til. Står på dagene i basen, men må kunne
@@ -305,58 +291,17 @@ export function Samtaler({
     void last();
   }, [skolear.id, modus, fagId]);
 
-  useEffect(() => {
-    void hentInnstilling(storrelseNokkel).then((v) =>
-      setStorrelse(v ? Math.max(1, Number(v) || 1) : 1),
-    );
-  }, [storrelseNokkel]);
-
-  // Temaene hører til ett fag. Bytter man fag før svaret er kommet, skal
-  // verken et tregt svar eller en redigering havne under feil fag (#6).
-  const temaerFor = useRef<string | null>(null);
-  const temavakt = useSisteSvar();
-  useEffect(() => {
-    temaerFor.current = null;
-    setTemaer([]);
-    if (modus !== "fag" || !fagId) return;
-    const gjeldende = temavakt();
-    void hentInnstilling(temanokkel(fagId)).then((v) => {
-      if (!gjeldende()) return;
-      temaerFor.current = fagId;
-      setTemaer(lesJson<string[]>(v, [], "samtaletemaene"));
-    });
-  }, [modus, fagId]);
-
-  function lagreTemaer(nye: string[]) {
-    if (modus !== "fag" || !fagId || temaerFor.current !== fagId) return;
-    setTemaer(nye);
-    void settInnstilling(temanokkel(fagId), JSON.stringify(nye));
-  }
-
   /** Elevene trekningen gjelder — fra appen, eller fra lista du limte inn. */
   // Elevene som er tatt ut av samtalene (DESIGN §10: alle eller noen
   // utvalgte). Lagret per fag, og for mentorsamtalene for seg. Lista er de
   // som er tatt UT, så en ny elev i faget kommer med av seg selv.
-  const [utelatt, setUtelatt] = useState<Set<string>>(new Set());
   const [velgElever, setVelgElever] = useState(false);
-  const utvalgNokkel = `samtale_utelatt_${modus === "mentor" ? "mentor" : fagId}`;
-  const utelattFor = useRef<string | null>(null);
-  const utvalgvakt = useSisteSvar();
-  useEffect(() => {
-    utelattFor.current = null;
-    setUtelatt(new Set());
-    const gjeldende = utvalgvakt();
-    void hentInnstilling(utvalgNokkel).then((v) => {
-      if (!gjeldende()) return;
-      utelattFor.current = utvalgNokkel;
-      setUtelatt(new Set(lesJson<string[]>(v, [], "utvalget av elever")));
-    });
-  }, [utvalgNokkel]);
-  function settUtelatt(ny: Set<string>) {
-    if (utelattFor.current !== utvalgNokkel) return;
-    setUtelatt(ny);
-    void settInnstilling(utvalgNokkel, JSON.stringify([...ny]));
-  }
+  const [utelatt, settUtelatt] = useLagretInnstilling<Set<string>>(
+    `samtale_utelatt_${modus === "mentor" ? "mentor" : fagId}`,
+    new Set(),
+    (v) => new Set(lesJson<string[]>(v, [], "utvalget av elever")),
+    (u) => JSON.stringify([...u]),
+  );
 
   const alleDeltakere = useMemo(() => {
     if (brukEgen) {
@@ -925,8 +870,7 @@ export function Samtaler({
                   verdi={storrelse >= 4 ? "4" : String(storrelse)}
                   settVerdi={(v) => {
                     const n = Number(v);
-                    setStorrelse(n);
-                    void settInnstilling(storrelseNokkel, String(n));
+                    settStorrelse(n);
                   }}
                   valg={[
                     { id: "1", navn: "Enkeltvis" },
@@ -940,8 +884,7 @@ export function Samtaler({
                     value={storrelse}
                     onChange={(e) => {
                       const n = Number(e.target.value);
-                      setStorrelse(n);
-                      void settInnstilling(storrelseNokkel, String(n));
+                      settStorrelse(n);
                     }}
                     className="rounded-vanlig border border-linje bg-ark px-1.5 py-0.5 text-liten"
                   >
@@ -1442,7 +1385,6 @@ export function Samtaler({
 }
 
 // ------------------------------------------------------------------ deler
-
 function Bolk({
   tittel,
   etter,
@@ -1476,7 +1418,6 @@ function Bolk({
     </section>
   );
 }
-
 /**
  * Knappene i verktøylinja: rolige tekstknapper på glasset, den viktigste
  * med ramme som en kapsel, og Slett i rødt (DESIGN.md §10).
@@ -1510,7 +1451,6 @@ function Verktoyknapp({
     </button>
   );
 }
-
 function Varseltrekant() {
   return (
     <svg
@@ -1527,13 +1467,11 @@ function Varseltrekant() {
     </svg>
   );
 }
-
 /** «Tony og Vito», «Tony, Vito og Paulie». */
 function listeTekst(navn: string[]): string {
   if (navn.length <= 1) return navn.join("");
   return `${navn.slice(0, -1).join(", ")} og ${navn[navn.length - 1]}`;
 }
-
 /** En bolk som legges sammen med et klikk på overskriften. */
 function Sammenleggbolk({
   tittel,
@@ -1575,832 +1513,6 @@ function Sammenleggbolk({
     </section>
   );
 }
-
-/** Et lite tallfelt med etiketten over. */
-function Tallfelt({
-  etikett,
-  verdi,
-  settVerdi,
-}: {
-  etikett: string;
-  verdi: string;
-  settVerdi: (v: string) => void;
-}) {
-  return (
-    <label className="block">
-      <span className="mb-1 block text-liten text-blekk-dempet">{etikett}</span>
-      <input
-        inputMode="numeric"
-        value={verdi}
-        onChange={(e) => settVerdi(e.target.value)}
-        className="h-[2.4em] w-full rounded-vanlig border border-linje bg-ark px-2.5 text-brod tabular-nums outline-none focus:border-aksent"
-      />
-    </label>
-  );
-}
-
-/** Oppgavenummeret som liten rute i temafargen (DESIGN.md §10). */
-function Temarute({ nr }: { nr: number }) {
-  return (
-    <span
-      className="grid h-6 w-6 shrink-0 place-items-center rounded-[5px] text-liten font-medium tabular-nums"
-      style={{ background: temafarge(nr), color: TEMATEKST }}
-    >
-      {nr}
-    </span>
-  );
-}
-
-/** Knappene under Generer: Trekk på nytt og de to låsene, som piller. */
-function Pilleknapp({
-  pa,
-  av,
-  tittel,
-  onKlikk,
-  children,
-}: {
-  /** låst: knappen står trykket inn */
-  pa?: boolean;
-  av?: boolean;
-  tittel?: string;
-  onKlikk: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      onClick={onKlikk}
-      disabled={av}
-      aria-pressed={pa}
-      title={tittel}
-      className={`flex h-9 items-center gap-1.5 whitespace-nowrap rounded-full border px-3.5 text-brod disabled:opacity-40 ${
-        pa
-          ? "border-aksent bg-valgt text-aksent"
-          : "border-linje-sterk bg-ark text-blekk hover:bg-flate"
-      }`}
-    >
-      {children}
-    </button>
-  );
-}
-
-/**
- * Ett kort per dag, med sin egen kapasitet.
- *
- * Kapasiteten oppdateres mens du skriver — den regnes ut fra dagen slik den
- * står akkurat nå, ikke fra noe som må lagres først.
- */
-/**
- * Fagets økter som avkrysningsliste. Hver økt som krysses av, blir en
- * samtaledag med øktas klokkeslett som ramme (§4.10). Får ikke alle elevene
- * plass i én økt, krysses en til av — kapasiteten står ved hver.
- *
- * Kommende økter vises; tidligere bare når de allerede er valgt, eller når
- * du ber om dem.
- */
-function Oktvelger({
-  okter,
-  vurderingsokter,
-  dager,
-  kapasiteter,
-  minutter,
-  pause,
-  kollisjon,
-  onVelg,
-}: {
-  okter: Oktvalg[];
-  /**
-   * Øktene som er huket av for en vurdering — den valgte, eller alle i
-   * faget når ingen er valgt. Det er bare dem samtaler legges i, så lista
-   * viser bare dem til du ber om resten.
-   */
-  vurderingsokter: Set<string>;
-  dager: Samtaledag[];
-  kapasiteter: number[];
-  minutter: number;
-  pause: number;
-  /** det som ligger på datoen — en hendelse, en fridag — eller null */
-  kollisjon: (dato: string) => string | null;
-  onVelg: (okt: Oktvalg, pa: boolean) => Promise<void>;
-}) {
-  const [visAlle, setVisAlle] = useState(false);
-  const [visTidligere, setVisTidligere] = useState(false);
-  const idag = new Date().toLocaleDateString("sv-SE");
-  const valgt = new Map(
-    dager.map((d, i) => [d.oktId, { dag: d, plass: kapasiteter[i] }]),
-  );
-  const synlige = okter.filter((o) =>
-    visAlle
-      ? visTidligere || o.dato >= idag || valgt.has(o.id)
-      : vurderingsokter.has(o.id) || valgt.has(o.id),
-  );
-  const skjulte = visAlle ? okter.length - synlige.length : 0;
-
-  if (okter.length === 0) {
-    return (
-      <p className="mb-2 text-liten text-blekk-svak">
-        Faget har ingen økter ennå. Legg dem inn under Økter, eller bruk en egen
-        dag under.
-      </p>
-    );
-  }
-
-  return (
-    <div className="mb-2">
-      {synlige.length === 0 ? (
-        <p className="text-liten text-blekk-svak">
-          Ingen økter er knyttet til vurderingen ennå. Huk av for vurderingen på
-          økta, eller vis alle øktene i faget.
-        </p>
-      ) : (
-        <ul
-          className={`space-y-3 ${visAlle ? "max-h-80 overflow-y-auto pr-1" : ""}`}
-        >
-          {synlige.map((o) => {
-            const v = valgt.get(o.id);
-            const slutt = o.klokkeslett
-              ? tilKlokke(tilMin(o.klokkeslett) + o.varighetMin)
-              : null;
-            // Kapasiteten står også på økter som ikke er valgt, så du ser
-            // hva en til gir. Dagen i en økt har ingen lunsj (§3.6) før du
-            // legger den inn selv.
-            const plass =
-              v?.plass ??
-              (o.klokkeslett && slutt
-                ? kapasitet(
-                    {
-                      fra: o.klokkeslett,
-                      til: slutt,
-                      lunsjFra: null,
-                      lunsjMin: null,
-                    },
-                    minutter,
-                    pause,
-                  )
-                : 0);
-            const kolliderer = kollisjon(o.dato);
-            return (
-              <li key={o.id}>
-                <label
-                  className={`flex gap-2.5 ${o.klokkeslett ? "cursor-pointer" : "text-blekk-svak"}`}
-                  title={o.klokkeslett ? undefined : "Økta mangler klokkeslett"}
-                >
-                  <input
-                    type="checkbox"
-                    checked={v !== undefined}
-                    disabled={!o.klokkeslett}
-                    onChange={(e) => void onVelg(o, e.target.checked)}
-                    className="mt-1 h-4 w-4 shrink-0 accent-[var(--color-aksent)]"
-                  />
-                  <span className="min-w-0 flex-1">
-                    <span className="flex items-baseline gap-2">
-                      <span
-                        className={`min-w-0 flex-1 truncate text-brod first-letter:uppercase ${
-                          v ? "" : "text-blekk-dempet"
-                        }`}
-                      >
-                        {dagOgDato(o.dato)}
-                      </span>
-                      {plass > 0 && (
-                        <span className="shrink-0 text-liten tabular-nums text-blekk-dempet">
-                          maks {plass}
-                        </span>
-                      )}
-                    </span>
-                    <span
-                      className={`block truncate text-liten tabular-nums ${
-                        kolliderer ? "text-feil" : "text-blekk-dempet"
-                      }`}
-                    >
-                      {kolliderer
-                        ? `${kolliderer} kolliderer`
-                        : o.klokkeslett
-                          ? `Økt ${o.klokkeslett}–${slutt}${
-                              v?.dag.lunsjFra
-                                ? ` · lunsj ${v.dag.lunsjFra}`
-                                : ""
-                            }`
-                          : "uten klokkeslett"}
-                    </span>
-                  </span>
-                </label>
-              </li>
-            );
-          })}
-        </ul>
-      )}
-      <span className="mt-2 flex gap-4">
-        <button
-          onClick={() => setVisAlle((v) => !v)}
-          className="text-liten text-blekk-svak hover:text-blekk"
-        >
-          {visAlle
-            ? "Bare øktene med vurdering"
-            : `Vis alle ${okter.length} øktene i faget`}
-        </button>
-        {skjulte > 0 && (
-          <button
-            onClick={() => setVisTidligere(true)}
-            className="text-liten text-blekk-svak hover:text-blekk"
-          >
-            Vis {skjulte} tidligere økter
-          </button>
-        )}
-      </span>
-    </div>
-  );
-}
-
-/** «torsdag 15. oktober» */
-function dagOgDato(dato: string): string {
-  return new Date(`${dato}T00:00:00`).toLocaleDateString("nb-NO", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  });
-}
-
-function Dagkort({
-  dag,
-  nr,
-  kapasitet: plass,
-  plassord = "elever",
-  onEndre,
-  onSlett,
-}: {
-  dag: Samtaledag;
-  nr: number;
-  kapasitet: number;
-  /** «elever», eller «grupper» i gruppesamtaler */
-  plassord?: string;
-  onEndre: (felter: Record<string, unknown>) => Promise<void>;
-  onSlett: () => void;
-}) {
-  const harLunsj = dag.lunsjFra !== null;
-
-  return (
-    <div className="mb-2 rounded-vanlig border border-linje bg-flate-svak p-2">
-      <div className="mb-1.5 flex items-baseline justify-between">
-        <span className="text-liten font-medium">Dag {nr}</span>
-        <span className="flex items-baseline gap-2">
-          <span className="text-liten tabular-nums text-blekk-dempet">
-            {plass > 0 ? `Maks ${plass} ${plassord}` : "–"}
-          </span>
-          <button
-            onClick={onSlett}
-            className="text-blekk-svakest hover:text-feil"
-            title="Fjern dagen"
-          >
-            <Ikon navn="kryss" />
-          </button>
-        </span>
-      </div>
-
-      <input
-        type="date"
-        defaultValue={dag.dato}
-        key={`d${dag.dato}`}
-        onBlur={(e) => void onEndre({ dato: e.target.value })}
-        className={feltstil + " mb-1.5 w-full"}
-      />
-
-      <div className="flex gap-1.5">
-        <input
-          type="time"
-          defaultValue={dag.fra}
-          key={`f${dag.fra}`}
-          onBlur={(e) => void onEndre({ fra: e.target.value })}
-          className={feltstil + " w-1/2"}
-        />
-        <input
-          type="time"
-          defaultValue={dag.til}
-          key={`t${dag.til}`}
-          onBlur={(e) => void onEndre({ til: e.target.value })}
-          className={feltstil + " w-1/2"}
-        />
-      </div>
-
-      <label className="mt-1.5 flex select-none items-center gap-1.5 text-liten text-blekk-dempet">
-        <input
-          type="checkbox"
-          checked={harLunsj}
-          onChange={(e) =>
-            void onEndre(
-              e.target.checked
-                ? { lunsj_fra: "11:45", lunsj_min: 30 }
-                : { lunsj_fra: null, lunsj_min: null },
-            )
-          }
-        />
-        Lunsjpause
-      </label>
-
-      {harLunsj && (
-        <div className="mt-1.5 flex gap-1.5">
-          <input
-            type="time"
-            defaultValue={dag.lunsjFra ?? "11:45"}
-            key={`lf${dag.lunsjFra}`}
-            onBlur={(e) => void onEndre({ lunsj_fra: e.target.value })}
-            className={feltstil + " w-1/2"}
-          />
-          <input
-            type="number"
-            min={5}
-            max={120}
-            defaultValue={dag.lunsjMin ?? 30}
-            key={`lm${dag.lunsjMin}`}
-            onBlur={(e) =>
-              void onEndre({ lunsj_min: Number(e.target.value) || 30 })
-            }
-            className={feltstil + " w-1/2"}
-          />
-        </div>
-      )}
-    </div>
-  );
-}
-
-const feltstil =
-  "rounded border border-linje bg-ark px-2 py-1 text-brod tabular-nums outline-none focus:border-aksent";
-
-/**
- * Timeplanen: én bolk per dag, én rad per samtale.
- *
- * Plassnummeret løper sammenhengende over alle dagene — dag 2 fortsetter der
- * dag 1 sluttet (§4.10).
- */
-function Timeplan({
-  plan,
-  historikk,
-  laste,
-  notater,
-  temaer,
-  kapasitetFor,
-  onLas,
-  onMotte,
-  onApneNotat,
-  onFlytt,
-  onFlyttElev,
-}: {
-  plan: Dagplan[];
-  historikk: Map<string, Plassering[]>;
-  laste: ReadonlySet<string>;
-  notater: Map<string, Elevnotat>;
-  /** temalista fra oppsettet, så oppgavenummeret blir det samme som der */
-  temaer: string[];
-  onLas: (elevId: string) => void;
-  /** «møtte ikke» av og på for en samtale */
-  onMotte: (rad: Dagplan["rader"][number]) => void;
-  /** hvor mange plasser dagen har, etter plassen i planen */
-  kapasitetFor: (planIdx: number) => number;
-  /** et klikk på navnet: notatet fra samtalen */
-  onApneNotat: (rad: Dagplan["rader"][number], dag: Samtaledag) => void;
-  onFlytt: (
-    fra: { dag: number; rad: number },
-    til: { dag: number; rad: number; etter: boolean },
-  ) => void;
-  /** en elev dras fra sin gruppe over på en annen plass */
-  onFlyttElev: (elevId: string, dag: number, rad: number) => void;
-}) {
-  // Et navn i en gruppe åpner elevkortet som et ark over timeplanen. En
-  // enkeltsamtale åpner notatet fra samtalen.
-  const ark = useArk();
-  let plass = 0;
-
-  // ------------------------------------------------------------ dra
-  //
-  // Raden følger musa, og de andre glir unna mens du drar — du ser hvor den
-  // havner før du slipper. Posisjonene måles én gang når draget begynner;
-  // forskyvningene regnes ut fra dem, ikke fra en DOM som flytter seg.
-  // Nederste halvdel av en rad betyr «etter denne». Er dagen det slippes på
-  // full, bytter de to plass (§4.10), og raden som byttes står markert.
-  type Mal = { dag: number; rad: number; etter: boolean; bytt: boolean };
-  const [dra, setDra] = useState<{
-    fra: { dag: number; rad: number };
-    dy: number;
-    h: number;
-    mal: Mal | null;
-  } | null>(null);
-  const radEl = useRef(new Map<string, HTMLElement>());
-  const malt = useRef<
-    { dag: number; rad: number; top: number; bunn: number }[]
-  >([]);
-  const draget = useRef(false);
-  // Målet slik det sto sist pekeren flyttet seg — det er dit eleven går.
-  const sisteMal = useRef<Mal | null>(null);
-
-  function begynnDra(e: React.PointerEvent, fra: { dag: number; rad: number }) {
-    if (e.button !== 0) return;
-    if ((e.target as HTMLElement).closest("[data-ikke-dra], input, textarea"))
-      return;
-    const startY = e.clientY;
-    const startX = e.clientX;
-    let pekerY = startY;
-    let aktiv = false;
-    let h = 0;
-    // Rullesonen timeplanen står i. Drar du mot kanten, ruller den, og
-    // rullingen regnes inn: posisjonene ble målt før den begynte.
-    const sone = (e.currentTarget as HTMLElement).closest<HTMLElement>(
-      ".overflow-auto",
-    );
-    const startRull = sone?.scrollTop ?? 0;
-    let ramme = 0;
-
-    const oppdater = () => {
-      const rullet = (sone?.scrollTop ?? 0) - startRull;
-      const mal = finnMal(pekerY + rullet, fra);
-      sisteMal.current = mal;
-      setDra({ fra, dy: pekerY - startY + rullet, h, mal });
-    };
-
-    const rull = () => {
-      ramme = 0;
-      if (!aktiv || !sone) return;
-      const r = sone.getBoundingClientRect();
-      const kant = 48;
-      const fart =
-        pekerY < r.top + kant
-          ? -Math.ceil((r.top + kant - pekerY) / 4)
-          : pekerY > r.bottom - kant
-            ? Math.ceil((pekerY - (r.bottom - kant)) / 4)
-            : 0;
-      if (fart === 0) return;
-      sone.scrollTop += fart;
-      oppdater();
-      ramme = requestAnimationFrame(rull);
-    };
-
-    const flytt = (ev: PointerEvent) => {
-      pekerY = ev.clientY;
-      if (!aktiv) {
-        if (Math.hypot(ev.clientX - startX, ev.clientY - startY) < 4) return;
-        aktiv = true;
-        draget.current = true;
-        malt.current = [...radEl.current].map(([k, el]) => {
-          const [dag, rad] = k.split(":").map(Number);
-          const r = el.getBoundingClientRect();
-          return { dag, rad, top: r.top, bunn: r.bottom };
-        });
-        const egen = malt.current.find(
-          (m) => m.dag === fra.dag && m.rad === fra.rad,
-        );
-        h = egen ? egen.bunn - egen.top : 0;
-      }
-      oppdater();
-      if (!ramme) ramme = requestAnimationFrame(rull);
-    };
-
-    const slipp = () => {
-      window.removeEventListener("pointermove", flytt);
-      window.removeEventListener("pointerup", slipp);
-      window.removeEventListener("pointercancel", slipp);
-      if (ramme) cancelAnimationFrame(ramme);
-      // Utføres her, ikke i en state-oppdatering: React kan kjøre dem to
-      // ganger, og da ville eleven blitt flyttet to ganger.
-      const mal = sisteMal.current;
-      sisteMal.current = null;
-      setDra(null);
-      if (aktiv && mal) utfor(fra, mal);
-      // Klikket som kommer etter slippet, skal ikke åpne notatet.
-      window.setTimeout(() => (draget.current = false), 0);
-    };
-
-    window.addEventListener("pointermove", flytt);
-    window.addEventListener("pointerup", slipp);
-    window.addEventListener("pointercancel", slipp);
-  }
-
-  function finnMal(y: number, fra: { dag: number; rad: number }): Mal | null {
-    const andre = malt.current
-      .filter((m) => !(m.dag === fra.dag && m.rad === fra.rad))
-      .sort((a, b) => a.top - b.top);
-    if (andre.length === 0) return null;
-    // Raden pekeren står over, eller den nærmeste.
-    const over =
-      andre.find((m) => y >= m.top && y < m.bunn) ??
-      andre.reduce((best, m) =>
-        Math.abs((m.top + m.bunn) / 2 - y) <
-        Math.abs((best.top + best.bunn) / 2 - y)
-          ? m
-          : best,
-      );
-    const etter = y > (over.top + over.bunn) / 2;
-    const bytt =
-      over.dag !== fra.dag &&
-      plan[over.dag].rader.length >= kapasitetFor(over.dag);
-    return { dag: over.dag, rad: over.rad, etter: bytt ? false : etter, bytt };
-  }
-
-  /** Slippet: samme regler som før — innen dagen, eller til en annen dag. */
-  function utfor(fra: { dag: number; rad: number }, mal: Mal) {
-    if (mal.dag === fra.dag) {
-      const t = mal.etter ? mal.rad + 1 : mal.rad;
-      const til = t > fra.rad ? t - 1 : t;
-      if (til !== fra.rad)
-        onFlytt(fra, { dag: mal.dag, rad: til, etter: false });
-    } else {
-      onFlytt(fra, mal);
-    }
-  }
-
-  /** Hvor langt en rad skal gli for å gi plass, mens det dras. */
-  function forskyvning(dag: number, rad: number): number {
-    if (!dra?.mal || dra.mal.bytt) return 0;
-    const { fra, mal, h } = dra;
-    const t = mal.etter ? mal.rad + 1 : mal.rad;
-    if (mal.dag === fra.dag) {
-      if (dag !== fra.dag) return 0;
-      if (t > fra.rad) return rad > fra.rad && rad < t ? -h : 0;
-      return rad >= t && rad < fra.rad ? h : 0;
-    }
-    if (dag === fra.dag && rad > fra.rad) return -h;
-    if (dag === mal.dag && rad >= t) return h;
-    return 0;
-  }
-
-  function erDratt(dag: number, rad: number): boolean {
-    return dra !== null && dra.fra.dag === dag && dra.fra.rad === rad;
-  }
-
-  function byttesMed(dag: number, rad: number): boolean {
-    return !!dra?.mal?.bytt && dra.mal.dag === dag && dra.mal.rad === rad;
-  }
-
-  function stil(dag: number, rad: number): React.CSSProperties | undefined {
-    if (!dra) return undefined;
-    if (erDratt(dag, rad))
-      return { transform: `translateY(${dra.dy}px)`, transition: "none" };
-    return {
-      transform: `translateY(${forskyvning(dag, rad)}px)`,
-      transition: "transform var(--tid-inn) var(--ease-inn)",
-    };
-  }
-
-  return (
-    <div className="space-y-6">
-      {plan.map((d, dagIdx) => (
-        <section key={d.dag.id}>
-          {/* Dagen i Light (DESIGN.md §10), med tid og antall ved siden av. */}
-          <div className="flex flex-wrap items-baseline gap-x-3 border-b border-linje pb-2">
-            <h2 className="text-[calc(26px*var(--tekst-skala))] font-light leading-tight tracking-overskrift first-letter:uppercase">
-              {langDato(d.dag.dato)}
-            </h2>
-            <span className="text-liten tabular-nums text-blekk-dempet">
-              {d.dag.fra}–{d.dag.til} ·{" "}
-              {d.rader.reduce((n, r) => n + r.medlemmer.length, 0)} elever
-              {d.rader.some((r) => r.medlemmer.length > 1) &&
-                ` i ${d.rader.length} grupper`}
-              {d.dag.oktId && " · økt"}
-            </span>
-          </div>
-
-          {d.rader.map((r, radIdx) => {
-            plass++;
-            // Lunsjen står på sin plass i rekka: rett før den første samtalen
-            // som begynner etter at pausen er over.
-            const lunsjHer =
-              d.lunsj !== null &&
-              r.fra >= d.lunsj.til &&
-              (radIdx === 0 || d.rader[radIdx - 1].fra < d.lunsj.fra);
-            // Merknaden bygges på historikken FØR denne trekningen, så den
-            // sier noe om hva som har skjedd — ikke om det som nettopp ble
-            // trukket.
-            const notis = merknad(historikk.get(r.elevId) ?? []);
-            const erLast = laste.has(r.elevId);
-            return (
-              <Fragment key={`${r.elevId}-${r.fra}`}>
-                {lunsjHer && d.lunsj && (
-                  <div className="flex items-baseline gap-3 border-b border-linje-svak bg-flate py-2 text-brod text-blekk-dempet">
-                    <span className="w-7 shrink-0" />
-                    <span className="shrink-0 tabular-nums">
-                      {d.lunsj.fra}–{d.lunsj.til}
-                    </span>
-                    <span className="flex-1">
-                      · Lunsj ({tilMin(d.lunsj.til) - tilMin(d.lunsj.fra)} min)
-                    </span>
-                  </div>
-                )}
-                <div
-                  ref={(el) => {
-                    const k = `${dagIdx}:${radIdx}`;
-                    if (el) radEl.current.set(k, el);
-                    else radEl.current.delete(k);
-                  }}
-                  onPointerDown={(e) =>
-                    !erLast && begynnDra(e, { dag: dagIdx, rad: radIdx })
-                  }
-                  // Et navn dratt ut av en gruppe: eleven flyttes hit.
-                  onDragOver={(e) => e.preventDefault()}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    const elev = e.dataTransfer.getData(ELEVDRAG);
-                    if (elev) onFlyttElev(elev, dagIdx, radIdx);
-                  }}
-                  style={stil(dagIdx, radIdx)}
-                  className={`relative flex touch-none select-none items-center gap-3 border-b border-linje-svak py-2 text-brod ${
-                    r.motte ? "" : "opacity-55"
-                  } ${
-                    erLast
-                      ? "bg-flate-svak"
-                      : dra
-                        ? "cursor-grabbing"
-                        : "cursor-grab hover:bg-flate-svak"
-                  } ${erDratt(dagIdx, radIdx) ? "z-20 bg-ark shadow-[var(--shadow-ark)]" : ""} ${
-                    byttesMed(dagIdx, radIdx)
-                      ? "bg-valgt ring-1 ring-inset ring-aksent"
-                      : ""
-                  }`}
-                >
-                  <span className="w-7 shrink-0 text-right text-liten tabular-nums text-blekk-svak">
-                    {plass}
-                  </span>
-                  {/* Bare starttida: slutten er neste rad (§4.10). */}
-                  <span
-                    className="w-14 shrink-0 tabular-nums"
-                    title={`${r.fra}–${r.til}`}
-                  >
-                    {r.fra}
-                  </span>
-                  {r.medlemmer.length > 1 ? (
-                    <span className="flex min-w-0 flex-1 flex-wrap gap-1">
-                      {r.medlemmer.map((m) => (
-                        <span
-                          key={m.id}
-                          data-ikke-dra
-                          draggable={!erLast}
-                          onDragStart={(e) => {
-                            // Navnet, ikke hele raden: raden har sitt eget drag.
-                            e.stopPropagation();
-                            e.dataTransfer.setData(ELEVDRAG, m.id);
-                            e.dataTransfer.effectAllowed = "move";
-                          }}
-                          onClick={() => ark.apneElev(m.id)}
-                          title="Klikk for elevkortet, dra til en annen gruppe"
-                          className={`cursor-pointer rounded-full bg-flate px-2 py-px hover:bg-linje-medium ${erLast ? "" : "active:cursor-grab"}`}
-                        >
-                          {m.navn}
-                        </span>
-                      ))}
-                    </span>
-                  ) : (
-                    <button
-                      onClick={() => {
-                        // Musa ble sluppet etter et drag: det var ikke et klikk.
-                        if (draget.current) return;
-                        if (r.samtaleId) onApneNotat(r, d.dag);
-                        else if (r.medlemmer[0])
-                          ark.apneElev(r.medlemmer[0].id);
-                      }}
-                      title={
-                        r.samtaleId
-                          ? (notater.get(r.elevId)?.tekst ??
-                            "Skriv notat fra samtalen")
-                          : undefined
-                      }
-                      className={`flex min-w-0 flex-1 items-center gap-2 text-left font-medium hover:text-aksent ${
-                        r.motte ? "" : "line-through"
-                      }`}
-                    >
-                      <Elevfoto
-                        elevId={r.medlemmer[0]?.id ?? r.elevId}
-                        storrelse={24}
-                      />
-                      <Kappet verdi={r.navn} />
-                    </button>
-                  )}
-                  {r.tema && (
-                    <span
-                      title={r.tema}
-                      className="flex w-6 min-w-0 shrink-0 items-center gap-3 @xl:w-44 @3xl:w-60"
-                    >
-                      {/* Oppgavenummeret som liten rute i temafargen. */}
-                      {temaer.indexOf(r.tema) >= 0 && (
-                        <Temarute nr={temaer.indexOf(r.tema) + 1} />
-                      )}
-                      <Kappet verdi={r.tema} klasse="hidden @xl:block" />
-                    </span>
-                  )}
-                  <span className="hidden w-28 shrink-0 text-right text-liten text-blekk-dempet @3xl:block">
-                    {r.motte ? notis : "møtte ikke"}
-                  </span>
-                  {r.samtaleId && r.medlemmer.length === 1 ? (
-                    <button
-                      data-ikke-dra
-                      onClick={() => onApneNotat(r, d.dag)}
-                      title={
-                        notater.has(r.elevId)
-                          ? "Notatet fra samtalen"
-                          : "Ta notat fra samtalen"
-                      }
-                      className={`grid h-7 w-7 shrink-0 place-items-center rounded-vanlig ${
-                        notater.has(r.elevId)
-                          ? "text-aksent hover:bg-flate"
-                          : "text-blekk-svakest hover:bg-flate hover:text-blekk"
-                      }`}
-                    >
-                      <Ikon
-                        navn={notater.has(r.elevId) ? "notat-fylt" : "notat"}
-                      />
-                    </button>
-                  ) : (
-                    <span className="w-7 shrink-0" />
-                  )}
-                  <button
-                    data-ikke-dra
-                    onClick={() => onLas(r.elevId)}
-                    title={
-                      erLast
-                        ? "Lås opp: eleven trekkes om igjen"
-                        : "Lås: eleven beholder plass og tema"
-                    }
-                    className={`grid h-7 w-7 shrink-0 place-items-center rounded-vanlig ${
-                      erLast
-                        ? "text-blekk"
-                        : "text-blekk-svakest hover:bg-flate hover:text-blekk"
-                    }`}
-                  >
-                    <Ikon navn={erLast ? "las-fylt" : "apen-las"} />
-                  </button>
-                  {r.samtaleId && r.medlemmer.length === 1 ? (
-                    <button
-                      data-ikke-dra
-                      onClick={() => onMotte(r)}
-                      aria-pressed={!r.motte}
-                      title={
-                        r.motte
-                          ? "Møtte ikke: raden blir stående med klokkeslettet sitt"
-                          : "Møtte likevel"
-                      }
-                      className={`grid h-7 w-7 shrink-0 place-items-center rounded-vanlig ${
-                        r.motte
-                          ? "text-blekk-svakest hover:bg-flate hover:text-blekk"
-                          : "text-feil"
-                      }`}
-                    >
-                      <Ikon navn="motte-ikke" />
-                    </button>
-                  ) : (
-                    <span className="w-7 shrink-0" />
-                  )}
-                </div>
-              </Fragment>
-            );
-          })}
-        </section>
-      ))}
-    </div>
-  );
-}
-
-/**
- * Hvem som hadde tidlig eller sent sist, samlet.
- *
- * Bare de som har noe å si står her — de fleste har ingenting, og det er
- * nettopp derfor de som har det er verdt å se på.
- */
-function Historikkoversikt({
-  deltakere,
-  historikk,
-}: {
-  deltakere: { id: string; navn: string }[];
-  historikk: Map<string, Plassering[]>;
-}) {
-  const grupper = new Map<string, string[]>();
-  for (const d of deltakere) {
-    const notis = merknad(historikk.get(d.id) ?? []);
-    if (!notis) continue;
-    grupper.set(notis, [...(grupper.get(notis) ?? []), d.navn.split(" ")[0]]);
-  }
-
-  if (grupper.size === 0) {
-    return (
-      <p className="mt-2 text-liten text-blekk-dempet">
-        Ingenting å melde ennå. Etter et par trekninger står det her hvem som
-        har hatt tidlig eller sent.
-      </p>
-    );
-  }
-
-  const antall = [...grupper.values()].reduce((n, g) => n + g.length, 0);
-  return (
-    <div className="mt-2">
-      <p className="text-liten text-blekk-dempet">
-        {antall === 1 ? "Én elev har" : `${antall} elever har`} en merknad.
-        Merknadene vises uansett.
-      </p>
-      <ul className="mt-1.5 space-y-1">
-        {[...grupper].map(([notis, navn]) => (
-          <li key={notis} className="text-liten">
-            <span className="text-blekk-dempet">{notis}</span>{" "}
-            <span className="text-blekk-svak">· {navn.join(", ")}</span>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
 /** Ordlyden fra §4.10 — den sier hva «Trekk på nytt» faktisk gjør. */
 function lashint(tema: boolean, rekkefolge: boolean): string {
   if (tema && rekkefolge) return "Begge er låst, ingenting endres.";
@@ -2408,120 +1520,9 @@ function lashint(tema: boolean, rekkefolge: boolean): string {
   if (rekkefolge) return "Rekkefølge holdes, kun tema trekkes.";
   return "";
 }
-
 function storForbokstav(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
-
-function langDato(dato: string): string {
-  if (!dato) return "Dato ikke satt";
-  return new Date(`${dato}T00:00:00`).toLocaleDateString("nb-NO", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  });
-}
-
-/**
- * Fordeling — ett kort per elev i tidsrekkefølge på tvers av alle dagene.
- *
- * Plassnummeret er posisjonen i køen denne trekningen, ikke en fast id.
- */
-function Fordeling({ plan }: { plan: Dagplan[] }) {
-  const alle = plan.flatMap((d) => d.rader);
-
-  return (
-    <div className="grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(11rem,1fr))]">
-      {alle.map((r, i) => (
-        <div
-          key={`${r.elevId}-${r.fra}`}
-          className={`rounded-vanlig border border-linje bg-ark px-3 py-2 ${
-            r.motte ? "" : "opacity-50"
-          }`}
-        >
-          <span className="text-liten tabular-nums text-blekk-svak">
-            {i + 1}
-          </span>
-          <p className="flex items-center gap-2 text-brod font-medium">
-            {r.medlemmer.length === 1 && (
-              <Elevfoto elevId={r.medlemmer[0].id} storrelse={22} />
-            )}
-            <span className="truncate">{r.navn}</span>
-          </p>
-          {r.tema && (
-            <p className="truncate text-liten text-blekk-dempet">{r.tema}</p>
-          )}
-          <p className="text-liten tabular-nums text-blekk-svak">{r.fra}</p>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-/** Alfabetisk — lista sortert på navn, med tidspunkt og dag. */
-function Alfabetisk({ plan, medTema }: { plan: Dagplan[]; medTema: boolean }) {
-  // Én rad per elev, også i gruppesamtaler — lista er til å finne seg selv.
-  const rader = plan
-    .flatMap((d) =>
-      d.rader.flatMap((r) =>
-        r.medlemmer.map((m) => ({
-          ...r,
-          elevId: m.id,
-          navn: m.navn,
-          dato: d.dag.dato,
-        })),
-      ),
-    )
-    .sort((a, b) => a.navn.localeCompare(b.navn, "nb-NO"));
-
-  return (
-    <table className="w-full text-brod">
-      <thead>
-        <tr className="border-b border-linje text-left text-etikett uppercase tracking-etikett text-blekk-dempet">
-          <th className="py-1">Navn</th>
-          {medTema && <th className="py-1">Oppgave</th>}
-          <th className="py-1">Tid</th>
-          <th className="py-1">Dag</th>
-        </tr>
-      </thead>
-      <tbody>
-        {rader.map((r) => (
-          <tr
-            key={`${r.elevId}-${r.fra}`}
-            className={`border-b border-linje-svak ${
-              r.motte ? "" : "text-blekk-svak line-through"
-            }`}
-          >
-            <td className="py-1.5">
-              <span className="flex items-center gap-2">
-                <Elevfoto elevId={r.elevId} storrelse={20} />
-                {r.navn}
-              </span>
-            </td>
-            {medTema && (
-              <td className="py-1.5 text-blekk-dempet">{r.tema ?? ""}</td>
-            )}
-            <td className="py-1.5 tabular-nums text-blekk-dempet">
-              {r.fra}–{r.til}
-            </td>
-            <td className="py-1.5 tabular-nums text-blekk-dempet">
-              {kortDato(r.dato)}
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  );
-}
-
-function kortDato(dato: string): string {
-  if (!dato) return "–";
-  return new Date(`${dato}T00:00:00`).toLocaleDateString("nb-NO", {
-    day: "numeric",
-    month: "short",
-  });
-}
-
 /**
  * Hva kalenderen vet om trekningen.
  *
