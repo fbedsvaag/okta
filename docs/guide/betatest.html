@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<title>Økta: betatest</title>
+<style>
+  @page { size: A4; margin: 0; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    font-family: -apple-system, "SF Pro Text", "Helvetica Neue", Helvetica, sans-serif;
+    color: #1d1d1f;
+    -webkit-font-smoothing: antialiased;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .side { width: 210mm; height: 297mm; padding: 22mm 22mm 18mm; position: relative; page-break-after: always; overflow: hidden; }
+  .side:last-child { page-break-after: auto; }
+  .merke { display: flex; align-items: center; gap: 10px; font-size: 13px; color: #6e6e73; }
+  .merke b { color: #1d1d1f; font-weight: 600; }
+  h1 { font-family: -apple-system, "SF Pro Display", "Helvetica Neue", sans-serif; font-size: 52px; font-weight: 600; letter-spacing: -0.025em; line-height: 1.04; margin: 30mm 0 0; }
+  .ingress { font-size: 21px; line-height: 1.4; color: #6e6e73; margin: 14px 0 0; max-width: 145mm; font-weight: 400; }
+  .bunn { position: absolute; left: 22mm; right: 22mm; bottom: 14mm; display: flex; justify-content: space-between; font-size: 11px; color: #86868b; }
+  h2 { font-family: -apple-system, "SF Pro Display", "Helvetica Neue", sans-serif; font-size: 24px; font-weight: 600; letter-spacing: -0.015em; margin: 0 0 8px; }
+  h3 { font-size: 17px; font-weight: 600; margin: 0 0 4px; letter-spacing: -0.01em; }
+  p, li { font-size: 14px; line-height: 1.55; color: #3a3a3c; margin: 0 0 8px; }
+  ol, ul { margin: 0 0 8px; padding-left: 20px; }
+  li { margin-bottom: 4px; }
+  .sti { font-weight: 500; color: #1d1d1f; }
+  kbd { display: inline-block; min-width: 20px; text-align: center; padding: 0 6px; border-radius: 5px; border: 0.5px solid #c7c7cc; background: #fff; font-family: inherit; font-size: 12.5px; color: #1d1d1f; box-shadow: 0 1px 0 #c7c7cc; }
+  .boks { background: #f5f5f7; border-radius: 14px; padding: 16px 20px; margin-top: 14px; }
+  .boks p:last-child { margin-bottom: 0; }
+  .liten { font-size: 12.5px; color: #86868b; }
+  .slik { margin-top: 22mm; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 18px; }
+  .slik div { border-top: 0.5px solid #d2d2d7; padding-top: 12px; }
+  .slik b { display: block; font-size: 15px; margin-bottom: 4px; }
+  .slik span { font-size: 13.5px; color: #6e6e73; line-height: 1.5; }
+  .oppg { display: grid; grid-template-columns: 34px minmax(0,1fr); gap: 0 14px; padding: 12px 0 10px; border-top: 0.5px solid #e5e5ea; }
+  .oppg:first-of-type { border-top: 0; }
+  .nr { width: 34px; height: 34px; border-radius: 50%; background: #f5f5f7; color: #1d1d1f; display: grid; place-items: center; font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .mal { font-size: 14px; color: #1d1d1f; margin: 0 0 6px; }
+  .se { font-size: 13px; color: #6e6e73; margin: 0; }
+  .se b { color: #3a3a3c; font-weight: 500; }
+  .tid { float: right; font-size: 12px; color: #86868b; font-variant-numeric: tabular-nums; }
+  .navn { columns: 2; font-size: 13px; line-height: 1.7; color: #3a3a3c; font-family: ui-monospace, "SF Mono", Menlo, monospace; margin: 8px 0 0; padding: 14px 18px; background: #f5f5f7; border-radius: 12px; }
+</style>
+</head>
+<body>
+
+<section class="side">
+  <div class="merke">
+    <svg width="22" height="22" viewBox="0 0 1024 1024" aria-hidden="true"><rect x="40" y="40" width="944" height="944" rx="215" fill="#241F33"/><rect x="290" y="330" width="200" height="364" rx="44" fill="#EEEDFE"/><rect x="516" y="330" width="100" height="364" rx="40" fill="#C9C2DD"/><rect x="642" y="330" width="100" height="364" rx="40" fill="#9A90B8"/></svg>
+    <b>Økta</b> · beta 0.3.0
+  </div>
+  <h1>Takk for at du<br>tester Økta.</h1>
+  <p class="ingress">Jeg trenger å vite om det viktigste virker for deg: å planlegge, skåre og holde oversikt over elevene. Utseendet pusses senere.</p>
+
+  <div class="slik">
+    <div><b>1. Prøv oppgavene</b><span>Ni korte oppgaver på de neste sidene. Rundt en time til sammen, gjerne fordelt på flere dager.</span></div>
+    <div><b>2. Bruk den i en uke</b><span>Skår minst tre ordentlige økter. Det er da det viser seg hva som er tungvint.</span></div>
+    <div><b>3. Svar på skjemaet</b><span>Trykk <span class="sti">Gi tilbakemelding</span> nederst i sidemenyen. Det tar ti minutter.</span></div>
+  </div>
+
+  <div class="boks" style="margin-top:20mm">
+    <p><b>Oppgavene sier hva du skal få til, ikke hvordan.</b> Finn ut av det selv. Står du fast mer enn et par minutter, er det appen sin feil og ikke din. Noter hvor det stoppet, og gå videre.</p>
+    <p>Har du ikke installert ennå, se <span class="sti">guide_read_me.pdf</span> som lå ved siden av appen.</p>
+  </div>
+
+  <div class="boks">
+    <p><b>Ekte elever eller oppdiktede?</b> Bruk oppdiktede navn hvis skolen ikke har sagt ja til ekte elevdata. Det ligger en ferdig liste bakerst. Skriv aldri elevnavn i tilbakemeldingsskjemaet.</p>
+  </div>
+
+  <div class="bunn"><span>Økta · betatest</span><span>1</span></div>
+</section>
+
+<section class="side">
+  <h2>Oppgavene</h2>
+  <p class="liten" style="margin-bottom:10px">Tiden er et anslag. Bruker du mye lenger, er det verdt å nevne.</p>
+
+  <div class="oppg"><div class="nr">1</div><div>
+    <h3>Sett opp skoleåret <span class="tid">5 min</span></h3>
+    <p class="mal">Kom deg gjennom førstegangsoppsettet, med eller uten oppsettfil, så du har fagene dine for i år.</p>
+    <p class="se"><b>Legg merke til:</b> om noe spørres om som du ikke forsto, eller som du ikke visste svaret på.</p>
+  </div></div>
+
+  <div class="oppg"><div class="nr">2</div><div>
+    <h3>Få inn en klasse <span class="tid">5 min</span></h3>
+    <p class="mal">Legg inn elevene i ett av fagene dine, enten fra InSchool-PDF-en eller ved å lime inn lista bakerst.</p>
+    <p class="se"><b>Legg merke til:</b> om navn, klasser og kjønn ble riktige, og om det var lett å rette det som var feil.</p>
+  </div></div>
+
+  <div class="oppg"><div class="nr">3</div><div>
+    <h3>Planlegg de neste to ukene <span class="tid">10 min</span></h3>
+    <p class="mal">Legg inn øktene dine i faget for to uker, med tema på hver. Prøv å legge inn en fast ukentlig time som serie.</p>
+    <p class="se"><b>Legg merke til:</b> om timeplanen og fridagene stemte, og hvor mange klikk det tok.</p>
+  </div></div>
+
+  <div class="oppg"><div class="nr">4</div><div>
+    <h3>Skår en økt <span class="tid">5 min</span></h3>
+    <p class="mal">Åpne en økt fra I dag og gi alle elevene grønn, gul, rød eller «ikke i økta». Skriv et notat på én elev og to linjer i øktloggen, der den ene er et gjøremål.</p>
+    <p class="se"><b>Legg merke til:</b> om du klarer det mens du står i klasserommet, og om tastene sitter etter et par runder.</p>
+  </div></div>
+
+  <div class="oppg"><div class="nr">5</div><div>
+    <h3>Finn en elev <span class="tid">3 min</span></h3>
+    <p class="mal">Finn en bestemt elev så raskt du kan, og se hvordan det har gått med hen så langt. Legg til et notat fra en samtale.</p>
+    <p class="se"><b>Legg merke til:</b> om elevkortet svarer på det du lurer på før en foreldresamtale eller et teammøte.</p>
+  </div></div>
+
+  <div class="oppg"><div class="nr">6</div><div>
+    <h3>Se hvordan faget går <span class="tid">5 min</span></h3>
+    <p class="mal">Finn ut hvem i klassen som trenger oppfølging, hvem som nærmer seg fraværsgrensen, og om du ligger i rute med årsplanen.</p>
+    <p class="se"><b>Legg merke til:</b> om tallene stemmer med magefølelsen din, og om noe er vanskelig å lese.</p>
+  </div></div>
+
+  <div class="bunn"><span>Økta · betatest</span><span>2</span></div>
+</section>
+
+<section class="side">
+  <div class="oppg"><div class="nr">7</div><div>
+    <h3>Lag klassekart og grupper <span class="tid">10 min</span></h3>
+    <p class="mal">Sett opp rommet ditt og lag et klassekart der to elever ikke sitter sammen og én er låst foran. Lag så grupper til en gruppeoppgave, og del begge slik du ville gjort i Teams.</p>
+    <p class="se"><b>Legg merke til:</b> om du stoler nok på stokkingen til å bruke den i en ekte time.</p>
+  </div></div>
+
+  <div class="oppg"><div class="nr">8</div><div>
+    <h3>Trekk muntlige samtaler <span class="tid">10 min</span></h3>
+    <p class="mal">Sett opp en muntlig vurdering i klassen med to samtaledager og noen temaer, og trekk rekkefølgen. Flytt én elev til et annet tidspunkt.</p>
+    <p class="se"><b>Legg merke til:</b> om planen ble slik du ville laget den selv, og hva du måtte rette for hånd.</p>
+  </div></div>
+
+  <div class="oppg"><div class="nr">9</div><div>
+    <h3>Del årsplanen <span class="tid">5 min</span></h3>
+    <p class="mal">Lag årsplanen for faget som PDF, slik du ville lagt den ut til elevene.</p>
+    <p class="se"><b>Legg merke til:</b> om du ville delt den som den er, eller hva du måtte endret først.</p>
+  </div></div>
+
+  <div class="boks" style="margin-top:8mm">
+    <h3>Valgfritt: timeplanen i kalenderen</h3>
+    <p>Har du en CalDAV-kalender, for eksempel Framagenda, kan du prøve å publisere timeplanen og abonnere på den fra mobilen. Det er det eneste Økta sender ut, og det er av til du slår det på.</p>
+  </div>
+
+  <div class="boks">
+    <h3>Når noe går galt</h3>
+    <p>Ta et skjermbilde med <kbd>⇧</kbd> <kbd>⌘</kbd> <kbd>4</kbd> og skriv hva du gjorde rett før. Pass på at skjermbildet ikke viser ekte elevnavn, eller dekk dem til.</p>
+    <p>Trykk <span class="sti">Gi tilbakemelding</span> nederst i sidemenyen. Appen kopierer versjonen og skjermen du står på, og åpner skjemaet. Lim det inn i det første feltet.</p>
+  </div>
+
+  <div class="bunn"><span>Økta · betatest</span><span>3</span></div>
+</section>
+
+<section class="side">
+  <h2>Oppdiktet klasse</h2>
+  <p>Kopier lista og lim den inn under <span class="sti">Elever › Lim inn liste</span>. Én elev per linje, navn og klasse.</p>
+  <div class="navn">Ingrid Bakken; 1STA<br>Jonas Lie; 1STA<br>Sara Haugen; 1STA<br>Emil Strand; 1STA<br>Nora Vik; 1STA<br>Elias Berg; 1STA<br>Ida Moe; 1STA<br>Filip Dahl; 1STA<br>Maja Lund; 1STA<br>Oskar Holm; 1STA<br>Thea Ruud; 1STA<br>Lukas Brekke; 1STA<br>Emma Sand; 1STB<br>Henrik Aas; 1STB<br>Sofie Lien; 1STB<br>Jakob Næss; 1STB<br>Ella Fjeld; 1STB<br>William Moen; 1STB<br>Ingeborg Eide; 1STB<br>Mats Hagen; 1STB<br>Kim Solberg; 1STB<br>Alex Tangen; 1STB</div>
+  <p class="liten" style="margin-top:10px">Kim og Alex er med med vilje: navn som brukes om begge kjønn, så du ser hva appen gjør med dem.</p>
+
+  <div class="boks" style="margin-top:12mm">
+    <h3>Hva jeg helst vil vite</h3>
+    <ul>
+      <li>Hvilke tre ting du faktisk ville brukt hver uke.</li>
+      <li>Hva som mangler før du ville sluttet med det du bruker i dag.</li>
+      <li>Hvor du stod fast, og hva du prøvde.</li>
+    </ul>
+    <p>Kritikk er mer nyttig enn ros. Si det rett ut.</p>
+  </div>
+
+  <p class="liten" style="margin-top:14mm">Økta er laget av Fredrik Bedsvaag. Dette er en betaversjon. Alt du legger inn, ligger bare på din Mac. Ta en sikkerhetskopi før du oppdaterer: Innstillinger › Sikkerhetskopi › Ta kopi nå.</p>
+
+  <div class="bunn"><span>Økta · betatest</span><span>4</span></div>
+</section>
+
+</body>
+</html>

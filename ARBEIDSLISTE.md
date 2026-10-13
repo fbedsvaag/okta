@@ -473,6 +473,27 @@ Tegnet i lerretet runde 13: `Elever`, `Fagside`, `OktSkar`, `OktPlan`
   som lerretet og resten av appen. Andelen grønn regnes uten «ikke i økta»
   (CLAUDE.md regel 5), lerretet tok den med i nevneren.
 
+## 13. Beta 0.3.0 (13.10)
+
+Målet er tilbakemelding på kjernefunksjonene fra kolleger. Pynt venter.
+
+- [ ] **13.1 «Gi tilbakemelding» nederst i sidemenyen**, over Innstillinger,
+  samme stil som Innstillinger-raden. Klikk: kopierer én linje til
+  utklippstavla, `Økta 0.3.0 · macOS 15.1 · Skjerm: Elevkort`, viser en
+  kort bekreftelse («Kopiert. Lim inn i første felt.») og åpner skjemaet i
+  standardnettleseren (Tauri opener). Skjermnavnet er skjermen man står på,
+  aldri en elev, et fag-tema eller annet innhold. Lenka ligger som én
+  konstant i `src/tilbakemelding.ts`; er den tom, skjules raden. Appen gjør
+  ingen nettverkskall selv – nettleseren åpner lenka.
+- [ ] **13.2 Testheftet i dmg-en.** `docs/guide/betatest.html` skrives ut
+  til PDF i `scripts/lag-dmg.sh` som guiden, og legges i dmg-vinduet ved
+  siden av `guide_read_me.pdf`.
+- [ ] **13.3 Versjon 0.3.0** i `package.json`, `src-tauri/tauri.conf.json`,
+  `guide_read_me.html` og `betatest.html`. Release som pre-release på
+  GitHub (`gh release create v0.3.0 … --prerelease --title "Økta 0.3.0 beta"`),
+  se `docs/release.md`.
+- Skjemaets spørsmål: `docs/beta/skjema.md`.
+
 ## Ikke nå
 
 Ting som er vurdert og lagt bort med vilje. Står her så de ikke dukker opp
