@@ -2650,6 +2650,7 @@ version = "0.3.0"
 dependencies = [
  "base64 0.22.1",
  "dirs",
+ "getrandom 0.3.4",
  "keyring",
  "os_info",
  "serde",
