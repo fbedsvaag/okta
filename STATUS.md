@@ -98,15 +98,12 @@ Prøvd i `npm run tauri dev`, skjerm for skjerm mot lerretet.
 - **Klassekart med gruppefarger og logg, vurderinger som kalender:**
   tegnes i neste runde.
 
-## Hvor SPEC.md ikke stemmer med appen
+## SPEC.md og DESIGN.md
 
-Forslag til ny tekst står i `docs/spec-forslag-2026-10-07.md`.
-
-- §4.3 beskriver en tabell med avkrysning, kolonnene Økter og Siste, og
-  manuell innlegging i en tom rad nederst. Appen har oversikten fra
-  lerretet. Eieren har bestemt at InSchool-import og lim inn er veien inn.
-- §4.4 har trafikklyset til høyre for navnet. Det står nå først i raden,
-  og økta har to moduser.
+Følger appen; arbeidet er iterativt (CLAUDE.md). SPEC.md ble oppdatert
+13.10: Elever (§4.3), økta med to moduser (§4.4), fagsiden (§4.2), PDF-en
+(§4.9), fravær mot 10 % (ny §4.12), arkivmappa (§4.8 og §8) og en ny bolk
+om sikkerhet i §8.
 
 ## Kjent
 
@@ -120,9 +117,6 @@ Forslag til ny tekst står i `docs/spec-forslag-2026-10-07.md`.
     transaksjon gjennom Rust-kommandoen `transaksjon`. Andre operasjoner
     med flere skrivinger kan flyttes over etter hvert.
   - #3–#6: se commit-loggen.
-- **SPEC §4.8 nevner `eksportmappe` som en innstilling i databasen.** Den
-  bor nå i `arkivmappe.txt` i appens datamappe (#1). Forslag til ny tekst
-  må tas med eieren.
 - **Under utvikling** (`tauri dev`) kan vinduet bli blankt etter at koden
   er endret mens appen kjører. Lukk og start vinduet på nytt. Den ferdige
   appen er ikke berørt.

@@ -5,9 +5,8 @@ SQLite + Vite/React/TypeScript. Bygges av én lærer, til eget bruk.
 
 ## Les alltid dette først
 
-**`SPEC.md` er fasit.** Les den i sin helhet ved starten av hver økt, før du
-skriver kode. Er noe uklart eller motstridende, spør — ikke gjett og ikke fyll
-inn på egen hånd.
+**Les `SPEC.md` i sin helhet ved starten av hver økt**, før du skriver kode.
+Den beskriver hva appen skal gjøre. Er noe uklart om hva brukeren vil, spør.
 
 Brukeren er ikke utvikler. Forklar valgene dine underveis på norsk, med vanlige
 ord. Kjør ikke lange sekvenser uten å si hva du gjør.
@@ -43,10 +42,12 @@ Byggerekkefølgen står i §11. Dag 1–4 er det brukeren trenger i august, dag 
 er det som må stå til første undervisningsuke. Skjer det en prioritering,
 gjelder den rekkefølgen.
 
-## SPEC.md og STATUS.md
+## SPEC.md, DESIGN.md og STATUS.md
 
-**Du skriver ikke i SPEC.md.** Den er brukerens fasit. Ser du at koden avviker
-fra den, foreslå en endring — bruker bestemmer om spec eller kode skal rettes.
+**Arbeidet er iterativt.** SPEC.md og DESIGN.md følger appen, ikke omvendt.
+Avviker appen med god grunn, oppdaterer du dokumentet i samme runde og nevner
+det kort. Ikke heng deg opp i avvik. Endrer noe hva appen gjør for brukeren,
+si det i rapporten.
 
 **STATUS.md eier du og kan oppdatere fritt.** Den beskriver hvor prosjektet
 faktisk står, ikke hva det skal bli.

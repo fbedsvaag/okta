@@ -666,6 +666,12 @@ Alle fag i én kronologisk liste, med fagfilter og søk i tema, innenfor det
 aktive skoleåret. Tre visninger som veksles med en bryter øverst: liste,
 kalender, periode.
 
+Med et fag valgt har Økter en fjerde inngang først: **Oversikt**, fagsiden.
+Bryteren er da Oversikt | Økter | Kalender. Fagsiden viser timene mot
+årstimetallet, neste økter, kommende vurderinger, klassen økt for økt,
+elevene nå med fraværet, kompetansemålene med hvor langt de er dekket, og
+øktloggene.
+
 #### Listevisning (standard)
 
 Øktene kronologisk nedover, under månedsoverskrifter. Per rad: dato, ukedag,
@@ -760,63 +766,38 @@ Summen skjuler ikke at de to er ulike størrelser.
 
 ### 4.3 Elever — alle elever, klasser og fag
 
-Motstykket til Elever-fanen i Excel, og limet mellom alt annet. Én tabell med
-alle elever på tvers av klasser og fag, for det aktive skoleåret:
+Motstykket til Elever-fanen i Excel, og limet mellom alt annet. En liste
+med alle elevene i det aktive skoleåret, gruppert på klasse, fag eller
+alfabetisk (valget huskes):
 
 ```
-Navn                    Klasse    Fag                 Økter   Siste
-Tony Soprano            1STC      MFL1, ENG1           24      2 d
-Carmela Soprano         1STC      MFL1, ENG1, EBU1     24      2 d
-Phil Harris             1STC      MFL1, EBU1           31      1 d
-Jennifer Melfi          2STA      MFL2                 19      5 d
-+ Legg til elev …
+2STA  8 elever
+  Artie Bucco         2STA   MFL1  MFL2   ▪▪▪▪▪▪▪▪▪▪   –
+  Christopher Moltisanti M   MFL2  ENG1   ▪▪▪▪▪▪▪▪▪▪   ▬ 11 %   ●
 ```
 
-- **Klassekolonnen har én verdi** — elevens klasse dette skoleåret. Klikk åpner
-  en nedtrekksliste over klassene i året, med «Ny klasse …» nederst og «Ingen
-  klasse» som gyldig valg. Å endre den rører ikke tidligere år.
-- **Fagkolonnen viser flere verdier**, kommaseparert. Klikk åpner en kompakt
-  flervalgsliste over opprettede fag, med «Nytt fag …» nederst. Det er slik
-  `elev_fag` vedlikeholdes.
-- **Mentor** er en avkrysning per elev: er hen din mentorelev dette året?
-  Kolonnen kan slås av i kolonnevelgeren som de andre. Filteret «bare
-  mentorelever» står ved siden av klasse- og fagfilteret, og virker uavhengig
-  av dem. Avkrysningen er av for elever uten klasse — merket henger på
-  klassekoblingen (§3.2).
-- **Økter** er antall skåringer registrert, **Siste** er hvor lenge siden. Sammen
-  avslører de hull: en elev med påfallende få skåringer er som regel en du har
-  oversett, ikke en som har vært mye borte.
-- Filter på klasse, på fag (også «Uten fag») og på mentor (mentorelever /
-  ikke mentorelever), uavhengig av hverandre og fritt kombinert — som i en
-  database der egenskapene styrer visningen. Sortering på hvilken som helst
-  kolonne. Søk øverst.
-- **Endringer på mange elever samtidig:** kryss av, og legg til i fag, fjern
-  fra fag, sett eller fjern mentor, eller slett. Tas en elev ut av et fag,
-  blir skåringene liggende og kommer tilbake om hen kobles på igjen.
-  «Uten fag» + «Ikke mentorelever» finner elevene man ikke lenger har.
-- **Sletter man en elev, forsvinner alt som hører til eleven:** skåringer,
+- Per rad: bilde, fornavn og etternavn, M for mentorelev, klasse, fagene
+  med fagfirkant, innsatsen de siste ti øktene som ruter, og fraværet i
+  prosent av fagets timer med en liten stolpe mot 10 %-grensen (det
+  høyeste faget; se §4.12). En rød prikk når eleven glipper: minst to
+  røde blant de fem siste øktene.
+- Filterpiller for fagene, «Uten fag» og Mentorelever, fritt kombinert.
+  Søk i verktøylinja.
+- Klikk åpner elevkortet (§4.5). **Eleven endres der:** klasse, fag,
+  mentor, kjønn, bilde og sletting. Lista har ingen redigering i radene.
+- Elever med et åpent, forfalt oppfølgingspunkt får et merke ved navnet.
+  Merket sier bare at noe venter, aldri hva.
+- **Endringer på mange elever samtidig** (merke flere og endre fag,
+  klasse eller mentor, eller slette) skal tegnes i lerretet før det bygges.
+- Sletter man en elev, forsvinner alt som hører til eleven: skåringer,
   vurderingsresultater, notater, samtaler og koblinger.
-- Klikk på navnet åpner §4.5.
 
-#### Manuell innlegging
+#### Elever inn i appen
 
-Nederst i tabellen står alltid en tom rad: **+ Legg til elev**. Skriv navnet,
-trykk Enter, og raden lagres samtidig som en ny tom rad dukker opp under. Klasse
-og fag arves fra det filteret som er aktivt — står du og ser på 1STC i MFL1, blir
-nye elever lagt i 1STC og koblet til MFL1 uten at du må sette det.
-
-Skriver du inn et navn som allerede finnes, gjelder §7.1 også her: appen spør om
-det er samme elev, i stedet for å opprette en ny i stillhet.
-
-En mentorelev uten fag er en gyldig rad. Du er kontaktlærer for elever du ikke
-underviser, og de skal stå i lista på lik linje med resten.
-
-Dette er hovedveien inn for en lærer som ikke har en liste å lime inn. Den skal
-være like rask som lim-inn: skriv, Enter, skriv, Enter. Ingen dialogvindu, ingen
-lagre-knapp.
-
-Navneparsingen er den samme som i §7, slik at `La Cerva, Adriana` og
-`Adriana La Cerva` gir samme resultat.
+Elevene kommer inn med **Lim inn liste** (§7): InSchool-PDF-en, eller en
+liste skrevet som `fornavn etternavn; klasse`, én per linje. «Ny elev» i
+verktøylinja lager én elev og åpner elevkortet. Det finnes ingen tom rad
+for manuell innlegging nederst i lista.
 
 #### Lim inn liste
 
@@ -858,19 +839,33 @@ Motstykket til Tracking-fanen, og den daglige bruken. Åpnes som et ark over
 skjermen man kom fra; Esc lukker og alt er lagret. Pågår økta, står det
 «Pågår · n min igjen» i toppen, og over lista hvor mange som er skåret.
 
-Øverst en kompakt topplinje: fag, dato, tema, periode, og planen for økta
-sammenklappet — ett trykk for å utvide.
+Økta har **to moduser i samme ark**, med en bryter øverst til høyre:
+**Skåring og logg** og **Planlegging**. Åpnes økta fra I dag, eller pågår
+den eller er den ferdig, åpner den i skåring. Ligger den fram i tid, åpner
+den i planlegging. ⌘← og ⌘→ blar til forrige og neste økt i faget.
 
-Under: elevlista for faget, alfabetisk på fornavn, én rad per elev. Har
-elevene bilde (§7), står et bilde (28 px) foran navnet, ellers en
-plassholder; raden er 38 px.
+Øverst: fag, tittel, når økta er («om 3 dager», «Pågår · 50 min igjen»),
+dato, tid, rom og periode, og Ferdig (⌘↵).
+
+**Skåring og logg.** Elevlista for faget, alfabetisk på fornavn, én rad per
+elev (38 px). Trafikklyset står **først**, foran bildet (28 px) og navnet,
+så blikket ikke må hoppe:
 
 ```
-    Anna Reistad              ●  ○  ○  ○
- ▸  Alexander Eikås           ○  ○  ○  ○        ← markør
-    Benjamin Holm             ○  ○  ●  ○
-    Cecilie Vang              ○  ○  ○  ●   ikke i økta
+ ▸  ●  ○  ○  ○   Anna Reistad       2STB   notat fra økta
+    ○  ○  ●  ○   Benjamin Holm      2STA
 ```
+
+Til høyre: notatet fra forrige økt, planen med avkrysning og øktloggen.
+
+**Planlegging.** Dato, tid, rom, periode og vurdering; lekse og agenda til
+elevene; planen som en sjekkliste med minutter per punkt og summen mot
+øktas lengde; kompetansemålene i økta med avkrysning, der periodens mål er
+merket. Til høyre: forrige økt, «Følg opp i økta» (rød to ganger på rad,
+borte sist, åpent oppfølgingspunkt; bare fornavn og grunn) og hvor i
+perioden økta ligger.
+
+Tastene i skåringen:
 
 | Tast | Handling |
 |------|----------|
@@ -1020,13 +1015,17 @@ være hardkodet i applikasjonskoden.
 | Nøkkel | Betydning | Standard |
 |--------|-----------|----------|
 | `standard_varighet_min` | Forhåndsutfylt varighet på nye økter | `180` |
-| `eksportmappe` | Hvor tekstfilene i §8 skrives | ikke satt |
 | `aktivt_skolear` | Hvilket skoleår appen viser | første opprettede |
 | `laerer_navn` | Faglærer på årsplanen i alle fag. Spørres om når skoleåret opprettes (§4.0) | ikke satt |
 | `arsplan_felt` | Hvilke felt som står på årsplanarket (§4.9) | se §4.9 |
 
 Etikettene på trafikklyset (§5.1) ligger på `skalaverdi.etikett` og redigeres
 der, ikke som en egen innstilling. Ett sted, ikke to.
+
+**Arkivmappa (§8) er ikke i databasen.** Den velges i Innstillinger › Arkiv og
+huskes av Rust-siden i `arkivmappe.txt` i appens datamappe. Ligger den i
+databasen og sendes med fra vinduet, kan et skript i vinduet styre hvor filer
+skrives (se §8, Sikkerhet).
 
 Skjermen har disse delene:
 
@@ -1038,7 +1037,8 @@ Skjermen har disse delene:
   faglærer, kompetansemål (fritekst for fag uten Udir-kode) og teksten på
   årsplanarket.
 - **Skalaer:** se og lage skåringsskalaer og vurderingsskalaer
-- **Generelt:** lærernavn, standard varighet og eksportmappe
+- **Generelt:** lærernavn og standard varighet
+- **Arkiv:** mappa tekstfilene i §8 skrives til
 
 **Varighet arves i tre ledd:** global standard → fagets standard → øktas egen
 verdi. Nye økter (§4.2) forhåndsutfylles fra fagets standard, og verdien kan
@@ -1061,6 +1061,11 @@ står på «Alle fag»:
 - **Lagre som regneark (.csv)** — semikolon og BOM, slik norsk Excel vil ha det
 
 Alle fire bygges av samme innhold, så de sier det samme.
+
+PDF-en har egne A4-sider: toppen med fag, faglærer, rom, tid, timene per
+periode, teksten om faget og kompetansemålene på første side; en smal
+topplinje og «<periode> fortsetter» på de neste; «Side n av N» nederst.
+Ferier står som egne linjer i kursiv.
 
 **Øverst:** fag, skoleår, faglærer, rom, timeregnskap (økter og timer mot
 årstimetallet, med samtaledager som egen hale), teksten på årsplanarket, og
@@ -1423,6 +1428,22 @@ CREATE TABLE elevregel (                         -- «hold fra hverandre»
 
 UUID, stempler og soft delete som resten (§3.1). Sletting av en elev tar
 plasseringer og regler med. Ingen av tabellene er med i oppsettfila (§8.2).
+
+### 4.12 Fravær mot 10 %-grensen
+
+Fravær regnes i timer: summen av varigheten på de avholdte øktene der
+eleven står som «ikke i økta», mot 10 % av fagets årstimetall (140 t gir
+14 t). Har faget ikke årstimetall, regnes det av timene som er planlagt i
+faget. Elever som kom inn i faget etter en økt, får ikke fravær for den.
+
+Det vises i Elever (høyeste fag), på fagsiden (bolken «Fravær mot
+10 %-grensen») og i elevkortet («Fravær i år», én rad per fag: prosent,
+stolpe, «9 av 24 økter · 15,8 t»). Merker: Halvveis (minst 50 % av
+grensen), Nær grensen (minst 75 %) og Over grensen.
+
+Appen skiller ikke dokumentert fra udokumentert fravær. Teksten sier det:
+«Udokumentert fravær over 10 % av timene i faget kan gi IV. InSchool er
+fasit; her regnes «ikke i økta».»
 
 ## 5. Skalaer
 
@@ -1802,14 +1823,17 @@ overlever et år.
 ### Arbeidsfil
 
 `elevtracking.sqlite` i appens data-mappe
-(`~/Library/Application Support/elevtracking/`). Skal **aldri** ligge i iCloud
-Drive, Dropbox eller annen synkmappe — synktjenester kan evakuere og delvis
+(`~/Library/Application Support/no.elevtracking.app/` på Mac,
+`%APPDATA%\no.elevtracking.app\` på Windows; Innstillinger › Personvern viser
+den faktiske). Skal **aldri** ligge i iCloud Drive, OneDrive, Dropbox eller
+annen synkmappe — synktjenester kan evakuere og delvis
 skrive tilbake filer, og en åpen SQLite-database blir korrupt uten forvarsel.
 
 ### Arkiv
 
-Ved hver appavslutning, og manuelt via knapp, skrives hele databasen ut som
-lesbare tekstfiler til en mappe brukeren velger:
+Ved hver oppstart, og manuelt via knapp, skrives hele databasen ut som
+lesbare tekstfiler til en mappe brukeren velger, og alltid også ved siden av
+sikkerhetskopiene:
 
 ```
 <valgt mappe>/
@@ -1835,6 +1859,22 @@ Denne mappa kan legges hvor som helst, inkludert i en skytjeneste — det er van
 tekstfiler som ingenting skriver til samtidig.
 
 Eksporten er automatisk, ikke manuell. En eksport man må huske på er ikke backup.
+
+### Sikkerhet
+
+Webvisningen regnes som mindre betrodd enn Rust-siden. Skulle et skript
+noen gang få kjøre i vinduet (en feil, en ødelagt pakke), skal det ikke
+kunne skrive filer rundt på maskinen:
+
+- **Streng CSP:** bare appens egne skript; bilder fra `data:` og `blob:`.
+- **Rust eier filskrivingen.** Lagre-dialogen åpnes og fila skrives på
+  Rust-siden; stien går aldri via vinduet, og bare kjente filtyper lagres.
+  Arkivet skrives bare til mappa brukeren har valgt, eller ved siden av
+  sikkerhetskopiene.
+- **Skrivinger i flere steg er én transaksjon** (sletting av elev,
+  samtaletrekning, import av oppsettfil): enten går alt gjennom, eller
+  ingenting. De kjøres på én tilkobling på Rust-siden, siden tilkoblingene
+  fra vinduet ligger i en pulje.
 
 ### 8.1 Publisering av timeplanen (CalDAV)
 
