@@ -51,6 +51,7 @@ import { Sokevindu } from "./ui/Sokevindu";
 import { ArkKobling, Arkstabel, type ArkApi } from "./ui/Arkstabel";
 import { brukZoom, zoomInn, zoomNull, zoomUt } from "./ui/zoom";
 import { hovedtast, harModifikator, tast as visTast } from "./ui/taster";
+import { useIdag } from "./ui/useIdag";
 
 /**
  * Et sted i historikken.
@@ -90,6 +91,8 @@ export default function App() {
   const [feil, setFeil] = useState<string | null>(null);
   const [melding, setMelding] = useState<string | null>(null);
   const [versjon, setVersjon] = useState(0);
+  // Dagens dato, som skifter over midnatt (#4, #5).
+  const dag = useIdag();
   // Faget Økter står filtrert på ("" = alle). Bor her, ikke i Økter, fordi
   // undermenyen i sidemenyen og ⌘1–9 velger det (DESIGN.md §6).
   const [oktFag, setOktFag] = useState("");
@@ -315,6 +318,23 @@ export default function App() {
     void last();
   }, [last]);
 
+  // Ny dag mens appen står åpen: dagens sikkerhetskopi og arkiv, som ved
+  // oppstart (#4). I dag tegnes på nytt med dagen som nøkkel (#5).
+  const startdag = useRef(dag);
+  useEffect(() => {
+    if (dag === startdag.current) return;
+    startdag.current = dag;
+    void (async () => {
+      await daglingKopi().catch((e) => console.error("sikkerhetskopi:", e));
+      if (skolear) {
+        void skrivArkiv(skolear).catch((e) => console.error("arkiv:", e));
+        void skrivArkivTilBackup(skolear).catch((e) =>
+          console.error("arkiv til backup:", e),
+        );
+      }
+    })();
+  }, [dag]);
+
   // Kartene i undermenyen: lastes med året, og på nytt når kart, rom eller
   // elever endres (antallet elever står i undermenyen).
   useEffect(() => {
@@ -460,6 +480,7 @@ export default function App() {
               <div className="flex min-h-0 flex-1 flex-col px-6 py-4">
                 {visning === "idag" && (
                   <IDag
+                    key={dag}
                     skolear={skolear}
                     fag={fag}
                     onGaTil={(v, id) => ga(v, id ?? null)}
@@ -691,6 +712,7 @@ function Verktoylinje({
   onTilbake: () => void;
   onFram: () => void;
 }) {
+  const dag = useIdag();
   // Sveip med to fingre: til høyre tilbake, til venstre fram.
   const sveip = useSveip(onTilbake, onFram, kanTilbake, kanFram);
   return (
@@ -734,18 +756,12 @@ function Verktoylinje({
       {bryter && <span className="ml-1 shrink-0">{bryter}</span>}
       {visning === "idag" && (
         <span className="text-brod tabular-nums text-blekk-dempet">
-          Uke {ukenummer(isoIDag())}
+          Uke {ukenummer(dag)}
         </span>
       )}
       <div ref={onSpor} className="flex min-w-0 flex-1 items-center gap-2" />
     </div>
   );
-}
-
-function isoIDag(): string {
-  const d = new Date();
-  const to = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${to(d.getMonth() + 1)}-${to(d.getDate())}`;
 }
 
 /** Hvilket punkt i sidemenyen som står markert for en visning. */
