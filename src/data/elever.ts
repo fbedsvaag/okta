@@ -1,7 +1,7 @@
-import { slettForElev } from "./klassekart";
+import { slettForElevI } from "./klassekart";
 import { varsleElever } from "./endringer";
-import { slettElevbilde } from "./elevbilde";
-import { hent, oppdater, settInn, slett } from "../db";
+import { slettElevbildeI } from "./elevbilde";
+import { hent, oppdater, settInn, slett, Transaksjon } from "../db";
 import { lagElevkode } from "./elevkode";
 import type { EksisterendeElev } from "../import/duplikat";
 
@@ -453,6 +453,9 @@ export async function slettElever(elevIder: string[]): Promise<void> {
 }
 
 export async function slettElevHelt(elevId: string): Promise<void> {
+  // Alt leses først, og slettingen skjer i én transaksjon: enten er hele
+  // eleven borte, eller ingenting (#2).
+  const t = new Transaksjon();
   for (const tabell of [
     "skaring",
     "oktnotat",
@@ -466,11 +469,12 @@ export async function slettElevHelt(elevId: string): Promise<void> {
       `SELECT id FROM ${tabell} WHERE elev_id = $1 AND slettet IS NULL`,
       [elevId],
     );
-    for (const r of rader) await slett(tabell, r.id);
+    for (const r of rader) t.slett(tabell, r.id);
   }
-  await slettElevbilde(elevId);
-  await slettForElev(elevId);
-  await slett("elev", elevId);
+  await slettElevbildeI(t, elevId);
+  await slettForElevI(t, elevId);
+  t.slett("elev", elevId);
+  await t.kjor();
   varsleElever();
 }
 

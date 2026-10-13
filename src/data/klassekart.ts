@@ -1,4 +1,4 @@
-import { hent, nyId, oppdater, settInn, slett } from "../db";
+import { hent, nyId, oppdater, settInn, slett, Transaksjon } from "../db";
 import { varsleKlassekart } from "./endringer";
 
 /**
@@ -641,17 +641,27 @@ export async function slettRegel(id: string): Promise<void> {
 
 /** Til sletting av en elev: plasseringene og reglene går med. */
 export async function slettForElev(elevId: string): Promise<void> {
+  const t = new Transaksjon();
+  await slettForElevI(t, elevId);
+  await t.kjor();
+}
+
+/** Som `slettForElev`, men inn i en større transaksjon (#2). */
+export async function slettForElevI(
+  t: Transaksjon,
+  elevId: string,
+): Promise<void> {
   const plasseringer = await hent<{ id: string }>(
     "SELECT id FROM plassering WHERE elev_id = $1 AND slettet IS NULL",
     [elevId],
   );
-  for (const r of plasseringer) await slett("plassering", r.id);
+  for (const r of plasseringer) t.slett("plassering", r.id);
   const regler = await hent<{ id: string }>(
     `SELECT id FROM elevregel
       WHERE (elev_a = $1 OR elev_b = $1) AND slettet IS NULL`,
     [elevId],
   );
-  for (const r of regler) await slett("elevregel", r.id);
+  for (const r of regler) t.slett("elevregel", r.id);
 }
 
 // ------------------------------------------------------------ elevkortet

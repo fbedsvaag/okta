@@ -763,3 +763,31 @@ describe("samme elev på samme klokkeslett igjen (#3)", () => {
     expect(samtaler[0].id).toBe(elleve.id);
   });
 });
+
+describe("trekningen er én transaksjon (#2)", () => {
+  it("lar forrige trekning stå urørt når en ny feiler halvveis", async () => {
+    const dagId = await dagMed("2026-11-24");
+    await trekning(dagId, elever.slice(0, 3));
+    const for_ = await hentSamtaler(dagId);
+
+    await expect(
+      lagreTrekning(dagId, [
+        {
+          elevId: elever[3],
+          klokkeslett: "09:00",
+          varighetMin: 20,
+          tema: null,
+        },
+        // varighet_min er NOT NULL: andre setning feiler
+        {
+          elevId: elever[4],
+          klokkeslett: "09:20",
+          varighetMin: null as unknown as number,
+          tema: null,
+        },
+      ]),
+    ).rejects.toThrow();
+
+    expect(await hentSamtaler(dagId)).toEqual(for_);
+  });
+});

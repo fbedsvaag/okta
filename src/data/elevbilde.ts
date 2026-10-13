@@ -1,4 +1,4 @@
-import { hent, oppdater, settInn, slett } from "../db";
+import { hent, oppdater, settInn, Transaksjon } from "../db";
 import { varsleElever } from "./endringer";
 
 /**
@@ -61,12 +61,22 @@ export async function hentAlleKjonn(): Promise<Map<string, "j" | "g">> {
  * først — ansiktet skal ikke ligge igjen i basen.
  */
 export async function slettElevbilde(elevId: string): Promise<void> {
+  const t = new Transaksjon();
+  await slettElevbildeI(t, elevId);
+  await t.kjor();
+  varsleElever();
+}
+
+/** Legger slettingen av bildet inn i en større transaksjon (#2). */
+export async function slettElevbildeI(
+  t: Transaksjon,
+  elevId: string,
+): Promise<void> {
   const [rad] = await hent<{ id: string }>(
     "SELECT id FROM elevbilde WHERE elev_id = $1 AND slettet IS NULL",
     [elevId],
   );
   if (!rad) return;
-  await oppdater("elevbilde", rad.id, { bilde: null });
-  await slett("elevbilde", rad.id);
-  varsleElever();
+  t.oppdater("elevbilde", rad.id, { bilde: null });
+  t.slett("elevbilde", rad.id);
 }

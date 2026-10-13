@@ -1,4 +1,4 @@
-import { db, hent, naa, oppdater, settInn, slett } from "../db";
+import { db, hent, naa, oppdater, settInn, slett, Transaksjon } from "../db";
 import type { Fridag } from "./kalender";
 
 export type Skolear = {
@@ -173,6 +173,19 @@ export async function opprettFridag(
 
 export async function slettFridag(id: string): Promise<void> {
   await slett("fridag", id);
+}
+
+/** Som `settInnstilling`, men inn i en større transaksjon (#2). */
+export function settInnstillingI(
+  t: Transaksjon,
+  nokkel: string,
+  verdi: string,
+): void {
+  t.execute(
+    `INSERT INTO innstilling (nokkel, verdi, endret) VALUES ($1, $2, $3)
+     ON CONFLICT(nokkel) DO UPDATE SET verdi = $2, endret = $3`,
+    [nokkel, verdi, naa()],
+  );
 }
 
 export async function settInnstilling(

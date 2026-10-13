@@ -35,6 +35,9 @@ base64 = "0.22"
 keyring = { version = "3", features = ["apple-native", "windows-native"] }
 # Operativsystem og versjon til tilbakemeldingslinja (13.1). Leser lokalt.
 os_info = { version = "3", default-features = false }
+# Samme sqlx som tauri-plugin-sql. Brukes til transaksjoner over flere
+# setninger på én tilkobling (issue #2), med pluginens egen pulje.
+sqlx = { version = "0.8", default-features = false, features = ["sqlite", "json"] }
 
 # Windows og Linux: dobbeltklikk på en .okta-fil starter en ny prosess.
 # Den sender stien til vinduet som kjører og avslutter (14.4). På Mac
@@ -46,3 +49,5 @@ tauri-plugin-single-instance = "2"
 # Bare i testene: sjekker at SQL-pluginens mappe og appens datamappe er den
 # samme på Mac og Windows (sikkerhetskopi.rs).
 dirs = "6"
+# Kjører de asynkrone transaksjonstestene (transaksjon.rs).
+tokio = { version = "1", features = ["rt", "macros"] }

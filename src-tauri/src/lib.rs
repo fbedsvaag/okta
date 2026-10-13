@@ -15,6 +15,7 @@ mod filer;
 mod kalenderfeed;
 mod sikkerhetskopi;
 mod system;
+mod transaksjon;
 
 use tauri_plugin_sql::{Migration, MigrationKind};
 
@@ -274,6 +275,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             skriv_ut,
             filer::lagre_fil,
+            transaksjon::transaksjon,
             system::systemversjon,
             sikkerhetskopi::forbered_sikkerhetskopi,
             sikkerhetskopi::sikkerhetskopier,

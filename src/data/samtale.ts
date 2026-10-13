@@ -1,4 +1,4 @@
-import { hent, oppdater, settInn, slett } from "../db";
+import { hent, oppdater, settInn, slett, Transaksjon } from "../db";
 import { knyttOkt, losOkt } from "./vurderinger";
 
 /**
@@ -951,6 +951,9 @@ export async function lagreTrekning(
       ledige.set(g.elevId, [...(ledige.get(g.elevId) ?? []), g.id]);
   }
 
+  // Alle skrivingene i én transaksjon: en trekning som feiler, lar den
+  // forrige stå urørt (#2).
+  const t = new Transaksjon();
   const brukt = new Set<string>();
   const felter = (s: (typeof samtaler)[number]) => ({
     klokkeslett: s.klokkeslett,
@@ -963,7 +966,7 @@ export async function lagreTrekning(
     const her = pa(s.elevId, s.klokkeslett);
     if (her && !brukt.has(her.id)) {
       brukt.add(her.id);
-      await oppdater("samtale", her.id, {
+      t.oppdater("samtale", her.id, {
         ...felter(s),
         motte: 1,
         slettet: null,
@@ -973,10 +976,10 @@ export async function lagreTrekning(
     const flytt = (ledige.get(s.elevId) ?? []).find((id) => !brukt.has(id));
     if (flytt) {
       brukt.add(flytt);
-      await oppdater("samtale", flytt, felter(s));
+      t.oppdater("samtale", flytt, felter(s));
       continue;
     }
-    await settInn("samtale", {
+    t.settInn("samtale", {
       samtaledag_id: samtaledagId,
       elev_id: s.elevId,
       ...felter(s),
@@ -986,8 +989,9 @@ export async function lagreTrekning(
 
   // Elever som ikke er med i den nye trekningen faller ut.
   for (const g of gamle) {
-    if (g.motte === 1 && !brukt.has(g.id)) await slett("samtale", g.id);
+    if (g.motte === 1 && !brukt.has(g.id)) t.slett("samtale", g.id);
   }
+  await t.kjor();
 }
 
 /** Markerer at eleven ikke møtte, uten at noe annet flyttes (§4.10). */

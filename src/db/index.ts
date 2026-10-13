@@ -1,4 +1,5 @@
 import Database from "@tauri-apps/plugin-sql";
+import { invoke } from "@tauri-apps/api/core";
 
 /**
  * Tilkoblingen til arbeidsfila. Filen legges av Tauri i appens data-mappe
@@ -65,7 +66,9 @@ export async function settInn(
 
   const kolonner = Object.keys(rad);
   const plassholdere = kolonner.map((_, i) => `$${i + 1}`).join(", ");
-  await (await db()).execute(
+  await (
+    await db()
+  ).execute(
     `INSERT INTO ${tabell} (${kolonner.join(", ")}) VALUES (${plassholdere})`,
     Object.values(rad),
   );
@@ -81,17 +84,85 @@ export async function oppdater(
   const rad = { ...felter, endret: naa() };
   const kolonner = Object.keys(rad);
   const sett = kolonner.map((k, i) => `${k} = $${i + 1}`).join(", ");
-  await (await db()).execute(
-    `UPDATE ${tabell} SET ${sett} WHERE id = $${kolonner.length + 1}`,
-    [...Object.values(rad), id],
-  );
+  await (
+    await db()
+  ).execute(`UPDATE ${tabell} SET ${sett} WHERE id = $${kolonner.length + 1}`, [
+    ...Object.values(rad),
+    id,
+  ]);
 }
 
 /** Soft delete. Ingenting i appen sletter rader for godt (SPEC §9). */
 export async function slett(tabell: string, id: string): Promise<void> {
   const tid = naa();
-  await (await db()).execute(
-    `UPDATE ${tabell} SET slettet = $1, endret = $2 WHERE id = $3`,
-    [tid, tid, id],
-  );
+  await (
+    await db()
+  ).execute(`UPDATE ${tabell} SET slettet = $1, endret = $2 WHERE id = $3`, [
+    tid,
+    tid,
+    id,
+  ]);
+}
+
+// ------------------------------------------------------------ transaksjoner
+
+export type Setning = { sql: string; verdier: unknown[] };
+
+/**
+ * Skrivinger som skal gå gjennom samlet, eller ikke i det hele tatt
+ * (issue #2). Samme SQL som `settInn`, `oppdater` og `slett`, men samlet
+ * opp og sendt i ett kall med `kjor()`.
+ *
+ * Les først, bygg setningene, kjør til slutt. Midt i en transaksjon kan
+ * man ikke lese det man nettopp har skrevet; det er heller ikke behov for
+ * det, siden id-ene lages her.
+ */
+export class Transaksjon {
+  readonly setninger: Setning[] = [];
+  private readonly tid = naa();
+
+  execute(sql: string, verdier: unknown[] = []): void {
+    this.setninger.push({ sql, verdier });
+  }
+
+  settInn(tabell: string, felter: Record<string, unknown>): string {
+    const id = (felter.id as string | undefined) ?? nyId();
+    const rad = { ...felter, id, opprettet: this.tid, endret: this.tid };
+    const kolonner = Object.keys(rad);
+    const plassholdere = kolonner.map((_, i) => `$${i + 1}`).join(", ");
+    this.execute(
+      `INSERT INTO ${tabell} (${kolonner.join(", ")}) VALUES (${plassholdere})`,
+      Object.values(rad),
+    );
+    return id;
+  }
+
+  oppdater(tabell: string, id: string, felter: Record<string, unknown>): void {
+    const rad = { ...felter, endret: this.tid };
+    const kolonner = Object.keys(rad);
+    const sett = kolonner.map((k, i) => `${k} = $${i + 1}`).join(", ");
+    this.execute(
+      `UPDATE ${tabell} SET ${sett} WHERE id = $${kolonner.length + 1}`,
+      [...Object.values(rad), id],
+    );
+  }
+
+  slett(tabell: string, id: string): void {
+    this.execute(
+      `UPDATE ${tabell} SET slettet = $1, endret = $2 WHERE id = $3`,
+      [this.tid, this.tid, id],
+    );
+  }
+
+  /** Kjører alt samlet. Feiler én setning, er ingenting lagret. */
+  async kjor(): Promise<void> {
+    if (this.setninger.length === 0) return;
+    const d = (await db()) as Database & {
+      transaksjon?: (s: Setning[]) => Promise<void>;
+    };
+    // Testbasen (src/db/testbase.ts) kjører transaksjonen selv; i appen gjør
+    // Rust det, på én tilkobling fra den samme puljen.
+    if (d.transaksjon) return d.transaksjon(this.setninger);
+    await invoke("transaksjon", { setninger: this.setninger });
+  }
 }

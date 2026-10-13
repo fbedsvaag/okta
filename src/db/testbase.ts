@@ -13,7 +13,13 @@ import { DatabaseSync, type SQLInputValue } from "node:sqlite";
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
-const MIGRASJONER = join(import.meta.dirname, "..", "..", "src-tauri", "migrations");
+const MIGRASJONER = join(
+  import.meta.dirname,
+  "..",
+  "..",
+  "src-tauri",
+  "migrations",
+);
 
 /**
  * Plugin-en bruker `$1`, `$2` … og tillater at samme nummer går igjen.
@@ -29,6 +35,8 @@ function navngi(args: unknown[]): Record<string, SQLInputValue> {
 export type Testbase = {
   select<T>(sql: string, args?: unknown[]): Promise<T>;
   execute(sql: string, args?: unknown[]): Promise<{ rowsAffected: number }>;
+  /** Som Rust-kommandoen `transaksjon`: alt eller ingenting. */
+  transaksjon(setninger: { sql: string; verdier: unknown[] }[]): Promise<void>;
   /** Tømmer alle tabeller og kjører seedingen på nytt. */
   nullstill(): void;
 };
@@ -59,6 +67,17 @@ export function lagTestbase(): Testbase {
     async execute(spørring: string, args: unknown[] = []) {
       const r = base.prepare(spørring).run(navngi(args));
       return { rowsAffected: Number(r.changes) };
+    },
+
+    async transaksjon(setninger) {
+      base.exec("BEGIN");
+      try {
+        for (const s of setninger) base.prepare(s.sql).run(navngi(s.verdier));
+        base.exec("COMMIT");
+      } catch (e) {
+        base.exec("ROLLBACK");
+        throw e;
+      }
     },
 
     nullstill() {

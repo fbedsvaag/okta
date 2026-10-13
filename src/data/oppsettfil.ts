@@ -1,12 +1,11 @@
-import { db, hent, naa, nyId, oppdater, settInn } from "../db";
+import { hent, nyId, Transaksjon } from "../db";
 import { hentFagIAr } from "./fag";
 import {
   hentAktivtSkolear,
+  hentAktivtSkolearId,
   hentFridager,
   hentInnstilling,
-  opprettFridag,
-  opprettSkolear,
-  settInnstilling,
+  settInnstillingI,
 } from "./skolear";
 import { LAERERNAVN } from "./arsplanark";
 import { FAGFARGER } from "../ui/farger";
@@ -510,9 +509,9 @@ export function plantekst(p: Importplan): string[] {
 }
 
 /**
- * Skriver planen. Sjekk og plan er gjort på forhånd; går noe galt
- * underveis, tas det som alt er lagt inn, bort igjen, så ingenting står
- * halvveis (tilkoblingen har ingen transaksjoner på tvers av kall).
+ * Skriver planen. Sjekk og plan er gjort på forhånd; alt skrives i én
+ * transaksjon, så en import som feiler, ikke etterlater noe halvveis og
+ * ikke rører valgt skoleår eller øktlengde (#2, #4).
  *
  * Fagene havner i fagbanken, ikke i skoleåret: mottakeren krysser av for
  * dem i oppsettet (§8.2).
@@ -520,98 +519,73 @@ export function plantekst(p: Importplan): string[] {
 export async function importerOppsett(
   p: Importplan,
 ): Promise<{ skolearId: string | null }> {
-  const lagt: { tabell: string; id: string }[] = [];
-  const logg = (tabell: string, id: string) => (lagt.push({ tabell, id }), id);
-  // Skalaverdi har ingen slettet-kolonne; de tas bort med id ved feil.
-  const verdier: string[] = [];
-  // Innstillingene importen kan endre, slik de var før (#4). Settes de
-  // tilbake til det de var, også når de ikke fantes.
-  const for_ = {
-    aktivt_skolear: await hentInnstilling("aktivt_skolear"),
-    standard_varighet_min: await hentInnstilling("standard_varighet_min"),
-  };
-  try {
-    let skolearId: string | null =
-      p.skolear?.status === "finnes" ? p.skolear.id : null;
-    if (p.skolear?.status === "ny" && p.oppsett.skolear) {
-      const o = p.oppsett.skolear;
-      skolearId = logg(
-        "skolear",
-        await opprettSkolear(o.navn, o.start, o.slutt),
-      );
-    }
-    if (skolearId)
-      for (const f of p.fridagerNye)
-        logg(
-          "fridag",
-          await opprettFridag(skolearId, f.navn, f.type as never, f.fra, f.til),
-        );
-
-    const [{ n }] = await hent<{ n: number }>("SELECT COUNT(*) AS n FROM fag");
-    for (const [i, f] of p.fagNye.entries())
-      logg(
-        "fag",
-        await settInn("fag", {
-          kode: f.kode,
-          navn: f.navn,
-          alias: f.alias,
-          grep_kode: f.grep_kode,
-          farge: FAGFARGER[(n + i) % FAGFARGER.length],
-        }),
-      );
-
-    if (p.settOktlengde)
-      await settInnstilling(
-        "standard_varighet_min",
-        String(p.oppsett.innstillinger.standard_varighet_min),
-      );
-
-    for (const s of p.skalaerNye) {
-      const id = logg(
-        "skala",
-        await settInn("skala", {
-          navn: s.navn,
-          bruksomrade: s.bruksomrade,
-          innebygd: 0,
-        }),
-      );
-      for (const v of s.verdier)
-        await (
-          await db()
-        ).execute(
-          `INSERT INTO skalaverdi (id, skala_id, kode, etikett, rang, farge, bestatt, teller_ikke)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-          [
-            (verdier.push(nyId()), verdier[verdier.length - 1]),
-            id,
-            v.kode,
-            v.etikett ?? null,
-            v.rang,
-            v.farge ?? null,
-            v.bestatt ?? null,
-            v.teller_ikke ?? 0,
-          ],
-        );
-    }
-    return { skolearId };
-  } catch (e) {
-    // Tilbake til der vi startet.
-    const tilkobling = await db();
-    for (const id of verdier)
-      await tilkobling
-        .execute("DELETE FROM skalaverdi WHERE id = $1", [id])
-        .catch(() => {});
-    for (const r of lagt.reverse())
-      await oppdater(r.tabell, r.id, { slettet: naa() }).catch(() => {});
-    for (const [nokkel, verdi] of Object.entries(for_)) {
-      if (verdi !== null) await settInnstilling(nokkel, verdi).catch(() => {});
-      else
-        await tilkobling
-          .execute("DELETE FROM innstilling WHERE nokkel = $1", [nokkel])
-          .catch(() => {});
-    }
-    throw e;
+  const t = new Transaksjon();
+  let skolearId: string | null =
+    p.skolear?.status === "finnes" ? p.skolear.id : null;
+  if (p.skolear?.status === "ny" && p.oppsett.skolear) {
+    const o = p.oppsett.skolear;
+    skolearId = t.settInn("skolear", {
+      navn: o.navn,
+      start: o.start,
+      slutt: o.slutt,
+    });
+    // Det første skoleåret blir det aktive, som i opprettSkolear (§4.8).
+    if ((await hentAktivtSkolearId()) === null)
+      settInnstillingI(t, "aktivt_skolear", skolearId);
   }
+  if (skolearId)
+    for (const f of p.fridagerNye)
+      t.settInn("fridag", {
+        skolear_id: skolearId,
+        navn: f.navn,
+        type: f.type,
+        fra: f.fra,
+        til: f.til,
+      });
+
+  const [{ n }] = await hent<{ n: number }>("SELECT COUNT(*) AS n FROM fag");
+  for (const [i, f] of p.fagNye.entries())
+    t.settInn("fag", {
+      kode: f.kode,
+      navn: f.navn,
+      alias: f.alias,
+      grep_kode: f.grep_kode,
+      farge: FAGFARGER[(n + i) % FAGFARGER.length],
+    });
+
+  if (p.settOktlengde)
+    settInnstillingI(
+      t,
+      "standard_varighet_min",
+      String(p.oppsett.innstillinger.standard_varighet_min),
+    );
+
+  for (const s of p.skalaerNye) {
+    const id = t.settInn("skala", {
+      navn: s.navn,
+      bruksomrade: s.bruksomrade,
+      innebygd: 0,
+    });
+    // Skalaverdi har ingen tidsstempler, så settInn passer ikke.
+    for (const v of s.verdier)
+      t.execute(
+        `INSERT INTO skalaverdi (id, skala_id, kode, etikett, rang, farge, bestatt, teller_ikke)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+        [
+          nyId(),
+          id,
+          v.kode,
+          v.etikett ?? null,
+          v.rang,
+          v.farge ?? null,
+          v.bestatt ?? null,
+          v.teller_ikke ?? 0,
+        ],
+      );
+  }
+
+  await t.kjor();
+  return { skolearId };
 }
 
 /** Fagene fra oppsettet slik de står i fagbanken nå, til avkrysning i veiviseren. */
