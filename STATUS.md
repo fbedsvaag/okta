@@ -1,6 +1,6 @@
 # Status
 
-Pr. 2026-10-13, versjon 0.3.0 (beta, ikke utgitt ennå). Beskriver hvor appen faktisk står, ikke hva
+Pr. 2026-10-13, versjon 0.3.0 (beta, utgitt 13.10 som pre-release). Beskriver hvor appen faktisk står, ikke hva
 den skal bli. Fila eies fritt, i motsetning til SPEC.md.
 
 **645 tester i `npm test` og 25 i `cargo test`, alle grønne på Mac.

@@ -491,7 +491,7 @@ Målet er tilbakemelding på kjernefunksjonene fra kolleger. Pynt venter.
   `docs/guide/oppdiktet-klasseliste-1STA-1STB.pdf` (oppdiktet InSchool-PDF med
   22 elever og CC0-figurer; testet mot `lesInschool`, gir ENG1007, 22 elever,
   22 bilder).
-- [ ] **13.3 Versjon 0.3.0** i `package.json`, `src-tauri/tauri.conf.json`,
+- [x] **13.3 Versjon 0.3.0** i `package.json`, `src-tauri/tauri.conf.json`,
   `guide_read_me.html` og `betatest.html`. Release som pre-release på
   GitHub (`gh release create v0.3.0 … --prerelease --title "Økta 0.3.0 beta"`),
   se `docs/release.md`.
