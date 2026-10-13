@@ -315,12 +315,62 @@ describe("vektetRekkefolge", () => {
     expect(ut).toEqual(["sentsist", "tidligsist"]);
   });
 
-  it("lar tilfeldigheten dominere, så køen ikke blir en fast rotasjon", () => {
-    // Én «tidlig» veier 1,0, mens tilfeldigheten spenner over 2,0. Da kan en
-    // elev med tidlig-historikk fortsatt havne først.
-    const h = new Map<string, Plassering[]>([["a", ["tidlig"]]]);
-    const ut = vektetRekkefolge(["a", "b"], h, fast([0.0, 0.9]));
-    expect(ut[0]).toBe("a");
+  it("den som var tidlig sist, havner aldri tidlig igjen", () => {
+    // 12 elever, fire av dem tidlig sist. De står bak alle de andre,
+    // uansett tilfeldighet; innenfor hver gruppe er rekkefølgen tilfeldig.
+    const tidlig = ["t1", "t2", "t3", "t4"];
+    const andre = ["n1", "n2", "n3", "n4", "n5", "n6", "n7", "n8"];
+    const h = new Map<string, Plassering[]>(
+      tidlig.map((id) => [id, ["tidlig"]] as [string, Plassering[]]),
+    );
+    const forste = new Set<string>();
+    for (let n = 0; n < 500; n++) {
+      const ut = vektetRekkefolge([...tidlig, ...andre], h);
+      expect(ut.slice(0, 8).some((id) => tidlig.includes(id))).toBe(false);
+      forste.add(ut[0]);
+    }
+    expect(forste.size).toBeGreaterThan(1);
+  });
+
+  it("den som var sent sist, havner aldri sent igjen", () => {
+    const sent = ["s1", "s2", "s3", "s4"];
+    const andre = ["n1", "n2", "n3", "n4", "n5", "n6", "n7", "n8"];
+    const h = new Map<string, Plassering[]>(
+      sent.map((id) => [id, ["sent"]] as [string, Plassering[]]),
+    );
+    for (let n = 0; n < 500; n++) {
+      const ut = vektetRekkefolge([...andre, ...sent], h);
+      expect(ut.slice(4).some((id) => sent.includes(id))).toBe(false);
+    }
+  });
+
+  it("veier en gruppe som snittet av medlemmene", () => {
+    const h = new Map<string, Plassering[]>([
+      ["a", ["tidlig"]],
+      ["b", ["tidlig"]],
+    ]);
+    const ut = vektetRekkefolge(["g:a+b", "c"], h, fast([0.0, 0.99]));
+    expect(ut).toEqual(["c", "g:a+b"]);
+  });
+});
+
+describe("trekkOmRekkefolge med vekting", () => {
+  it("vekter innenfor dagen og lar låste stå", () => {
+    const h = new Map<string, Plassering[]>([
+      ["a", ["tidlig"]],
+      ["d", ["sent"]],
+    ]);
+    for (let n = 0; n < 200; n++) {
+      const [dag] = trekkOmRekkefolge(
+        [["a", "b", "c", "d"]],
+        new Set(["c"]),
+        Math.random,
+        h,
+      );
+      expect(dag[2]).toBe("c"); // låst
+      expect(dag.indexOf("a")).toBeGreaterThan(dag.indexOf("d"));
+      expect(dag.indexOf("a")).toBeGreaterThan(dag.indexOf("b"));
+    }
   });
 });
 

@@ -205,11 +205,16 @@ export function Samtaler({
   async function last() {
     setElever(await hentElever(skolear.id));
     setFridager(await hentFridager(skolear.id));
-    setHistorikk(await hentHistorikk(skolear.id));
-
     const alle = await hentSamtaledager(skolear.id);
     const mine = alle.filter((d) =>
       modus === "mentor" ? d.skolearFagId === null : d.skolearFagId === fagId,
+    );
+    // Historikken er de andre trekningene, ikke den man står i.
+    setHistorikk(
+      await hentHistorikk(
+        skolear.id,
+        mine.map((d) => d.id),
+      ),
     );
     setDager(mine);
 
@@ -620,7 +625,12 @@ export function Samtaler({
 
     const nyPerDag = lastRekkefolge
       ? perDag
-      : trekkOmRekkefolge(perDag, lasteElever);
+      : trekkOmRekkefolge(
+          perDag,
+          lasteElever,
+          Math.random,
+          vekting ? historikk : undefined,
+        );
 
     const nyttTema = lastTema
       ? na

@@ -1253,10 +1253,16 @@ det er nettopp derfor de som har det er verdt å se på. Den samme oversikten
 ligger i oppsettet, over Generer, så den er synlig mens du trekker og ikke bare
 etterpå.
 
+**Historikken er de andre trekningene.** Trekningen man står i, teller ikke
+som «sist»: ellers ville merknaden beskrive plassen eleven nettopp fikk, og en
+ny trekning vektes mot den forrige utgaven av seg selv.
+
 **Vektingen er av som standard.** Ren tilfeldighet er normaltilstanden. Slås
-den på, skyves elever med nylig «tidlig» mot senere plasser og omvendt — som en
-tyngde i trekningen, ikke som en fast rotasjon. Tilfeldigheten skal fortsatt
-dominere, ellers blir køen forutsigbar på en annen måte.
+den på, gjelder den både Generer og Trekk på nytt: den som var tidlig sist,
+havner bak alle som ikke var det, og den som var sent sist, foran. Innenfor
+hver gruppe er rekkefølgen tilfeldig, så køen er ikke en fast rotasjon. De to
+plasseringene før det veier mindre. En gruppesamtale veier som snittet av
+medlemmene.
 
 **Merknadene vises uansett om vektingen er på.** De er opplysning om hva som
 har skjedd, ikke en konsekvens av en innstilling.

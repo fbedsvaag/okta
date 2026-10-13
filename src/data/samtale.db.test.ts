@@ -221,6 +221,15 @@ describe("hentHistorikk", () => {
   it("er tom når ingenting er trukket", async () => {
     expect((await hentHistorikk(skolearId)).size).toBe(0);
   });
+
+  it("lar trekningen man står i, være utenfor (den er ikke «sist»)", async () => {
+    const forrige = await dagMed("2026-10-01");
+    await trekning(forrige, elever.slice(0, 3)); // Tony tidlig
+    const na = await dagMed("2026-11-24");
+    await trekning(na, [...elever.slice(0, 3)].reverse()); // Tony sent nå
+    const h = await hentHistorikk(skolearId, [na]);
+    expect(h.get(elever[0])).toEqual(["tidlig"]);
+  });
 });
 
 describe("mentorsamtalen har ingen oppgave", () => {

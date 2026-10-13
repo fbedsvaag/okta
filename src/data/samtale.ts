@@ -311,12 +311,14 @@ export function trekkOmRekkefolge(
   perDag: string[][],
   laste: ReadonlySet<string>,
   tilfeldig: () => number = Math.random,
+  /** med historikk: vektet som ved en ny trekning (§4.10) */
+  historikk?: Map<string, Plassering[]>,
 ): string[][] {
   return perDag.map((dagen) => {
-    const losse = stokk(
-      dagen.filter((id) => !laste.has(id)),
-      tilfeldig,
-    );
+    const frie = dagen.filter((id) => !laste.has(id));
+    const losse = historikk
+      ? vektetRekkefolge(frie, historikk, tilfeldig)
+      : stokk(frie, tilfeldig);
     let i = 0;
     return dagen.map((id) => (laste.has(id) ? id : losse[i++]));
   });
@@ -456,25 +458,32 @@ export function merknad(nyesteForst: Plassering[]): string | null {
 /**
  * Rekkefølge vektet mot gjentakelse. Av som standard i UI-et (§4.10).
  *
- * En tyngde, ikke en rotasjon: elever med nylig «tidlig» skyves mot senere
- * plasser og omvendt, men tilfeldigheten dominerer fortsatt. Uten det blir
- * køen forutsigbar på en annen måte enn den var.
+ * Den nyeste plasseringen veier like mye som hele tilfeldigheten: den som
+ * var tidlig sist, havner bak alle som ikke var det, og den som var sent
+ * sist, foran. Innenfor hver gruppe er rekkefølgen tilfeldig. De to
+ * plasseringene før det veier mindre, så de bare flytter innenfor gruppa.
+ * En gruppesamtale veier som snittet av medlemmene.
  */
 export function vektetRekkefolge(
   elevIder: string[],
   historikk: Map<string, Plassering[]>,
   tilfeldig: () => number = Math.random,
 ): string[] {
-  const vekt = (id: string) => {
+  // Bare de tre siste teller. Den nyeste veier 2, like mye som spennet i
+  // tilfeldigheten under, så den alene bestemmer hvilken side eleven havner på.
+  const STYRKE = [2, 1, 0.5];
+  const elevvekt = (id: string) => {
     const nyeste = historikk.get(id) ?? [];
     let sum = 0;
-    // Bare de tre siste teller, og det nyeste tyngst.
     for (let i = 0; i < Math.min(3, nyeste.length); i++) {
-      const styrke = 1 / (i + 1);
-      if (nyeste[i] === "tidlig") sum += styrke;
-      if (nyeste[i] === "sent") sum -= styrke;
+      if (nyeste[i] === "tidlig") sum += STYRKE[i];
+      if (nyeste[i] === "sent") sum -= STYRKE[i];
     }
     return sum;
+  };
+  const vekt = (enhet: string) => {
+    const m = medlemmerAv(enhet);
+    return m.reduce((sum, id) => sum + elevvekt(id), 0) / m.length;
   };
 
   return [...elevIder]
@@ -1008,6 +1017,12 @@ export async function settMotte(id: string, motte: boolean): Promise<void> {
  */
 export async function hentHistorikk(
   skolearId: string,
+  /**
+   * Dagene i trekningen man står i. De er ikke «sist»: uten dette ville en
+   * ny trekning vektes mot den forrige utgaven av seg selv, og merknaden
+   * ved navnet beskrive plassen eleven nettopp fikk.
+   */
+  utenDager: string[] = [],
 ): Promise<Map<string, Plassering[]>> {
   const rader = await hent<{
     elevId: string;
@@ -1026,7 +1041,9 @@ export async function hentHistorikk(
   // Plasseringen regnes innen dagen, så radene grupperes per dag først.
   const perDag = new Map<string, { elevId: string; klokkeslett: string }[]>();
   const rekkefolge: string[] = [];
+  const utenfor = new Set(utenDager);
   for (const r of rader) {
+    if (utenfor.has(r.dagId)) continue;
     if (!perDag.has(r.dagId)) {
       perDag.set(r.dagId, []);
       rekkefolge.push(r.dagId);
