@@ -367,7 +367,10 @@ function GiTilbakemelding({ visning }: { visning: string }) {
       tilbakemeldingslinje(versjon, system, visning),
     );
     setKopiert(true);
-    setTimeout(() => setKopiert(false), 4000);
+    setTimeout(() => setKopiert(false), 6000);
+    // Nettleseren legger seg foran appen. Vent litt, så bekreftelsen
+    // rekker å bli lest først.
+    await new Promise((r) => setTimeout(r, 1300));
     const { openUrl } = await import("@tauri-apps/plugin-opener");
     await openUrl(SKJEMA_URL);
   }
@@ -376,17 +379,18 @@ function GiTilbakemelding({ visning }: { visning: string }) {
       <button
         onClick={klikk}
         data-hover
-        className="relative z-[1] flex h-8 min-w-0 flex-1 items-center rounded-[10px] px-2.5 text-left text-[calc(14px*var(--tekst-skala))] text-blekk"
+        className="relative z-[1] flex min-h-8 min-w-0 flex-1 items-center rounded-[10px] px-2.5 py-1 text-left text-[calc(14px*var(--tekst-skala))] text-blekk"
       >
-        <span className="truncate">
-          {kopiert ? (
-            <span className="text-blekk-dempet">
-              Kopiert. Lim inn i første felt.
-            </span>
-          ) : (
-            "Gi tilbakemelding"
-          )}
-        </span>
+        {kopiert ? (
+          <span
+            role="status"
+            className="text-[calc(12.5px*var(--tekst-skala))] leading-snug text-blekk-dempet"
+          >
+            Kopiert. Lim inn under «Versjon og skjerm».
+          </span>
+        ) : (
+          <span className="truncate">Gi tilbakemelding</span>
+        )}
       </button>
     </div>
   );
