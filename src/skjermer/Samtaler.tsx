@@ -63,6 +63,8 @@ import { useApen } from "../ui/Sammenleggbar";
 import { Samtalenotat } from "./Samtalenotat";
 import { Elevfoto } from "../ui/Elevfoto";
 import { TEMATEKST, temafarge } from "../ui/farger";
+import { useSisteSvar } from "../ui/sisteSvar";
+import { lesJson } from "../data/json";
 
 /**
  * Samtaletrekkeren, SPEC §4.10.
@@ -309,18 +311,26 @@ export function Samtaler({
     );
   }, [storrelseNokkel]);
 
+  // Temaene hører til ett fag. Bytter man fag før svaret er kommet, skal
+  // verken et tregt svar eller en redigering havne under feil fag (#6).
+  const temaerFor = useRef<string | null>(null);
+  const temavakt = useSisteSvar();
   useEffect(() => {
+    temaerFor.current = null;
+    setTemaer([]);
     if (modus !== "fag" || !fagId) return;
-    void hentInnstilling(temanokkel(fagId)).then((v) =>
-      setTemaer(v ? (JSON.parse(v) as string[]) : []),
-    );
+    const gjeldende = temavakt();
+    void hentInnstilling(temanokkel(fagId)).then((v) => {
+      if (!gjeldende()) return;
+      temaerFor.current = fagId;
+      setTemaer(lesJson<string[]>(v, [], "samtaletemaene"));
+    });
   }, [modus, fagId]);
 
   function lagreTemaer(nye: string[]) {
+    if (modus !== "fag" || !fagId || temaerFor.current !== fagId) return;
     setTemaer(nye);
-    if (modus === "fag" && fagId) {
-      void settInnstilling(temanokkel(fagId), JSON.stringify(nye));
-    }
+    void settInnstilling(temanokkel(fagId), JSON.stringify(nye));
   }
 
   /** Elevene trekningen gjelder — fra appen, eller fra lista du limte inn. */
@@ -330,12 +340,20 @@ export function Samtaler({
   const [utelatt, setUtelatt] = useState<Set<string>>(new Set());
   const [velgElever, setVelgElever] = useState(false);
   const utvalgNokkel = `samtale_utelatt_${modus === "mentor" ? "mentor" : fagId}`;
+  const utelattFor = useRef<string | null>(null);
+  const utvalgvakt = useSisteSvar();
   useEffect(() => {
-    void hentInnstilling(utvalgNokkel).then((v) =>
-      setUtelatt(new Set(v ? (JSON.parse(v) as string[]) : [])),
-    );
+    utelattFor.current = null;
+    setUtelatt(new Set());
+    const gjeldende = utvalgvakt();
+    void hentInnstilling(utvalgNokkel).then((v) => {
+      if (!gjeldende()) return;
+      utelattFor.current = utvalgNokkel;
+      setUtelatt(new Set(lesJson<string[]>(v, [], "utvalget av elever")));
+    });
   }, [utvalgNokkel]);
   function settUtelatt(ny: Set<string>) {
+    if (utelattFor.current !== utvalgNokkel) return;
     setUtelatt(ny);
     void settInnstilling(utvalgNokkel, JSON.stringify([...ny]));
   }
