@@ -10,7 +10,7 @@
  */
 
 /** Lenka til skjemaet. Tom: raden skjules. */
-export const SKJEMA_URL = "";
+export const SKJEMA_URL = "https://forms.cloud.microsoft/e/HAvnL8PZtu";
 
 /** Skjermnavnene i linja. Faste ord, så ingenting fra databasen lekker ut. */
 const SKJERMER: Record<string, string> = {
