@@ -3,7 +3,7 @@
 Pr. 2026-10-13, versjon 0.3.0 (beta, ikke utgitt ennå). Beskriver hvor appen faktisk står, ikke hva
 den skal bli. Fila eies fritt, i motsetning til SPEC.md.
 
-**616 tester i `npm test` og 13 i `cargo test`, alle grønne på Mac.
+**625 tester i `npm test` og 13 i `cargo test`, alle grønne på Mac.
 `tsc --noEmit` er ren. `npm run build` går gjennom. 24 migrasjoner.**
 
 Utseendet står i `DESIGN.md`, som beskriver appen slik den er bygget.
@@ -110,6 +110,10 @@ Forslag til ny tekst står i `docs/spec-forslag-2026-10-07.md`.
 
 ## Kjent
 
+- **Åpne issues fra Torbjørn (GitHub):** #1 sikkerhet (CSP er av,
+  `skriv_fil`/`skriv_kalenderfil`/`skriv_arkiv` skriver der JS ber om) og
+  #2 transaksjoner (sammensatte skrivinger bør bli Rust-kommandoer). Neste
+  runde. #3–#6 er rettet 13.10.
 - **Under utvikling** (`tauri dev`) kan vinduet bli blankt etter at koden
   er endret mens appen kjører. Lukk og start vinduet på nytt. Den ferdige
   appen er ikke berørt.
