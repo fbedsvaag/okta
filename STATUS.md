@@ -3,7 +3,7 @@
 Pr. 2026-10-13, versjon 0.3.0 (beta, ikke utgitt ennå). Beskriver hvor appen faktisk står, ikke hva
 den skal bli. Fila eies fritt, i motsetning til SPEC.md.
 
-**625 tester i `npm test` og 13 i `cargo test`, alle grønne på Mac.
+**630 tester i `npm test` og 19 i `cargo test`, alle grønne på Mac.
 `tsc --noEmit` er ren. `npm run build` går gjennom. 24 migrasjoner.**
 
 Utseendet står i `DESIGN.md`, som beskriver appen slik den er bygget.
@@ -110,10 +110,19 @@ Forslag til ny tekst står i `docs/spec-forslag-2026-10-07.md`.
 
 ## Kjent
 
-- **Åpne issues fra Torbjørn (GitHub):** #1 sikkerhet (CSP er av,
-  `skriv_fil`/`skriv_kalenderfil`/`skriv_arkiv` skriver der JS ber om) og
-  #2 transaksjoner (sammensatte skrivinger bør bli Rust-kommandoer). Neste
-  runde. #3–#6 er rettet 13.10.
+- **Issues fra Torbjørn (GitHub), alle rettet 13.10:**
+  - #1: CSP er på. Lagre-dialogen og arkivmappa eies av Rust; vinduet kan
+    ikke lenger be om å få skrevet til en vilkårlig sti. Arkivmappa må
+    velges på nytt én gang (den gamle `eksportmappe` i databasen brukes
+    ikke). `sql:allow-execute` står fortsatt åpen: alle andre skrivinger
+    går den veien.
+  - #2: `slettElevHelt`, `lagreTrekning` og `importerOppsett` kjører i én
+    transaksjon gjennom Rust-kommandoen `transaksjon`. Andre operasjoner
+    med flere skrivinger kan flyttes over etter hvert.
+  - #3–#6: se commit-loggen.
+- **SPEC §4.8 nevner `eksportmappe` som en innstilling i databasen.** Den
+  bor nå i `arkivmappe.txt` i appens datamappe (#1). Forslag til ny tekst
+  må tas med eieren.
 - **Under utvikling** (`tauri dev`) kan vinduet bli blankt etter at koden
   er endret mens appen kjører. Lukk og start vinduet på nytt. Den ferdige
   appen er ikke berørt.
