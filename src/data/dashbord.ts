@@ -352,30 +352,40 @@ export type Kommende = {
 };
 
 /**
- * Vurderinger med frist, nærmeste først. Tar med dem som har passert og
- * ikke er ferdig ført — en glemt frist er nettopp det man vil se.
+ * Vurderinger med frist som ikke er ferdig ført, nærmeste først. Med dem
+ * som har passert: en glemt frist er nettopp det man vil se. En vurdering
+ * der alle elevene har fått resultat, er ferdig og står ikke her; ellers
+ * ville høstens vurderinger fylt lista resten av året.
+ *
+ * «Ført» og «elever» telles som i Vurderinger: elever som er slettet,
+ * teller ikke.
  */
 export async function hentKommendeVurderinger(
   skolearId: string,
   grense = 6,
 ): Promise<Kommende[]> {
   return hent<Kommende>(
-    `SELECT v.id     AS vurderingId,
-            v.tittel AS tittel,
-            v.frist  AS frist,
-            COALESCE(NULLIF(f.alias, ''), f.kode) AS kode,
-            f.farge  AS farge,
-            (SELECT COUNT(*) FROM vurderingsresultat vr
-              WHERE vr.vurdering_id = v.id AND vr.slettet IS NULL
-                AND vr.skalaverdi_id IS NOT NULL)        AS fort,
-            (SELECT COUNT(*) FROM elev_fag ef
-              WHERE ef.skolear_fag_id = v.skolear_fag_id
-                AND ef.slettet IS NULL)                  AS elever
-       FROM vurdering v
-       JOIN skolear_fag sf ON sf.id = v.skolear_fag_id AND sf.slettet IS NULL
-       JOIN fag f          ON f.id = sf.fag_id
-      WHERE v.slettet IS NULL AND sf.skolear_id = $1 AND v.frist IS NOT NULL
-      ORDER BY v.frist ASC
+    `WITH alle AS (
+       SELECT v.id     AS vurderingId,
+              v.tittel AS tittel,
+              v.frist  AS frist,
+              COALESCE(NULLIF(f.alias, ''), f.kode) AS kode,
+              f.farge  AS farge,
+              (SELECT COUNT(*) FROM vurderingsresultat vr
+                WHERE vr.vurdering_id = v.id AND vr.slettet IS NULL
+                  AND vr.skalaverdi_id IS NOT NULL)        AS fort,
+              (SELECT COUNT(*) FROM elev_fag ef
+                 JOIN elev e ON e.id = ef.elev_id AND e.slettet IS NULL
+                WHERE ef.skolear_fag_id = v.skolear_fag_id
+                  AND ef.slettet IS NULL)                  AS elever
+         FROM vurdering v
+         JOIN skolear_fag sf ON sf.id = v.skolear_fag_id AND sf.slettet IS NULL
+         JOIN fag f          ON f.id = sf.fag_id
+        WHERE v.slettet IS NULL AND sf.skolear_id = $1 AND v.frist IS NOT NULL
+     )
+     SELECT * FROM alle
+      WHERE elever = 0 OR fort < elever
+      ORDER BY frist ASC
       LIMIT $2`,
     [skolearId, grense],
   );
