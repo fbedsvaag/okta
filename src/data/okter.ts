@@ -1,4 +1,4 @@
-import { hent, oppdater, settInn, slett } from "../db";
+import { hent, oppdater, settInn, slett, settInnEllerOppdater } from "../db";
 import { varsle, varsleElever } from "./endringer";
 import type { Skalaverdi } from "../skala";
 
@@ -430,20 +430,7 @@ export async function settSkaring(
   oktId: string,
   skalaverdiId: string,
 ): Promise<void> {
-  const finnes = await hent<{ id: string }>(
-    "SELECT id FROM skaring WHERE elev_id = $1 AND okt_id = $2",
-    [elevId, oktId],
-  );
-
-  if (finnes[0]) {
-    await oppdater("skaring", finnes[0].id, {
-      skalaverdi_id: skalaverdiId,
-      slettet: null,
-    });
-    return;
-  }
-
-  await settInn("skaring", {
+  await settInnEllerOppdater("skaring", ["elev_id", "okt_id"], {
     elev_id: elevId,
     okt_id: oktId,
     skalaverdi_id: skalaverdiId,
@@ -472,16 +459,18 @@ export async function settSkaringsnotat(
   notat: string,
 ): Promise<void> {
   const tekst = notat.trim();
-  const [finnes] = await hent<{ id: string; slettet: string | null }>(
-    "SELECT id, slettet FROM oktnotat WHERE elev_id = $1 AND okt_id = $2",
-    [elevId, oktId],
-  );
   if (!tekst) {
-    if (finnes && finnes.slettet === null) await slett("oktnotat", finnes.id);
-  } else if (finnes) {
-    await oppdater("oktnotat", finnes.id, { tekst, slettet: null });
+    const [finnes] = await hent<{ id: string }>(
+      "SELECT id FROM oktnotat WHERE elev_id = $1 AND okt_id = $2 AND slettet IS NULL",
+      [elevId, oktId],
+    );
+    if (finnes) await slett("oktnotat", finnes.id);
   } else {
-    await settInn("oktnotat", { elev_id: elevId, okt_id: oktId, tekst });
+    await settInnEllerOppdater("oktnotat", ["elev_id", "okt_id"], {
+      elev_id: elevId,
+      okt_id: oktId,
+      tekst,
+    });
   }
   // Notatet står også i elevens tidslinje; kortet under skal vise det.
   varsleElever();

@@ -1,7 +1,14 @@
 import { slettForElevI } from "./klassekart";
 import { varsleElever } from "./endringer";
 import { slettElevbildeI } from "./elevbilde";
-import { hent, oppdater, settInn, slett, Transaksjon } from "../db";
+import {
+  hent,
+  oppdater,
+  settInn,
+  slett,
+  Transaksjon,
+  settInnEllerOppdater,
+} from "../db";
 import { lagElevkode } from "./elevkode";
 import type { EksisterendeElev } from "../import/duplikat";
 
@@ -278,22 +285,14 @@ export async function settKlasse(
   skolearId: string,
   klasseId: string | null,
 ): Promise<void> {
-  const finnes = await hent<{ id: string }>(
-    "SELECT id FROM elev_klasse WHERE elev_id = $1 AND skolear_id = $2",
-    [elevId, skolearId],
-  );
-
   if (klasseId === null) {
+    const finnes = await hent<{ id: string }>(
+      "SELECT id FROM elev_klasse WHERE elev_id = $1 AND skolear_id = $2 AND slettet IS NULL",
+      [elevId, skolearId],
+    );
     if (finnes[0]) await slett("elev_klasse", finnes[0].id);
-  } else if (finnes[0]) {
-    // UNIQUE(elev_id, skolear_id) gjelder også soft-slettede rader, så raden
-    // gjenbrukes i stedet for at vi setter inn en ny (§12).
-    await oppdater("elev_klasse", finnes[0].id, {
-      klasse_id: klasseId,
-      slettet: null,
-    });
   } else {
-    await settInn("elev_klasse", {
+    await settInnEllerOppdater("elev_klasse", ["elev_id", "skolear_id"], {
       elev_id: elevId,
       klasse_id: klasseId,
       skolear_id: skolearId,

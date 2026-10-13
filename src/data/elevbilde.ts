@@ -1,4 +1,4 @@
-import { hent, oppdater, settInn, Transaksjon } from "../db";
+import { hent, settInnEllerOppdater, Transaksjon } from "../db";
 import { varsleElever } from "./endringer";
 
 /**
@@ -14,15 +14,11 @@ export async function settElevbilde(
   bilde: string,
   kilde: string,
 ): Promise<void> {
-  const [finnes] = await hent<{ id: string }>(
-    "SELECT id FROM elevbilde WHERE elev_id = $1",
-    [elevId],
-  );
-  if (finnes) {
-    await oppdater("elevbilde", finnes.id, { bilde, kilde, slettet: null });
-  } else {
-    await settInn("elevbilde", { elev_id: elevId, bilde, kilde });
-  }
+  await settInnEllerOppdater("elevbilde", ["elev_id"], {
+    elev_id: elevId,
+    bilde,
+    kilde,
+  });
   varsleElever();
 }
 

@@ -75,6 +75,39 @@ export async function settInn(
   return id;
 }
 
+/**
+ * INSERT, eller UPDATE av raden som har samme `nokkel` (#8). Én setning,
+ * så det finnes ikke noe vindu mellom «finnes raden?» og skrivingen: to
+ * raske tastetrykk på samme elev kan ikke begge prøve INSERT.
+ *
+ * UNIQUE gjelder også soft-slettede rader, så en slettet rad tas i bruk
+ * igjen (`slettet = NULL`) i stedet for at en ny settes inn (§12).
+ */
+export async function settInnEllerOppdater(
+  tabell: string,
+  nokkel: string[],
+  felter: Record<string, unknown>,
+): Promise<void> {
+  const tid = naa();
+  const rad = { ...felter, id: nyId(), opprettet: tid, endret: tid };
+  const kolonner = Object.keys(rad);
+  const plassholdere = kolonner.map((_, i) => `$${i + 1}`).join(", ");
+  const sett = [
+    ...Object.keys(felter)
+      .filter((k) => !nokkel.includes(k))
+      .map((k) => `${k} = excluded.${k}`),
+    "endret = excluded.endret",
+    "slettet = NULL",
+  ].join(", ");
+  await (
+    await db()
+  ).execute(
+    `INSERT INTO ${tabell} (${kolonner.join(", ")}) VALUES (${plassholdere})
+     ON CONFLICT(${nokkel.join(", ")}) DO UPDATE SET ${sett}`,
+    Object.values(rad),
+  );
+}
+
 /** UPDATE. Skriver endret automatisk — derfor ligger det her og ikke i hver visning. */
 export async function oppdater(
   tabell: string,
