@@ -456,7 +456,7 @@ Tegnet i lerretet runde 13: `Elever`, `Fagside`, `OktSkar`, `OktPlan`
 
 ## 12. Innsats over tid (13.10)
 
-- [ ] **12.1 Ny bolk «Innsats over tid» på I dag** (lerretet `InnsatsTid`),
+- [x] **12.1 Ny bolk «Innsats over tid» på I dag** (lerretet `InnsatsTid`),
   erstatter prikkene. Én rad per fag: fagfirkant, kode og navn til venstre.
   I midten én søyle per skoleuke for hele året (aug–jun, felles kolonner for
   alle fag): 100 % stablet andel grønn / gul / rød / fravær fra bunnen,
@@ -468,6 +468,10 @@ Tegnet i lerretet runde 13: `Elever`, `Fagside`, `OktSkar`, `OktPlan`
   søyle: mørk tooltip med «FAG · uke n», «3 økter · 72 skåringer» og tallene
   per farge; de andre søylene dempes. Klikk: åpner ukas økter. Ingen
   forklarende tekst under bolken – den skal forklare seg selv.
+  *Gjort:* bolken går over hele bredden under de to kolonnene; søylene
+  krymper under 14 px når vinduet er smalt. Forklaringen sier «Ikke i økta»
+  som lerretet og resten av appen. Andelen grønn regnes uten «ikke i økta»
+  (CLAUDE.md regel 5), lerretet tok den med i nevneren.
 
 ## Ikke nå
 

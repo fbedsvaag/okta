@@ -4,11 +4,7 @@ import { Utfold } from "../ui/Utfold";
 import { useEffect, useState } from "react";
 import {
   hentGlipp,
-  hentInnsatslinjer,
-  mandagFor,
   snittfarge,
-  ukesfarge,
-  type Innsatslinje,
   hentKommendeVurderinger,
   hentTimeregnskap,
   hentVurderingstimer,
@@ -16,15 +12,10 @@ import {
   type Glipp,
   type Kommende,
 } from "../data/dashbord";
-import {
-  Fagfirkant,
-  Fagmerke,
-  Kappet,
-  Kontekstmeny,
-  Menyvalg,
-  Tomtilstand,
-} from "../ui/felles";
+import { Fagmerke, Kappet, Tomtilstand } from "../ui/felles";
 import type { Okt } from "../data/okter";
+import type { FagIAr } from "../data/fag";
+import { InnsatsOverTid } from "./InnsatsOverTid";
 import {
   angreGjoremal,
   angreLoggpost,
@@ -55,14 +46,18 @@ import { useArk } from "../ui/Arkstabel";
 export function Arsoversikt({
   skolearId,
   skolestart,
+  skoleslutt,
+  fag,
   okter,
   onApneElev,
   onApneVurdering,
   children,
 }: {
   skolearId: string;
-  /** første skoledag — innsatslinjene begynner der */
+  /** skoleårets spenn: Innsats over tid viser alle ukene i det */
   skolestart: string;
+  skoleslutt: string;
+  fag: FagIAr[];
   /** alle øktene i året, så en prikk kan åpne ukas økter */
   okter: Okt[];
   onApneElev: (elevId: string) => void;
@@ -80,8 +75,7 @@ export function Arsoversikt({
   useEffect(() => {
     let avbrutt = false;
     (async () => {
-      const [uker, timer, glipp, kommende, vurdering] = await Promise.all([
-        hentInnsatslinjer(skolearId),
+      const [timer, glipp, kommende, vurdering] = await Promise.all([
         hentTimeregnskap(skolearId),
         hentGlipp(skolearId),
         hentKommendeVurderinger(skolearId),
@@ -89,7 +83,6 @@ export function Arsoversikt({
       ]);
       if (avbrutt) return;
       setData({
-        uker,
         timer,
         glipp,
         kommende,
@@ -105,11 +98,6 @@ export function Arsoversikt({
     <div className="grid gap-x-10 gap-y-7 lg:grid-cols-[minmax(0,1fr)_20rem]">
       <div className="min-w-0 space-y-7">
         {children}
-        <Innsats
-          linjer={data?.uker ?? []}
-          skolestart={skolestart}
-          okter={okter}
-        />
         <Timeregnskap fag={data?.timer ?? []} mentor={data?.mentor ?? null} />
       </div>
       <div className="grid content-start gap-y-7">
@@ -120,12 +108,24 @@ export function Arsoversikt({
         />
         <Glipper elever={data?.glipp ?? []} onApne={onApneElev} />
       </div>
+      {/*
+        Innsats over tid (12.1) går over hele bredden: én søyle per uke for
+        hele skoleåret får ikke plass i venstre spalte.
+      */}
+      <div className="lg:col-span-2">
+        <InnsatsOverTid
+          skolearId={skolearId}
+          start={skolestart}
+          slutt={skoleslutt}
+          fag={fag}
+          okter={okter}
+        />
+      </div>
     </div>
   );
 }
 
 type Oversikt = {
-  uker: Innsatslinje[];
   timer: Fagtimer[];
   /** mentorsamtalene, som ikke hører til noe fag (§4.10) */
   mentor: { timer: number; antall: number } | null;
@@ -170,8 +170,7 @@ function Panel({
   );
 }
 
-// ------------------------------------------------------------------ innsats
-
+/** Snittfargen til «Elever som glipper», i trafikklysets fem trinn. */
 const PRIKKFARGE = {
   gronn: "var(--color-lys-gronn)",
   gronngul: "var(--color-lys-gronngul)",
@@ -179,161 +178,6 @@ const PRIKKFARGE = {
   oransje: "var(--color-lys-oransje)",
   rod: "var(--color-lys-rod)",
 } as const;
-
-/**
- * Innsats over tid: én tynn linje per fag, én prikk per uke.
- *
- * Prikkens farge er uka samlet i trafikklysets fem trinn — andelen grønt,
- * der gult teller halvt. Uker uten skåringer har ingen prikk, så hullene
- * synes. Samme språk som heatmapet på elevkortet: små prikker, ikke grafer.
- */
-function Innsats({
-  linjer,
-  skolestart,
-  okter,
-}: {
-  linjer: Innsatslinje[];
-  skolestart: string;
-  okter: Okt[];
-}) {
-  const ark = useArk();
-  // Uka man klikket på, når den har flere økter å velge mellom.
-  const [meny, setMeny] = useState<{
-    x: number;
-    y: number;
-    okter: Okt[];
-  } | null>(null);
-
-  /** Én økt den uka åpnes rett; flere gir en liste å velge fra. */
-  function apneUke(fagId: string, mandag: string, el: HTMLElement) {
-    const ukas = okter
-      .filter((o) => o.skolearFagId === fagId && mandagFor(o.dato) === mandag)
-      .sort(
-        (a, b) =>
-          a.dato.localeCompare(b.dato) ||
-          (a.klokkeslett ?? "").localeCompare(b.klokkeslett ?? ""),
-      );
-    if (ukas.length === 1) return ark.apneOkt(ukas[0].id, "skaring");
-    if (ukas.length === 0) return;
-    const r = el.getBoundingClientRect();
-    setMeny({ x: r.left, y: r.bottom + 4, okter: ukas });
-  }
-
-  // Ukene fra skolestart til i dag, felles for alle fagene.
-  const forste = mandagFor(skolestart);
-  const siste = mandagFor(isoIdag());
-  const uker: string[] = [];
-  for (let m = forste; m <= siste; m = pluss7(m)) uker.push(m);
-
-  return (
-    <Panel
-      tittel="Innsats over tid"
-      nokkel="forside-innsats"
-      hjelp="én prikk per uke"
-    >
-      {linjer.length === 0 ? (
-        <p className="py-2 text-brod text-blekk-svak">
-          Ingen skåringer ført ennå. Linjene fyller seg etter hvert som du
-          skårer øktene.
-        </p>
-      ) : (
-        <div className="space-y-2.5 pt-1">
-          {linjer.map((l) => {
-            const perUke = new Map(l.prikker.map((p) => [p.mandag, p]));
-            return (
-              <div key={l.skolearFagId} className="flex items-center gap-3">
-                <span className="flex w-20 shrink-0 items-center gap-1.5 text-liten font-medium">
-                  <Fagfirkant farge={l.farge} />
-                  <span className="truncate">{l.kode}</span>
-                </span>
-                <div className="relative flex h-4 flex-1 items-center">
-                  <span
-                    aria-hidden
-                    className="absolute inset-x-0 top-1/2 h-px bg-linje"
-                  />
-                  {uker.map((m) => {
-                    const p = perUke.get(m);
-                    const f = p ? ukesfarge(p) : null;
-                    return (
-                      <span
-                        key={m}
-                        className="group/prikk relative flex flex-1 justify-center"
-                      >
-                        {f && (
-                          <>
-                            <button
-                              aria-label={`Uke ${isoUke(m)}: åpne ukas økter`}
-                              onClick={(e) =>
-                                apneUke(l.skolearFagId, m, e.currentTarget)
-                              }
-                              className="h-2.5 w-2.5 cursor-pointer rounded-full ring-2 ring-ark transition-transform hover:scale-150"
-                              style={{ background: PRIKKFARGE[f] }}
-                            />
-                            <span
-                              role="tooltip"
-                              className="pointer-events-none absolute bottom-full z-20 mb-1.5 hidden whitespace-nowrap rounded-liten border border-linje bg-ark px-2 py-1 text-liten shadow-[var(--shadow-panel)] group-hover/prikk:block"
-                            >
-                              <span className="font-medium tabular-nums">
-                                Uke {isoUke(m)} · {norskDato(m)}
-                              </span>
-                              <span className="ml-2 tabular-nums text-blekk-dempet">
-                                grønn {p!.gronn} · gul {p!.gul} · rød {p!.rod}
-                              </span>
-                            </span>
-                          </>
-                        )}
-                      </span>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })}
-          <div className="flex gap-3 pl-[5.75rem] text-mikro tabular-nums text-blekk-svakest">
-            <span>uke {isoUke(forste)}</span>
-            <span className="ml-auto">uke {isoUke(siste)}</span>
-          </div>
-          {meny && (
-            <Kontekstmeny x={meny.x} y={meny.y} onLukk={() => setMeny(null)}>
-              {meny.okter.map((o) => (
-                <Menyvalg
-                  key={o.id}
-                  onKlikk={() => {
-                    setMeny(null);
-                    ark.apneOkt(o.id, "skaring");
-                  }}
-                >
-                  <span className="tabular-nums">{norskDato(o.dato)}</span>
-                  {o.klokkeslett && (
-                    <span className="ml-2 tabular-nums text-blekk-dempet">
-                      {o.klokkeslett}
-                    </span>
-                  )}
-                  {o.tema && (
-                    <span className="ml-2 text-blekk-dempet">{o.tema}</span>
-                  )}
-                </Menyvalg>
-              ))}
-            </Kontekstmeny>
-          )}
-        </div>
-      )}
-    </Panel>
-  );
-}
-
-function pluss7(dato: string): string {
-  const [a, m, d] = dato.split("-").map(Number);
-  return new Date(Date.UTC(a, m - 1, d + 7)).toISOString().slice(0, 10);
-}
-
-function isoUke(dato: string): number {
-  const [a, m, d] = dato.split("-").map(Number);
-  const t = new Date(Date.UTC(a, m - 1, d));
-  t.setUTCDate(t.getUTCDate() + 4 - (t.getUTCDay() || 7));
-  const nyttar = Date.UTC(t.getUTCFullYear(), 0, 1);
-  return Math.ceil(((t.getTime() - nyttar) / 86400000 + 1) / 7);
-}
 
 // ------------------------------------------------------------- timeregnskap
 

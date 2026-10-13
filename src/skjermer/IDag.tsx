@@ -76,6 +76,8 @@ export function IDag({
         <Arsoversikt
           skolearId={skolear.id}
           skolestart={skolear.start}
+          skoleslutt={skolear.slutt}
+          fag={fag}
           okter={okter}
           onApneElev={(elevId) => ark.apneElev(elevId)}
           onApneVurdering={(id) => ark.apneVurdering(id)}
