@@ -1,5 +1,6 @@
 import { hent } from "../db";
 import { hentSamtaledager, timerPaDagen } from "./samtale";
+import { glipper, hentOktrader, sisteRuter } from "./oktrader";
 
 /**
  * Tallene årsskjermen bygger på.
@@ -284,7 +285,11 @@ export type Glipp = {
 };
 
 /**
- * Elevene med lavest snitt i skåringene sine, lavest først.
+ * Elevene som glipper, lavest snitt først.
+ *
+ * «Glipper» er samme regel som i Elever-lista: minst to røde blant de fem
+ * siste øktene (`glipper` i oktrader.ts). Før sto de åtte med lavest snitt
+ * her uansett nivå, så en sterk klasse fikk gode elever under «glipper».
  *
  * Hver skåring regnes om til et tall fra 0 til 1 etter hvor den ligger på
  * sin egen skala — rød er 0, grønn 1, gul midt imellom på trafikklyset. Da
@@ -332,10 +337,14 @@ export async function hentGlipp(
                           AND ek.skolear_id = $1 AND ek.slettet IS NULL
        LEFT JOIN klasse k  ON k.id = ek.klasse_id AND k.slettet IS NULL
       GROUP BY e.id
-      ORDER BY snitt ASC, antall DESC, e.etternavn, e.fornavn
-      LIMIT $2`,
-    [skolearId, grense],
-  );
+      ORDER BY snitt ASC, antall DESC, e.etternavn, e.fornavn`,
+    [skolearId],
+  ).then(async (alle) => {
+    const rader = await hentOktrader(skolearId);
+    return alle
+      .filter((e) => glipper(sisteRuter(rader, e.elevId)))
+      .slice(0, grense);
+  });
 }
 
 // --------------------------------------------------------- kommende vurderinger

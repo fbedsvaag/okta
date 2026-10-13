@@ -301,10 +301,10 @@ function Glipper({
     <Panel
       tittel="Elever som glipper"
       nokkel="forside-glipper"
-      hjelp="lavest snitt først"
+      hjelp="to røde av de fem siste · lavest snitt først"
     >
       {elever.length === 0 ? (
-        <Tomtilstand tekst="Ingen elever er skåret ennå." />
+        <Tomtilstand tekst="Ingen elever glipper nå." />
       ) : (
         <ul className="divide-y divide-linje-svak">
           {elever.map((e) => (

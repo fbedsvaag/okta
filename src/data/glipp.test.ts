@@ -43,25 +43,32 @@ async function elevMed(navn: string, verdier: string[]): Promise<string> {
   return elev;
 }
 
-describe("elever som glipper", () => {
-  it("står med lavest snitt først, og snittet går fra 0 til 1", async () => {
+describe("elever som glipper (#6)", () => {
+  it("er bare de med minst to røde blant de fem siste, lavest snitt først", async () => {
     await elevMed("Meadow", [GRONN, GRONN]);
-    await elevMed("Tony", [ROD, GUL]);
-    await elevMed("Carmela", [GUL, GRONN]);
+    await elevMed("Carmela", [ROD, GRONN, GRONN]); // én rød: glipper ikke
+    await elevMed("Tony", [ROD, ROD]);
+    await elevMed("Paulie", [GUL, ROD, ROD]);
 
     const rader = await hentGlipp(skolearId);
-    expect(rader.map((r) => r.fornavn)).toEqual(["Tony", "Carmela", "Meadow"]);
-    expect(rader.map((r) => r.snitt)).toEqual([0.25, 0.75, 1]);
+    expect(rader.map((r) => r.fornavn)).toEqual(["Tony", "Paulie"]);
+    expect(rader.map((r) => r.snitt)).toEqual([0, 1 / 6]);
+  });
+
+  it("ser bare på de fem siste øktene", async () => {
+    // To røde tidlig, så fem grønne: glipper ikke lenger.
+    await elevMed("Silvio", [ROD, ROD, GRONN, GRONN, GRONN, GRONN, GRONN]);
+    expect(await hentGlipp(skolearId)).toEqual([]);
   });
 
   it("lar «ikke i økta» være utenfor snittet", async () => {
-    await elevMed("AJ", [GRONN, IKKE_I_OKTA, IKKE_I_OKTA]);
+    await elevMed("AJ", [ROD, ROD, IKKE_I_OKTA]);
     const [aj] = await hentGlipp(skolearId);
-    expect(aj).toMatchObject({ snitt: 1, antall: 1 });
+    expect(aj).toMatchObject({ snitt: 0, antall: 2 });
   });
 
   it("tar ikke med elever som er tatt ut av faget", async () => {
-    const tony = await elevMed("Tony", [ROD]);
+    const tony = await elevMed("Tony", [ROD, ROD]);
     await frakobleFag(tony, fagId);
     expect(await hentGlipp(skolearId)).toEqual([]);
   });

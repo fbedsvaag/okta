@@ -642,7 +642,8 @@ uke for uke. En strek viser klokka nå — tydelig i dagens kolonne, svak bak
 øktene resten av uka. En økt åpnes med et klikk, som et kort over forsiden.
 
 Under igjen: **årsoversikten** — timeregnskap, **gjøremål**, vurderingsfrister og
-elever som glipper (lavest snitt først, på tvers av skalaer).
+elever som glipper (minst to røde blant de fem siste øktene, som i Elever;
+lavest snitt først, på tvers av skalaer).
 
 **Gjøremål** samler alt som venter: notater merket «skal følges opp» som ikke
 er lukket, og ukryssede avkrysningsbokser (`- [ ]`) i elevnotater og
