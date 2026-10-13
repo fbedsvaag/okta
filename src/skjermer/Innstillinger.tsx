@@ -1073,7 +1073,7 @@ export function Innstillinger({
           <Bolk id="personvern" tittel="Personvern">
             <p className="text-brod text-blekk-dempet">
               Appen gjør ingen nettverkskall. Databasen ligger lokalt i{" "}
-              <code className="text-liten break-all">
+              <code className="text-liten break-words">
                 {datamappe ?? "appens datamappe"}
               </code>
               .

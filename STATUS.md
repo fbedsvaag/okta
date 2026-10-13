@@ -1,10 +1,10 @@
 # Status
 
-Pr. 2026-10-13, versjon 0.2.0. Beskriver hvor appen faktisk står, ikke hva
+Pr. 2026-10-13, versjon 0.3.0 (beta, ikke utgitt ennå). Beskriver hvor appen faktisk står, ikke hva
 den skal bli. Fila eies fritt, i motsetning til SPEC.md.
 
-**578 tester, alle grønne. `tsc --noEmit` er ren. `npm run build` går
-gjennom. 24 migrasjoner.**
+**616 tester i `npm test` og 13 i `cargo test`, alle grønne på Mac.
+`tsc --noEmit` er ren. `npm run build` går gjennom. 24 migrasjoner.**
 
 Utseendet står i `DESIGN.md`, som beskriver appen slik den er bygget.
 Lerretet (`docs/lerret/`) er fasit for det som er tegnet.
@@ -50,6 +50,28 @@ Prøvd i `npm run tauri dev`, skjerm for skjerm mot lerretet.
 - **Klassekart (§4.11):** rom, plasser, grupper, fordeling og historikk.
 - **CalDAV (§8.1), arkiv og sikkerhetskopi (§8):** ferdig.
 
+## Beta 0.3.0 og Windows (13.10, ARBEIDSLISTE §12–14)
+
+- **Innsats over tid** (12.1) har erstattet prikkene på I dag.
+- **Gi tilbakemelding** (13.1) står over Innstillinger, men er skjult til
+  lenka i `src/tilbakemelding.ts` er fylt inn. Kopierer versjon, system og
+  skjermnavn (aldri innhold) og åpner skjemaet i nettleseren.
+- **Dmg-en** (13.2) får testheftet `betatest.pdf` og den oppdiktede
+  klasselista ved siden av guiden. Releaseoppskriften står i
+  `docs/release.md`. Releasen er ikke laget.
+- **Windows** (§14) bygges bare på GitHub Actions
+  (`.github/workflows/windows.yml`): `npm test` og `cargo test` på
+  Windows, så NSIS-installer per bruker. Ingen har kjørt appen på en
+  Windows-maskin ennå; det som er sjekket, er det testene dekker:
+  hurtigtaster (⌘/Ctrl, og at WebView2 ikke tar Ctrl+P/F/R/W),
+  Windows legitimasjonsbehandling for kalenderpassordet, `.okta` som
+  argument og fra en ny prosess, Windows-ord i Innstillinger, og at
+  databasen og kopiene ligger i samme mappe.
+- **Mac er uendret** for brukeren: ⌘ vises, ⌘K, ⌘, og G-snarveiene
+  virker. Én liten forskjell: Ctrl+tast på Mac utløser ikke lenger
+  ⌘-snarveiene (Ctrl+E i et tekstfelt flytter markøren, som i andre
+  Mac-apper).
+
 ## Test-dmg til kolleger (0.2.0)
 
 - **Oppsettfila (§8.2, 5.13):** bygget, men ikke prøvd i appen ennå.
@@ -61,6 +83,8 @@ Prøvd i `npm run tauri dev`, skjerm for skjerm mot lerretet.
   siden av appen. Resultatet havner i `dist-dmg/`. Kollegene må trykke
   «Åpne likevel» første gang; guiden viser hvordan.
 - Ikke prøvd ennå: en tom brukerkonto, fra installasjon til første økt.
+- Testene låser tidssonen til Europe/Oslo (`vite.config.ts`), så de gir
+  samme svar på GitHub Actions, som går på UTC.
 - Rust-binæren har kildestier med brukernavnet i seg (vanlig for Rust),
   ingen data. Kan vaskes med `--remap-path-prefix` om ønskelig.
 

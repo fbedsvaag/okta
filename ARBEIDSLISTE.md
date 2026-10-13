@@ -477,7 +477,7 @@ Tegnet i lerretet runde 13: `Elever`, `Fagside`, `OktSkar`, `OktPlan`
 
 Målet er tilbakemelding på kjernefunksjonene fra kolleger. Pynt venter.
 
-- [ ] **13.1 «Gi tilbakemelding» nederst i sidemenyen**, over Innstillinger,
+- [x] **13.1 «Gi tilbakemelding» nederst i sidemenyen**, over Innstillinger,
   samme stil som Innstillinger-raden. Klikk: kopierer én linje til
   utklippstavla, `Økta 0.3.0 · macOS 15.1 · Skjerm: Elevkort`, viser en
   kort bekreftelse («Kopiert. Lim inn i første felt.») og åpner skjemaet i
@@ -485,7 +485,7 @@ Målet er tilbakemelding på kjernefunksjonene fra kolleger. Pynt venter.
   aldri en elev, et fag-tema eller annet innhold. Lenka ligger som én
   konstant i `src/tilbakemelding.ts`; er den tom, skjules raden. Appen gjør
   ingen nettverkskall selv – nettleseren åpner lenka.
-- [ ] **13.2 Testheftet i dmg-en.** `docs/guide/betatest.html` skrives ut
+- [x] **13.2 Testheftet i dmg-en.** `docs/guide/betatest.html` skrives ut
   til PDF i `scripts/lag-dmg.sh` som guiden, og legges i dmg-vinduet ved
   siden av `guide_read_me.pdf`, sammen med
   `docs/guide/oppdiktet-klasseliste-1STA-1STB.pdf` (oppdiktet InSchool-PDF med
@@ -503,37 +503,37 @@ Fredrik har ingen Windows-maskin. Alt bygges på GitHub Actions og testes av
 betabrukere. Derfor: små, trygge endringer, og ingenting som bare kan
 sjekkes ved å se på en Windows-skjerm uten at det står i en test.
 
-- [ ] **14.1 Bygg på GitHub Actions.** `.github/workflows/windows.yml` med
+- [x] **14.1 Bygg på GitHub Actions.** `.github/workflows/windows.yml` med
   `tauri-apps/tauri-action` på `windows-latest`. Kjøres når en release
   publiseres (`release: published`) og manuelt (`workflow_dispatch`).
   Laster NSIS-installeren (`.exe`) opp til den samme releasen; ingen MSI.
   `bundle.windows.nsis.installMode: "currentUser"`, så det ikke trengs
   admin, og `webviewInstallMode: downloadBootstrapper`. Mac bygges fortsatt
   lokalt med `npm run dmg`. Repoet er offentlig, så Actions er gratis.
-- [ ] **14.2 Hurtigtaster.** Én hjelper i `src/ui/` som sier om
+- [x] **14.2 Hurtigtaster.** Én hjelper i `src/ui/` som sier om
   modifikatortasten er trykket (`metaKey` på Mac, `ctrlKey` ellers) og
   hvilket tegn som vises (⌘ / Ctrl, ⇧ / Shift, ⌥ / Alt). Alle stedene som
   bruker `metaKey` eller viser ⌘ går gjennom den. Test for begge plattformer.
   Pass på at Ctrl-snarveiene ikke kolliderer med WebView2 (Ctrl+P, Ctrl+F,
   Ctrl+R, Ctrl+W): de skal fanges av appen, ikke nettleseren.
-- [ ] **14.3 Nøkkelringen.** `keyring` får `windows-native` i tillegg til
+- [x] **14.3 Nøkkelringen.** `keyring` får `windows-native` i tillegg til
   `apple-native` (Windows legitimasjonsbehandling). Teksten «nøkkelringen»
   heter «Windows legitimasjonsbehandling» på Windows.
-- [ ] **14.4 .okta-filer.** På Windows kommer stien som argument, og et nytt
+- [x] **14.4 .okta-filer.** På Windows kommer stien som argument, og et nytt
   dobbeltklikk starter en ny prosess. Bruk `tauri-plugin-single-instance`,
   send stien til vinduet som kjører, og gjenbruk `oppsettfil-apnet`.
-- [ ] **14.5 Stier og tekster.** Vis den faktiske datamappa (fra Tauri, ikke
+- [x] **14.5 Stier og tekster.** Vis den faktiske datamappa (fra Tauri, ikke
   hardkodet `~/Library/…`) i Innstillinger. Advarselen om synkmapper skal på
   Windows nevne OneDrive spesielt: Dokumenter ligger ofte i OneDrive der.
   «Programmer», «Finder», «FileVault» og lignende får Windows-ord der de
   vises.
-- [ ] **14.6 Guide for Windows.** `docs/guide/guide_read_me_windows.html`
+- [x] **14.6 Guide for Windows.** `docs/guide/guide_read_me_windows.html`
   fra Mac-guiden: last ned `.exe`, SmartScreen («Mer informasjon» →
   «Kjør likevel», fordi appen ikke er signert), BitLocker i stedet for
   FileVault, Ctrl i stedet for ⌘, ny versjon = kjør ny installer. Skrives ut
   til PDF og lastes opp til releasen sammen med `betatest.pdf` og den
   oppdiktede klasselista, så Windows-brukerne har hele startpakken.
-- [ ] **14.7 Røyktest uten Windows.** Actions-jobben kjører `npm test` og
+- [x] **14.7 Røyktest uten Windows.** Actions-jobben kjører `npm test` og
   `cargo test` på Windows før bygget. README får en Windows-linje under
   Installer. I betaskjemaet legges «Mac eller Windows?» til som første
   spørsmål.
