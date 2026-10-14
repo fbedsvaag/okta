@@ -361,6 +361,13 @@ Rader som gjør plass når man drar i samtaletimeplanen, glir 240 ms med
 `cubic-bezier(0.2, 0.8, 0.2, 1)`, og kortet som slippes glir fra der det
 ble sluppet til plassen sin. Klokkeslettet på kortet ruller tegnvis
 (`ui/Ticker.tsx`, `--tid-inn`).
+**All dra og slipp i appen skal føles likt med samtaletimeplanen** (bestemt
+14.10): det som dras er et hvitt kort med skygge som følger pekeren uten
+forsinkelse, naboer gjør plass når kortet dekker 30 % av dem (240 ms,
+`cubic-bezier(0.2, 0.8, 0.2, 1)`), kortet glir på plass ved slipp, ingen
+tekstmarkering, og ingen hopp eller blink. Én felles mekanikk i `src/ui/`,
+ikke en ny variant per skjerm. Gjelder øktplanen (tidslinjen og lista),
+grupper og klassekart.
 Aldri på tekst som skrives, scrolling eller tall som endres.
 
 **Hover er én glassflate som glir** (`ui/Hovermarkor.tsx`), 220 ms med

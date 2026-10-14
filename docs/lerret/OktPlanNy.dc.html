@@ -45,11 +45,14 @@ body{margin:0;background:#d4cee2}
 .tl{position:relative;height:48px;border-radius:10px;background:#f7f6fb}
 .sg{position:absolute;top:0;bottom:0;box-sizing:border-box;border-radius:8px;background:#efecf6;box-shadow:inset 0 0 0 1px #e3ddf0;padding:6px 9px;overflow:hidden;cursor:pointer}
 .sg.p{background:repeating-linear-gradient(135deg,#f7f6fb 0 5px,#ebe7f3 5px 10px);box-shadow:inset 0 0 0 1px #e8e4f1}
+.sg{cursor:grab;user-select:none;transition:left 180ms var(--ease-sprett)}
+.sg.loft{z-index:4;cursor:grabbing;transform:translateY(-3px);box-shadow:inset 0 0 0 1.5px var(--pal),0 8px 20px rgba(36,31,51,.22)!important;background:#fff;transition:none}
+.rad.loft{background:#fff;box-shadow:0 8px 20px rgba(36,31,51,.18),inset 0 0 0 1px #e3ddf0}
 .sg.on{background:#fff;box-shadow:inset 0 0 0 1.5px var(--pal),0 2px 8px rgba(74,61,125,.14)}
 .sg.ut{opacity:.55;box-shadow:inset 0 0 0 1px #c9c2dd;background:#f7f6fb}
 .sg .t{font-size:12.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sg .m{white-space:nowrap;font-size:11.5px;color:#645d7a;margin-top:2px}
-.kant{position:absolute;top:8px;bottom:8px;width:10px;margin-left:-5px;cursor:col-resize;z-index:3;display:flex;justify-content:center}
+.kant{position:absolute;top:6px;bottom:6px;width:16px;margin-left:-8px;cursor:col-resize;z-index:3;display:flex;justify-content:center}
 .kant i{width:3px;border-radius:2px;background:transparent}
 .tl:hover .kant i{background:#c9c2dd}
 .kant:hover i,.kant.dra i{background:var(--pal)!important}
@@ -59,10 +62,17 @@ body{margin:0;background:#d4cee2}
 .mk{display:inline-flex;align-items:center;gap:2px;justify-self:end}
 .mk button{all:unset;width:22px;height:22px;border-radius:6px;display:grid;place-items:center;color:#645d7a;cursor:pointer;font-size:15px}
 .mk button:hover{background:#ece9f3;color:#241f33}
+.minb:hover{background:#ece9f3}
+.valgrad{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:2px 0 8px 80px;padding:8px 10px;border-radius:10px;background:#fff;box-shadow:inset 0 0 0 1px #e3ddf0,0 4px 14px rgba(36,31,51,.06)}
+.vc{all:unset;cursor:pointer;height:26px;padding:0 10px;border-radius:13px;background:#f4f2f9;font-size:12.5px;font-variant-numeric:tabular-nums}
+.vc:hover{background:#e3ddf0}
+.vc.on{background:var(--pal);color:#fff;font-weight:500}
+.vc.rest{background:transparent;box-shadow:inset 0 0 0 1px #d9d4e8;color:var(--pal)}
 .besk{margin:2px 0 8px 80px;padding:10px 12px;border-radius:8px;background:#fff;box-shadow:inset 0 0 0 1px #e3ddf0;font-size:13.5px;line-height:1.55;color:#3a3446}
 .ks{display:grid;grid-template-columns:18px 14px 22px minmax(0,1fr);align-items:center;gap:8px;min-height:30px;font-size:13px}
 .boks{width:15px;height:15px;border-radius:4px;box-shadow:inset 0 0 0 1.5px #b9b2cc;background:#fff;display:inline-grid;place-items:center}
 .boks.x{background:var(--pal);box-shadow:none}
+.boks.a{background:#b2a8d2;box-shadow:none}
 .kbdk{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 5px;border-radius:5px;background:#fff;box-shadow:inset 0 0 0 1px #d9d4e8;font-size:11px;color:#4b4560}
 
 </style>
@@ -113,31 +123,33 @@ body{margin:0;background:#d4cee2}
 
 <div class="tl" data-tl="1">
 <sc-for list="{{seg}}" as="s" hint-placeholder-count="5">
-<div class="{{s.kl}}" style="left:{{s.l}};width:{{s.w}}" onClick="{{s.velg}}"><div class="t">{{s.t}}</div><div class="m num">{{s.m}}</div></div>
+<div class="{{s.kl}}" data-sg="1" style="left:{{s.l}};width:{{s.w}}" onPointerDown="{{s.ned}}"><div class="t">{{s.t}}</div><div class="m num">{{s.m}}</div></div>
 </sc-for>
 <sc-if value="{{harLuft}}" hint-placeholder-val="{{ true }}"><div style="position:absolute;top:0;bottom:0;left:{{luftL}};right:0;border-radius:8px;box-shadow:inset 0 0 0 1px #d9d4e8;border:1px dashed #d9d4e8;box-sizing:border-box;display:flex;align-items:center;justify-content:center;font-size:12px;color:#9a90b8;border-style:dashed">{{luftT}}</div></sc-if>
-<sc-for list="{{kanter}}" as="k" hint-placeholder-count="5"><div class="{{k.kl}}" style="left:{{k.l}}" onPointerDown="{{k.ned}}" title="Dra for å endre minuttene"><i></i></div></sc-for>
+<sc-for list="{{kanter}}" as="k" hint-placeholder-count="5"><div class="{{k.kl}}" style="left:{{k.l}}" onPointerDown="{{k.ned}}" title="Dra for å flytte tid mellom bolkene"><i></i></div></sc-for>
 <div style="position:absolute;top:-6px;bottom:-6px;left:{{slutt}};width:0;border-left:1.5px solid rgba(36,31,51,.45)"></div>
 </div>
 <div style="position:relative;height:18px;margin-top:4px;font-size:11px;color:#9a90b8" class="num">
 <sc-for list="{{ticks}}" as="t" hint-placeholder-count="7"><span style="position:absolute;left:{{t.l}};transform:translateX({{t.tx}})">{{t.n}}</span></sc-for>
 </div>
+<sc-if value="{{over}}" hint-placeholder-val="{{ false }}"><div style="display:flex;align-items:center;gap:10px;margin-top:6px;padding:8px 12px;border-radius:10px;background:#f7f6fb;font-size:13px"><span>{{overT}}</span><span style="flex:1"></span><button class="btn" style="height:26px;font-size:12.5px" onClick="{{trekk}}">{{trekkT}}</button></div></sc-if>
 
-<div style="margin-top:8px;display:flex;flex-direction:column">
+<div data-liste="1" style="margin-top:8px;display:flex;flex-direction:column">
 <sc-for list="{{rader}}" as="r" hint-placeholder-count="5">
 <div>
-<div class="{{r.kl}}" onClick="{{r.velg}}">
-<span style="color:#c9c2dd;font-size:13px;letter-spacing:-1px;cursor:grab">⋮⋮</span>
+<div class="{{r.kl}}" data-rad="1" onClick="{{r.velg}}">
+<span style="color:#b9b2cc;font-size:13px;letter-spacing:-1px;cursor:grab;padding:6px 2px;touch-action:none" onPointerDown="{{r.dra}}" onClick="{{r.stopp}}" title="Dra for å flytte">⋮⋮</span>
 <span class="num" style="font-size:12.5px;color:#9a90b8">{{r.start}}</span>
 <span style="display:flex;align-items:center;gap:8px;min-width:0"><sc-if value="{{r.p}}" hint-placeholder-val="{{ false }}"><span style="width:14px;height:14px;border-radius:3px;flex:none;background:repeating-linear-gradient(135deg,#f7f6fb 0 3px,#d9d4e8 3px 6px)"></span></sc-if><span class="ell" style="font-size:14px;font-weight:{{r.vekt}};color:{{r.farge}}">{{r.t}}</span><sc-if value="{{r.harB}}" hint-placeholder-val="{{ false }}"><span class="ell" style="font-size:12.5px;color:#9a90b8;flex:1">{{r.bkort}}</span></sc-if></span>
-<span class="mk"><button onClick="{{r.minus}}" title="5 min mindre">−</button><span class="num" style="width:52px;text-align:center;font-size:13px">{{r.min}} min</span><button onClick="{{r.pluss}}" title="5 min mer">+</button></span>
+<span class="mk"><button onClick="{{r.minus}}" title="5 min mindre">−</button><span class="minb num" onClick="{{r.apneMin}}" title="Velg lengde" style="display:inline-block;width:56px;white-space:nowrap;text-align:center;cursor:pointer;border-radius:6px;font-size:13px;line-height:24px">{{r.min}} min</span><button onClick="{{r.pluss}}" title="5 min mer">+</button></span>
 <span style="color:#9a90b8;font-size:12px;transform:rotate({{r.rot}});display:inline-block;transition:transform 200ms">▸</span>
 </div>
+<sc-if value="{{r.velgApen}}" hint-placeholder-val="{{ false }}"><div class="valgrad"><span class="lbl" style="margin-right:4px">Lengde</span><sc-for list="{{r.valg}}" as="v" hint-placeholder-count="7"><button class="{{v.kl}}" onClick="{{v.klikk}}">{{v.n}}</button></sc-for></div></sc-if>
 <sc-if value="{{r.apen}}" hint-placeholder-val="{{ false }}"><div class="besk">{{r.b}}<div style="margin-top:6px;font-size:11.5px;color:#9a90b8">Beskrivelse · bare for deg · går aldri ut av appen</div></div></sc-if>
 </div>
 </sc-for>
 </div>
-<div style="display:flex;gap:8px;margin-top:8px;padding-left:80px"><button class="btn" style="height:28px;font-size:12.5px">+ Aktivitet</button><button class="btn stille" style="height:28px;font-size:12.5px">+ Pause</button><span style="flex:1"></span><span class="lbl" style="color:#9a90b8;align-self:center">Dra i kantene på tidslinjen for å endre minuttene</span></div>
+<div style="display:flex;gap:8px;margin-top:8px;padding-left:80px"><button class="btn" style="height:28px;font-size:12.5px">+ Aktivitet</button><button class="btn stille" style="height:28px;font-size:12.5px">+ Pause</button><span style="flex:1"></span><span class="lbl" style="color:#9a90b8;align-self:center">Dra en bolk for å flytte den. Dra i skillet for å flytte tid, eller i enden for å korte ned den siste. Pauser står fast til du klikker på dem</span></div>
 </div>
 
 <div>
@@ -163,7 +175,23 @@ body{margin:0;background:#d4cee2}
 var START = 8 * 60 + 30, LENGDE = 90;
 function kl(m) { var t = START + m; return String(Math.floor(t / 60)).padStart(2, '0') + ':' + String(t % 60).padStart(2, '0'); }
 class Component extends DCLogic {
-  constructor(p) { super(p); this.state = { akt: [{"t": "Repetisjon fra sist", "min": 10, "b": "", "p": false}, {"t": "Gjennomgang: byene vokser", "min": 30, "b": "Tavle: befolkningstall 1850 og 1900 for Christiania, Bergen og Trondheim. Hvorfor flyttet folk inn, og hvor bodde de?", "p": false}, {"t": "Pause", "min": 10, "b": "", "p": true}, {"t": "Gruppearbeid: kildekritikk", "min": 30, "b": "Gruppene får hver sin by og to kilder: et fotografi og et utdrag fra en boligundersøkelse. De lager en tidslinje og svarer på hvem som laget kilden og hvorfor. Kildene ligger i Teams.", "p": false}, {"t": "Exit-lapp", "min": 10, "b": "", "p": false}], apen: 3, sel: 3, dra: -1 }; }
+  constructor(p) { super(p); this.state = { akt: [{"t": "Repetisjon fra sist", "min": 10, "b": "", "p": false}, {"t": "Gjennomgang: byene vokser", "min": 30, "b": "Tavle: befolkningstall 1850 og 1900 for Christiania, Bergen og Trondheim. Hvorfor flyttet folk inn, og hvor bodde de?", "p": false}, {"t": "Pause", "min": 10, "b": "", "p": true}, {"t": "Gruppearbeid: kildekritikk", "min": 30, "b": "Gruppene får hver sin by og to kilder: et fotografi og et utdrag fra en boligundersøkelse. De lager en tidslinje og svarer på hvem som laget kilden og hvorfor. Kildene ligger i Teams.", "p": false}, {"t": "Exit-lapp", "min": 10, "b": "", "p": false}], apen: 3, sel: 3, dra: -1, velgMin: 1, flytter: -1 }; }
+  flytt(fra, til) { var a = this.state.akt.slice(); var x = a.splice(fra, 1)[0]; a.splice(til, 0, x); this.setState({ akt: a, sel: til, flytter: til, apen: -1, velgMin: -1 }); }
+  dragOrd(e, i, sel, akse) {
+    e.preventDefault(); e.stopPropagation();
+    var self = this, x0 = e.clientX, y0 = e.clientY, flyttet = false, cur = i;
+    var beh = e.currentTarget.closest(akse === 'x' ? '[data-tl]' : '[data-liste]');
+    var flytt = function (ev) {
+      var d = akse === 'x' ? ev.clientX - x0 : ev.clientY - y0;
+      if (!flyttet && Math.abs(d) < 4) return;
+      if (!flyttet) { flyttet = true; self.setState({ flytter: cur, sel: cur }); }
+      var el = beh.querySelectorAll(akse === 'x' ? '[data-sg]' : '[data-rad]'), mal = cur;
+      el.forEach(function (n, k) { var r = n.getBoundingClientRect(); var p = akse === 'x' ? ev.clientX : ev.clientY; if (akse === 'x' ? (p >= r.left && p <= r.right) : (p >= r.top && p <= r.bottom)) mal = k; });
+      if (mal !== cur) { self.flytt(cur, mal); cur = mal; }
+    };
+    var slipp = function () { window.removeEventListener('pointermove', flytt); window.removeEventListener('pointerup', slipp); self.setState({ flytter: -1 }); if (!flyttet && sel) sel(); };
+    window.addEventListener('pointermove', flytt); window.addEventListener('pointerup', slipp);
+  }
   sett(i, min) { var a = this.state.akt.slice(); a[i] = Object.assign({}, a[i], { min: Math.max(5, Math.min(120, min)) }); this.setState({ akt: a }); }
   renderVals() {
     var self = this, st = this.state, a = st.akt;
@@ -173,26 +201,53 @@ class Component extends DCLogic {
     var pos = 0, seg = [], kanter = [], rader = [];
     a.forEach(function (x, i) {
       var l = pos, ut = pos + x.min > LENGDE;
-      seg.push({ kl: 'sg' + (x.p ? ' p' : '') + (st.sel === i ? ' on' : '') + (ut && !x.p && l >= LENGDE ? ' ut' : ''), l: 'calc(' + pct(l) + ' + 1px)', w: 'calc(' + pct(x.min) + ' - 2px)', t: x.p ? 'Pause' : x.t, m: x.min + ' min', velg: function () { self.setState({ sel: i, apen: x.b ? i : st.apen }); } });
+      seg.push({ kl: 'sg' + (x.p ? ' p' : '') + (st.sel === i ? ' on' : '') + (st.flytter === i ? ' loft' : '') + (ut && !x.p && l >= LENGDE ? ' ut' : ''), l: 'calc(' + pct(l) + ' + 1px)', w: 'calc(' + pct(x.min) + ' - 2px)', t: x.p ? 'Pause' : x.t, m: x.min + ' min', ned: function (e) { if (e.target.closest('.kant')) return; self.dragOrd(e, i, function () { self.setState({ sel: i, apen: x.b ? i : -1, velgMin: x.p ? i : -1 }); }, 'x'); } });
       pos += x.min;
-      kanter.push({ kl: 'kant' + (st.dra === i ? ' dra' : ''), l: pct(pos), ned: function (e) {
+      var fri = function (k) { return !a[k].p || st.sel === k; };
+      var vi = i; while (vi >= 0 && !fri(vi)) vi--;
+      var hi = i + 1; while (hi < a.length && !fri(hi)) hi++;
+      if (i === a.length - 1) kanter.push({ kl: 'kant' + (st.dra === i ? ' dra' : ''), l: pct(pos), ned: function (e) {
         e.preventDefault();
         var tl = e.currentTarget.closest('[data-tl]'), b = tl.getBoundingClientRect().width;
-        var x0 = e.clientX, m0 = self.state.akt[i].min, perMin = b / Math.max(LENGDE, self.state.akt.reduce(function (s, y) { return s + y.min; }, 0));
+        var x0 = e.clientX, m0 = self.state.akt[i].min, andre = sum - m0, perMin = b / skala;
         self.setState({ dra: i, sel: i });
-        var flytt = function (ev) { self.sett(i, m0 + Math.round((ev.clientX - x0) / perMin / 5) * 5); };
+        var flytt = function (ev) { var n = m0 + Math.round((ev.clientX - x0) / perMin / 5) * 5; self.sett(i, Math.max(5, Math.min(Math.max(m0, LENGDE - andre), n))); };
         var slipp = function () { window.removeEventListener('pointermove', flytt); window.removeEventListener('pointerup', slipp); self.setState({ dra: -1 }); };
         window.addEventListener('pointermove', flytt); window.addEventListener('pointerup', slipp);
       } });
-      rader.push({ kl: 'rad' + (st.sel === i ? ' on' : ''), start: kl(l), t: x.t, p: !!x.p, vekt: x.p ? 400 : 500, farge: x.p ? '#645d7a' : '#241f33', harB: !!x.b && st.apen !== i, bkort: x.b, b: x.b, apen: st.apen === i && !!x.b, min: x.min, rot: st.apen === i ? '90deg' : '0deg',
+      if (i < a.length - 1 && vi >= 0 && hi < a.length) kanter.push({ kl: 'kant' + (st.dra === i ? ' dra' : ''), l: pct(pos), ned: function (e) {
+        e.preventDefault();
+        var tl = e.currentTarget.closest('[data-tl]'), b = tl.getBoundingClientRect().width;
+        var x0 = e.clientX, m0 = self.state.akt[vi].min, perMin = b / Math.max(LENGDE, self.state.akt.reduce(function (s, y) { return s + y.min; }, 0));
+        self.setState({ dra: i, sel: vi });
+        var n0 = self.state.akt[hi].min;
+        var flytt = function (ev) {
+          var d = Math.round((ev.clientX - x0) / perMin / 5) * 5;
+          d = Math.max(5 - m0, Math.min(n0 - 5, d));
+          var ak = self.state.akt.slice();
+          ak[vi] = Object.assign({}, ak[vi], { min: m0 + d }); ak[hi] = Object.assign({}, ak[hi], { min: n0 - d });
+          self.setState({ akt: ak });
+        };
+        var slipp = function () { window.removeEventListener('pointermove', flytt); window.removeEventListener('pointerup', slipp); self.setState({ dra: -1 }); };
+        window.addEventListener('pointermove', flytt); window.addEventListener('pointerup', slipp);
+      } });
+      rader.push({ kl: 'rad' + (st.sel === i ? ' on' : '') + (st.flytter === i ? ' loft' : ''), dra: function (e) { self.dragOrd(e, i, null, 'y'); }, stopp: function (e) { e.stopPropagation(); }, start: kl(l), t: x.t, p: !!x.p, vekt: x.p ? 400 : 500, farge: x.p ? '#645d7a' : '#241f33', harB: !!x.b && st.apen !== i, bkort: x.b, b: x.b, apen: st.apen === i && !!x.b, min: x.min, rot: st.apen === i ? '90deg' : '0deg',
         velg: function () { self.setState({ sel: i, apen: st.apen === i ? -1 : i }); },
+        velgApen: st.velgMin === i,
+        apneMin: function (e) { e.stopPropagation(); self.setState({ velgMin: st.velgMin === i ? -1 : i, sel: i }); },
+        valg: (function () { var rest = LENGDE - (sum - x.min), v = [5, 10, 15, 20, 30, 45, 60].map(function (n) { return { n: n + ' min', kl: 'vc' + (n === x.min ? ' on' : ''), klikk: function (e) { e.stopPropagation(); self.sett(i, n); self.setState({ velgMin: -1 }); } }; });
+          if (rest > 0 && rest !== x.min) v.push({ n: 'Resten av økta · ' + rest + ' min', kl: 'vc rest', klikk: function (e) { e.stopPropagation(); self.sett(i, rest); self.setState({ velgMin: -1 }); } });
+          return v; })(),
         minus: function (e) { e.stopPropagation(); self.sett(i, x.min - 5); },
         pluss: function (e) { e.stopPropagation(); self.sett(i, x.min + 5); } });
     });
     var ticks = [];
     for (var m = 0; m <= skala; m += 15) ticks.push({ l: pct(m), n: kl(m), tx: m === 0 ? '0' : '-50%' });
     var diff = sum - LENGDE;
+    var storst = -1; a.forEach(function (x, i) { if (!x.p && (storst < 0 || x.min > a[storst].min)) storst = i; });
     return {
+      over: diff > 0, overT: 'Planen er ' + diff + ' min for lang. Økta slutter 10:00, så det siste rekker ikke.',
+      trekkT: storst >= 0 ? 'Trekk ' + diff + ' min fra «' + a[storst].t + '»' : '', trekk: function () { self.sett(storst, a[storst].min - diff); },
       seg: seg, kanter: kanter, rader: rader, ticks: ticks, slutt: pct(LENGDE),
       harLuft: diff < 0, luftL: 'calc(' + pct(sum) + ' + 1px)', luftT: 'Luft · ' + (-diff) + ' min',
       sum: diff === 0 ? sum + ' av 90 min · går opp' : (diff > 0 ? sum + ' av 90 min · ' + diff + ' min for mye' : sum + ' av 90 min · ' + (-diff) + ' min luft'),

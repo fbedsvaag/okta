@@ -549,6 +549,11 @@ de er interaktive.
   tittelen på andre, inntil to linjer, så «…». Samme svake fagtone som før,
   radius 5. Hele «FAG · 08:30 · tittel» i verktøytipset. Mentorsamtaler som
   før, men på én linje. Dagens dato i aksentfarget merke. Gjelder også uke.
+  **Vis og skjul fag:** en rad med fagbrikker øverst til høyre i kalenderen
+  (HIS3 · NOR3 · REL3 · Mentorsamtaler), hver i sin fagtone med hake. Klikk
+  skjuler faget (brikken blir hvit med tom boks); klikk igjen viser det.
+  Valget huskes per skjerm og gjelder både Uke og Måned. Heatmapet til
+  høyre følger det som vises.
 - [ ] **15.2 Planlegging: aktiviteter.** Hver rad: ⋮⋮ (dra), starttid
   (regnet ut, dempet), tittel, minutter med − / + i steg på 5, og ▸ som
   folder ut beskrivelsen under raden. Lukket rad med beskrivelse viser
@@ -560,10 +565,36 @@ de er interaktive.
   skravert. Klokkeslett hvert kvarter under, og en strek ved øktas slutt.
   Går planen opp: «90 av 90 min · går opp». Luft: stiplet felt «Luft ·
   10 min». For mye: tidslinjen strekker seg forbi sluttstreken, og summen
-  sier «10 min for mye» i vanlig blekk, uten rødt. **Dra i kanten mellom to
-  felt** endrer minuttene i steg på 5 (rekkefølgen byttes i lista, ikke på
-  tidslinjen). Klikk på et felt velger raden. Summen i overskriften
+  sier «10 min for mye» i vanlig blekk, uten rødt. **Dra i skillet mellom to bolker** flytter tid mellom dem i steg på 5:
+  bolken til venstre blir lengre og den til høyre like mye kortere (minst
+  5 min hver), så summen står fast. **Enden av siste bolk** har også et
+  håndtak: dra mot venstre for å korte ned den siste og få luft, mot høyre
+  for å fylle luften igjen (aldri forbi øktas slutt). Håndtakene er 16 px
+  brede og synes når musa er over tidslinjen.
+  **Pauser står fast:** et skille inntil en pause flytter tid mellom
+  aktivitetene på hver side av pausen; pausen beholder lengden og flytter
+  seg bare. Klikk på en pause velger den og åpner lengdevalget; mens den er
+  valgt, endrer skillene på hver side pausen selv (pausen blir lengre,
+  naboen kortere).
+  **Stokk om:** dra en bolk sideveis på tidslinjen, eller ⋮⋮ i lista opp og
+  ned, så bytter den plass med det den slippes over. Bolken løftes litt
+  (hvit, aksentkant, skygge) mens den dras; de andre glir på plass. Et
+  klikk uten å dra velger bare. ⌥↑↓ flytter med tastaturet.
+  **Skal føles nøyaktig som dra og slipp i samtaletimeplanen** (DESIGN §8):
+  løft samtaletimeplanens dra-logikk (`skjermer/samtaler/Timeplan.tsx`) ut i
+  én felles mekanikk i `src/ui/` og bruk den her, både sideveis på
+  tidslinjen og opp/ned i lista. Samme kort, samme 30 %-regel, samme 240 ms
+  og samme glid på plass. Lerretet viser bare oppførselen, ikke følelsen;
+  timeplanen er fasit for følelsen.
+  Klikk på et felt velger raden. Summen i overskriften
   erstatter «1,5 t av 1,5 t».
+  - **Lengde med ett klikk:** klikk på «30 min» i raden åpner et valg rett
+    under: 5 · 10 · 15 · 20 · 30 · 45 · 60 min og «Resten av økta · N min»
+    (det som får planen til å gå opp). − / + står fortsatt ved siden av.
+  - **For lite tid:** en rolig linje under tidslinjen: «Planen er 10 min for
+    lang. Økta slutter 10:00, så det siste rekker ikke.» med én knapp:
+    «Trekk 10 min fra ‹lengste aktivitet›». Øktas lengde endres aldri
+    herfra. Ingenting stoppes; planen kan lagres som den er.
 - [ ] **15.4 Kompetansemål foldet sammen.** Bare valgte mål og periodens
   mål vises, med «Vis alle 17 ▾». Overskriften sier «1 valgt · ● periodens
   mål».
@@ -577,10 +608,15 @@ de er interaktive.
   under, strek ved slutt; til høyre «5 av 30 min» og «29 min igjen av økta»
   eller «6 min etter planen · 29 min igjen». Statusmerket i hodet sier
   «Pågår · 29 min igjen».
-  - **Ligger etter:** en aktivitet som ikke er krysset av når tida er ute,
-    varer til den krysses av. Resten flytter seg; det som havner etter
-    slutt, står tonet med kant, og i lista «6 min over slutt» eller «rekker
-    ikke». Aldri rødt.
+  - **Avkrysning går av seg selv:** når tida for en aktivitet er ute, krysses
+    den av automatisk (lysere hake) og neste begynner. Læreren trenger ikke
+    røre noe.
+  - **Trenger mer tid:** den aktive raden har «+5 min». Da forlenges den, og
+    resten flytter seg. Det som havner etter slutt, står tonet med kant og
+    «6 min over slutt» eller «rekker ikke» i lista; øverst «6 min forlenget
+    · siste går 6 min over». Aldri rødt.
+  - **Ferdig før tida:** klikk avkrysningen på den aktive, så begynner neste
+    med en gang (mørk hake).
   - **Før start:** hele planen tonet, ingen markør, «Starter om 12 min»
     og «Først: …».
   - **Etter slutt:** ingen markør, «Ferdig 10:00 · 3 av 4 aktiviteter
@@ -592,15 +628,57 @@ de er interaktive.
   - Stripen oppdateres én gang i minuttet, **uten overgang**. Skåringen
     påvirkes ikke.
 - [ ] **15.7 Planen i høyre kolonne i skåringen:** én rad per aktivitet med
-  avkrysning (ett klikk; tidspunktet lagres), tid til høyre (ferdig-klokkeslett,
+  avkrysning (automatisk når tida er ute, eller ett klikk for ferdig før tida;
+  tidspunktet lagres), tid til høyre (ferdig-klokkeslett,
   «25 min igjen» på den aktive, ellers fra–til). Den aktive er uthevet med
   svak aksentflate og en tynn framdriftsstrek.
 - [ ] **15.8 Lagring.** Fortsatt lesbar markdown i `okt.plan`:
   `- [ ] Gruppearbeid: kildekritikk · 30 min`, beskrivelsen som innrykkede
   linjer under (fire mellomrom), og pause uten avkrysningsboks:
   `- Pause · 10 min`. Tidspunktet en aktivitet ble krysset av lagres som
-  `- [x] Gjennomgang · 30 min · ferdig 09:16`. Eldre planer uten disse
+  `- [x] Gjennomgang · 30 min · ferdig 09:16`, og en forlengelse som
+  `· +5 min`. Eldre planer uten disse
   feltene leses som før. Plan og beskrivelse går aldri ut av appen.
+
+- [ ] **15.9 Nedtrekksmenyen** (lerretet `Nedtrekk`). Én komponent,
+  `Velger` i `src/ui/`, som erstatter alle 25 `<select>` i appen og deler
+  glass, rader og markør med `Kontekstmeny`.
+  - **Feltet:** 32 px, radius 7, hvitt med kant `#e3ddf0` (hover `#c9c2dd`).
+    Valgt verdi med eventuell prikk eller fagfirkant, og en vinkelpil som
+    snur seg (S-kurven) når menyen er åpen. Åpen: aksentkant 1,5 px og en
+    svak aksentring. Tastaturfokus: tydelig ring. Kan ikke endres: halvt
+    gjennomsiktig. Variant «stille» uten ramme for verktøylinjer og over
+    lister.
+  - **Menyen:** glass som de andre menyene (hvit 94 %, blur 22, radius 14,
+    skygge), minst like bred som feltet, 6 px under. Kommer inn på 170 ms
+    (litt ned og opp i skala fra .97); ingen animasjon med redusert
+    bevegelse. Snur og åpner oppover når det ikke er plass under.
+  - **Rader:** 30 px, hake i aksent foran det valgte (og 500 vekt), ikon
+    (prikk, fagfirkant eller vurderingsikon), tekst og hint til høyre
+    (uker, dato, snarvei). Grupper med små versaletiketter, skillelinjer,
+    og en handling nederst i aksent («+ Ny periode …»). «Ingen …» står først
+    i dempet farge.
+  - **Markøren** er én flate som glir mellom radene med S-kurven, som i
+    sidemenyen.
+  - **Tastatur:** ↓/↵/mellomrom åpner, ↑↓ flytter, ↵ velger, esc lukker,
+    bokstav hopper til første treff. Over åtte valg: søkefelt øverst som
+    filtrerer mens man skriver.
+  - Tilgjengelighet: `role="listbox"`/`option`, `aria-expanded`,
+    `aria-activedescendant`. Windows: samme utseende.
+
+- [ ] **15.10 Øktplan: Enkel | Full** (lerretet `OktPlanEnkel`). Valg under
+  Innstillinger › Generelt, standard **Enkel**. Samme data i begge; bare
+  visningen skifter, så man kan bytte fram og tilbake uten å miste noe.
+  - **Enkel, planlegging:** en ren liste med tittel og minutter per linje
+    («Film · 15 min» kan skrives rett inn), en tynn stolpe (6 px) uten tekst
+    over lista og «90 av 90 min» i overskriften. Ingen dra i tidslinjen,
+    ingen beskrivelser synlig, ingen egen pausetype (en linje som heter
+    «Pause» er bare en linje). Kompetansemål foldet til én linje. Vurdering
+    flyttes ut av faktaraden.
+  - **Enkel, skåring:** én linje i stedet for tidslinjen: «Nå · Gruppearbeid:
+    kildekritikk · 25 min igjen». Lista til høyre krysses av som før.
+  - **Full:** som 15.2–15.7.
+  - Beskrivelser skrevet i Full blir liggende i Enkel og vises igjen i Full.
 
 ## Ikke nå
 
