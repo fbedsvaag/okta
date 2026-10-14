@@ -601,7 +601,9 @@ de er interaktive.
 - [ ] **15.5 Faktaraden** (dato, tid, rom, periode, vurdering) på én linje
   med etiketter over, lekse og agenda i to kolonner under. Mindre plass,
   samme innhold.
-- [ ] **15.6 Live tidslinje i skåringen.** En stripe rett under arkhodet,
+- [ ] **15.6 Live tidslinje i skåringen** (valgt 14.10 kveld: loddrett tidslinje i
+  høyre kolonne, lerretet `OktLiveVertikal`, i stedet for den vannrette
+  stripa i `OktLive`). En stripe rett under arkhodet,
   over hele bredden, over elevlista: til venstre «Nå» og aktiviteten, i
   midten stripen (12 px) med felt per aktivitet, ferdige mørkere, den aktive
   med aksentkant og framdrift fylt inn, nå-markør i aksent med klokkeslettet

@@ -1,7 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { Elevfoto } from "../ui/Elevfoto";
 import { Bryter, Fagfirkant } from "../ui/felles";
-import { narTekst, standardModus, type Oktmodus } from "../data/oktplan";
+import {
+  lesPlan,
+  narTekst,
+  standardModus,
+  type Oktmodus,
+} from "../data/oktplan";
 import { kortDag } from "../data/fagside";
 import { OktPlanlegging } from "./OktPlanlegging";
 import { Tastestripe, Tasthint } from "../ui/Tastestripe";
@@ -22,7 +27,7 @@ import {
 import { taster, type Skalaverdi } from "../skala";
 import { fagfarge, skalafarge } from "../ui/farger";
 import { hovedtast, harModifikator, tast as visTast } from "../ui/taster";
-import { Livestripe, Liveplan, useMinutt, visesLive } from "./Oktlive";
+import { Liveplan, Nalinje, useMinutt, visesLive } from "./Oktlive";
 import { usePlanvisning } from "./Oktplan";
 
 /**
@@ -80,6 +85,11 @@ export function OktPanel({
   const na = useMinutt();
   const pagar = minIgjen(okt, na);
   const visning = usePlanvisning();
+  // Full, den dagen økta er: planen som loddrett tidslinje (OktLiveVertikal).
+  const loddrett =
+    visning === "full" &&
+    visesLive(okt, na) &&
+    lesPlan(okt.plan).punkter.length > 0;
 
   // ⌘↵ = Ferdig, også fra et felt i arket. ⌘← / ⌘→ blar til forrige og
   // neste økt i faget, men ikke i et felt — der flytter de markøren.
@@ -335,8 +345,10 @@ export function OktPanel({
       ) : (
         <>
           {/* Live tidslinje under arkhodet, den dagen økta er (15.6). */}
-          {visning && visesLive(okt, na) && (
-            <Livestripe okt={okt} na={na} enkel={visning === "enkel"} />
+          {/* Enkel: én linje om hva som skjer nå (15.10). Full viser det i
+              planen til høyre, som loddrett tidslinje. */}
+          {visning === "enkel" && visesLive(okt, na) && (
+            <Nalinje okt={okt} na={na} />
           )}
           <div className="flex min-h-0 flex-1">
             <div
@@ -426,11 +438,15 @@ export function OktPanel({
               <div className="h-4" />
             </div>
 
-            <aside className="flex w-80 shrink-0 flex-col gap-[22px] overflow-auto border-l border-linje-medium bg-flate-svak/70 px-[22px] py-[18px]">
-              <Forrigenotat okt={okt} />
+            <aside
+              className={`flex ${loddrett ? "w-[360px]" : "w-80"} shrink-0 flex-col gap-[22px] overflow-auto border-l border-linje-medium bg-flate-svak/70 px-[22px] py-[18px]`}
+            >
+              {/* Mens økta pågår, tar den loddrette planen plassen. */}
+              {!loddrett && <Forrigenotat okt={okt} />}
               <Liveplan
                 okt={okt}
                 na={na}
+                loddrett={loddrett}
                 onLagre={async (plan) => {
                   await endreOkt(okt.id, { plan });
                   onEndret();

@@ -854,7 +854,7 @@ så blikket ikke må hoppe:
 
 Til høyre: notatet fra forrige økt, planen med avkrysning og øktloggen.
 
-Den dagen økta er, står planen live under toppen: hva som skal skje nå,
+Den dagen økta er, står planen live i høyre kolonne: hva som skal skje nå,
 hvor langt man er kommet, og hvor mye tid som er igjen. En aktivitet
 krysses av når tida for den er ute, eller med et klikk når man er ferdig
 før tida (tidspunktet lagres). «+5 min» forlenger den som pågår, og resten

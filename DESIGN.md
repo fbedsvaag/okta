@@ -473,17 +473,19 @@ hoppe ut til høyre kant. N åpner notatfeltet i raden; uten notat vises
 forrige økts notat i grå kursiv. Høyre kolonne: «Fra forrige økt · tor
 1.10», Plan, Øktlogg. Tastene i stripa nederst.
 
-**Økta: live** (lerretet «OktLive», `skjermer/Oktlive.tsx`). Den dagen økta
-er, står en stripe under arkhodet: «Nå» og aktiviteten til venstre, en
-12 px tidslinje i midten (ferdige felt mørkere, den aktive med aksentkant
-og framdrift, nå-markøren i aksent med klokkeslett, strek ved slutt), og
-«5 av 30 min» med tida igjen til høyre. Før start tonet uten markør,
-etter slutt «Ferdig 10:00 · 3 av 4 aktiviteter krysset av». Planen i høyre
-kolonne krysses av når tida er ute (lysere hake) eller med et klikk (mørk
-hake; neste starter). «+5 min» på den aktive flytter resten, og det som
-havner etter slutt står tonet. Aldri rødt. Oppdateres ved hvert
-minuttskifte, uten overgang. Med Øktplan: Enkel står det én linje i
-stedet for stripa.
+**Økta: live** (lerretet «OktLiveVertikal», `skjermer/Oktlive.tsx`). Med
+Øktplan: Full, den dagen økta er, blir planen i høyre kolonne (360 px) en
+loddrett tidslinje på 480 px: klokkeslett til venstre, ett felt per
+aktivitet med høyde etter minuttene, strek ved øktas slutt og nå-markøren
+tvers over med klokkeslettet i en aksentpille. Ferdige felt tonet, pausen
+skravert, den aktive med aksentkant, fylt ovenfra etter hvert som tida
+går, og «+5 min» nederst. Over: «5 min forlenget · siste går 5 min over»,
+«Starter om 12 min · Først: …» eller «Ferdig 10:00 · 3 av 4 aktiviteter
+krysset av». Avkrysning når tida er ute (lysere hake) eller med et klikk
+(mørk hake; neste starter). Det som havner etter slutt, står tonet. Aldri
+rødt. Oppdateres ved hvert minuttskifte, uten overgang. Den vannrette
+stripa (lerretet «OktLive») ble bygget først og erstattet 14.10. Med
+Enkel står det én linje under arkhodet, og planen er en vanlig liste.
 
 **Økta: planlegging** (lerretet «OktPlanNy», `skjermer/Oktplan.tsx`).
 Faktaraden på én linje med etiketter over: dato, tid, rom, periode og

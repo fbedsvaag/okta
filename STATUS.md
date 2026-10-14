@@ -12,7 +12,8 @@ Lerretet (`docs/lerret/`) er fasit for det som er tegnet.
 ## Runde 15 (14.10, ARBEIDSLISTE §15)
 
 Bygget etter lerretene KalenderTitler, Nedtrekk, OktPlanNy, OktPlanEnkel og
-OktLive. OktLiveVertikal er forkastet og bygges ikke.
+OktLiveVertikal. Den vannrette stripa (OktLive) ble bygget først og
+erstattet av den loddrette samme kveld.
 
 - **Kalendertitler (15.1):** økta som brikke i to linjer, dagens dato i
   merke, fagbrikker som skjuler og viser fag i uke, måned og heatmap.
@@ -27,12 +28,13 @@ OktLive. OktLiveVertikal er forkastet og bygges ikke.
   lengdevalg, beskrivelser, «for lite tid», faktarad på én linje,
   kompetansemål foldet sammen.
 - **Øktplan: Enkel | Full (15.10)**, Enkel som standard.
-- **Live i skåringen (15.6–15.7):** stripa, automatisk avkrysning, +5 min
-  og ferdig før tida.
+- **Live i skåringen (15.6–15.7):** med Full en loddrett tidslinje i høyre
+  kolonne, med Enkel én linje under arkhodet. Automatisk avkrysning, +5 min
+  og ferdig før tida. Prøvd i appen, også i mørk modus.
   - Avkrysningen når tida er ute regnes fra klokka og lagres ikke; bare
     klikk og +5 min skrives til planen. Da skrives det ikke til basen
     hvert minutt mens man skårer.
-  - Stripa vises bare den dagen økta er.
+  - Tidslinjen vises bare den dagen økta er.
 
 **Prøvd:**
 
