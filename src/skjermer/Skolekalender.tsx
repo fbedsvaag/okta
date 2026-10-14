@@ -50,9 +50,9 @@ const STREKER = 5;
  * Det er dette som gjør at høyden følger plassen som finnes i stedet for å
  * være en fast verdi som klipper på en liten skjerm.
  */
-const FORHOLD = 0.95;
+const FORHOLD = 1.12;
 const HOYDE_MINST = 64;
-const HOYDE_MEST = 150;
+const HOYDE_MEST = 170;
 
 /**
  * Målene i en dagrute, i piksler ved tekstskala 1 (lerretet KalenderTitler).

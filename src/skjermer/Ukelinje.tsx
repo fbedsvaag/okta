@@ -493,6 +493,20 @@ function Blokk({
   const [start, slutt] = spennet(okt, fra);
   const topp = (start - fra) * time;
   const hoyde = Math.max((slutt - start) * time - 2, 16);
+  // Hele linjer tittel som får plass under fag og klokkeslett (inntil to),
+  // så teksten aldri klippes midt i en linje på en lav blokk.
+  const skala =
+    parseFloat(
+      getComputedStyle(document.documentElement).getPropertyValue(
+        "--tekst-skala",
+      ),
+    ) || 1;
+  const linje = 15.6 * skala;
+  const titler = Math.max(
+    0,
+    Math.min(2, Math.floor((hoyde - 9 - 14 * skala) / linje)),
+  );
+  const rom = hoyde - 9 - 14 * skala - titler * linje >= 13 * skala;
 
   return (
     <button
@@ -535,13 +549,16 @@ function Blokk({
           </span>
         )}
       </span>
-      {okt.tema && (
-        <span className="okt-tittel mt-px text-etikett leading-[1.3] text-blekk">
+      {okt.tema && titler > 0 && (
+        <span
+          className="okt-tittel mt-px text-etikett leading-[1.3] text-blekk"
+          style={{ WebkitLineClamp: titler }}
+        >
           {okt.tema}
         </span>
       )}
-      {/* Rommet i liten grå skrift (ARBEIDSLISTE 7.5). */}
-      {okt.sted && (
+      {/* Rommet i liten grå skrift (ARBEIDSLISTE 7.5), når det er plass. */}
+      {okt.sted && rom && (
         <span className="block truncate text-mikro leading-tight text-blekk-svak">
           {okt.sted}
         </span>
