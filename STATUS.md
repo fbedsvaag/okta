@@ -42,11 +42,16 @@ OktLive. OktLiveVertikal er ikke bygget (ikke bestemt).
   - Lista: «Film · 15 min», ↵ og ⌥↑.
   - Skåringen: +5 min og avkrysning.
   - Alle fem live-tilstandene er sammenlignet med lerretet.
-- **Ikke prøvd i selve appen ennå**, fordi den installerte Økta var åpen
-  hele økta:
-  - kalenderbrikkene og fagbrikkene;
-  - draget i samtaletimeplanen etter at mekanikken ble flyttet. Logikken
-    er flyttet uendret og har tester, men følelsen er ikke sjekket med mus.
+- **Prøvd i appen (`tauri dev`):**
+  - kalenderen i uke og måned, med fagbrikkene;
+  - draget i samtaletimeplanen;
+  - periodemenyen og esc i økta;
+  - skåring og planlegging i Enkel.
+  - Rettet underveis: to økter fikk ikke plass i en dagrute, titler ble
+    klippet midt i en linje i uka, esc i en meny lukket hele arket, og
+    markøren startet på feil rad.
+  - Full i selve appen er ikke prøvd med mus. Testingen stoppet da Mac-en
+    ble tatt i bruk.
 
 ## Runde 10 og 11 (07.10, ARBEIDSLISTE §10 og §11)
 
