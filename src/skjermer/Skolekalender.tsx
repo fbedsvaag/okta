@@ -29,10 +29,12 @@ import {
   type Okt,
 } from "../data/okter";
 import type { FagIAr } from "../data/fag";
-import { Bryter, Fagfirkant, Kappet, Knapp } from "../ui/felles";
+import { Bryter, Fagfirkant, Knapp } from "../ui/felles";
 import { Kalenderuke } from "./Kalenderuke";
 import { fagfarge } from "../ui/farger";
 import { hentSamtaledager, type Samtaledag } from "../data/samtale";
+import { lesJson } from "../data/json";
+import { useLagretInnstilling } from "../ui/useLagretInnstilling";
 
 // --------------------------------------------------------------- cellehøyde
 
@@ -48,38 +50,72 @@ const STREKER = 5;
  * Det er dette som gjør at høyden følger plassen som finnes i stedet for å
  * være en fast verdi som klipper på en liten skjerm.
  */
-const FORHOLD = 1.1;
-const HOYDE_MINST = 44;
-const HOYDE_MEST = 110;
-
-/** Datolinja øverst i ruta, og høyden på én økt- eller merkelapplinje. */
-const DATOLINJE = 20;
-const LINJE = 14;
+const FORHOLD = 0.95;
+const HOYDE_MINST = 64;
+const HOYDE_MEST = 150;
 
 /**
- * Hvor mange linjer det er plass til under datoen.
- *
- * Alltid minst én: en rute som ikke viser noe som helst er verre enn en som
- * viser «+3 til».
+ * Målene i en dagrute, i piksler ved tekstskala 1 (lerretet KalenderTitler).
+ * Ruta regner med dem for å vite hvor mange brikker den har plass til.
  */
-export function linjerSomFarPlass(cellehoyde: number): number {
-  return Math.max(1, Math.floor((cellehoyde - DATOLINJE) / LINJE));
+const RAMME = 6 + 8; // polstring over og under
+const DATOLINJE = 20 + 4; // datoen (merket for i dag er 20 høyt) og luft
+const MERKELAPP = 16 + 4;
+const SAMTALELINJE = 22 + 4;
+const TELLER = 16;
+/** Brikka uten tittel: polstring, fag og klokkeslett, og luft til neste. */
+const OKTRAMME = 4 + 5 + 13 + 4;
+const TITTELLINJE = 15.6;
+/** Snittbredden på et tegn i tittelen (12 px), og brikkas polstring. */
+const TEGN = 6.3;
+const POLSTRING = 12 + 14;
+
+/** Hvor mange linjer tittelen tar i en rute så bred: 0, 1 eller 2. */
+export function tittellinjer(tittel: string | null, dagbredde: number): number {
+  if (!tittel) return 0;
+  const plass = Math.max(dagbredde - POLSTRING, 20);
+  return Math.min(2, Math.ceil((tittel.length * TEGN) / plass));
+}
+
+/** Høyden på en øktbrikke, med luft til neste. */
+export function okthoyde(linjer: number, skala = 1): number {
+  return (OKTRAMME + linjer * TITTELLINJE) * skala;
 }
 
 /**
- * Kapper øktene til det ruta har plass til.
+ * Hvor mye plass øktene har i ruta, når datoen, merkelappen for ferie og
+ * samtalelinja er trukket fra.
+ */
+export function plassTilOkter(
+  cellehoyde: number,
+  { merkelapp = false, samtaler = false, skala = 1 } = {},
+): number {
+  return (
+    cellehoyde -
+    RAMME -
+    (DATOLINJE + (merkelapp ? MERKELAPP : 0) + (samtaler ? SAMTALELINJE : 0)) *
+      skala
+  );
+}
+
+/**
+ * Kapper øktene til det ruta har plass til, etter høyden på hver.
  *
- * Går det ikke opp, brukes den nederste linja til telleren — ellers ville
+ * Går det ikke opp, gis det plass til telleren nederst — ellers ville
  * «+n til» selv skjøvet en økt ut uten å si fra om det.
  */
 export function kappOkter<T>(
   okter: T[],
+  hoyder: number[],
   plass: number,
+  teller = TELLER,
 ): { synlige: T[]; skjulte: number } {
-  if (plass <= 0) return { synlige: [], skjulte: okter.length };
-  if (okter.length <= plass) return { synlige: okter, skjulte: 0 };
-  const synlige = okter.slice(0, plass - 1);
-  return { synlige, skjulte: okter.length - synlige.length };
+  const sum = hoyder.reduce((a, b) => a + b, 0);
+  if (sum <= plass) return { synlige: okter, skjulte: 0 };
+  let brukt = teller;
+  let n = 0;
+  while (n < okter.length && brukt + hoyder[n] <= plass) brukt += hoyder[n++];
+  return { synlige: okter.slice(0, n), skjulte: okter.length - n };
 }
 
 /**
@@ -88,15 +124,21 @@ export function kappOkter<T>(
  * Bredden leses av rutenettets egne kolonnespor framfor å gjettes, så tallet
  * stemmer uansett hvor mange måneder som fikk plass ved siden av hverandre.
  */
-function useCellehoyde(): [React.RefObject<HTMLDivElement | null>, number] {
+type Rutemal = { hoyde: number; bredde: number; skala: number };
+
+function useCellehoyde(): [React.RefObject<HTMLDivElement | null>, Rutemal] {
   const rutenett = useRef<HTMLDivElement>(null);
-  const [hoyde, setHoyde] = useState(HOYDE_MINST);
+  const [mal, setMal] = useState<Rutemal>({
+    hoyde: HOYDE_MINST,
+    bredde: 120,
+    skala: 1,
+  });
 
   useLayoutEffect(() => {
     const el = rutenett.current;
     if (!el) return;
 
-    const mal = () => {
+    const maal = () => {
       const spor = getComputedStyle(el)
         .gridTemplateColumns.split(" ")
         .map(parseFloat)
@@ -104,21 +146,27 @@ function useCellehoyde(): [React.RefObject<HTMLDivElement | null>, number] {
       const kortbredde = spor[0] ?? el.clientWidth;
       const dagbredde = (kortbredde - UKEKOLONNE - STREKER) / 5;
       if (dagbredde <= 0) return;
-      setHoyde(
-        Math.min(
-          HOYDE_MEST,
-          Math.max(HOYDE_MINST, Math.round(dagbredde * FORHOLD)),
-        ),
+      // Større tekst gir høyere brikker, så plassen regnes med skalaen.
+      const skala =
+        parseFloat(getComputedStyle(el).getPropertyValue("--tekst-skala")) || 1;
+      const hoyde = Math.min(
+        HOYDE_MEST,
+        Math.max(HOYDE_MINST, Math.round(dagbredde * FORHOLD)),
+      );
+      setMal((f) =>
+        f.hoyde === hoyde && f.bredde === dagbredde && f.skala === skala
+          ? f
+          : { hoyde, bredde: dagbredde, skala },
       );
     };
 
-    mal();
-    const ro = new ResizeObserver(mal);
+    maal();
+    const ro = new ResizeObserver(maal);
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
 
-  return [rutenett, hoyde];
+  return [rutenett, mal];
 }
 
 /**
@@ -156,7 +204,31 @@ export function Skolekalender({
   // legge inn alle på én gang er enklere enn et serieskjema, og du ser hele
   // tiden hvor de havner.
   const [valgte, setValgte] = useState<Set<string>>(new Set());
-  const [rutenett, cellehoyde] = useCellehoyde();
+  const [rutenett, rutemal] = useCellehoyde();
+  const cellehoyde = rutemal.hoyde;
+
+  // Fagene som er skjult i kalenderen (ARBEIDSLISTE 15.1). Gjelder uke,
+  // måned og årsheatmapet, og huskes.
+  const [skjult, settSkjult] = useLagretInnstilling<Set<string>>(
+    "kalender_skjulte_fag",
+    new Set(),
+    (v) => new Set(lesJson<string[]>(v, [])),
+    (v) => JSON.stringify([...v]),
+  );
+  function vekslFag(id: string) {
+    const ny = new Set(skjult);
+    if (ny.has(id)) ny.delete(id);
+    else ny.add(id);
+    settSkjult(ny);
+  }
+  const synligeOkter = useMemo(
+    () => okter.filter((o) => !skjult.has(o.skolearFagId)),
+    [okter, skjult],
+  );
+  const synligeSamtaler = useMemo(
+    () => (skjult.has(SAMTALER) ? [] : samtaledager),
+    [samtaledager, skjult],
+  );
 
   async function last() {
     setOkter(await hentOkter(skolear.id));
@@ -190,18 +262,19 @@ export function Skolekalender({
 
   const perDag = useMemo(() => {
     const kart = new Map<string, Okt[]>();
-    for (const o of okter) kart.set(o.dato, [...(kart.get(o.dato) ?? []), o]);
+    for (const o of synligeOkter)
+      kart.set(o.dato, [...(kart.get(o.dato) ?? []), o]);
     return kart;
-  }, [okter]);
+  }, [synligeOkter]);
 
   const samtalePerDag = useMemo(() => {
     const kart = new Map<string, Samtaledag[]>();
-    for (const d of samtaledager) {
+    for (const d of synligeSamtaler) {
       if (d.dato === "") continue;
       kart.set(d.dato, [...(kart.get(d.dato) ?? []), d]);
     }
     return kart;
-  }, [samtaledager]);
+  }, [synligeSamtaler]);
 
   const maneder = useMemo(
     () => manederMellom(skolear.start, skolear.slutt),
@@ -283,11 +356,11 @@ export function Skolekalender({
   // Hvor mye som skjer hver dag, til årsheatmapet.
   const mengde = useMemo(() => {
     const kart = new Map<string, number>();
-    for (const o of okter) kart.set(o.dato, (kart.get(o.dato) ?? 0) + 1);
-    for (const d of samtaledager)
+    for (const o of synligeOkter) kart.set(o.dato, (kart.get(o.dato) ?? 0) + 1);
+    for (const d of synligeSamtaler)
       if (d.dato) kart.set(d.dato, (kart.get(d.dato) ?? 0) + 1);
     return kart;
-  }, [okter, samtaledager]);
+  }, [synligeOkter, synligeSamtaler]);
 
   return (
     <div className="mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col overflow-clip">
@@ -302,38 +375,42 @@ export function Skolekalender({
           settVerdi={(v) => byttModus(v as "uke" | "maned")}
         />
         {modus === "maned" && (
-          <>
-            <h2 className="ml-2 text-[calc(26px*var(--tekst-skala))] font-light leading-none tracking-overskrift first-letter:uppercase">
-              {manedsnavn(visManed)}
-            </h2>
-            <span className="ml-auto flex items-center gap-1">
-              <button
-                onClick={() => ix > 0 && rullTil(maneder[ix - 1])}
-                disabled={ix <= 0}
-                title="Forrige måned"
-                className="rounded-vanlig px-2 py-0.5 text-tittel leading-none text-blekk-dempet hover:bg-flate hover:text-blekk disabled:opacity-30"
-              >
-                ‹
-              </button>
-              <Knapp
-                onClick={() =>
-                  rullTil(narmesteManed(idag.slice(0, 7), maneder))
-                }
-              >
-                I dag
-              </Knapp>
-              <button
-                onClick={() =>
-                  ix < maneder.length - 1 && rullTil(maneder[ix + 1])
-                }
-                disabled={ix >= maneder.length - 1}
-                title="Neste måned"
-                className="rounded-vanlig px-2 py-0.5 text-tittel leading-none text-blekk-dempet hover:bg-flate hover:text-blekk disabled:opacity-30"
-              >
-                ›
-              </button>
-            </span>
-          </>
+          <h2 className="ml-2 text-[calc(26px*var(--tekst-skala))] font-light leading-none tracking-overskrift first-letter:uppercase">
+            {manedsnavn(visManed)}
+          </h2>
+        )}
+        <Fagbrytere
+          fag={fag}
+          samtaler={samtaledager.some((d) => d.dato !== "")}
+          skjult={skjult}
+          onVeksle={vekslFag}
+        />
+        {modus === "maned" && (
+          <span className="flex items-center gap-1">
+            <button
+              onClick={() => ix > 0 && rullTil(maneder[ix - 1])}
+              disabled={ix <= 0}
+              title="Forrige måned"
+              className="rounded-vanlig px-2 py-0.5 text-tittel leading-none text-blekk-dempet hover:bg-flate hover:text-blekk disabled:opacity-30"
+            >
+              ‹
+            </button>
+            <Knapp
+              onClick={() => rullTil(narmesteManed(idag.slice(0, 7), maneder))}
+            >
+              I dag
+            </Knapp>
+            <button
+              onClick={() =>
+                ix < maneder.length - 1 && rullTil(maneder[ix + 1])
+              }
+              disabled={ix >= maneder.length - 1}
+              title="Neste måned"
+              className="rounded-vanlig px-2 py-0.5 text-tittel leading-none text-blekk-dempet hover:bg-flate hover:text-blekk disabled:opacity-30"
+            >
+              ›
+            </button>
+          </span>
         )}
       </div>
 
@@ -342,11 +419,11 @@ export function Skolekalender({
           skolearId={skolear.id}
           forste={skolear.start}
           siste={skolear.slutt}
-          okter={okter}
+          okter={synligeOkter}
           fag={fag}
           fridager={fridager}
           rode={rode}
-          samtaledager={samtaledager}
+          samtaledager={synligeSamtaler}
           onApneOkt={onApneOkt}
           onEndret={() => void last()}
         />
@@ -368,7 +445,7 @@ export function Skolekalender({
                   )}
                   <Maned
                     maned={m}
-                    cellehoyde={cellehoyde}
+                    rutemal={rutemal}
                     spennFra={skolear.start}
                     spennTil={skolear.slutt}
                     perDag={perDag}
@@ -427,6 +504,72 @@ export function Skolekalender({
         />
       )}
     </div>
+  );
+}
+
+/** Nøkkelen samtaledagene skjules under, ved siden av fagenes id-er. */
+const SAMTALER = "samtaler";
+
+/**
+ * Fagene øverst til høyre i kalenderen, hvert i sin tone med hake
+ * (ARBEIDSLISTE 15.1). Et klikk skjuler faget; brikka blir hvit med tom
+ * boks. Et klikk til viser det igjen.
+ */
+function Fagbrytere({
+  fag,
+  samtaler,
+  skjult,
+  onVeksle,
+}: {
+  fag: FagIAr[];
+  /** om det finnes samtaledager i året; da får de sin egen brikke */
+  samtaler: boolean;
+  skjult: Set<string>;
+  onVeksle: (id: string) => void;
+}) {
+  const valg = [
+    ...fag.map((f) => ({
+      id: f.id,
+      navn: f.kode,
+      farge: f.farge ? fagfarge(f.farge) : "var(--color-blekk-dempet)",
+    })),
+    ...(samtaler
+      ? [{ id: SAMTALER, navn: "Mentorsamtaler", farge: "var(--color-aksent)" }]
+      : []),
+  ];
+  if (valg.length < 2) return null;
+  return (
+    <span className="ml-auto flex flex-wrap items-center gap-1.5">
+      {valg.map((v) => {
+        const av = skjult.has(v.id);
+        return (
+          <button
+            key={v.id}
+            onClick={() => onVeksle(v.id)}
+            title={`${av ? "Vis" : "Skjul"} ${v.navn}`}
+            aria-pressed={!av}
+            className={`fagbryter ${av ? "av" : ""}`}
+            style={{ "--fc": v.farge } as React.CSSProperties}
+          >
+            <span className="fagbryter-boks">
+              {!av && (
+                <svg width="8" height="8" viewBox="0 0 10 10" aria-hidden>
+                  <path
+                    d="M1.8 5.2l2.2 2.2L8.4 2.8"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    fill="none"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              )}
+            </span>
+            {v.navn}
+          </button>
+        );
+      })}
+    </span>
   );
 }
 
@@ -515,7 +658,7 @@ function narmesteManed(maned: string, maneder: string[]): string {
 
 function Maned({
   maned,
-  cellehoyde,
+  rutemal,
   spennFra,
   spennTil,
   perDag,
@@ -529,7 +672,7 @@ function Maned({
   onSlettOkt,
 }: {
   maned: string;
-  cellehoyde: number;
+  rutemal: Rutemal;
   spennFra: string;
   spennTil: string;
   perDag: Map<string, Okt[]>;
@@ -543,6 +686,7 @@ function Maned({
   onSlettOkt: (okt: Okt) => void;
 }) {
   const uker = ukerIManed(maned);
+  const cellehoyde = rutemal.hoyde;
 
   return (
     <section>
@@ -579,7 +723,7 @@ function Maned({
                 <Dag
                   key={dato}
                   dato={dato}
-                  cellehoyde={cellehoyde}
+                  rutemal={rutemal}
                   utenfor={dato < spennFra || dato > spennTil}
                   okter={perDag.get(dato) ?? []}
                   samtaledager={samtalePerDag.get(dato) ?? []}
@@ -601,7 +745,7 @@ function Maned({
 
 function Dag({
   dato,
-  cellehoyde,
+  rutemal,
   utenfor,
   okter,
   samtaledager,
@@ -613,7 +757,7 @@ function Dag({
   onSlettOkt,
 }: {
   dato: string;
-  cellehoyde: number;
+  rutemal: Rutemal;
   utenfor: boolean;
   okter: Okt[];
   samtaledager: Samtaledag[];
@@ -628,14 +772,22 @@ function Dag({
   // Ligger det økter på en blokkert dag, er det noe å rydde opp i.
   const konflikt = blokkert !== null && okter.length > 0;
 
-  // Merkelappen for ferie eller helligdag legger beslag på en linje, så den
-  // må trekkes fra før øktene får vite hvor mye plass de har igjen.
+  // Merkelappen for ferie eller helligdag og samtalelinja tar plass, så de
+  // må trekkes fra før øktene får vite hvor mye plass de har igjen. Hver
+  // brikke er så høy som tittelen den har.
   const merkelapp = blokkert !== null && !utenfor;
   const harSamtaler = samtaledager.length > 0 && !utenfor;
+  const linjer = okter.map((o) => tittellinjer(o.tema, rutemal.bredde));
   const { synlige, skjulte } = kappOkter(
     okter,
-    linjerSomFarPlass(cellehoyde) - (merkelapp ? 1 : 0) - (harSamtaler ? 1 : 0),
+    linjer.map((l) => okthoyde(l, rutemal.skala)),
+    plassTilOkter(rutemal.hoyde, {
+      merkelapp,
+      samtaler: harSamtaler,
+      skala: rutemal.skala,
+    }),
   );
+  const elever = samtaledager.reduce((n, d) => n + d.antall, 0);
 
   const bakgrunn = utenfor
     ? "bg-flate"
@@ -652,16 +804,17 @@ function Dag({
   return (
     <div
       onClick={utenfor ? undefined : onVelg}
-      style={{ height: cellehoyde }}
-      className={`overflow-hidden px-1 py-0.5 ${bakgrunn} ${
+      style={{ height: rutemal.hoyde }}
+      className={`flex flex-col gap-1 overflow-hidden px-1.5 pb-2 pt-1.5 ${bakgrunn} ${
         utenfor ? "" : "cursor-pointer hover:brightness-[0.98]"
       } ${valgt ? "outline outline-2 -outline-offset-2 outline-aksent" : ""}`}
     >
-      <div className="flex items-baseline gap-1">
+      <div className="flex h-5 shrink-0 items-center gap-1">
+        {/* Dagens dato i et aksentfarget merke (ARBEIDSLISTE 15.1). */}
         <span
-          className={`text-etikett tabular-nums ${
+          className={`text-[calc(12.5px*var(--tekst-skala))] tabular-nums ${
             erIdag
-              ? "rounded-sm bg-aksent px-1 font-medium text-ark"
+              ? "inline-grid h-5 min-w-[22px] place-items-center rounded-[6px] bg-aksent px-1 font-semibold text-ark"
               : utenfor
                 ? "text-blekk-svakest"
                 : "text-blekk-dempet"
@@ -681,7 +834,7 @@ function Dag({
 
       {merkelapp && (
         <p
-          className={`truncate text-mikro ${
+          className={`shrink-0 truncate text-mikro ${
             konflikt ? "text-feil" : "text-blekk-svak"
           }`}
           title={blokkert.navn}
@@ -693,11 +846,17 @@ function Dag({
       {/*
         Samtaledagen står over øktene: er det samtaler den dagen, er det dem
         dagen handler om. Den er ikke en økt (§3.6), så den har sitt eget
-        uttrykk — en linje med antall, ikke en fagbrikke.
+        uttrykk — én linje i aksentens tone, med antall elever.
       */}
       {harSamtaler && (
         <p
-          className="mt-0.5 truncate rounded-[2px] bg-valgt px-0.5 text-mikro text-aksent"
+          className="shrink-0 truncate rounded-[5px] px-[7px] py-[4px] text-mikro leading-[1.2]"
+          style={{
+            background:
+              "color-mix(in srgb, var(--color-aksent) 12%, var(--color-ark))",
+            boxShadow:
+              "inset 0 0 0 1px color-mix(in srgb, var(--color-aksent) 25%, var(--color-ark))",
+          }}
           title={samtaledager
             .map(
               (d) =>
@@ -706,21 +865,23 @@ function Dag({
             )
             .join("\n")}
         >
-          {samtaledager[0].fagKode ?? "Mentorsamtaler"}
-          {samtaledager.reduce((n, d) => n + d.antall, 0) > 0 &&
-            ` · ${samtaledager.reduce((n, d) => n + d.antall, 0)}`}
+          <span className="font-semibold text-aksent">
+            {samtaledager[0].fagKode ?? "Mentorsamtaler"}
+          </span>
+          {elever > 0 && <span className="text-blekk-dempet"> · {elever}</span>}
         </p>
       )}
 
       {/*
-        To knapper på rad, ikke én: krysset kan ikke ligge inni knappen som
-        åpner økta. Krysset vises først når musa er over brikka, så rutene
-        holder seg rolige når du bare ser på kalenderen (§13).
+        Hver økt er en brikke i to linjer: fag og klokkeslett, så tittelen
+        i inntil to linjer (ARBEIDSLISTE 15.1). Krysset for å slette ligger
+        utenfor knappen som åpner økta, og vises først når musa er over
+        brikka, så rutene holder seg rolige (§13).
       */}
       {synlige.map((o) => (
         <div
           key={o.id}
-          className="group/okt mt-0.5 flex w-full items-center gap-1 rounded-[2px] px-0.5 text-mikro hover:brightness-95"
+          className="group/okt relative shrink-0 rounded-[5px] hover:brightness-95"
           style={{ background: o.farge ? `${o.farge}1c` : undefined }}
         >
           <button
@@ -728,15 +889,29 @@ function Dag({
               e.stopPropagation();
               onApneOkt(o.id);
             }}
-            title={`${o.fagKode} ${o.klokkeslett ?? ""} ${o.tema ?? ""}`}
-            className="flex min-w-0 flex-1 items-center gap-1 text-left"
+            title={[o.fagKode, o.klokkeslett, o.tema]
+              .filter(Boolean)
+              .join(" · ")}
+            className="block w-full min-w-0 px-[7px] pb-[5px] pt-1 text-left"
           >
-            <span
-              className="min-w-0 font-medium"
-              style={{ color: o.farge ? fagfarge(o.farge) : undefined }}
-            >
-              <Kappet verdi={o.fagKode} />
+            <span className="flex min-w-0 items-baseline gap-1.5 text-mikro leading-[1.2]">
+              <span
+                className="min-w-0 truncate font-semibold"
+                style={{ color: o.farge ? fagfarge(o.farge) : undefined }}
+              >
+                {o.fagKode}
+              </span>
+              {o.klokkeslett && (
+                <span className="shrink-0 tabular-nums text-blekk-dempet">
+                  {o.klokkeslett}
+                </span>
+              )}
             </span>
+            {o.tema && (
+              <span className="okt-tittel mt-px text-etikett leading-[1.3] text-blekk">
+                {o.tema}
+              </span>
+            )}
           </button>
           <button
             onClick={(e) => {
@@ -744,7 +919,7 @@ function Dag({
               onSlettOkt(o);
             }}
             title={`Slett ${o.fagKode} denne dagen`}
-            className="hidden shrink-0 px-0.5 leading-none text-blekk-svak hover:text-feil group-hover/okt:block"
+            className="absolute right-1 top-0.5 hidden px-0.5 text-mikro leading-none text-blekk-svak hover:text-feil group-hover/okt:block"
           >
             &times;
           </button>
@@ -763,14 +938,11 @@ function Dag({
           }}
           title={okter
             .slice(synlige.length)
-            .map(
-              (o) =>
-                `${o.fagKode}${o.klokkeslett ? ` ${o.klokkeslett}` : ""}${
-                  o.tema ? `: ${o.tema}` : ""
-                }`,
+            .map((o) =>
+              [o.fagKode, o.klokkeslett, o.tema].filter(Boolean).join(" · "),
             )
             .join("\n")}
-          className="mt-0.5 w-full px-0.5 text-left text-mikro tabular-nums text-blekk-svak hover:text-blekk"
+          className="w-full shrink-0 px-0.5 text-left text-mikro tabular-nums text-blekk-svak hover:text-blekk"
         >
           +{skjulte} til
         </button>

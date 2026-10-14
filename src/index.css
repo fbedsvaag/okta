@@ -1306,3 +1306,52 @@ html {
   margin-left: 0 !important;
   justify-content: flex-start !important;
 }
+
+/*
+ * Fagbrikkene i kalenderen (ARBEIDSLISTE 15.1). --fc er fagfargen. Av: hvit
+ * med tom boks.
+ */
+.fagbryter {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 10px 0 6px;
+  border-radius: 13px;
+  font-size: calc(12.5px * var(--tekst-skala));
+  font-weight: 500;
+  white-space: nowrap;
+  color: var(--fc);
+  background: color-mix(in srgb, var(--fc) 12%, var(--color-ark));
+  box-shadow: inset 0 0 0 1px
+    color-mix(in srgb, var(--fc) 30%, var(--color-ark));
+  transition:
+    background var(--tid-inn),
+    color var(--tid-inn);
+}
+.fagbryter-boks {
+  display: inline-grid;
+  place-items: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  background: var(--fc);
+  color: var(--color-ark);
+}
+.fagbryter.av {
+  background: transparent;
+  color: var(--color-blekk-svak);
+  box-shadow: inset 0 0 0 1px var(--color-linje-medium);
+}
+.fagbryter.av .fagbryter-boks {
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px var(--color-linje-sterk);
+}
+
+/* Øktbrikka i månedsruta: tittelen i inntil to linjer, så «…». */
+.okt-tittel {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}

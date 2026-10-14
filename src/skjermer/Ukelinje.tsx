@@ -311,7 +311,7 @@ function Dag({
   return (
     <div className="min-w-0 border-l border-linje-svak first:border-l-0">
       <div
-        className={`flex h-7 items-baseline gap-1.5 px-1.5 pt-1 text-liten tabular-nums ${
+        className={`flex h-7 items-center gap-1.5 px-1.5 text-liten tabular-nums ${
           erIdag
             ? "font-medium text-aksent"
             : passert
@@ -319,7 +319,14 @@ function Dag({
               : "text-blekk-dempet"
         }`}
       >
-        {navn} {Number(dato.slice(8))}.
+        {navn} {/* Dagens dato i et aksentfarget merke (ARBEIDSLISTE 15.1). */}
+        {erIdag ? (
+          <span className="inline-grid h-5 min-w-[22px] place-items-center rounded-[6px] bg-aksent px-1 font-semibold text-ark">
+            {Number(dato.slice(8))}
+          </span>
+        ) : (
+          `${Number(dato.slice(8))}.`
+        )}
       </div>
       {heldag && (
         <div
@@ -446,7 +453,8 @@ const HELDAGSTONE: Record<Heldag["type"], string> = {
     "bg-helligdag-flate text-blekk shadow-[inset_0_0_0_1px_var(--color-helligdag-kant)]",
   fri: "bg-fri-flate text-blekk-dempet",
   hendelse: "bg-hendelse-flate text-blekk-dempet",
-  samtale: "bg-ark text-aksent shadow-[inset_0_0_0_1px_var(--color-aksent)]",
+  samtale:
+    "bg-[color-mix(in_srgb,var(--color-aksent)_12%,var(--color-ark))] font-semibold text-aksent shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--color-aksent)_25%,var(--color-ark))]",
 };
 
 function useNaa(): number {
@@ -489,10 +497,15 @@ function Blokk({
   return (
     <button
       onClick={onApne}
-      title={`${okt.fagKode}${okt.tema ? `: ${okt.tema}` : ""}${
-        okt.klokkeslett ? ` · ${okt.klokkeslett}` : " · uten klokkeslett"
-      }${okt.sted ? ` · ${okt.sted}` : ""}`}
-      className={`absolute overflow-hidden rounded-liten bg-ark px-1.5 py-0.5 text-left text-mikro leading-tight hover:brightness-95 ${
+      title={[
+        okt.fagKode,
+        okt.klokkeslett ?? "uten klokkeslett",
+        okt.tema,
+        okt.sted,
+      ]
+        .filter(Boolean)
+        .join(" · ")}
+      className={`absolute overflow-hidden rounded-[5px] bg-ark px-[7px] pb-[5px] pt-1 text-left hover:brightness-95 ${
         utenTid ? "border border-dashed border-linje-sterk" : ""
       } ${valgt ? "z-10 ring-2 ring-aksent" : ""}`}
       style={{
@@ -508,23 +521,30 @@ function Blokk({
           : undefined,
       }}
     >
-      <span
-        className="block truncate font-medium"
-        style={{ color: okt.farge ? fagfarge(okt.farge) : undefined }}
-      >
-        {okt.fagKode}
+      {/* Fag og klokkeslett, så tittelen i inntil to linjer (15.1). */}
+      <span className="flex min-w-0 items-baseline gap-1.5 text-mikro leading-[1.2]">
+        <span
+          className="min-w-0 truncate font-semibold"
+          style={{ color: okt.farge ? fagfarge(okt.farge) : undefined }}
+        >
+          {okt.fagKode}
+        </span>
         {okt.klokkeslett && (
-          <span className="ml-1 font-normal tabular-nums text-blekk-svak">
+          <span className="shrink-0 tabular-nums text-blekk-dempet">
             {okt.klokkeslett}
           </span>
         )}
       </span>
       {okt.tema && (
-        <span className="block truncate text-blekk">{okt.tema}</span>
+        <span className="okt-tittel mt-px text-etikett leading-[1.3] text-blekk">
+          {okt.tema}
+        </span>
       )}
       {/* Rommet i liten grå skrift (ARBEIDSLISTE 7.5). */}
       {okt.sted && (
-        <span className="block truncate text-blekk-svak">{okt.sted}</span>
+        <span className="block truncate text-mikro leading-tight text-blekk-svak">
+          {okt.sted}
+        </span>
       )}
     </button>
   );
