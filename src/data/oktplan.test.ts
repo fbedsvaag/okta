@@ -1,3 +1,4 @@
+import type { Planpunkt } from "./oktplan";
 import { describe, expect, it } from "vitest";
 import {
   folgOpp,
@@ -11,6 +12,9 @@ import {
   dragEnde,
   lengste,
   lesTittel,
+  livePlan,
+  livetid,
+  livetekst,
   narTekst,
   skrivPlan,
   standardModus,
@@ -271,5 +275,85 @@ describe("tida i planen", () => {
     expect(lesTittel("Film 15 min")).toEqual({ tekst: "Film", min: 15 });
     expect(lesTittel("Kapittel 3")).toEqual({ tekst: "Kapittel 3", min: null });
     expect(lesTittel("15 min")).toEqual({ tekst: "15 min", min: null });
+  });
+});
+
+describe("live", () => {
+  const a = (min: number, d: Partial<Planpunkt> = {}) =>
+    nyttPunkt({ tekst: d.tekst ?? "a", min, ...d });
+  const plan = [
+    a(10, { tekst: "Repetisjon" }),
+    a(30, { tekst: "Gjennomgang" }),
+    nyttPunkt({ type: "pause", tekst: "Pause", min: 10 }),
+    a(30, { tekst: "Gruppearbeid" }),
+    a(10, { tekst: "Exit-lapp" }),
+  ];
+
+  it("krysser av det som er ferdig, og finner det som pågår", () => {
+    const { liste, aktiv } = livePlan(plan, "08:30", 55);
+    expect(aktiv).toBe(3);
+    expect(liste.map((l) => l.ferdig)).toEqual([
+      true,
+      true,
+      true,
+      false,
+      false,
+    ]);
+    expect(liste[0].auto).toBe(true);
+  });
+
+  it("lar +5 min flytte resten", () => {
+    const p = plan.map((x, i) => (i === 1 ? { ...x, forlenget: 6 } : x));
+    const { liste } = livePlan(p, "08:30", 61);
+    expect(liste[4].e).toBe(96);
+    const t = livetekst(p, "08:30", 90, 61);
+    expect(t.under).toBe("6 min forlenget · siste går 6 min over");
+    expect(livetid(p[4], liste[4], false, 61, "08:30", 90)).toBe(
+      "6 min over slutt",
+    );
+  });
+
+  it("starter neste når en aktivitet krysses av før tida", () => {
+    const p = plan.map((x, i) =>
+      i === 0 ? { ...x, gjort: true, ferdig: "08:36" } : x,
+    );
+    const { liste, aktiv } = livePlan(p, "08:30", 7);
+    expect(liste[0]).toMatchObject({ e: 6, ferdig: true, auto: false });
+    expect(aktiv).toBe(1);
+  });
+
+  it("sier hva som skjer før start og etter slutt", () => {
+    expect(livetekst(plan, "08:30", 90, -12)).toMatchObject({
+      etikett: "Starter om 12 min",
+      tittel: "Først: Repetisjon",
+      under: "4 aktiviteter, går opp",
+    });
+    expect(livetekst(plan, "08:30", 90, 92)).toMatchObject({
+      etikett: "Ferdig 10:00",
+      tittel: "4 av 4 aktiviteter krysset av",
+      under: "Skriv i øktloggen før du lukker",
+    });
+  });
+
+  it("viser tid igjen for den aktive og fra–til for resten", () => {
+    const { liste } = livePlan(plan, "08:30", 55);
+    expect(livetid(plan[3], liste[3], true, 55, "08:30", 90)).toBe(
+      "25 min igjen",
+    );
+    expect(livetid(plan[4], liste[4], false, 55, "08:30", 90)).toBe(
+      "09:50–10:00",
+    );
+    expect(livetid(plan[0], liste[0], false, 55, "08:30", 90)).toBe("08:40");
+    expect(livetekst(plan, "08:30", 90, 55)).toMatchObject({
+      hoyre: "5 av 30 min",
+      under: "35 min igjen av økta",
+      status: "Pågår · 35 min igjen",
+    });
+  });
+
+  it("krysser bare av det som er klikket når økta er uten klokkeslett", () => {
+    const { liste, aktiv } = livePlan(plan, null, null);
+    expect(aktiv).toBe(-1);
+    expect(liste.every((l) => !l.ferdig)).toBe(true);
   });
 });

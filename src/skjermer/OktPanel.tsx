@@ -22,6 +22,8 @@ import {
 import { taster, type Skalaverdi } from "../skala";
 import { fagfarge, skalafarge } from "../ui/farger";
 import { hovedtast, harModifikator, tast as visTast } from "../ui/taster";
+import { Livestripe, Liveplan, useMinutt, visesLive } from "./Oktlive";
+import { usePlanvisning } from "./Oktplan";
 
 /**
  * Økta som ark, SPEC §4.4 og DESIGN.md §10 (lerretet «OktArk»).
@@ -73,13 +75,11 @@ export function OktPanel({
       setPeriode(p.find((x) => x.id === okt.periodeId) ?? null),
     );
   }, [okt.periodeId, okt.skolearFagId]);
-  // «Pågår · n min igjen», oppdatert hvert halve minutt.
-  const [na, setNa] = useState(() => new Date());
-  useEffect(() => {
-    const t = window.setInterval(() => setNa(new Date()), 30_000);
-    return () => window.clearInterval(t);
-  }, []);
+  // Klokka, én gang i minuttet (15.6): «Pågår · n min igjen», stripa og
+  // avkrysningen i planen.
+  const na = useMinutt();
   const pagar = minIgjen(okt, na);
+  const visning = usePlanvisning();
 
   // ⌘↵ = Ferdig, også fra et felt i arket. ⌘← / ⌘→ blar til forrige og
   // neste økt i faget, men ikke i et felt — der flytter de markøren.
@@ -255,8 +255,8 @@ export function OktPanel({
           </h1>
           <span className="flex-1" />
           {pagar !== null ? (
-            <span className="inline-flex shrink-0 items-center gap-[7px] rounded-full bg-flate px-2.5 py-1 text-[calc(12.5px*var(--tekst-skala))] font-medium text-aksent">
-              <span className="puls h-[7px] w-[7px] rounded-full bg-aksent" />
+            // Uten pulserende prikk: skåringen animeres aldri (§13).
+            <span className="inline-flex shrink-0 items-center rounded-full bg-flate px-2.5 py-1 text-[calc(12.5px*var(--tekst-skala))] font-medium tabular-nums text-aksent">
               Pågår · {pagar} min igjen
             </span>
           ) : (
@@ -334,6 +334,10 @@ export function OktPanel({
         />
       ) : (
         <>
+          {/* Live tidslinje under arkhodet, den dagen økta er (15.6). */}
+          {visning && visesLive(okt, na) && (
+            <Livestripe okt={okt} na={na} enkel={visning === "enkel"} />
+          )}
           <div className="flex min-h-0 flex-1">
             <div
               ref={liste}
@@ -424,22 +428,15 @@ export function OktPanel({
 
             <aside className="flex w-80 shrink-0 flex-col gap-[22px] overflow-auto border-l border-linje-medium bg-flate-svak/70 px-[22px] py-[18px]">
               <Forrigenotat okt={okt} />
-              <div>
-                <p className="mb-2 text-etikett font-semibold text-blekk">
-                  Plan
-                </p>
-                {/* Avkrysning i planen lagres med en gang. */}
-                <Markdownfelt
-                  key={`plan-${okt.id}`}
-                  verdi={okt.plan}
-                  minRader={3}
-                  plassholder="- [ ] Det du skal gjennom i økta"
-                  onLagre={async (v) => {
-                    await endreOkt(okt.id, { plan: v });
-                    onEndret();
-                  }}
-                />
-              </div>
+              <Liveplan
+                okt={okt}
+                na={na}
+                onLagre={async (plan) => {
+                  await endreOkt(okt.id, { plan });
+                  onEndret();
+                }}
+                onApnePlan={() => setModus("plan")}
+              />
               <div className="flex min-h-[200px] flex-1 flex-col">
                 <p className="mb-2 text-etikett font-semibold text-blekk">
                   Øktlogg

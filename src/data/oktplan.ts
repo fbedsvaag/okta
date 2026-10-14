@@ -339,6 +339,156 @@ export function lesTittel(tekst: string): {
   return { tekst: m[1].trim(), min: Number(m[2]) };
 }
 
+// --------------------------------------------------------------- live
+
+/** Et punkt i planen mens økta pågår, i minutter fra øktas start. */
+export type Livepunkt = {
+  /** når det begynner og slutter, med forlengelser og det som ble ferdig før tida */
+  s: number;
+  e: number;
+  /** krysset av: med et klikk, eller av seg selv når tida er ute */
+  ferdig: boolean;
+  /** krysset av av seg selv (lysere hake) */
+  auto: boolean;
+};
+
+/**
+ * Hvor økta står (15.6). `na` er minutter siden øktas start (negativ før
+ * start), eller null når økta ikke har klokkeslett: da krysses bare det
+ * som er klikket.
+ *
+ * En aktivitet krysses av når tida er ute. «+5 min» forlenger den, og
+ * resten flytter seg. Krysses den av før tida, slutter den der, og den
+ * neste begynner. En pause krysses av selv.
+ */
+export function livePlan(
+  punkter: Planpunkt[],
+  start: string | null,
+  na: number | null,
+): { liste: Livepunkt[]; aktiv: number } {
+  let pos = 0;
+  const liste = punkter.map((p) => {
+    const s = pos;
+    let e = s + (p.min ?? 0) + (p.type === "aktivitet" ? p.forlenget : 0);
+    if (p.type === "aktivitet" && p.gjort && p.ferdig && start) {
+      let f = tilMinutter(p.ferdig) - tilMinutter(start);
+      if (f < -720) f += 1440;
+      if (f >= s && f < e) e = f;
+    }
+    pos = e;
+    const ute = na !== null && na >= e;
+    const ferdig = p.type === "pause" ? ute : p.gjort || ute;
+    return { s, e, ferdig, auto: ferdig && !p.gjort };
+  });
+  const aktiv =
+    na === null
+      ? -1
+      : liste.findIndex((l) => !l.ferdig && na >= l.s && na < l.e);
+  return { liste, aktiv };
+}
+
+/** Teksten til høyre i hver rad i skåringen (15.7). */
+export function livetid(
+  p: Planpunkt,
+  l: Livepunkt,
+  aktiv: boolean,
+  na: number | null,
+  start: string | null,
+  lengde: number,
+): string {
+  const kl = (m: number) => (start ? klokke(tilMinutter(start) + m) : "");
+  if (p.type === "pause") return aktiv ? "pågår" : `${p.min ?? 0} min`;
+  if (!start || na === null) return p.min ? `${p.min} min` : "";
+  if (l.ferdig) return kl(l.e);
+  if (aktiv) return `${Math.max(0, l.e - na)} min igjen`;
+  if (l.e <= lengde) return `${kl(l.s)}–${kl(l.e)}`;
+  if (l.s < lengde) return `${l.e - lengde} min over slutt`;
+  return "rekker ikke";
+}
+
+/** Det som står til venstre og høyre i stripa, og i statusmerket (15.6). */
+export function livetekst(
+  punkter: Planpunkt[],
+  start: string,
+  lengde: number,
+  na: number,
+): {
+  etikett: string;
+  tittel: string;
+  hoyre: string;
+  under: string;
+  status: string | null;
+} {
+  const { liste, aktiv } = livePlan(punkter, start, na);
+  const slutt = klokke(tilMinutter(start) + lengde);
+  const igjen = lengde - na;
+  const aktiviteter = punkter.filter((p) => p.type === "aktivitet").length;
+  if (na < 0)
+    return {
+      etikett: `Starter om ${-na} min`,
+      tittel: punkter.length
+        ? `Først: ${punkter[0].tekst}`
+        : "Ingen plan for økta",
+      hoyre: `${lengde} min`,
+      under: punkter.length
+        ? `${aktiviteter} ${aktiviteter === 1 ? "aktivitet" : "aktiviteter"}, ${sumTekst(punkter, lengde).split(" · ")[1]}`
+        : "",
+      status: null,
+    };
+  if (na >= lengde) {
+    const krysset = punkter.filter(
+      (p, i) => p.type === "aktivitet" && (p.gjort || liste[i].e <= lengde),
+    ).length;
+    return {
+      etikett: `Ferdig ${slutt}`,
+      tittel: punkter.length
+        ? `${krysset} av ${aktiviteter} aktiviteter krysset av`
+        : "Økta er slutt",
+      hoyre: "Økta er slutt",
+      under: "Skriv i øktloggen før du lukker",
+      status: null,
+    };
+  }
+  const status = `Pågår · ${igjen} min igjen`;
+  if (!punkter.length)
+    return {
+      etikett: "Ingen plan",
+      tittel: "Økta pågår",
+      hoyre: `${igjen} min igjen`,
+      under: "av økta",
+      status,
+    };
+  if (aktiv < 0)
+    return {
+      etikett: "Nå",
+      tittel: liste.every((l) => l.ferdig)
+        ? "Planen er gjennomført"
+        : "Mellom aktiviteter",
+      hoyre: `${igjen} min igjen`,
+      under: "av økta",
+      status,
+    };
+  const l = liste[aktiv];
+  // Hvor mye senere den aktive slutter enn planen sa.
+  const planlagt = punkter
+    .slice(0, aktiv + 1)
+    .reduce((s, p) => s + (p.min ?? 0), 0);
+  const etter = l.e - planlagt;
+  const over = liste[liste.length - 1].e - lengde;
+  return {
+    etikett: "Nå",
+    tittel: punkter[aktiv].tekst,
+    hoyre: `${na - l.s} av ${l.e - l.s} min`,
+    under:
+      etter > 0
+        ? over > 0
+          ? `${etter} min forlenget · siste går ${over} min over`
+          : `${etter} min etter planen · ${igjen} min igjen`
+        : `${igjen} min igjen av økta`,
+    status,
+  };
+}
+
 // ------------------------------------------------------------ følg opp
 
 export type Oppfolging = { elevId: string; grunn: "rod" | "borte" | "punkt" };
