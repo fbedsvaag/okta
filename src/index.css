@@ -1302,4 +1302,7 @@ html {
   flex-shrink: 1;
   min-width: 0;
   row-gap: 0.375rem;
+  /* Det som bryter til en ny rad, står til venstre (ikke ml-auto). */
+  margin-left: 0 !important;
+  justify-content: flex-start !important;
 }

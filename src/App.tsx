@@ -741,9 +741,22 @@ function Verktoylinje({
   useLayoutEffect(() => {
     if (!spor) return;
     const sjekk = () => {
-      // Utbrettet bryter linja, så da er det ingenting å måle.
-      if (utvidetRef.current) return;
-      setFlyter(spor.scrollWidth > spor.clientWidth + 1);
+      // Utbrettet bryter linja, så da måles den som én rad et øyeblikk:
+      // klassene byttes, bredden leses og klassene settes tilbake, før
+      // noe tegnes. Får alt plass igjen, legges linja sammen og pila går.
+      const ut = utvidetRef.current;
+      const bryt = ["verktoy-utbrettet", "flex-wrap"];
+      if (ut) {
+        spor.classList.remove(...bryt);
+        spor.classList.add("overflow-hidden");
+      }
+      const flyterNa = spor.scrollWidth > spor.clientWidth + 1;
+      if (ut) {
+        spor.classList.add(...bryt);
+        spor.classList.remove("overflow-hidden");
+      }
+      setFlyter(flyterNa);
+      if (ut && !flyterNa) setUtvidet(false);
     };
     const ro = new ResizeObserver(sjekk);
     ro.observe(spor);
