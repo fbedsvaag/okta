@@ -188,8 +188,19 @@ redusert bevegelse åpnes den uten animasjon. Et klikk på selve
 skjermpunktet gir skjermens oversikt (Samtaler: Planlagt · Utkast ·
 Gjennomført).
 
+Nederst i sidemenyen, over Innstillinger: **Gi tilbakemelding**, i samme
+stil som Innstillinger-raden. Et klikk kopierer versjon, system og skjerm,
+viser «Kopiert. Lim inn under «Versjon og skjerm».» i raden (12,5 px, grå,
+kan bryte over to linjer) og åpner skjemaet litt over ett sekund etter.
+
 Hovedflaten ligger som et hvitt ark ved siden av, 8–10 px fra kanten, med
 radius 10 px. Verktøylinja øverst i arket.
+
+**Får ikke skjermens knapper plass i verktøylinja**, toner høyre kant ut
+(28 px) og en vinkelpil (⌄) kommer ytterst til høyre. Den bretter linja ut
+over flere rader: kapselen blir et rundet rektangel (radius 24 px), det som
+bryter står til venstre, og pila snur. Blir det plass igjen, legger linja
+seg sammen og pila går. Ny skjerm: én rad.
 
 **Visningsbryteren i Økter står i verktøylinja**, rett etter tittelen og på
 samme sted i alle visningene. Uten fag: «Økter» og Liste | Kalender. Med et
@@ -346,6 +357,10 @@ tommelen i alle brytere (Liste | Kalender, Uke | Måned, Plasser | Grupper,
 Fordel etter) glir under teksten; markøren i ⌘K, øktlista, elevlista og
 samtaletimeplanen glir med piltastene; ved «Stokk på nytt» glir elevene til
 de nye plassene (560 ms, 18 ms etterslep per plass, låste står stille).
+Rader som gjør plass når man drar i samtaletimeplanen, glir 240 ms med
+`cubic-bezier(0.2, 0.8, 0.2, 1)`, og kortet som slippes glir fra der det
+ble sluppet til plassen sin. Klokkeslettet på kortet ruller tegnvis
+(`ui/Ticker.tsx`, `--tid-inn`).
 Aldri på tekst som skrives, scrolling eller tall som endres.
 
 **Hover er én glassflate som glir** (`ui/Hovermarkor.tsx`), 220 ms med
@@ -386,7 +401,10 @@ med lister og avkrysning. Ingen oppsummeringssetning øverst — den gjentok
 bare «Dagens økter». Så uka som kalender, med tidsakse og nå-strek; tiden
 som har gått i dag har dempede fagfarger (ikke grått). Til høyre:
 gjøremål med en sammenleggbar logg over det som er gjort siste 14 dager,
-vurderingsfrister, elever som glipper (med lite heatmap).
+vurderingsfrister (bare de som ikke er ferdig ført), elever som glipper
+(samme regel som Elever: minst to røde av de fem siste; lavest snitt
+først; tom: «Ingen elever glipper nå»). Nederst over hele bredden:
+**Innsats over tid** (lerretet `InnsatsTid`), forklaringen «Fravær».
 
 **Økter — liste.** Fagfilter, søk, timeregnskap med en tynn stolpe delt på
 periodene. Periodene står som filtre over lista (klikk = vis bare den).
@@ -493,6 +511,14 @@ oppgavenummer som liten rute i temafargen, tema, merknad i vanlig grå tekst
 («tidlig 2× på rad»), lås og «møtte ikke» som ikonknapper. Møtte ikke gir
 gjennomstreket navn og tonet rad. Lunsj som egen, tonet rad. Temafargene er
 svake pastelltoner, bare til å kjenne igjen oppgaven.
+
+**Dra i timeplanen.** Klokkeslettene hører til plassene og står fast i sin
+kolonne; bare elevene glir. Raden som dras er et hvitt kort med skygge, og
+har sitt eget klokkeslett (aksent, medium) som viser tida på plassen den er
+over; sifrene som endres, ruller som et telleverk (opp når tida øker).
+Klokkeslettet under plassen kortet er over, skjules. En nabo gjør plass når
+kortet dekker 30 % av den; mellom dager avgjør midten av kortet. Ingen
+tekstmarkering mens det dras.
 
 **Førstegangsoppsett.** Eget vindu med stegene til venstre: Velkommen ·
 Skoleåret · Fagene dine · Elevene · Ferdig. Større tekst (15–17 px) enn
