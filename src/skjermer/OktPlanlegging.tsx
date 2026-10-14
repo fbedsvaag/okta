@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { confirm as bekreft } from "@tauri-apps/plugin-dialog";
 import {
   endreOkt,
@@ -26,16 +26,7 @@ import {
 } from "../data/vurderinger";
 import { hentOktrader, type Oktrad } from "../data/oktrader";
 import { hentApneOppfolginger } from "../data/elevnotat";
-import {
-  folgOpp,
-  iPerioden,
-  lesPlan,
-  nyttPunkt,
-  plansum,
-  skrivPlan,
-  type Oppfolging,
-  type Planpunkt,
-} from "../data/oktplan";
+import { folgOpp, iPerioden, type Oppfolging } from "../data/oktplan";
 import { kortDag } from "../data/fagside";
 import { lyttVurderinger } from "../data/endringer";
 import { useArk } from "../ui/Arkstabel";
@@ -44,7 +35,7 @@ import { Tastestripe, Tasthint } from "../ui/Tastestripe";
 import { tast } from "../ui/taster";
 import { idag as dagensDato } from "../db";
 import { Velger } from "../ui/Velger";
-import { nyPlass, useDra } from "../ui/dra";
+import { Oktplan } from "./Oktplan";
 
 /**
  * Økta i planlegging (ARBEIDSLISTE 11.5, lerretet «OktPlan»).
@@ -80,30 +71,29 @@ export function OktPlanlegging({
     <>
       <div className="flex min-h-0 flex-1">
         <div className="min-w-0 flex-1 overflow-y-auto px-[26px] pb-6 pt-[18px]">
-          <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-x-7">
-            <Fakta okt={okt} onLagre={lagre} />
-            <div className="flex flex-col gap-3.5">
+          {/* Faktaraden: alt på én linje, med etiketter over (15.5). */}
+          <Fakta okt={okt} onLagre={lagre} />
+          <div className="mt-4 grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-x-4">
+            <Tekstfelt
+              etikett="Lekse"
+              hint="står på årsplanen"
+              verdi={okt.lekse}
+              plassholder="Hva elevene skal ha gjort"
+              onLagre={(v) => lagre({ lekse: v })}
+            />
+            <div>
               <Tekstfelt
-                etikett="Lekse"
-                hint="står på årsplanen ved denne økta"
-                verdi={okt.lekse}
-                plassholder="Hva elevene skal ha gjort"
-                onLagre={(v) => lagre({ lekse: v })}
+                etikett="Agenda til elevene"
+                hint="går ut i kalenderen"
+                verdi={okt.agenda}
+                plassholder="Repetisjon · Case i grupper · Exit-lapp"
+                onLagre={(v) => lagre({ agenda: v })}
               />
-              <div>
-                <Tekstfelt
-                  etikett="Agenda til elevene"
-                  hint="går ut i kalenderen elevene abonnerer på"
-                  verdi={okt.agenda}
-                  plassholder="Repetisjon · Case i grupper · Exit-lapp"
-                  onLagre={(v) => lagre({ agenda: v })}
-                />
-                <Kopier okt={okt} />
-              </div>
+              <Kopier okt={okt} />
             </div>
           </div>
 
-          <Plan okt={okt} onLagre={(plan) => lagre({ plan })} />
+          <Oktplan okt={okt} onLagre={(plan) => lagre({ plan })} />
           <Mal okt={okt} periode={periode} />
 
           <div className="mt-6 flex gap-4">
@@ -141,7 +131,8 @@ export function OktPlanlegging({
 
       <Tastestripe klasse="shrink-0 justify-start gap-4 px-[22px]">
         <Tasthint taster={[tast("⌘"), "←", "→"]}>forrige / neste økt</Tasthint>
-        <Tasthint taster={["⇥"]}>neste felt</Tasthint>
+        <Tasthint taster={["↵"]}>ny aktivitet</Tasthint>
+        <Tasthint taster={[tast("⌥"), "↑", "↓"]}>flytt aktivitet</Tasthint>
         <span className="ml-auto">
           <Tasthint taster={["esc"]}>lukk, alt er lagret</Tasthint>
         </span>
@@ -168,7 +159,7 @@ function Fakta({
     : "";
 
   return (
-    <div>
+    <div className="flex flex-wrap items-end gap-x-6 gap-y-3">
       <Rad etikett="Dato">
         <input
           type="date"
@@ -179,11 +170,13 @@ function Fakta({
             e.target.value !== okt.dato &&
             void onLagre({ dato: e.target.value })
           }
-          className={stille}
+          className={`${felt} tabular-nums`}
         />
       </Rad>
       <Rad etikett="Tid">
-        <span className="flex items-center gap-1 tabular-nums">
+        <span
+          className={`${felt} inline-flex items-center gap-1 tabular-nums focus-within:shadow-[inset_0_0_0_1.5px_var(--color-aksent)]`}
+        >
           <input
             type="time"
             defaultValue={okt.klokkeslett ?? ""}
@@ -191,7 +184,7 @@ function Fakta({
             onBlur={(e) =>
               void onLagre({ klokkeslett: e.target.value || null })
             }
-            className={`${stille} w-[58px]`}
+            className="w-[54px] bg-transparent outline-none"
           />
           –
           <input
@@ -205,9 +198,8 @@ function Fakta({
               if (min > 0 && min !== okt.varighetMin)
                 void onLagre({ varighet_min: min });
             }}
-            className={`${stille} w-[58px]`}
+            className="w-[54px] bg-transparent outline-none disabled:text-blekk-svak"
           />
-          <span className="text-blekk-svak">· {timer(okt.varighetMin)}</span>
         </span>
       </Rad>
       <Rad etikett="Rom">
@@ -216,12 +208,11 @@ function Fakta({
           key={okt.sted ?? ""}
           placeholder="–"
           onBlur={(e) => void onLagre({ sted: e.target.value.trim() || null })}
-          className={stille}
+          className={`${felt} w-[100px]`}
         />
       </Rad>
       <Rad etikett="Periode">
         <Velger
-          variant="stille"
           etikett="Periode"
           verdi={okt.periodeId ?? ""}
           settVerdi={async (v) => {
@@ -262,13 +253,15 @@ function Vurdering({ okt, onEndret }: { okt: Okt; onEndret: () => void }) {
   }
 
   return (
-    <span className="flex min-w-0 flex-wrap items-center gap-x-1.5">
-      {her.length === 0 && <span className="text-blekk-svak">Ingen</span>}
+    <span className="flex min-w-0 flex-wrap items-center gap-1.5">
       {her.map((v) => (
-        <span key={v.id} className="inline-flex items-center gap-1">
+        <span
+          key={v.id}
+          className="inline-flex h-8 items-center gap-1.5 rounded-[7px] bg-[color-mix(in_srgb,var(--color-aksent)_7%,var(--color-ark))] px-2.5 text-[calc(13.5px*var(--tekst-skala))]"
+        >
           <button
             onClick={() => ark.apneVurdering(v.id)}
-            className="truncate hover:underline"
+            className="max-w-[220px] truncate hover:underline"
           >
             {v.tittel}
           </button>
@@ -281,15 +274,20 @@ function Vurdering({ okt, onEndret }: { okt: Okt; onEndret: () => void }) {
           </button>
         </span>
       ))}
-      {andre.length > 0 && (
+      {andre.length > 0 ? (
         <Velger
-          variant="stille"
           etikett="Knytt til vurdering"
           verdi=""
-          plassholder="+ Knytt til vurdering"
+          plassholder={her.length ? "+" : "+ Knytt til"}
           settVerdi={(v) => void koble(v, true)}
           valg={andre.map((v) => ({ verdi: v.id, tekst: v.tittel }))}
         />
+      ) : (
+        her.length === 0 && (
+          <span className="flex h-8 items-center text-[calc(13.5px*var(--tekst-skala))] text-blekk-svak">
+            Ingen vurderinger i faget
+          </span>
+        )
       )}
     </span>
   );
@@ -311,157 +309,6 @@ function Kopier({ okt }: { okt: Okt }) {
   );
 }
 
-// -------------------------------------------------------------------- plan
-
-/**
- * Planen som sjekkliste (11.5): avkrysning, tekst og minutter per punkt,
- * summen mot øktas lengde, og dra for å flytte. Lagres som markdown i
- * `okt.plan`, så den samme lista vises med avkrysning i skåringen.
- */
-function Plan({
-  okt,
-  onLagre,
-}: {
-  okt: Okt;
-  onLagre: (plan: string | null) => Promise<void>;
-}) {
-  const start = useMemo(() => lesPlan(okt.plan), [okt.plan]);
-  const [punkter, setPunkter] = useState<Planpunkt[]>(start.punkter);
-  // Faste nøkler per punkt, så raden som slippes kan gli på plass og
-  // feltene beholder det du skriver når rekkefølgen endres.
-  const ider = useRef<string[]>([]);
-  while (ider.current.length < punkter.length)
-    ider.current.push(crypto.randomUUID());
-  const flyttet = (fra: number, til: number) => {
-    const ny = [...punkter];
-    const [p] = ny.splice(fra, 1);
-    ny.splice(til, 0, p);
-    const id = [...ider.current];
-    const [k] = id.splice(fra, 1);
-    id.splice(til, 0, k);
-    ider.current = id;
-    lagre(ny);
-  };
-  // Samme dra og slipp som samtaletimeplanen (ui/dra.ts).
-  const { begynn, reg, stil, erDratt, dra } = useDra({
-    nokkel: (p) => ider.current[p.nr],
-    onSlipp: (fra, mal) => {
-      const til = nyPlass(fra, mal).nr;
-      if (til !== fra.nr) flyttet(fra.nr, til);
-    },
-  });
-  const nyttFelt = useRef<HTMLInputElement>(null);
-  const [fokusNy, setFokusNy] = useState(false);
-  useEffect(() => setPunkter(start.punkter), [start]);
-  useEffect(() => {
-    if (fokusNy) {
-      nyttFelt.current?.focus();
-      setFokusNy(false);
-    }
-  }, [fokusNy, punkter.length]);
-
-  function lagre(ny: Planpunkt[]) {
-    setPunkter(ny);
-    void onLagre(
-      skrivPlan(
-        ny.filter((p) => p.tekst.trim()),
-        start.rest,
-      ),
-    );
-  }
-  const endre = (i: number, d: Partial<Planpunkt>) =>
-    punkter.map((p, j) => (j === i ? { ...p, ...d } : p));
-
-  return (
-    <section className="mt-6">
-      <div className="mb-1.5 flex items-baseline gap-2 border-b border-linje-medium pb-1.5">
-        <h2 className="text-[calc(13px*var(--tekst-skala))] font-semibold">
-          Plan
-        </h2>
-        <span className="text-[calc(12px*var(--tekst-skala))] text-blekk-svak">
-          bare for deg · {plansum(punkter, okt.varighetMin)}
-        </span>
-        <button
-          onClick={() => {
-            setPunkter([...punkter, nyttPunkt()]);
-            setFokusNy(true);
-          }}
-          className="ml-auto text-[calc(12.5px*var(--tekst-skala))] text-aksent hover:underline"
-        >
-          + Nytt punkt
-        </button>
-      </div>
-      {punkter.length === 0 && (
-        <p className="py-2 text-[calc(13px*var(--tekst-skala))] text-blekk-svak">
-          Ingen plan ennå. Legg til punktene du skal gjennom, med minutter.
-        </p>
-      )}
-      {punkter.map((p, i) => (
-        <div
-          key={ider.current[i]}
-          ref={reg({ gruppe: 0, nr: i })}
-          onPointerDown={(e) => begynn(e, { gruppe: 0, nr: i })}
-          className="relative"
-        >
-          <div
-            data-dra-innhold={ider.current[i]}
-            style={stil({ gruppe: 0, nr: i })}
-            className={`group flex h-[29px] items-center gap-2.5 text-[calc(13.5px*var(--tekst-skala))] ${
-              erDratt({ gruppe: 0, nr: i })
-                ? "relative z-20 -mx-2 rounded-vanlig bg-ark px-2 shadow-[var(--shadow-ark)] ring-1 ring-aksent"
-                : dra
-                  ? ""
-                  : "cursor-grab"
-            }`}
-          >
-            <span
-              aria-hidden
-              title="Dra for å flytte"
-              className="select-none text-[11px] leading-none tracking-[-2px] text-blekk-svakest"
-            >
-              ⋮⋮
-            </span>
-            <input
-              type="checkbox"
-              checked={p.gjort}
-              onChange={(e) => lagre(endre(i, { gjort: e.target.checked }))}
-            />
-            <input
-              ref={i === punkter.length - 1 ? nyttFelt : undefined}
-              defaultValue={p.tekst}
-              key={`${ider.current[i]}-${p.tekst}`}
-              placeholder="Hva skal skje"
-              onBlur={(e) =>
-                e.target.value !== p.tekst &&
-                lagre(endre(i, { tekst: e.target.value }))
-              }
-              onKeyDown={(e) => {
-                if (e.key === "Enter") (e.target as HTMLInputElement).blur();
-              }}
-              className={`min-w-0 flex-1 bg-transparent outline-none ${p.gjort ? "text-blekk-svak line-through" : ""}`}
-            />
-            <span className="flex shrink-0 items-center gap-1 text-[calc(12px*var(--tekst-skala))] text-blekk-svak">
-              <input
-                inputMode="numeric"
-                defaultValue={p.min ?? ""}
-                key={`m${ider.current[i]}-${p.min}`}
-                placeholder="–"
-                onBlur={(e) => {
-                  const n = parseInt(e.target.value, 10);
-                  const min = Number.isFinite(n) && n > 0 ? n : null;
-                  if (min !== p.min) lagre(endre(i, { min }));
-                }}
-                className="w-8 bg-transparent text-right tabular-nums outline-none"
-              />
-              min
-            </span>
-          </div>
-        </div>
-      ))}
-    </section>
-  );
-}
-
 // ----------------------------------------------------------- kompetansemål
 
 /**
@@ -475,6 +322,7 @@ function Mal({ okt, periode }: { okt: Okt; periode: Periode | null }) {
   const [mal, setMal] = useState<Oktmal | null>(null);
   const [liste, setListe] = useState<Kompetansemaal[]>([]);
   const [laereplan, setLaereplan] = useState<string | null>(null);
+  const [visAlle, setVisAlle] = useState(false);
   const last = () => void hentOktmal(okt.id).then(setMal);
   useEffect(last, [okt.id, okt.periodeId]);
   useEffect(() => {
@@ -506,42 +354,63 @@ function Mal({ okt, periode }: { okt: Okt; periode: Periode | null }) {
   const valgt = new Set(mal.egne);
   const periodens = new Set(mal.fraPeriode);
   const udir = laereplan ? `udir.no/lk20/${laereplan.toLowerCase()}` : null;
+  // Foldet sammen: bare valgte mål og periodens mål (15.4). Resten ligger
+  // bak «Vis alle», så planen ikke drukner.
+  const synlige = visAlle
+    ? liste
+    : liste.filter((k) => valgt.has(k.kode) || periodens.has(k.kode));
 
   return (
-    <section className="mt-6">
-      <div className="mb-1 flex items-baseline gap-2 border-b border-linje-medium pb-1.5">
-        <h2 className="text-[calc(13px*var(--tekst-skala))] font-semibold">
-          Kompetansemål i økta
+    <section className="mt-7">
+      <div className="mb-1.5 flex items-baseline gap-2.5">
+        <h2 className="text-[calc(15px*var(--tekst-skala))] font-semibold">
+          Kompetansemål
         </h2>
         <span className="text-[calc(12px*var(--tekst-skala))] text-blekk-svak">
           {valgt.size} valgt
           {periodens.size > 0 && (
             <>
               {" · "}
-              <span style={{ color: farge }}>●</span> = periodens mål
+              <span style={{ color: farge }}>●</span> periodens mål
             </>
           )}
         </span>
-        {udir && (
-          <button
-            onClick={() =>
-              void import("@tauri-apps/plugin-opener").then((o) =>
-                o.openUrl(`https://www.${udir}`),
-              )
-            }
-            className="ml-auto text-[calc(12.5px*var(--tekst-skala))] text-aksent hover:underline"
-          >
-            {udir} →
-          </button>
-        )}
+        <span className="ml-auto flex items-baseline gap-4">
+          {udir && visAlle && (
+            <button
+              onClick={() =>
+                void import("@tauri-apps/plugin-opener").then((o) =>
+                  o.openUrl(`https://www.${udir}`),
+                )
+              }
+              className="text-[calc(12.5px*var(--tekst-skala))] text-blekk-svak hover:text-blekk hover:underline"
+            >
+              {udir} →
+            </button>
+          )}
+          {liste.length > synlige.length || visAlle ? (
+            <button
+              onClick={() => setVisAlle(!visAlle)}
+              className="text-[calc(12.5px*var(--tekst-skala))] text-aksent hover:underline"
+            >
+              {visAlle ? "Vis færre ▴" : `Vis alle ${liste.length} ▾`}
+            </button>
+          ) : null}
+        </span>
       </div>
-      {liste.map((k, i) => {
+      {synlige.length === 0 && (
+        <p className="py-1 text-[calc(13px*var(--tekst-skala))] text-blekk-svak">
+          Ingen mål valgt for økta.
+        </p>
+      )}
+      {synlige.map((k) => {
         const pa = valgt.has(k.kode);
         const fraPeriode = periodens.has(k.kode);
+        const nr = liste.indexOf(k) + 1;
         return (
           <label
             key={k.kode}
-            className="grid h-7 cursor-pointer grid-cols-[18px_10px_22px_minmax(0,1fr)] items-center gap-x-2 text-[calc(13px*var(--tekst-skala))]"
+            className="grid min-h-[30px] cursor-pointer grid-cols-[18px_14px_22px_minmax(0,1fr)] items-center gap-x-2 text-[calc(13px*var(--tekst-skala))]"
           >
             <input
               type="checkbox"
@@ -550,14 +419,15 @@ function Mal({ okt, periode }: { okt: Okt; periode: Periode | null }) {
                 await settOktmal(okt.id, k.kode, e.target.checked);
                 last();
               }}
+              className="accent-[var(--color-aksent)]"
             />
-            <span className="text-[9px]" style={{ color: farge }}>
+            <span className="text-[10px]" style={{ color: farge }}>
               {fraPeriode ? "●" : ""}
             </span>
-            <span className="tabular-nums text-blekk-svak">{i + 1}</span>
+            <span className="tabular-nums text-blekk-dempet">{nr}</span>
             <span
               title={k.tekst}
-              className={`truncate ${pa || fraPeriode ? "text-blekk" : "text-blekk-svak"}`}
+              className={`truncate ${pa ? "text-blekk" : "text-blekk-dempet"}`}
             >
               {k.tekst}
             </span>
@@ -722,8 +592,8 @@ function Perioden({
 
 function Rad({ etikett, children }: { etikett: string; children: ReactNode }) {
   return (
-    <div className="grid min-h-[33px] grid-cols-[90px_minmax(0,1fr)] items-center border-b border-linje-svak text-[calc(13.5px*var(--tekst-skala))]">
-      <span className="text-[calc(12.5px*var(--tekst-skala))] text-blekk-dempet">
+    <div className="flex min-w-0 flex-col gap-[5px] text-[calc(13.5px*var(--tekst-skala))]">
+      <span className="text-[calc(12px*var(--tekst-skala))] text-blekk-dempet">
         {etikett}
       </span>
       {children}
@@ -746,7 +616,7 @@ function Tekstfelt({
 }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-[calc(12.5px*var(--tekst-skala))] text-blekk-dempet">
+      <span className="mb-[5px] block text-[calc(12px*var(--tekst-skala))] text-blekk-dempet">
         {etikett}
         {hint && <span className="text-blekk-svak"> · {hint}</span>}
       </span>
@@ -758,14 +628,15 @@ function Tekstfelt({
           const v = e.target.value.trim() || null;
           if (v !== verdi) void onLagre(v);
         }}
-        className="w-full rounded-[8px] border border-linje bg-ark px-2.5 py-1.5 text-[calc(13.5px*var(--tekst-skala))] outline-none placeholder:text-blekk-svak focus:border-aksent"
+        className={`${felt} w-full text-[calc(13.5px*var(--tekst-skala))] placeholder:text-blekk-svak`}
       />
     </label>
   );
 }
 
-const stille =
-  "min-w-0 bg-transparent py-1 outline-none focus:text-aksent disabled:text-blekk-svak";
+/** Feltene i faktaraden: samme høyde og kant som nedtrekksmenyen. */
+const felt =
+  "h-8 min-w-0 rounded-[7px] bg-ark px-2.5 shadow-[inset_0_0_0_1px_var(--color-linje)] outline-none focus:shadow-[inset_0_0_0_1.5px_var(--color-aksent)]";
 
 function tilMin(kl: string): number {
   const [t, m] = kl.split(":").map(Number);
@@ -776,10 +647,4 @@ function sluttKlokke(kl: string, min: number): string {
   const tot = tilMin(kl) + min;
   const p = (n: number) => String(n).padStart(2, "0");
   return `${p(Math.floor(tot / 60) % 24)}:${p(tot % 60)}`;
-}
-
-function timer(min: number): string {
-  return min % 60 === 0
-    ? `${min / 60} t`
-    : `${String(Math.round((min / 60) * 10) / 10).replace(".", ",")} t`;
 }

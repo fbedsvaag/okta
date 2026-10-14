@@ -1499,3 +1499,191 @@ html {
 .hovermarkor.markor-meny:not([data-synlig="false"]) {
   background-color: color-mix(in srgb, var(--color-aksent) 9%, transparent);
 }
+
+/*
+ * Planen i økta (skjermer/Oktplan.tsx, ARBEIDSLISTE 15.2–15.3, lerretet
+ * OktPlanNy). Tidslinjen er 48 px med nøytrale felt; valgt felt er hvitt
+ * med aksentring, pausen skravert. Skillene er 16 px og synes ved hover.
+ */
+.tidslinje {
+  position: relative;
+  height: 48px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--color-flate-svak) 55%, var(--color-ark));
+}
+.tl-felt {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  overflow: hidden;
+  padding: 6px 9px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--color-aksent) 7%, var(--color-ark));
+  box-shadow: inset 0 0 0 1px var(--color-valgt);
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+}
+.tl-felt.pause {
+  background: repeating-linear-gradient(
+    135deg,
+    var(--color-flate-svak) 0 5px,
+    color-mix(in srgb, var(--color-aksent) 9%, var(--color-ark)) 5px 10px
+  );
+  box-shadow: inset 0 0 0 1px var(--color-linje-medium);
+}
+.tl-felt.valgt {
+  background: var(--color-ark);
+  box-shadow:
+    inset 0 0 0 1.5px var(--color-aksent),
+    0 2px 8px color-mix(in srgb, var(--color-aksent) 14%, transparent);
+}
+.tl-felt.loftet {
+  z-index: 4;
+  cursor: grabbing;
+  background: var(--color-ark);
+  box-shadow:
+    inset 0 0 0 1.5px var(--color-aksent),
+    0 8px 20px rgba(36, 31, 51, 0.22);
+}
+.tl-felt.ute {
+  opacity: 0.55;
+}
+.tl-luft {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed var(--color-linje);
+  border-radius: 8px;
+  font-size: calc(12px * var(--tekst-skala));
+  color: var(--color-blekk-svak);
+  white-space: nowrap;
+  overflow: hidden;
+}
+.tl-skille {
+  position: absolute;
+  top: 6px;
+  bottom: 6px;
+  z-index: 3;
+  display: flex;
+  justify-content: center;
+  width: 16px;
+  margin-left: -8px;
+  cursor: col-resize;
+  touch-action: none;
+}
+.tl-skille i {
+  width: 3px;
+  border-radius: 2px;
+}
+.tidslinje:hover .tl-skille i {
+  background: var(--color-linje-sterk);
+}
+.tidslinje .tl-skille:hover i,
+.tidslinje .tl-skille.dras i {
+  background: var(--color-aksent);
+}
+.tl-slutt {
+  position: absolute;
+  top: -6px;
+  bottom: -6px;
+  width: 0;
+  border-left: 1.5px solid
+    color-mix(in srgb, var(--color-blekk) 45%, transparent);
+  pointer-events: none;
+}
+
+.planrad {
+  display: grid;
+  grid-template-columns: 18px 46px minmax(0, 1fr) 128px 14px 14px;
+  align-items: center;
+  column-gap: 10px;
+  min-height: 42px;
+  padding: 0 6px;
+  border-radius: 8px;
+  outline: none;
+}
+.planrad:hover {
+  background: var(--color-flate-svak);
+}
+.planrad.valgt {
+  background: color-mix(in srgb, var(--color-aksent) 6%, var(--color-ark));
+}
+.planrad.loftet {
+  position: relative;
+  z-index: 20;
+  background: var(--color-ark);
+  box-shadow:
+    0 8px 20px rgba(36, 31, 51, 0.18),
+    inset 0 0 0 1.5px var(--color-aksent);
+}
+.planknapp {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  color: var(--color-blekk-dempet);
+  font-size: 15px;
+}
+.planknapp:hover {
+  background: var(--color-flate);
+  color: var(--color-blekk);
+}
+.planpause {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  background: repeating-linear-gradient(
+    135deg,
+    var(--color-flate-svak) 0 3px,
+    var(--color-linje) 3px 6px
+  );
+}
+.planvalg {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 2px 0 8px 80px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--color-ark);
+  box-shadow:
+    inset 0 0 0 1px var(--color-valgt),
+    0 4px 14px rgba(36, 31, 51, 0.06);
+}
+.planvalg-knapp {
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 13px;
+  background: color-mix(in srgb, var(--color-aksent) 6%, var(--color-ark));
+  font-size: calc(12.5px * var(--tekst-skala));
+  font-variant-numeric: tabular-nums;
+}
+.planvalg-knapp:hover {
+  background: var(--color-valgt);
+}
+.planvalg-knapp.pa {
+  background: var(--color-aksent);
+  color: var(--color-ark);
+  font-weight: 500;
+}
+.planvalg-knapp.rest {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--color-linje);
+  color: var(--color-aksent);
+}
+.planbesk {
+  margin: 2px 0 8px 80px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--color-ark);
+  box-shadow: inset 0 0 0 1px var(--color-valgt);
+  font-size: calc(13.5px * var(--tekst-skala));
+  color: var(--color-blekk);
+}

@@ -189,14 +189,142 @@ export function skrivPlan(punkter: Planpunkt[], rest: string[]): string | null {
   return linjer.length ? linjer.join("\n") : null;
 }
 
-/** «2 t av 3 t», «40 min av 1,5 t» — planen mot øktas lengde. */
-export function plansum(punkter: Planpunkt[], varighetMin: number): string {
-  const sum = punkter.reduce((s, p) => s + (p.min ?? 0), 0);
-  const t = (m: number) =>
-    m < 60
-      ? `${m} min`
-      : `${String(Math.round((m / 60) * 10) / 10).replace(".", ",")} t`;
-  return `${t(sum)} av ${t(varighetMin)}`;
+// ------------------------------------------------------- tid i planen
+
+/** Lengdene man kan velge med ett klikk (15.3). */
+export const LENGDER = [5, 10, 15, 20, 30, 45, 60];
+/** Minste lengde på en bolk, og steget når man drar eller trykker − / +. */
+export const STEG = 5;
+
+export function minutter(punkter: Planpunkt[]): number {
+  return punkter.reduce((s, p) => s + (p.min ?? 0), 0);
+}
+
+/**
+ * Summen mot øktas lengde, som i overskriften: «90 av 90 min · går opp»,
+ * «80 av 90 min · 10 min luft», «100 av 90 min · 10 min for mye».
+ */
+export function sumTekst(punkter: Planpunkt[], lengde: number): string {
+  const sum = minutter(punkter);
+  const diff = sum - lengde;
+  const hale =
+    diff === 0
+      ? "går opp"
+      : diff > 0
+        ? `${diff} min for mye`
+        : `${-diff} min luft`;
+  return `${sum} av ${lengde} min · ${hale}`;
+}
+
+export function klokke(min: number): string {
+  const m = ((min % 1440) + 1440) % 1440;
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${p(Math.floor(m / 60))}:${p(m % 60)}`;
+}
+
+export function tilMinutter(kl: string): number {
+  const [t, m] = kl.split(":").map(Number);
+  return t * 60 + (m || 0);
+}
+
+/** Når hvert punkt begynner, regnet fra øktas start. Uten klokkeslett: null. */
+export function startTider(
+  punkter: Planpunkt[],
+  start: string | null,
+): (string | null)[] {
+  let t = start ? tilMinutter(start) : 0;
+  return punkter.map((p) => {
+    const her = start ? klokke(t) : null;
+    t += p.min ?? 0;
+    return her;
+  });
+}
+
+/**
+ * Skillene i tidslinjen: etter punkt `etter`, flytter tid mellom `fra` og
+ * `til`. Pauser står fast (15.3): et skille inntil en pause flytter tid
+ * mellom aktivitetene på hver side av den. Er pausen valgt, er det pausen
+ * som endres.
+ */
+export function skiller(
+  punkter: Planpunkt[],
+  valgt: number | null,
+): { etter: number; fra: number; til: number }[] {
+  const fri = (k: number) => punkter[k].type !== "pause" || k === valgt;
+  const ut: { etter: number; fra: number; til: number }[] = [];
+  for (let i = 0; i < punkter.length - 1; i++) {
+    let fra = i;
+    while (fra >= 0 && !fri(fra)) fra--;
+    let til = i + 1;
+    while (til < punkter.length && !fri(til)) til++;
+    if (fra >= 0 && til < punkter.length) ut.push({ etter: i, fra, til });
+  }
+  return ut;
+}
+
+/**
+ * Flytter `d` minutter fra `til` til `fra` (negativ d: motsatt vei), i
+ * steg på fem og så hver beholder minst fem. Summen står fast.
+ */
+export function flyttTid(
+  punkter: Planpunkt[],
+  fra: number,
+  til: number,
+  d: number,
+): Planpunkt[] {
+  const a = punkter[fra].min ?? STEG;
+  const b = punkter[til].min ?? STEG;
+  const steg = Math.round(d / STEG) * STEG;
+  const x = Math.max(STEG - a, Math.min(b - STEG, steg));
+  return punkter.map((p, i) =>
+    i === fra ? { ...p, min: a + x } : i === til ? { ...p, min: b - x } : p,
+  );
+}
+
+/**
+ * Enden av siste bolk (15.3): til venstre gir luft, til høyre fyller luft,
+ * men aldri forbi øktas slutt. Ligger planen allerede over, kan den bare
+ * kortes ned.
+ */
+export function dragEnde(
+  punkter: Planpunkt[],
+  lengde: number,
+  start: number,
+  d: number,
+): Planpunkt[] {
+  const i = punkter.length - 1;
+  if (i < 0) return punkter;
+  const andre = minutter(punkter) - (punkter[i].min ?? 0);
+  const tak = Math.max(start, lengde - andre);
+  const n = start + Math.round(d / STEG) * STEG;
+  const min = Math.max(STEG, Math.min(tak, n));
+  return punkter.map((p, k) => (k === i ? { ...p, min } : p));
+}
+
+/** Den lengste aktiviteten, som «Trekk 10 min fra …» korter ned. */
+export function lengste(punkter: Planpunkt[]): number {
+  let best = -1;
+  punkter.forEach((p, i) => {
+    if (
+      p.type === "aktivitet" &&
+      (best < 0 || (p.min ?? 0) > (punkter[best].min ?? 0))
+    )
+      best = i;
+  });
+  return best;
+}
+
+/**
+ * «Film · 15 min» eller «Film 15 min» skrevet i tittelen: minuttene tas ut
+ * av teksten (15.10). Uten minutter står tittelen som den er.
+ */
+export function lesTittel(tekst: string): {
+  tekst: string;
+  min: number | null;
+} {
+  const m = tekst.match(/^(.*?)\s*(?:·\s*)?(\d+)\s*min\s*$/);
+  if (!m || !m[1].trim()) return { tekst: tekst.trim(), min: null };
+  return { tekst: m[1].trim(), min: Number(m[2]) };
 }
 
 // ------------------------------------------------------------ følg opp

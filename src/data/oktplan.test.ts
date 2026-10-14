@@ -4,8 +4,14 @@ import {
   iPerioden,
   lesPlan,
   nyttPunkt,
+  sumTekst,
+  startTider,
+  skiller,
+  flyttTid,
+  dragEnde,
+  lengste,
+  lesTittel,
   narTekst,
-  plansum,
   skrivPlan,
   standardModus,
 } from "./oktplan";
@@ -141,11 +147,10 @@ describe("planen", () => {
   });
 
   it("summerer mot øktas lengde", () => {
-    const p = lesPlan("- [ ] a · 60 min\n- [ ] b · 60 min").punkter;
-    expect(plansum(p, 180)).toBe("2 t av 3 t");
-    expect(plansum(lesPlan("- [ ] a · 40 min").punkter, 90)).toBe(
-      "40 min av 1,5 t",
-    );
+    const p = (min: number) => nyttPunkt({ tekst: "x", min });
+    expect(sumTekst([p(60), p(30)], 90)).toBe("90 av 90 min · går opp");
+    expect(sumTekst([p(80)], 90)).toBe("80 av 90 min · 10 min luft");
+    expect(sumTekst([p(60), p(40)], 90)).toBe("100 av 90 min · 10 min for mye");
   });
 });
 
@@ -204,5 +209,67 @@ describe("perioden", () => {
       av: 2,
     });
     expect(iPerioden({ id: "b", periodeId: null }, fag)).toBeNull();
+  });
+});
+
+describe("tida i planen", () => {
+  const a = (min: number, tekst = "a") => nyttPunkt({ tekst, min });
+  const pause = (min: number) =>
+    nyttPunkt({ type: "pause", tekst: "Pause", min });
+
+  it("regner ut når hvert punkt begynner", () => {
+    expect(startTider([a(10), a(30), a(5)], "08:30")).toEqual([
+      "08:30",
+      "08:40",
+      "09:10",
+    ]);
+    expect(startTider([a(10)], null)).toEqual([null]);
+  });
+
+  it("hopper over pauser i skillene, så de står fast", () => {
+    const p = [a(10), pause(10), a(30)];
+    // Begge skillene ved pausen flytter tid mellom aktivitetene rundt den.
+    expect(skiller(p, null)).toEqual([
+      { etter: 0, fra: 0, til: 2 },
+      { etter: 1, fra: 0, til: 2 },
+    ]);
+    // Valgt pause: skillene endrer pausen selv.
+    expect(skiller(p, 1)).toEqual([
+      { etter: 0, fra: 0, til: 1 },
+      { etter: 1, fra: 1, til: 2 },
+    ]);
+  });
+
+  it("har ikke skille der det bare er pauser på den ene siden", () => {
+    expect(skiller([pause(10), a(30)], null)).toEqual([]);
+  });
+
+  it("flytter tid i steg på fem, med minst fem igjen, og summen står", () => {
+    const p = [a(30), a(30)];
+    expect(flyttTid(p, 0, 1, 7).map((x) => x.min)).toEqual([35, 25]);
+    expect(flyttTid(p, 0, 1, 100).map((x) => x.min)).toEqual([55, 5]);
+    expect(flyttTid(p, 0, 1, -100).map((x) => x.min)).toEqual([5, 55]);
+  });
+
+  it("lar enden av siste bolk gi luft, men aldri fylle forbi slutt", () => {
+    const p = [a(30), a(30)];
+    expect(dragEnde(p, 90, 30, -10).map((x) => x.min)).toEqual([30, 20]);
+    expect(dragEnde(p, 90, 30, 100).map((x) => x.min)).toEqual([30, 60]);
+    // Allerede over: kan bare kortes ned.
+    expect(dragEnde([a(60), a(40)], 90, 40, 10).map((x) => x.min)).toEqual([
+      60, 40,
+    ]);
+  });
+
+  it("finner den lengste aktiviteten, ikke pausen", () => {
+    expect(lengste([a(10), pause(60), a(30)])).toBe(2);
+    expect(lengste([pause(10)])).toBe(-1);
+  });
+
+  it("tar minuttene ut av tittelen", () => {
+    expect(lesTittel("Film · 15 min")).toEqual({ tekst: "Film", min: 15 });
+    expect(lesTittel("Film 15 min")).toEqual({ tekst: "Film", min: 15 });
+    expect(lesTittel("Kapittel 3")).toEqual({ tekst: "Kapittel 3", min: null });
+    expect(lesTittel("15 min")).toEqual({ tekst: "15 min", min: null });
   });
 });
