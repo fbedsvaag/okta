@@ -15,6 +15,7 @@ import { lesInschool, navnenokkel, somLimInnTekst } from "../import/inschool";
 import { Elevbilde } from "../ui/Elevbilde";
 import type { FagIAr } from "../data/fag";
 import { Bryter, Felt, Knapp } from "../ui/felles";
+import { Velger } from "../ui/Velger";
 
 /**
  * Lim inn klasseliste, SPEC §7. Ingenting skrives til databasen før
@@ -392,18 +393,20 @@ export function LimInn({
           <span className="mb-1 block text-etikett uppercase tracking-etikett text-blekk-dempet">
             Fag
           </span>
-          <select
-            value={fagId}
-            onChange={(e) => setFagId(e.target.value)}
-            className="w-full rounded border border-linje bg-ark px-2 py-1.5 text-brod"
-          >
-            {fag.map((f) => (
-              <option key={f.id} value={f.id}>
-                {f.kode} · {f.navn}
-              </option>
-            ))}
-            <option value="">Uten fag (mentorelever)</option>
-          </select>
+          <Velger
+            verdi={fagId}
+            settVerdi={setFagId}
+            bredde="w-full"
+            valg={[
+              ...fag.map((f) => ({
+                verdi: f.id,
+                tekst: `${f.kode} · ${f.navn}`,
+                farge: f.farge,
+                firkant: true,
+              })),
+              { verdi: "", tekst: "Uten fag (mentorelever)" },
+            ]}
+          />
         </label>
         <Felt
           etikett="Klasse"
@@ -622,27 +625,28 @@ function ForhandsvisRad({
                 ]}
               />
             ) : (
-              <select
-                value={rad.valgt}
-                onChange={(e) => {
-                  const k = rad.kandidater.find((x) => x.id === e.target.value);
+              <Velger
+                verdi={rad.valgt}
+                settVerdi={(v) => {
+                  const k = rad.kandidater.find((x) => x.id === v);
                   // Et fullere navn fra lista tas med av seg selv; et annet
                   // navn må velges med vilje.
                   onEndre({
-                    valgt: e.target.value,
+                    valgt: v,
                     byttNavn: k ? erFullereNavn(rad.linje, k) : false,
                   });
                 }}
-                className="rounded border border-linje bg-ark px-1 py-0.5 text-liten"
-              >
-                <option value="ny">Ny elev</option>
-                {rad.kandidater.map((k) => (
-                  <option key={k.id} value={k.id}>
-                    {k.fornavn} {k.etternavn}
-                    {k.klasse ? ` (${k.klasse})` : ""}
-                  </option>
-                ))}
-              </select>
+                variant="liten"
+                etikett="Elev"
+                valg={[
+                  { verdi: "ny", tekst: "Ny elev" },
+                  ...rad.kandidater.map((k) => ({
+                    verdi: k.id,
+                    tekst: `${k.fornavn} ${k.etternavn}`,
+                    hint: k.klasse ?? undefined,
+                  })),
+                ]}
+              />
             )}
             {rad.klassekonflikt && rad.valgt !== "ny" && (
               <label className="flex items-center gap-1 text-liten text-blekk-dempet">

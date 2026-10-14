@@ -75,6 +75,7 @@ import { useSisteSvar } from "../ui/sisteSvar";
 import { Klassevelger, Navnefelt } from "./elevkort/Redigering";
 import { Motelogg } from "./elevkort/Notater";
 import { Stille } from "./elevkort/deler";
+import { Velger } from "../ui/Velger";
 
 /**
  * Elevkortet, SPEC §4.5 og DESIGN.md §10 (lerretet «ElevArk»).
@@ -897,31 +898,23 @@ function Klassekartboks({
               </span>
             ))}
             {legger === k.kartId ? (
-              <select
-                autoFocus
-                defaultValue=""
-                onBlur={() => setLegger(null)}
-                onChange={async (e) => {
-                  if (e.target.value)
-                    await leggTilRegel(
-                      k.kildeType,
-                      k.kildeId,
-                      elevId,
-                      e.target.value,
-                    );
-                  setLegger(null);
-                }}
-                className="h-[26px] rounded-full border border-linje bg-ark px-2 text-[calc(12.5px*var(--tekst-skala))]"
-              >
-                <option value="">Velg elev</option>
-                {k.medelever
+              <Velger
+                startApen
+                onLukk={() => setLegger(null)}
+                verdi=""
+                settVerdi={(v) =>
+                  void leggTilRegel(k.kildeType, k.kildeId, elevId, v)
+                }
+                variant="liten"
+                etikett="Elev"
+                plassholder="Velg elev"
+                valg={k.medelever
                   .filter((m) => !k.regler.some((r) => r.andre.id === m.id))
-                  .map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.fornavn} {m.etternavn}
-                    </option>
-                  ))}
-              </select>
+                  .map((m) => ({
+                    verdi: m.id,
+                    tekst: `${m.fornavn} ${m.etternavn}`,
+                  }))}
+              />
             ) : (
               <button
                 onClick={() => setLegger(k.kartId)}

@@ -42,6 +42,7 @@ import { Markdown } from "../ui/Notattekst";
 import { Tastestripe, Tasthint } from "../ui/Tastestripe";
 import { tast } from "../ui/taster";
 import { idag as dagensDato } from "../db";
+import { Velger } from "../ui/Velger";
 
 /**
  * Økta i planlegging (ARBEIDSLISTE 11.5, lerretet «OktPlan»).
@@ -78,7 +79,7 @@ export function OktPlanlegging({
       <div className="flex min-h-0 flex-1">
         <div className="min-w-0 flex-1 overflow-y-auto px-[26px] pb-6 pt-[18px]">
           <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-x-7">
-            <Fakta okt={okt} periode={periode} onLagre={lagre} />
+            <Fakta okt={okt} onLagre={lagre} />
             <div className="flex flex-col gap-3.5">
               <Tekstfelt
                 etikett="Lekse"
@@ -151,11 +152,9 @@ export function OktPlanlegging({
 
 function Fakta({
   okt,
-  periode,
   onLagre,
 }: {
   okt: Okt;
-  periode: Periode | null;
   onLagre: (felt: Parameters<typeof endreOkt>[1]) => Promise<void>;
 }) {
   const [perioder, setPerioder] = useState<Periode[]>([]);
@@ -219,29 +218,23 @@ function Fakta({
         />
       </Rad>
       <Rad etikett="Periode">
-        <span className="relative inline-flex h-6 items-center gap-1.5 rounded-xl bg-[color-mix(in_srgb,var(--color-aksent)_7%,var(--color-ark))] pl-2 pr-1.5 text-[calc(12.5px*var(--tekst-skala))]">
-          <span
-            className="h-1.5 w-1.5 rounded-full"
-            style={{ background: periode?.farge ?? "var(--color-linje-sterk)" }}
-          />
-          {periode?.navn ?? "Ingen"} ▾
-          <select
-            aria-label="Periode"
-            value={okt.periodeId ?? ""}
-            onChange={async (e) => {
-              await fargelegg([okt.id], e.target.value || null);
-              void onLagre({});
-            }}
-            className="absolute inset-0 cursor-pointer opacity-0"
-          >
-            <option value="">Ingen periode</option>
-            {perioder.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.navn}
-              </option>
-            ))}
-          </select>
-        </span>
+        <Velger
+          variant="stille"
+          etikett="Periode"
+          verdi={okt.periodeId ?? ""}
+          settVerdi={async (v) => {
+            await fargelegg([okt.id], v || null);
+            void onLagre({});
+          }}
+          valg={[
+            { verdi: "", tekst: "Ingen periode", dempet: true },
+            ...perioder.map((p) => ({
+              verdi: p.id,
+              tekst: p.navn,
+              farge: p.farge,
+            })),
+          ]}
+        />
       </Rad>
       <Rad etikett="Vurdering">
         <Vurdering okt={okt} onEndret={() => void onLagre({})} />
@@ -287,22 +280,14 @@ function Vurdering({ okt, onEndret }: { okt: Okt; onEndret: () => void }) {
         </span>
       ))}
       {andre.length > 0 && (
-        <span className="relative text-aksent">
-          · + Knytt til vurdering
-          <select
-            aria-label="Knytt til vurdering"
-            value=""
-            onChange={(e) => e.target.value && void koble(e.target.value, true)}
-            className="absolute inset-0 cursor-pointer opacity-0"
-          >
-            <option value="">Knytt til …</option>
-            {andre.map((v) => (
-              <option key={v.id} value={v.id}>
-                {v.tittel}
-              </option>
-            ))}
-          </select>
-        </span>
+        <Velger
+          variant="stille"
+          etikett="Knytt til vurdering"
+          verdi=""
+          plassholder="+ Knytt til vurdering"
+          settVerdi={(v) => void koble(v, true)}
+          valg={andre.map((v) => ({ verdi: v.id, tekst: v.tittel }))}
+        />
       )}
     </span>
   );

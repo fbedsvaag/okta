@@ -47,6 +47,7 @@ import { Elevfoto } from "../ui/Elevfoto";
 import { KlassekartGrupper } from "./KlassekartGrupper";
 import { hovedtast, tast as visTast } from "../ui/taster";
 import { filnavnAv, lagreFil } from "../data/filer";
+import { Velger } from "../ui/Velger";
 
 /**
  * Klassekartet — Plasser (SPEC §4.11, lerretet «Klassekart»).
@@ -1027,20 +1028,17 @@ export function Regler({
 }) {
   const [ny, setNy] = useState<{ a: string; b: string } | null>(null);
   const valg = (verdi: string, sett: (v: string) => void, ikke: string) => (
-    <select
-      value={verdi}
-      onChange={(e) => sett(e.target.value)}
-      className="min-w-0 flex-1 rounded-md border border-linje bg-ark px-1.5 py-1 text-liten"
-    >
-      <option value="">Velg elev</option>
-      {elever
+    <Velger
+      verdi={verdi}
+      settVerdi={sett}
+      variant="liten"
+      bredde="min-w-0 flex-1"
+      etikett="Elev"
+      plassholder="Velg elev"
+      valg={elever
         .filter((e) => e.id !== ikke)
-        .map((e) => (
-          <option key={e.id} value={e.id}>
-            {e.fornavn} {e.etternavn}
-          </option>
-        ))}
-    </select>
+        .map((e) => ({ verdi: e.id, tekst: `${e.fornavn} ${e.etternavn}` }))}
+    />
   );
   return (
     <div className="flex flex-wrap gap-1.5">

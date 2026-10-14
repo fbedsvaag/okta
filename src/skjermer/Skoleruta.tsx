@@ -9,6 +9,7 @@ import {
 } from "../data/skolear";
 import { roddagerISpenn, type Fridag } from "../data/kalender";
 import { Felt, Knapp } from "../ui/felles";
+import { Velger } from "../ui/Velger";
 
 /**
  * Skoleruta — skoleårets rammer.
@@ -200,17 +201,17 @@ function NyFridag({
       />
       <label className="block">
         <Etikett>Type</Etikett>
-        <select
-          value={type}
-          onChange={(e) => setType(e.target.value as Fridag["type"])}
-          className={felt}
-        >
-          <option value="ferie">Ferie</option>
-          <option value="planlegging">Planleggingsdag</option>
-          <option value="hendelse">Hendelse</option>
-          <option value="helligdag">Helligdag (rød dag)</option>
-          <option value="annet">Annet</option>
-        </select>
+        <Velger
+          verdi={type}
+          settVerdi={(v) => setType(v as Fridag["type"])}
+          valg={[
+            { verdi: "ferie", tekst: "Ferie" },
+            { verdi: "planlegging", tekst: "Planleggingsdag" },
+            { verdi: "hendelse", tekst: "Hendelse" },
+            { verdi: "helligdag", tekst: "Helligdag (rød dag)" },
+            { verdi: "annet", tekst: "Annet" },
+          ]}
+        />
       </label>
       <Felt
         etikett="Fra"

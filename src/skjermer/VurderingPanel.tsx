@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Elevfoto } from "../ui/Elevfoto";
 import { useArk } from "../ui/Arkstabel";
 import { Fagfirkant, Ikon, Kappet } from "../ui/felles";
+import { Velger } from "../ui/Velger";
 import { confirm as bekreft } from "@tauri-apps/plugin-dialog";
 import {
   endreVurdering,
@@ -414,23 +415,21 @@ function Felter({
           stedet for at «Økt» klemmes til én bokstav. */}
       <div className="grid gap-2 [grid-template-columns:repeat(auto-fit,minmax(10rem,1fr))]">
         <Linje etikett="Type">
-          <select
-            value={vurdering.type ?? ""}
-            onChange={async (e) => {
+          <Velger
+            verdi={vurdering.type ?? ""}
+            settVerdi={async (v) => {
               await endreVurdering(vurdering.id, {
-                type: (e.target.value || null) as Vurderingstype | null,
+                type: (v || null) as Vurderingstype | null,
               });
               onEndret();
             }}
-            className={feltStil}
-          >
-            <option value="">–</option>
-            {TYPER.map((t) => (
-              <option key={t.verdi} value={t.verdi}>
-                {t.navn}
-              </option>
-            ))}
-          </select>
+            bredde="w-full"
+            etikett="Type"
+            valg={[
+              { verdi: "", tekst: "Ingen type", dempet: true },
+              ...TYPER.map((t) => ({ verdi: t.verdi, tekst: t.navn })),
+            ]}
+          />
           {/*
             En muntlig vurdering trekkes i Samtaler. Inngangen står her, der
             man er når man vet at den skal trekkes (§4.10).
@@ -469,9 +468,9 @@ function Felter({
         <Oktkobling vurdering={vurdering} okter={okter} onEndret={onEndret} />
 
         <Linje etikett="Skala">
-          <select
-            value={vurdering.skalaId}
-            onChange={async (e) => {
+          <Velger
+            verdi={vurdering.skalaId}
+            settVerdi={async (v) => {
               if (
                 !(await bekreft(
                   "Bytte skala? Resultater som allerede er ført peker på verdier " +
@@ -479,17 +478,13 @@ function Felter({
                 ))
               )
                 return;
-              await endreVurdering(vurdering.id, { skala_id: e.target.value });
+              await endreVurdering(vurdering.id, { skala_id: v });
               onEndret();
             }}
-            className={feltStil}
-          >
-            {skalaer.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.navn}
-              </option>
-            ))}
-          </select>
+            bredde="w-full"
+            etikett="Skala"
+            valg={skalaer.map((s) => ({ verdi: s.id, tekst: s.navn }))}
+          />
         </Linje>
       </div>
 
@@ -612,24 +607,21 @@ function Oktkobling({
           </button>
         </div>
       ))}
-      <select
-        value=""
-        onChange={async (e) => {
-          if (!e.target.value) return;
-          await knyttOkt(vurdering.id, e.target.value);
-          onEndret();
-        }}
-        className={`${feltStil} ${her.length > 0 ? "mt-1" : ""}`}
-      >
-        <option value="">
-          {her.length > 0 ? "Legg til en økt til …" : "Knytt til en økt …"}
-        </option>
-        {andre.map((o) => (
-          <option key={o.id} value={o.id}>
-            {oktetikett(o)}
-          </option>
-        ))}
-      </select>
+      <span className={`block ${her.length > 0 ? "mt-1" : ""}`}>
+        <Velger
+          verdi=""
+          settVerdi={async (v) => {
+            await knyttOkt(vurdering.id, v);
+            onEndret();
+          }}
+          bredde="w-full"
+          etikett="Knytt til en økt"
+          plassholder={
+            her.length > 0 ? "Legg til en økt til …" : "Knytt til en økt …"
+          }
+          valg={andre.map((o) => ({ verdi: o.id, tekst: oktetikett(o) }))}
+        />
+      </span>
     </div>
   );
 }

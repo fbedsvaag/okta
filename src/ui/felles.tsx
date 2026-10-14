@@ -26,34 +26,6 @@ import { createPortal } from "react-dom";
  */
 export const KONTROLL = "h-[2.2em] leading-none";
 
-/**
- * Nedtrekksliste med samme form som knapper og felter.
- *
- * Fantes som en håndskrevet klasse i åtte filer før, med små forskjeller i
- * padding hvert sted.
- */
-export function Velger({
-  verdi,
-  settVerdi,
-  bredde = "",
-  children,
-}: {
-  verdi: string;
-  settVerdi: (v: string) => void;
-  bredde?: string;
-  children: ReactNode;
-}) {
-  return (
-    <select
-      value={verdi}
-      onChange={(e) => settVerdi(e.target.value)}
-      className={`${KONTROLL} ${bredde} rounded border border-linje bg-ark px-2 text-brod`}
-    >
-      {children}
-    </select>
-  );
-}
-
 export function Knapp({
   children,
   onClick,
@@ -779,10 +751,13 @@ export function Kontekstmeny({
       style={{ left: plass.venstre, top: plass.topp }}
       data-inngang="meny"
       data-inne={inne}
-      className="glass-meny fixed z-50 min-w-40 rounded-[14px] p-1.5"
+      className="glass-meny fixed z-50 min-w-40 rounded-[14px] p-[5px]"
     >
-      {/* Hover glir fra valg til valg (10.3). */}
-      <Hovermarkor beholder={meny} klasse="hovermarkor-tonet rounded-[8px]" />
+      {/*
+        Hover glir fra valg til valg (10.3), med samme glass, rader og
+        markør som nedtrekksmenyen (15.9).
+      */}
+      <Hovermarkor beholder={meny} klasse="markor-meny" />
       {children}
     </div>,
     document.body,
@@ -803,9 +778,7 @@ export function Menyvalg({
     <button
       role="menuitem"
       onClick={onKlikk}
-      className={`relative z-[1] block w-full rounded-[8px] px-3 py-1.5 text-left text-brod ${
-        farlig ? "text-feil" : ""
-      }`}
+      className={`menyrad ${farlig ? "text-feil" : ""}`}
     >
       {children}
     </button>
@@ -823,7 +796,7 @@ export function Menylinje({
   children: ReactNode;
 }) {
   return (
-    <span className="flex w-64 items-center gap-2.5">
+    <span className="flex w-64 items-center gap-2.5 whitespace-normal">
       <span className="min-w-0 flex-1">
         <span className="block">{children}</span>
         {under && (

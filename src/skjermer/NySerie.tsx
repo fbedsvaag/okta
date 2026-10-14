@@ -10,6 +10,7 @@ import { hentFridager, hentInnstilling } from "../data/skolear";
 import { opprettOkt } from "../data/okter";
 import type { FagIAr } from "../data/fag";
 import { Felt, Knapp } from "../ui/felles";
+import { Velger } from "../ui/Velger";
 
 /**
  * Serieopprettelse av økter, SPEC §4.2.
@@ -162,32 +163,28 @@ export function NySerie({
       <div className="flex flex-wrap items-end gap-3">
         <label className="block">
           <Etikett>Fag</Etikett>
-          <select
-            value={fagId}
-            onChange={(e) => setFagId(e.target.value)}
-            className={velger}
-          >
-            {fag.map((f) => (
-              <option key={f.id} value={f.id}>
-                {f.kode}
-              </option>
-            ))}
-          </select>
+          <Velger
+            verdi={fagId}
+            settVerdi={setFagId}
+            valg={fag.map((f) => ({
+              verdi: f.id,
+              tekst: f.kode,
+              farge: f.farge,
+              firkant: true,
+            }))}
+          />
         </label>
 
         <label className="block">
           <Etikett>Ukedag</Etikett>
-          <select
-            value={ukedag}
-            onChange={(e) => setUkedag(Number(e.target.value) as Ukedag)}
-            className={velger}
-          >
-            {([1, 2, 3, 4, 5] as Ukedag[]).map((u) => (
-              <option key={u} value={u}>
-                {ukedagsnavn(u)}
-              </option>
-            ))}
-          </select>
+          <Velger
+            verdi={String(ukedag)}
+            settVerdi={(v) => setUkedag(Number(v) as Ukedag)}
+            valg={([1, 2, 3, 4, 5] as Ukedag[]).map((u) => ({
+              verdi: String(u),
+              tekst: ukedagsnavn(u),
+            }))}
+          />
         </label>
 
         <Felt
@@ -240,8 +237,6 @@ export function NySerie({
     </div>
   );
 }
-
-const velger = "rounded border border-linje bg-ark px-2 py-1.5 text-brod";
 
 function Etikett({ children }: { children: React.ReactNode }) {
   return (

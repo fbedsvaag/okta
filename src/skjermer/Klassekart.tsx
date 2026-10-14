@@ -18,6 +18,7 @@ import { Fagfirkant } from "../ui/felles";
 import { KlassekartKart } from "./KlassekartKart";
 import { IVerktoylinja } from "../ui/Verktoylinje";
 import { KlassekartRom } from "./KlassekartRom";
+import { Velger } from "../ui/Velger";
 
 /**
  * Klassekart (SPEC §4.11). `id` sier hva som vises:
@@ -288,8 +289,6 @@ function NyttKart({
     onLaget(kartId);
   }
 
-  const felt =
-    "h-9 w-full rounded-md border border-linje bg-ark px-2.5 text-brod";
   return (
     <div className="mx-auto w-full max-w-md pt-6">
       <IVerktoylinja>
@@ -303,47 +302,44 @@ function NyttKart({
         inn.
       </p>
       <label className="mb-1.5 block text-liten font-semibold">Elevene</label>
-      <select
-        value={kilde}
-        onChange={(e) => setKilde(e.target.value)}
-        className={felt}
-      >
-        <option value="">Velg …</option>
-        {fag.length > 0 && (
-          <optgroup label="Fag">
-            {fag.map((f) => (
-              <option key={f.id} value={`fag:${f.id}`}>
-                {f.kode} · {f.navn}
-              </option>
-            ))}
-          </optgroup>
-        )}
-        {klasser.length > 0 && (
-          <optgroup label="Klasse">
-            {klasser.map((k) => (
-              <option key={k.id} value={`klasse:${k.id}`}>
-                {k.navn} ({k.antall} elever)
-              </option>
-            ))}
-          </optgroup>
-        )}
-        <optgroup label="Mentor">
-          <option value="mentorgruppe:">Mentorgruppa</option>
-        </optgroup>
-      </select>
+      <Velger
+        verdi={kilde}
+        settVerdi={setKilde}
+        bredde="w-full"
+        etikett="Elevene"
+        plassholder="Velg …"
+        valg={[
+          ...fag.map((f) => ({
+            verdi: `fag:${f.id}`,
+            tekst: `${f.kode} · ${f.navn}`,
+            farge: f.farge,
+            firkant: true,
+            gruppe: "Fag",
+          })),
+          ...klasser.map((k) => ({
+            verdi: `klasse:${k.id}`,
+            tekst: k.navn,
+            hint: `${k.antall} elever`,
+            gruppe: "Klasse",
+          })),
+          { verdi: "mentorgruppe:", tekst: "Mentorgruppa", gruppe: "Mentor" },
+        ]}
+      />
       <label className="mb-1.5 mt-4 block text-liten font-semibold">Rom</label>
-      <select
-        value={romId}
-        onChange={(e) => setRomId(e.target.value)}
-        className={felt}
-      >
-        {rom.map((r) => (
-          <option key={r.id} value={r.id}>
-            {r.navn} ({plasserIRom(r.deler).length} plasser)
-          </option>
-        ))}
-        <option value="">Ingen ennå, tegn det etterpå</option>
-      </select>
+      <Velger
+        verdi={romId}
+        settVerdi={setRomId}
+        bredde="w-full"
+        etikett="Rom"
+        valg={[
+          ...rom.map((r) => ({
+            verdi: r.id,
+            tekst: r.navn,
+            hint: `${plasserIRom(r.deler).length} plasser`,
+          })),
+          { verdi: "", tekst: "Ingen ennå, tegn det etterpå", dempet: true },
+        ]}
+      />
       <div className="mt-6 flex justify-end gap-2">
         <button
           onClick={onAvbryt}

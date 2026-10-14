@@ -73,6 +73,7 @@ import {
   type Modus,
   type Visning,
 } from "./samtaler/deler";
+import { Velger } from "../ui/Velger";
 
 /**
  * Samtaletrekkeren, SPEC §4.10.
@@ -830,10 +831,10 @@ export function Samtaler({
           */}
             {modus === "fag" && (
               <Bolk tittel="Vurdering">
-                <select
-                  value={`${fagId}|${valgtVurdering}`}
-                  onChange={async (e) => {
-                    const [nyttFag, vurdering] = e.target.value.split("|");
+                <Velger
+                  verdi={`${fagId}|${valgtVurdering}`}
+                  settVerdi={async (v) => {
+                    const [nyttFag, vurdering] = v.split("|");
                     if (nyttFag !== fagId) {
                       venterVurdering.current = vurdering;
                       setFagId(nyttFag);
@@ -843,23 +844,24 @@ export function Samtaler({
                     await settTrekningensVurdering(dager, vurdering || null);
                     await last();
                   }}
-                  className="h-[2.4em] w-full rounded-vanlig border border-linje bg-ark px-2.5 text-brod"
-                >
-                  {fag.map((f) => (
-                    <optgroup key={f.id} label={`${f.kode} · ${f.navn}`}>
-                      {vurderinger
-                        .filter((v) => v.skolearFagId === f.id)
-                        .map((v) => (
-                          <option key={v.id} value={`${f.id}|${v.id}`}>
-                            {v.tittel} ({f.kode})
-                          </option>
-                        ))}
-                      <option value={`${f.id}|`}>
-                        Uten vurdering ({f.kode})
-                      </option>
-                    </optgroup>
-                  ))}
-                </select>
+                  bredde="w-full"
+                  etikett="Vurdering"
+                  valg={fag.flatMap((f) => [
+                    ...vurderinger
+                      .filter((v) => v.skolearFagId === f.id)
+                      .map((v) => ({
+                        verdi: `${f.id}|${v.id}`,
+                        tekst: `${v.tittel} (${f.kode})`,
+                        gruppe: `${f.kode} · ${f.navn}`,
+                      })),
+                    {
+                      verdi: `${f.id}|`,
+                      tekst: `Uten vurdering (${f.kode})`,
+                      dempet: true,
+                      gruppe: `${f.kode} · ${f.navn}`,
+                    },
+                  ])}
+                />
               </Bolk>
             )}
 
@@ -969,18 +971,13 @@ export function Samtaler({
                   ]}
                 />
                 {storrelse >= 4 && (
-                  <select
-                    value={storrelse}
-                    onChange={(e) => {
-                      const n = Number(e.target.value);
-                      settStorrelse(n);
-                    }}
-                    className="rounded-vanlig border border-linje bg-ark px-1.5 py-0.5 text-liten"
-                  >
-                    <option value={4}>4</option>
-                    <option value={5}>5</option>
-                    <option value={6}>6</option>
-                  </select>
+                  <Velger
+                    verdi={String(storrelse)}
+                    settVerdi={(v) => settStorrelse(Number(v))}
+                    variant="liten"
+                    etikett="Gruppestørrelse"
+                    valg={["4", "5", "6"].map((n) => ({ verdi: n, tekst: n }))}
+                  />
                 )}
               </div>
               {storrelse > 1 && (

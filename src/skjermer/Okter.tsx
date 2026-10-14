@@ -34,10 +34,10 @@ import {
   Kontekstmeny,
   Menyvalg,
   Tomtilstand,
-  Velger,
 } from "../ui/felles";
 import { invoke } from "@tauri-apps/api/core";
 import { Arsplan } from "./Arsplan";
+import { Velger } from "../ui/Velger";
 import { Arsplanmeny } from "./Arsplanmeny";
 import { hentArk, type Ark } from "../data/arsplanark";
 import { TRAFIKKLYS } from "../ui/farger";
@@ -367,14 +367,20 @@ export function Okter({
                 plassholder="Søk i tema"
                 bredde="w-56"
               />
-              <Velger verdi={filterFag} settVerdi={setFilterFag}>
-                <option value="">Alle fag</option>
-                {fag.map((f) => (
-                  <option key={f.id} value={f.id}>
-                    {f.kode}
-                  </option>
-                ))}
-              </Velger>
+              <Velger
+                verdi={filterFag}
+                settVerdi={setFilterFag}
+                etikett="Fag"
+                valg={[
+                  { verdi: "", tekst: "Alle fag" },
+                  ...fag.map((f) => ({
+                    verdi: f.id,
+                    tekst: f.kode,
+                    farge: f.farge,
+                    firkant: true,
+                  })),
+                ]}
+              />
               <div className="ml-auto flex items-center gap-2">
                 <Kolonnevelger
                   valgbare={VALGBARE}
@@ -1230,17 +1236,16 @@ function NyOkt({
         <span className="mb-1 block text-etikett uppercase tracking-etikett text-blekk-dempet">
           Fag
         </span>
-        <select
-          value={fagId}
-          onChange={(e) => setFagId(e.target.value)}
-          className="rounded border border-linje bg-ark px-2 py-1.5 text-brod"
-        >
-          {fag.map((f) => (
-            <option key={f.id} value={f.id}>
-              {f.kode}
-            </option>
-          ))}
-        </select>
+        <Velger
+          verdi={fagId}
+          settVerdi={setFagId}
+          valg={fag.map((f) => ({
+            verdi: f.id,
+            tekst: f.kode,
+            farge: f.farge,
+            firkant: true,
+          }))}
+        />
       </label>
 
       <Felt

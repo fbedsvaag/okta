@@ -18,6 +18,7 @@ import {
 } from "../ui/felles";
 import { useArk } from "../ui/Arkstabel";
 import { lyttVurderinger } from "../data/endringer";
+import { Velger } from "../ui/Velger";
 
 /**
  * Vurderinger, SPEC §4.6.
@@ -88,18 +89,25 @@ export function Vurderinger({
               plassholder="Søk i tittel"
               bredde="w-56"
             />
-            <select
-              value={filterFag}
-              onChange={(e) => setFilterFag(e.target.value)}
-              className="rounded border border-linje bg-ark px-2 py-1.5 text-brod"
-            >
-              <option value="">Alle fag ({vurderinger.length})</option>
-              {fag.map((f) => (
-                <option key={f.id} value={f.id}>
-                  {f.kode} ({antallPerFag.get(f.id) ?? 0})
-                </option>
-              ))}
-            </select>
+            <Velger
+              verdi={filterFag}
+              settVerdi={setFilterFag}
+              etikett="Fag"
+              valg={[
+                {
+                  verdi: "",
+                  tekst: "Alle fag",
+                  hint: String(vurderinger.length),
+                },
+                ...fag.map((f) => ({
+                  verdi: f.id,
+                  tekst: f.kode,
+                  hint: String(antallPerFag.get(f.id) ?? 0),
+                  farge: f.farge,
+                  firkant: true,
+                })),
+              ]}
+            />
             <div className="ml-auto">
               <Knapp variant="primar" onClick={() => setLagerNy(true)}>
                 + Ny vurdering
@@ -292,17 +300,16 @@ function NyVurdering({
     <div className="mb-4 flex flex-wrap items-end gap-3 border border-linje bg-flate p-3">
       <label className="block">
         <Etikett>Fag</Etikett>
-        <select
-          value={fagId}
-          onChange={(e) => setFagId(e.target.value)}
-          className={velgerStil}
-        >
-          {fag.map((f) => (
-            <option key={f.id} value={f.id}>
-              {f.kode}
-            </option>
-          ))}
-        </select>
+        <Velger
+          verdi={fagId}
+          settVerdi={setFagId}
+          valg={fag.map((f) => ({
+            verdi: f.id,
+            tekst: f.kode,
+            farge: f.farge,
+            firkant: true,
+          }))}
+        />
       </label>
 
       <Felt
@@ -317,16 +324,16 @@ function NyVurdering({
 
       <label className="block">
         <Etikett>Type</Etikett>
-        <select
-          value={type}
-          onChange={(e) => setType(e.target.value as Vurderingstype | "")}
-          className={velgerStil}
-        >
-          <option value="">–</option>
-          <option value="skriftlig">Skriftlig</option>
-          <option value="muntlig">Muntlig</option>
-          <option value="praktisk">Praktisk</option>
-        </select>
+        <Velger
+          verdi={type}
+          settVerdi={(v) => setType(v as Vurderingstype | "")}
+          valg={[
+            { verdi: "", tekst: "Ingen type", dempet: true },
+            { verdi: "skriftlig", tekst: "Skriftlig" },
+            { verdi: "muntlig", tekst: "Muntlig" },
+            { verdi: "praktisk", tekst: "Praktisk" },
+          ]}
+        />
       </label>
 
       <Felt
@@ -339,17 +346,11 @@ function NyVurdering({
 
       <label className="block">
         <Etikett>Skala</Etikett>
-        <select
-          value={valgtSkala}
-          onChange={(e) => setSkalaId(e.target.value)}
-          className={velgerStil}
-        >
-          {skalaer.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.navn}
-            </option>
-          ))}
-        </select>
+        <Velger
+          verdi={valgtSkala}
+          settVerdi={setSkalaId}
+          valg={skalaer.map((s) => ({ verdi: s.id, tekst: s.navn }))}
+        />
       </label>
 
       <Knapp
@@ -365,8 +366,6 @@ function NyVurdering({
     </div>
   );
 }
-
-const velgerStil = "rounded border border-linje bg-ark px-2 py-1.5 text-brod";
 
 function Etikett({ children }: { children: React.ReactNode }) {
   return (

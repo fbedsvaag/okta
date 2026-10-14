@@ -289,10 +289,10 @@
   --glass-dempet: #4b4560;
   --glass-uskarp: blur(28px) saturate(170%);
   --glass-uskarp-sok: blur(40px) saturate(180%);
-  --glass-meny: rgba(255, 255, 255, 0.9);
+  --glass-meny: rgba(255, 255, 255, 0.94);
   --glass-meny-kant: rgba(255, 255, 255, 0.9);
-  --glass-meny-skygge: rgba(36, 31, 51, 0.26);
-  --glass-uskarp-meny: blur(30px) saturate(180%);
+  --glass-meny-skygge: rgba(36, 31, 51, 0.2);
+  --glass-uskarp-meny: blur(22px) saturate(140%);
   --teppe-styrke: 1;
 }
 
@@ -414,7 +414,8 @@
   border-color: var(--glass-meny-kant);
   box-shadow:
     inset 0 1px 0 var(--glass-innerlys),
-    0 18px 44px var(--glass-meny-skygge);
+    0 14px 40px var(--glass-meny-skygge),
+    0 0 0 0.5px color-mix(in srgb, var(--glass-meny-skygge) 60%, transparent);
 }
 
 /* Valgt punkt på glass. */
@@ -1007,11 +1008,16 @@ html {
 
 [data-inngang="meny"] {
   transform-origin: top left;
-  transition-duration: 140ms;
+  transition-duration: 170ms;
 }
 
 [data-inngang="meny"] > * {
-  transition-duration: 140ms;
+  transition-duration: 170ms;
+}
+
+/* Nedtrekksmenyen som snur oppover, vokser fra feltet og opp. */
+[data-inngang="meny"][data-opp="true"] {
+  transform-origin: bottom left;
 }
 
 [data-inngang="meny"][data-inne="false"] {
@@ -1354,4 +1360,142 @@ html {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+/*
+ * Nedtrekksmenyen (ui/Velger.tsx, ARBEIDSLISTE 15.9, lerretet Nedtrekk).
+ * Feltet er 32 px med vinkelpil som snur; åpent får det aksentkant og en
+ * svak ring. Menyen er .glass-meny, som kontekstmenyene.
+ */
+.velger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  max-width: 100%;
+  height: 32px;
+  padding: 0 10px 0 11px;
+  border-radius: 7px;
+  background: var(--color-ark);
+  box-shadow: inset 0 0 0 1px var(--color-linje);
+  color: var(--color-blekk);
+  font-size: calc(13.5px * var(--tekst-skala));
+  text-align: left;
+  white-space: nowrap;
+  outline: none;
+  transition: box-shadow 140ms var(--ease-inn);
+}
+.velger:hover {
+  box-shadow: inset 0 0 0 1px var(--color-linje-sterk);
+}
+.velger:focus-visible {
+  box-shadow:
+    inset 0 0 0 1px var(--color-linje-sterk),
+    0 0 0 3px color-mix(in srgb, var(--color-aksent) 28%, transparent);
+}
+.velger[aria-expanded="true"] {
+  box-shadow:
+    inset 0 0 0 1.5px var(--color-aksent),
+    0 0 0 4px color-mix(in srgb, var(--color-aksent) 12%, transparent);
+}
+.velger:disabled {
+  opacity: 0.5;
+}
+.velger.liten {
+  height: 26px;
+  padding: 0 7px 0 8px;
+  border-radius: 6px;
+  font-size: calc(12.5px * var(--tekst-skala));
+}
+.velger.stille {
+  height: 26px;
+  padding: 0 6px;
+  background: transparent;
+  box-shadow: none;
+  color: var(--color-blekk-dempet);
+  font-size: calc(12.5px * var(--tekst-skala));
+}
+.velger.stille:hover,
+.velger.stille[aria-expanded="true"] {
+  background: color-mix(in srgb, var(--color-blekk) 6%, transparent);
+  box-shadow: none;
+}
+.velger.stille:focus-visible {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-aksent) 28%, transparent);
+}
+.velger-pil {
+  display: inline-flex;
+  flex: none;
+  margin-left: auto;
+  color: var(--color-blekk-svak);
+  transition: transform 200ms var(--ease-sprett);
+}
+.velger[aria-expanded="true"] .velger-pil {
+  transform: rotate(180deg);
+  color: var(--color-aksent);
+}
+
+/* Radene: 30 px, i nedtrekksmenyen og kontekstmenyene. */
+.menyrad {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  min-height: 30px;
+  padding: 4px 9px;
+  border-radius: 8px;
+  font-size: calc(13.5px * var(--tekst-skala));
+  line-height: 1.35;
+  text-align: left;
+  white-space: nowrap;
+}
+.menyrad-hint {
+  margin-left: auto;
+  padding-left: 14px;
+  font-size: calc(12px * var(--tekst-skala));
+  font-variant-numeric: tabular-nums;
+  color: var(--color-blekk-svak);
+}
+.menyrad-hake {
+  display: inline-flex;
+  flex: none;
+  width: 12px;
+  color: var(--color-aksent);
+}
+.menygruppe {
+  padding: 8px 9px 3px;
+  font-size: calc(11px * var(--tekst-skala));
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-blekk-svak);
+}
+.menyskille {
+  height: 1px;
+  margin: 5px 4px;
+  background: var(--color-linje-medium);
+}
+.menysok {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  height: 30px;
+  margin: 0 0 4px;
+  padding: 0 9px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--color-blekk) 5%, transparent);
+  font-size: calc(13px * var(--tekst-skala));
+  color: var(--color-blekk-svak);
+}
+
+/* Markøren i menyene: en svak aksenttone som glir med S-kurven. */
+.hovermarkor.markor-meny {
+  border-radius: 8px;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+.hovermarkor.markor-meny:not([data-synlig="false"]) {
+  background-color: color-mix(in srgb, var(--color-aksent) 9%, transparent);
 }

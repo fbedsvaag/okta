@@ -43,6 +43,7 @@ import type { FagIAr } from "../data/fag";
 import { TRAFIKKLYS } from "../ui/farger";
 import { hentInnstilling } from "../data/skolear";
 import { LAERERNAVN } from "../data/arsplanark";
+import { Velger } from "../ui/Velger";
 
 /**
  * Fagportalen — faget sett ovenfra.
@@ -871,17 +872,13 @@ function Fagslogg({ fag, skolearId }: { fag: FagIAr; skolearId: string }) {
       nokkel="fagkort-oktlogg"
       handling={
         arene.length > 1 ? (
-          <select
-            value={ar}
-            onChange={(e) => setAr(e.target.value)}
-            className="rounded border border-linje bg-ark px-1.5 py-0.5 text-liten"
-          >
-            {arene.map((a) => (
-              <option key={a.skolearId} value={a.skolearId}>
-                {a.navn}
-              </option>
-            ))}
-          </select>
+          <Velger
+            verdi={ar}
+            settVerdi={setAr}
+            variant="liten"
+            etikett="Skoleår"
+            valg={arene.map((a) => ({ verdi: a.skolearId, tekst: a.navn }))}
+          />
         ) : undefined
       }
     >

@@ -18,6 +18,7 @@ import { hentInnstilling, settInnstilling } from "../data/skolear";
 import { Elevbilde } from "../ui/Elevbilde";
 import { useInngang } from "../ui/bevegelse";
 import { hovedtast, tast as visTast } from "../ui/taster";
+import { Velger } from "../ui/Velger";
 
 /** Hvor lenge det skal være stille i feltet før notatet lagres. */
 const PAUSE_MS = 400;
@@ -378,22 +379,16 @@ export function Samtalenotat({
             vurderingsvalg.length > 0 && (
               // Uten vurdering finnes det ingen skala. Knyttes trekningen til
               // en her, kommer skalaen fram med en gang.
-              <select
-                value=""
-                onChange={(e) =>
-                  e.target.value && onVelgVurdering(e.target.value)
-                }
-                className="h-8 rounded-full border border-linje bg-ark/70 px-3 text-liten text-blekk-dempet"
-              >
-                <option value="">
-                  Knytt til en vurdering for å sette resultat …
-                </option>
-                {vurderingsvalg.map((v) => (
-                  <option key={v.id} value={v.id}>
-                    {v.tittel}
-                  </option>
-                ))}
-              </select>
+              <Velger
+                verdi=""
+                settVerdi={onVelgVurdering}
+                etikett="Knytt til en vurdering"
+                plassholder="Knytt til en vurdering for å sette resultat …"
+                valg={vurderingsvalg.map((v) => ({
+                  verdi: v.id,
+                  tekst: v.tittel,
+                }))}
+              />
             )
           )}
           <span

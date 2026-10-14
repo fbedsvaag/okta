@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { type Klasse } from "../../data/elever";
+import { Velger } from "../../ui/Velger";
 
 /**
  * Klassen settes sjelden — som regel bare når noen bytter klasse midt i året.
@@ -39,23 +40,18 @@ export function Klassevelger({
   }
 
   return (
-    <select
-      value={valgtId}
-      onChange={(e) => {
-        if (e.target.value === "__ny") return setSkriver(true);
-        onVelg(e.target.value === "" ? null : e.target.value);
-      }}
-      title="Klasse dette skoleåret"
-      className="rounded-vanlig border border-transparent bg-transparent px-1 py-0.5 text-brod text-blekk-dempet hover:border-linje focus:border-aksent focus:outline-none"
-    >
-      <option value="">Ingen klasse</option>
-      {klasser.map((k) => (
-        <option key={k.id} value={k.id}>
-          {k.navn}
-        </option>
-      ))}
-      <option value="__ny">Ny klasse …</option>
-    </select>
+    <Velger
+      verdi={valgtId}
+      settVerdi={(v) => onVelg(v === "" ? null : v)}
+      variant="stille"
+      tittel="Klasse dette skoleåret"
+      etikett="Klasse"
+      valg={[
+        { verdi: "", tekst: "Ingen klasse", dempet: true },
+        ...klasser.map((k) => ({ verdi: k.id, tekst: k.navn })),
+      ]}
+      handling={{ tekst: "Ny klasse …", onKlikk: () => setSkriver(true) }}
+    />
   );
 }
 /**
