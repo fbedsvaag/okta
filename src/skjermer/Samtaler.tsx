@@ -212,6 +212,13 @@ export function Samtaler({
     neste: Dagplan[] | null;
     lagret: Map<string, string>;
   }>({ kjorer: false, neste: null, lagret: new Map() });
+  // Dagene i trekningen, alltid ferske. skriv() kalles også fra last(),
+  // før dager-tilstanden er oppdatert; da ville den skrevet til gårsdagens
+  // liste (eller ingen).
+  const dagerRef = useRef<Samtaledag[]>([]);
+  useEffect(() => {
+    dagerRef.current = dager;
+  }, [dager]);
   // Øker for hver plan som vises. En innlesing som startet før, skal ikke
   // overskrive en nyere plan med det som sto i basen.
   const generasjon = useRef(0);
@@ -234,6 +241,7 @@ export function Samtaler({
         mine.map((d) => d.id),
       ),
     );
+    dagerRef.current = mine;
     setDager(mine);
 
     // Er det allerede trukket på disse dagene, vises det som står i basen.
@@ -452,14 +460,16 @@ export function Samtaler({
         k.neste = null;
         // Alle dagene i trekningen, også en som er tømt: ellers ble de
         // gamle radene liggende der og eleven sto på to dager.
-        for (const dag of dager) {
+        for (const dag of dagerRef.current) {
           const rader = (p.find((x) => x.dag.id === dag.id)?.rader ?? [])
             // En gruppe pakkes ut: hver elev får sin rad, på samme klokkeslett.
             .flatMap((r) =>
               medlemmerAv(r.elevId).map((elevId) => ({
                 elevId,
                 klokkeslett: r.fra,
-                varighetMin: minutter,
+                // Radens egen lengde, ikke feltet: det kan være fra en
+                // annen trekning når skriv() kalles fra last().
+                varighetMin: tilMin(r.til) - tilMin(r.fra),
                 tema: r.tema,
               })),
             );
