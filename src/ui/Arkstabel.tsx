@@ -189,7 +189,13 @@ export function Arkstabel({
     const tast = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
       const i = e.target as HTMLElement;
-      if (i.closest?.("input, textarea, select")) return;
+      // En åpen nedtrekksmeny (ui/Velger) lukker seg selv på Esc.
+      if (
+        i.closest?.(
+          "input, textarea, select, [role='combobox'][aria-expanded='true']",
+        )
+      )
+        return;
       e.preventDefault();
       e.stopImmediatePropagation();
       lukk();

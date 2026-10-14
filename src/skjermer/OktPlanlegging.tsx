@@ -208,7 +208,7 @@ function Fakta({
             onBlur={(e) =>
               void onLagre({ klokkeslett: e.target.value || null })
             }
-            className="w-[54px] bg-transparent outline-none"
+            className="w-[44px] bg-transparent outline-none"
           />
           –
           <input
@@ -222,7 +222,7 @@ function Fakta({
               if (min > 0 && min !== okt.varighetMin)
                 void onLagre({ varighet_min: min });
             }}
-            className="w-[54px] bg-transparent outline-none disabled:text-blekk-svak"
+            className="w-[44px] bg-transparent outline-none disabled:text-blekk-svak"
           />
         </span>
       </Rad>

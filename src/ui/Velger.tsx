@@ -261,10 +261,13 @@ function Meny({
       0,
     ),
   );
-  const forsteSok = useRef(true);
+  // Nytt søk: markøren til første treff. Bare når teksten faktisk endres,
+  // så det valgte står markert når menyen åpnes.
+  const forrigeSok = useRef(soketekst);
   useEffect(() => {
-    if (forsteSok.current) forsteSok.current = false;
-    else setAktiv(0);
+    if (forrigeSok.current === soketekst) return;
+    forrigeSok.current = soketekst;
+    setAktiv(0);
   }, [soketekst]);
 
   // Plassen: under feltet, eller over når det ikke er plass under.
