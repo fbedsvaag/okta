@@ -48,6 +48,7 @@ import {
   type Plassering,
   type Samtaledag,
   tiderITrekning,
+  utenDobbelteElever,
 } from "../data/samtale";
 import { invoke } from "@tauri-apps/api/core";
 import { mentorStatus, publiserMentor } from "../data/caldav";
@@ -205,8 +206,21 @@ export function Samtaler({
 
   // Trekningen samtaletid og pause sist ble lest ut av (se last()).
   const tiderLest = useRef<string | null>(null);
+  // Lagringskøen (se skriv) og hva som sist ble skrevet per dag.
+  const lagring = useRef<{
+    kjorer: boolean;
+    neste: Dagplan[] | null;
+    lagret: Map<string, string>;
+  }>({ kjorer: false, neste: null, lagret: new Map() });
+  // Øker for hver plan som vises. En innlesing som startet før, skal ikke
+  // overskrive en nyere plan med det som sto i basen.
+  const generasjon = useRef(0);
 
   async function last() {
+    const startet = generasjon.current;
+    // Basen kan være endret utenfor køen (møtte ikke, sletting): skriv alt
+    // neste gang.
+    if (!lagring.current.kjorer) lagring.current.lagret = new Map();
     setElever(await hentElever(skolear.id));
     setFridager(await hentFridager(skolear.id));
     const alle = await hentSamtaledager(skolear.id);
@@ -257,7 +271,15 @@ export function Samtaler({
         }),
       });
     }
-    setTrekning(lagrede.length > 0 ? lagrede : null);
+    // Er en nyere plan vist mens vi leste, er den riktigere enn basen var.
+    if (generasjon.current === startet)
+      setTrekning(lagrede.length > 0 ? lagrede : null);
+    // Står en elev to ganger (en tidligere feil kunne gjøre det), ryddes
+    // det: den første plassen gjelder, de andre fjernes og står tomme.
+    const rensket = utenDobbelteElever(lagrede);
+    const dobbelt =
+      rensket.reduce((n, d) => n + d.rader.length, 0) <
+      lagrede.reduce((n, d) => n + d.rader.length, 0);
     // Samtaletid og pause slik trekningen faktisk ligger, så en flytting
     // ikke legger dagen ut på nytt med standardverdiene.
     // Bare når trekningen åpnes: et tall man nettopp har skrevet i feltet,
@@ -304,6 +326,8 @@ export function Samtaler({
         ),
       );
     }
+    if (dobbelt && !brukEgen && generasjon.current === startet)
+      await skriv(rensket);
     onEndret?.();
   }
 
@@ -404,7 +428,9 @@ export function Samtaler({
    * til elev — da vises trekningen uten å lagres, tydelig merket. Å gjøre
    * innlimingen ubrukelig ville vært verre.
    */
-  async function skriv(plan: Dagplan[]) {
+  async function skriv(planInn: Dagplan[]) {
+    const plan = utenDobbelteElever(planInn);
+    generasjon.current++;
     setTrekning(plan);
 
     if (brukEgen) {
@@ -412,19 +438,39 @@ export function Samtaler({
       return;
     }
 
-    for (const d of plan) {
-      // En gruppe pakkes ut: hver elev får sin rad, på samme klokkeslett.
-      await lagreTrekning(
-        d.dag.id,
-        d.rader.flatMap((r) =>
-          medlemmerAv(r.elevId).map((elevId) => ({
-            elevId,
-            klokkeslett: r.fra,
-            varighetMin: minutter,
-            tema: r.tema,
-          })),
-        ),
-      );
+    // Lagringen går i kø. Flytter man igjen før forrige lagring er ferdig,
+    // skrives bare den siste planen, etter at den forrige er ferdig. Før
+    // kunne to lagringer gå samtidig, begge lese «slik det var» og begge
+    // sette inn eleven, så hen sto to ganger.
+    const k = lagring.current;
+    k.neste = plan;
+    if (k.kjorer) return;
+    k.kjorer = true;
+    try {
+      while (k.neste) {
+        const p = k.neste;
+        k.neste = null;
+        // Alle dagene i trekningen, også en som er tømt: ellers ble de
+        // gamle radene liggende der og eleven sto på to dager.
+        for (const dag of dager) {
+          const rader = (p.find((x) => x.dag.id === dag.id)?.rader ?? [])
+            // En gruppe pakkes ut: hver elev får sin rad, på samme klokkeslett.
+            .flatMap((r) =>
+              medlemmerAv(r.elevId).map((elevId) => ({
+                elevId,
+                klokkeslett: r.fra,
+                varighetMin: minutter,
+                tema: r.tema,
+              })),
+            );
+          const nokkel = JSON.stringify(rader);
+          if (k.lagret.get(dag.id) === nokkel) continue;
+          await lagreTrekning(dag.id, rader);
+          k.lagret.set(dag.id, nokkel);
+        }
+      }
+    } finally {
+      k.kjorer = false;
     }
     setLagret(true);
     // Les tilbake fra basen: da får radene sine ekte id-er, og oversikten

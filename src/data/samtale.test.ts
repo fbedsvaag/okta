@@ -29,6 +29,7 @@ import {
   trekkRekkefolge,
   vektetRekkefolge,
   tiderITrekning,
+  utenDobbelteElever,
   type Dagoppsett,
   type Eksportdag,
   type Plassering,
@@ -879,5 +880,33 @@ describe("tiderITrekning", () => {
 
   it("gir null uten samtaler", () => {
     expect(tiderITrekning([[], []])).toBeNull();
+  });
+});
+
+describe("utenDobbelteElever", () => {
+  const dag = (...ider: string[]) => ({
+    rader: ider.map((elevId) => ({ elevId })),
+  });
+  const ider = (d: { rader: { elevId: string }[] }[]) =>
+    d.map((x) => x.rader.map((r) => r.elevId));
+
+  it("lar hver elev stå én gang, på den første plassen", () => {
+    expect(
+      ider(utenDobbelteElever([dag("a", "b", "a"), dag("b", "c")])),
+    ).toEqual([["a", "b"], ["c"]]);
+  });
+
+  it("tar bort en gruppe der et medlem alt har plass", () => {
+    expect(ider(utenDobbelteElever([dag("a"), dag("g:a+b", "c")]))).toEqual([
+      ["a"],
+      ["c"],
+    ]);
+  });
+
+  it("rører ikke en trekning uten dobbelte", () => {
+    expect(ider(utenDobbelteElever([dag("a", "b"), dag("c")]))).toEqual([
+      ["a", "b"],
+      ["c"],
+    ]);
   });
 });

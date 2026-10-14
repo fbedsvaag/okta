@@ -367,6 +367,26 @@ export function flyttInnenDagen<T>(rader: T[], fra: number, til: number): T[] {
 }
 
 /**
+ * Én elev, én samtale i en trekning: den første plassen gjelder, senere
+ * plasser for samme elev tas bort (også i grupper). Blir det flere ledige
+ * plasser enn elever, står de tomme; ingen får to.
+ */
+export function utenDobbelteElever<T extends { rader: { elevId: string }[] }>(
+  dager: T[],
+): T[] {
+  const sett = new Set<string>();
+  return dager.map((d) => ({
+    ...d,
+    rader: d.rader.filter((r) => {
+      const m = medlemmerAv(r.elevId);
+      if (m.some((id) => sett.has(id))) return false;
+      m.forEach((id) => sett.add(id));
+      return true;
+    }),
+  }));
+}
+
+/**
  * Flytter en elev til en annen dag i trekningen.
  *
  * Har måldagen ledig plass, settes eleven inn der (`etter` = etter raden
