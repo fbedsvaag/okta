@@ -1,4 +1,5 @@
-import { Fragment, useLayoutEffect, useRef, useState } from "react";
+import { Fragment } from "react";
+import { nyPlass, useDra, type Mal } from "../../ui/dra";
 import { useArk } from "../../ui/Arkstabel";
 import {
   merknad,
@@ -60,291 +61,43 @@ export function Timeplan({
 
   // ------------------------------------------------------------ dra
   //
-  // Raden følger musa, og de andre glir unna mens du drar — du ser hvor den
-  // havner før du slipper. Posisjonene måles én gang når draget begynner;
-  // forskyvningene regnes ut fra dem, ikke fra en DOM som flytter seg.
-  // Nederste halvdel av en rad betyr «etter denne». Er dagen det slippes på
-  // full, bytter de to plass (§4.10), og raden som byttes står markert.
-  type Mal = { dag: number; rad: number; etter: boolean; bytt: boolean };
-  // Lengden og kurven på bevegelsen når rader gjør plass og når kortet
-  // glir på plass: litt roligere enn resten av appen, og myk i enden.
-  const DRATID = "240ms cubic-bezier(0.2, 0.8, 0.2, 1)";
-  const [dra, setDra] = useState<{
-    fra: { dag: number; rad: number };
-    dy: number;
-    h: number;
-    mal: Mal | null;
-  } | null>(null);
-  const radEl = useRef(new Map<string, HTMLElement>());
-  const malt = useRef<
-    { dag: number; rad: number; top: number; bunn: number }[]
-  >([]);
-  const draget = useRef(false);
-  // Målet slik det sto sist pekeren flyttet seg — det er dit eleven går.
-  const sisteMal = useRef<Mal | null>(null);
-
-  function begynnDra(e: React.PointerEvent, fra: { dag: number; rad: number }) {
-    if (e.button !== 0) return;
-    if ((e.target as HTMLElement).closest("[data-ikke-dra], input, textarea"))
-      return;
-    // Ikke la trykket gi fokus til navneknappen. Flyttes raden med fokus,
-    // ruller WebKit for å holde den synlig, og vinduet hoppet ved slipp.
-    // Klikket kommer likevel, så notatet åpnes som før uten drag.
-    e.preventDefault();
-    const startY = e.clientY;
-    const startX = e.clientX;
-    let pekerY = startY;
-    let aktiv = false;
-    let h = 0;
-    // Rullesonen timeplanen står i. Drar du mot kanten, ruller den, og
-    // rullingen regnes inn: posisjonene ble målt før den begynte.
-    const sone = (e.currentTarget as HTMLElement).closest<HTMLElement>(
-      ".overflow-auto",
-    );
-    const startRull = sone?.scrollTop ?? 0;
-    let ramme = 0;
-
-    const oppdater = () => {
-      const rullet = (sone?.scrollTop ?? 0) - startRull;
-      const dy = pekerY - startY + rullet;
-      const mal = finnMal(dy, fra);
-      sisteMal.current = mal;
-      setDra({ fra, dy, h, mal });
-    };
-
-    const rull = () => {
-      ramme = 0;
-      if (!aktiv || !sone) return;
-      const r = sone.getBoundingClientRect();
-      const kant = 48;
-      const fart =
-        pekerY < r.top + kant
-          ? -Math.ceil((r.top + kant - pekerY) / 4)
-          : pekerY > r.bottom - kant
-            ? Math.ceil((pekerY - (r.bottom - kant)) / 4)
-            : 0;
-      if (fart === 0) return;
-      sone.scrollTop += fart;
-      oppdater();
-      ramme = requestAnimationFrame(rull);
-    };
-
-    const flytt = (ev: PointerEvent) => {
-      pekerY = ev.clientY;
-      if (!aktiv) {
-        if (Math.hypot(ev.clientX - startX, ev.clientY - startY) < 4) return;
-        aktiv = true;
-        draget.current = true;
-        // Ingen tekstmarkering mens det dras (dager, overskrifter, menyen).
-        document.documentElement.dataset.drar = "";
-        window.getSelection()?.removeAllRanges();
-        malt.current = [...radEl.current].map(([k, el]) => {
-          const [dag, rad] = k.split(":").map(Number);
-          const r = el.getBoundingClientRect();
-          return { dag, rad, top: r.top, bunn: r.bottom };
-        });
-        const egen = malt.current.find(
-          (m) => m.dag === fra.dag && m.rad === fra.rad,
-        );
-        h = egen ? egen.bunn - egen.top : 0;
-      }
-      oppdater();
-      if (!ramme) ramme = requestAnimationFrame(rull);
-    };
-
-    const slipp = () => {
-      window.removeEventListener("pointermove", flytt);
-      window.removeEventListener("pointerup", slipp);
-      window.removeEventListener("pointercancel", slipp);
-      if (ramme) cancelAnimationFrame(ramme);
-      // Utføres her, ikke i en state-oppdatering: React kan kjøre dem to
-      // ganger, og da ville eleven blitt flyttet to ganger.
-      const mal = sisteMal.current;
-      sisteMal.current = null;
-      delete document.documentElement.dataset.drar;
-      if (aktiv) {
-        const kort = radEl.current
-          .get(`${fra.dag}:${fra.rad}`)
-          ?.querySelector<HTMLElement>("[data-innhold]");
-        const elevId = plan[fra.dag]?.rader[fra.rad]?.elevId;
-        if (kort && elevId)
-          slippet.current = {
-            elevId,
-            top: kort.getBoundingClientRect().top,
-            sone,
-            rullet: sone?.scrollTop ?? 0,
-          };
-      }
-      setDra(null);
-      if (aktiv && mal) utfor(fra, mal);
-      // Klikket som kommer etter slippet, skal ikke åpne notatet.
-      window.setTimeout(() => (draget.current = false), 0);
-    };
-
-    window.addEventListener("pointermove", flytt);
-    window.addEventListener("pointerup", slipp);
-    window.addEventListener("pointercancel", slipp);
-  }
-
-  /**
-   * Hvor raden havner, ut fra hvor kortet står — ikke pekeren. En nabo gjør
-   * plass så snart kortet dekker 30 % av den, ikke først ved midten; da ser
-   * du tidlig hvor eleven havner. Mellom to dager avgjør midten av kortet.
-   */
-  function finnMal(dy: number, fra: { dag: number; rad: number }): Mal | null {
-    const egen = malt.current.find(
-      (m) => m.dag === fra.dag && m.rad === fra.rad,
-    );
-    const andre = malt.current
-      .filter((m) => !(m.dag === fra.dag && m.rad === fra.rad))
-      .sort((a, b) => a.top - b.top);
-    if (!egen || andre.length === 0) return null;
-    const topp = egen.top + dy;
-    const bunn = egen.bunn + dy;
-    const midt = (topp + bunn) / 2;
-    const DEKK = 0.3;
-
-    // Er dagen kortet står over full, bytter de to plass (§4.10).
-    const under =
-      andre.find((m) => midt >= m.top && midt < m.bunn) ??
-      andre.reduce((best, m) =>
-        Math.abs((m.top + m.bunn) / 2 - midt) <
-        Math.abs((best.top + best.bunn) / 2 - midt)
-          ? m
-          : best,
-      );
-    if (
-      under.dag !== fra.dag &&
-      plan[under.dag].rader.length >= kapasitetFor(under.dag)
-    )
-      return { dag: under.dag, rad: under.rad, etter: false, bytt: true };
-
-    // Hvor mange rader som står foran kortet nå.
-    let foran = 0;
-    for (const m of andre) {
-      const hoyde = m.bunn - m.top;
-      const fraOver = m.top < egen.top;
-      const erForan = fraOver
-        ? !(topp < m.bunn - hoyde * DEKK)
-        : bunn > m.top + hoyde * DEKK;
-      if (erForan) foran++;
-      else break;
-    }
-    if (foran >= andre.length) {
-      const siste = andre[andre.length - 1];
-      return { dag: siste.dag, rad: siste.rad, etter: true, bytt: false };
-    }
-    const neste = andre[foran];
-    const forrige = andre[foran - 1];
-    if (
-      forrige &&
-      forrige.dag !== neste.dag &&
-      midt < (forrige.bunn + neste.top) / 2
-    )
-      return { dag: forrige.dag, rad: forrige.rad, etter: true, bytt: false };
-    return { dag: neste.dag, rad: neste.rad, etter: false, bytt: false };
-  }
-
-  /** Slippet: samme regler som før — innen dagen, eller til en annen dag. */
-  function utfor(fra: { dag: number; rad: number }, mal: Mal) {
-    if (mal.dag === fra.dag) {
-      const t = mal.etter ? mal.rad + 1 : mal.rad;
-      const til = t > fra.rad ? t - 1 : t;
-      if (til !== fra.rad)
-        onFlytt(fra, { dag: mal.dag, rad: til, etter: false });
-    } else {
-      onFlytt(fra, mal);
-    }
-  }
-
-  /** Hvor langt en rad skal gli for å gi plass, mens det dras. */
-  /**
-   * Hvor langt en rad skal gli for å gi plass, mens det dras: fra sin egen
-   * plass til nabplassen, målt. Ikke én radhøyde: står lunsjen mellom to
-   * plasser, ville raden ellers lagt seg oppå lunsjen og hoppet ved slipp.
-   */
-  function forskyvning(dag: number, rad: number): number {
-    if (!dra?.mal || dra.mal.bytt) return 0;
-    const { fra, mal, h } = dra;
-    const t = mal.etter ? mal.rad + 1 : mal.rad;
-    let ny = rad;
-    if (mal.dag === fra.dag) {
-      if (dag !== fra.dag) return 0;
-      if (t > fra.rad && rad > fra.rad && rad < t) ny = rad - 1;
-      else if (t <= fra.rad && rad >= t && rad < fra.rad) ny = rad + 1;
-    } else if (dag === fra.dag && rad > fra.rad) ny = rad - 1;
-    else if (dag === mal.dag && rad >= t) ny = rad + 1;
-    if (ny === rad) return 0;
-    const plass = (r: number) =>
-      malt.current.find((m) => m.dag === dag && m.rad === r)?.top;
-    const her = plass(rad);
-    const der = plass(ny);
-    if (her === undefined) return ny > rad ? h : -h;
-    // Etter dagens siste plass finnes ingen å måle: én høyde videre.
-    return (der ?? her + h) - her;
-  }
-
-  // Kortet som nettopp ble sluppet, glir fra der det sto til plassen sin.
-  const slippet = useRef<{
-    elevId: string;
-    top: number;
-    sone: HTMLElement | null;
-    rullet: number;
-  } | null>(null);
-  useLayoutEffect(() => {
-    const sl = slippet.current;
-    if (!sl) return;
-    slippet.current = null;
-    // Når raden flyttes, tar WebKit den ut før den settes inn igjen. Står
-    // vinduet helt nederst, klemmes det da opp én rad og blir stående der.
-    // Rulleposisjonen fra slippet settes tilbake før skjermen tegnes.
-    if (sl.sone && sl.sone.scrollTop !== sl.rullet)
-      sl.sone.scrollTop = sl.rullet;
-    const el = document.querySelector<HTMLElement>(
-      `[data-innhold="${CSS.escape(sl.elevId)}"]`,
-    );
-    if (!el) return;
-    const d = sl.top - el.getBoundingClientRect().top;
-    if (Math.abs(d) < 1) return;
-    el.style.transition = "none";
-    el.style.transform = `translateY(${d}px)`;
-    el.getBoundingClientRect();
-    el.style.transition = `transform ${DRATID}`;
-    el.style.transform = "";
-    const t = window.setTimeout(() => (el.style.transition = ""), 320);
-    return () => window.clearTimeout(t);
+  // Den felles mekanikken (ui/dra.ts): raden følger musa, og de andre glir
+  // unna mens du drar. Gruppene er dagene. Er dagen det slippes på full,
+  // bytter de to plass (§4.10), og raden som byttes står markert.
+  const {
+    dra,
+    reg,
+    begynn,
+    draget,
+    erDratt: erDrattP,
+    byttesMed: byttesMedP,
+    malPlass: malP,
+    stil: stilP,
+  } = useDra({
+    full: (dag) => plan[dag].rader.length >= kapasitetFor(dag),
+    nokkel: (p) => plan[p.gruppe]?.rader[p.nr]?.elevId,
+    onSlipp: (fra, mal) => utfor({ dag: fra.gruppe, rad: fra.nr }, mal),
   });
+  const P = (dag: number, rad: number) => ({ gruppe: dag, nr: rad });
+  const erDratt = (dag: number, rad: number) => erDrattP(P(dag, rad));
+  const byttesMed = (dag: number, rad: number) => byttesMedP(P(dag, rad));
+  const stil = (dag: number, rad: number) => stilP(P(dag, rad));
 
-  function erDratt(dag: number, rad: number): boolean {
-    return dra !== null && dra.fra.dag === dag && dra.fra.rad === rad;
-  }
-
-  function byttesMed(dag: number, rad: number): boolean {
-    return !!dra?.mal?.bytt && dra.mal.dag === dag && dra.mal.rad === rad;
-  }
-
-  function stil(dag: number, rad: number): React.CSSProperties | undefined {
-    if (!dra) return undefined;
-    if (erDratt(dag, rad))
-      return { transform: `translateY(${dra.dy}px)`, transition: "none" };
-    return {
-      transform: `translateY(${forskyvning(dag, rad)}px)`,
-      transition: `transform ${DRATID}`,
-    };
+  /** Slippet: innen dagen, eller til en annen dag. */
+  function utfor(fra: { dag: number; rad: number }, mal: Mal) {
+    if (mal.gruppe === fra.dag) {
+      const til = nyPlass({ gruppe: fra.dag, nr: fra.rad }, mal).nr;
+      if (til !== fra.rad)
+        onFlytt(fra, { dag: mal.gruppe, rad: til, etter: false });
+    } else {
+      onFlytt(fra, { dag: mal.gruppe, rad: mal.nr, etter: mal.etter });
+    }
   }
 
   // Plassen raden som dras havner på, og klokkeslettet der. Klokkeslettene
   // står fast mens du drar (de hører til plassene, ikke elevene); raden du
   // drar har sitt eget, som ruller til tida på plassen den er over.
-  const malPlass = ((): { dag: number; rad: number } | null => {
-    if (!dra?.mal) return dra ? dra.fra : null;
-    const { fra, mal } = dra;
-    if (mal.bytt) return { dag: mal.dag, rad: mal.rad };
-    const t = mal.etter ? mal.rad + 1 : mal.rad;
-    if (mal.dag === fra.dag)
-      return { dag: fra.dag, rad: t > fra.rad ? t - 1 : t };
-    return { dag: mal.dag, rad: t };
-  })();
+  const malPlass = malP ? { dag: malP.gruppe, rad: malP.nr } : null;
   function tidPa(dag: number, rad: number): string {
     const r = plan[dag].rader;
     if (rad < r.length) return r[rad].fra;
@@ -429,14 +182,8 @@ export function Timeplan({
                 key={`${r.elevId}${r.motte ? "" : "-ikke"}${like ? `-${like}` : ""}`}
               >
                 <div
-                  ref={(el) => {
-                    const k = `${dagIdx}:${radIdx}`;
-                    if (el) radEl.current.set(k, el);
-                    else radEl.current.delete(k);
-                  }}
-                  onPointerDown={(e) =>
-                    !erLast && begynnDra(e, { dag: dagIdx, rad: radIdx })
-                  }
+                  ref={reg(P(dagIdx, radIdx))}
+                  onPointerDown={(e) => !erLast && begynn(e, P(dagIdx, radIdx))}
                   // Et navn dratt ut av en gruppe: eleven flyttes hit.
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={(e) => {
@@ -477,8 +224,8 @@ export function Timeplan({
                           : dra &&
                               dra.mal &&
                               !dra.mal.bytt &&
-                              dra.mal.dag !== dra.fra.dag &&
-                              dagIdx === dra.fra.dag &&
+                              dra.mal.gruppe !== dra.fra.gruppe &&
+                              dagIdx === dra.fra.gruppe &&
                               radIdx === d.rader.length - 1
                             ? "opacity-30"
                             : ""
@@ -489,14 +236,14 @@ export function Timeplan({
                     {erDratt(dagIdx, radIdx) && malTid && (
                       <span
                         className="absolute left-0 top-0 z-30 font-medium text-aksent"
-                        style={{ transform: `translateY(${dra!.dy}px)` }}
+                        style={{ transform: `translateY(${dra!.d}px)` }}
                       >
                         <Ticker tekst={malTid} />
                       </span>
                     )}
                   </span>
                   <div
-                    data-innhold={r.elevId}
+                    data-dra-innhold={r.elevId}
                     style={stil(dagIdx, radIdx)}
                     className={`flex min-w-0 flex-1 items-center gap-3 ${
                       erDratt(dagIdx, radIdx)

@@ -44,6 +44,7 @@ import { Tastestripe, Tasthint } from "../ui/Tastestripe";
 import { tast } from "../ui/taster";
 import { idag as dagensDato } from "../db";
 import { Velger } from "../ui/Velger";
+import { nyPlass, useDra } from "../ui/dra";
 
 /**
  * Økta i planlegging (ARBEIDSLISTE 11.5, lerretet «OktPlan»).
@@ -326,7 +327,29 @@ function Plan({
 }) {
   const start = useMemo(() => lesPlan(okt.plan), [okt.plan]);
   const [punkter, setPunkter] = useState<Planpunkt[]>(start.punkter);
-  const [dras, setDras] = useState<number | null>(null);
+  // Faste nøkler per punkt, så raden som slippes kan gli på plass og
+  // feltene beholder det du skriver når rekkefølgen endres.
+  const ider = useRef<string[]>([]);
+  while (ider.current.length < punkter.length)
+    ider.current.push(crypto.randomUUID());
+  const flyttet = (fra: number, til: number) => {
+    const ny = [...punkter];
+    const [p] = ny.splice(fra, 1);
+    ny.splice(til, 0, p);
+    const id = [...ider.current];
+    const [k] = id.splice(fra, 1);
+    id.splice(til, 0, k);
+    ider.current = id;
+    lagre(ny);
+  };
+  // Samme dra og slipp som samtaletimeplanen (ui/dra.ts).
+  const { begynn, reg, stil, erDratt, dra } = useDra({
+    nokkel: (p) => ider.current[p.nr],
+    onSlipp: (fra, mal) => {
+      const til = nyPlass(fra, mal).nr;
+      if (til !== fra.nr) flyttet(fra.nr, til);
+    },
+  });
   const nyttFelt = useRef<HTMLInputElement>(null);
   const [fokusNy, setFokusNy] = useState(false);
   useEffect(() => setPunkter(start.punkter), [start]);
@@ -375,62 +398,64 @@ function Plan({
       )}
       {punkter.map((p, i) => (
         <div
-          key={i}
-          draggable
-          onDragStart={() => setDras(i)}
-          onDragOver={(e) => e.preventDefault()}
-          onDrop={() => {
-            if (dras === null || dras === i) return;
-            const ny = [...punkter];
-            const [flyttet] = ny.splice(dras, 1);
-            ny.splice(i, 0, flyttet);
-            setDras(null);
-            lagre(ny);
-          }}
-          onDragEnd={() => setDras(null)}
-          className={`group flex h-[29px] items-center gap-2.5 text-[calc(13.5px*var(--tekst-skala))] ${dras === i ? "opacity-40" : ""}`}
+          key={ider.current[i]}
+          ref={reg({ gruppe: 0, nr: i })}
+          onPointerDown={(e) => begynn(e, { gruppe: 0, nr: i })}
+          className="relative"
         >
-          <span
-            aria-hidden
-            title="Dra for å flytte"
-            className="cursor-grab select-none text-[11px] leading-none tracking-[-2px] text-blekk-svakest"
+          <div
+            data-dra-innhold={ider.current[i]}
+            style={stil({ gruppe: 0, nr: i })}
+            className={`group flex h-[29px] items-center gap-2.5 text-[calc(13.5px*var(--tekst-skala))] ${
+              erDratt({ gruppe: 0, nr: i })
+                ? "relative z-20 -mx-2 rounded-vanlig bg-ark px-2 shadow-[var(--shadow-ark)] ring-1 ring-aksent"
+                : dra
+                  ? ""
+                  : "cursor-grab"
+            }`}
           >
-            ⋮⋮
-          </span>
-          <input
-            type="checkbox"
-            checked={p.gjort}
-            onChange={(e) => lagre(endre(i, { gjort: e.target.checked }))}
-          />
-          <input
-            ref={i === punkter.length - 1 ? nyttFelt : undefined}
-            defaultValue={p.tekst}
-            key={`${i}-${p.tekst}`}
-            placeholder="Hva skal skje"
-            onBlur={(e) =>
-              e.target.value !== p.tekst &&
-              lagre(endre(i, { tekst: e.target.value }))
-            }
-            onKeyDown={(e) => {
-              if (e.key === "Enter") (e.target as HTMLInputElement).blur();
-            }}
-            className={`min-w-0 flex-1 bg-transparent outline-none ${p.gjort ? "text-blekk-svak line-through" : ""}`}
-          />
-          <span className="flex shrink-0 items-center gap-1 text-[calc(12px*var(--tekst-skala))] text-blekk-svak">
+            <span
+              aria-hidden
+              title="Dra for å flytte"
+              className="select-none text-[11px] leading-none tracking-[-2px] text-blekk-svakest"
+            >
+              ⋮⋮
+            </span>
             <input
-              inputMode="numeric"
-              defaultValue={p.min ?? ""}
-              key={`m${i}-${p.min}`}
-              placeholder="–"
-              onBlur={(e) => {
-                const n = parseInt(e.target.value, 10);
-                const min = Number.isFinite(n) && n > 0 ? n : null;
-                if (min !== p.min) lagre(endre(i, { min }));
-              }}
-              className="w-8 bg-transparent text-right tabular-nums outline-none"
+              type="checkbox"
+              checked={p.gjort}
+              onChange={(e) => lagre(endre(i, { gjort: e.target.checked }))}
             />
-            min
-          </span>
+            <input
+              ref={i === punkter.length - 1 ? nyttFelt : undefined}
+              defaultValue={p.tekst}
+              key={`${ider.current[i]}-${p.tekst}`}
+              placeholder="Hva skal skje"
+              onBlur={(e) =>
+                e.target.value !== p.tekst &&
+                lagre(endre(i, { tekst: e.target.value }))
+              }
+              onKeyDown={(e) => {
+                if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+              }}
+              className={`min-w-0 flex-1 bg-transparent outline-none ${p.gjort ? "text-blekk-svak line-through" : ""}`}
+            />
+            <span className="flex shrink-0 items-center gap-1 text-[calc(12px*var(--tekst-skala))] text-blekk-svak">
+              <input
+                inputMode="numeric"
+                defaultValue={p.min ?? ""}
+                key={`m${ider.current[i]}-${p.min}`}
+                placeholder="–"
+                onBlur={(e) => {
+                  const n = parseInt(e.target.value, 10);
+                  const min = Number.isFinite(n) && n > 0 ? n : null;
+                  if (min !== p.min) lagre(endre(i, { min }));
+                }}
+                className="w-8 bg-transparent text-right tabular-nums outline-none"
+              />
+              min
+            </span>
+          </div>
         </div>
       ))}
     </section>
