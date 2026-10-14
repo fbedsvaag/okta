@@ -249,18 +249,30 @@ export function Timeplan({
   }
 
   /** Hvor langt en rad skal gli for å gi plass, mens det dras. */
+  /**
+   * Hvor langt en rad skal gli for å gi plass, mens det dras: fra sin egen
+   * plass til nabplassen, målt. Ikke én radhøyde: står lunsjen mellom to
+   * plasser, ville raden ellers lagt seg oppå lunsjen og hoppet ved slipp.
+   */
   function forskyvning(dag: number, rad: number): number {
     if (!dra?.mal || dra.mal.bytt) return 0;
     const { fra, mal, h } = dra;
     const t = mal.etter ? mal.rad + 1 : mal.rad;
+    let ny = rad;
     if (mal.dag === fra.dag) {
       if (dag !== fra.dag) return 0;
-      if (t > fra.rad) return rad > fra.rad && rad < t ? -h : 0;
-      return rad >= t && rad < fra.rad ? h : 0;
-    }
-    if (dag === fra.dag && rad > fra.rad) return -h;
-    if (dag === mal.dag && rad >= t) return h;
-    return 0;
+      if (t > fra.rad && rad > fra.rad && rad < t) ny = rad - 1;
+      else if (t <= fra.rad && rad >= t && rad < fra.rad) ny = rad + 1;
+    } else if (dag === fra.dag && rad > fra.rad) ny = rad - 1;
+    else if (dag === mal.dag && rad >= t) ny = rad + 1;
+    if (ny === rad) return 0;
+    const plass = (r: number) =>
+      malt.current.find((m) => m.dag === dag && m.rad === r)?.top;
+    const her = plass(rad);
+    const der = plass(ny);
+    if (her === undefined) return ny > rad ? h : -h;
+    // Etter dagens siste plass finnes ingen å måle: én høyde videre.
+    return (der ?? her + h) - her;
   }
 
   // Kortet som nettopp ble sluppet, glir fra der det sto til plassen sin.
@@ -327,7 +339,10 @@ export function Timeplan({
   const malTid = malPlass ? tidPa(malPlass.dag, malPlass.rad) : null;
 
   return (
-    <div className="space-y-6">
+    // Luft nederst: en rad som gjør plass nederst på siste dag, skyves ut
+    // forbi lista. Uten plass til den ble lista høyere mens det ble dratt,
+    // og kortere igjen ved slipp, så vinduet rullet opp et stykke.
+    <div className="space-y-6 pb-16">
       {plan.map((d, dagIdx) => (
         <section key={d.dag.id}>
           {/* Dagen i Light (DESIGN.md §10), med tid og antall ved siden av. */}
@@ -344,8 +359,16 @@ export function Timeplan({
             </span>
           </div>
 
-          {d.rader.map((r, radIdx) => {
+          {d.rader.flatMap((r, radIdx) => {
             plass++;
+            // Lunsjen er sitt eget element med fast nøkkel. Lå den inne i
+            // raden etter, ble den laget på nytt (og blinket) når
+            // rekkefølgen endret seg.
+            const lunsjHer =
+              d.lunsj !== null &&
+              r.fra >= d.lunsj.til &&
+              (radIdx === 0 || d.rader[radIdx - 1].fra < d.lunsj.fra);
+
             // Samme elev to ganger i en dag skal ikke skje, men gjør det,
             // må nøklene likevel være unike, ellers blir rader hengende igjen.
             const like = d.rader
@@ -353,35 +376,35 @@ export function Timeplan({
               .filter(
                 (x) => x.elevId === r.elevId && x.motte === r.motte,
               ).length;
-            // Lunsjen står på sin plass i rekka: rett før den første samtalen
-            // som begynner etter at pausen er over.
-            const lunsjHer =
-              d.lunsj !== null &&
-              r.fra >= d.lunsj.til &&
-              (radIdx === 0 || d.rader[radIdx - 1].fra < d.lunsj.fra);
             // Merknaden bygges på historikken FØR denne trekningen, så den
             // sier noe om hva som har skjedd — ikke om det som nettopp ble
             // trukket.
             const notis = merknad(historikk.get(r.elevId) ?? []);
             const erLast = laste.has(r.elevId);
-            return (
+            return [
               // Nøkkelen er eleven, ikke klokkeslettet: en flytting gir mange
               // rader nytt klokkeslett, og da ble de laget på nytt og blinket.
               // «motte» skiller en som ikke møtte fra samme elev satt opp igjen.
+              ...(lunsjHer && d.lunsj
+                ? [
+                    <div
+                      key={`lunsj-${d.dag.id}`}
+                      className="flex items-baseline gap-3 border-b border-linje-svak bg-flate py-2 text-brod text-blekk-dempet"
+                    >
+                      <span className="w-7 shrink-0" />
+                      <span className="shrink-0 tabular-nums">
+                        {d.lunsj.fra}–{d.lunsj.til}
+                      </span>
+                      <span className="flex-1">
+                        · Lunsj ({tilMin(d.lunsj.til) - tilMin(d.lunsj.fra)}{" "}
+                        min)
+                      </span>
+                    </div>,
+                  ]
+                : []),
               <Fragment
                 key={`${r.elevId}${r.motte ? "" : "-ikke"}${like ? `-${like}` : ""}`}
               >
-                {lunsjHer && d.lunsj && (
-                  <div className="flex items-baseline gap-3 border-b border-linje-svak bg-flate py-2 text-brod text-blekk-dempet">
-                    <span className="w-7 shrink-0" />
-                    <span className="shrink-0 tabular-nums">
-                      {d.lunsj.fra}–{d.lunsj.til}
-                    </span>
-                    <span className="flex-1">
-                      · Lunsj ({tilMin(d.lunsj.til) - tilMin(d.lunsj.fra)} min)
-                    </span>
-                  </div>
-                )}
                 <div
                   ref={(el) => {
                     const k = `${dagIdx}:${radIdx}`;
@@ -581,8 +604,8 @@ export function Timeplan({
                     )}
                   </div>
                 </div>
-              </Fragment>
-            );
+              </Fragment>,
+            ];
           })}
         </section>
       ))}
