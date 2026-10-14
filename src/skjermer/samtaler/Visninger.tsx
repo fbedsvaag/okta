@@ -1,5 +1,3 @@
-import type {} from "../../data/skolear";
-import type {} from "../../data/fag";
 import { merknad, type Plassering } from "../../data/samtale";
 import { Elevfoto } from "../../ui/Elevfoto";
 import { kortDato } from "./deler";

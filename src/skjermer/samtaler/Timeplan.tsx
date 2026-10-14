@@ -1,9 +1,8 @@
 import { Fragment, useRef, useState } from "react";
 import { useArk } from "../../ui/Arkstabel";
-import type {} from "../../data/skolear";
-import type {} from "../../data/fag";
 import {
   merknad,
+  tilKlokke,
   tilMin,
   type Plassering,
   type Samtaledag,
@@ -11,6 +10,7 @@ import {
 import { type Elevnotat } from "../../data/elevnotat";
 import { Ikon, Kappet } from "../../ui/felles";
 import { Elevfoto } from "../../ui/Elevfoto";
+import { Ticker } from "../../ui/Ticker";
 import { Temarute, langDato } from "./deler";
 import { ELEVDRAG, type Dagplan } from "./deler";
 
@@ -227,6 +227,30 @@ export function Timeplan({
     };
   }
 
+  // Plassen raden som dras havner på, og klokkeslettet der. Klokkeslettene
+  // står fast mens du drar (de hører til plassene, ikke elevene); raden du
+  // drar har sitt eget, som ruller til tida på plassen den er over.
+  const malPlass = ((): { dag: number; rad: number } | null => {
+    if (!dra?.mal) return dra ? dra.fra : null;
+    const { fra, mal } = dra;
+    if (mal.bytt) return { dag: mal.dag, rad: mal.rad };
+    const t = mal.etter ? mal.rad + 1 : mal.rad;
+    if (mal.dag === fra.dag)
+      return { dag: fra.dag, rad: t > fra.rad ? t - 1 : t };
+    return { dag: mal.dag, rad: t };
+  })();
+  function tidPa(dag: number, rad: number): string {
+    const r = plan[dag].rader;
+    if (rad < r.length) return r[rad].fra;
+    // Etter den siste: samme lengde og pause som raden før.
+    const siste = r[r.length - 1];
+    if (!siste) return plan[dag].dag.fra;
+    const pause =
+      r.length >= 2 ? tilMin(siste.fra) - tilMin(r[r.length - 2].til) : 0;
+    return tilKlokke(tilMin(siste.til) + Math.max(0, pause));
+  }
+  const malTid = malPlass ? tidPa(malPlass.dag, malPlass.rad) : null;
+
   return (
     <div className="space-y-6">
       {plan.map((d, dagIdx) => (
@@ -290,7 +314,6 @@ export function Timeplan({
                     const elev = e.dataTransfer.getData(ELEVDRAG);
                     if (elev) onFlyttElev(elev, dagIdx, radIdx);
                   }}
-                  style={stil(dagIdx, radIdx)}
                   className={`relative flex touch-none select-none items-center gap-3 border-b border-linje-svak py-2 text-brod ${
                     r.motte ? "" : "opacity-55"
                   } ${
@@ -299,7 +322,7 @@ export function Timeplan({
                       : dra
                         ? "cursor-grabbing"
                         : "cursor-grab hover:bg-flate-svak"
-                  } ${erDratt(dagIdx, radIdx) ? "z-20 bg-ark shadow-[var(--shadow-ark)]" : ""} ${
+                  } ${
                     byttesMed(dagIdx, radIdx)
                       ? "bg-valgt ring-1 ring-inset ring-aksent"
                       : ""
@@ -308,134 +331,170 @@ export function Timeplan({
                   <span className="w-7 shrink-0 text-right text-liten tabular-nums text-blekk-svak">
                     {plass}
                   </span>
-                  {/* Bare starttida: slutten er neste rad (§4.10). */}
+                  {/* Bare starttida: slutten er neste rad (§4.10). Står fast
+                      mens det dras; plassen raden havner på, skjuler sin, og
+                      raden som dras viser den i stedet, rullende. */}
                   <span
-                    className="w-14 shrink-0 tabular-nums"
+                    className="relative w-14 shrink-0 tabular-nums"
                     title={`${r.fra}–${r.til}`}
                   >
-                    {r.fra}
-                  </span>
-                  {r.medlemmer.length > 1 ? (
-                    <span className="flex min-w-0 flex-1 flex-wrap gap-1">
-                      {r.medlemmer.map((m) => (
-                        <span
-                          key={m.id}
-                          data-ikke-dra
-                          draggable={!erLast}
-                          onDragStart={(e) => {
-                            // Navnet, ikke hele raden: raden har sitt eget drag.
-                            e.stopPropagation();
-                            e.dataTransfer.setData(ELEVDRAG, m.id);
-                            e.dataTransfer.effectAllowed = "move";
-                          }}
-                          onClick={() => ark.apneElev(m.id)}
-                          title="Klikk for elevkortet, dra til en annen gruppe"
-                          className={`cursor-pointer rounded-full bg-flate px-2 py-px hover:bg-linje-medium ${erLast ? "" : "active:cursor-grab"}`}
-                        >
-                          {m.navn}
-                        </span>
-                      ))}
-                    </span>
-                  ) : (
-                    <button
-                      onClick={() => {
-                        // Musa ble sluppet etter et drag: det var ikke et klikk.
-                        if (draget.current) return;
-                        if (r.samtaleId) onApneNotat(r, d.dag);
-                        else if (r.medlemmer[0])
-                          ark.apneElev(r.medlemmer[0].id);
-                      }}
-                      title={
-                        r.samtaleId
-                          ? (notater.get(r.elevId)?.tekst ??
-                            "Skriv notat fra samtalen")
-                          : undefined
-                      }
-                      className={`flex min-w-0 flex-1 items-center gap-2 text-left font-medium hover:text-aksent ${
-                        r.motte ? "" : "line-through"
-                      }`}
-                    >
-                      <Elevfoto
-                        elevId={r.medlemmer[0]?.id ?? r.elevId}
-                        storrelse={24}
-                      />
-                      <Kappet verdi={r.navn} />
-                    </button>
-                  )}
-                  {r.tema && (
                     <span
-                      title={r.tema}
-                      className="flex w-6 min-w-0 shrink-0 items-center gap-3 @xl:w-44 @3xl:w-60"
+                      className={
+                        dra &&
+                        malPlass?.dag === dagIdx &&
+                        malPlass.rad === radIdx
+                          ? "opacity-0"
+                          : dra &&
+                              dra.mal &&
+                              !dra.mal.bytt &&
+                              dra.mal.dag !== dra.fra.dag &&
+                              dagIdx === dra.fra.dag &&
+                              radIdx === d.rader.length - 1
+                            ? "opacity-30"
+                            : ""
+                      }
                     >
-                      {/* Oppgavenummeret som liten rute i temafargen. */}
-                      {temaer.indexOf(r.tema) >= 0 && (
-                        <Temarute nr={temaer.indexOf(r.tema) + 1} />
-                      )}
-                      <Kappet verdi={r.tema} klasse="hidden @xl:block" />
+                      {r.fra}
                     </span>
-                  )}
-                  <span className="hidden w-28 shrink-0 text-right text-liten text-blekk-dempet @3xl:block">
-                    {r.motte ? notis : "møtte ikke"}
+                    {erDratt(dagIdx, radIdx) && malTid && (
+                      <span
+                        className="absolute left-0 top-0 z-30 font-medium text-aksent"
+                        style={{ transform: `translateY(${dra!.dy}px)` }}
+                      >
+                        <Ticker tekst={malTid} />
+                      </span>
+                    )}
                   </span>
-                  {r.samtaleId && r.medlemmer.length === 1 ? (
+                  <div
+                    style={stil(dagIdx, radIdx)}
+                    className={`flex min-w-0 flex-1 items-center gap-3 ${
+                      erDratt(dagIdx, radIdx)
+                        ? "relative z-20 -my-2 -ml-2 rounded-vanlig bg-ark py-2 pl-2 shadow-[var(--shadow-ark)]"
+                        : ""
+                    }`}
+                  >
+                    {r.medlemmer.length > 1 ? (
+                      <span className="flex min-w-0 flex-1 flex-wrap gap-1">
+                        {r.medlemmer.map((m) => (
+                          <span
+                            key={m.id}
+                            data-ikke-dra
+                            draggable={!erLast}
+                            onDragStart={(e) => {
+                              // Navnet, ikke hele raden: raden har sitt eget drag.
+                              e.stopPropagation();
+                              e.dataTransfer.setData(ELEVDRAG, m.id);
+                              e.dataTransfer.effectAllowed = "move";
+                            }}
+                            onClick={() => ark.apneElev(m.id)}
+                            title="Klikk for elevkortet, dra til en annen gruppe"
+                            className={`cursor-pointer rounded-full bg-flate px-2 py-px hover:bg-linje-medium ${erLast ? "" : "active:cursor-grab"}`}
+                          >
+                            {m.navn}
+                          </span>
+                        ))}
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          // Musa ble sluppet etter et drag: det var ikke et klikk.
+                          if (draget.current) return;
+                          if (r.samtaleId) onApneNotat(r, d.dag);
+                          else if (r.medlemmer[0])
+                            ark.apneElev(r.medlemmer[0].id);
+                        }}
+                        title={
+                          r.samtaleId
+                            ? (notater.get(r.elevId)?.tekst ??
+                              "Skriv notat fra samtalen")
+                            : undefined
+                        }
+                        className={`flex min-w-0 flex-1 items-center gap-2 text-left font-medium hover:text-aksent ${
+                          r.motte ? "" : "line-through"
+                        }`}
+                      >
+                        <Elevfoto
+                          elevId={r.medlemmer[0]?.id ?? r.elevId}
+                          storrelse={24}
+                        />
+                        <Kappet verdi={r.navn} />
+                      </button>
+                    )}
+                    {r.tema && (
+                      <span
+                        title={r.tema}
+                        className="flex w-6 min-w-0 shrink-0 items-center gap-3 @xl:w-44 @3xl:w-60"
+                      >
+                        {/* Oppgavenummeret som liten rute i temafargen. */}
+                        {temaer.indexOf(r.tema) >= 0 && (
+                          <Temarute nr={temaer.indexOf(r.tema) + 1} />
+                        )}
+                        <Kappet verdi={r.tema} klasse="hidden @xl:block" />
+                      </span>
+                    )}
+                    <span className="hidden w-28 shrink-0 text-right text-liten text-blekk-dempet @3xl:block">
+                      {r.motte ? notis : "møtte ikke"}
+                    </span>
+                    {r.samtaleId && r.medlemmer.length === 1 ? (
+                      <button
+                        data-ikke-dra
+                        onClick={() => onApneNotat(r, d.dag)}
+                        title={
+                          notater.has(r.elevId)
+                            ? "Notatet fra samtalen"
+                            : "Ta notat fra samtalen"
+                        }
+                        className={`grid h-7 w-7 shrink-0 place-items-center rounded-vanlig ${
+                          notater.has(r.elevId)
+                            ? "text-aksent hover:bg-flate"
+                            : "text-blekk-svakest hover:bg-flate hover:text-blekk"
+                        }`}
+                      >
+                        <Ikon
+                          navn={notater.has(r.elevId) ? "notat-fylt" : "notat"}
+                        />
+                      </button>
+                    ) : (
+                      <span className="w-7 shrink-0" />
+                    )}
                     <button
                       data-ikke-dra
-                      onClick={() => onApneNotat(r, d.dag)}
+                      onClick={() => onLas(r.elevId)}
                       title={
-                        notater.has(r.elevId)
-                          ? "Notatet fra samtalen"
-                          : "Ta notat fra samtalen"
+                        erLast
+                          ? "Lås opp: eleven trekkes om igjen"
+                          : "Lås: eleven beholder plass og tema"
                       }
                       className={`grid h-7 w-7 shrink-0 place-items-center rounded-vanlig ${
-                        notater.has(r.elevId)
-                          ? "text-aksent hover:bg-flate"
+                        erLast
+                          ? "text-blekk"
                           : "text-blekk-svakest hover:bg-flate hover:text-blekk"
                       }`}
                     >
-                      <Ikon
-                        navn={notater.has(r.elevId) ? "notat-fylt" : "notat"}
-                      />
+                      <Ikon navn={erLast ? "las-fylt" : "apen-las"} />
                     </button>
-                  ) : (
-                    <span className="w-7 shrink-0" />
-                  )}
-                  <button
-                    data-ikke-dra
-                    onClick={() => onLas(r.elevId)}
-                    title={
-                      erLast
-                        ? "Lås opp: eleven trekkes om igjen"
-                        : "Lås: eleven beholder plass og tema"
-                    }
-                    className={`grid h-7 w-7 shrink-0 place-items-center rounded-vanlig ${
-                      erLast
-                        ? "text-blekk"
-                        : "text-blekk-svakest hover:bg-flate hover:text-blekk"
-                    }`}
-                  >
-                    <Ikon navn={erLast ? "las-fylt" : "apen-las"} />
-                  </button>
-                  {r.samtaleId && r.medlemmer.length === 1 ? (
-                    <button
-                      data-ikke-dra
-                      onClick={() => onMotte(r)}
-                      aria-pressed={!r.motte}
-                      title={
-                        r.motte
-                          ? "Møtte ikke: raden blir stående med klokkeslettet sitt"
-                          : "Møtte likevel"
-                      }
-                      className={`grid h-7 w-7 shrink-0 place-items-center rounded-vanlig ${
-                        r.motte
-                          ? "text-blekk-svakest hover:bg-flate hover:text-blekk"
-                          : "text-feil"
-                      }`}
-                    >
-                      <Ikon navn="motte-ikke" />
-                    </button>
-                  ) : (
-                    <span className="w-7 shrink-0" />
-                  )}
+                    {r.samtaleId && r.medlemmer.length === 1 ? (
+                      <button
+                        data-ikke-dra
+                        onClick={() => onMotte(r)}
+                        aria-pressed={!r.motte}
+                        title={
+                          r.motte
+                            ? "Møtte ikke: raden blir stående med klokkeslettet sitt"
+                            : "Møtte likevel"
+                        }
+                        className={`grid h-7 w-7 shrink-0 place-items-center rounded-vanlig ${
+                          r.motte
+                            ? "text-blekk-svakest hover:bg-flate hover:text-blekk"
+                            : "text-feil"
+                        }`}
+                      >
+                        <Ikon navn="motte-ikke" />
+                      </button>
+                    ) : (
+                      <span className="w-7 shrink-0" />
+                    )}
+                  </div>
                 </div>
               </Fragment>
             );

@@ -1,6 +1,4 @@
 import { useState } from "react";
-import type {} from "../../data/skolear";
-import type {} from "../../data/fag";
 import { type Oktvalg } from "../../data/vurderinger";
 import {
   kapasitet,

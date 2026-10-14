@@ -1,5 +1,3 @@
-import type {} from "../../data/skolear";
-import type {} from "../../data/fag";
 import { type Samtaledag } from "../../data/samtale";
 import { TEMATEKST, temafarge } from "../../ui/farger";
 
