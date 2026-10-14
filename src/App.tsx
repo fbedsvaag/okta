@@ -8,7 +8,13 @@ import { brukGlass } from "./ui/glass";
 import { brukPalett } from "./ui/palett";
 import { brukBevegelse } from "./ui/bevegelse";
 import { ukenummer } from "./data/kalender";
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import {
   brukTekstskala,
   hentAktivtSkolear,
@@ -715,8 +721,49 @@ function Verktoylinje({
   const dag = useIdag();
   // Sveip med to fingre: til høyre tilbake, til venstre fram.
   const sveip = useSveip(onTilbake, onFram, kanTilbake, kanFram);
+
+  // Får ikke skjermens knapper plass, kommer en pil ytterst til høyre.
+  // Den bretter linja ut over flere rader, og sammen igjen. Ny skjerm:
+  // tilbake til én rad.
+  const [spor, setSpor] = useState<HTMLElement | null>(null);
+  const [flyter, setFlyter] = useState(false);
+  const [utvidet, setUtvidet] = useState(false);
+  const utvidetRef = useRef(false);
+  utvidetRef.current = utvidet;
+  const sporRef = useCallback(
+    (el: HTMLElement | null) => {
+      onSpor(el);
+      setSpor(el);
+    },
+    [onSpor],
+  );
+  useEffect(() => setUtvidet(false), [visning]);
+  useLayoutEffect(() => {
+    if (!spor) return;
+    const sjekk = () => {
+      // Utbrettet bryter linja, så da er det ingenting å måle.
+      if (utvidetRef.current) return;
+      setFlyter(spor.scrollWidth > spor.clientWidth + 1);
+    };
+    const ro = new ResizeObserver(sjekk);
+    ro.observe(spor);
+    const mo = new MutationObserver(sjekk);
+    mo.observe(spor, { childList: true, subtree: true, characterData: true });
+    sjekk();
+    return () => {
+      ro.disconnect();
+      mo.disconnect();
+    };
+  }, [spor, utvidet]);
+
   return (
-    <div className="glass-verktoy ikkeutskrift mx-3 mt-2.5 flex h-12 shrink-0 items-center gap-2.5 rounded-full pl-2 pr-2">
+    <div
+      className={`glass-verktoy ikkeutskrift mx-3 mt-2.5 flex shrink-0 gap-2.5 pl-2 pr-2 ${
+        utvidet
+          ? "min-h-12 items-start rounded-[24px] py-2"
+          : "h-12 items-center rounded-full"
+      }`}
+    >
       {/*
         Tilbake og fram, som i en nettleser (⌘[ ⌘]). Sto før nederst i
         sidemenyen, der de var vanskelige å finne.
@@ -759,7 +806,29 @@ function Verktoylinje({
           Uke {ukenummer(dag)}
         </span>
       )}
-      <div ref={onSpor} className="flex min-w-0 flex-1 items-center gap-2" />
+      <div
+        ref={sporRef}
+        className={`flex min-w-0 flex-1 items-center gap-2 ${
+          utvidet
+            ? "flex-wrap gap-y-1.5"
+            : flyter
+              ? "overflow-hidden [mask-image:linear-gradient(to_right,black_calc(100%-28px),transparent)]"
+              : "overflow-hidden"
+        }`}
+      />
+      {(flyter || utvidet) && (
+        <button
+          onClick={() => setUtvidet((u) => !u)}
+          aria-expanded={utvidet}
+          title={utvidet ? "Vis på én linje" : "Vis alle knappene"}
+          className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-blekk-dempet hover:bg-flate hover:text-blekk"
+        >
+          <Ikon
+            navn="vinkel"
+            klasse={`transition-transform ${utvidet ? "rotate-180" : ""}`}
+          />
+        </button>
+      )}
     </div>
   );
 }

@@ -122,6 +122,7 @@ export function Ikon({
     | "hake"
     | "pil"
     | "markor"
+    | "vinkel"
     | "opp"
     | "ned"
     | "motte-ikke"
@@ -224,6 +225,12 @@ export function Ikon({
       return (
         <svg {...felles}>
           <path d="M8 3.5v9M4.5 9L8 12.5 11.5 9" />
+        </svg>
+      );
+    case "vinkel":
+      return (
+        <svg {...felles}>
+          <path d="M4.5 6.5L8 10l3.5-3.5" />
         </svg>
       );
     case "markor":
