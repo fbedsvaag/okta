@@ -40,6 +40,19 @@ Planen lagres som markdown i `okt.plan`: `- [ ] Gjennomgang av nytt stoff · 30 
 Det er med vilje: arkivet (§8) skrives som lesbare filer, og planen skal
 kunne leses uten appen.
 
+Slik ser planleggingen ut nå (dummydata):
+
+![Øktkortet i planlegging, 14.10.2026](bestilling/oktkort-planlegging.jpg)
+
+To ting å merke seg i bildet:
+
+- **Kompetansemålene tar mest plass.** Alle fagets mål (her 17 lange
+  linjer) står utfoldet under planen, også når ingen er valgt. Planen, som
+  er det læreren jobber med i denne modusen, drukner. Bør målene foldes
+  sammen, eller bare vise de valgte og periodens?
+- **Summen er lett å overse.** «1,5 t av 1,5 t» står i liten grå tekst i
+  overskriften. Tidslinjen under kan erstatte den.
+
 ## Hva læreren vil
 
 ### 1. Planlegging: aktivitet, beskrivelse og tidsbruk
