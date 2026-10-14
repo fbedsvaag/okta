@@ -538,6 +538,70 @@ sjekkes ved å se på en Windows-skjerm uten at det står i en test.
   Installer. I betaskjemaet legges «Mac eller Windows?» til som første
   spørsmål.
 
+## 15. Øktkortet og kalendertitler (14.10, lerret runde 15)
+
+Svar på `docs/bestilling-oktkort.md`. Lerretene er fasit: `OktPlanNy`,
+`OktLive` og `KalenderTitler` i `docs/lerret/`. Prøv dem i nettleseren;
+de er interaktive.
+
+- [ ] **15.1 Titler i kalenderen (måned).** Hver økt er en brikke i to
+  linjer: fagkode (fagfargen, 600) og klokkeslett (dempet) på første,
+  tittelen på andre, inntil to linjer, så «…». Samme svake fagtone som før,
+  radius 5. Hele «FAG · 08:30 · tittel» i verktøytipset. Mentorsamtaler som
+  før, men på én linje. Dagens dato i aksentfarget merke. Gjelder også uke.
+- [ ] **15.2 Planlegging: aktiviteter.** Hver rad: ⋮⋮ (dra), starttid
+  (regnet ut, dempet), tittel, minutter med − / + i steg på 5, og ▸ som
+  folder ut beskrivelsen under raden. Lukket rad med beskrivelse viser
+  første linje grått etter tittelen. Ingen avkrysning i planleggingen.
+  «+ Aktivitet» og «+ Pause» under lista. ↵ lager ny aktivitet, ⌥↑↓ flytter.
+- [ ] **15.3 Tidslinjen i planleggingen** står over lista: 48 px, ett felt
+  per aktivitet med bredde etter minuttene, tittel og «30 min» inni. Nøytrale
+  felt (`#efecf6`, kant `#e3ddf0`), valgt felt hvitt med aksentring. Pause
+  skravert. Klokkeslett hvert kvarter under, og en strek ved øktas slutt.
+  Går planen opp: «90 av 90 min · går opp». Luft: stiplet felt «Luft ·
+  10 min». For mye: tidslinjen strekker seg forbi sluttstreken, og summen
+  sier «10 min for mye» i vanlig blekk, uten rødt. **Dra i kanten mellom to
+  felt** endrer minuttene i steg på 5 (rekkefølgen byttes i lista, ikke på
+  tidslinjen). Klikk på et felt velger raden. Summen i overskriften
+  erstatter «1,5 t av 1,5 t».
+- [ ] **15.4 Kompetansemål foldet sammen.** Bare valgte mål og periodens
+  mål vises, med «Vis alle 17 ▾». Overskriften sier «1 valgt · ● periodens
+  mål».
+- [ ] **15.5 Faktaraden** (dato, tid, rom, periode, vurdering) på én linje
+  med etiketter over, lekse og agenda i to kolonner under. Mindre plass,
+  samme innhold.
+- [ ] **15.6 Live tidslinje i skåringen.** En stripe rett under arkhodet,
+  over hele bredden, over elevlista: til venstre «Nå» og aktiviteten, i
+  midten stripen (12 px) med felt per aktivitet, ferdige mørkere, den aktive
+  med aksentkant og framdrift fylt inn, nå-markør i aksent med klokkeslettet
+  under, strek ved slutt; til høyre «5 av 30 min» og «29 min igjen av økta»
+  eller «6 min etter planen · 29 min igjen». Statusmerket i hodet sier
+  «Pågår · 29 min igjen».
+  - **Ligger etter:** en aktivitet som ikke er krysset av når tida er ute,
+    varer til den krysses av. Resten flytter seg; det som havner etter
+    slutt, står tonet med kant, og i lista «6 min over slutt» eller «rekker
+    ikke». Aldri rødt.
+  - **Før start:** hele planen tonet, ingen markør, «Starter om 12 min»
+    og «Først: …».
+  - **Etter slutt:** ingen markør, «Ferdig 10:00 · 3 av 4 aktiviteter
+    krysset av» og «Skriv i øktloggen før du lukker».
+  - **Uten plan:** tom stripe med nå-markør og tid igjen; i høyre kolonne en
+    stiplet boks «Ingen plan for økta. Legg til aktivitet åpner Planlegging».
+  - **Pause** er egen type: skravert, uten avkrysning, krysses av av seg selv
+    når tida er gått.
+  - Stripen oppdateres én gang i minuttet, **uten overgang**. Skåringen
+    påvirkes ikke.
+- [ ] **15.7 Planen i høyre kolonne i skåringen:** én rad per aktivitet med
+  avkrysning (ett klikk; tidspunktet lagres), tid til høyre (ferdig-klokkeslett,
+  «25 min igjen» på den aktive, ellers fra–til). Den aktive er uthevet med
+  svak aksentflate og en tynn framdriftsstrek.
+- [ ] **15.8 Lagring.** Fortsatt lesbar markdown i `okt.plan`:
+  `- [ ] Gruppearbeid: kildekritikk · 30 min`, beskrivelsen som innrykkede
+  linjer under (fire mellomrom), og pause uten avkrysningsboks:
+  `- Pause · 10 min`. Tidspunktet en aktivitet ble krysset av lagres som
+  `- [x] Gjennomgang · 30 min · ferdig 09:16`. Eldre planer uten disse
+  feltene leses som før. Plan og beskrivelse går aldri ut av appen.
+
 ## Ikke nå
 
 Ting som er vurdert og lagt bort med vilje. Står her så de ikke dukker opp
