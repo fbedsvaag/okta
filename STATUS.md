@@ -50,8 +50,10 @@ OktLive. OktLiveVertikal er ikke bygget (ikke bestemt).
   - Rettet underveis: to økter fikk ikke plass i en dagrute, titler ble
     klippet midt i en linje i uka, esc i en meny lukket hele arket, og
     markøren startet på feil rad.
-  - Full i selve appen er ikke prøvd med mus. Testingen stoppet da Mac-en
-    ble tatt i bruk.
+  - Full er prøvd med mus i appen: skillet og stokkingen i tidslinjen,
+    live-stripa mens økta pågår, «+5 min» og avkrysning før tida.
+    «+ Aktivitet» og «+ Pause» brøt over to linjer i et smalt ark og er
+    rettet.
 
 ## Runde 10 og 11 (07.10, ARBEIDSLISTE §10 og §11)
 

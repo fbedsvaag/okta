@@ -210,13 +210,13 @@ export function Oktplan({
       <div className="mt-2 flex items-center gap-2 pl-[80px]">
         <button
           onClick={() => leggTil(null)}
-          className="h-7 rounded-full border border-linje bg-ark px-3 text-[calc(12.5px*var(--tekst-skala))] hover:bg-flate"
+          className="h-7 shrink-0 whitespace-nowrap rounded-full border border-linje bg-ark px-3 text-[calc(12.5px*var(--tekst-skala))] hover:bg-flate"
         >
           + Aktivitet
         </button>
         <button
           onClick={() => leggTil(null, { type: "pause", tekst: "Pause" })}
-          className="h-7 rounded-full px-3 text-[calc(12.5px*var(--tekst-skala))] text-blekk-dempet hover:bg-flate hover:text-blekk"
+          className="h-7 shrink-0 whitespace-nowrap rounded-full px-3 text-[calc(12.5px*var(--tekst-skala))] text-blekk-dempet hover:bg-flate hover:text-blekk"
         >
           + Pause
         </button>
