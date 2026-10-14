@@ -810,7 +810,7 @@ function Verktoylinje({
         ref={sporRef}
         className={`flex min-w-0 flex-1 items-center gap-2 ${
           utvidet
-            ? "flex-wrap gap-y-1.5"
+            ? "verktoy-utbrettet flex-wrap gap-y-1.5"
             : flyter
               ? "overflow-hidden [mask-image:linear-gradient(to_right,black_calc(100%-28px),transparent)]"
               : "overflow-hidden"
