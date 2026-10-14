@@ -35,7 +35,7 @@ import { Tastestripe, Tasthint } from "../ui/Tastestripe";
 import { tast } from "../ui/taster";
 import { idag as dagensDato } from "../db";
 import { Velger } from "../ui/Velger";
-import { Oktplan } from "./Oktplan";
+import { Oktplan, usePlanvisning } from "./Oktplan";
 
 /**
  * Økta i planlegging (ARBEIDSLISTE 11.5, lerretet «OktPlan»).
@@ -66,17 +66,22 @@ export function OktPlanlegging({
     await endreOkt(okt.id, felt);
     onEndret();
   }
+  // Øktplan: Enkel | Full (15.10). Ingenting tegnes før valget er lest,
+  // så planen ikke blinker fra den ene til den andre.
+  const visning = usePlanvisning();
+  if (!visning) return null;
+  const enkel = visning === "enkel";
 
   return (
     <>
       <div className="flex min-h-0 flex-1">
         <div className="min-w-0 flex-1 overflow-y-auto px-[26px] pb-6 pt-[18px]">
           {/* Faktaraden: alt på én linje, med etiketter over (15.5). */}
-          <Fakta okt={okt} onLagre={lagre} />
+          <Fakta okt={okt} enkel={enkel} onLagre={lagre} />
           <div className="mt-4 grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-x-4">
             <Tekstfelt
               etikett="Lekse"
-              hint="står på årsplanen"
+              hint={enkel ? undefined : "står på årsplanen"}
               verdi={okt.lekse}
               plassholder="Hva elevene skal ha gjort"
               onLagre={(v) => lagre({ lekse: v })}
@@ -84,7 +89,7 @@ export function OktPlanlegging({
             <div>
               <Tekstfelt
                 etikett="Agenda til elevene"
-                hint="går ut i kalenderen"
+                hint={enkel ? undefined : "går ut i kalenderen"}
                 verdi={okt.agenda}
                 plassholder="Repetisjon · Case i grupper · Exit-lapp"
                 onLagre={(v) => lagre({ agenda: v })}
@@ -93,8 +98,21 @@ export function OktPlanlegging({
             </div>
           </div>
 
-          <Oktplan okt={okt} onLagre={(plan) => lagre({ plan })} />
-          <Mal okt={okt} periode={periode} />
+          <Oktplan
+            okt={okt}
+            enkel={enkel}
+            onLagre={(plan) => lagre({ plan })}
+          />
+          <Mal okt={okt} periode={periode} enkel={enkel} />
+          {/* Enkel: vurderingen står her, ikke i faktaraden. */}
+          {enkel && (
+            <div className="mt-4 flex items-center gap-2.5 text-[calc(13.5px*var(--tekst-skala))]">
+              <span className="text-[calc(12px*var(--tekst-skala))] text-blekk-dempet">
+                Vurdering
+              </span>
+              <Vurdering okt={okt} onEndret={() => void lagre({})} />
+            </div>
+          )}
 
           <div className="mt-6 flex gap-4">
             <button
@@ -131,8 +149,12 @@ export function OktPlanlegging({
 
       <Tastestripe klasse="shrink-0 justify-start gap-4 px-[22px]">
         <Tasthint taster={[tast("⌘"), "←", "→"]}>forrige / neste økt</Tasthint>
-        <Tasthint taster={["↵"]}>ny aktivitet</Tasthint>
-        <Tasthint taster={[tast("⌥"), "↑", "↓"]}>flytt aktivitet</Tasthint>
+        <Tasthint taster={["↵"]}>
+          {enkel ? "ny linje" : "ny aktivitet"}
+        </Tasthint>
+        <Tasthint taster={[tast("⌥"), "↑", "↓"]}>
+          {enkel ? "flytt linje" : "flytt aktivitet"}
+        </Tasthint>
         <span className="ml-auto">
           <Tasthint taster={["esc"]}>lukk, alt er lagret</Tasthint>
         </span>
@@ -145,9 +167,11 @@ export function OktPlanlegging({
 
 function Fakta({
   okt,
+  enkel,
   onLagre,
 }: {
   okt: Okt;
+  enkel: boolean;
   onLagre: (felt: Parameters<typeof endreOkt>[1]) => Promise<void>;
 }) {
   const [perioder, setPerioder] = useState<Periode[]>([]);
@@ -229,9 +253,11 @@ function Fakta({
           ]}
         />
       </Rad>
-      <Rad etikett="Vurdering">
-        <Vurdering okt={okt} onEndret={() => void onLagre({})} />
-      </Rad>
+      {!enkel && (
+        <Rad etikett="Vurdering">
+          <Vurdering okt={okt} onEndret={() => void onLagre({})} />
+        </Rad>
+      )}
     </div>
   );
 }
@@ -316,7 +342,17 @@ function Kopier({ okt }: { okt: Okt }) {
  * merket med en prikk, og valgte mål i full farge. Fag uten Udir-kode får
  * et fritekstfelt.
  */
-function Mal({ okt, periode }: { okt: Okt; periode: Periode | null }) {
+function Mal({
+  okt,
+  periode,
+  enkel,
+}: {
+  okt: Okt;
+  periode: Periode | null;
+  /** Enkel: foldet til én linje til den åpnes */
+  enkel: boolean;
+}) {
+  const [apen, setApen] = useState(false);
   // Prikken for periodens mål har periodens farge.
   const farge = periode?.farge ?? "var(--color-aksent)";
   const [mal, setMal] = useState<Oktmal | null>(null);
@@ -359,6 +395,22 @@ function Mal({ okt, periode }: { okt: Okt; periode: Periode | null }) {
   const synlige = visAlle
     ? liste
     : liste.filter((k) => valgt.has(k.kode) || periodens.has(k.kode));
+
+  if (enkel && !apen)
+    return (
+      <button
+        onClick={() => setApen(true)}
+        className="mt-6 flex items-baseline gap-2 text-left"
+      >
+        <span className="text-[12px] text-blekk-svak">▸</span>
+        <span className="text-[calc(15px*var(--tekst-skala))] font-semibold">
+          Kompetansemål
+        </span>
+        <span className="text-[calc(12px*var(--tekst-skala))] text-blekk-svak">
+          {valgt.size} valgt
+        </span>
+      </button>
+    );
 
   return (
     <section className="mt-7">

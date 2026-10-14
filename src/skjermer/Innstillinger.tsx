@@ -52,6 +52,7 @@ import {
   systemnavn,
 } from "../ui/plattformord";
 import { invoke } from "@tauri-apps/api/core";
+import { PLANVISNING, lesPlanvisning, type Planvisning } from "../data/oktplan";
 
 /**
  * Globale innstillinger, SPEC §4.8.
@@ -119,6 +120,7 @@ export function Innstillinger({
   const [feedFeil, setFeedFeil] = useState<string | null>(null);
   const [kopiert, setKopiert] = useState(false);
   const [varighet, setVarighet] = useState("180");
+  const [planvisning, setPlanvisning] = useState<Planvisning>("enkel");
   const [lagret, setLagret] = useState(false);
   const [skalaer, setSkalaer] = useState<Skala[]>([]);
   const [kopier, setKopier] = useState<Kopi[]>([]);
@@ -211,6 +213,9 @@ export function Innstillinger({
       .catch(() => {});
     void hentInnstilling("standard_varighet_min").then((v) =>
       setVarighet(v ?? "180"),
+    );
+    void hentInnstilling(PLANVISNING).then((v) =>
+      setPlanvisning(lesPlanvisning(v)),
     );
     void (async () => {
       const s = await hentSkalaer();
@@ -486,6 +491,22 @@ export function Innstillinger({
                   setTekstskala(v);
                   settTekstskala(v);
                   await settInnstilling(TEKSTSKALA, v);
+                }}
+              />
+            </Rad>
+            <Rad
+              etikett="Øktplan"
+              hjelp="Enkel: en liste med minutter. Full: tidslinje du drar i, beskrivelser og pauser. Det som er skrevet i Full, blir liggende om du bytter."
+            >
+              <Bryter
+                valg={[
+                  { id: "enkel", navn: "Enkel" },
+                  { id: "full", navn: "Full" },
+                ]}
+                verdi={planvisning}
+                settVerdi={async (v) => {
+                  setPlanvisning(lesPlanvisning(v));
+                  await settInnstilling(PLANVISNING, v);
                 }}
               />
             </Rad>

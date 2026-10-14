@@ -16,8 +16,12 @@ import {
   startTider,
   sumTekst,
   tilMinutter,
+  PLANVISNING,
+  lesPlanvisning,
   type Planpunkt,
+  type Planvisning,
 } from "../data/oktplan";
+import { hentInnstilling } from "../data/skolear";
 import { nyPlass, useDra } from "../ui/dra";
 
 /**
@@ -45,9 +49,12 @@ const beholdes = (p: Planpunkt) => p.type === "pause" || p.tekst.trim() !== "";
 
 export function Oktplan({
   okt,
+  enkel = false,
   onLagre,
 }: {
   okt: Okt;
+  /** Øktplan: Enkel (15.10): en liste med minutter, uten tidslinje å dra i */
+  enkel?: boolean;
   onLagre: (plan: string | null) => Promise<void>;
 }) {
   const [rader, setRader] = useState<Rad[]>([]);
@@ -116,6 +123,17 @@ export function Oktplan({
   const tider = startTider(rader, start);
   const lang = lengste(rader);
   const slutt = start ? klokke(tilMinutter(start) + lengde) : null;
+
+  if (enkel)
+    return (
+      <EnkelPlan
+        rader={rader}
+        lengde={lengde}
+        lagre={lagre}
+        flytt={flytt}
+        slett={slett}
+      />
+    );
 
   return (
     <section className="mt-6">
@@ -718,4 +736,204 @@ function Beskrivelse({
       </div>
     </div>
   );
+}
+
+// -------------------------------------------------------------------- enkel
+
+/**
+ * Øktplan: Enkel (15.10, lerretet OktPlanEnkel). En ren liste med minutter
+ * og en tynn stolpe uten tekst. Det man skriver, kan ha minuttene med:
+ * «Film · 15 min». Ingen dra, ingen egen pausetype, og beskrivelsene fra
+ * Full vises ikke, men blir liggende.
+ */
+function EnkelPlan({
+  rader,
+  lengde,
+  lagre,
+  flytt,
+  slett,
+}: {
+  rader: Rad[];
+  lengde: number;
+  lagre: (r: Rad[]) => void;
+  flytt: (fra: number, til: number) => void;
+  slett: (id: string) => number;
+}) {
+  const [skriver, setSkriver] = useState<string | null>(null);
+  const nyLinje = useRef<HTMLInputElement>(null);
+  const sum = minutter(rader);
+  const diff = sum - lengde;
+  const skala = Math.max(lengde, sum, 1);
+  const pst = (m: number) => `${(m / skala) * 100}%`;
+  let pos = 0;
+
+  /** Teksten i en rad slik den skrives: tittel, og minuttene bak. */
+  const somTekst = (r: Rad) => (r.min ? `${r.tekst} · ${r.min} min` : r.tekst);
+
+  function ferdig(r: Rad, i: number, tekst: string, neste: boolean) {
+    setSkriver(null);
+    const t = lesTittel(tekst);
+    const her = { ...r, tekst: t.tekst, min: t.min };
+    if (!beholdes(her)) {
+      lagre(rader.filter((x) => x.id !== r.id));
+      return;
+    }
+    const nye = rader.map((x) => (x.id === r.id ? her : x));
+    if (neste) {
+      const n = ny();
+      nye.splice(i + 1, 0, n);
+      setSkriver(n.id);
+    }
+    lagre(nye);
+  }
+
+  return (
+    <section className="mt-6">
+      <div className="mb-2.5 flex items-baseline gap-2.5">
+        <h2 className="text-[calc(15px*var(--tekst-skala))] font-semibold">
+          Plan
+        </h2>
+        <span
+          className={`ml-auto text-[calc(13px*var(--tekst-skala))] tabular-nums ${
+            diff > 0 ? "text-blekk" : "text-blekk-dempet"
+          }`}
+        >
+          {sum} av {lengde} min{diff > 0 && ` · ${diff} min for mye`}
+        </span>
+      </div>
+
+      {/* Stolpen: 6 px, uten tekst. */}
+      <div className="relative mb-3 h-1.5">
+        {rader.map((r) => {
+          const fra = pos;
+          pos += r.min ?? 0;
+          return (
+            <span
+              key={r.id}
+              className="absolute inset-y-0 rounded-[3px]"
+              style={{
+                left: `calc(${pst(fra)} + 1px)`,
+                width: `calc(${pst(r.min ?? 0)} - 2px)`,
+                background:
+                  r.type === "pause"
+                    ? "var(--color-valgt)"
+                    : "var(--color-linje-sterk)",
+                opacity: fra >= lengde ? 0.5 : 1,
+              }}
+            />
+          );
+        })}
+        {sum > lengde && (
+          <span
+            className="absolute -inset-y-1 border-l-[1.5px] border-blekk/45"
+            style={{ left: pst(lengde) }}
+          />
+        )}
+      </div>
+
+      <div className="border-t border-linje-medium">
+        {rader.map((r, i) => (
+          <div
+            key={r.id}
+            className="grid min-h-[38px] grid-cols-[minmax(0,1fr)_70px] items-center border-b border-linje-svak px-2.5 text-[calc(14px*var(--tekst-skala))]"
+          >
+            {skriver === r.id ? (
+              <Linjefelt
+                start={somTekst(r)}
+                onFerdig={(t, neste) => ferdig(r, i, t, neste)}
+                onSlett={() => {
+                  const k = slett(r.id);
+                  setSkriver(rader[k - 1]?.id ?? null);
+                }}
+                onFlytt={(d) => flytt(i, i + d)}
+              />
+            ) : (
+              <button
+                onClick={() => setSkriver(r.id)}
+                className={`truncate text-left ${
+                  r.type === "pause" ? "text-blekk-dempet" : "text-blekk"
+                }`}
+              >
+                {r.tekst}
+              </button>
+            )}
+            <span className="text-right text-[calc(13px*var(--tekst-skala))] tabular-nums text-blekk-dempet">
+              {r.min ? `${r.min} min` : ""}
+            </span>
+          </div>
+        ))}
+        <div className="grid min-h-[38px] grid-cols-[minmax(0,1fr)_70px] items-center px-2.5 text-[calc(14px*var(--tekst-skala))]">
+          <input
+            ref={nyLinje}
+            placeholder="Skriv en ny linje, for eksempel «Film · 15 min»"
+            onKeyDown={(e) => {
+              if (e.key !== "Enter") return;
+              e.preventDefault();
+              const t = lesTittel(e.currentTarget.value);
+              if (!t.tekst) return;
+              e.currentTarget.value = "";
+              lagre([...rader, ny({ tekst: t.tekst, min: t.min })]);
+            }}
+            className="min-w-0 bg-transparent outline-none placeholder:text-blekk-svak"
+          />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Linjefelt({
+  start,
+  onFerdig,
+  onSlett,
+  onFlytt,
+}: {
+  start: string;
+  onFerdig: (tekst: string, neste: boolean) => void;
+  onSlett: () => void;
+  onFlytt: (d: number) => void;
+}) {
+  const felt = useRef<HTMLInputElement>(null);
+  const ferdig = useRef(false);
+  useLayoutEffect(() => felt.current?.focus(), []);
+  const avslutt = (neste: boolean) => {
+    if (ferdig.current) return;
+    ferdig.current = true;
+    onFerdig(felt.current?.value ?? "", neste);
+  };
+  return (
+    <input
+      ref={felt}
+      defaultValue={start}
+      placeholder="Hva skal skje · 10 min"
+      onBlur={() => avslutt(false)}
+      onKeyDown={(e) => {
+        if (e.altKey && (e.key === "ArrowUp" || e.key === "ArrowDown")) {
+          e.preventDefault();
+          onFlytt(e.key === "ArrowUp" ? -1 : 1);
+        } else if (e.key === "Enter") {
+          e.preventDefault();
+          avslutt(true);
+        } else if (e.key === "Escape") {
+          e.preventDefault();
+          e.stopPropagation();
+          avslutt(false);
+        } else if (e.key === "Backspace" && e.currentTarget.value === "") {
+          e.preventDefault();
+          ferdig.current = true;
+          onSlett();
+        }
+      }}
+      className="min-w-0 bg-transparent outline-none placeholder:text-blekk-svak"
+    />
+  );
+}
+
+/** Øktplan: Enkel eller Full, lest fra innstillingene. null mens den leses. */
+export function usePlanvisning(): Planvisning | null {
+  const [v, setV] = useState<Planvisning | null>(null);
+  useEffect(() => {
+    void hentInnstilling(PLANVISNING).then((x) => setV(lesPlanvisning(x)));
+  }, []);
+  return v;
 }

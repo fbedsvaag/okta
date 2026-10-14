@@ -189,6 +189,18 @@ export function skrivPlan(punkter: Planpunkt[], rest: string[]): string | null {
   return linjer.length ? linjer.join("\n") : null;
 }
 
+// ----------------------------------------------------------- visningen
+
+/**
+ * Øktplan: Enkel | Full (Innstillinger › Generelt, 15.10). Enkel er en
+ * liste med minutter; Full har tidslinjen man drar i, beskrivelser og
+ * pauser. Beskrivelser skrevet i Full blir liggende i Enkel.
+ */
+export type Planvisning = "enkel" | "full";
+export const PLANVISNING = "oktplan_visning";
+export const lesPlanvisning = (v: string | null): Planvisning =>
+  v === "full" ? "full" : "enkel";
+
 // ------------------------------------------------------- tid i planen
 
 /** Lengdene man kan velge med ett klikk (15.3). */
