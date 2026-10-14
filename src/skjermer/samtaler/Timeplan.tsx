@@ -87,6 +87,10 @@ export function Timeplan({
     if (e.button !== 0) return;
     if ((e.target as HTMLElement).closest("[data-ikke-dra], input, textarea"))
       return;
+    // Ikke la trykket gi fokus til navneknappen. Flyttes raden med fokus,
+    // ruller WebKit for å holde den synlig, og vinduet hoppet ved slipp.
+    // Klikket kommer likevel, så notatet åpnes som før uten drag.
+    e.preventDefault();
     const startY = e.clientY;
     const startX = e.clientX;
     let pekerY = startY;
@@ -164,7 +168,12 @@ export function Timeplan({
           ?.querySelector<HTMLElement>("[data-innhold]");
         const elevId = plan[fra.dag]?.rader[fra.rad]?.elevId;
         if (kort && elevId)
-          slippet.current = { elevId, top: kort.getBoundingClientRect().top };
+          slippet.current = {
+            elevId,
+            top: kort.getBoundingClientRect().top,
+            sone,
+            rullet: sone?.scrollTop ?? 0,
+          };
       }
       setDra(null);
       if (aktiv && mal) utfor(fra, mal);
@@ -276,11 +285,21 @@ export function Timeplan({
   }
 
   // Kortet som nettopp ble sluppet, glir fra der det sto til plassen sin.
-  const slippet = useRef<{ elevId: string; top: number } | null>(null);
+  const slippet = useRef<{
+    elevId: string;
+    top: number;
+    sone: HTMLElement | null;
+    rullet: number;
+  } | null>(null);
   useLayoutEffect(() => {
     const sl = slippet.current;
     if (!sl) return;
     slippet.current = null;
+    // Når raden flyttes, tar WebKit den ut før den settes inn igjen. Står
+    // vinduet helt nederst, klemmes det da opp én rad og blir stående der.
+    // Rulleposisjonen fra slippet settes tilbake før skjermen tegnes.
+    if (sl.sone && sl.sone.scrollTop !== sl.rullet)
+      sl.sone.scrollTop = sl.rullet;
     const el = document.querySelector<HTMLElement>(
       `[data-innhold="${CSS.escape(sl.elevId)}"]`,
     );
@@ -339,10 +358,14 @@ export function Timeplan({
   const malTid = malPlass ? tidPa(malPlass.dag, malPlass.rad) : null;
 
   return (
-    // Luft nederst: en rad som gjør plass nederst på siste dag, skyves ut
-    // forbi lista. Uten plass til den ble lista høyere mens det ble dratt,
-    // og kortere igjen ved slipp, så vinduet rullet opp et stykke.
-    <div className="space-y-6 pb-16">
+    // Luft nederst, og klipt loddrett: kortet som dras og en rad som gjør
+    // plass nederst, skal ikke gjøre lista høyere. Ellers vokste den mens
+    // det ble dratt (og rulleflata fulgte med) og krympet ved slipp, så
+    // vinduet rullet opp et stykke.
+    <div
+      className="space-y-6 overflow-y-clip pb-16"
+      style={{ overflowAnchor: "none" }}
+    >
       {plan.map((d, dagIdx) => (
         <section key={d.dag.id}>
           {/* Dagen i Light (DESIGN.md §10), med tid og antall ved siden av. */}

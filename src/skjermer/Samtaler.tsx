@@ -1256,6 +1256,9 @@ export function Samtaler({
 
       <div
         className={`@container min-h-0 min-w-0 flex-1 overflow-auto ${visOppsett ? "pl-5 xl:pl-6" : ""}`}
+        // Ingen «scroll anchoring»: når timeplanen endrer rekkefølge, skal
+        // ikke vinduet rulle for å holde en rad på plass (hoppet ved slipp).
+        style={{ overflowAnchor: "none" }}
       >
         {/*
           Gult varsel øverst når det er for få plasser, og det sier hvem som
