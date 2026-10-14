@@ -1,4 +1,4 @@
-import { Fragment, useRef, useState } from "react";
+import { Fragment, useLayoutEffect, useRef, useState } from "react";
 import { useArk } from "../../ui/Arkstabel";
 import {
   merknad,
@@ -66,6 +66,9 @@ export function Timeplan({
   // Nederste halvdel av en rad betyr «etter denne». Er dagen det slippes på
   // full, bytter de to plass (§4.10), og raden som byttes står markert.
   type Mal = { dag: number; rad: number; etter: boolean; bytt: boolean };
+  // Lengden og kurven på bevegelsen når rader gjør plass og når kortet
+  // glir på plass: litt roligere enn resten av appen, og myk i enden.
+  const DRATID = "240ms cubic-bezier(0.2, 0.8, 0.2, 1)";
   const [dra, setDra] = useState<{
     fra: { dag: number; rad: number };
     dy: number;
@@ -99,9 +102,10 @@ export function Timeplan({
 
     const oppdater = () => {
       const rullet = (sone?.scrollTop ?? 0) - startRull;
-      const mal = finnMal(pekerY + rullet, fra);
+      const dy = pekerY - startY + rullet;
+      const mal = finnMal(dy, fra);
       sisteMal.current = mal;
-      setDra({ fra, dy: pekerY - startY + rullet, h, mal });
+      setDra({ fra, dy, h, mal });
     };
 
     const rull = () => {
@@ -127,6 +131,9 @@ export function Timeplan({
         if (Math.hypot(ev.clientX - startX, ev.clientY - startY) < 4) return;
         aktiv = true;
         draget.current = true;
+        // Ingen tekstmarkering mens det dras (dager, overskrifter, menyen).
+        document.documentElement.dataset.drar = "";
+        window.getSelection()?.removeAllRanges();
         malt.current = [...radEl.current].map(([k, el]) => {
           const [dag, rad] = k.split(":").map(Number);
           const r = el.getBoundingClientRect();
@@ -150,6 +157,15 @@ export function Timeplan({
       // ganger, og da ville eleven blitt flyttet to ganger.
       const mal = sisteMal.current;
       sisteMal.current = null;
+      delete document.documentElement.dataset.drar;
+      if (aktiv) {
+        const kort = radEl.current
+          .get(`${fra.dag}:${fra.rad}`)
+          ?.querySelector<HTMLElement>("[data-innhold]");
+        const elevId = plan[fra.dag]?.rader[fra.rad]?.elevId;
+        if (kort && elevId)
+          slippet.current = { elevId, top: kort.getBoundingClientRect().top };
+      }
       setDra(null);
       if (aktiv && mal) utfor(fra, mal);
       // Klikket som kommer etter slippet, skal ikke åpne notatet.
@@ -161,25 +177,63 @@ export function Timeplan({
     window.addEventListener("pointercancel", slipp);
   }
 
-  function finnMal(y: number, fra: { dag: number; rad: number }): Mal | null {
+  /**
+   * Hvor raden havner, ut fra hvor kortet står — ikke pekeren. En nabo gjør
+   * plass så snart kortet dekker 30 % av den, ikke først ved midten; da ser
+   * du tidlig hvor eleven havner. Mellom to dager avgjør midten av kortet.
+   */
+  function finnMal(dy: number, fra: { dag: number; rad: number }): Mal | null {
+    const egen = malt.current.find(
+      (m) => m.dag === fra.dag && m.rad === fra.rad,
+    );
     const andre = malt.current
       .filter((m) => !(m.dag === fra.dag && m.rad === fra.rad))
       .sort((a, b) => a.top - b.top);
-    if (andre.length === 0) return null;
-    // Raden pekeren står over, eller den nærmeste.
-    const over =
-      andre.find((m) => y >= m.top && y < m.bunn) ??
+    if (!egen || andre.length === 0) return null;
+    const topp = egen.top + dy;
+    const bunn = egen.bunn + dy;
+    const midt = (topp + bunn) / 2;
+    const DEKK = 0.3;
+
+    // Er dagen kortet står over full, bytter de to plass (§4.10).
+    const under =
+      andre.find((m) => midt >= m.top && midt < m.bunn) ??
       andre.reduce((best, m) =>
-        Math.abs((m.top + m.bunn) / 2 - y) <
-        Math.abs((best.top + best.bunn) / 2 - y)
+        Math.abs((m.top + m.bunn) / 2 - midt) <
+        Math.abs((best.top + best.bunn) / 2 - midt)
           ? m
           : best,
       );
-    const etter = y > (over.top + over.bunn) / 2;
-    const bytt =
-      over.dag !== fra.dag &&
-      plan[over.dag].rader.length >= kapasitetFor(over.dag);
-    return { dag: over.dag, rad: over.rad, etter: bytt ? false : etter, bytt };
+    if (
+      under.dag !== fra.dag &&
+      plan[under.dag].rader.length >= kapasitetFor(under.dag)
+    )
+      return { dag: under.dag, rad: under.rad, etter: false, bytt: true };
+
+    // Hvor mange rader som står foran kortet nå.
+    let foran = 0;
+    for (const m of andre) {
+      const hoyde = m.bunn - m.top;
+      const fraOver = m.top < egen.top;
+      const erForan = fraOver
+        ? !(topp < m.bunn - hoyde * DEKK)
+        : bunn > m.top + hoyde * DEKK;
+      if (erForan) foran++;
+      else break;
+    }
+    if (foran >= andre.length) {
+      const siste = andre[andre.length - 1];
+      return { dag: siste.dag, rad: siste.rad, etter: true, bytt: false };
+    }
+    const neste = andre[foran];
+    const forrige = andre[foran - 1];
+    if (
+      forrige &&
+      forrige.dag !== neste.dag &&
+      midt < (forrige.bunn + neste.top) / 2
+    )
+      return { dag: forrige.dag, rad: forrige.rad, etter: true, bytt: false };
+    return { dag: neste.dag, rad: neste.rad, etter: false, bytt: false };
   }
 
   /** Slippet: samme regler som før — innen dagen, eller til en annen dag. */
@@ -209,6 +263,27 @@ export function Timeplan({
     return 0;
   }
 
+  // Kortet som nettopp ble sluppet, glir fra der det sto til plassen sin.
+  const slippet = useRef<{ elevId: string; top: number } | null>(null);
+  useLayoutEffect(() => {
+    const sl = slippet.current;
+    if (!sl) return;
+    slippet.current = null;
+    const el = document.querySelector<HTMLElement>(
+      `[data-innhold="${CSS.escape(sl.elevId)}"]`,
+    );
+    if (!el) return;
+    const d = sl.top - el.getBoundingClientRect().top;
+    if (Math.abs(d) < 1) return;
+    el.style.transition = "none";
+    el.style.transform = `translateY(${d}px)`;
+    el.getBoundingClientRect();
+    el.style.transition = `transform ${DRATID}`;
+    el.style.transform = "";
+    const t = window.setTimeout(() => (el.style.transition = ""), 320);
+    return () => window.clearTimeout(t);
+  });
+
   function erDratt(dag: number, rad: number): boolean {
     return dra !== null && dra.fra.dag === dag && dra.fra.rad === rad;
   }
@@ -223,7 +298,7 @@ export function Timeplan({
       return { transform: `translateY(${dra.dy}px)`, transition: "none" };
     return {
       transform: `translateY(${forskyvning(dag, rad)}px)`,
-      transition: "transform var(--tid-inn) var(--ease-inn)",
+      transition: `transform ${DRATID}`,
     };
   }
 
@@ -271,6 +346,13 @@ export function Timeplan({
 
           {d.rader.map((r, radIdx) => {
             plass++;
+            // Samme elev to ganger i en dag skal ikke skje, men gjør det,
+            // må nøklene likevel være unike, ellers blir rader hengende igjen.
+            const like = d.rader
+              .slice(0, radIdx)
+              .filter(
+                (x) => x.elevId === r.elevId && x.motte === r.motte,
+              ).length;
             // Lunsjen står på sin plass i rekka: rett før den første samtalen
             // som begynner etter at pausen er over.
             const lunsjHer =
@@ -286,7 +368,9 @@ export function Timeplan({
               // Nøkkelen er eleven, ikke klokkeslettet: en flytting gir mange
               // rader nytt klokkeslett, og da ble de laget på nytt og blinket.
               // «motte» skiller en som ikke møtte fra samme elev satt opp igjen.
-              <Fragment key={`${r.elevId}${r.motte ? "" : "-ikke"}`}>
+              <Fragment
+                key={`${r.elevId}${r.motte ? "" : "-ikke"}${like ? `-${like}` : ""}`}
+              >
                 {lunsjHer && d.lunsj && (
                   <div className="flex items-baseline gap-3 border-b border-linje-svak bg-flate py-2 text-brod text-blekk-dempet">
                     <span className="w-7 shrink-0" />
@@ -366,6 +450,7 @@ export function Timeplan({
                     )}
                   </span>
                   <div
+                    data-innhold={r.elevId}
                     style={stil(dagIdx, radIdx)}
                     className={`flex min-w-0 flex-1 items-center gap-3 ${
                       erDratt(dagIdx, radIdx)
