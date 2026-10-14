@@ -7,6 +7,7 @@ import {
   snittfarge,
   hentKommendeVurderinger,
   hentTimeregnskap,
+  holdtNa,
   hentVurderingstimer,
   type Fagtimer,
   type Glipp,
@@ -29,6 +30,7 @@ import {
 import { hentElever, type ElevRad } from "../data/elever";
 import { lytt, lyttElever, lyttOktvisning } from "../data/endringer";
 import { useArk } from "../ui/Arkstabel";
+import { useMinutt } from "./Oktlive";
 
 /**
  * Årsoversikten på startskjermen.
@@ -228,10 +230,16 @@ function Timeregnskap({
 
 function Fagmaler({ fag }: { fag: Fagtimer }) {
   const ark = useArk();
+  // Hvor langt man er kommet i det planlagte, minutt for minutt: også en
+  // økt som pågår, teller med det som har gått av den.
+  const na = useMinutt();
+  const holdt = holdtNa(fag, na.getHours() * 60 + na.getMinutes()) / 60;
   const timer = fag.planlagtMin / 60;
   const mal = fag.arstimetall;
   const andel = mal && mal > 0 ? timer / mal : null;
+  const holdtAndel = mal && mal > 0 ? Math.min(holdt, timer) / mal : null;
   const over = andel !== null && andel > 1;
+  const farge = fag.farge ?? "var(--color-aksent)";
 
   return (
     <li>
@@ -256,17 +264,40 @@ function Fagmaler({ fag }: { fag: Fagtimer }) {
       </div>
 
       <div className="mt-1 flex items-center gap-2">
-        <div className="h-[6px] flex-1 overflow-clip rounded-liten bg-flate">
+        {/*
+          Det planlagte i en lys tone av fagfargen, det som er holdt til nå
+          i full farge, og en strek der man står.
+        */}
+        <div
+          className="relative h-[6px] flex-1 rounded-liten bg-flate"
+          title={`${rundt(holdt)} t holdt av ${rundt(timer)} t planlagt`}
+        >
           {andel !== null && (
             <div
-              className="h-full rounded-liten"
+              className="absolute inset-y-0 left-0 rounded-liten"
               style={{
                 width: `${Math.min(100, andel * 100)}%`,
                 background: over
-                  ? "var(--color-feil)"
-                  : (fag.farge ?? "var(--color-aksent)"),
+                  ? "color-mix(in srgb, var(--color-feil) 35%, var(--color-flate))"
+                  : `color-mix(in srgb, ${farge} 32%, var(--color-flate))`,
               }}
             />
+          )}
+          {holdtAndel !== null && holdtAndel > 0 && (
+            <>
+              <div
+                className="absolute inset-y-0 left-0 rounded-liten"
+                style={{
+                  width: `${Math.min(100, holdtAndel * 100)}%`,
+                  background: farge,
+                }}
+              />
+              <div
+                aria-hidden
+                className="absolute -inset-y-[3px] w-0.5 -translate-x-1/2 rounded-full bg-blekk"
+                style={{ left: `${Math.min(100, holdtAndel * 100)}%` }}
+              />
+            </>
           )}
         </div>
         <span className="w-28 shrink-0 text-right text-liten tabular-nums text-blekk-svak">

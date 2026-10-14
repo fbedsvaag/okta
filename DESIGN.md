@@ -417,7 +417,10 @@ En økt ingen er skåret i, er et hull i heatmapet.
 linja under (ikke fagnavnet). «Notat fra forrige økt» er en sammenleggbar boks under tittelen,
 med lister og avkrysning. Ingen oppsummeringssetning øverst — den gjentok
 bare «Dagens økter». Så uka som kalender, med tidsakse og nå-strek; tiden
-som har gått i dag har dempede fagfarger (ikke grått). Til høyre:
+som har gått i dag har dempede fagfarger (ikke grått). Timeregnskapet:
+per fag en stolpe mot årstimetallet, der det planlagte står i en lys tone
+av fagfargen, det som er holdt til nå i full farge, og en strek der man
+står. Streken flytter seg minutt for minutt, også midt i en økt. Til høyre:
 gjøremål med en sammenleggbar logg over det som er gjort siste 14 dager,
 vurderingsfrister (bare de som ikke er ferdig ført), elever som glipper
 (samme regel som Elever: minst to røde av de fem siste; lavest snitt

@@ -247,6 +247,21 @@ describe("avholdte økter", () => {
     expect(fag.avholdte).toBe(2);
     expect((await hentNokkeltall(fagId, idag)).avholdte).toBe(2);
   });
+
+  it("regner holdte minutter fram til nå, også midt i en økt", async () => {
+    const { hentTimeregnskap, holdtNa } = await import("./dashbord");
+    await opprettOkt(fagId, "MFL1", "2026-09-01", "08:30", 90); // forbi
+    await opprettOkt(fagId, "MFL1", "2026-09-30", "08:30", 90); // i dag
+    await opprettOkt(fagId, "MFL1", "2026-09-30", null, 60); // i dag, uten tid
+    await opprettOkt(fagId, "MFL1", "2026-10-06", "08:30", 90); // kommer
+    const [fag] = await hentTimeregnskap(skolearId, "2026-09-30");
+    expect(fag.holdtForMin).toBe(90);
+    expect(fag.idag).toHaveLength(2);
+    // Før økta i dag, midt i den, og etter den.
+    expect(holdtNa(fag, 8 * 60)).toBe(90);
+    expect(holdtNa(fag, 9 * 60)).toBe(120);
+    expect(holdtNa(fag, 12 * 60)).toBe(180);
+  });
 });
 
 describe("alias", () => {

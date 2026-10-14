@@ -186,7 +186,29 @@ export type Fagtimer = {
   antallOkter: number;
   /** Hvor mange av øktene som er avholdt: datert i dag eller tidligere */
   avholdte: number;
+  /** minuttene i øktene før i dag */
+  holdtForMin: number;
+  /** dagens økter som «08:30|90», til framdriften gjennom dagen */
+  idag: { klokkeslett: string | null; min: number }[];
 };
+
+/**
+ * Hvor mange av de planlagte minuttene som er holdt akkurat nå: alt før i
+ * dag, og av dagens økter det som har gått (en økt som pågår, teller med
+ * minuttene så langt). En økt i dag uten klokkeslett teller fra i morgen.
+ */
+export function holdtNa(
+  fag: Pick<Fagtimer, "holdtForMin" | "idag">,
+  naMin: number,
+): number {
+  let sum = fag.holdtForMin;
+  for (const o of fag.idag) {
+    if (!o.klokkeslett) continue;
+    const [t, m] = o.klokkeslett.split(":").map(Number);
+    sum += Math.max(0, Math.min(o.min, naMin - (t * 60 + m)));
+  }
+  return sum;
+}
 
 /**
  * Timene som går med til samtaledager, per fag — og for mentorsamtalene, som
@@ -239,7 +261,9 @@ export async function hentTimeregnskap(
 ): Promise<Fagtimer[]> {
   const vurdering = await hentVurderingstimer(skolearId);
   const rader = await hent<
-    Omit<Fagtimer, "vurderingTimer" | "vurderingAntall">
+    Omit<Fagtimer, "vurderingTimer" | "vurderingAntall" | "idag"> & {
+      idagOkter: string | null;
+    }
   >(
     `SELECT sf.id                                   AS skolearFagId,
             COALESCE(NULLIF(f.alias, ''), f.kode) AS kode,
@@ -250,7 +274,14 @@ export async function hentTimeregnskap(
             COUNT(o.id)                             AS antallOkter,
             COALESCE(SUM(
               CASE WHEN o.dato <= $2 THEN 1 ELSE 0 END), 0)
-                                                    AS avholdte
+                                                    AS avholdte,
+            COALESCE(SUM(
+              CASE WHEN o.dato < $2 THEN o.varighet_min ELSE 0 END), 0)
+                                                    AS holdtForMin,
+            GROUP_CONCAT(
+              CASE WHEN o.dato = $2
+                   THEN COALESCE(o.klokkeslett, '') || '|' || o.varighet_min
+              END, ',')                             AS idagOkter
        FROM skolear_fag sf
        JOIN fag f ON f.id = sf.fag_id
        JOIN skolear a ON a.id = sf.skolear_id
@@ -262,8 +293,15 @@ export async function hentTimeregnskap(
     [skolearId, idag],
   );
 
-  return rader.map((r) => ({
+  return rader.map(({ idagOkter, ...r }) => ({
     ...r,
+    idag: (idagOkter ?? "")
+      .split(",")
+      .filter(Boolean)
+      .map((x) => {
+        const [k, m] = x.split("|");
+        return { klokkeslett: k || null, min: Number(m) };
+      }),
     vurderingTimer: vurdering.get(r.skolearFagId)?.timer ?? 0,
     vurderingAntall: vurdering.get(r.skolearFagId)?.antall ?? 0,
   }));
