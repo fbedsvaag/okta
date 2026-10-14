@@ -51,14 +51,76 @@ export function narTekst(
 
 // ------------------------------------------------------------------- planen
 
-export type Planpunkt = { gjort: boolean; tekst: string; min: number | null };
+/**
+ * Ett punkt i planen (ARBEIDSLISTE 15.8): en aktivitet med avkrysning, eller
+ * en pause uten.
+ */
+export type Planpunkt = {
+  type: "aktivitet" | "pause";
+  tekst: string;
+  min: number | null;
+  /** krysset av, i planen eller i skåringen */
+  gjort: boolean;
+  /** klokkeslettet den ble krysset av, «09:16» */
+  ferdig: string | null;
+  /** minutter lagt til underveis med «+5 min» */
+  forlenget: number;
+  /** linjene under punktet; tom når det ikke er skrevet noe */
+  beskrivelse: string;
+};
 
-const PUNKT = /^\s*[-*]\s+\[( |x|X)\]\s*(.*?)(?:\s+·\s+(\d+)\s*min)?\s*$/;
+export function nyttPunkt(d: Partial<Planpunkt> = {}): Planpunkt {
+  return {
+    type: "aktivitet",
+    tekst: "",
+    min: null,
+    gjort: false,
+    ferdig: null,
+    forlenget: 0,
+    beskrivelse: "",
+    ...d,
+  };
+}
+
+const AKTIVITET = /^\s*[-*]\s+\[( |x|X)\]\s*(.*?)\s*$/;
+const PAUSE = /^\s*[-*]\s+(Pause\b.*?)\s*$/i;
+/** Det som kan stå bak tittelen, skilt med «·», i hvilken som helst rekkefølge. */
+const MIN = /\s+·\s+(\d+)\s*min$/;
+const FERDIG = /\s+·\s+ferdig\s+(\d{1,2}:\d{2})$/;
+const FORLENGET = /\s+·\s+\+(\d+)\s*min$/;
+/** Beskrivelsen: innrykk på fire mellomrom (eller tab) under punktet. */
+const INNRYKK = /^(?: {4}|\t)/;
+
+function lesHale(
+  tekst: string,
+): Pick<Planpunkt, "tekst" | "min" | "ferdig" | "forlenget"> {
+  let t = tekst;
+  let min: number | null = null;
+  let ferdig: string | null = null;
+  let forlenget = 0;
+  for (;;) {
+    let m: RegExpMatchArray | null;
+    if (forlenget === 0 && (m = t.match(FORLENGET))) forlenget = Number(m[1]);
+    else if (ferdig === null && (m = t.match(FERDIG))) ferdig = m[1];
+    else if (min === null && (m = t.match(MIN))) min = Number(m[1]);
+    else break;
+    t = t.slice(0, m.index);
+  }
+  return { tekst: t, min, ferdig, forlenget };
+}
 
 /**
- * Planen er markdown i `okt.plan` (§3.3): «- [ ] Tekst · 10 min». Linjer
- * som ikke er avkrysningspunkter, blir liggende som de er i `rest`, så
- * ingenting som er skrevet forsvinner.
+ * Planen er markdown i `okt.plan` (§3.3), så den kan leses i arkivet uten
+ * appen:
+ *
+ *     - [ ] Gruppearbeid: kildekritikk · 30 min
+ *         Elevene får tre kilder hver.
+ *     - Pause · 10 min
+ *     - [x] Gjennomgang · 30 min · +5 min · ferdig 09:16
+ *
+ * Eldre planer («- [ ] Tekst · 10 min») leses som før. Linjer som ikke hører
+ * til et punkt, blir liggende som de er i `rest`, så ingenting som er
+ * skrevet forsvinner.
  */
 export function lesPlan(plan: string | null): {
   punkter: Planpunkt[];
@@ -66,27 +128,64 @@ export function lesPlan(plan: string | null): {
 } {
   const punkter: Planpunkt[] = [];
   const rest: string[] = [];
-  for (const linje of (plan ?? "").split("\n")) {
-    const m = linje.match(PUNKT);
-    if (m)
-      punkter.push({
-        gjort: m[1] !== " ",
-        tekst: m[2],
-        min: m[3] ? Number(m[3]) : null,
-      });
-    else if (linje.trim()) rest.push(linje);
+  const linjer = (plan ?? "").split("\n");
+  let forrige: Planpunkt | null = null;
+  let tomme = 0;
+  for (const linje of linjer) {
+    // Innrykk under et punkt er beskrivelsen. Tomme linjer imellom hører
+    // med når beskrivelsen fortsetter etter dem.
+    if (forrige && INNRYKK.test(linje) && linje.trim()) {
+      const del = linje.replace(INNRYKK, "");
+      forrige.beskrivelse = forrige.beskrivelse
+        ? `${forrige.beskrivelse}${"\n".repeat(tomme + 1)}${del}`
+        : del;
+      tomme = 0;
+      continue;
+    }
+    if (!linje.trim()) {
+      if (forrige?.beskrivelse) tomme++;
+      continue;
+    }
+    tomme = 0;
+    const a = linje.match(AKTIVITET);
+    const p = !a && linje.match(PAUSE);
+    if (a) {
+      forrige = nyttPunkt({ gjort: a[1] !== " ", ...lesHale(a[2]) });
+      punkter.push(forrige);
+    } else if (p) {
+      const hale = lesHale(p[1]);
+      forrige = nyttPunkt({ type: "pause", tekst: hale.tekst, min: hale.min });
+      punkter.push(forrige);
+    } else {
+      forrige = null;
+      rest.push(linje);
+    }
   }
   return { punkter, rest };
 }
 
+function skrivPunkt(p: Planpunkt): string {
+  const hale = [
+    p.min ? `${p.min} min` : null,
+    p.type === "aktivitet" && p.forlenget ? `+${p.forlenget} min` : null,
+    p.type === "aktivitet" && p.gjort && p.ferdig ? `ferdig ${p.ferdig}` : null,
+  ]
+    .filter(Boolean)
+    .map((x) => ` · ${x}`)
+    .join("");
+  const forst =
+    p.type === "pause"
+      ? `- ${p.tekst.trim() || "Pause"}${hale}`
+      : `- [${p.gjort ? "x" : " "}] ${p.tekst.trim()}${hale}`;
+  const beskrivelse = p.beskrivelse.replace(/\s+$/, "");
+  const under = beskrivelse
+    ? beskrivelse.split("\n").map((l) => (l.trim() ? `    ${l}` : ""))
+    : [];
+  return [forst, ...under].join("\n");
+}
+
 export function skrivPlan(punkter: Planpunkt[], rest: string[]): string | null {
-  const linjer = [
-    ...punkter.map(
-      (p) =>
-        `- [${p.gjort ? "x" : " "}] ${p.tekst.trim()}${p.min ? ` · ${p.min} min` : ""}`,
-    ),
-    ...rest,
-  ];
+  const linjer = [...punkter.map(skrivPunkt), ...rest];
   return linjer.length ? linjer.join("\n") : null;
 }
 

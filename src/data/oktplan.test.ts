@@ -3,6 +3,7 @@ import {
   folgOpp,
   iPerioden,
   lesPlan,
+  nyttPunkt,
   narTekst,
   plansum,
   skrivPlan,
@@ -53,17 +54,90 @@ describe("modus", () => {
 
 describe("planen", () => {
   it("leser og skriver avkrysningspunkter med minutter, og beholder resten", () => {
+    // Det eldre formatet, fra før 15.8. Skal leses og skrives likt.
     const tekst =
       "- [x] Oppsummering · 10 min\n- [ ] Case i grupper · 60 min\n- [ ] Exit-lapp\nHusk projektor";
     const { punkter, rest } = lesPlan(tekst);
     expect(punkter).toEqual([
-      { gjort: true, tekst: "Oppsummering", min: 10 },
-      { gjort: false, tekst: "Case i grupper", min: 60 },
-      { gjort: false, tekst: "Exit-lapp", min: null },
+      nyttPunkt({ gjort: true, tekst: "Oppsummering", min: 10 }),
+      nyttPunkt({ tekst: "Case i grupper", min: 60 }),
+      nyttPunkt({ tekst: "Exit-lapp" }),
     ]);
     expect(rest).toEqual(["Husk projektor"]);
     expect(skrivPlan(punkter, rest)).toBe(tekst);
     expect(skrivPlan([], [])).toBeNull();
+  });
+
+  it("leser eldre planer med stjerne, store X og uten mellomrom", () => {
+    const { punkter } = lesPlan("* [X]Gjennomgang · 30min\n  - [ ] Innrykket");
+    expect(punkter.map((p) => [p.gjort, p.tekst, p.min])).toEqual([
+      [true, "Gjennomgang", 30],
+      [false, "Innrykket", null],
+    ]);
+  });
+
+  const ny = [
+    "- [ ] Gruppearbeid: kildekritikk · 30 min",
+    "    Elevene får tre kilder hver.",
+    "",
+    "    Husk arkene.",
+    "- Pause · 10 min",
+    "- [x] Gjennomgang · 30 min · +5 min · ferdig 09:16",
+    "- [ ] Film · 15 min",
+  ].join("\n");
+
+  it("leser beskrivelse, pause, forlengelse og ferdig-tid", () => {
+    const { punkter, rest } = lesPlan(ny);
+    expect(rest).toEqual([]);
+    expect(punkter).toEqual([
+      nyttPunkt({
+        tekst: "Gruppearbeid: kildekritikk",
+        min: 30,
+        beskrivelse: "Elevene får tre kilder hver.\n\nHusk arkene.",
+      }),
+      nyttPunkt({ type: "pause", tekst: "Pause", min: 10 }),
+      nyttPunkt({
+        tekst: "Gjennomgang",
+        min: 30,
+        gjort: true,
+        ferdig: "09:16",
+        forlenget: 5,
+      }),
+      nyttPunkt({ tekst: "Film", min: 15 }),
+    ]);
+  });
+
+  it("skriver det nye formatet tilbake uten å miste noe", () => {
+    const { punkter, rest } = lesPlan(ny);
+    expect(skrivPlan(punkter, rest)).toBe(ny);
+  });
+
+  it("tåler halen i en annen rekkefølge", () => {
+    const [p] = lesPlan(
+      "- [x] Gjennomgang · ferdig 9:05 · 30 min · +10 min",
+    ).punkter;
+    expect([p.tekst, p.min, p.ferdig, p.forlenget]).toEqual([
+      "Gjennomgang",
+      30,
+      "9:05",
+      10,
+    ]);
+  });
+
+  it("lar en tittel med «·» i seg stå", () => {
+    const [p] = lesPlan("- [ ] Ibsen · akt 2 · 20 min").punkter;
+    expect([p.tekst, p.min]).toEqual(["Ibsen · akt 2", 20]);
+  });
+
+  it("skriver ikke ferdig-tid på et punkt som ikke er krysset av", () => {
+    const p = nyttPunkt({ tekst: "A", min: 5, ferdig: "09:00" });
+    expect(skrivPlan([p], [])).toBe("- [ ] A · 5 min");
+  });
+
+  it("lar fritekst etter punktene bli fritekst, ikke beskrivelse", () => {
+    const { punkter, rest } = lesPlan("- [ ] A · 5 min\nHusk projektor");
+    expect(punkter[0].beskrivelse).toBe("");
+    expect(rest).toEqual(["Husk projektor"]);
   });
 
   it("summerer mot øktas lengde", () => {

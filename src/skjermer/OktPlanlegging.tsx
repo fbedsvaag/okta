@@ -30,6 +30,7 @@ import {
   folgOpp,
   iPerioden,
   lesPlan,
+  nyttPunkt,
   plansum,
   skrivPlan,
   type Oppfolging,
@@ -359,7 +360,7 @@ function Plan({
         </span>
         <button
           onClick={() => {
-            setPunkter([...punkter, { gjort: false, tekst: "", min: null }]);
+            setPunkter([...punkter, nyttPunkt()]);
             setFokusNy(true);
           }}
           className="ml-auto text-[calc(12.5px*var(--tekst-skala))] text-aksent hover:underline"
