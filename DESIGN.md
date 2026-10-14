@@ -240,6 +240,17 @@ samme sted. Firkanten skal ikke skyves inn i en tekstlinje.
 eller et trykk utenfor. Menyene tegnes rett i `<body>`, så de aldri havner
 under eller utenfor et ark.
 
+**Nedtrekksmenyen** (`ui/Velger.tsx`, lerretet «Nedtrekk») erstatter alle
+`<select>`. Feltet er 32 px, radius 7, hvitt med kant; vinkelpila snur med
+S-kurven, og åpent får feltet aksentkant og en svak ring. Variantene liten
+(26 px, i tabeller) og stille (uten ramme). Menyen er glass (hvit 94 %,
+blur 22, radius 14), 6 px under feltet, eller over når det ikke er plass,
+og kommer inn på 170 ms. Rader 30 px: hake i aksent på det valgte, prikk
+eller fagfirkant, hint til høyre, grupper med versaletiketter, «Ingen …»
+først og dempet, en handling nederst i aksent. Markøren glir med
+S-kurven. Over åtte valg: søkefelt. Kontekstmenyene har samme glass, rader
+og markør.
+
 **Zoom.** ⌘+ og ⌘− skalerer hele vinduet i trinnene 80, 90, 100, 110, 125
 og 150 %, ⌘0 tilbake til 100 %. Valget huskes. Står også i View-menyen
 (Større, Mindre, Faktisk størrelse). Noe annet enn Tekststørrelse i
@@ -366,8 +377,8 @@ ble sluppet til plassen sin. Klokkeslettet på kortet ruller tegnvis
 forsinkelse, naboer gjør plass når kortet dekker 30 % av dem (240 ms,
 `cubic-bezier(0.2, 0.8, 0.2, 1)`), kortet glir på plass ved slipp, ingen
 tekstmarkering, og ingen hopp eller blink. Én felles mekanikk i `src/ui/`,
-ikke en ny variant per skjerm. Gjelder øktplanen (tidslinjen og lista),
-grupper og klassekart.
+ikke en ny variant per skjerm: `ui/dra.ts`, brukt i samtaletimeplanen og
+øktplanen (tidslinjen og lista). Grupper og klassekart står igjen.
 Aldri på tekst som skrives, scrolling eller tall som endres.
 
 **Hover er én glassflate som glir** (`ui/Hovermarkor.tsx`), 220 ms med
@@ -420,7 +431,12 @@ periode. Temaet skrives rett i lista.
 
 **Økter: kalender, måned.** Alle månedene i skoleåret står under hverandre
 i én liste som ruller. Mandag til fredag med ukenummer, fast cellehøyde,
-«+n til». Fridager, helligdager og hendelser med navn og tone (§4).
+«+n til». Hver økt er en brikke i to linjer (lerretet «KalenderTitler»):
+fagkode i fagfarge og klokkeslett dempet, så tittelen i inntil to linjer;
+radius 5, svak fagtone, «FAG · 08:30 · tittel» i verktøytipset.
+Mentorsamtaler på én linje. Dagens dato i et aksentfarget merke, også i
+uka. Fagbrikkene øverst til høyre (ett per fag og Mentorsamtaler) skjuler
+og viser et fag i uke, måned og heatmap; valget huskes. Fridager, helligdager og hendelser med navn og tone (§4).
 Månedsnavnet i toppen følger rullingen. Høyre kolonne: skoleåret
 august til juni som heatmap (§4), der måneden som er synlig er markert, og
 et klikk ruller dit.
@@ -445,7 +461,8 @@ fordelingen av skåringene til høyre. Bare visning; alt åpnes som ark.
 | Planlegging øverst til høyre. Fra I dag åpner den i skåring; ellers etter
 tidspunktet: fram i tid i planlegging, pågår eller ferdig i skåring. Topp
 med luft: fagfirkant, kode i fagfarge, tittel (Light, 28 px), et merke for
-når økta er («om 3 dager», «Pågår · n min igjen»), esc og en liten
+når økta er («om 3 dager», «Pågår · n min igjen», uten pulserende prikk),
+esc og en liten
 Ferdig-knapp (28 px, ⌘↵). Under: naturlig dato · tid · rom · periode og
 bryteren. ⌘← og ⌘→ blar til forrige og neste økt i faget.
 
@@ -454,17 +471,43 @@ fremdriftslinje. Rad (38 px): markør, **trafikklyset**, bilde (28 px), navn,
 klasse, notat fra denne økta. Trafikklyset står først, så blikket ikke må
 hoppe ut til høyre kant. N åpner notatfeltet i raden; uten notat vises
 forrige økts notat i grå kursiv. Høyre kolonne: «Fra forrige økt · tor
-1.10», Plan med avkrysning, Øktlogg. Tastene i stripa nederst.
+1.10», Plan, Øktlogg. Tastene i stripa nederst.
 
-**Økta: planlegging.** Venstre: dato, tid (fra og til), rom, periode og
-vurdering som rader; lekse og agenda til elevene; Plan som sjekkliste med
-minutter per punkt, summen mot øktas lengde («2 t av 3 t») og dra for å
-flytte; Kompetansemål i økta, med fagets mål til avkrysning, periodens mål
-merket med en grønn prikk og valgte mål i full farge. Høyre: fra forrige
+**Økta: live** (lerretet «OktLive», `skjermer/Oktlive.tsx`). Den dagen økta
+er, står en stripe under arkhodet: «Nå» og aktiviteten til venstre, en
+12 px tidslinje i midten (ferdige felt mørkere, den aktive med aksentkant
+og framdrift, nå-markøren i aksent med klokkeslett, strek ved slutt), og
+«5 av 30 min» med tida igjen til høyre. Før start tonet uten markør,
+etter slutt «Ferdig 10:00 · 3 av 4 aktiviteter krysset av». Planen i høyre
+kolonne krysses av når tida er ute (lysere hake) eller med et klikk (mørk
+hake; neste starter). «+5 min» på den aktive flytter resten, og det som
+havner etter slutt står tonet. Aldri rødt. Oppdateres ved hvert
+minuttskifte, uten overgang. Med Øktplan: Enkel står det én linje i
+stedet for stripa.
+
+**Økta: planlegging** (lerretet «OktPlanNy», `skjermer/Oktplan.tsx`).
+Faktaraden på én linje med etiketter over: dato, tid, rom, periode og
+vurdering; lekse og agenda i to kolonner under. Plan med summen i
+overskriften («90 av 90 min · går opp»), en 48 px tidslinje (felt med
+bredde etter minuttene, pause skravert, luft stiplet, strek ved slutt,
+klokkeslett hvert kvarter) og lista under: ⋮⋮, starttid, tittel, − / + i
+steg på fem, ▸ for beskrivelsen. Man drar i skillet for å flytte tid, i
+enden for å gi eller fylle luft, og feltene eller ⋮⋮ for å stokke om.
+Pauser står fast til de er valgt. «30 min» åpner lengdevalget. Går
+planen over, sies det i vanlig blekk med «Trekk N min fra …»; øktas
+lengde endres aldri. Kompetansemålene er foldet til valgte og periodens
+mål, med «Vis alle 17 ▾».
+
+**Øktplan: Enkel | Full** (Innstillinger › Generelt, standard Enkel,
+lerretet «OktPlanEnkel»). Enkel er en ren liste med minutter og en 6 px
+stolpe uten tekst; «Film · 15 min» kan skrives inn. Ingen dra, ingen egen
+pausetype, beskrivelser skjult men beholdt, kompetansemålene på én linje
+og vurderingen ute av faktaraden. Høyre: fra forrige
 økt, «Følg opp i økta» (rød to ganger på rad, borte sist, åpent
 oppfølgingspunkt; bare fornavn og grunn, aldri hva et notat sier) og hvor i
 perioden økta ligger. Planen lagres som markdown i `okt.plan`
-(«- [ ] Tekst · 10 min»), så den samme lista står i skåringen.
+(«- [ ] Tekst · 10 min», beskrivelsen innrykket under, «- Pause · 10 min»,
+«· +5 min» og «· ferdig 09:16»), så den samme lista står i skåringen.
 
 **Utfoldet økt i øktlista** (variant F): to spalter — fakta til venstre,
 plan og forrige notat til høyre — og tastestripa nederst med «Åpne økta ↵».

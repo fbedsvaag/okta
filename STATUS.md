@@ -1,15 +1,54 @@
 # Status
 
-Pr. 2026-10-13, versjon 0.3.0 (beta, utgitt 13.10 som pre-release). Beskriver hvor appen faktisk står, ikke hva
+Pr. 2026-10-14, versjon 0.3.0 (beta, utgitt 13.10 som pre-release). Beskriver hvor appen faktisk står, ikke hva
 den skal bli. Fila eies fritt, i motsetning til SPEC.md.
 
-**662 tester i `npm test` og 25 i `cargo test`, alle grønne på Mac.
+**703 tester i `npm test` og 25 i `cargo test`, alle grønne på Mac.
 `tsc --noEmit` er ren. `npm run build` går gjennom. 24 migrasjoner.**
 
 Utseendet står i `DESIGN.md`, som beskriver appen slik den er bygget.
 Lerretet (`docs/lerret/`) er fasit for det som er tegnet.
 
-## Siste runde (07.10, ARBEIDSLISTE §10 og §11)
+## Runde 15 (14.10, ARBEIDSLISTE §15)
+
+Bygget etter lerretene KalenderTitler, Nedtrekk, OktPlanNy, OktPlanEnkel og
+OktLive. OktLiveVertikal er ikke bygget (ikke bestemt).
+
+- **Kalendertitler (15.1):** økta som brikke i to linjer, dagens dato i
+  merke, fagbrikker som skjuler og viser fag i uke, måned og heatmap.
+- **Nedtrekksmenyen (15.9):** `ui/Velger.tsx` har erstattet alle 25
+  `<select>`. Kontekstmenyene har samme glass, rader og markør.
+- **Planformatet (15.8):** pause, beskrivelse, `+5 min` og `ferdig 09:16`
+  i `okt.plan`. Eldre planer leses som før.
+- **Dra og slipp:** felles mekanikk i `ui/dra.ts`, brukt i
+  samtaletimeplanen og øktplanen. Grupper og klassekart bruker den ikke
+  ennå.
+- **Planleggingen (15.2–15.5):** tidslinje med skiller, ende og stokking,
+  lengdevalg, beskrivelser, «for lite tid», faktarad på én linje,
+  kompetansemål foldet sammen.
+- **Øktplan: Enkel | Full (15.10)**, Enkel som standard.
+- **Live i skåringen (15.6–15.7):** stripa, automatisk avkrysning, +5 min
+  og ferdig før tida.
+  - Avkrysningen når tida er ute regnes fra klokka og lagres ikke; bare
+    klikk og +5 min skrives til planen. Da skrives det ikke til basen
+    hvert minutt mens man skårer.
+  - Stripa vises bare den dagen økta er.
+
+**Prøvd:**
+
+- Nedtrekksmenyen, planen og live-stripa er prøvd i systemets WebKit
+  (WKWebView) på egne prøvesider, med syntetiske pekere og taster.
+  - Tidslinjen: skille, ende og stokking lagrer riktig.
+  - Lista: «Film · 15 min», ↵ og ⌥↑.
+  - Skåringen: +5 min og avkrysning.
+  - Alle fem live-tilstandene er sammenlignet med lerretet.
+- **Ikke prøvd i selve appen ennå**, fordi den installerte Økta var åpen
+  hele økta:
+  - kalenderbrikkene og fagbrikkene;
+  - draget i samtaletimeplanen etter at mekanikken ble flyttet. Logikken
+    er flyttet uendret og har tester, men følelsen er ikke sjekket med mus.
+
+## Runde 10 og 11 (07.10, ARBEIDSLISTE §10 og §11)
 
 Prøvd i `npm run tauri dev`, skjerm for skjerm mot lerretet.
 
@@ -38,8 +77,9 @@ Prøvd i `npm run tauri dev`, skjerm for skjerm mot lerretet.
 - **Elever (§4.3):** oversikten over. Eleven endres i elevkortet. Klasser
   bak ⋯. Lim inn liste og InSchool-PDF med bilder og kjønn gjettet fra
   SSBs navneliste.
-- **Økt (§4.4):** skåring med tastene fra skalaen, notat på raden,
-  planlegging med sjekkliste og kompetansemål. ⌘← ⌘→ blar.
+- **Økt (§4.4):** skåring med tastene fra skalaen, notat på raden, planen
+  live under toppen; planlegging med tidslinje, beskrivelser og
+  kompetansemål (Enkel | Full). ⌘← ⌘→ blar.
 - **Elev (§4.5):** elevkort med heatmap for hele året, vurderinger,
   fravær per fag, klassekart og tidslinje med notater og møtelogg.
 - **Vurderinger (§4.6), notater (§4.7), innstillinger (§4.8):** ferdig,

@@ -854,10 +854,28 @@ så blikket ikke må hoppe:
 
 Til høyre: notatet fra forrige økt, planen med avkrysning og øktloggen.
 
+Den dagen økta er, står planen live under toppen: hva som skal skje nå,
+hvor langt man er kommet, og hvor mye tid som er igjen. En aktivitet
+krysses av når tida for den er ute, eller med et klikk når man er ferdig
+før tida (tidspunktet lagres). «+5 min» forlenger den som pågår, og resten
+flytter seg; det som havner etter slutt, sies uten alarm. Oppdateres én
+gang i minuttet, uten bevegelse: skåringen animeres aldri.
+
 **Planlegging.** Dato, tid, rom, periode og vurdering; lekse og agenda til
-elevene; planen som en sjekkliste med minutter per punkt og summen mot
-øktas lengde; kompetansemålene i økta med avkrysning, der periodens mål er
-merket. Til høyre: forrige økt, «Følg opp i økta» (rød to ganger på rad,
+elevene; planen med aktiviteter, pauser, minutter og en beskrivelse per
+aktivitet, summen mot øktas lengde og en tidslinje man drar i; øktas
+lengde endres aldri herfra. Kompetansemålene i økta med avkrysning, der
+periodens mål er merket; resten er foldet sammen.
+
+Planen lagres som markdown i `okt.plan`, lesbar i arkivet:
+`- [ ] Gruppearbeid · 30 min`, beskrivelsen innrykket under, `- Pause ·
+10 min`, og i skåringen `· +5 min` og `· ferdig 09:16`. Plan og
+beskrivelse går aldri ut av appen.
+
+**Øktplan: Enkel | Full** (Innstillinger › Generelt, standard Enkel).
+Enkel er en liste med minutter («Film · 15 min» kan skrives inn) og én
+linje om hva som skjer nå i skåringen. Full har tidslinjen, beskrivelser
+og pauser. Det som er skrevet i Full, blir liggende i Enkel. Til høyre: forrige økt, «Følg opp i økta» (rød to ganger på rad,
 borte sist, åpent oppfølgingspunkt; bare fornavn og grunn) og hvor i
 perioden økta ligger.
 
