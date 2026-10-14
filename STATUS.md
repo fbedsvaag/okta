@@ -12,7 +12,7 @@ Lerretet (`docs/lerret/`) er fasit for det som er tegnet.
 ## Runde 15 (14.10, ARBEIDSLISTE §15)
 
 Bygget etter lerretene KalenderTitler, Nedtrekk, OktPlanNy, OktPlanEnkel og
-OktLive. OktLiveVertikal er ikke bygget (ikke bestemt).
+OktLive. OktLiveVertikal er forkastet og bygges ikke.
 
 - **Kalendertitler (15.1):** økta som brikke i to linjer, dagens dato i
   merke, fagbrikker som skjuler og viser fag i uke, måned og heatmap.
