@@ -181,6 +181,35 @@ export function OktPanel({
   const nullverdi = verdier.find((v) => v.rang === 0) ?? null;
   const antallSkaret = elever.filter((e) => e.skalaverdiId !== null).length;
 
+  // Alle · Til stede · Borte over lista (16.1). Huskes ikke mellom økter.
+  // «Borte» er verdien som ikke teller («ikke i økta», teller_ikke).
+  const [filter, setFilter] = useState<"alle" | "tilstede" | "borte">("alle");
+  useEffect(() => setFilter("alle"), [okt.id]);
+  const borteverdi = verdier.find((v) => v.teller_ikke === 1) ?? null;
+  const erBorte = (e: OktElev) =>
+    borteverdi !== null && e.skalaverdiId === borteverdi.id;
+  const antallBorte = elever.filter(erBorte).length;
+  /** Indeksene i `elever` som vises med filteret. */
+  const synlige = elever
+    .map((_, i) => i)
+    .filter((i) =>
+      filter === "alle"
+        ? true
+        : filter === "borte"
+          ? erBorte(elever[i])
+          : !erBorte(elever[i]),
+    );
+  const nesteSynlige = (fra: number, retning: 1 | -1) => {
+    const pos = synlige.indexOf(fra);
+    if (pos < 0) return synlige[0] ?? fra;
+    return synlige[Math.max(0, Math.min(synlige.length - 1, pos + retning))];
+  };
+  // Står markøren på en elev som er filtrert bort, flyttes den til første
+  // som vises.
+  useEffect(() => {
+    if (synlige.length && !synlige.includes(markert)) setMarkert(synlige[0]);
+  }, [filter, synlige.join(",")]);
+
   async function skaar(indeks: number, verdi: Skalaverdi) {
     const elev = elever[indeks];
     if (!elev) return;
@@ -189,7 +218,7 @@ export function OktPanel({
       f.map((e, i) => (i === indeks ? { ...e, skalaverdiId: verdi.id } : e)),
     );
     setSistSatt(elev.elevId);
-    setMarkert(Math.min(indeks + 1, elever.length - 1));
+    setMarkert(nesteSynlige(indeks, 1));
 
     await settSkaring(elev.elevId, okt.id, verdi.id);
     onEndret();
@@ -220,17 +249,28 @@ export function OktPanel({
     }
     if (e.key === "ArrowDown" || (e.key === "Tab" && !e.shiftKey)) {
       e.preventDefault();
-      setMarkert((i) => Math.min(i + 1, elever.length - 1));
+      setMarkert((i) => nesteSynlige(i, 1));
       return;
     }
     if (e.key === "ArrowUp" || (e.key === "Tab" && e.shiftKey)) {
       e.preventDefault();
-      setMarkert((i) => Math.max(i - 1, 0));
+      setMarkert((i) => nesteSynlige(i, -1));
       return;
     }
     if (e.key === "Backspace" || e.key === "Delete") {
       e.preventDefault();
       void fjern(markert);
+      return;
+    }
+    // B: bare de som var borte (B igjen: alle). A: alle (16.1).
+    if (e.key.toLowerCase() === "b") {
+      e.preventDefault();
+      setFilter((f) => (f === "borte" ? "alle" : "borte"));
+      return;
+    }
+    if (e.key.toLowerCase() === "a") {
+      e.preventDefault();
+      setFilter("alle");
       return;
     }
     if (e.key.toLowerCase() === "n") {
@@ -362,6 +402,25 @@ export function OktPanel({
                 <span className="text-[calc(13px*var(--tekst-skala))] font-semibold">
                   Elever
                 </span>
+                {/* Alle · Til stede · Borte (16.1), tastene A og B. */}
+                {borteverdi && elever.length > 0 && (
+                  <Bryter
+                    storrelse="liten"
+                    verdi={filter}
+                    settVerdi={(v) => {
+                      setFilter(v as typeof filter);
+                      liste.current?.focus();
+                    }}
+                    valg={[
+                      { id: "alle", navn: `Alle ${elever.length}` },
+                      {
+                        id: "tilstede",
+                        navn: `Til stede ${elever.length - antallBorte}`,
+                      },
+                      { id: "borte", navn: `Borte ${antallBorte}` },
+                    ]}
+                  />
+                )}
                 {/* Fremdrift, ikke statistikk (DESIGN.md §12): hvor mange som er skåret. */}
                 <span className="text-etikett tabular-nums text-blekk-dempet">
                   {antallSkaret} av {elever.length} skåret
@@ -378,6 +437,36 @@ export function OktPanel({
                   Alfabetisk på fornavn
                 </span>
               </div>
+
+              {filter === "borte" && (
+                <div className="mt-2 flex items-center gap-2.5 rounded-[10px] bg-flate-svak px-3 py-2 text-[calc(13px*var(--tekst-skala))] text-blekk-dempet">
+                  <span>
+                    {antallBorte === 0
+                      ? "Ingen var borte i økta."
+                      : `${antallBorte} ${antallBorte === 1 ? "elev" : "elever"} var ikke i økta ${langDato(okt.dato)}${
+                          okt.klokkeslett
+                            ? `, ${okt.klokkeslett}–${sluttKlokke(okt.klokkeslett, okt.varighetMin)}`
+                            : ""
+                        }.`}
+                  </span>
+                  {antallBorte > 0 && (
+                    <button
+                      onClick={() => {
+                        void navigator.clipboard.writeText(
+                          elever
+                            .filter(erBorte)
+                            .map((e) => `${e.fornavn} ${e.etternavn}`)
+                            .join("\n"),
+                        );
+                        liste.current?.focus();
+                      }}
+                      className="ml-auto h-[26px] shrink-0 rounded-full border border-linje bg-ark px-3 text-[calc(12.5px*var(--tekst-skala))] text-blekk hover:bg-flate"
+                    >
+                      Kopier navnene
+                    </button>
+                  )}
+                </div>
+              )}
 
               {elever.length === 0 && (
                 <p className="px-5 py-6 text-center text-brod text-blekk-dempet">
@@ -396,44 +485,51 @@ export function OktPanel({
                   <div
                     aria-hidden
                     className="markor-flate pointer-events-none absolute inset-x-0 top-0 z-0 h-[38px] rounded-lg"
-                    style={{ transform: `translateY(${markert * RAD}px)` }}
+                    style={{
+                      transform: `translateY(${Math.max(0, synlige.indexOf(markert)) * RAD}px)`,
+                    }}
                   />
                 )}
-                {elever.map((elev, i) => (
-                  <ElevRad
-                    key={elev.elevId}
-                    elev={elev}
-                    verdier={plott}
-                    tastekart={tastekart}
-                    markert={i === markert}
-                    radRef={i === markert ? markertRad : undefined}
-                    avholdt={avholdt}
-                    nullverdi={nullverdi}
-                    pop={sistSatt === elev.elevId}
-                    onKlikk={() => {
-                      setMarkert(i);
-                      liste.current?.focus();
-                    }}
-                    onVelg={(v) => skaar(i, v)}
-                    onNotat={() => setNotatFor(elev.elevId)}
-                    skriverNotat={notatFor === elev.elevId}
-                    onNotatFerdig={async (tekst) => {
-                      if (tekst !== null) {
-                        await settSkaringsnotat(elev.elevId, okt.id, tekst);
-                        setElever((f) =>
-                          f.map((e) =>
-                            e.elevId === elev.elevId
-                              ? { ...e, notat: tekst.trim() || null }
-                              : e,
-                          ),
-                        );
-                      }
-                      setNotatFor(null);
-                      liste.current?.focus();
-                    }}
-                    onApneElev={() => onApneElev(elev.elevId)}
-                  />
-                ))}
+                {synlige
+                  .map((i) => elever[i])
+                  .map((elev, k) => {
+                    const i = synlige[k];
+                    return (
+                      <ElevRad
+                        key={elev.elevId}
+                        elev={elev}
+                        verdier={plott}
+                        tastekart={tastekart}
+                        markert={i === markert}
+                        radRef={i === markert ? markertRad : undefined}
+                        avholdt={avholdt}
+                        nullverdi={nullverdi}
+                        pop={sistSatt === elev.elevId}
+                        onKlikk={() => {
+                          setMarkert(i);
+                          liste.current?.focus();
+                        }}
+                        onVelg={(v) => skaar(i, v)}
+                        onNotat={() => setNotatFor(elev.elevId)}
+                        skriverNotat={notatFor === elev.elevId}
+                        onNotatFerdig={async (tekst) => {
+                          if (tekst !== null) {
+                            await settSkaringsnotat(elev.elevId, okt.id, tekst);
+                            setElever((f) =>
+                              f.map((e) =>
+                                e.elevId === elev.elevId
+                                  ? { ...e, notat: tekst.trim() || null }
+                                  : e,
+                              ),
+                            );
+                          }
+                          setNotatFor(null);
+                          liste.current?.focus();
+                        }}
+                        onApneElev={() => onApneElev(elev.elevId)}
+                      />
+                    );
+                  })}
               </div>
               <div className="h-4" />
             </div>
@@ -549,6 +645,12 @@ function ElevRad({
   const visesSom =
     elev.skalaverdiId ?? (avholdt ? (nullverdi?.id ?? null) : null);
   const eksplisitt = elev.skalaverdiId !== null;
+  // Borte (16.8, variant B): den fjerde prikken blir mørk med kryss og
+  // ring, trafikklyset dempes, og navn og bilde blekes. Raden står der den
+  // står, uten merkelapp.
+  const borte =
+    eksplisitt &&
+    verdier.find((v) => v.id === elev.skalaverdiId)?.teller_ikke === 1;
 
   return (
     <div
@@ -569,6 +671,7 @@ function ElevRad({
             verdi={v}
             valgt={visesSom === v.id}
             eksplisitt={eksplisitt}
+            borte={borte}
             pop={pop && visesSom === v.id}
             tast={tastekart.get(v.id)}
             onVelg={(e) => {
@@ -578,7 +681,12 @@ function ElevRad({
           />
         ))}
       </div>
-      <Elevfoto elevId={elev.elevId} storrelse={28} />
+      <span
+        className="inline-flex"
+        style={borte ? { opacity: 0.4, filter: "grayscale(1)" } : undefined}
+      >
+        <Elevfoto elevId={elev.elevId} storrelse={28} />
+      </span>
       <button
         onClick={(e) => {
           e.stopPropagation();
@@ -586,7 +694,11 @@ function ElevRad({
         }}
         title={`${elev.fornavn} ${elev.etternavn}: åpne eleven`}
         className={`truncate text-left hover:text-aksent ${
-          eksplisitt || markert ? "font-medium" : "text-blekk-dempet"
+          borte
+            ? "text-blekk-svak"
+            : eksplisitt || markert
+              ? "font-medium"
+              : "text-blekk-dempet"
         }`}
       >
         {elev.fornavn} {elev.etternavn}
@@ -642,6 +754,7 @@ function Merke({
   verdi,
   valgt,
   eksplisitt,
+  borte,
   pop,
   tast,
   onVelg,
@@ -649,19 +762,50 @@ function Merke({
   verdi: Skalaverdi;
   valgt: boolean;
   eksplisitt: boolean;
+  /** eleven er satt som borte: de andre prikkene dempes mer */
+  borte: boolean;
   pop: boolean;
   tast?: string;
   onVelg: (e: React.MouseEvent) => void;
 }) {
   const farge = skalafarge(verdi.farge);
   const pa = valgt && eksplisitt;
+  // Borte: mørk prikk med hvitt kryss og en ring, så den ikke kan
+  // forveksles med «ikke skåret ennå» (fire lyse prikker).
+  if (pa && verdi.teller_ikke === 1)
+    return (
+      <button
+        onClick={onVelg}
+        title={`${tast ? `${tast}: ` : ""}${verdi.kode}${verdi.etikett ? `: ${verdi.etikett}` : ""}`}
+        className="grid h-6 w-7 place-items-center rounded-md"
+      >
+        <span
+          className={`grid h-[13px] w-[13px] place-items-center rounded-full bg-borte shadow-[0_0_0_2px_var(--color-ark),0_0_0_3.5px_var(--color-borte)] ${
+            pop ? "pop" : ""
+          }`}
+        >
+          <svg width="7" height="7" viewBox="0 0 8 8" aria-hidden>
+            <path
+              d="M1.5 1.5l5 5M6.5 1.5l-5 5"
+              stroke="var(--color-ark)"
+              strokeWidth="1.6"
+              strokeLinecap="round"
+            />
+          </svg>
+        </span>
+      </button>
+    );
 
   return (
     <button
       onClick={onVelg}
       title={`${tast ? `${tast}: ` : ""}${verdi.kode}${verdi.etikett ? `: ${verdi.etikett}` : ""}`}
       className={`grid h-6 w-7 place-items-center rounded-md ${
-        pa ? "" : "opacity-20 hover:bg-bord hover:opacity-70"
+        pa
+          ? ""
+          : borte
+            ? "opacity-15 hover:bg-bord hover:opacity-70"
+            : "opacity-20 hover:bg-bord hover:opacity-70"
       }`}
     >
       <span

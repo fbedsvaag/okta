@@ -89,6 +89,8 @@
 
   /* Aksent */
   --color-aksent: #4a3d7d;
+  /* Borte i økta (16.8): mørk prikk med kryss. */
+  --color-borte: #5f5a70;
   --color-aksent-mork: #3b3066;
   --color-aksent-dyp: #332b52;
   --color-aksent-dypere: #3f3563;
@@ -229,6 +231,7 @@
     --color-linje-sterk: #4b4466;
 
     --color-aksent: #b3a6ec;
+    --color-borte: #a29cb6;
     --color-aksent-mork: #c4b9f2;
     --color-aksent-dyp: #d3cbf6;
     --color-aksent-dypere: #c4b9f2;
