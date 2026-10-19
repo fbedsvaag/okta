@@ -66,6 +66,7 @@ import { Vurderingsikon, vurderingstype } from "../ui/Vurderingsikon";
 import { Tastestripe, Tasthint } from "../ui/Tastestripe";
 import { enLinje, forrigeOkt } from "../data/dagen";
 import { hovedtast, harModifikator } from "../ui/taster";
+import { useIdag } from "../ui/useIdag";
 
 /**
  * Årsplan — økter, SPEC §4.2.
@@ -320,13 +321,16 @@ export function Okter({
     const rad =
       mal && sone.querySelector<HTMLElement>(`[data-okt="${mal.id}"]`);
     if (!rad) return;
-    // Månedsoverskriften står fast øverst; raden skal ligge rett under den.
+    // Månedsoverskriften står fast øverst. Raden skal ligge under den med
+    // én rad luft, så i dag-linja (16.5) og forrige økt synes over.
     const overskrift =
       sone.querySelector<HTMLElement>(".sticky")?.offsetHeight ?? 0;
+    const luft = startValgt ? 0 : 36;
     sone.scrollTop +=
       rad.getBoundingClientRect().top -
       sone.getBoundingClientRect().top -
-      overskrift;
+      overskrift -
+      luft;
   }, [synlige, startValgt]);
 
   return (
@@ -742,6 +746,14 @@ function Liste({
 }) {
   const [apen, setApen] = useState<string | null>(null);
   const liste = useRef<HTMLDivElement>(null);
+  // I dag-linja (16.5) står over den første økta i dag eller senere — men
+  // bare når lista har økter på begge sider av i dag, eller en i dag.
+  const idag = useIdag();
+  const forsteFra = okter.findIndex((o) => o.dato >= idag);
+  const idagFor =
+    forsteFra < 0 || (forsteFra === 0 && okter[0].dato !== idag)
+      ? null
+      : okter[forsteFra].id;
   const [markorEl, setMarkorEl] = useState<HTMLElement | null>(null);
   useLayoutEffect(() => {
     setMarkorEl(
@@ -877,6 +889,7 @@ function Liste({
             const per = perioder.get(o.id);
             return (
               <div key={o.id} data-okt={o.id} className="px-0">
+                {o.id === idagFor && <Idaglinje dato={idag} />}
                 <div
                   onClick={(e) => {
                     if ((e.target as HTMLElement).closest("input")) return;
@@ -1018,6 +1031,23 @@ function Liste({
           })}
         </div>
       ))}
+    </div>
+  );
+}
+
+/**
+ * I dag-linja i lista (16.5): en mørk strek med prikk til venstre og
+ * «I dag · ons 14.10» til høyre, samme uttrykk som nå-linja i uka på I dag.
+ * Den tar ingen plass; den ligger på skillet mellom radene.
+ */
+function Idaglinje({ dato }: { dato: string }) {
+  return (
+    <div aria-label="I dag" className="pointer-events-none relative z-[3] h-0">
+      <span className="absolute inset-x-0 -top-[0.75px] h-[1.5px] bg-blekk" />
+      <span className="absolute -left-1 -top-1 h-2 w-2 rounded-full bg-blekk" />
+      <span className="absolute -top-2.5 right-0 rounded-full bg-blekk px-2 py-px text-[calc(11.5px*var(--tekst-skala))] font-medium tabular-nums text-ark">
+        I dag · {ukedag(dato)} {kortDato(dato)}
+      </span>
     </div>
   );
 }
