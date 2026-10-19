@@ -682,6 +682,76 @@ de er interaktive.
   - **Full:** som 15.2–15.7.
   - Beskrivelser skrevet i Full blir liggende i Enkel og vises igjen i Full.
 
+## 16. Fra lerretet, runde 16 (19.10)
+
+Tegningene ligger i `docs/lerret/`. Fila står i parentes.
+
+- [ ] **16.1 Filter i skåret økt** (OktSkarFilter): Alle · Til stede · Borte
+  over elevlista, tastene B og A. «Borte» viser en linje med antall og
+  «Kopier navnene». Filteret huskes ikke mellom økter.
+- [ ] **16.2 Periode med ett klikk i Økter-lista** (OktListeMasse): perioden er
+  en brikke som åpner nedtrekksmenyen (samme komponent som 15.x). En økt uten
+  periode viser «Velg periode» med stiplet kant.
+- [ ] **16.3 Flere økter samtidig** (OktListeMasse): avkrysning per rad,
+  ⇧-klikk velger et spenn, ⌘A alle, esc fjerner valget. Med noe valgt kommer
+  en mørk linje nederst: Periode (P) · Tid og rom (T) · Lekse (L) ·
+  Vurdering (V) · Flytt … · Slett · ✕. Klikker man perioden på en valgt rad,
+  gjelder valget alle valgte. Alt kan angres (⌘Z) og bekreftes med en toast.
+- [ ] **16.4 Bytt to økter** (OktBytt): dra i tittelen eller i ⋮⋮ og slipp på
+  en annen økt. Datoene, tid og rom står; tema, agenda, plan, lekse, kladd,
+  kompetansemål, periode og vurdering bytter plass. Draget starter først
+  etter 4 px, så et klikk i tittelen fortsatt gir skrivemarkør. Plassen man
+  drar fra viser «‹tema› havner her». Skårede økter ligger fast. ⌥↑ / ⌥↓
+  bytter med økta over eller under. Angre med ⌘Z. Samme dragfølelse som
+  samtaletrekkeren (DESIGN §8).
+- [ ] **16.5 I dag-linje i Økter-lista** (OktListeMasse, OktBytt): mørk linje
+  med prikk til venstre og «I dag · ons 14.10» til høyre, over dagens økt,
+  samme uttrykk som nå-linja i uka på I dag. «I dag»-merket i temaet fjernes.
+- [ ] **16.6 Agenda med avsnitt** (OktTekst): agenda blir et flerlinjet felt
+  som vokser med teksten. Enter gir ny linje, ⌘↵ er fortsatt Ferdig.
+  Avsnittene går ut i kalenderbeskrivelsen (CalDAV) som linjeskift.
+- [ ] **16.7 Kladd i økta** (OktTekst): eget felt under agendaen, bare for
+  læreren, går aldri ut (ikke kalender, ikke årsplan, ikke eksport). Dra i
+  håndtaket under for å endre høyden (60–420 px, huskes per bruker), dobbelt-
+  klikk tilpasser til teksten. Vises også i Skåring og logg. Ny kolonne
+  `kladd` på økta; byttes med i 16.4.
+- [ ] **16.8 Fravær tydeligere** (OktFravaer, variant B er valgt): den fjerde
+  prikken blir mørk (#5f5a70) med hvitt kryss og en ring rundt; de tre
+  trafikklysene dempes; navn og bilde blekes (bildet i gråtoner). Ingen
+  «BORTE»-merkelapp, raden står der den står. «Ikke skåret ennå» har fire
+  lyse prikker, så de to kan ikke forveksles.
+- [ ] **16.9 Ny vurdering rett fra økta** (OktVurdering): Vurdering-velgeren
+  i økta får «+ Ny vurdering i denne økta» (N) nederst. Det åpner et lite
+  skjema: navn (fylt ut fra temaet, med form som prefiks), form (Muntlig ·
+  Skriftlig · Praktisk · Annet), når (denne økta / over flere økter …),
+  type (Underveis · Sluttvurdering). «Lag vurdering» oppretter vurderingen,
+  knytter den til økta og viser en toast med Angre og «Åpne i Vurderinger».
+  Kriterier og vekt redigeres under Vurderinger som før.
+
+## 17. Ønsker fra bruk (19.10), uten egne tegninger
+
+- [ ] **17.1 Flere fag i filteret** i kalenderen og i øktlista under Alle
+  fag: fagbrikkene fra KalenderTitler, flere kan være på samtidig, valget
+  huskes per visning.
+- [ ] **17.2 Ikoner i nedtrekkslista** der de mangler, i samme stil som
+  «Lang liste» (Nedtrekk).
+- [ ] **17.3 Endre fargen på et fag** i fagoppsettet: fargevelger med
+  palettens fagfarger pluss egendefinert. Fargen følger med overalt.
+- [ ] **17.4 Velge flere elever** i Elever, mest for å slette mange på en
+  gang. Samme mønster som 16.3 (avkrysning, ⇧-klikk, linje nederst).
+  Sletting bekreftes med antall og navn.
+- [ ] **17.5 Standard pausetider per fag** i fagoppsettet (f.eks. 10 min etter
+  45 min). Legges inn i planen når en ny økt lages; kan endres per økt.
+- [ ] **17.6 Tellende minutter per økt** i fagoppsettet: en økt 08:30–11:45 er
+  195 min, men skal kunne telle som 180 i timeregnskapet. Valgfritt felt;
+  tomt betyr faktisk lengde. Gjelder Timer på fagsiden og årsplanen.
+- [ ] **17.7 Fagsøket i oppsettet**: søket mot Udir virker ikke for nye
+  brukere. Finn feilen. Søk skal være standardvalget i oppsettet og stå
+  øverst, med en tydelig tekst om at faginfo og kompetansemål hentes derfra.
+  Ingen elevdata sendes med søket.
+- [ ] **17.8 Spørsmål:** vises «borte sist» i «Følg opp i økta» alltid når
+  en elev var borte forrige økt? Eieren vil beholde det.
+
 ## Ikke nå
 
 Ting som er vurdert og lagt bort med vilje. Står her så de ikke dukker opp

@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<title>Ny vurdering rett fra økta</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#d4cee2}
+:root{--pal:#4a3d7d;--pal-lys:#e3ddf0;--pal-mid:#b2a8d2;--pal-svak:#f4f2f9;--ease-sprett:cubic-bezier(.34,1.32,.5,1)}
+.pt{position:relative;z-index:1;display:flex;align-items:center;gap:9px;height:32px;padding:0 10px;border-radius:10px;color:#2e2840;font-size:14px}
+.pt.on{font-weight:500;color:#241f33}
+.under{position:relative;z-index:1;display:flex;align-items:center;gap:8px;min-height:28px;margin-left:22px;padding:3px 10px;border-radius:8px;color:#2e2840;font-size:13px}
+.under.on{font-weight:500}
+.under::before{content:"";position:absolute;left:-11px;top:-1px;bottom:-1px;width:1.5px;border-radius:1px;background:rgba(36,31,51,.16)}
+.kbd{margin-left:auto;font-size:11px;color:#6b6482;letter-spacing:.04em;font-weight:400}
+.navmark{position:absolute;left:8px;right:8px;border-radius:10px;background:rgba(255,255,255,.88);box-shadow:0 1px 3px rgba(36,31,51,.14),inset 0 1px 0 #fff;pointer-events:none}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;height:30px;padding:0 13px;border-radius:999px;border:1px solid #d9d4e8;background:#fff;color:#241f33;font:inherit;font-size:13px;cursor:pointer;white-space:nowrap}
+.btn.pri{background:var(--pal);border-color:var(--pal);color:#fff;font-weight:500}
+.btn.stille{border-color:transparent;background:transparent;color:#645d7a}
+.seg{position:relative;display:inline-flex;padding:2px;border-radius:999px;background:rgba(36,31,51,.06)}
+.seg button{all:unset;position:relative;z-index:1;cursor:pointer;height:26px;display:inline-flex;align-items:center;justify-content:center;font-size:12.5px;color:#645d7a;transition:color 200ms}
+.seg button.on{color:#241f33;font-weight:500}
+.tommel{position:absolute;top:2px;left:2px;height:26px;border-radius:999px;background:#fff;box-shadow:0 1px 3px rgba(36,31,51,.16);transition:transform 340ms var(--ease-sprett),width 340ms var(--ease-sprett)}
+.chip{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 9px;border-radius:12px;background:var(--pal-svak);font-size:12px;white-space:nowrap}
+.fk{width:8px;height:8px;border-radius:2px;flex:none;display:inline-block}
+.av{border-radius:50%;overflow:hidden;flex:none;display:inline-block;background:var(--pal-lys)}
+.ell{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.num{font-variant-numeric:tabular-nums}
+.h{font-size:13px;font-weight:600;margin:0}
+.kort{border-radius:14px;background:#fff;box-shadow:inset 0 0 0 1px #ece9f3;padding:16px 18px}
+.hm{border-radius:2px;display:inline-block}
+.g{background:#3f9d49}.y{background:#d9a92f}.r{background:#c04a3d}.o{background:#d5d8dd}
+.glide{transition:transform 260ms var(--ease-sprett),height 260ms var(--ease-sprett)}
+@media (prefers-reduced-motion: reduce){.glide,.tommel{transition:none!important}}
+
+.ark{position:absolute;z-index:2;top:28px;bottom:28px;left:150px;right:150px;display:flex;flex-direction:column;border-radius:24px;overflow:hidden;background:rgba(255,255,255,.93);backdrop-filter:blur(22px) saturate(105%);border:1px solid rgba(255,255,255,.9);box-shadow:inset 0 1px 0 #fff,0 30px 80px rgba(36,31,51,.32),0 0 0 .5px rgba(36,31,51,.10)}
+.lbl{font-size:12px;color:#645d7a}
+.felt{white-space:nowrap;display:flex;align-items:center;min-height:30px;padding:0 10px;border-radius:6px;background:#fff;box-shadow:inset 0 0 0 1px #e3ddf0;font-size:13.5px}
+.tl{position:relative;height:48px;border-radius:10px;background:#f7f6fb}
+.sg{position:absolute;top:0;bottom:0;box-sizing:border-box;border-radius:8px;background:#efecf6;box-shadow:inset 0 0 0 1px #e3ddf0;padding:6px 9px;overflow:hidden;cursor:pointer}
+.sg.p{background:repeating-linear-gradient(135deg,#f7f6fb 0 5px,#ebe7f3 5px 10px);box-shadow:inset 0 0 0 1px #e8e4f1}
+.sg{cursor:grab;user-select:none;transition:left 180ms var(--ease-sprett)}
+.sg.loft{z-index:4;cursor:grabbing;transform:translateY(-3px);box-shadow:inset 0 0 0 1.5px var(--pal),0 8px 20px rgba(36,31,51,.22)!important;background:#fff;transition:none}
+.rad.loft{background:#fff;box-shadow:0 8px 20px rgba(36,31,51,.18),inset 0 0 0 1px #e3ddf0}
+.sg.on{background:#fff;box-shadow:inset 0 0 0 1.5px var(--pal),0 2px 8px rgba(74,61,125,.14)}
+.sg.ut{opacity:.55;box-shadow:inset 0 0 0 1px #c9c2dd;background:#f7f6fb}
+.sg .t{font-size:12.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sg .m{white-space:nowrap;font-size:11.5px;color:#645d7a;margin-top:2px}
+.kant{position:absolute;top:6px;bottom:6px;width:16px;margin-left:-8px;cursor:col-resize;z-index:3;display:flex;justify-content:center}
+.kant i{width:3px;border-radius:2px;background:transparent}
+.tl:hover .kant i{background:#c9c2dd}
+.kant:hover i,.kant.dra i{background:var(--pal)!important}
+.rad{display:grid;grid-template-columns:18px 46px minmax(0,1fr) 128px 22px;align-items:center;column-gap:10px;min-height:42px;padding:0 6px;border-radius:8px}
+.rad:hover{background:#f7f6fb}
+.rad.on{background:var(--pal-svak)}
+.mk{display:inline-flex;align-items:center;gap:2px;justify-self:end}
+.mk button{all:unset;width:22px;height:22px;border-radius:6px;display:grid;place-items:center;color:#645d7a;cursor:pointer;font-size:15px}
+.mk button:hover{background:#ece9f3;color:#241f33}
+.minb:hover{background:#ece9f3}
+.valgrad{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:2px 0 8px 80px;padding:8px 10px;border-radius:10px;background:#fff;box-shadow:inset 0 0 0 1px #e3ddf0,0 4px 14px rgba(36,31,51,.06)}
+.vc{all:unset;cursor:pointer;height:26px;padding:0 10px;border-radius:13px;background:#f4f2f9;font-size:12.5px;font-variant-numeric:tabular-nums}
+.vc:hover{background:#e3ddf0}
+.vc.on{background:var(--pal);color:#fff;font-weight:500}
+.vc.rest{background:transparent;box-shadow:inset 0 0 0 1px #d9d4e8;color:var(--pal)}
+.besk{margin:2px 0 8px 80px;padding:10px 12px;border-radius:8px;background:#fff;box-shadow:inset 0 0 0 1px #e3ddf0;font-size:13.5px;line-height:1.55;color:#3a3446}
+.ks{display:grid;grid-template-columns:18px 14px 22px minmax(0,1fr);align-items:center;gap:8px;min-height:30px;font-size:13px}
+.boks{width:15px;height:15px;border-radius:4px;box-shadow:inset 0 0 0 1.5px #b9b2cc;background:#fff;display:inline-grid;place-items:center}
+.boks.x{background:var(--pal);box-shadow:none}
+.boks.a{background:#b2a8d2;box-shadow:none}
+.kbdk{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 5px;border-radius:5px;background:#fff;box-shadow:inset 0 0 0 1px #d9d4e8;font-size:11px;color:#4b4560}
+
+.ta{all:unset;display:block;box-sizing:border-box;width:100%;padding:10px 12px;border-radius:8px;background:#fff;box-shadow:inset 0 0 0 1px #e3ddf0;font:inherit;font-size:13.5px;line-height:1.55;color:#241f33;white-space:pre-wrap;overflow:auto;resize:none;transition:box-shadow 140ms}
+.ta:focus{box-shadow:inset 0 0 0 1.5px var(--pal),0 0 0 4px rgba(74,61,125,.10)}
+.ta::placeholder{color:#b9b2cc}
+.grip{position:relative;height:14px;margin-top:-7px;display:flex;justify-content:center;align-items:center;cursor:ns-resize;touch-action:none;z-index:2}
+.grip i{width:36px;height:4px;border-radius:2px;background:#d9d4e8;transition:background 140ms,width 200ms var(--ease-sprett)}
+.grip:hover i,.grip.dra i{background:var(--pal);width:52px}
+.meny{position:absolute;z-index:30;box-sizing:border-box;padding:5px;border-radius:14px;background:rgba(255,255,255,.97);backdrop-filter:blur(22px) saturate(140%);border:1px solid rgba(255,255,255,.9);box-shadow:inset 0 1px 0 #fff,0 14px 40px rgba(36,31,51,.22),0 0 0 .5px rgba(36,31,51,.12);animation:inn 170ms cubic-bezier(.22,1,.36,1)}
+@keyframes inn{from{opacity:0;transform:translateY(-4px) scale(.97)}to{opacity:1;transform:none}}
+@keyframes opp{from{opacity:0;transform:translate(-50%,12px)}to{opacity:1;transform:translateX(-50%)}}
+.el{display:flex;align-items:center;gap:9px;height:30px;padding:0 9px;border-radius:8px;font-size:13.5px;cursor:pointer;white-space:nowrap}
+.el:hover{background:rgba(74,61,125,.09)}
+.el .hint{margin-left:auto;padding-left:14px;font-size:12px;color:#9a90b8}
+.gn{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#9a90b8;padding:6px 9px 3px}
+.skille{height:1px;background:#ece9f3;margin:5px 4px}
+.fot{display:flex;align-items:center;gap:8px;height:32px;padding:0 9px;border-radius:8px;font-size:13.5px;color:var(--pal);cursor:pointer;font-weight:500}
+.fot:hover{background:rgba(74,61,125,.09)}
+.inp{all:unset;box-sizing:border-box;width:100%;height:34px;padding:0 10px;border-radius:7px;background:#fff;box-shadow:inset 0 0 0 1px #e3ddf0;font-size:14px}
+.inp:focus{box-shadow:inset 0 0 0 1.5px var(--pal),0 0 0 4px rgba(74,61,125,.10)}
+.vc{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 11px;border-radius:14px;background:#f4f2f9;font-size:12.5px}
+.vc:hover{background:#e3ddf0}
+.vc.on{background:var(--pal);color:#fff;font-weight:500}
+.toast{position:absolute;z-index:40;left:50%;bottom:58px;transform:translateX(-50%);display:flex;align-items:center;gap:12px;height:42px;padding:0 6px 0 16px;border-radius:999px;background:rgba(36,31,51,.92);color:#fff;font-size:13px;box-shadow:0 14px 40px rgba(36,31,51,.3);animation:opp 260ms var(--ease-sprett);white-space:nowrap}
+.toast button{all:unset;cursor:pointer;height:30px;padding:0 12px;border-radius:999px;background:rgba(255,255,255,.14);font-size:12.5px}
+
+</style>
+</helmet>
+<div style="position:relative;height:1060px;padding:24px;box-sizing:border-box;overflow:hidden;font-family:'Geist',-apple-system,sans-serif;color:#241f33;font-size:14px">
+<div aria-hidden="true" style="position:absolute;left:-120px;top:-80px;width:620px;height:620px;border-radius:50%;background:#8a7bc2;filter:blur(70px);opacity:.75"></div>
+<div aria-hidden="true" style="position:absolute;left:-60px;top:560px;width:520px;height:520px;border-radius:50%;background:#5f9e98;filter:blur(80px);opacity:.7"></div>
+<div aria-hidden="true" style="position:absolute;right:-100px;top:-60px;width:700px;height:500px;border-radius:50%;background:#b8aee0;filter:blur(90px);opacity:.6"></div>
+<div style="position:relative;display:flex;height:1012px;border-radius:16px;overflow:hidden;background:rgba(236,234,241,.42);backdrop-filter:blur(40px) saturate(160%);box-shadow:0 24px 70px rgba(36,31,51,.28),0 0 0 1px rgba(36,31,51,.14)">
+<nav aria-label="Hovedmeny" style="position:relative;width:236px;flex:none;margin:10px;padding:12px 8px;box-sizing:border-box;display:flex;flex-direction:column;gap:2px;border-radius:22px;background:rgba(255,255,255,.5);backdrop-filter:blur(28px) saturate(170%);border:1px solid rgba(255,255,255,.75);box-shadow:inset 0 1px 0 rgba(255,255,255,.95),0 10px 30px rgba(36,31,51,.14)">
+<div style="display:flex;align-items:center;gap:8px;padding:2px 8px 10px"><svg width="20" height="20" viewBox="0 0 1024 1024" aria-hidden="true"><rect x="40" y="40" width="944" height="944" rx="215" fill="#241F33"></rect><rect x="290" y="330" width="200" height="364" rx="44" fill="#EEEDFE"></rect><rect x="516" y="330" width="100" height="364" rx="40" fill="#C9C2DD"></rect><rect x="642" y="330" width="100" height="364" rx="40" fill="#9A90B8"></rect></svg><span style="font-weight:600;font-size:14px">Økta</span><span class="num" style="margin-left:auto;font-size:11px;color:#4b4560">2026/27</span></div>
+<div style="display:flex;align-items:center;gap:8px;height:30px;padding:0 12px;margin-bottom:10px;border-radius:999px;background:rgba(255,255,255,.55);border:1px solid rgba(255,255,255,.75);font-size:13px;color:#4b4560">Søk<span class="kbd">⌘K</span></div>
+<div class="navmark" style="top:195px;height:34px;left:30px"></div><div class="pt ">I dag<span class="kbd">G D</span></div><div class="pt on">Økter<span class="kbd">G Ø</span></div><div class="under "><span class="fk" style="background:#c9c2dd"></span>Alle fag<span class="kbd"></span></div><div class="under on"><span class="fk" style="background:#7a4f2e"></span>HIS3<span class="kbd"></span></div><div class="under "><span class="fk" style="background:#3f6a95"></span>NOR3<span class="kbd"></span></div><div class="under "><span class="fk" style="background:#3d7a5a"></span>REL3<span class="kbd"></span></div><div class="pt ">Elever<span class="kbd">G E</span></div><div class="pt ">Vurderinger<span class="kbd">G V</span></div><div class="pt ">Samtaler<span class="kbd">G S</span></div><div class="pt ">Klassekart<span class="kbd">G K</span></div>
+<div style="flex:1"></div><div class="pt">Gi tilbakemelding</div><div class="pt">Innstillinger<span class="kbd">⌘,</span></div></nav>
+<div style="display:flex;flex:1;min-width:0"><main aria-hidden="true" style="flex:1;margin:10px 10px 10px 0;background:#fff;border-radius:16px;padding:80px 36px 20px">
+<div style="font-size:30px;font-weight:300;letter-spacing:-.015em">Oktober 2026</div>
+<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:24px"><div style="height:120px;border-radius:6px;background:#f7f6fb"></div><div style="height:120px;border-radius:6px;background:#f7f6fb"></div><div style="height:120px;border-radius:6px;background:#f7f6fb"></div><div style="height:120px;border-radius:6px;background:#f7f6fb"></div><div style="height:120px;border-radius:6px;background:#f7f6fb"></div><div style="height:120px;border-radius:6px;background:#f7f6fb"></div><div style="height:120px;border-radius:6px;background:#f7f6fb"></div><div style="height:120px;border-radius:6px;background:#f7f6fb"></div><div style="height:120px;border-radius:6px;background:#f7f6fb"></div><div style="height:120px;border-radius:6px;background:#f7f6fb"></div><div style="height:120px;border-radius:6px;background:#f7f6fb"></div><div style="height:120px;border-radius:6px;background:#f7f6fb"></div><div style="height:120px;border-radius:6px;background:#f7f6fb"></div><div style="height:120px;border-radius:6px;background:#f7f6fb"></div><div style="height:120px;border-radius:6px;background:#f7f6fb"></div><div style="height:120px;border-radius:6px;background:#f7f6fb"></div><div style="height:120px;border-radius:6px;background:#f7f6fb"></div><div style="height:120px;border-radius:6px;background:#f7f6fb"></div><div style="height:120px;border-radius:6px;background:#f7f6fb"></div><div style="height:120px;border-radius:6px;background:#f7f6fb"></div></div></main>
+<div style="position:absolute;inset:0;background:rgba(36,31,51,.20)"></div>
+<section class="ark" role="dialog" aria-label="Økt: Byene vokser">
+<header style="padding:22px 28px 16px;border-bottom:1px solid #ece9f3;flex:none">
+<div style="display:flex;align-items:center;gap:12px">
+<span style="width:11px;height:11px;border-radius:3px;background:#7a4f2e;flex:none"></span>
+<span style="font-size:15px;font-weight:600;color:#7a4f2e">HIS3</span>
+<h1 style="margin:0;white-space:nowrap;font-size:28px;font-weight:300;letter-spacing:-.015em">Byene vokser: arbeid og bolig</h1>
+<span style="flex:1"></span>
+<span class="num" style="display:inline-flex;align-items:center;gap:7px;height:26px;padding:0 10px;border-radius:13px;background:var(--pal-svak);font-size:12.5px;color:var(--pal);font-weight:500;white-space:nowrap">om 7 dager</span>
+<span style="font-size:12px;color:#4b4560;padding:3px 8px;border-radius:999px;background:#f4f2f9">esc</span>
+<button class="btn pri" style="height:28px;padding:0 12px;font-size:12.5px;gap:6px">Ferdig<span style="opacity:.7;font-size:10.5px">⌘↵</span></button>
+</div>
+<div style="margin:10px 0 0 23px;font-size:13px;color:#645d7a;display:flex;align-items:center;gap:8px"><span>Onsdag 21. oktober</span>·<span class="num">08:30–10:00</span>·<span>Rom 118</span>·<span style="display:inline-flex;align-items:center;gap:5px"><span style="width:6px;height:6px;border-radius:50%;background:#2f9a8a"></span>Industrialisering</span><span style="flex:1"></span>
+<div class="seg" style="margin-top:-4px"><span class="tommel" style="left:132px;width:100px"></span><button class="" style="width:128px">Skåring og logg</button><button class="on" style="width:100px">Planlegging</button></div></div>
+</header>
+<div style="flex:1;min-height:0;display:flex">
+<div style="flex:1;min-width:0;padding:20px 28px 16px;overflow:visible;display:flex;flex-direction:column;gap:18px;position:relative" onClick="{{lukk}}">
+<div style="display:grid;grid-template-columns:repeat(5,auto);gap:6px 18px;align-items:center;justify-content:start;font-size:13px">
+<span class="lbl">Dato</span><span class="lbl">Tid</span><span class="lbl">Rom</span><span class="lbl">Periode</span><span class="lbl">Vurdering</span>
+<span class="felt num">21.10.2026</span><span class="felt num">08:30 – 10:00</span><span class="felt num" style="width:54px">118</span><span class="felt" style="gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#2f9a8a"></span>Industrialisering ▾</span><span style="position:relative">
+<sc-if value="{{ingen}}" hint-placeholder-val="{{ true }}"><button class="felt" style="all:unset;box-sizing:border-box;cursor:pointer;display:flex;align-items:center;min-height:30px;padding:0 10px;border-radius:6px;background:#fff;box-shadow:{{tsh}};font-size:13.5px;color:var(--pal)" onClick="{{apne}}">+ Knytt til</button></sc-if>
+<sc-if value="{{harV}}" hint-placeholder-val="{{ false }}"><button style="all:unset;box-sizing:border-box;cursor:pointer;display:flex;align-items:center;gap:8px;min-height:30px;padding:0 10px;border-radius:6px;background:#fdf7ec;box-shadow:inset 0 0 0 1px #efdcb8;font-size:13.5px;color:#6b4a10;white-space:nowrap" onClick="{{apne}}"><sc-if value="{{vS}}" hint-placeholder-val="{{ false }}"><span style="width:15px;height:15px;border-radius:4px;background:#c9922e;display:inline-grid;place-items:center;flex:none"><svg width="9" height="9" viewBox="0 0 10 10"><path d="M2 8l.5-2 4-4 1.5 1.5-4 4z" fill="#fff"/></svg></span></sc-if><sc-if value="{{vM}}" hint-placeholder-val="{{ true }}"><span style="width:15px;height:15px;border-radius:4px;background:#c9922e;display:inline-grid;place-items:center;flex:none"><svg width="9" height="9" viewBox="0 0 10 10"><path d="M1.5 2.5h7v4h-4l-2 1.5v-1.5h-1z" fill="#fff"/></svg></span></sc-if><span style="font-weight:500">{{vNavn}}</span><span style="color:#b08a45">▾</span></button></sc-if>
+<sc-if value="{{steg1}}" hint-placeholder-val="{{ false }}"><div class="meny" style="left:0;top:calc(100% + 6px);width:320px" onClick="{{stopp}}">
+<div class="el" style="color:#9a90b8" onClick="{{ingenV}}">Ingen vurdering</div>
+<div class="gn">HIS3</div>
+<div class="el" onClick="{{velgFinnes}}"><span style="width:15px;height:15px;border-radius:4px;background:#c9922e;display:inline-grid;place-items:center;flex:none"><svg width="9" height="9" viewBox="0 0 10 10"><path d="M1.5 2.5h7v4h-4l-2 1.5v-1.5h-1z" fill="#fff"/></svg></span>Muntlig: industrialisering<span class="hint">4.11</span></div>
+<div class="el"><span style="width:15px;height:15px;border-radius:4px;background:#c9922e;display:inline-grid;place-items:center;flex:none"><svg width="9" height="9" viewBox="0 0 10 10"><path d="M2 8l.5-2 4-4 1.5 1.5-4 4z" fill="#fff"/></svg></span>Skriftlig prøve: 1800-tallet<span class="hint">3.12</span></div>
+<div class="skille"></div>
+<div class="fot" onClick="{{tilSkjema}}"><span style="width:18px;height:18px;border-radius:5px;background:var(--pal);color:#fff;display:inline-grid;place-items:center;font-size:13px;line-height:1">+</span>Ny vurdering i denne økta<span style="margin-left:auto;font-size:11.5px;color:#9a90b8;font-weight:400">N</span></div>
+</div></sc-if>
+<sc-if value="{{steg2}}" hint-placeholder-val="{{ false }}"><div class="meny" style="left:-200px;top:calc(100% + 6px);width:440px;padding:18px 20px 16px" onClick="{{stopp}}">
+<div style="display:flex;align-items:baseline;gap:8px"><span style="font-size:15px;font-weight:600">Ny vurdering</span><span class="lbl" style="color:#9a90b8">knyttes til økta 21.10</span></div>
+<div class="lbl" style="margin:14px 0 5px">Navn</div>
+<input class="inp" value="{{navn}}" onInput="{{skrivNavn}}">
+<div class="lbl" style="margin:14px 0 6px">Form</div>
+<div style="display:flex;gap:6px;flex-wrap:wrap"><sc-for list="{{former}}" as="f" hint-placeholder-count="4"><button class="{{f.kl}}" onClick="{{f.klikk}}">{{f.n}}</button></sc-for></div>
+<div class="lbl" style="margin:14px 0 6px">Når</div>
+<div style="display:flex;gap:6px;flex-wrap:wrap"><sc-for list="{{naar}}" as="f" hint-placeholder-count="2"><button class="{{f.kl}}" onClick="{{f.klikk}}">{{f.n}}</button></sc-for></div>
+<sc-if value="{{flere}}" hint-placeholder-val="{{ false }}"><div style="margin-top:8px;font-size:12.5px;color:#645d7a;line-height:1.45">Etter at den er laget, velger du de andre øktene i lista eller kalenderen. Samtaledager kan settes opp i Samtaler.</div></sc-if>
+<div class="lbl" style="margin:14px 0 6px">Type</div>
+<div style="display:flex;gap:6px"><sc-for list="{{typer}}" as="f" hint-placeholder-count="2"><button class="{{f.kl}}" onClick="{{f.klikk}}">{{f.n}}</button></sc-for><span style="flex:1"></span><span class="lbl" style="align-self:center">Hele klassen · 17 elever</span></div>
+<div style="display:flex;align-items:center;gap:8px;margin-top:18px;padding-top:14px;border-top:1px solid #ece9f3"><span class="lbl" style="color:#9a90b8;white-space:nowrap">Kriterier og vekt: under Vurderinger</span><span style="flex:1"></span><button class="btn stille" onClick="{{avbryt}}">Avbryt</button><button class="btn pri" onClick="{{lag}}">Lag vurdering<span style="opacity:.7;font-size:10.5px">↵</span></button></div>
+</div></sc-if>
+</span>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+<div><div class="lbl" style="margin-bottom:5px">Lekse <span style="color:#9a90b8">· står på årsplanen</span></div><div class="felt" style="color:#9a90b8">Hva elevene skal ha gjort</div></div>
+<div><div class="lbl" style="margin-bottom:5px">Agenda til elevene <span style="color:#9a90b8">· går ut i kalenderen</span></div><div class="felt">Repetisjon · Byene vokser · Kildekritikk i grupper · Exit-lapp</div></div>
+</div>
+<div style="display:flex;align-items:center;gap:10px;height:40px;padding:0 12px;border-radius:10px;background:#f7f6fb;font-size:13.5px"><span style="font-weight:600">Plan</span><span style="color:#645d7a">5 aktiviteter · 90 av 90 min · går opp</span><span style="flex:1"></span><span style="display:flex;gap:2px;width:220px"><span style="flex:10;height:8px;border-radius:2px;background:#c9c2dd"></span><span style="flex:30;height:8px;border-radius:2px;background:#b2a8d2"></span><span style="flex:10;height:8px;border-radius:2px;background:#ece9f3"></span><span style="flex:30;height:8px;border-radius:2px;background:#b2a8d2"></span><span style="flex:10;height:8px;border-radius:2px;background:#c9c2dd"></span></span><span style="color:#9a90b8">▸</span></div>
+<div><div style="display:flex;align-items:baseline;gap:10px;margin-bottom:6px"><h2 style="margin:0;font-size:15px;font-weight:600">Kompetansemål</h2><span class="lbl" style="color:#9a90b8">1 valgt</span></div>
+<div class="ks"><span class="boks x"><svg width="9" height="9" viewBox="0 0 10 10"><path d="M1.5 5.2l2.2 2.2L8.5 2.6" stroke="#fff" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span style="color:#2f9a8a">●</span><span class="num lbl">8</span><span class="ell">reflektere over hvordan teknologiske omveltninger fra den industrielle revolusjonen til i dag har endret menneskers liv</span></div></div>
+<sc-if value="{{harToast}}" hint-placeholder-val="{{ false }}"><div class="toast">{{toastT}}<button onClick="{{angre}}">Angre</button><button>Åpne i Vurderinger</button></div></sc-if>
+</div>
+<aside style="width:300px;flex:none;border-left:1px solid #ece9f3;padding:22px 24px;box-sizing:border-box;display:flex;flex-direction:column;gap:22px;font-size:13px">
+<div><div class="h">Fra forrige økt <span style="font-weight:400;color:#9a90b8">· man 19.10</span></div><div style="margin-top:8px;color:#3a3446;line-height:1.5">Vi rakk ikke kildene om Christiania. Start med dem.</div></div>
+<div><div class="h">Følg opp i økta</div><div style="margin-top:8px;display:flex;flex-direction:column;gap:7px"><div style="display:flex;gap:8px;align-items:center"><span class="hm r" style="width:7px;height:7px;border-radius:50%"></span>Filip: rød to ganger på rad</div><div style="display:flex;gap:8px;align-items:center"><span class="hm o" style="width:7px;height:7px;border-radius:50%"></span>Nora: borte sist</div></div></div>
+<div><div class="h">Perioden</div><div style="margin-top:8px">Industrialisering · økt 2 av 18</div><div style="display:flex;gap:3px;margin-top:8px"><span style="flex:1;height:5px;border-radius:3px;background:#b2a8d2"></span><span style="flex:1;height:5px;border-radius:3px;background:var(--pal)"></span><span style="flex:1;height:5px;border-radius:3px;background:#ece9f3"></span><span style="flex:1;height:5px;border-radius:3px;background:#ece9f3"></span><span style="flex:1;height:5px;border-radius:3px;background:#ece9f3"></span><span style="flex:1;height:5px;border-radius:3px;background:#ece9f3"></span><span style="flex:1;height:5px;border-radius:3px;background:#ece9f3"></span><span style="flex:1;height:5px;border-radius:3px;background:#ece9f3"></span><span style="flex:1;height:5px;border-radius:3px;background:#ece9f3"></span><span style="flex:1;height:5px;border-radius:3px;background:#ece9f3"></span><span style="flex:1;height:5px;border-radius:3px;background:#ece9f3"></span><span style="flex:1;height:5px;border-radius:3px;background:#ece9f3"></span><span style="flex:1;height:5px;border-radius:3px;background:#ece9f3"></span><span style="flex:1;height:5px;border-radius:3px;background:#ece9f3"></span><span style="flex:1;height:5px;border-radius:3px;background:#ece9f3"></span><span style="flex:1;height:5px;border-radius:3px;background:#ece9f3"></span><span style="flex:1;height:5px;border-radius:3px;background:#ece9f3"></span><span style="flex:1;height:5px;border-radius:3px;background:#ece9f3"></span></div></div>
+</aside>
+</div>
+<footer style="flex:none;display:flex;align-items:center;gap:8px;padding:10px 28px;border-top:1px solid #ece9f3;background:#f7f6fb;font-size:12px;color:#645d7a"><span class="kbdk">V</span>vurdering<span style="width:10px"></span><span class="kbdk">N</span>ny vurdering i økta<span style="width:10px"></span><span class="kbdk">↵</span>lag<span style="flex:1"></span><span class="kbdk">esc</span>lukk, alt er lagret</footer>
+</section></div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1060}}'>
+var MI = "<span style=\"width:15px;height:15px;border-radius:4px;background:#c9922e;display:inline-grid;place-items:center;flex:none\"><svg width=\"9\" height=\"9\" viewBox=\"0 0 10 10\"><path d=\"M1.5 2.5h7v4h-4l-2 1.5v-1.5h-1z\" fill=\"#fff\"/></svg></span>", SI = "<span style=\"width:15px;height:15px;border-radius:4px;background:#c9922e;display:inline-grid;place-items:center;flex:none\"><svg width=\"9\" height=\"9\" viewBox=\"0 0 10 10\"><path d=\"M2 8l.5-2 4-4 1.5 1.5-4 4z\" fill=\"#fff\"/></svg></span>";
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { steg: 0, navn: 'Muntlig: byene vokser', form: 'Muntlig', naar: 'en', type: 'Underveis', v: null, toast: '' }; }
+  renderVals() {
+    var self = this, st = this.state;
+    var chips = function (liste, felt) { return liste.map(function (x) { var id = x[0], n = x[1] || x[0]; return { n: n, kl: 'vc' + (st[felt] === id ? ' on' : ''), klikk: function (e) { e.stopPropagation(); var o = {}; o[felt] = id; if (felt === 'form') { var rest = st.navn.replace(/^(Muntlig|Skriftlig|Praktisk|Annet): /, ''); o.navn = id + ': ' + rest; } self.setState(o); } }; }); };
+    return {
+      ingen: !st.v, harV: !!st.v, vNavn: st.v ? st.v.n : '', vS: !!(st.v && st.v.f === 'Skriftlig'), vM: !(st.v && st.v.f === 'Skriftlig'), vIk: '',
+      tsh: st.steg ? 'inset 0 0 0 1.5px var(--pal),0 0 0 4px rgba(74,61,125,.12)' : 'inset 0 0 0 1px #e3ddf0',
+      steg1: st.steg === 1, steg2: st.steg === 2,
+      apne: function (e) { e.stopPropagation(); self.setState({ steg: st.steg ? 0 : 1 }); },
+      stopp: function (e) { e.stopPropagation(); },
+      lukk: function () { if (st.steg) self.setState({ steg: 0 }); },
+      ingenV: function () { self.setState({ v: null, steg: 0 }); },
+      velgFinnes: function () { self.setState({ v: { n: 'Muntlig: industrialisering' }, steg: 0 }); },
+      tilSkjema: function () { self.setState({ steg: 2 }); },
+      navn: st.navn, skrivNavn: function (e) { self.setState({ navn: e.target.value }); },
+      former: chips([['Muntlig'], ['Skriftlig'], ['Praktisk'], ['Annet']], 'form'),
+      naar: chips([['en', 'Denne økta · ons 21.10'], ['flere', 'Over flere økter …']], 'naar'), flere: st.naar === 'flere',
+      typer: chips([['Underveis'], ['Sluttvurdering']], 'type'),
+      avbryt: function () { self.setState({ steg: 0 }); },
+      lag: function () { var s = self; s.setState({ v: { n: st.navn, f: st.form }, steg: 0, toast: 'Vurderingen «' + st.navn + '» er laget og knyttet til økta' }); clearTimeout(s._t); s._t = setTimeout(function () { s.setState({ toast: '' }); }, 7000); },
+      harToast: !!st.toast, toastT: st.toast, angre: function () { self.setState({ v: null, toast: '' }); }
+    };
+  }
+}
+</script>
+</body>
+</html>
