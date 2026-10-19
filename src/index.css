@@ -1793,3 +1793,16 @@ html {
       0 0 0 1px rgba(255, 255, 255, 0.1);
   }
 }
+
+/* To økter som nettopp byttet innhold (16.4), blinker kort. */
+.bytteblink {
+  animation: bytteblink 900ms ease-out;
+}
+@keyframes bytteblink {
+  0% {
+    background-color: color-mix(in srgb, var(--color-aksent) 18%, transparent);
+  }
+  100% {
+    background-color: transparent;
+  }
+}

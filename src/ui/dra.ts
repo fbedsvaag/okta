@@ -195,9 +195,15 @@ export function useDra({
     };
   }
 
-  function begynn(e: Trykk, fra: Plass) {
+  /**
+   * `fraFelt`: draget kan starte i et tekstfelt (tittelen i øktlista,
+   * 16.4). Trykket får da gi skrivemarkør som vanlig; først når pekeren har
+   * flyttet seg 4 px, blir det et drag, og feltet mister fokus.
+   */
+  function begynn(e: Trykk, fra: Plass, fraFelt = false) {
     if (e.button !== 0) return;
     if (
+      !fraFelt &&
       (e.target as HTMLElement).closest(
         "[data-ikke-dra], input, textarea, select, [contenteditable]",
       )
@@ -206,7 +212,10 @@ export function useDra({
     // Ikke la trykket gi fokus til en knapp i raden. Flyttes raden med
     // fokus, ruller WebKit for å holde den synlig, og vinduet hoppet ved
     // slipp. Klikket kommer likevel, så knappen virker som før uten drag.
-    e.preventDefault();
+    if (!fraFelt) e.preventDefault();
+    const felt = fraFelt
+      ? (e.target as HTMLElement).closest<HTMLElement>("input, textarea")
+      : null;
     const startX = e.clientX;
     const startY = e.clientY;
     let peker = y ? startY : startX;
@@ -254,6 +263,10 @@ export function useDra({
           return;
         aktiv = true;
         draget.current = true;
+        if (fraFelt) {
+          felt?.blur();
+          (document.activeElement as HTMLElement | null)?.blur();
+        }
         // Ingen tekstmarkering mens det dras.
         document.documentElement.dataset.drar = "";
         window.getSelection()?.removeAllRanges();

@@ -127,6 +127,21 @@ async function fargeleggSpenn(
  * `slutt` blir første og siste økt i perioden. En periode som mister alle
  * øktene sine, beholder spennet den hadde.
  */
+/** Periodenes start og slutt settes etter øktene de har. */
+export async function oppdaterPeriodespenn(
+  periodeIder: string[],
+): Promise<void> {
+  for (const p of new Set(periodeIder)) {
+    const [spenn] = await hent<{ fra: string | null; til: string | null }>(
+      `SELECT MIN(dato) AS fra, MAX(dato) AS til FROM okt
+        WHERE periode_id = $1 AND slettet IS NULL`,
+      [p],
+    );
+    if (spenn?.fra && spenn.til)
+      await oppdater("periode", p, { start: spenn.fra, slutt: spenn.til });
+  }
+}
+
 export async function fargelegg(
   oktIder: string[],
   periodeId: string | null,
@@ -145,15 +160,7 @@ export async function fargelegg(
       await oppdater("okt", id, { periode_id: periodeId });
   }
 
-  for (const p of berorte) {
-    const [spenn] = await hent<{ fra: string | null; til: string | null }>(
-      `SELECT MIN(dato) AS fra, MAX(dato) AS til FROM okt
-        WHERE periode_id = $1 AND slettet IS NULL`,
-      [p],
-    );
-    if (spenn?.fra && spenn.til)
-      await oppdater("periode", p, { start: spenn.fra, slutt: spenn.til });
-  }
+  await oppdaterPeriodespenn([...berorte]);
 }
 
 /** Sletter perioden, ikke øktene. De blir stående som uplasserte. */

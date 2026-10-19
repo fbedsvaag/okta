@@ -7,6 +7,7 @@ import {
   hentOktVurderinger,
   opprettOkt,
   slettetekst,
+  byttOkter,
   slettOkter,
   type Okt,
   type OktVurdering,
@@ -63,6 +64,9 @@ import { hovedtast, harModifikator } from "../ui/taster";
 import { useIdag } from "../ui/useIdag";
 import { Avkrysning, nyttValg } from "../ui/Flervalg";
 import { Oktvalg, settPeriodeMedAngre } from "./Oktvalg";
+import { useDra } from "../ui/dra";
+import { leggTilAngring } from "../ui/angre";
+import { visToast } from "../ui/Toast";
 
 /**
  * Årsplan — økter, SPEC §4.2.
@@ -139,6 +143,36 @@ export function Okter({
   const [periodeFilter, setPeriodeFilter] = useState<Periodefilter>(null);
   // Raden som sist ble krysset av, så ⇧-klikk kan velge et spenn (16.3).
   const sistKrysset = useRef<string | null>(null);
+  // De to øktene som nettopp byttet innhold, blinker kort (16.4).
+  const [blink, setBlink] = useState<Set<string>>(new Set());
+
+  /**
+   * Bytter innholdet i to økter (16.4). Datoene, tid og rom står. Skårede
+   * økter ligger fast. Angres med ⌘Z, som er å bytte de samme igjen.
+   */
+  async function bytt(a: Okt, b: Okt) {
+    if (a.id === b.id) return;
+    if (a.skaret > 0 || b.skaret > 0) {
+      visToast("Skårede økter ligger fast");
+      return;
+    }
+    if (!(await byttOkter(a.id, b.id))) return;
+    await last();
+    setBlink(new Set([a.id, b.id]));
+    window.setTimeout(() => setBlink(new Set()), 950);
+    const tekst = `Byttet ${kortDato(a.dato)} og ${kortDato(b.dato)}: «${
+      a.tema || "tom økt"
+    }» ligger nå ${kortDato(b.dato)}`;
+    const angring = {
+      tekst,
+      angre: async () => {
+        await byttOkter(a.id, b.id);
+        await last();
+      },
+    };
+    leggTilAngring(angring);
+    visToast(tekst, { angring });
+  }
 
   // Periodene hører til ett fag. Byttes faget, nullstilles filteret.
   useEffect(() => setPeriodeFilter(null), [filterFag]);
@@ -530,6 +564,8 @@ export function Okter({
                 periodevalg={(o) =>
                   perioder.filter((p) => p.skolearFagId === o.skolearFagId)
                 }
+                onBytt={(a, b) => void bytt(a, b)}
+                blink={blink}
                 onPeriode={(o, periode) => {
                   // Klikker man perioden på en valgt rad, gjelder valget
                   // alle valgte i samme fag (16.3).
@@ -660,6 +696,8 @@ function Liste({
   onKryssAlle,
   periodevalg,
   onPeriode,
+  onBytt,
+  blink,
 }: {
   okter: Okt[];
   /** alle øktene i året, så titten finner forrige økt i faget */
@@ -691,8 +729,33 @@ function Liste({
   /** periodene økta kan få: de i dens fag */
   periodevalg: (okt: Okt) => Periode[];
   onPeriode: (okt: Okt, periode: Periode | null) => void;
+  /** dra en økt og slipp på en annen, eller ⌥↑↓: de bytter innhold */
+  onBytt: (a: Okt, b: Okt) => void;
+  /** øktene som nettopp byttet, og blinker kort */
+  blink: Set<string>;
 }) {
   const [apen, setApen] = useState<string | null>(null);
+  // Bytt to økter (16.4): samme dra-mekanikk som samtaletimeplanen. Hver
+  // rad er sin egen gruppe, og alle er «fulle», så et slipp er alltid et
+  // bytte, aldri en innsetting.
+  const {
+    dra,
+    reg,
+    begynn,
+    erDratt,
+    byttesMed,
+    stil,
+    draget: dradd,
+  } = useDra({
+    full: () => true,
+    nokkel: () => undefined,
+    onSlipp: (fra, mal) => {
+      const a = okter[fra.gruppe];
+      const b = okter[mal.gruppe];
+      if (a && b && a.id !== b.id) onBytt(a, b);
+    },
+  });
+  const malOkt = dra?.mal ? okter[dra.mal.gruppe] : undefined;
   const liste = useRef<HTMLDivElement>(null);
   // I dag-linja (16.5) står over den første økta i dag eller senere — men
   // bare når lista har økter på begge sider av i dag, eller en i dag.
@@ -755,6 +818,24 @@ function Liste({
   }
 
   function tast(e: React.KeyboardEvent) {
+    // ⌥↑ / ⌥↓ bytter med økta over eller under (16.4), også fra temafeltet.
+    if (
+      e.altKey &&
+      !harModifikator(e) &&
+      (e.key === "ArrowUp" || e.key === "ArrowDown")
+    ) {
+      const id =
+        (e.target as HTMLElement).closest<HTMLElement>("[data-okt]")?.dataset
+          .okt ?? valgt;
+      const i = okter.findIndex((o) => o.id === id);
+      const j = i + (e.key === "ArrowUp" ? -1 : 1);
+      if (i >= 0 && okter[j]) {
+        e.preventDefault();
+        onBytt(okter[i], okter[j]);
+        onMarkor(okter[j].id);
+      }
+      return;
+    }
     if ((e.target as HTMLElement).closest("input, textarea, select")) return;
     if (hovedtast(e) && e.key.toLowerCase() === "a") {
       e.preventDefault();
@@ -843,10 +924,34 @@ function Liste({
             const vurd = vurderinger.get(o.id) ?? [];
             const per = perioder.get(o.id);
             return (
-              <div key={o.id} data-okt={o.id} className="px-0">
+              <div
+                key={o.id}
+                data-okt={o.id}
+                ref={reg({ gruppe: okter.indexOf(o), nr: 0 })}
+                className="relative px-0"
+              >
                 {o.id === idagFor && <Idaglinje dato={idag} />}
+                {/* Plassen man drar fra, viser hva som havner her. */}
+                {erDratt({ gruppe: okter.indexOf(o), nr: 0 }) &&
+                  malOkt &&
+                  malOkt.id !== o.id &&
+                  !malOkt.skaret && (
+                    <div className="pointer-events-none absolute inset-0 flex items-center rounded-lg bg-flate-svak pl-[230px] text-[calc(13px*var(--tekst-skala))] italic text-blekk-svak">
+                      «{malOkt.tema || "tom økt"}» havner her
+                    </div>
+                  )}
                 <div
+                  onPointerDown={(e) => {
+                    // Dra i tittelen eller i ⋮⋮ (16.4). Skårede ligger fast.
+                    if (o.skaret > 0) return;
+                    const mal = e.target as HTMLElement;
+                    const p = { gruppe: okter.indexOf(o), nr: 0 };
+                    if (mal.closest("[data-grep]")) begynn(e, p);
+                    else if (mal.closest("input[data-tema]"))
+                      begynn(e, p, true);
+                  }}
                   onClick={(e) => {
+                    if (dradd.current) return;
                     if ((e.target as HTMLElement).closest("input")) return;
                     if (hovedtast(e)) return onMerk(o.id, !merket.has(o.id));
                     if (e.shiftKey && valgt) return onMerkSpenn(valgt, o.id);
@@ -862,6 +967,7 @@ function Liste({
                     e.preventDefault();
                     onMeny(o, e.clientX, e.clientY);
                   }}
+                  data-dra-innhold={o.id}
                   style={{
                     ...kolonner,
                     // Gyllen strek til venstre på økter med vurdering (§6).
@@ -869,17 +975,35 @@ function Liste({
                       vurd.length > 0
                         ? "inset 3px 0 0 var(--color-vurdering)"
                         : undefined,
+                    ...stil({ gruppe: okter.indexOf(o), nr: 0 }),
                   }}
-                  className={`grid h-[30px] cursor-default items-center gap-x-3 px-2 text-[calc(13px*var(--tekst-skala))] tabular-nums ${
-                    erApen
-                      ? "rounded-t-lg bg-flate"
-                      : merket.has(o.id)
-                        ? "border-b border-linje-svak bg-valgt"
-                        : vurd.length > 0
-                          ? "border-b border-linje-svak bg-vurdering-flate hover:bg-flate-svak"
-                          : "border-b border-linje-svak hover:bg-flate-svak"
+                  className={`group relative grid h-[30px] cursor-default items-center gap-x-3 px-2 text-[calc(13px*var(--tekst-skala))] tabular-nums ${
+                    blink.has(o.id) ? "bytteblink" : ""
+                  } ${
+                    erDratt({ gruppe: okter.indexOf(o), nr: 0 })
+                      ? "z-20 rounded-lg bg-ark shadow-[0_10px_28px_rgba(36,31,51,0.22),inset_0_0_0_1.5px_var(--color-aksent)]"
+                      : byttesMed({ gruppe: okter.indexOf(o), nr: 0 }) &&
+                          !o.skaret
+                        ? "rounded-lg bg-ark opacity-55 shadow-[inset_0_0_0_1.5px_var(--color-linje-sterk)]"
+                        : erApen
+                          ? "rounded-t-lg bg-flate"
+                          : merket.has(o.id)
+                            ? "border-b border-linje-svak bg-valgt"
+                            : vurd.length > 0
+                              ? "border-b border-linje-svak bg-vurdering-flate hover:bg-flate-svak"
+                              : "border-b border-linje-svak hover:bg-flate-svak"
                   }`}
                 >
+                  {/* ⋮⋮: dra til en annen økt for å bytte innhold (16.4). */}
+                  {!o.skaret && (
+                    <span
+                      data-grep
+                      title="Dra til en annen økt for å bytte innhold"
+                      className="absolute -left-3.5 top-1/2 -translate-y-1/2 cursor-grab touch-none select-none px-0.5 text-[13px] tracking-[-1px] text-blekk-svakest opacity-0 hover:text-aksent group-hover:opacity-100"
+                    >
+                      ⋮⋮
+                    </span>
+                  )}
                   <Avkrysning
                     pa={merket.has(o.id)}
                     etikett={`Velg ${o.tema ?? kortDato(o.dato)}`}

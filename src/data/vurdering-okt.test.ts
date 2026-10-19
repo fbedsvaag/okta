@@ -14,6 +14,8 @@ const {
   hentOkter,
   slettOkter,
   gjenopprettOkter,
+  byttOkter,
+  settSkaring,
 } = await import("./okter");
 const { opprettSkolear } = await import("./skolear");
 const { opprettVurdering, settFrist, knyttOkt, losOkt, hentVurderinger } =
@@ -310,5 +312,58 @@ describe("slette og angre", () => {
     expect(okter).toHaveLength(2);
     expect(okter.find((o) => o.id === a)?.tema).toBe("Markedsmiks");
     expect(okter.find((o) => o.id === a)?.plan).toContain("Gjennomgang");
+  });
+});
+
+describe("bytte to økter", () => {
+  it("bytter innholdet, men dato, tid og rom står", async () => {
+    const { settOktmal, hentOktmal } = await import("./perioder");
+    const a = await opprettOkt(fagId, "MFL1", "2026-10-06", "08:30", 90);
+    const b = await opprettOkt(fagId, "MFL1", "2026-10-08", "10:15", 90);
+    await endreOkt(a, { tema: "Markedsmiks", lekse: "Les kap. 3", sted: "R1" });
+    await endreOkt(b, { tema: "Prising", agenda: "Case", sted: "R2" });
+    await settOktmal(a, "KM1", true);
+    const v = await opprettVurdering(fagId, await skala(), "Prøve", null, null);
+    await knyttOkt(v, b);
+
+    expect(await byttOkter(a, b)).toBe(true);
+    const okter = await hentOkter(skolearId);
+    const A = okter.find((o) => o.id === a)!;
+    const B = okter.find((o) => o.id === b)!;
+    expect([A.dato, A.klokkeslett, A.sted]).toEqual([
+      "2026-10-06",
+      "08:30",
+      "R1",
+    ]);
+    expect([A.tema, A.agenda, A.lekse]).toEqual(["Prising", "Case", null]);
+    expect([B.tema, B.lekse]).toEqual(["Markedsmiks", "Les kap. 3"]);
+    expect((await hentOktmal(b)).egne).toEqual(["KM1"]);
+    expect((await hentOktmal(a)).egne).toEqual([]);
+    const vo = await hentOktVurderinger(skolearId);
+    expect(vo.get(a)?.map((x) => x.id)).toEqual([v]);
+    expect(vo.get(b) ?? []).toEqual([]);
+
+    // Et nytt bytte angrer det første.
+    await byttOkter(a, b);
+    const igjen = await hentOkter(skolearId);
+    expect(igjen.find((o) => o.id === a)?.tema).toBe("Markedsmiks");
+    expect((await hentOktmal(a)).egne).toEqual(["KM1"]);
+  });
+
+  it("lar skårede økter ligge fast", async () => {
+    const a = await opprettOkt(fagId, "MFL1", "2026-10-06", "08:30", 90);
+    const b = await opprettOkt(fagId, "MFL1", "2026-10-08", "08:30", 90);
+    await endreOkt(a, { tema: "Skåret" });
+    const { opprettElev, koblePaFag } = await import("./elever");
+    const elev = await opprettElev("Tony", "Soprano");
+    await koblePaFag(elev, fagId);
+    const [verdi] = await base.select<{ id: string }[]>(
+      "SELECT id FROM skalaverdi LIMIT 1",
+    );
+    await settSkaring(elev, a, verdi.id);
+    expect(await byttOkter(a, b)).toBe(false);
+    expect((await hentOkter(skolearId)).find((o) => o.id === a)?.tema).toBe(
+      "Skåret",
+    );
   });
 });

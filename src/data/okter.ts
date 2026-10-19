@@ -438,6 +438,93 @@ export async function slettOkter(ider: string[]): Promise<void> {
 }
 
 /**
+ * Feltene som bytter plass når to økter byttes (16.4). Datoen, tida og
+ * rommet står; det som skal skje i økta, flytter.
+ */
+export const BYTTEFELT = [
+  "tema",
+  "agenda",
+  "plan",
+  "lekse",
+  "kompetansemal",
+  "periode_id",
+] as const;
+
+/**
+ * Bytter innholdet i to økter (ARBEIDSLISTE 16.4): tema, agenda, plan,
+ * lekse, kompetansemål, periode og vurdering. Dato, tid og rom står.
+ * Skårede økter ligger fast; da skjer ingenting, og svaret er false.
+ * Et bytte er sitt eget motsatte: å bytte de samme to igjen angrer det.
+ */
+export async function byttOkter(a: string, b: string): Promise<boolean> {
+  if (a === b) return false;
+  const rader = await hent<
+    Record<string, unknown> & { id: string; skaret: number }
+  >(
+    `SELECT o.id, ${BYTTEFELT.map((f) => `o.${f}`).join(", ")},
+            (SELECT COUNT(*) FROM skaring s
+              WHERE s.okt_id = o.id AND s.slettet IS NULL) AS skaret
+       FROM okt o WHERE o.id IN ($1, $2) AND o.slettet IS NULL`,
+    [a, b],
+  );
+  const A = rader.find((r) => r.id === a);
+  const B = rader.find((r) => r.id === b);
+  if (!A || !B || A.skaret > 0 || B.skaret > 0) return false;
+
+  const fra = (r: Record<string, unknown>) =>
+    Object.fromEntries(BYTTEFELT.map((f) => [f, r[f] ?? null]));
+  await oppdater("okt", a, fra(B));
+  await oppdater("okt", b, fra(A));
+
+  // Kompetansemål og vurderinger henger i egne tabeller med unike nøkler
+  // (også over slettede rader). De slås av og på, ikke flyttes.
+  const { settOktmal, oppdaterPeriodespenn } = await import("./perioder");
+  const { knyttOkt, losOkt } = await import("./vurderinger");
+  const mal = async (id: string) =>
+    (
+      await hent<{ kode: string }>(
+        "SELECT kode FROM okt_kompetansemal WHERE okt_id = $1 AND slettet IS NULL",
+        [id],
+      )
+    ).map((r) => r.kode);
+  const vurd = async (id: string) =>
+    (
+      await hent<{ v: string }>(
+        "SELECT vurdering_id AS v FROM vurdering_okt WHERE okt_id = $1 AND slettet IS NULL",
+        [id],
+      )
+    ).map((r) => r.v);
+  const [malA, malB, vA, vB] = await Promise.all([
+    mal(a),
+    mal(b),
+    vurd(a),
+    vurd(b),
+  ]);
+  for (const k of malA.filter((k) => !malB.includes(k))) {
+    await settOktmal(a, k, false);
+    await settOktmal(b, k, true);
+  }
+  for (const k of malB.filter((k) => !malA.includes(k))) {
+    await settOktmal(b, k, false);
+    await settOktmal(a, k, true);
+  }
+  for (const v of vA.filter((v) => !vB.includes(v))) {
+    await losOkt(v, a);
+    await knyttOkt(v, b);
+  }
+  for (const v of vB.filter((v) => !vA.includes(v))) {
+    await losOkt(v, b);
+    await knyttOkt(v, a);
+  }
+  // Periodenes start og slutt følger øktene de har.
+  await oppdaterPeriodespenn(
+    [A.periode_id, B.periode_id].filter((p): p is string => !!p),
+  );
+  varsle();
+  return true;
+}
+
+/**
  * Tar slettede økter tilbake (⌘Z etter sletting, 16.3). Slettingen er soft
  * delete (§9), så alt — skåringer, plan, logg — står der fortsatt.
  */
