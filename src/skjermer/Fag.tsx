@@ -365,7 +365,8 @@ function NyttFag({
   const [navn, setNavn] = useState("");
   const [grepKode, setGrepKode] = useState<string | null>(null);
   const [timer, setTimer] = useState<number | null>(null);
-  const [soker, setSoker] = useState(false);
+  // Søket i Udirs fagliste er standardvalget (17.7).
+  const [soker, setSoker] = useState(true);
 
   async function leggTil() {
     if (kode.trim() === "") return;
@@ -388,6 +389,7 @@ function NyttFag({
     <div className="mt-5 border-t border-linje-medium pt-4">
       {soker && (
         <Fagvelger
+          autoFocus={false}
           onLukk={() => setSoker(false)}
           onVelg={(f) => {
             // Udirs navn og kode er et forslag. Kaller du faget MFL1, skriver

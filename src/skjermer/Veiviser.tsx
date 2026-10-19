@@ -19,6 +19,8 @@ import { Oppsettimport } from "./Oppsettfil";
 import { FAGFARGER } from "../ui/farger";
 import { Felt, Knapp, Fagfirkant, Ikon } from "../ui/felles";
 import { LimInn } from "./LimInn";
+import { Fagvelger } from "./Fagvelger";
+import type { GrepFag } from "../data/grep";
 import { Ordmerke } from "../ui/logo";
 
 /**
@@ -438,15 +440,36 @@ function StegFag({
     setNavn("");
   }
 
+  /**
+   * Et fag fra Udirs liste legges til med en gang, med fagkoden som nøkkel
+   * til kompetansemålene og årstimetallet fra Udir. Navnet kan endres under
+   * Fag etterpå.
+   */
+  async function leggTilFraUdir(f: GrepFag) {
+    const kode = f.fagkode ?? f.opplaeringsfag;
+    if (fag.some((x) => x.fagkode === kode)) return;
+    const farge = FAGFARGER[fag.length % FAGFARGER.length];
+    await leggFagIAr(skolearId, kode, f.navn, farge, kode, f.timer);
+    setFag(await hentFagIAr(skolearId));
+  }
+
   return (
     <section>
       <h1 className="text-[calc(30px*var(--tekst-skala))] font-light leading-tight tracking-overskrift">
         Hvilke fag har du i år?
       </h1>
       <p className="mt-1 text-brod text-blekk-dempet">
-        Kode og navn skriver du selv: <code>MFL1</code>, <code>ENG1</code>,{" "}
-        <code>Norsk</code>, hva du nå enn underviser i.
+        Søk opp faget hos Udir, så følger kompetansemålene og årstimetallet med.
+        Kode og navn kan du endre etterpå.
       </p>
+
+      {/* Søket er standardvalget og står øverst (17.7). */}
+      <div className="mt-5">
+        <Fagvelger
+          autoFocus={forslag.length === 0}
+          onVelg={(f) => void leggTilFraUdir(f)}
+        />
+      </div>
 
       {forslag.length > 0 && (
         <div className="mt-5">
@@ -494,7 +517,11 @@ function StegFag({
         </ul>
       )}
 
-      <div className="mt-4 flex items-end gap-3">
+      <p className="mt-5 text-liten text-blekk-dempet">
+        Finner du ikke faget hos Udir (et lokalt valgfag, for eksempel)? Skriv
+        kode og navn selv.
+      </p>
+      <div className="mt-2 flex items-end gap-3">
         <Felt
           etikett="Kode"
           verdi={kode}

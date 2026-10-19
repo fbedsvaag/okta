@@ -17,9 +17,12 @@ import { Felt, Kappet, Knapp } from "../ui/felles";
 export function Fagvelger({
   onVelg,
   onLukk,
+  autoFocus = true,
 }: {
   onVelg: (fag: GrepFag) => void;
-  onLukk: () => void;
+  /** uten: søket står fast, uten Lukk (standardvalget i oppsettet, 17.7) */
+  onLukk?: () => void;
+  autoFocus?: boolean;
 }) {
   const [sok, setSok] = useState("");
   const [treff, setTreff] = useState<GrepFag[]>([]);
@@ -56,12 +59,21 @@ export function Fagvelger({
           verdi={sok}
           settVerdi={setSok}
           plassholder="markedsføring, SAM3045, kroppsøving …"
-          autoFocus
+          bredde="w-full max-w-md"
+          autoFocus={autoFocus}
         />
-        <Knapp variant="stille" onClick={onLukk}>
-          Lukk
-        </Knapp>
+        {onLukk && (
+          <Knapp variant="stille" onClick={onLukk}>
+            Lukk
+          </Knapp>
+        )}
       </div>
+      {/* Hva søket gjør, og hva det ikke gjør (17.7). */}
+      <p className="mt-1.5 text-liten text-blekk-dempet">
+        Fagnavn, fagkode, årstimetall og kompetansemål hentes fra Udirs
+        fagliste. Lista følger med appen, så søket går ikke på nett, og ingen
+        elevdata sendes noe sted.
+      </p>
 
       {leter && <p className="mt-2 text-liten text-blekk-svak">Søker …</p>}
 
