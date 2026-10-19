@@ -1426,6 +1426,33 @@ html {
 .velger.stille:focus-visible {
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-aksent) 28%, transparent);
 }
+/* Brikke: perioden i øktlista (16.2). Uten pil; tom er stiplet. */
+.velger.brikke {
+  height: 24px;
+  padding: 0 9px 0 8px;
+  border-radius: 12px;
+  gap: 6px;
+  background: transparent;
+  box-shadow: none;
+  font-size: calc(12.5px * var(--tekst-skala));
+}
+.velger.brikke:hover {
+  box-shadow: inset 0 0 0 1px var(--color-linje-sterk);
+}
+.velger.brikke.tom {
+  color: var(--color-blekk-svak);
+  box-shadow: none;
+  outline: 1px dashed var(--color-linje-sterk);
+  outline-offset: -1px;
+}
+.velger.brikke[aria-expanded="true"] {
+  box-shadow:
+    inset 0 0 0 1.5px var(--color-aksent),
+    0 0 0 3px color-mix(in srgb, var(--color-aksent) 12%, transparent);
+}
+.velger.brikke .velger-pil {
+  display: none;
+}
 .velger-pil {
   display: inline-flex;
   flex: none;
@@ -1689,4 +1716,80 @@ html {
   box-shadow: inset 0 0 0 1px var(--color-valgt);
   font-size: calc(13.5px * var(--tekst-skala));
   color: var(--color-blekk);
+}
+
+/*
+ * Flervalg (ui/Flervalg.tsx, ARBEIDSLISTE 16.3): avkrysning, den mørke
+ * linja nederst og toasten (ui/Toast.tsx) i samme mørke pille.
+ */
+.avkrysning {
+  display: inline-grid;
+  place-items: center;
+  width: 15px;
+  height: 15px;
+  border-radius: 4px;
+  background: var(--color-ark);
+  box-shadow: inset 0 0 0 1.5px var(--color-linje-sterk);
+  color: var(--color-ark);
+}
+.avkrysning.pa {
+  background: var(--color-aksent);
+  box-shadow: none;
+}
+.flervalgslinje,
+.toast {
+  background: rgba(36, 31, 51, 0.92);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+  color: #fff;
+  box-shadow: 0 14px 40px rgba(36, 31, 51, 0.35);
+}
+.linjeknapp {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  color: #fff;
+}
+.linjeknapp:hover,
+.linjeknapp.apen {
+  background: rgba(255, 255, 255, 0.14);
+}
+.linjeknapp.fare {
+  color: #ffb4a8;
+}
+.linjetast {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.14);
+  font-size: calc(10.5px * var(--tekst-skala));
+  color: #d9d4e8;
+}
+.toast-knapp {
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  font-size: calc(12.5px * var(--tekst-skala));
+}
+.toast-knapp:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+/* Mørk modus: linja og toasten må skille seg fra den mørke bakgrunnen. */
+@media screen {
+  :root[data-tema="mork"] .flervalgslinje,
+  :root[data-tema="mork"] .toast {
+    background: rgba(78, 70, 104, 0.96);
+    box-shadow:
+      0 14px 40px rgba(0, 0, 0, 0.5),
+      0 0 0 1px rgba(255, 255, 255, 0.1);
+  }
 }

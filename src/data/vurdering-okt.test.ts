@@ -7,8 +7,14 @@ vi.mock("@tauri-apps/plugin-sql", () => ({
 }));
 
 const { leggFagIAr, endreFagIAr } = await import("./fag");
-const { opprettOkt, endreOkt, hentOktVurderinger, hentOkter } =
-  await import("./okter");
+const {
+  opprettOkt,
+  endreOkt,
+  hentOktVurderinger,
+  hentOkter,
+  slettOkter,
+  gjenopprettOkter,
+} = await import("./okter");
 const { opprettSkolear } = await import("./skolear");
 const { opprettVurdering, settFrist, knyttOkt, losOkt, hentVurderinger } =
   await import("./vurderinger");
@@ -286,5 +292,23 @@ describe("alias", () => {
     const [f] = await hentFagIAr(skolearId);
     await endreFag(f.fagId, { alias: "" });
     expect((await hentFagIAr(skolearId))[0].kode).toBe("MFL1");
+  });
+});
+
+describe("slette og angre", () => {
+  it("tar slettede økter tilbake med alt de hadde", async () => {
+    const a = await opprettOkt(fagId, "MFL1", "2026-10-06", "08:30", 90);
+    const b = await opprettOkt(fagId, "MFL1", "2026-10-08", "08:30", 90);
+    await endreOkt(a, {
+      tema: "Markedsmiks",
+      plan: "- [ ] Gjennomgang · 30 min",
+    });
+    await slettOkter([a, b]);
+    expect(await hentOkter(skolearId)).toHaveLength(0);
+    await gjenopprettOkter([a, b]);
+    const okter = await hentOkter(skolearId);
+    expect(okter).toHaveLength(2);
+    expect(okter.find((o) => o.id === a)?.tema).toBe("Markedsmiks");
+    expect(okter.find((o) => o.id === a)?.plan).toContain("Gjennomgang");
   });
 });

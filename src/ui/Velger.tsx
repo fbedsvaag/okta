@@ -64,7 +64,11 @@ export function Velger({
   /** klasser for bredden på feltet, f.eks. «w-full» */
   bredde?: string;
   /** liten: 26 px, i tabeller og lister. stille: uten ramme. */
-  variant?: "vanlig" | "liten" | "stille";
+  /**
+   * liten: 26 px, i tabeller og lister. stille: uten ramme. brikke: en
+   * merkelapp i valgets farge, som perioden i øktlista (16.2).
+   */
+  variant?: "vanlig" | "liten" | "stille" | "brikke";
   deaktivert?: boolean;
   /** en handling nederst i aksent, f.eks. «+ Ny periode …» */
   handling?: { tekst: string; onKlikk: () => void };
@@ -128,7 +132,16 @@ export function Velger({
             setApen(true);
           }
         }}
-        className={`velger ${variant === "vanlig" ? "" : variant} ${bredde}`}
+        className={`velger ${variant === "vanlig" ? "" : variant} ${
+          variant === "brikke" && !valgt ? "tom" : ""
+        } ${bredde}`}
+        style={
+          variant === "brikke" && valgt?.farge
+            ? {
+                background: `color-mix(in srgb, ${valgt.farge} 12%, var(--color-ark))`,
+              }
+            : undefined
+        }
       >
         {valgt && <Merke valg={valgt} />}
         <span

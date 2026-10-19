@@ -438,6 +438,16 @@ export async function slettOkter(ider: string[]): Promise<void> {
 }
 
 /**
+ * Tar slettede økter tilbake (⌘Z etter sletting, 16.3). Slettingen er soft
+ * delete (§9), så alt — skåringer, plan, logg — står der fortsatt.
+ */
+export async function gjenopprettOkter(ider: string[]): Promise<void> {
+  if (ider.length === 0) return;
+  for (const id of ider) await oppdater("okt", id, { slettet: null });
+  varsle();
+}
+
+/**
  * Spørsmålet som stilles før økter slettes.
  *
  * Skåringene er det som gjør slettingen alvorlig: en økt kan legges inn

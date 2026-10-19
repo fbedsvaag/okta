@@ -58,6 +58,7 @@ import { ArkKobling, Arkstabel, type ArkApi } from "./ui/Arkstabel";
 import { brukZoom, zoomInn, zoomNull, zoomUt } from "./ui/zoom";
 import { hovedtast, harModifikator, tast as visTast } from "./ui/taster";
 import { useIdag } from "./ui/useIdag";
+import { Toaster } from "./ui/Toast";
 
 /**
  * Et sted i historikken.
@@ -403,6 +404,7 @@ export default function App() {
           <i />
           <i />
         </div>
+        <Toaster />
         {sokApent && (
           <Sokevindu
             skolearId={skolear.id}

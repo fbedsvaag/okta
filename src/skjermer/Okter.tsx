@@ -41,15 +41,9 @@ import { Velger } from "../ui/Velger";
 import { Arsplanmeny } from "./Arsplanmeny";
 import { hentArk, type Ark } from "../data/arsplanark";
 import { TRAFIKKLYS } from "../ui/farger";
-import {
-  fargelegg,
-  hentAllePerioder,
-  periodeFor,
-  type Periode,
-} from "../data/perioder";
+import { hentAllePerioder, periodeFor, type Periode } from "../data/perioder";
 import {
   Periodefiltre,
-  Periodemerke,
   UTEN,
   type Periodefilter,
   type Periodetall,
@@ -67,6 +61,8 @@ import { Tastestripe, Tasthint } from "../ui/Tastestripe";
 import { enLinje, forrigeOkt } from "../data/dagen";
 import { hovedtast, harModifikator } from "../ui/taster";
 import { useIdag } from "../ui/useIdag";
+import { Avkrysning, nyttValg } from "../ui/Flervalg";
+import { Oktvalg, settPeriodeMedAngre } from "./Oktvalg";
 
 /**
  * Årsplan — økter, SPEC §4.2.
@@ -139,42 +135,13 @@ export function Okter({
   const [meny, setMeny] = useState<{ okt: Okt; x: number; y: number } | null>(
     null,
   );
-  // Perioden lista er filtrert på (merkelappene over lista), og om
-  // periodevelgeren for de merkede øktene står åpen (P).
+  // Perioden lista er filtrert på (merkelappene over lista).
   const [periodeFilter, setPeriodeFilter] = useState<Periodefilter>(null);
-  const [velgerPeriode, setVelgerPeriode] = useState(false);
+  // Raden som sist ble krysset av, så ⇧-klikk kan velge et spenn (16.3).
+  const sistKrysset = useRef<string | null>(null);
 
   // Periodene hører til ett fag. Byttes faget, nullstilles filteret.
   useEffect(() => setPeriodeFilter(null), [filterFag]);
-
-  /** Setter perioden på alle de merkede øktene på én gang. */
-  async function settPeriode(periodeId: string | null) {
-    await fargelegg([...merket], periodeId);
-    setMerket(new Set());
-    setVelgerPeriode(false);
-    await last();
-  }
-
-  // P setter periode på de merkede øktene (DESIGN.md §10). Ikke mens man
-  // skriver i et felt — da er P bare en bokstav.
-  useEffect(() => {
-    if (merket.size === 0) {
-      setVelgerPeriode(false);
-      return;
-    }
-    const tast = (e: KeyboardEvent) => {
-      if (harModifikator(e) || e.altKey) return;
-      const mal = e.target as HTMLElement;
-      if (mal.closest?.("input, textarea, select, [contenteditable]")) return;
-      if (e.key === "p" || e.key === "P") {
-        e.preventDefault();
-        setVelgerPeriode((v) => !v);
-      }
-      if (e.key === "Escape") setVelgerPeriode(false);
-    };
-    window.addEventListener("keydown", tast);
-    return () => window.removeEventListener("keydown", tast);
-  }, [merket.size]);
 
   /**
    * Temaet skrives rett i lista. Lagres uten å laste alt på nytt, så
@@ -290,15 +257,6 @@ export function Okter({
     }
     return kart;
   }, [okter, periodePerOkt, filterFag]);
-
-  // Periodene de merkede øktene kan få: bare når alle er i samme fag, for
-  // periodene hører til faget.
-  const merketFag = useMemo(() => {
-    const fagene = new Set(
-      okter.filter((o) => merket.has(o.id)).map((o) => o.skolearFagId),
-    );
-    return fagene.size === 1 ? [...fagene][0] : null;
-  }, [okter, merket]);
 
   // Lista åpner på dagens dato: den første økta fra i dag står øverst, og
   // det som har vært ligger over. Gjøres når skjermen åpnes og når faget
@@ -550,6 +508,46 @@ export function Okter({
                   );
                 }}
                 onMerkAlle={() => setMerket(new Set(synlige.map((o) => o.id)))}
+                onKryss={(id, spenn) => {
+                  setMerket((f) =>
+                    nyttValg(
+                      f,
+                      synlige.map((o) => o.id),
+                      id,
+                      sistKrysset.current,
+                      spenn,
+                    ),
+                  );
+                  sistKrysset.current = id;
+                }}
+                onKryssAlle={() =>
+                  setMerket((f) =>
+                    f.size === synlige.length
+                      ? new Set()
+                      : new Set(synlige.map((o) => o.id)),
+                  )
+                }
+                periodevalg={(o) =>
+                  perioder.filter((p) => p.skolearFagId === o.skolearFagId)
+                }
+                onPeriode={(o, periode) => {
+                  // Klikker man perioden på en valgt rad, gjelder valget
+                  // alle valgte i samme fag (16.3).
+                  const malet =
+                    merket.has(o.id) && merket.size > 1
+                      ? okter.filter(
+                          (x) =>
+                            merket.has(x.id) &&
+                            x.skolearFagId === o.skolearFagId,
+                        )
+                      : [o];
+                  void settPeriodeMedAngre(
+                    malet,
+                    periode?.id ?? null,
+                    periode?.navn ?? null,
+                    () => void last(),
+                  );
+                }}
                 onApneVurdering={(v) =>
                   v.type === "muntlig"
                     ? onApneSamtaler(v.skolearFagId)
@@ -591,75 +589,15 @@ export function Okter({
             )}
 
             {/*
-            Handlingslinja for flervalg. Den ligger nederst i lista og ikke
-            i verktøylinja, fordi den bare finnes når noe er merket — en
-            knapp som kommer og går i toppen ville flyttet resten.
-          */}
-            {merket.size > 0 && (
-              <div className="sticky bottom-0 mt-3 flex items-center gap-3 border border-linje bg-flate px-3 py-2 text-brod shadow-[0_-4px_12px_rgba(0,0,0,0.04)]">
-                <span className="tabular-nums">
-                  {merket.size} {merket.size === 1 ? "økt" : "økter"} merket
-                </span>
-                <span className="tabular-nums text-blekk-dempet">
-                  {timer(
-                    okter
-                      .filter((o) => merket.has(o.id))
-                      .reduce((sum, o) => sum + o.varighetMin, 0),
-                  )}
-                </span>
-                {velgerPeriode && merketFag && (
-                  <span className="flex flex-wrap items-center gap-1.5">
-                    {perioder
-                      .filter((p) => p.skolearFagId === merketFag)
-                      .map((p) => (
-                        <button
-                          key={p.id}
-                          onClick={() => void settPeriode(p.id)}
-                          className="hover:brightness-95"
-                        >
-                          <Periodemerke navn={p.navn} farge={p.farge} />
-                        </button>
-                      ))}
-                    <button
-                      onClick={() => void settPeriode(null)}
-                      className="rounded-stor border border-dashed border-linje px-1.5 py-0.5 text-liten text-blekk-dempet hover:text-blekk"
-                    >
-                      Ingen periode
-                    </button>
-                  </span>
-                )}
-                {velgerPeriode && !merketFag && (
-                  <span className="text-liten text-blekk-dempet">
-                    Merk økter i ett fag for å sette periode.
-                  </span>
-                )}
-                <div className="ml-auto flex items-center gap-2">
-                  {!velgerPeriode && (
-                    <Knapp onClick={() => setVelgerPeriode(true)}>
-                      Sett periode{" "}
-                      <kbd className="font-sans text-blekk-svak">P</kbd>
-                    </Knapp>
-                  )}
-                  <Knapp variant="stille" onClick={() => setMerket(new Set())}>
-                    Nullstill
-                  </Knapp>
-                  <button
-                    onClick={async () => {
-                      const valgte = okter.filter((o) => merket.has(o.id));
-                      if (!(await bekreft(slettetekst(valgte)))) return;
-                      await slettOkter(valgte.map((o) => o.id));
-                      setMerket(new Set());
-                      if (valgt && merket.has(valgt)) setValgt(null);
-                      await last();
-                    }}
-                    className="text-brod text-feil hover:text-feil-mork"
-                  >
-                    Slett{" "}
-                    {merket.size === 1 ? "økta" : `de ${merket.size} øktene`}
-                  </button>
-                </div>
-              </div>
-            )}
+              Flere økter samtidig (16.3): den mørke linja nederst, med
+              Periode · Tid og rom · Lekse · Vurdering · Flytt · Slett.
+            */}
+            <Oktvalg
+              valgte={okter.filter((o) => merket.has(o.id))}
+              perioder={perioder}
+              onEndret={() => void last()}
+              onTom={() => setMerket(new Set())}
+            />
 
             {okter.length > 0 && (
               <p className="mt-3 text-liten text-blekk-dempet">
@@ -718,6 +656,10 @@ function Liste({
   onMerkAlle,
   onApneVurdering,
   onMeny,
+  onKryss,
+  onKryssAlle,
+  periodevalg,
+  onPeriode,
 }: {
   okter: Okt[];
   /** alle øktene i året, så titten finner forrige økt i faget */
@@ -743,6 +685,12 @@ function Liste({
   /** muntlig: trekningen i Samtaler; ellers vurderingskortet */
   onApneVurdering: (v: OktVurdering) => void;
   onMeny: (okt: Okt, x: number, y: number) => void;
+  /** avkrysningen i raden; spenn: ⇧ holdt inne */
+  onKryss: (id: string, spenn: boolean) => void;
+  onKryssAlle: () => void;
+  /** periodene økta kan få: de i dens fag */
+  periodevalg: (okt: Okt) => Periode[];
+  onPeriode: (okt: Okt, periode: Periode | null) => void;
 }) {
   const [apen, setApen] = useState<string | null>(null);
   const liste = useRef<HTMLDivElement>(null);
@@ -767,6 +715,7 @@ function Liste({
 
   // Kolonnene: de faste, fag når alle fag vises, og tilleggene som er på.
   const spor = [
+    "16px",
     "26px",
     "44px",
     "78px",
@@ -857,6 +806,12 @@ function Liste({
         className="grid h-[26px] items-center gap-x-3 border-b border-linje px-2 text-etikett text-blekk-dempet"
         style={kolonner}
       >
+        <Avkrysning
+          pa={okter.length > 0 && okter.every((o) => merket.has(o.id))}
+          delvis={merket.size > 0 && okter.some((o) => !merket.has(o.id))}
+          etikett="Velg alle"
+          onKlikk={onKryssAlle}
+        />
         <span title="Ukenummer">Uke</span>
         <span>Dato</span>
         <span>Tid</span>
@@ -925,6 +880,11 @@ function Liste({
                           : "border-b border-linje-svak hover:bg-flate-svak"
                   }`}
                 >
+                  <Avkrysning
+                    pa={merket.has(o.id)}
+                    etikett={`Velg ${o.tema ?? kortDato(o.dato)}`}
+                    onKlikk={(e) => onKryss(o.id, e.shiftKey)}
+                  />
                   <span className="text-blekk-dempet">{ukenummer(o.dato)}</span>
                   <span
                     className={
@@ -980,8 +940,33 @@ function Liste({
                       }`}
                     />
                   </span>
-                  <span className="min-w-0">
-                    {per && <Periodemerke navn={per.navn} farge={per.farge} />}
+                  {/* Perioden med ett klikk (16.2). */}
+                  <span
+                    className="min-w-0"
+                    onClick={(e) => e.stopPropagation()}
+                    onDoubleClick={(e) => e.stopPropagation()}
+                  >
+                    <Velger
+                      variant="brikke"
+                      bredde="max-w-full"
+                      etikett="Periode"
+                      plassholder="Velg periode"
+                      verdi={per?.id ?? ""}
+                      settVerdi={(v) =>
+                        onPeriode(
+                          o,
+                          periodevalg(o).find((p) => p.id === v) ?? null,
+                        )
+                      }
+                      valg={[
+                        { verdi: "", tekst: "Ingen periode", dempet: true },
+                        ...periodevalg(o).map((p) => ({
+                          verdi: p.id,
+                          tekst: p.navn,
+                          farge: p.farge,
+                        })),
+                      ]}
+                    />
                   </span>
                   {/* Bare typen; temaet står i titten og på vurderingen. */}
                   <Kappet
