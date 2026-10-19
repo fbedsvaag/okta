@@ -27,6 +27,7 @@ import {
 import { taster, type Skalaverdi } from "../skala";
 import { fagfarge, skalafarge } from "../ui/farger";
 import { hovedtast, harModifikator, tast as visTast } from "../ui/taster";
+import { Kladdfelt } from "./Okttekst";
 import { Liveplan, Nalinje, useMinutt, visesLive } from "./Oktlive";
 import { usePlanvisning } from "./Oktplan";
 
@@ -549,6 +550,20 @@ export function OktPanel({
                 }}
                 onApnePlan={() => setModus("plan")}
               />
+              {/* Kladden vises også her, så lappen står foran deg i økta (16.7). */}
+              <div>
+                <p className="mb-2 text-etikett font-semibold text-blekk">
+                  Kladd
+                </p>
+                <Kladdfelt
+                  kompakt
+                  verdi={okt.kladd}
+                  onLagre={async (v) => {
+                    await endreOkt(okt.id, { kladd: v });
+                    onEndret();
+                  }}
+                />
+              </div>
               <div className="flex min-h-[200px] flex-1 flex-col">
                 <p className="mb-2 text-etikett font-semibold text-blekk">
                   Øktlogg

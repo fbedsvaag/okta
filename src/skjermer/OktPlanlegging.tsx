@@ -36,6 +36,7 @@ import { tast } from "../ui/taster";
 import { idag as dagensDato } from "../db";
 import { Velger } from "../ui/Velger";
 import { Oktplan, usePlanvisning } from "./Oktplan";
+import { Agendafelt, Kladdfelt } from "./Okttekst";
 
 /**
  * Økta i planlegging (ARBEIDSLISTE 11.5, lerretet «OktPlan»).
@@ -78,7 +79,11 @@ export function OktPlanlegging({
         <div className="min-w-0 flex-1 overflow-y-auto px-[26px] pb-6 pt-[18px]">
           {/* Faktaraden: alt på én linje, med etiketter over (15.5). */}
           <Fakta okt={okt} enkel={enkel} onLagre={lagre} />
-          <div className="mt-4 grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-x-4">
+          {/*
+            Lekse, agenda med avsnitt og kladd under hverandre (16.6–16.7,
+            lerretet OktTekst).
+          */}
+          <div className="mt-4 space-y-3.5">
             <Tekstfelt
               etikett="Lekse"
               hint={enkel ? undefined : "står på årsplanen"}
@@ -87,14 +92,35 @@ export function OktPlanlegging({
               onLagre={(v) => lagre({ lekse: v })}
             />
             <div>
-              <Tekstfelt
-                etikett="Agenda til elevene"
-                hint={enkel ? undefined : "går ut i kalenderen"}
+              <div className="mb-[5px] flex items-baseline gap-1 text-[calc(12px*var(--tekst-skala))] text-blekk-dempet">
+                <span className="font-medium text-blekk">
+                  Agenda til elevene
+                </span>
+                {!enkel && (
+                  <span className="text-blekk-svak">
+                    · går ut i kalenderen, med avsnittene
+                  </span>
+                )}
+                <span className="ml-auto text-blekk-svak">↵ nytt avsnitt</span>
+              </div>
+              <Agendafelt
                 verdi={okt.agenda}
                 plassholder="Repetisjon · Case i grupper · Exit-lapp"
-                onLagre={(v) => lagre({ agenda: v })}
+                onLagre={(v) => void lagre({ agenda: v })}
               />
               <Kopier okt={okt} />
+            </div>
+            <div>
+              <div className="mb-[5px] flex items-baseline gap-1 text-[calc(12px*var(--tekst-skala))]">
+                <span className="font-medium text-blekk">Kladd</span>
+                <span className="text-blekk-svak">
+                  · bare for deg · havner ikke i kalenderen eller på årsplanen
+                </span>
+              </div>
+              <Kladdfelt
+                verdi={okt.kladd}
+                onLagre={(v) => void lagre({ kladd: v })}
+              />
             </div>
           </div>
 

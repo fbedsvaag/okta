@@ -27,6 +27,7 @@ function okt(over: Partial<Okt>): Okt {
     endret: "2026-08-01T00:00:00",
     plan: null,
     logg: null,
+    kladd: null,
     skaret: 0,
     elever: 0,
     gronn: 0,

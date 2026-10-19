@@ -11,7 +11,8 @@ const { opprettElev, koblePaFag, finnEllerOpprettKlasse, settKlasse } =
 const { opprettElevnotat, settLukket } = await import("./elevnotat");
 const { leggFagIAr } = await import("./fag");
 const { opprettSkolear } = await import("./skolear");
-const { opprettOkt, settSkaring, settSkaringsnotat } = await import("./okter");
+const { opprettOkt, settSkaring, settSkaringsnotat, endreOkt } =
+  await import("./okter");
 const { byggArkiv } = await import("./arkiv");
 
 const GRONN = "5ca1ade1-0001-4000-8000-000000000004";
@@ -92,5 +93,31 @@ describe("byggArkiv og egne gjøremål", () => {
     const ut = fil(await byggArkiv(skolear), "oppfolging.md");
     expect(ut).toContain("- [x] Kopier prøvene, frist 2026-10-02, ferdig");
     expect(ut).toContain("- [ ] Bestill rom");
+  });
+});
+
+describe("kladden", () => {
+  // 16.7: kladden er bare for læreren og går aldri ut av appen.
+  it("er aldri med i arkivet, årsplanen eller kalenderen", async () => {
+    const { lagIcal } = await import("./ical");
+    const { hentOkter } = await import("./okter");
+    const tony = await opprettElev("Tony", "Soprano");
+    await koblePaFag(tony, fag);
+    const okt = await opprettOkt(fag, "MFL1", "2026-09-01", "08:15", 90);
+    await endreOkt(okt, {
+      tema: "Markedsmiks",
+      agenda: "Gjennomgang",
+      kladd: "HEMMELIG KLADD: spør Tony om fraværet",
+    });
+    await settSkaring(tony, okt, GRONN);
+
+    for (const f of await byggArkiv(skolear))
+      expect(f.innhold, f.sti).not.toContain("HEMMELIG");
+
+    const okter = await hentOkter(skolear.id);
+    expect(okter[0].kladd).toContain("HEMMELIG");
+    expect(lagIcal(okter, "x", new Date("2026-09-01T00:00:00"))).not.toContain(
+      "HEMMELIG",
+    );
   });
 });

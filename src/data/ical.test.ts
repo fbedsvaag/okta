@@ -26,6 +26,7 @@ function okt(over: Partial<Okt> = {}): Okt {
     endret: "2026-08-07T14:03:22",
     plan: "HEMMELIG PLAN",
     logg: "HEMMELIG LOGG",
+    kladd: "HEMMELIG KLADD",
     skaret: 0,
     elever: 0,
     gronn: 0,
@@ -228,5 +229,16 @@ describe("mentorsamtale som kalenderhendelse", () => {
     const ics = lagSamtaleHendelse({ ...vera, varighetMin: 30 });
     expect(ics).toContain("DTSTART:20261124T073000Z");
     expect(ics).toContain("DTEND:20261124T080000Z");
+  });
+});
+
+describe("agenda med avsnitt (16.6)", () => {
+  it("går ut i kalenderbeskrivelsen som linjeskift", () => {
+    const s = lagIcal(
+      [okt({ agenda: "Repetisjon\n\nKildekritikk i grupper" })],
+      "x",
+      NA,
+    ).replace(/\r\n /g, "");
+    expect(s).toContain("DESCRIPTION:Repetisjon\\n\\nKildekritikk i grupper");
   });
 });

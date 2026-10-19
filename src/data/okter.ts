@@ -33,6 +33,8 @@ export type Okt = {
   endret: string;
   plan: string | null;
   logg: string | null;
+  /** lærerens kladd. Går aldri ut av appen (16.7). */
+  kladd: string | null;
   /** antall skåringsrader som faktisk finnes */
   skaret: number;
   /** antall elever koblet til faget i år */
@@ -88,7 +90,7 @@ export async function hentOkter(skolearId: string): Promise<Okt[]> {
             o.dato,
             o.klokkeslett,
             o.varighet_min   AS varighetMin,
-            o.tema, o.sted, o.agenda, o.lekse, o.plan, o.logg, o.endret,
+            o.tema, o.sted, o.agenda, o.lekse, o.plan, o.logg, o.kladd, o.endret,
             o.kompetansemal,
             -- Bare elever som står i faget nå teller — samme elever som lista
             -- viser. En elev som er tatt ut av faget, har skåringene sine i
@@ -310,6 +312,8 @@ export async function endreOkt(
     kompetansemal?: string | null;
     plan?: string | null;
     logg?: string | null;
+    /** bare for læreren; går aldri ut av appen (16.7) */
+    kladd?: string | null;
     periode_id?: string | null;
   },
 ): Promise<void> {
@@ -448,6 +452,7 @@ export const BYTTEFELT = [
   "lekse",
   "kompetansemal",
   "periode_id",
+  "kladd",
 ] as const;
 
 /**

@@ -32,6 +32,7 @@ function okt(id: string, dato: string, ekstra: Partial<Okt> = {}): Okt {
     endret: "",
     plan: null,
     logg: null,
+    kladd: null,
     skaret: 0,
     elever: 0,
     gronn: 0,

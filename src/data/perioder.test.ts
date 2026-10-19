@@ -41,6 +41,7 @@ const okt = (
   endret: "2026-08-07T00:00:00",
   plan: null,
   logg: null,
+  kladd: null,
   skaret: 0,
   elever: 0,
   gronn: 0,

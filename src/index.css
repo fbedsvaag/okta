@@ -89,6 +89,9 @@
 
   /* Aksent */
   --color-aksent: #4a3d7d;
+  /* Kladden i økta (16.7): en varm, lys flate. */
+  --color-kladd: #fffcf0;
+  --color-kladd-kant: #efe6c4;
   /* Borte i økta (16.8): mørk prikk med kryss. */
   --color-borte: #5f5a70;
   --color-aksent-mork: #3b3066;
@@ -232,6 +235,8 @@
 
     --color-aksent: #b3a6ec;
     --color-borte: #a29cb6;
+    --color-kladd: #2c2819;
+    --color-kladd-kant: #4a4126;
     --color-aksent-mork: #c4b9f2;
     --color-aksent-dyp: #d3cbf6;
     --color-aksent-dypere: #c4b9f2;
@@ -1805,4 +1810,13 @@ html {
   100% {
     background-color: transparent;
   }
+}
+
+/* Kladden (skjermer/Okttekst.tsx, 16.7). */
+.kladd {
+  background: var(--color-kladd);
+  box-shadow: inset 0 0 0 1px var(--color-kladd-kant);
+}
+.kladd:focus {
+  box-shadow: inset 0 0 0 1.5px var(--color-aksent);
 }
