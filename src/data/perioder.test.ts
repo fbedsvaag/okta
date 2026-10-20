@@ -34,6 +34,7 @@ const okt = (
   dato,
   klokkeslett: null,
   varighetMin: 180,
+  tellendeMin: 180,
   tema: null,
   sted: null,
   agenda: null,

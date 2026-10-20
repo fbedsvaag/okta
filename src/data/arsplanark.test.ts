@@ -38,6 +38,7 @@ const fag: FagIAr = {
   arknotat: null,
   pauseEtterMin: null,
   pauseMin: null,
+  tellendeMin: null,
 };
 
 let n = 0;
@@ -54,6 +55,7 @@ function okt(over: Partial<Okt> = {}): Okt {
     dato: "2026-09-01",
     klokkeslett: "09:15",
     varighetMin: 180,
+    tellendeMin: 180,
     tema: "Markedsanalyse",
     sted: null,
     agenda: null,

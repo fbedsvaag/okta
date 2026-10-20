@@ -10,7 +10,7 @@ import type { Periode } from "./perioder";
 export function holdteMinutter(okter: Okt[], idag: string): number {
   return okter
     .filter((o) => o.dato <= idag)
-    .reduce((s, o) => s + o.varighetMin, 0);
+    .reduce((s, o) => s + o.tellendeMin, 0);
 }
 
 /**
@@ -67,7 +67,7 @@ export function periodestolper(
     farge: string | null,
     liste: Okt[],
   ) => {
-    const planlagt = liste.reduce((s, o) => s + o.varighetMin, 0);
+    const planlagt = liste.reduce((s, o) => s + o.tellendeMin, 0);
     if (planlagt === 0) return;
     ut.push({
       id,

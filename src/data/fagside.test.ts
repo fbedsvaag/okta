@@ -25,6 +25,7 @@ function okt(id: string, dato: string, ekstra: Partial<Okt> = {}): Okt {
     dato,
     klokkeslett: "08:30",
     varighetMin: 120,
+    tellendeMin: 120,
     tema: null,
     sted: null,
     agenda: null,

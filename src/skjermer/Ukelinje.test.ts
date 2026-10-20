@@ -20,6 +20,7 @@ function okt(over: Partial<Okt>): Okt {
     dato: "2026-08-11",
     klokkeslett: "09:15",
     varighetMin: 120,
+    tellendeMin: 120,
     tema: null,
     sted: null,
     agenda: null,

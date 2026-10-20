@@ -130,6 +130,8 @@ export type Arkrad = {
   uke: number;
   klokkeslett: string | null;
   varighetMin: number;
+  /** det raden teller i regnskapet: høyst fagets tak (17.6) */
+  tellendeMin: number;
   tema: string | null;
   lekse: string | null;
   sted: string | null;
@@ -246,6 +248,7 @@ export function byggArk(inn: {
     uke: ukenummer(o.dato),
     klokkeslett: o.klokkeslett,
     varighetMin: o.varighetMin,
+    tellendeMin: o.tellendeMin ?? o.varighetMin,
     tema: tom(o.tema),
     lekse: tom(o.lekse),
     sted: tom(o.sted),
@@ -441,7 +444,7 @@ function grupper(
     const b = kart.get(n)!;
     const minutter = b.rader
       .filter((r) => !r.utenfor)
-      .reduce((s, r) => s + r.varighetMin, 0);
+      .reduce((s, r) => s + r.tellendeMin, 0);
     // Står alt uten periode, er det ingen inndeling å navngi.
     const navn = b.navn ?? (ordnet.length > 1 ? "Uten periode" : null);
     return {
@@ -456,8 +459,8 @@ function grupper(
   });
 }
 
-function timer(okter: { varighetMin: number }[]): number {
-  return okter.reduce((s, o) => s + o.varighetMin, 0) / 60;
+function timer(okter: { varighetMin: number; tellendeMin?: number }[]): number {
+  return okter.reduce((s, o) => s + (o.tellendeMin ?? o.varighetMin), 0) / 60;
 }
 
 function tom(s: string | null | undefined): string | null {

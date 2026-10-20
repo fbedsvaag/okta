@@ -270,17 +270,17 @@ export async function hentTimeregnskap(
             f.navn                                  AS navn,
             f.farge                                 AS farge,
             sf.arstimetall                          AS arstimetall,
-            COALESCE(SUM(o.varighet_min), 0)        AS planlagtMin,
+            COALESCE(SUM(MIN(o.varighet_min, COALESCE(sf.tellende_min, o.varighet_min))), 0) AS planlagtMin,
             COUNT(o.id)                             AS antallOkter,
             COALESCE(SUM(
               CASE WHEN o.dato <= $2 THEN 1 ELSE 0 END), 0)
                                                     AS avholdte,
             COALESCE(SUM(
-              CASE WHEN o.dato < $2 THEN o.varighet_min ELSE 0 END), 0)
+              CASE WHEN o.dato < $2 THEN MIN(o.varighet_min, COALESCE(sf.tellende_min, o.varighet_min)) ELSE 0 END), 0)
                                                     AS holdtForMin,
             GROUP_CONCAT(
               CASE WHEN o.dato = $2
-                   THEN COALESCE(o.klokkeslett, '') || '|' || o.varighet_min
+                   THEN COALESCE(o.klokkeslett, '') || '|' || MIN(o.varighet_min, COALESCE(sf.tellende_min, o.varighet_min))
               END, ',')                             AS idagOkter
        FROM skolear_fag sf
        JOIN fag f ON f.id = sf.fag_id

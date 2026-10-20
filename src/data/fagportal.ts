@@ -43,7 +43,7 @@ export async function hentNokkeltall(
   // «utenfor» — og skal da ikke telle i fagets tall heller.
   const rader = await hent<FagNokkeltall>(
     `WITH innenfor AS (
-       SELECT o.id, o.varighet_min, o.dato
+       SELECT o.id, MIN(o.varighet_min, COALESCE(sf.tellende_min, o.varighet_min)) AS varighet_min, o.dato
          FROM okt o
          JOIN skolear_fag sf ON sf.id = o.skolear_fag_id
          JOIN skolear a ON a.id = sf.skolear_id

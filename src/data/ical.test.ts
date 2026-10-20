@@ -19,6 +19,7 @@ function okt(over: Partial<Okt> = {}): Okt {
     dato: "2026-08-17",
     klokkeslett: "09:15",
     varighetMin: 180,
+    tellendeMin: 180,
     tema: "Markedsanalyse",
     sted: "R204",
     agenda: "Vi ser på SWOT og lager en enkel analyse.",
@@ -185,6 +186,7 @@ describe("mentorsamtale som kalenderhendelse", () => {
     dato: "2026-11-24",
     klokkeslett: "08:30",
     varighetMin: 15,
+    tellendeMin: 15,
     endret: "2026-11-01T00:00:00",
   };
 

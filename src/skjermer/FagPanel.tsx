@@ -197,6 +197,20 @@ export function FagPanel({
             />
             {/* Standard pause (17.5): legges inn i planen i nye økter. */}
             <div className="col-span-2 grid grid-cols-2 gap-3">
+              {/* En økt teller høyst så mye i timeregnskapet (17.6). */}
+              <Felt
+                etikett="Teller høyst, min per økt"
+                verdi={fag.tellendeMin === null ? "" : String(fag.tellendeMin)}
+                plassholder="faktisk lengde"
+                settVerdi={async (v) => {
+                  const n = Math.round(Number(v.trim()));
+                  await endreFagIAr(fag.id, {
+                    tellende_min: v.trim() === "" || !(n > 0) ? null : n,
+                  });
+                  onEndret();
+                }}
+              />
+              <span />
               <Felt
                 etikett="Pause etter, minutter"
                 verdi={

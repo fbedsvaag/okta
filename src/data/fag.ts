@@ -29,6 +29,8 @@ export type FagIAr = {
   /** standard pause (17.5): `pauseMin` minutter etter hver `pauseEtterMin` */
   pauseEtterMin: number | null;
   pauseMin: number | null;
+  /** en økt teller høyst så mange minutter i timeregnskapet (17.6) */
+  tellendeMin: number | null;
   /** faglærer. null = lærernavnet fra innstillingene */
   laerer: string | null;
   /** kompetansemål som fritekst, for fag uten Udir-kode */
@@ -68,7 +70,8 @@ export async function hentFagIAr(skolearId: string): Promise<FagIAr[]> {
             sf.arstimetall   AS arstimetall,
             sf.standard_varighet_min AS standardVarighetMin,
             sf.rom, sf.laerer, sf.kompetansemal, sf.arknotat,
-            sf.pause_etter_min AS pauseEtterMin, sf.pause_min AS pauseMin
+            sf.pause_etter_min AS pauseEtterMin, sf.pause_min AS pauseMin,
+            sf.tellende_min AS tellendeMin
        FROM skolear_fag sf
        JOIN fag f ON f.id = sf.fag_id AND f.slettet IS NULL
       WHERE sf.skolear_id = $1 AND sf.slettet IS NULL
@@ -159,6 +162,7 @@ export async function endreFagIAr(
     arknotat?: string | null;
     pause_etter_min?: number | null;
     pause_min?: number | null;
+    tellende_min?: number | null;
   },
 ): Promise<void> {
   // Nytt standard rom gjelder også øktene som finnes: de uten rom, og de som

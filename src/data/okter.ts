@@ -22,6 +22,8 @@ export type Okt = {
   dato: string;
   klokkeslett: string | null;
   varighetMin: number;
+  /** minuttene økta teller i timeregnskapet: høyst fagets tak (17.6) */
+  tellendeMin: number;
   tema: string | null;
   sted: string | null;
   /** kort beskrivelse for eleven; går ut i kalenderen */
@@ -91,6 +93,8 @@ export async function hentOkter(skolearId: string): Promise<Okt[]> {
             o.dato,
             o.klokkeslett,
             o.varighet_min   AS varighetMin,
+            -- Det økta teller i timeregnskapet (17.6).
+            MIN(o.varighet_min, COALESCE(sf.tellende_min, o.varighet_min)) AS tellendeMin,
             o.tema, o.sted, o.agenda, o.lekse, o.plan, o.logg, o.kladd, o.endret,
             o.kompetansemal,
             -- Bare elever som står i faget nå teller — samme elever som lista

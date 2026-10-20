@@ -397,3 +397,24 @@ describe("standard pauser i nye økter (17.5)", () => {
     expect(o.plan).toContain("- Pause · 10 min");
   });
 });
+
+describe("tellende minutter (17.6)", () => {
+  it("lar en lang økt telle høyst taket, og en kort som den er", async () => {
+    const { hentTimeregnskap } = await import("./dashbord");
+    const { hentNokkeltall } = await import("./fagportal");
+    await opprettOkt(fagId, "MFL1", "2026-09-01", "08:30", 195);
+    await opprettOkt(fagId, "MFL1", "2026-09-02", "08:30", 90);
+    await endreFagIAr(fagId, { tellende_min: 180 });
+    const [fag] = await hentTimeregnskap(skolearId, "2026-09-30");
+    expect(fag.planlagtMin).toBe(270);
+    expect((await hentNokkeltall(fagId, "2026-09-30")).minutter).toBe(270);
+    const okter = await hentOkter(skolearId);
+    expect(okter.map((o) => o.varighetMin).sort()).toEqual([195, 90].sort());
+    expect(okter.map((o) => o.tellendeMin).sort()).toEqual([180, 90].sort());
+
+    // Tomt felt: faktisk lengde.
+    await endreFagIAr(fagId, { tellende_min: null });
+    const [igjen] = await hentTimeregnskap(skolearId, "2026-09-30");
+    expect(igjen.planlagtMin).toBe(285);
+  });
+});

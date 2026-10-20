@@ -9,6 +9,7 @@ function rad(dato: string): Arkrad {
     uke: 0,
     klokkeslett: null,
     varighetMin: 90,
+    tellendeMin: 90,
     tema: null,
     lekse: null,
     sted: null,

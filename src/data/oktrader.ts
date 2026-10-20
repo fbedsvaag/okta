@@ -211,7 +211,7 @@ export async function hentFravaersgrunnlag(
     planlagt: number | null;
   }>(
     `SELECT sf.id AS id, sf.arstimetall AS arstimetall,
-            (SELECT SUM(o.varighet_min) FROM okt o
+            (SELECT SUM(MIN(o.varighet_min, COALESCE(sf.tellende_min, o.varighet_min))) FROM okt o
               WHERE o.skolear_fag_id = sf.id AND o.slettet IS NULL
                 AND o.dato BETWEEN sa.start AND sa.slutt) AS planlagt
        FROM skolear_fag sf
