@@ -67,6 +67,7 @@ import { Oktvalg, settPeriodeMedAngre } from "./Oktvalg";
 import { useDra } from "../ui/dra";
 import { leggTilAngring } from "../ui/angre";
 import { visToast } from "../ui/Toast";
+import { Fagbrytere, useSkjulteFag } from "./Fagbrytere";
 
 /**
  * Årsplan — økter, SPEC §4.2.
@@ -139,6 +140,8 @@ export function Okter({
   const [meny, setMeny] = useState<{ okt: Okt; x: number; y: number } | null>(
     null,
   );
+  // Fagene som er skjult under «Alle fag», huskes for lista (17.1).
+  const [skjultFag, vekslFag] = useSkjulteFag("okter_skjulte_fag");
   // Perioden lista er filtrert på (merkelappene over lista).
   const [periodeFilter, setPeriodeFilter] = useState<Periodefilter>(null);
   // Raden som sist ble krysset av, så ⇧-klikk kan velge et spenn (16.3).
@@ -264,6 +267,8 @@ export function Okter({
     const s = sok.trim().toLocaleLowerCase("nb-NO");
     return okter.filter((o) => {
       if (filterFag && o.skolearFagId !== filterFag) return false;
+      // Alle fag: fagbrikkene skjuler og viser fag (17.1).
+      if (!filterFag && skjultFag.has(o.skolearFagId)) return false;
       if (s && !(o.tema ?? "").toLocaleLowerCase("nb-NO").includes(s))
         return false;
       if (periodeFilter === UTEN && periodePerOkt.has(o.id)) return false;
@@ -275,7 +280,7 @@ export function Okter({
         return false;
       return true;
     });
-  }, [okter, filterFag, sok, periodeFilter, periodePerOkt]);
+  }, [okter, filterFag, sok, periodeFilter, periodePerOkt, skjultFag]);
 
   // Antall økter og timer per periode i faget, til merkelappene.
   const periodeTall = useMemo(() => {
@@ -377,6 +382,15 @@ export function Okter({
                   })),
                 ]}
               />
+              {!filterFag && (
+                <Fagbrytere
+                  klasse=""
+                  fag={fag}
+                  samtaler={false}
+                  skjult={skjultFag}
+                  onVeksle={vekslFag}
+                />
+              )}
               <div className="ml-auto flex items-center gap-2">
                 <Kolonnevelger
                   valgbare={VALGBARE}
