@@ -22,6 +22,11 @@ Lerretet (`docs/lerret/`) er fasit for det som er tegnet.
 - **19.2 Fast overskrift i Økter**: kolonnehodet står fast øverst i glass
   (`.okter-hode`), og månedsoverskriften fester seg rett under det til neste
   måned tar over. Rullingen til dagens økt og piltastene regner med begge.
+- **19.3 Smidigere markering i Økter**: ⌘-klikk på en rad tar én, ⇧-klikk
+  et spenn fra forrige klikk (eller fra markøren), og når noe alt er valgt,
+  velger et vanlig klikk på raden. Uten noe valgt åpner klikket titten som
+  før. Dra over avkrysningene maler et utvalg; første rad avgjør om det
+  merkes eller tas bort. Esc tømmer (som før).
 
 ## Hjemmesiden (20.10, ARBEIDSLISTE 18.3)
 

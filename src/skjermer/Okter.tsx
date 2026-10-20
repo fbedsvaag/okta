@@ -546,19 +546,6 @@ export function Okter({
                     return ny;
                   })
                 }
-                onMerkSpenn={(fra, til) => {
-                  const a = synlige.findIndex((o) => o.id === fra);
-                  const b = synlige.findIndex((o) => o.id === til);
-                  if (a < 0 || b < 0) return;
-                  const [l, h] = a < b ? [a, b] : [b, a];
-                  setMerket(
-                    (f) =>
-                      new Set([
-                        ...f,
-                        ...synlige.slice(l, h + 1).map((o) => o.id),
-                      ]),
-                  );
-                }}
                 onMerkAlle={() => setMerket(new Set(synlige.map((o) => o.id)))}
                 onKryss={(id, spenn) => {
                   setMerket((f) =>
@@ -566,7 +553,8 @@ export function Okter({
                       f,
                       synlige.map((o) => o.id),
                       id,
-                      sistKrysset.current,
+                      // ⇧ uten et klikk å regne fra: fra markøren.
+                      sistKrysset.current ?? valgt,
                       spenn,
                     ),
                   );
@@ -706,7 +694,6 @@ function Liste({
   onVelg,
   onMarkor,
   onMerk,
-  onMerkSpenn,
   onMerkAlle,
   onApneVurdering,
   onMeny,
@@ -733,9 +720,8 @@ function Liste({
   /** åpner økta (Enter, «Åpne økta») */
   onVelg: (id: string) => void;
   onMarkor: (id: string) => void;
+  /** merk eller ta bort én rad; brukes når man maler et utvalg (19.3) */
   onMerk: (id: string, pa: boolean) => void;
-  /** ⇧-klikk: alt mellom markøren og raden */
-  onMerkSpenn: (fra: string, til: string) => void;
   /** ⌘A: alle radene i lista */
   onMerkAlle: () => void;
   /** muntlig: trekningen i Samtaler; ellers vurderingskortet */
@@ -775,6 +761,38 @@ function Liste({
   });
   const malOkt = dra?.mal ? okter[dra.mal.gruppe] : undefined;
   const liste = useRef<HTMLDivElement>(null);
+
+  // Mal et utvalg ved å dra over avkrysningene (19.3). Første rad avgjør om
+  // det merkes eller tas bort. Uten bevegelse er det et vanlig klikk.
+  const maling = useRef<{ pa: boolean; start: string; rorte: boolean } | null>(
+    null,
+  );
+  const malt = useRef(false);
+  function begynnMaling(e: React.PointerEvent, id: string) {
+    if (e.button !== 0 || e.shiftKey || harModifikator(e)) return;
+    maling.current = { pa: !merket.has(id), start: id, rorte: false };
+    const slutt = () => {
+      window.removeEventListener("pointerup", slutt);
+      if (maling.current?.rorte) {
+        // Klikket som følger slippet, skal ikke telle.
+        malt.current = true;
+        setTimeout(() => (malt.current = false), 0);
+      }
+      maling.current = null;
+      liste.current?.classList.remove("select-none");
+    };
+    window.addEventListener("pointerup", slutt);
+  }
+  function malOver(id: string) {
+    const m = maling.current;
+    if (!m || (id === m.start && !m.rorte)) return;
+    if (!m.rorte) {
+      m.rorte = true;
+      liste.current?.classList.add("select-none");
+      onMerk(m.start, m.pa);
+    }
+    onMerk(id, m.pa);
+  }
   // I dag-linja (16.5) står over den første økta i dag eller senere — men
   // bare når lista har økter på begge sider av i dag, eller en i dag.
   const idag = useIdag();
@@ -992,11 +1010,18 @@ function Liste({
                     else if (mal.closest("input[data-tema]"))
                       begynn(e, p, true);
                   }}
+                  onPointerEnter={() => malOver(o.id)}
+                  onMouseDown={(e) => e.shiftKey && e.preventDefault()}
                   onClick={(e) => {
-                    if (dradd.current) return;
+                    if (dradd.current || malt.current) return;
                     if ((e.target as HTMLElement).closest("input")) return;
-                    if (hovedtast(e)) return onMerk(o.id, !merket.has(o.id));
-                    if (e.shiftKey && valgt) return onMerkSpenn(valgt, o.id);
+                    // Markering (19.3): ⌘ tar én, ⇧ et spenn, og når noe
+                    // alt er valgt, velger et klikk på raden.
+                    if (hovedtast(e) || e.shiftKey || merket.size > 0) {
+                      onKryss(o.id, e.shiftKey);
+                      onMarkor(o.id);
+                      return;
+                    }
                     onMarkor(o.id);
                     setApen((a) => (a === o.id ? null : o.id));
                     liste.current?.focus();
@@ -1046,11 +1071,19 @@ function Liste({
                       ⋮⋮
                     </span>
                   )}
-                  <Avkrysning
-                    pa={merket.has(o.id)}
-                    etikett={`Velg ${o.tema ?? kortDato(o.dato)}`}
-                    onKlikk={(e) => onKryss(o.id, e.shiftKey)}
-                  />
+                  <span
+                    className="flex"
+                    onPointerDown={(e) => begynnMaling(e, o.id)}
+                  >
+                    <Avkrysning
+                      pa={merket.has(o.id)}
+                      etikett={`Velg ${o.tema ?? kortDato(o.dato)}`}
+                      onKlikk={(e) => {
+                        if (malt.current) return;
+                        onKryss(o.id, e.shiftKey);
+                      }}
+                    />
+                  </span>
                   <span className="text-blekk-dempet">{ukenummer(o.dato)}</span>
                   <span
                     className={
