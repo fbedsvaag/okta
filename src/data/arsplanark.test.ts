@@ -248,8 +248,6 @@ describe("feltvalg", () => {
       rom: null,
       regnskap: null,
       arknotat: null,
-      pauseEtterMin: null,
-      pauseMin: null,
       kompetansemalFritekst: null,
     });
     const md = somMarkdown(a);
