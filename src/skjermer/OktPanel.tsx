@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Elevfoto } from "../ui/Elevfoto";
 import { Bryter, Fagfirkant } from "../ui/felles";
 import {
+  borteSist,
   lesPlan,
   narTekst,
   standardModus,
@@ -30,6 +31,7 @@ import { hovedtast, harModifikator, tast as visTast } from "../ui/taster";
 import { Kladdfelt } from "./Okttekst";
 import { Liveplan, Nalinje, useMinutt, visesLive } from "./Oktlive";
 import { usePlanvisning } from "./Oktplan";
+import { hentOktrader } from "../data/oktrader";
 
 /**
  * Økta som ark, SPEC §4.4 og DESIGN.md §10 (lerretet «OktArk»).
@@ -539,6 +541,20 @@ export function OktPanel({
               className={`flex ${loddrett ? "w-[360px]" : "w-80"} shrink-0 flex-col gap-[22px] overflow-auto border-l border-linje-medium bg-flate-svak/70 px-[22px] py-[18px]`}
             >
               {/* Mens økta pågår, tar den loddrette planen plassen. */}
+              {/* Hvem som var borte forrige gang, alle sammen. */}
+              <BorteSist
+                okt={okt}
+                skolearId={skolearId}
+                elever={elever}
+                onVelg={(elevId) => {
+                  const i = elever.findIndex((e) => e.elevId === elevId);
+                  if (i >= 0) {
+                    setFilter("alle");
+                    setMarkert(i);
+                    liste.current?.focus();
+                  }
+                }}
+              />
               {!loddrett && <Forrigenotat okt={okt} />}
               <Liveplan
                 okt={okt}
@@ -929,4 +945,77 @@ function minIgjen(okt: Okt, na: Date): number | null {
   const naMin = na.getHours() * 60 + na.getMinutes();
   const slutt = start + okt.varighetMin;
   return naMin >= start && naMin < slutt ? slutt - naMin : null;
+}
+
+/**
+ * «Borte sist»: alle elevene som var borte i forrige avholdte økt i faget,
+ * uten tak og uansett hva annet som gjelder dem. Bare fornavn (etternavnets
+ * forbokstav når to har samme), fordi økta kan stå på skjerm i klasserommet.
+ */
+function BorteSist({
+  okt,
+  skolearId,
+  elever,
+  onVelg,
+}: {
+  okt: Okt;
+  skolearId: string;
+  elever: OktElev[];
+  onVelg: (elevId: string) => void;
+}) {
+  const [sist, setSist] = useState<ReturnType<typeof borteSist>>(null);
+  useEffect(() => {
+    let avbrutt = false;
+    void hentOktrader(skolearId).then((r) => {
+      if (!avbrutt) setSist(borteSist(r, okt));
+    });
+    return () => {
+      avbrutt = true;
+    };
+  }, [okt.id, okt.dato, okt.klokkeslett, skolearId]);
+  if (!sist) return null;
+
+  const hvem = sist.elevIder
+    .map((id) => elever.find((e) => e.elevId === id))
+    .filter((e): e is OktElev => !!e)
+    .sort((a, b) => a.fornavn.localeCompare(b.fornavn, "nb-NO"));
+  const navn = (e: OktElev) =>
+    elever.filter((x) => x.fornavn === e.fornavn).length > 1
+      ? `${e.fornavn} ${e.etternavn.charAt(0)}.`
+      : e.fornavn;
+  const dag = new Date(`${sist.dato}T12:00:00`).toLocaleDateString("nb-NO", {
+    weekday: "short",
+    day: "numeric",
+    month: "numeric",
+  });
+
+  return (
+    <div>
+      <p className="mb-2 text-etikett font-semibold text-blekk">
+        Borte sist
+        <span className="font-normal text-blekk-svak">
+          {" "}
+          · {dag}
+          {hvem.length > 0 && ` · ${hvem.length}`}
+        </span>
+      </p>
+      {hvem.length === 0 ? (
+        <p className="text-liten text-blekk-svak">Alle var til stede.</p>
+      ) : (
+        <div className="flex flex-wrap gap-1.5">
+          {hvem.map((e) => (
+            <button
+              key={e.elevId}
+              onClick={() => onVelg(e.elevId)}
+              title={`${e.fornavn} ${e.etternavn}: vis i lista`}
+              className="inline-flex h-[26px] items-center gap-1.5 rounded-full bg-ark px-2.5 text-[calc(12.5px*var(--tekst-skala))] shadow-[inset_0_0_0_1px_var(--color-linje)] hover:shadow-[inset_0_0_0_1px_var(--color-aksent)]"
+            >
+              <span className="h-[7px] w-[7px] rounded-full bg-borte" />
+              {navn(e)}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }

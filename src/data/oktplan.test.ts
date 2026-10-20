@@ -13,6 +13,7 @@ import {
   lengste,
   lesTittel,
   planMedPauser,
+  borteSist,
   livePlan,
   livetid,
   livetekst,
@@ -372,5 +373,58 @@ describe("standard pauser (17.5)", () => {
   it("gir ingen plan uten pause, eller når økta er for kort", () => {
     expect(planMedPauser(90, null, 10)).toBeNull();
     expect(planMedPauser(50, 45, 10)).toBeNull();
+  });
+});
+
+describe("borte sist", () => {
+  const r = (
+    elevId: string,
+    oktId: string,
+    dato: string,
+    borte: number,
+    kl = "08:30",
+  ) => ({
+    elevId,
+    oktId,
+    dato,
+    klokkeslett: kl,
+    borte,
+    skolearFagId: "f",
+    farge: borte ? null : "rod",
+    varighetMin: 90,
+    tema: null,
+  });
+  const okt = {
+    id: "na",
+    dato: "2026-10-20",
+    klokkeslett: "08:30",
+    skolearFagId: "f",
+  };
+
+  it("gir alle som var borte i forrige avholdte økt, også de røde", () => {
+    const rader = [
+      r("a", "o1", "2026-10-13", 1),
+      r("a", "o2", "2026-10-15", 1),
+      r("b", "o2", "2026-10-15", 1),
+      r("c", "o2", "2026-10-15", 0),
+    ];
+    expect(borteSist(rader, okt)).toEqual({
+      dato: "2026-10-15",
+      elevIder: ["a", "b"],
+    });
+  });
+
+  it("tar med en tidligere økt samme dag, men ikke denne", () => {
+    const rader = [
+      r("a", "o1", "2026-10-20", 1, "08:00"),
+      r("b", "na", "2026-10-20", 1),
+    ];
+    expect(
+      borteSist(rader, { ...okt, klokkeslett: "10:00" })?.elevIder,
+    ).toEqual(["a"]);
+  });
+
+  it("er tom uten tidligere økter", () => {
+    expect(borteSist([], okt)).toBeNull();
   });
 });

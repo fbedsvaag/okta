@@ -558,6 +558,38 @@ export function folgOpp(
   return ut;
 }
 
+/**
+ * Hvem som var borte forrige gang (alle, uten tak): den siste avholdte økta
+ * i faget før denne, og elevene som hadde «ikke i økta» eller ikke ble
+ * trykket på der. Til boksen «Borte sist» i skåringen.
+ */
+export function borteSist(
+  rader: Oktrad[],
+  okt: Pick<Okt, "id" | "dato" | "klokkeslett" | "skolearFagId">,
+): { dato: string; elevIder: string[] } | null {
+  const for_ = rader.filter(
+    (r) =>
+      r.skolearFagId === okt.skolearFagId &&
+      r.oktId !== okt.id &&
+      (r.dato < okt.dato ||
+        (r.dato === okt.dato &&
+          (r.klokkeslett ?? "") < (okt.klokkeslett ?? ""))),
+  );
+  if (for_.length === 0) return null;
+  const siste = for_.reduce((a, b) =>
+    b.dato > a.dato ||
+    (b.dato === a.dato && (b.klokkeslett ?? "") > (a.klokkeslett ?? ""))
+      ? b
+      : a,
+  );
+  return {
+    dato: siste.dato,
+    elevIder: for_
+      .filter((r) => r.oktId === siste.oktId && r.borte)
+      .map((r) => r.elevId),
+  };
+}
+
 /** Hvor i perioden økta ligger: nummeret, og alle øktene i rekkefølge. */
 export function iPerioden(
   okt: Pick<Okt, "id" | "periodeId">,
