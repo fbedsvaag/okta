@@ -46,13 +46,17 @@ Lerretet (`docs/lerret/`) er fasit for det som er tegnet.
 
 ## Hjemmesiden (20.10, ARBEIDSLISTE 18.3)
 
-Statisk side i `site/` (index.html, personvern.html, stil.css, side.js,
+Statisk side i `site/` (index.html, personvern.html, forste-gang.html, stil.css, side.js,
 bilder/, fonter/). Ingen rammeverk og ingen byggesteg. Geist ligger ved,
 og siden henter ingenting fra andre enn seg selv: ingen informasjonskapsler,
 ingen analyse, ingen tredjepartsskript. Relative stier, så den kan flyttes
 til Cloudflare Pages eller Netlify uten endringer. Publiseres med GitHub
 Pages fra `site/` (`.github/workflows/side.yml`).
 
+- «Første gang du åpner Økta» (`forste-gang.html`): Mac (Åpne likevel i
+  Personvern og sikkerhet, og `xattr` hvis Mac sier at appen er skadet) og
+  Windows (Edge «Behold likevel», SmartScreen «Kjør likevel»). Lenket fra
+  begge nedlastingskortene og bunnmenyen.
 - Bildene er trukket ut av tegningen (webp og jpg), ingen nye skjermbilder.
 - Animasjonene starter når kortene ruller inn (IntersectionObserver), og
   står stille på sluttbildet med «Reduser bevegelse».

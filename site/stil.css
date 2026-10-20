@@ -1115,7 +1115,7 @@ h3 {
   opacity: 1;
 }
 
-/* ---------------------------------------- personvernsiden */
+/* ---------------------------------------- personvern og første gang */
 
 .artikkel {
   max-width: 760px;
@@ -1135,8 +1135,23 @@ h3 {
   line-height: 1.65;
   color: #3a3446;
 }
-.artikkel ul {
+.artikkel ul,
+.artikkel ol {
   padding-left: 22px;
+}
+.artikkel ol.steg li::marker {
+  font-weight: 600;
+  color: var(--dempet);
+}
+.artikkel .tips {
+  margin-top: 24px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  background: #fbfafd;
+  box-shadow: inset 0 0 0 1px var(--linje);
+}
+.oshjelp a {
+  white-space: nowrap;
 }
 .artikkel li + li {
   margin-top: 8px;
