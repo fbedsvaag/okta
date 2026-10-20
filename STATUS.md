@@ -9,6 +9,62 @@ den skal bli. Fila eies fritt, i motsetning til SPEC.md.
 Utseendet står i `DESIGN.md`, som beskriver appen slik den er bygget.
 Lerretet (`docs/lerret/`) er fasit for det som er tegnet.
 
+## Hjemmesiden (20.10, ARBEIDSLISTE 18.3)
+
+Statisk side i `site/` (index.html, personvern.html, stil.css, side.js,
+bilder/, fonter/). Ingen rammeverk og ingen byggesteg. Geist ligger ved,
+og siden henter ingenting fra andre enn seg selv: ingen informasjonskapsler,
+ingen analyse, ingen tredjepartsskript. Relative stier, så den kan flyttes
+til Cloudflare Pages eller Netlify uten endringer. Publiseres med GitHub
+Pages fra `site/` (`.github/workflows/side.yml`).
+
+- Bildene er trukket ut av tegningen (webp og jpg), ingen nye skjermbilder.
+- Animasjonene starter når kortene ruller inn (IntersectionObserver), og
+  står stille på sluttbildet med «Reduser bevegelse».
+- Mobil og nettbrett: én kolonne, teksten før bildene, ingen vannrett
+  rulling (sjekket i WebKit på 390 px).
+- Lighthouse: skrivebord 100/100/100/100; mobil ytelse 96, resten 100;
+  personvernsiden 98/100/100.
+
+**«Gratis» og «kildekoden er åpen» på siden**, til å ta stilling til:
+
+1. Øverst: «Gratis for lærere · beta 0.3»
+2. Under knappene: «Kildekoden er åpen · Ingen innlogging · Virker uten nett»
+3. Personvern-boksen: punktet «Åpen kildekode» og knappen «Se kildekoden»
+4. Spørsmål: «Koster det noe? Nei. Økta er gratis å bruke, og kildekoden er
+   åpen.»
+5. Personvernsiden: «Les koden selv» og «Kildekode på GitHub» i bunnen
+   (begge sider)
+
+Merk: repoet har ingen lisensfil. Uten lisens er koden synlig, men ikke
+åpen kildekode i juridisk forstand; ingen har lov til å bruke den videre.
+Velg en lisens (eller ta bort ordene) før siden går ut.
+
+**Systemkravene** er rettet mot det som faktisk bygges:
+
+- Mac: macOS 13 eller nyere (`minimumSystemVersion: "13.0"`), universal-
+  dmg for Apple-chip og Intel. Tegningen sa bare «macOS».
+- Windows: Windows 10 og 11, 64-bit (NSIS-installer for x64,
+  `Okta_0.3.0_x64-setup.exe`). WebView2 lastes ned ved installasjon hvis
+  den mangler. Tegningen sa «Windows 10 og 11».
+- Hjelpeteksten for Mac sa «høyreklikk og velg Åpne»; det virker ikke
+  lenger fra macOS 15. Rettet til Systeminnstillinger › Personvern og
+  sikkerhet › «Åpne likevel», som i guiden.
+
+**Tekst som ikke stemte med appen, og er rettet på siden:**
+
+- «Bare to ting går på nett … fagsøket mot Udir. Søket sender bare
+  fagkoden.» Fagsøket går ikke på nett; lista følger med appen
+  (`src/assets/grep-fag.json`). Nå: «Bare én ting går på nett …».
+- Personvernsiden sier i tillegg at kontaktsamtaler kan publiseres med
+  elevens fornavn og klokkeslett (SPEC §8.1), at «Gi tilbakemelding»
+  åpner et skjema i nettleseren, og at Windows-installasjonen laster ned
+  WebView2. Det sto ikke i tegningen.
+
+**Nedlasting:** knappene peker til `releases/latest`. Den er i dag v0.2.0,
+fordi 0.3.0 er merket som pre-release. Siden sier «Versjon 0.3.0». Merk
+0.3.0 som siste versjon på GitHub, eller endre teksten.
+
 ## Runde 16 og 17 (19.–20.10, ARBEIDSLISTE §16 og §17)
 
 Bygget etter lerretene OktFravaer (variant B), OktSkarFilter,

@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Personvern – Økta</title>
+<meta name="description" content="Hva Økta lagrer, hvor det ligger, og det lille som går på nett.">
+<meta name="theme-color" content="#f6f5fa">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preload" href="fonter/geist-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="stil.css">
+</head>
+<body>
+<a class="hopp" href="#innhold">Hopp til innholdet</a>
+<div class="side">
+<div class="flate lilla" aria-hidden="true"></div>
+
+<header class="bredde topp">
+  <a class="logo" href="./"><svg width="26" height="26" viewBox="0 0 1024 1024" aria-hidden="true"><rect x="40" y="40" width="944" height="944" rx="215" fill="#241F33"/><rect x="290" y="330" width="200" height="364" rx="44" fill="#EEEDFE"/><rect x="516" y="330" width="100" height="364" rx="40" fill="#C9C2DD"/><rect x="642" y="330" width="100" height="364" rx="40" fill="#9A90B8"/></svg>Økta</a>
+  <a class="btn pri lite" href="./#last-ned">Last ned</a>
+</header>
+
+<main id="innhold" class="artikkel">
+  <a class="tilbake" href="./">← Til forsiden</a>
+  <p class="merke" style="margin-top:28px">Personvern</p>
+  <h1>Hvordan Økta behandler elevdata</h1>
+  <p class="ingress">Kort sagt: alt ligger på maskinen din. Appen har ingen server, ingen konto og ingen sporing. To ting kan gå på nett, og bare hvis du selv slår dem på.</p>
+
+  <h2>Hva som lagres, og hvor</h2>
+  <table>
+    <thead><tr><th scope="col">Hva</th><th scope="col">Hvor</th></tr></thead>
+    <tbody>
+      <tr><td>Alt du legger inn: fag, økter, elever, skåringer, notater, vurderinger, samtaler, klassekart, elevbilder og kjønn</td><td>Én databasefil i appens egen mappe på maskinen (på Mac: <code>~/Library/Application Support/no.elevtracking.app/</code>)</td></tr>
+      <tr><td>Sikkerhetskopier av databasen</td><td>En mappe ved siden av databasen. Kopiene tas av appen selv og blir på maskinen.</td></tr>
+      <tr><td>Arkivet (lesbare filer for året)</td><td>Bare hvis du velger en arkivmappe, og bare der du velger. Velger du en mappe som synkes til en skytjeneste, havner arkivet der. Elevbilder og kjønn er aldri med i arkivet.</td></tr>
+      <tr><td>Det du skriver ut eller eksporterer (årsplan, klassekart, lister)</td><td>Der du lagrer det. Elevbilder og kjønn er aldri med. Klassekartet har bare fornavn og forbokstaven i etternavnet.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Det som kan gå på nett</h2>
+  <p>Appen gjør ingen nettverkskall av seg selv: ingen analyse, ingen oppdateringssjekk, ingen innlogging. Unntakene er disse:</p>
+  <ul>
+    <li><b>Kalenderen, hvis du kobler den til.</b> Du kan publisere timeplanen til én CalDAV-adresse du selv legger inn (bare https). Det er av som standard. For hver økt går fag, tittel, dato, klokkeslett, rom og agenda ut, ikke noe om elevene. Velger du også å publisere kontaktsamtalene, får hver samtale elevens fornavn og klokkeslettet, og ingenting annet. Appen skriver til kalenderen og leser aldri noe tilbake.</li>
+    <li><b>Kalenderstrømmen på maskinen.</b> Appen kan også lage en kalenderfil som bare er tilgjengelig på din egen maskin (<code>127.0.0.1</code>), for kalenderprogrammet ditt. Den nås ikke fra nettet.</li>
+    <li><b>«Gi tilbakemelding»</b> åpner et skjema i nettleseren din og kopierer én linje med versjon, operativsystem og hvilken skjerm du står på. Aldri en elev, et fag eller annet innhold. Det er nettleseren som går på nett, ikke appen.</li>
+    <li><b>Installasjonen på Windows</b> laster ned Microsofts WebView2 hvis den mangler på maskinen. Windows 11 har den fra før.</li>
+  </ul>
+  <p>Fagsøket mot Udir går ikke på nett. Lista over fag og kompetansemål følger med appen.</p>
+
+  <h2>Elevbilder og kjønn</h2>
+  <p>Bilder hentet fra klasselista og kjønn (som brukes til å blande grupper i klassekartet) blir i databasen på maskinen. De er ikke med i kalenderen, arkivet, eksporten, utskriftene eller oppsettfila du kan dele med kolleger. Dette er sjekket av tester i kildekoden.</p>
+
+  <h2>Oppsettfila</h2>
+  <p>«Del oppsett» lager en fil med skoleåret, fridagene, fagene, skalaene og noen innstillinger, så en kollega kan komme raskt i gang. Den inneholder ingen elever, ingen skåringer og ingen notater.</p>
+
+  <h2>Ditt ansvar</h2>
+  <p>Du er selv ansvarlig for hvordan du behandler opplysninger om elevene. Fordi alt ligger lokalt, finnes det ingen databehandler utenfor maskinen din. Snakk gjerne med personvernombudet eller IKT-ansvarlig på skolen, og vis dem denne siden.</p>
+
+  <h2>Denne nettsiden</h2>
+  <p>Siden bruker ingen informasjonskapsler, ingen analyse og ingen skript eller fonter fra andre. Den henter bare sine egne filer.</p>
+
+  <h2>Les koden selv</h2>
+  <p>Kildekoden ligger åpent på <a href="https://github.com/fbedsvaag/okta">GitHub</a>. Der kan du, eller IKT-ansvarlig, se nøyaktig hva appen gjør.</p>
+</main>
+
+<footer class="bredde bunn">
+  <a class="logo" href="./"><svg width="18" height="18" viewBox="0 0 1024 1024" aria-hidden="true"><rect x="40" y="40" width="944" height="944" rx="215" fill="#241F33"/><rect x="290" y="330" width="200" height="364" rx="44" fill="#EEEDFE"/><rect x="516" y="330" width="100" height="364" rx="40" fill="#C9C2DD"/><rect x="642" y="330" width="100" height="364" rx="40" fill="#9A90B8"/></svg>Økta</a><span>Laget i Norge</span>
+  <nav aria-label="Bunnmeny">
+    <a href="personvern.html" aria-current="page">Personvern</a>
+    <a href="https://github.com/fbedsvaag/okta/releases">Endringslogg</a>
+    <a href="https://github.com/fbedsvaag/okta">Kildekode på GitHub</a>
+  </nav>
+</footer>
+</div>
+</body>
+</html>
