@@ -451,9 +451,10 @@ export function Fagoversikt({
                           className="h-3.5 w-3.5 rounded-[2px]"
                           style={{
                             background: r ? RUTEFARGE[r] : "transparent",
-                            boxShadow: r
-                              ? undefined
-                              : "inset 0 0 0 1px var(--color-linje)",
+                            boxShadow:
+                              r && r !== "t"
+                                ? undefined
+                                : "inset 0 0 0 1px var(--color-linje)",
                           }}
                         />
                       ))}
@@ -599,7 +600,10 @@ export function Fagoversikt({
                         <span
                           key={i}
                           className="flex-1 rounded-[1px]"
-                          style={{ background: RUTEFARGE[r] }}
+                          style={{
+                            background:
+                              r === "t" ? "var(--color-stripe)" : RUTEFARGE[r],
+                          }}
                         />
                       ))}
                     </span>
@@ -722,7 +726,13 @@ function Gruppe({
                   key={i}
                   title={RUTENAVN[r]}
                   className="h-2.5 w-2.5 rounded-[2px]"
-                  style={{ background: RUTEFARGE[r] }}
+                  style={{
+                    background: RUTEFARGE[r],
+                    boxShadow:
+                      r === "t"
+                        ? "inset 0 0 0 1px var(--color-linje)"
+                        : undefined,
+                  }}
                 />
               ))}
             </span>
@@ -793,6 +803,8 @@ const RUTEFARGE: Record<Rute, string> = {
   r: "var(--color-lys-rod)",
   o: "var(--color-lys-borte)",
   n: "var(--color-linje-sterk)",
+  // Ikke skåret (19.4): til stede, ikke sett. Tom rute med kant.
+  t: "transparent",
 };
 const RUTENAVN: Record<Rute, string> = {
   g: "grønn",
@@ -800,8 +812,9 @@ const RUTENAVN: Record<Rute, string> = {
   r: "rød",
   o: "ikke i økta",
   n: "skåret",
+  t: "ikke skåret",
 };
-const RANG: Record<Rute, number> = { g: 0, y: 1, r: 2, n: 3, o: 4 };
+const RANG: Record<Rute, number> = { g: 0, y: 1, r: 2, n: 3, t: 4, o: 5 };
 
 function iDag(): string {
   const d = new Date();

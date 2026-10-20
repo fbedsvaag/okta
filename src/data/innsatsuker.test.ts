@@ -25,6 +25,7 @@ function rad(
     tema: null,
     farge,
     borte,
+    ikkeSett: 0,
   };
 }
 

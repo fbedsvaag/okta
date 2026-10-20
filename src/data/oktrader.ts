@@ -6,10 +6,12 @@ import { hent } from "../db";
  * elevkortet (ARBEIDSLISTE 11.1, 11.2, 11.7).
  *
  * En økt er avholdt når minst én elev er skåret (SPEC §3.3), og da står
- * hver elev i faget med en verdi: den som ble satt, eller «ikke i økta» for
- * dem som ikke ble trykket på. Unntaket er elever som ble lagt i faget etter
- * økta: de var ikke i faget da, og skal ikke få fravær for den. Står det en
- * skåring på dem likevel, teller den.
+ * hver elev i faget med en rad: verdien som ble satt, eller ingen verdi for
+ * dem som ikke ble trykket på. Ikke skåret betyr til stede, ikke sett
+ * (ARBEIDSLISTE 19.4): det er aldri fravær og teller ikke i innsatsen. Bare
+ * «ikke i økta» (teller_ikke) er fravær. Elever som ble lagt i faget etter
+ * økta, er ikke med: de var ikke i faget da. Står det en skåring på dem
+ * likevel, teller den.
  *
  * Bare økter innenfor skoleårets spenn er med, som i timeregnskapet (§4.2).
  */
@@ -23,8 +25,10 @@ export type Oktrad = {
   tema: string | null;
   /** skalaverdiens farge (gronn | gul | rod), null uten farge eller uten skåring */
   farge: string | null;
-  /** 1 = «ikke i økta» eller ikke skåret; teller ikke i noen sammenstilling */
+  /** 1 = «ikke i økta»: fravær, og teller ikke i noen sammenstilling */
   borte: number;
+  /** 1 = ikke skåret: til stede, ikke sett. Verken fravær eller innsats. */
+  ikkeSett: number;
 };
 
 export async function hentOktrader(skolearId: string): Promise<Oktrad[]> {
@@ -49,8 +53,10 @@ export async function hentOktrader(skolearId: string): Promise<Oktrad[]> {
             a.varighet_min    AS varighetMin,
             a.tema            AS tema,
             sv.farge          AS farge,
-            CASE WHEN sv.id IS NULL OR sv.teller_ikke = 1 THEN 1 ELSE 0 END
-                              AS borte
+            CASE WHEN sv.teller_ikke = 1 THEN 1 ELSE 0 END
+                              AS borte,
+            CASE WHEN sv.id IS NULL THEN 1 ELSE 0 END
+                              AS ikkeSett
        FROM avholdt a
        JOIN elev_fag ef   ON ef.skolear_fag_id = a.skolear_fag_id
                          AND ef.slettet IS NULL
@@ -66,11 +72,15 @@ export async function hentOktrader(skolearId: string): Promise<Oktrad[]> {
 
 // ------------------------------------------------------------------ innsats
 
-/** Én rute i «innsats, siste n»: g y r = trafikklyset, o = ikke i økta, n = verdi uten farge. */
-export type Rute = "g" | "y" | "r" | "o" | "n";
+/**
+ * Én rute i «innsats, siste n»: g y r = trafikklyset, o = ikke i økta,
+ * n = verdi uten farge, t = ikke skåret (tom rute).
+ */
+export type Rute = "g" | "y" | "r" | "o" | "n" | "t";
 
 export function rute(r: Oktrad): Rute {
   if (r.borte) return "o";
+  if (r.ikkeSett) return "t";
   return r.farge === "gronn"
     ? "g"
     : r.farge === "gul"

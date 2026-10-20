@@ -655,6 +655,8 @@ const RUTEFARGE: Record<Rute, string> = {
   r: "var(--color-lys-rod)",
   o: "var(--color-lys-borte)",
   n: "var(--color-linje-sterk)",
+  // Ikke skåret (19.4): til stede, ikke sett. Tom rute med kant.
+  t: "transparent",
 };
 const RUTENAVN: Record<Rute, string> = {
   g: "grønn",
@@ -662,6 +664,7 @@ const RUTENAVN: Record<Rute, string> = {
   r: "rød",
   o: "ikke i økta",
   n: "skåret",
+  t: "ikke skåret",
 };
 
 function Elevlinje({
@@ -747,7 +750,11 @@ function Elevlinje({
               key={i}
               title={RUTENAVN[r]}
               className="h-[11px] w-[11px] rounded-[2px]"
-              style={{ background: RUTEFARGE[r] }}
+              style={{
+                background: RUTEFARGE[r],
+                boxShadow:
+                  r === "t" ? "inset 0 0 0 1px var(--color-linje)" : undefined,
+              }}
             />
           ))
         )}

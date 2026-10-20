@@ -42,23 +42,29 @@ async function okt(dato: string, min = 105): Promise<string> {
 }
 
 describe("øktradene", () => {
-  it("gir alle i faget en verdi i en avholdt økt, også dem som ikke ble trykket på", async () => {
+  it("gir alle i faget en rad i en avholdt økt; ikke skåret er til stede, ikke borte", async () => {
     const tony = await opprettElev("Tony", "Soprano");
     const meadow = await opprettElev("Meadow", "Soprano");
     await koblePaFag(tony, fagId);
     await koblePaFag(meadow, fagId);
     // Elevene ble lagt i faget i dag; økta må ligge etter det for at
-    // «ikke trykket på» skal telle som borte.
+    // Meadow skal få en rad.
     const i = await okt("2027-06-01");
     await settSkaring(tony, i, GRONN);
 
     const rader = await hentOktrader(skolearId);
-    expect(rader.map((r) => [r.elevId === tony, r.borte, r.farge])).toEqual(
+    expect(
+      rader.map((r) => [r.elevId === tony, r.borte, r.ikkeSett, r.farge]),
+    ).toEqual(
       expect.arrayContaining([
-        [true, 0, "gronn"],
-        [false, 1, null],
+        [true, 0, 0, "gronn"],
+        [false, 0, 1, null],
       ]),
     );
+    // 19.4: ikke skåret gir tom rute og null fravær.
+    expect(sisteRuter(rader, meadow)).toEqual(["t"]);
+    const [f] = fravaer(rader, meadow, new Map([[fagId, 140 * 60]]));
+    expect(f).toMatchObject({ okter: 1, borte: 0, borteMin: 0, andel: 0 });
   });
 
   it("tar ikke med økter ingen er skåret i", async () => {

@@ -14,6 +14,7 @@ import {
   lesTittel,
   planMedPauser,
   borteSist,
+  ikkeSettSist,
   livePlan,
   livetid,
   livetekst,
@@ -176,6 +177,7 @@ function rad(
     tema: null,
     farge,
     borte,
+    ikkeSett: 0,
   };
 }
 
@@ -389,6 +391,7 @@ describe("borte sist", () => {
     dato,
     klokkeslett: kl,
     borte,
+    ikkeSett: 0,
     skolearFagId: "f",
     farge: borte ? null : "rod",
     varighetMin: 90,
@@ -426,5 +429,16 @@ describe("borte sist", () => {
 
   it("er tom uten tidligere økter", () => {
     expect(borteSist([], okt)).toBeNull();
+    expect(ikkeSettSist([], okt)).toEqual([]);
+  });
+
+  it("skiller borte fra ikke sett (19.4)", () => {
+    const rader = [
+      r("a", "o2", "2026-10-15", 1),
+      { ...r("b", "o2", "2026-10-15", 0), farge: null, ikkeSett: 1 },
+      r("c", "o2", "2026-10-15", 0),
+    ];
+    expect(borteSist(rader, okt)?.elevIder).toEqual(["a"]);
+    expect(ikkeSettSist(rader, okt)).toEqual(["b"]);
   });
 });

@@ -33,6 +33,16 @@ Lerretet (`docs/lerret/`) er fasit for det som er tegnet.
   skoleårets første uke (også over uke 53); «Bytt A og B» lagres per
   skoleår (`a_uke:<skolear>`). Datoene står under skjemaet mens du velger,
   og forhåndsvisningen med avhaking er som før.
+- **19.4 Ikke skåret = til stede, ikke sett.** Før talte `hentOktrader` en
+  elev uten skåring i en avholdt økt som borte (`sv.id IS NULL`), etter
+  SPEC §4.4. Det ga fravær, prosent mot 10 %-grensen, grå rute i Elever og
+  fagoversikten og «borte sist». Nå er bare `teller_ikke` borte; ikke skåret
+  er et eget flagg (`ikkeSett`) og en tom rute (`t`) som verken er fravær
+  eller innsats. Heatmapet i elevkortet og eksportene leste skåringene
+  direkte og var riktige fra før. Nytt: rolig linje ved Ferdig («3 elever
+  er ikke skåret · regnes som til stede», Vis åpner økta på «Ikke sett»),
+  «Ikke sett sist» i Følg opp i økta, og «Ikke sett» i filteret når økta er
+  i gang. SPEC §4.4 må oppdateres (forslag gitt eieren).
 
 ## Hjemmesiden (20.10, ARBEIDSLISTE 18.3)
 

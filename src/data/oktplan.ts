@@ -559,13 +559,13 @@ export function folgOpp(
 }
 
 /**
- * Hvem som var borte forrige gang (alle, uten tak): den siste avholdte økta
- * i faget før denne, og elevene som hadde «ikke i økta» eller ikke ble
- * trykket på der. Til boksen «Borte sist» i skåringen.
+ * Elevene i den siste avholdte økta i faget før denne som passer `hvem`.
+ * null når faget ikke har noen avholdt økt før denne.
  */
-export function borteSist(
+function forrigeOkt(
   rader: Oktrad[],
   okt: Pick<Okt, "id" | "dato" | "klokkeslett" | "skolearFagId">,
+  hvem: (r: Oktrad) => boolean,
 ): { dato: string; elevIder: string[] } | null {
   const for_ = rader.filter(
     (r) =>
@@ -585,9 +585,32 @@ export function borteSist(
   return {
     dato: siste.dato,
     elevIder: for_
-      .filter((r) => r.oktId === siste.oktId && r.borte)
+      .filter((r) => r.oktId === siste.oktId && hvem(r))
       .map((r) => r.elevId),
   };
+}
+
+/**
+ * Hvem som var borte forrige gang (alle, uten tak): «ikke i økta» i den
+ * siste avholdte økta i faget før denne. Til boksen «Borte sist» i
+ * skåringen. Ikke skåret er ikke borte (19.4).
+ */
+export function borteSist(
+  rader: Oktrad[],
+  okt: Pick<Okt, "id" | "dato" | "klokkeslett" | "skolearFagId">,
+): { dato: string; elevIder: string[] } | null {
+  return forrigeOkt(rader, okt, (r) => r.borte === 1);
+}
+
+/**
+ * Hvem som ikke ble sett forrige gang: til stede, men ikke skåret i den
+ * siste avholdte økta i faget før denne (19.4). Til «Følg opp i økta».
+ */
+export function ikkeSettSist(
+  rader: Oktrad[],
+  okt: Pick<Okt, "id" | "dato" | "klokkeslett" | "skolearFagId">,
+): string[] {
+  return forrigeOkt(rader, okt, (r) => r.ikkeSett === 1)?.elevIder ?? [];
 }
 
 /** Hvor i perioden økta ligger: nummeret, og alle øktene i rekkefølge. */

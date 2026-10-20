@@ -32,6 +32,7 @@ import { Kladdfelt } from "./Okttekst";
 import { Liveplan, Nalinje, useMinutt, visesLive } from "./Oktlive";
 import { usePlanvisning } from "./Oktplan";
 import { hentOktrader } from "../data/oktrader";
+import { visToast } from "../ui/Toast";
 
 /**
  * Økta som ark, SPEC §4.4 og DESIGN.md §10 (lerretet «OktArk»).
@@ -100,7 +101,7 @@ export function OktPanel({
     const tast = (e: KeyboardEvent) => {
       if (e.key === "Enter" && hovedtast(e)) {
         e.preventDefault();
-        onLukk();
+        ferdigRef.current();
         return;
       }
       if (!hovedtast(e) || e.shiftKey || e.altKey) return;
@@ -118,6 +119,8 @@ export function OktPanel({
     window.addEventListener("keydown", tast);
     return () => window.removeEventListener("keydown", tast);
   }, [onLukk, onForrige, onNeste]);
+  const ark = useArk();
+  const ferdigRef = useRef(() => {});
   const [elever, setElever] = useState<OktElev[]>([]);
   const [verdier, setVerdier] = useState<Skalaverdi[]>([]);
   const [markert, setMarkert] = useState(0);
@@ -184,14 +187,42 @@ export function OktPanel({
   const nullverdi = verdier.find((v) => v.rang === 0) ?? null;
   const antallSkaret = elever.filter((e) => e.skalaverdiId !== null).length;
 
-  // Alle · Til stede · Borte over lista (16.1). Huskes ikke mellom økter.
-  // «Borte» er verdien som ikke teller («ikke i økta», teller_ikke).
-  const [filter, setFilter] = useState<"alle" | "tilstede" | "borte">("alle");
-  useEffect(() => setFilter("alle"), [okt.id]);
+  // Alle · Til stede · Borte · Ikke sett over lista (16.1, 19.4). Huskes
+  // ikke mellom økter. «Borte» er verdien som ikke teller («ikke i økta»,
+  // teller_ikke). «Ikke sett» er til stede, men ikke skåret.
+  const [filter, setFilter] = useState<Filter>("alle");
+  useEffect(() => {
+    setFilter(startfilter ?? "alle");
+    startfilter = null;
+  }, [okt.id]);
   const borteverdi = verdier.find((v) => v.teller_ikke === 1) ?? null;
   const erBorte = (e: OktElev) =>
     borteverdi !== null && e.skalaverdiId === borteverdi.id;
   const antallBorte = elever.filter(erBorte).length;
+  const antallIkkeSett = elever.length - antallSkaret;
+
+  /**
+   * Ferdig (19.4): er noen ikke skåret i en avholdt økt, sier en rolig
+   * linje fra at de regnes som til stede, med vei tilbake til dem. Ingen
+   * dialog som stopper.
+   */
+  function ferdig() {
+    if (antallSkaret > 0 && antallIkkeSett > 0)
+      visToast(
+        `${antallIkkeSett} ${antallIkkeSett === 1 ? "elev er" : "elever er"} ikke skåret · regnes som til stede`,
+        {
+          handling: {
+            tekst: "Vis",
+            onKlikk: () => {
+              startfilter = "ikkesett";
+              ark.apneOkt(okt.id, "skaring");
+            },
+          },
+        },
+      );
+    onLukk();
+  }
+  ferdigRef.current = ferdig;
   /** Indeksene i `elever` som vises med filteret. */
   const synlige = elever
     .map((_, i) => i)
@@ -200,7 +231,9 @@ export function OktPanel({
         ? true
         : filter === "borte"
           ? erBorte(elever[i])
-          : !erBorte(elever[i]),
+          : filter === "ikkesett"
+            ? elever[i].skalaverdiId === null
+            : !erBorte(elever[i]),
     );
   const nesteSynlige = (fra: number, retning: 1 | -1) => {
     const pos = synlige.indexOf(fra);
@@ -321,7 +354,7 @@ export function OktPanel({
             esc
           </span>
           <button
-            onClick={onLukk}
+            onClick={ferdig}
             className="flex h-7 shrink-0 items-center gap-1.5 rounded-full bg-aksent px-3 text-[calc(13px*var(--tekst-skala))] font-medium text-ark hover:bg-aksent-mork"
           >
             Ferdig{" "}
@@ -421,6 +454,15 @@ export function OktPanel({
                         navn: `Til stede ${elever.length - antallBorte}`,
                       },
                       { id: "borte", navn: `Borte ${antallBorte}` },
+                      // Bare når økta er i gang: før det er alle «ikke sett».
+                      ...(antallSkaret > 0
+                        ? [
+                            {
+                              id: "ikkesett",
+                              navn: `Ikke sett ${antallIkkeSett}`,
+                            },
+                          ]
+                        : []),
                     ]}
                   />
                 )}
@@ -629,6 +671,11 @@ export function OktPanel({
 
 /** Radhøyden i skåringslista (DESIGN.md §3: 38 px med 28 px bilde). */
 const RAD = 38;
+
+type Filter = "alle" | "tilstede" | "borte" | "ikkesett";
+
+/** Filteret økta skal åpne med, satt av «Vis» i Ferdig-linja (19.4). */
+let startfilter: Filter | null = null;
 
 function sluttKlokke(kl: string, min: number): string {
   const [t, m] = kl.split(":").map(Number);
@@ -948,7 +995,8 @@ function minIgjen(okt: Okt, na: Date): number | null {
 }
 
 /**
- * «Borte sist»: alle elevene som var borte i forrige avholdte økt i faget,
+ * «Borte sist»: alle elevene som var «ikke i økta» i forrige avholdte økt i
+ * faget (ikke skåret er ikke borte, 19.4),
  * uten tak og uansett hva annet som gjelder dem. Bare fornavn (etternavnets
  * forbokstav når to har samme), fordi økta kan stå på skjerm i klasserommet.
  */

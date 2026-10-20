@@ -31,7 +31,12 @@ import { leggTilAngring } from "../ui/angre";
 import { visToast } from "../ui/Toast";
 import { hentOktrader, type Oktrad } from "../data/oktrader";
 import { hentApneOppfolginger } from "../data/elevnotat";
-import { folgOpp, iPerioden, type Oppfolging } from "../data/oktplan";
+import {
+  folgOpp,
+  iPerioden,
+  ikkeSettSist,
+  type Oppfolging,
+} from "../data/oktplan";
 import { kortDag } from "../data/fagside";
 import { lyttVurderinger } from "../data/endringer";
 import { useArk } from "../ui/Arkstabel";
@@ -731,11 +736,13 @@ function Forrige({ okt }: { okt: Okt }) {
 
 /**
  * «Følg opp i økta»: rød to ganger på rad, borte sist, eller et åpent
- * oppfølgingspunkt. Bare fornavn, og aldri hva punktet gjelder — økta kan
- * stå på skjerm i klasserommet (§4.7).
+ * oppfølgingspunkt. Under: «Ikke sett sist», de som var til stede men ikke
+ * ble skåret forrige gang (19.4). Bare fornavn, og aldri hva punktet
+ * gjelder — økta kan stå på skjerm i klasserommet (§4.7).
  */
 function FolgOpp({ okt, skolearId }: { okt: Okt; skolearId: string }) {
   const [liste, setListe] = useState<Oppfolging[]>([]);
+  const [ikkeSett, setIkkeSett] = useState<string[]>([]);
   const [elever, setElever] = useState<Map<string, OktElev>>(new Map());
   const ark = useArk();
   useEffect(() => {
@@ -749,6 +756,7 @@ function FolgOpp({ okt, skolearId }: { okt: Okt; skolearId: string }) {
       setListe(
         folgOpp(rader, okt, new Set(apne.map((a) => a.elevId))).slice(0, 6),
       );
+      setIkkeSett(ikkeSettSist(rader, okt));
       setElever(new Map(e.map((x) => [x.elevId, x])));
     });
     return () => {
@@ -756,12 +764,16 @@ function FolgOpp({ okt, skolearId }: { okt: Okt; skolearId: string }) {
     };
   }, [okt.id, okt.dato, okt.skolearFagId, skolearId]);
 
+  const ikkeSettNavn = ikkeSett
+    .map((id) => elever.get(id)?.fornavn)
+    .filter((n): n is string => !!n);
+
   return (
     <div>
       <h3 className="mb-1.5 text-[calc(13px*var(--tekst-skala))] font-semibold">
         Følg opp i økta
       </h3>
-      {liste.length === 0 ? (
+      {liste.length === 0 && ikkeSettNavn.length === 0 ? (
         <p className="text-liten text-blekk-svak">
           Ingen å følge opp fra forrige gang.
         </p>
@@ -797,6 +809,15 @@ function FolgOpp({ okt, skolearId }: { okt: Okt; skolearId: string }) {
             </button>
           );
         })
+      )}
+      {ikkeSettNavn.length > 0 && (
+        <p className="mt-1 flex gap-2 py-[3px] text-[calc(13px*var(--tekst-skala))]">
+          <span className="mt-[6px] h-[7px] w-[7px] shrink-0 rounded-full shadow-[inset_0_0_0_1.5px_var(--color-linje-sterk)]" />
+          <span>
+            <span className="text-blekk-dempet">Ikke sett sist:</span>{" "}
+            {ikkeSettNavn.join(", ")}
+          </span>
+        </p>
       )}
     </div>
   );
