@@ -388,3 +388,12 @@ describe("ny vurdering fra økta (16.9)", () => {
     ).toEqual([id]);
   });
 });
+
+describe("standard pauser i nye økter (17.5)", () => {
+  it("legges inn i planen når økta lages", async () => {
+    await endreFagIAr(fagId, { pause_etter_min: 45, pause_min: 10 });
+    const id = await opprettOkt(fagId, "MFL1", "2026-10-06", "08:30", 90);
+    const o = (await hentOkter(skolearId)).find((x) => x.id === id)!;
+    expect(o.plan).toContain("- Pause · 10 min");
+  });
+});

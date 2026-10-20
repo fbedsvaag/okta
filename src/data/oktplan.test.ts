@@ -12,6 +12,7 @@ import {
   dragEnde,
   lengste,
   lesTittel,
+  planMedPauser,
   livePlan,
   livetid,
   livetekst,
@@ -355,5 +356,21 @@ describe("live", () => {
     const { liste, aktiv } = livePlan(plan, null, null);
     expect(aktiv).toBe(-1);
     expect(liste.every((l) => !l.ferdig)).toBe(true);
+  });
+});
+
+describe("standard pauser (17.5)", () => {
+  it("deler økta med pause etter hver del, og resten i den siste", () => {
+    expect(planMedPauser(90, 45, 10)).toBe(
+      "- [ ] Del 1 · 45 min\n- Pause · 10 min\n- [ ] Del 2 · 35 min",
+    );
+    const lang = lesPlan(planMedPauser(195, 45, 10)).punkter;
+    expect(lang.map((p) => p.min)).toEqual([45, 10, 45, 10, 45, 10, 30]);
+    expect(lang.reduce((s, p) => s + (p.min ?? 0), 0)).toBe(195);
+  });
+
+  it("gir ingen plan uten pause, eller når økta er for kort", () => {
+    expect(planMedPauser(90, null, 10)).toBeNull();
+    expect(planMedPauser(50, 45, 10)).toBeNull();
   });
 });

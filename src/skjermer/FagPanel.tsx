@@ -195,6 +195,35 @@ export function FagPanel({
                 onEndret();
               }}
             />
+            {/* Standard pause (17.5): legges inn i planen i nye økter. */}
+            <div className="col-span-2 grid grid-cols-2 gap-3">
+              <Felt
+                etikett="Pause etter, minutter"
+                verdi={
+                  fag.pauseEtterMin === null ? "" : String(fag.pauseEtterMin)
+                }
+                plassholder="f.eks. 45"
+                settVerdi={async (v) => {
+                  const n = Math.round(Number(v.trim()));
+                  await endreFagIAr(fag.id, {
+                    pause_etter_min: v.trim() === "" || !(n > 0) ? null : n,
+                  });
+                  onEndret();
+                }}
+              />
+              <Felt
+                etikett="Pause, minutter"
+                verdi={fag.pauseMin === null ? "" : String(fag.pauseMin)}
+                plassholder="ingen"
+                settVerdi={async (v) => {
+                  const n = Math.round(Number(v.trim()));
+                  await endreFagIAr(fag.id, {
+                    pause_min: v.trim() === "" || !(n > 0) ? null : n,
+                  });
+                  onEndret();
+                }}
+              />
+            </div>
           </section>
 
           <OmFaget grepKode={fag.grepKode} />

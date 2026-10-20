@@ -36,6 +36,8 @@ const fag: FagIAr = {
   laerer: null,
   kompetansemal: null,
   arknotat: null,
+  pauseEtterMin: null,
+  pauseMin: null,
 };
 
 let n = 0;
@@ -246,6 +248,8 @@ describe("feltvalg", () => {
       rom: null,
       regnskap: null,
       arknotat: null,
+      pauseEtterMin: null,
+      pauseMin: null,
       kompetansemalFritekst: null,
     });
     const md = somMarkdown(a);

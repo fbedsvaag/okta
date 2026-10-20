@@ -1,6 +1,7 @@
 import { hent, oppdater, settInn, slett, settInnEllerOppdater } from "../db";
 import { varsle, varsleElever } from "./endringer";
 import type { Skalaverdi } from "../skala";
+import { planMedPauser } from "./oktplan";
 
 /**
  * Økter, SPEC §4.2.
@@ -232,8 +233,13 @@ export async function opprettOkt(
 ): Promise<string> {
   // Fagets standard rom følger med inn i økta, så det ikke må skrives på
   // hver av dem. Endres det på én økt, gjelder det bare den.
-  const [fag] = await hent<{ rom: string | null }>(
-    "SELECT rom FROM skolear_fag WHERE id = $1",
+  const [fag] = await hent<{
+    rom: string | null;
+    pauseEtter: number | null;
+    pause: number | null;
+  }>(
+    `SELECT rom, pause_etter_min AS pauseEtter, pause_min AS pause
+       FROM skolear_fag WHERE id = $1`,
     [skolearFagId],
   );
   // En økt som legges midt i en farget periode, får periodens farge med én
@@ -253,6 +259,12 @@ export async function opprettOkt(
     klokkeslett,
     varighet_min: varighetMin,
     sted: fag?.rom ?? null,
+    // Fagets standard pauser står i planen fra start (17.5).
+    plan: planMedPauser(
+      varighetMin,
+      fag?.pauseEtter ?? null,
+      fag?.pause ?? null,
+    ),
     kode: await lagOktkode(skolearFagId, fagKode, dato),
   });
 

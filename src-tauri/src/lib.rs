@@ -173,6 +173,12 @@ fn migrations() -> Vec<Migration> {
             sql: include_str!("../migrations/025_kladd.sql"),
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 26,
+            description: "standard pausetider per fag",
+            sql: include_str!("../migrations/026_pause_per_fag.sql"),
+            kind: MigrationKind::Up,
+        },
     ]
 }
 

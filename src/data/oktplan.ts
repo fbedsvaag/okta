@@ -201,6 +201,32 @@ export const PLANVISNING = "oktplan_visning";
 export const lesPlanvisning = (v: string | null): Planvisning =>
   v === "full" ? "full" : "enkel";
 
+// --------------------------------------------------------- pauser
+
+/**
+ * Planen en ny økt starter med når faget har standard pause (17.5): deler
+ * på `etter` minutter med `pause` minutter imellom, og resten av økta i den
+ * siste delen. Uten pause, eller når økta er for kort, ingen plan.
+ */
+export function planMedPauser(
+  lengde: number,
+  etter: number | null,
+  pause: number | null,
+): string | null {
+  if (!etter || !pause || etter <= 0 || pause <= 0) return null;
+  if (lengde <= etter + pause) return null;
+  const punkter: Planpunkt[] = [];
+  let t = 0;
+  let nr = 1;
+  while (lengde - t > etter + pause) {
+    punkter.push(nyttPunkt({ tekst: `Del ${nr++}`, min: etter }));
+    punkter.push(nyttPunkt({ type: "pause", tekst: "Pause", min: pause }));
+    t += etter + pause;
+  }
+  punkter.push(nyttPunkt({ tekst: `Del ${nr}`, min: lengde - t }));
+  return skrivPlan(punkter, []);
+}
+
 // ------------------------------------------------------- tid i planen
 
 /** Lengdene man kan velge med ett klikk (15.3). */
