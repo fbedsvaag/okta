@@ -221,8 +221,8 @@
     ["Repetisjon fra sist", 10, false],
     ["Gjennomgang: byene vokser", 25, false],
     ["Pause", 10, true],
-    ["Gruppearbeid: kildekritikk", 30, false],
-    ["Exit-lapp", 15, false],
+    ["Arbeid med veggavis", 30, false],
+    ["Oppsummering", 15, false],
   ];
   var LENGDE = 90;
   var STEG = 8;
@@ -344,4 +344,312 @@
     kort.querySelector("[data-pl-igjen]").addEventListener("click", spill);
     nar(kort, spill);
   })();
+  /* ----------------------------------------------- elevkortet */
+
+  var GRONN = "#3f9d49",
+    GUL = "#d9a92f",
+    ROD = "#c04a3d",
+    BORTE = "#d5d8dd";
+  var INNSATS = [
+    ["MFL2", "#9a5a2c", [GRONN, GRONN, GUL, GRONN, GRONN, BORTE, GUL, ROD], 22],
+    [
+      "ENG1",
+      "#3d7a5a",
+      [
+        GRONN,
+        GRONN,
+        GRONN,
+        GUL,
+        GRONN,
+        GUL,
+        GUL,
+        BORTE,
+        GRONN,
+        GUL,
+        ROD,
+        GRONN,
+        GRONN,
+      ],
+      22,
+    ],
+  ];
+  var NOTAT = "Jobbet godt i gruppa, ba om hjelp med kildene.";
+
+  (function () {
+    var kort = document.querySelector('[data-anim="ek"]');
+    if (!kort) return;
+    var rut = kort.querySelector("[data-ek-innsats]");
+    INNSATS.forEach(function (f) {
+      var navn = lag("span", "", f[0]);
+      navn.style.color = f[1];
+      rut.appendChild(navn);
+      var rad = lag("span");
+      rad.setAttribute("aria-hidden", "true");
+      for (var i = 0; i < f[3]; i++) {
+        var r = lag("span", i < f[2].length ? "" : "tom");
+        if (i < f[2].length) r.style.background = f[2][i];
+        rad.appendChild(r);
+      }
+      rut.appendChild(rad);
+    });
+
+    var knapp = kort.querySelector("[data-ek-knapp]");
+    var ny = kort.querySelector("[data-ek-ny]");
+    var tekst = kort.querySelector("[data-ek-tekst]");
+    var caret = kort.querySelector("[data-ek-caret]");
+    var meta = kort.querySelector("[data-ek-meta]");
+    var boks = kort.querySelector("[data-ek-boks]");
+    var oppg = kort.querySelector("[data-ek-oppg]");
+    var tid = [];
+
+    function steg(s, c) {
+      knapp.classList.toggle("on", s === 1);
+      ny.classList.toggle("vis", s >= 2);
+      tekst.textContent = NOTAT.slice(0, c);
+      caret.classList.toggle("av", s >= 3);
+      meta.textContent =
+        s >= 3 ? "I dag · Fra økta · MFL2 · lagret" : "I dag · Fra økta · MFL2";
+      boks.classList.toggle("x", s >= 4);
+      oppg.classList.toggle("x", s >= 4);
+    }
+    function vent(ms, f) {
+      tid.push(setTimeout(f, ms));
+    }
+    function spill() {
+      tid.forEach(clearTimeout);
+      tid = [];
+      if (rolig) {
+        steg(4, NOTAT.length);
+        return;
+      }
+      steg(0, 0);
+      vent(700, function () {
+        steg(1, 0);
+        vent(400, function () {
+          var c = 0;
+          (function skriv() {
+            steg(2, ++c);
+            if (c < NOTAT.length) vent(42, skriv);
+            else
+              vent(500, function () {
+                steg(3, c);
+                vent(900, function () {
+                  steg(4, c);
+                  vent(5000, spill);
+                });
+              });
+          })();
+        });
+      });
+    }
+    steg(4, NOTAT.length);
+    nar(kort, spill);
+  })();
+
+  /* --------------------------------------------- klassekart */
+
+  var PULT = [
+    "Ada",
+    "Filip",
+    "Jon",
+    "Karin",
+    "Liv",
+    "Pål",
+    "Tobias",
+    "Maja",
+    "Sindre",
+    "Guro",
+    "Arne",
+    "Jenny",
+  ];
+  var LAAST = [0, 7];
+
+  (function () {
+    var kk = document.querySelector('[data-anim="kk"]');
+    if (!kk) return;
+    var rom = kk.querySelector("[data-kk-rom]");
+    var stokk = kk.querySelector("[data-kk-stokk]");
+    var plass = PULT.map(function (_, i) {
+      return i;
+    });
+    var pulter = PULT.map(function (n, i) {
+      var p = lag("div", "kkp");
+      var t = lag("span", "", n);
+      p.appendChild(t);
+      if (LAAST.indexOf(i) >= 0) {
+        var l = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        l.setAttribute("width", "9");
+        l.setAttribute("height", "9");
+        var u = document.createElementNS("http://www.w3.org/2000/svg", "use");
+        u.setAttribute("href", "#las");
+        l.appendChild(u);
+        p.appendChild(l);
+      }
+      rom.appendChild(p);
+      return p;
+    });
+    function tegn() {
+      pulter.forEach(function (p, i) {
+        var s = plass[i],
+          kol = s % 4,
+          rad = Math.floor(s / 4);
+        // Prosent av pultrekka (258 px i tegningen), så den passer i flisa.
+        p.style.left = ((kol * 64 + (kol >= 2 ? 10 : 0)) / 258) * 100 + "%";
+        p.style.top = 38 + rad * 38 + "px";
+      });
+    }
+    function stokkOm() {
+      var fri = plass
+        .map(function (_, i) {
+          return i;
+        })
+        .filter(function (i) {
+          return LAAST.indexOf(i) < 0;
+        });
+      var ps = fri.map(function (i) {
+        return plass[i];
+      });
+      for (var k = ps.length - 1; k > 0; k--) {
+        var j = Math.floor(Math.random() * (k + 1));
+        var t = ps[k];
+        ps[k] = ps[j];
+        ps[j] = t;
+      }
+      fri.forEach(function (i, n) {
+        plass[i] = ps[n];
+      });
+      tegn();
+      stokk.classList.add("on");
+      setTimeout(function () {
+        stokk.classList.remove("on");
+      }, 300);
+    }
+    tegn();
+    if (!rolig)
+      nar(kk, function () {
+        setInterval(stokkOm, 3000);
+      });
+  })();
+
+  /* --------------------------------------------- samtaler */
+
+  var SAMTALE = [
+    "Ada Lie",
+    "Filip Gjerde",
+    "Jon Sæther",
+    "Karin Nilsen",
+    "Liv Solheim",
+    "Pål Grønli",
+  ];
+
+  (function () {
+    var sa = document.querySelector('[data-anim="sa"]');
+    if (!sa) return;
+    var liste = sa.querySelector("[data-sa-rader]");
+    var knapp = sa.querySelector("[data-sa-knapp]");
+    var eks = sa.querySelector("[data-sa-eks]");
+    var navn = SAMTALE.map(function (n, i) {
+      var m = 13 * 60 + i * 15;
+      var rad = lag("div", "sar");
+      rad.appendChild(
+        lag(
+          "span",
+          "t num",
+          Math.floor(m / 60) + ":" + String(m % 60).padStart(2, "0"),
+        ),
+      );
+      var e = lag("span", "san", n);
+      rad.appendChild(e);
+      liste.appendChild(rad);
+      return e;
+    });
+    var n = SAMTALE.length + 2;
+    function tegn() {
+      knapp.classList.toggle("on", n === 1);
+      eks.classList.toggle(
+        "on",
+        n >= SAMTALE.length + 2 && n <= SAMTALE.length + 3,
+      );
+      navn.forEach(function (e, i) {
+        e.classList.toggle("vis", n >= i + 2);
+      });
+    }
+    tegn();
+    if (!rolig)
+      nar(sa, function () {
+        n = 0;
+        tegn();
+        setInterval(function () {
+          n = n > SAMTALE.length + 6 ? 0 : n + 1;
+          tegn();
+        }, 450);
+      });
+  })();
+
+  /* --------------------------------------------- kalenderstrøm */
+
+  var KAL = [
+    [
+      "man 19.10",
+      [
+        ["08:30", "HIS3", "#7a4f2e", "Utvandringen til Amerika"],
+        ["12:30", "NOR3", "#3f6a95", "Retorikk: appellformene"],
+      ],
+    ],
+    [
+      "ons 21.10",
+      [["08:30", "HIS3", "#7a4f2e", "Byene vokser: arbeid og bolig"]],
+    ],
+    [
+      "tor 22.10",
+      [
+        ["10:15", "NOR3", "#3f6a95", "Kronikk: skriv innledningen"],
+        ["12:30", "REL3", "#3d7a5a", "Etiske dilemmaer i helse"],
+      ],
+    ],
+    ["man 26.10", [["08:30", "HIS3", "#7a4f2e", "Arbeiderbevegelsen"]]],
+    [
+      "ons 28.10",
+      [["08:30", "HIS3", "#7a4f2e", "Kvinnenes kamp for stemmerett"]],
+    ],
+    ["fre 30.10", [["10:15", "NOR3", "#3f6a95", "Muntlig vurdering, dag 2"]]],
+  ];
+
+  (function () {
+    var rull = document.querySelector("[data-kal]");
+    if (!rull) return;
+    // To ganger, så rullingen går rundt uten skjøt.
+    [0, 1].forEach(function () {
+      KAL.forEach(function (d) {
+        rull.appendChild(lag("div", "kaldag", d[0]));
+        d[1].forEach(function (o) {
+          var r = lag("div", "kalokt");
+          var strek = lag("i");
+          strek.style.background = o[2];
+          r.appendChild(strek);
+          var b = lag("div");
+          b.style.background = o[2] + "14";
+          b.appendChild(lag("small", "", o[0] + " · " + o[1]));
+          b.appendChild(lag("span", "", o[3]));
+          r.appendChild(b);
+          rull.appendChild(r);
+        });
+      });
+    });
+  })();
+
+  /* --------------------------------------------- glans på knappene */
+
+  if (!rolig)
+    document.addEventListener(
+      "pointermove",
+      function (e) {
+        var b = e.target.closest && e.target.closest(".btn");
+        if (!b) return;
+        var r = b.getBoundingClientRect();
+        b.style.setProperty("--mx", e.clientX - r.left + "px");
+        b.style.setProperty("--my", e.clientY - r.top + "px");
+      },
+      { passive: true },
+    );
 })();

@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Økta – planlegging og elevoppfølging for lærere</title>
-<meta name="description" content="Økta samler planen for økta, skåring av elevene, logg, kontaktsamtaler og klassekart. Alt lagres lokalt, uten konto og uten sky.">
+<title>Økta – fra plan til oppfølging</title>
+<meta name="description" content="Økta er et verktøy for kjerneoppgavene du som lærer gjør hver dag. Planlegg og loggfør på ett sted, så blir oppfølgingen enklere.">
 <meta name="theme-color" content="#f6f5fa">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="preload" href="fonter/geist-400.woff2" as="font" type="font/woff2" crossorigin>
@@ -16,9 +16,10 @@
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <symbol id="logo" viewBox="0 0 1024 1024"><rect x="40" y="40" width="944" height="944" rx="215" fill="#241F33"/><rect x="290" y="330" width="200" height="364" rx="44" fill="#EEEDFE"/><rect x="516" y="330" width="100" height="364" rx="40" fill="#C9C2DD"/><rect x="642" y="330" width="100" height="364" rx="40" fill="#9A90B8"/></symbol>
-  <symbol id="hake" viewBox="0 0 14 14"><path d="M3 7.3l2.6 2.6L11 4.4" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></symbol>
   <symbol id="apple" viewBox="0 0 24 24"><path fill="currentColor" d="M16.4 12.6c0-2.4 2-3.6 2.1-3.6-1.1-1.7-2.9-1.9-3.5-1.9-1.5-.2-2.9.9-3.7.9-.8 0-1.9-.9-3.2-.8-1.6 0-3.1 1-4 2.4-1.7 3-.4 7.4 1.2 9.8.8 1.2 1.8 2.5 3 2.4 1.2 0 1.7-.8 3.1-.8s1.9.8 3.2.8c1.3 0 2.1-1.2 2.9-2.4.9-1.4 1.3-2.7 1.3-2.8 0 0-2.4-.9-2.4-4zM14 5.6c.7-.8 1.1-1.9 1-3-1 0-2.1.6-2.8 1.4-.6.7-1.2 1.8-1 2.9 1.1.1 2.1-.5 2.8-1.3z"/></symbol>
   <symbol id="windows" viewBox="0 0 24 24"><path fill="currentColor" d="M3 5.1l7.4-1v7.2H3zM11.3 3.9L21 2.5v8.8h-9.7zM3 12.6h7.4v7.2l-7.4-1zM11.3 12.6H21v8.9l-9.7-1.4z"/></symbol>
+  <symbol id="hake10" viewBox="0 0 10 10"><path d="M1.5 5.2l2.2 2.2L8.5 2.6" stroke="#fff" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="las" viewBox="0 0 12 12"><rect x="2.5" y="5.5" width="7" height="5" rx="1.2" fill="#6f6884"/><path d="M4 5.5V4a2 2 0 0 1 4 0v1.5" stroke="#6f6884" stroke-width="1.3" fill="none"/></symbol>
 </svg>
 <a class="hopp" href="#innhold">Hopp til innholdet</a>
 
@@ -40,15 +41,16 @@
 <main id="innhold">
 
 <section class="bredde helt" aria-labelledby="tittel">
-  <span class="eyebrow"><i aria-hidden="true"></i>Gratis for lærere · beta 0.3</span>
-  <h1 id="tittel">Følg opp hver elev.<br>Alt blir på din maskin.</h1>
-  <p class="ingress">Økta samler det du ellers har i regneark, notatbøker og hodet: planen for økta, skåring av elevene, logg, kontaktsamtaler og klassekart. Alt lagres lokalt, uten konto og uten sky.</p>
+  <h1 id="tittel">Fra plan til oppfølging.</h1>
+  <p class="ingress">Økta er et verktøy for kjerneoppgavene du som lærer gjør hver dag. Planlegg og loggfør på ett sted, så blir oppfølgingen enklere.</p>
   <div class="knapper">
     <a class="btn pri" data-os="mac" href="https://github.com/fbedsvaag/okta/releases/latest"><svg width="15" height="15" aria-hidden="true"><use href="#apple"/></svg>Last ned for Mac</a>
     <a class="btn sek" data-os="win" href="https://github.com/fbedsvaag/okta/releases/latest"><svg width="14" height="14" aria-hidden="true"><use href="#windows"/></svg>Last ned for Windows</a>
   </div>
-  <p class="smaa">Kildekoden er åpen · Ingen innlogging · Virker uten nett</p>
+  <p class="smaa">Ingen konto · Alt lagres på din maskin</p>
   <div class="heltbilde">
+    <div class="flate h1" aria-hidden="true"></div>
+    <div class="flate h2" aria-hidden="true"></div>
     <div class="ramme">
       <picture>
         <source type="image/webp" srcset="bilder/oversikt-900.webp 900w, bilder/oversikt.webp 1800w" sizes="(max-width: 860px) 100vw, 1120px">
@@ -58,32 +60,12 @@
   </div>
 </section>
 
-<section class="bredde" aria-label="Kort fortalt">
-  <ul class="tillit">
-    <li><span class="ikon" aria-hidden="true">⌂</span><span><b>Lagret lokalt</b><span>Én fil på maskinen din</span></span></li>
-    <li><span class="ikon" aria-hidden="true">∅</span><span><b>Ingen konto</b><span>Åpne appen og begynn</span></span></li>
-    <li><span class="ikon" aria-hidden="true">◌</span><span><b>Ingen sporing</b><span>Ingen analyse, ingen reklame</span></span></li>
-    <li><span class="ikon" aria-hidden="true">⇄</span><span><b>Ta det med deg</b><span>Eksporter når du vil</span></span></li>
-  </ul>
-</section>
-
-<section id="funksjoner" class="bredde innledning" aria-labelledby="hva">
-  <p class="merke">Hva Økta gjør</p>
-  <h2 id="hva">Laget av en lærer, for hverdagen i klasserommet</h2>
-  <p class="ingress">Ikke enda et system du må fylle ut for andre. Et verktøy som sparer deg tid i økta, og gir deg oversikten når du trenger den.</p>
-</section>
-
 <!-- Skåring -->
-<section class="bredde del" aria-labelledby="skaring">
+<section id="funksjoner" class="bredde del" aria-labelledby="skaring">
   <div class="ord">
     <p class="merke">Skåring</p>
-    <h2 id="skaring">Skår hele klassen på et halvt minutt</h2>
-    <p class="tekst">Rød, gul eller grønn for innsats, med tastene 1, 2 og 3. Den som ikke er der får 0. Planen for økta går ved siden av, så du ser hva som skjer nå og hvor mye tid som er igjen.</p>
-    <ul class="punkter">
-      <li class="punkt"><i><svg width="14" height="14" aria-hidden="true"><use href="#hake"/></svg></i><span>Tastatur først: piltaster, 1 · 2 · 3 · 0, ferdig</span></li>
-      <li class="punkt"><i><svg width="14" height="14" aria-hidden="true"><use href="#hake"/></svg></i><span>Fravær er tydelig, og «ikke skåret ennå» kan ikke forveksles med borte</span></li>
-      <li class="punkt"><i><svg width="14" height="14" aria-hidden="true"><use href="#hake"/></svg></i><span>Øktloggen ligger rett ved, til neste gang</span></li>
-    </ul>
+    <h2 id="skaring">Loggfør underveis</h2>
+    <p class="tekst">Skår elevene på innsats i økta, og legg til et notat fra hver økt.</p>
   </div>
   <div class="vis">
     <figure class="ramme kort" data-skaring style="margin:0">
@@ -103,7 +85,7 @@
   </div>
 </section>
 
-<!-- Oversikt og vurdering -->
+<!-- Oversikt -->
 <section class="bredde del" aria-labelledby="oversikt">
   <div class="vis">
     <div class="duo hoy">
@@ -122,15 +104,9 @@
     </div>
   </div>
   <div class="ord">
-    <p class="merke">Oversikt og vurdering</p>
-    <h2 id="oversikt">Midtveisvurdering med grunnlag</h2>
-    <p class="tekst">Hver skåring havner i oversikten for faget: hele klassen, økt for økt, sortert etter snitt. Du ser med en gang hvem som går godt og hvem som glipper. Når midtveisvurderingen kommer, har du innsats over tid, fravær og logg for hver elev, i stedet for å lete i hukommelsen.</p>
-    <ul class="punkter">
-      <li class="punkt"><i><svg width="14" height="14" aria-hidden="true"><use href="#hake"/></svg></i><span>Hele klassen i ett bilde, per fag</span></li>
-      <li class="punkt"><i><svg width="14" height="14" aria-hidden="true"><use href="#hake"/></svg></i><span>Innsats over tid, uke for uke</span></li>
-      <li class="punkt"><i><svg width="14" height="14" aria-hidden="true"><use href="#hake"/></svg></i><span>Fravær mot 10 %-grensen, før det blir et problem</span></li>
-      <li class="punkt"><i><svg width="14" height="14" aria-hidden="true"><use href="#hake"/></svg></i><span>Logg og oppfølging med @elev i gjøremål</span></li>
-    </ul>
+    <p class="merke">Oversikt</p>
+    <h2 id="oversikt">Se hele klassen</h2>
+    <p class="tekst">Hver skåring havner i oversikten for faget: hele klassen, økt for økt. Et mer skreddersydd regneark som hjelper deg med å følge opp den enkelte elev, og sette standpunkt, når den tid kommer.</p>
   </div>
 </section>
 
@@ -138,22 +114,39 @@
 <section class="bredde del" aria-labelledby="elevkort">
   <div class="ord">
     <p class="merke">Elevkortet</p>
-    <h2 id="elevkort">Alt om eleven på ett ark</h2>
-    <p class="tekst">Ett trykk på et navn åpner elevkortet. Der ligger innsatsen i alle fagene eleven har med deg, vurderingene med resultat, og loggen fra øktene og kontaktsamtalene. Klart til samtalen med eleven eller foresatte.</p>
-    <ul class="punkter">
-      <li class="punkt"><i><svg width="14" height="14" aria-hidden="true"><use href="#hake"/></svg></i><span>Innsats gjennom året, fag for fag</span></li>
-      <li class="punkt"><i><svg width="14" height="14" aria-hidden="true"><use href="#hake"/></svg></i><span>Vurderinger med resultat og det som kommer</span></li>
-      <li class="punkt"><i><svg width="14" height="14" aria-hidden="true"><use href="#hake"/></svg></i><span>Logg fra øktene og møtelogg fra samtalene</span></li>
-      <li class="punkt"><i><svg width="14" height="14" aria-hidden="true"><use href="#hake"/></svg></i><span>Fravær per fag og det som er åpent for eleven</span></li>
-    </ul>
+    <h2 id="elevkort">Alt om én elev, <br>på én side</h2>
+    <p class="tekst">Elevens innsats i alle fagene dine, vurderinger og loggene dine fra økter og samtaler. Alltid ett søk unna.</p>
   </div>
   <div class="vis">
-    <div class="ramme">
-      <picture>
-        <source type="image/webp" srcset="bilder/elevkort-900.webp 900w, bilder/elevkort.webp 1200w" sizes="(max-width: 860px) 100vw, 700px">
-        <img src="bilder/elevkort.jpg" width="1200" height="1224" loading="lazy" decoding="async" alt="Elevkortet for en oppdiktet elev: innsats gjennom året per fag, vurderinger med resultat, notater og møtelogg, klassekart og fravær per fag.">
-      </picture>
-    </div>
+    <figure class="ramme ek" data-anim="ek" style="margin:0" aria-label="Elevkortet for en oppdiktet elev, Kristian Haugland">
+      <div class="ekhode">
+        <span class="ekbilde" aria-hidden="true"><svg width="54" height="54" viewBox="0 0 28 28"><path d="M4.8 28.5c.4-5 4.3-8.4 9.2-8.4s8.8 3.4 9.2 8.4z" fill="#b2a8d2"/><circle cx="14" cy="12.6" r="4.5" fill="#b2a8d2"/><path d="M9.4 11.6c.2-3.4 2.1-5.3 4.6-5.3s4.4 1.9 4.6 5.3c-1.2-1.2-2.7-1.8-4.6-1.8s-3.4.6-4.6 1.8z" fill="#4a3d7d" fill-opacity=".7"/></svg></span>
+        <div><p class="eknavn">Kristian Haugland</p><p class="ekmeta">2026/27 · 2STA · <span style="color:#9a5a2c" aria-hidden="true">■</span> MFL2 · <span style="color:#3d7a5a" aria-hidden="true">■</span> ENG1</p></div>
+      </div>
+      <div class="ekinnsats">
+        <p class="ektittel">Innsats gjennom året</p>
+        <div class="ekrutenett" data-ek-innsats></div>
+      </div>
+      <div class="ekdeler">
+        <div>
+          <div class="ekloggtopp"><b class="ektittel" style="margin:0">Notater og logg</b><span class="eknbtn" data-ek-knapp>+ Nytt notat</span></div>
+          <div class="ekny" data-ek-ny><div><div class="eklinje"><span class="ekd" style="background:#9a5a2c"></span><div style="min-width:0"><div class="ekdato" data-ek-meta>I dag · Fra økta · MFL2</div><div class="ektekst"><span data-ek-tekst></span><span class="ekcaret" data-ek-caret></span></div></div></div></div></div>
+          <div class="eklinje"><span class="ekd" style="background:#9a5a2c"></span><div><div class="ekdato">1.10 · Fra økta · MFL2</div><div class="ektekst">Kom 40 min for sent, jobbet godt etter pausen.</div></div></div>
+          <div class="eklinje"><span class="ekd" style="background:#4a3d7d"></span><div><div class="ekdato">28.9 · Møtelogg · kontaktsamtale</div><div class="ektekst">Snakket om fravær. Avtalt ny samtale om to uker.</div></div></div>
+          <div class="eklinje"><span class="ekd" style="background:#3d7a5a"></span><div><div class="ekdato">21.9 · Fra økta · ENG1</div><div class="ektekst">Leste høyt for gruppa, første gang i år.</div></div></div>
+        </div>
+        <div>
+          <div class="ekapent">
+            <p class="ektittel">Åpent for Kristian</p>
+            <div class="ekoppgave"><span class="ekboks" data-ek-boks aria-hidden="true"><svg width="9" height="9"><use href="#hake10"/></svg></span><span class="ekoppg" data-ek-oppg>Følge opp fraværet</span></div>
+            <div class="ekoppgave"><span class="ekboks" aria-hidden="true"><svg width="9" height="9"><use href="#hake10"/></svg></span><span>Rette SWOT-analysen</span></div>
+          </div>
+          <p class="ektittel" style="margin-top:14px">Vurderinger</p>
+          <div class="ekvurd"><span>SWOT-analyse</span><b>3/4</b></div>
+          <div class="ekvurd kommer"><span>Muntlig: prisstrategi</span><span>15.10</span></div>
+        </div>
+      </div>
+    </figure>
   </div>
 </section>
 
@@ -173,7 +166,7 @@
       </div>
       <div class="maal">
         <div class="hode"><b>Kompetansemål</b><span data-pl-maaltekst>ingen valgt</span></div>
-        <div class="linje"><span class="pboks" data-pl-boks aria-hidden="true"><svg width="9" height="9" viewBox="0 0 10 10"><path d="M1.5 5.2l2.2 2.2L8.5 2.6" stroke="#fff" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span>reflektere over hvordan teknologiske omveltninger har endret menneskers liv</span></div>
+        <div class="linje"><span class="pboks" data-pl-boks aria-hidden="true"><svg width="9" height="9"><use href="#hake10"/></svg></span><span>reflektere over hvordan teknologiske omveltninger har endret menneskers liv</span></div>
       </div>
       <div class="kortfot">Dra i en bolk for å flytte den, dra i skillet for å flytte tid
         <button class="igjen" type="button" data-pl-igjen>Spill av igjen</button>
@@ -182,99 +175,58 @@
   </div>
   <div class="ord">
     <p class="merke">Planlegging</p>
-    <h2 id="planlegging">Planlegg økta, og hele året</h2>
-    <p class="tekst">Dra aktivitetene i en tidslinje til planen går opp. Knytt økta til periode, vurdering og kompetansemål, og se timeregnskapet for faget ta form.</p>
-    <ul class="punkter">
-      <li class="punkt"><i><svg width="14" height="14" aria-hidden="true"><use href="#hake"/></svg></i><span>Aktiviteter og pauser du drar på plass</span></li>
-      <li class="punkt"><i><svg width="14" height="14" aria-hidden="true"><use href="#hake"/></svg></i><span>Kompetansemål fra læreplanen, hentet med fagsøk</span></li>
-      <li class="punkt"><i><svg width="14" height="14" aria-hidden="true"><use href="#hake"/></svg></i><span>Årsplan som pen PDF til elevene og foresatte</span></li>
-    </ul>
+    <h2 id="planlegging">Fra den enkelte økt <br>til hele skoleåret</h2>
+    <p class="tekst">Planlegg hele året og hver enkelt økt på ett sted. Del øktene inn i perioder, og knytt dem til kompetansemålene.</p>
   </div>
 </section>
 
-<!-- Klassekart -->
-<section class="bredde del" aria-labelledby="klassekart">
-  <div class="ord">
-    <p class="merke">Klassekart og grupper</p>
-    <h2 id="klassekart">Klassekart og grupper på sekunder</h2>
-    <p class="tekst">Tegn rommet én gang. Stokk elevene, lås dem som må sitte fast, og del opp i grupper med regler du bestemmer selv: bland jenter og gutter, hold to elever fra hverandre, juster nivå.</p>
-    <ul class="punkter">
-      <li class="punkt"><i><svg width="14" height="14" aria-hidden="true"><use href="#hake"/></svg></i><span>Klassekart for hvert rom og hver gruppe</span></li>
-      <li class="punkt"><i><svg width="14" height="14" aria-hidden="true"><use href="#hake"/></svg></i><span>Gruppegenerator med regler du kan stole på</span></li>
-      <li class="punkt"><i><svg width="14" height="14" aria-hidden="true"><use href="#hake"/></svg></i><span>Skriv ut eller kopier rett inn i Teams</span></li>
-    </ul>
-  </div>
-  <div class="vis">
-    <div class="duo lav">
-      <div class="ramme a">
-        <picture>
-          <source type="image/webp" srcset="bilder/klassekart.webp">
-          <img src="bilder/klassekart.jpg" width="1100" height="749" loading="lazy" decoding="async" alt="Klassekart for et rom med pultene tegnet inn og elevene på plassene sine, og menyen for å skrive ut eller kopiere kartet.">
-        </picture>
-      </div>
-      <div class="ramme b">
-        <picture>
-          <source type="image/webp" srcset="bilder/grupper.webp">
-          <img src="bilder/grupper.jpg" width="1100" height="749" loading="lazy" decoding="async" alt="Gruppegeneratoren: seks grupper med elever, og valg for å blande jenter og gutter og holde elever fra hverandre.">
-        </picture>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section class="bredde" aria-label="Mer i Økta">
+<section class="bredde andre" aria-labelledby="andre">
+  <h2 id="andre">Og det andre du bruker tid på</h2>
   <div class="fliser">
     <article class="flis">
-      <div class="bilde"><picture><source type="image/webp" srcset="bilder/kalender.webp"><img src="bilder/kalender.jpg" width="800" height="589" loading="lazy" decoding="async" alt="Kalenderen for en måned med øktene som brikker, og skoleåret som oversikt til høyre."></picture></div>
-      <div class="inn"><h3>Kalenderstrøm</h3><p>Agendaen for hver økt går rett inn i elevenes kalender. Du skriver den én gang, de ser den der de allerede ser.</p></div>
+      <div class="bilde lys"><div class="kk" data-anim="kk" aria-hidden="true">
+        <div class="kktavle">TAVLE</div>
+        <div class="kkrom" data-kk-rom></div>
+        <span class="minibtn" data-kk-stokk>Stokk</span>
+      </div></div>
+      <div class="inn"><h3>Klassekart og elevgrupper</h3><p>Generer, stokk om, lås og del opp.</p></div>
     </article>
     <article class="flis">
-      <div class="bilde"><picture><source type="image/webp" srcset="bilder/kontaktsamtaler.webp"><img src="bilder/kontaktsamtaler.jpg" width="800" height="689" loading="lazy" decoding="async" alt="Samtaletrekkeren: samtaledager med tider, elever og tema fordelt automatisk."></picture></div>
-      <div class="inn"><h3>Kontaktsamtaler</h3><p>Sett opp samtaledager, la appen fordele tidene, og skriv referat mens du snakker. Neste samtale starter med det dere sa sist.</p></div>
+      <div class="bilde lys"><div class="sa" data-anim="sa" aria-hidden="true">
+        <div class="satopp"><b>Kontaktsamtaler · tor 15.10</b><span class="sab" data-sa-knapp>Generer tider</span></div>
+        <div data-sa-rader></div>
+        <div class="saeks"><span class="sab" data-sa-eks>Eksporter tabell ↗</span></div>
+      </div></div>
+      <div class="inn"><h3>Fag- og kontaktsamtaler</h3><p>Generer tidspunkter, og eksporter tabellen til læringsplattformen din.</p></div>
     </article>
     <article class="flis">
-      <div class="bilde"><picture><source type="image/webp" srcset="bilder/import-klasseliste.webp"><img src="bilder/import-klasseliste.jpg" width="800" height="600" loading="lazy" decoding="async" alt="Import av klasseliste: navn, klasse og bilde lest fra en PDF, klare til å legges inn."></picture></div>
-      <div class="inn"><h3>Klasselista inn på ett minutt</h3><p>Slipp PDF-en med klasselista fra skolens system inn i Økta. Navn, klasse og bilde legges inn for deg, og ingenting sendes noe sted.</p></div>
+      <div class="bilde lys"><div class="kal" aria-hidden="true">
+        <div class="kaltopp"><span class="kalprikk"></span><b>Abonnement: HIS3</b><span class="kalical">iCal</span></div>
+        <div class="kalrull" data-kal></div>
+      </div></div>
+      <div class="inn"><h3>Kalenderstrøm</h3><p>Elevene abonnerer på kalenderen (iCal) og får agendaen rett i sin egen kalender.</p></div>
+    </article>
+    <article class="flis">
+      <div class="bilde lys"><picture><source type="image/webp" srcset="bilder/import-klasseliste.webp"><img src="bilder/import-klasseliste.jpg" width="800" height="600" loading="lazy" decoding="async" alt="Import av klasseliste: navn, klasse og bilde lest fra en PDF, klare til å legges inn."></picture></div>
+      <div class="inn"><h3>Importer klasselista</h3><p>Slipp inn PDF-en med klasselista, så leser Økta inn elevene for deg.</p></div>
     </article>
   </div>
-  <ul class="minier">
-    <li class="mini"><span class="ikon" aria-hidden="true">⌘</span><h3>Søk i alt</h3><p>Elever, økter og notater med ⌘K.</p></li>
-    <li class="mini"><span class="ikon" aria-hidden="true">✎</span><h3>Logg på elevene</h3><p>Korte notater fra økta havner på riktig elev.</p></li>
-    <li class="mini"><span class="ikon" aria-hidden="true">☑</span><h3>Gjøremål</h3><p>Ting du må huske, knyttet til elev og fag.</p></li>
-    <li class="mini"><span class="ikon" aria-hidden="true">t</span><h3>Timeregnskap</h3><p>Ser hvor langt du er kommet i faget.</p></li>
-    <li class="mini"><span class="ikon" aria-hidden="true">▤</span><h3>Vurderinger</h3><p>Muntlig, skriftlig og samtaledager samlet.</p></li>
-    <li class="mini"><span class="ikon" aria-hidden="true">⇵</span><h3>Bytt økter</h3><p>Flytt innhold mellom datoer med ett drag.</p></li>
-    <li class="mini"><span class="ikon" aria-hidden="true">☾</span><h3>Lys og mørk</h3><p>Følger maskinen din.</p></li>
-    <li class="mini"><span class="ikon pdf" aria-hidden="true">PDF</span><h3>Skriv ut</h3><p>Ukeplan, årsplan og klassekart på papir.</p></li>
-  </ul>
 </section>
 
 <section id="personvern" class="bredde" aria-labelledby="pv">
-  <div class="mork">
+  <div class="mork stripe">
     <div>
-      <div>
-        <p class="merke">Personvern</p>
-        <h2 id="pv">Elevdata hører hjemme hos læreren</h2>
-        <p class="ingress">Økta er bygget slik at du ikke trenger å stole på noen andre. Det finnes ingen server å stole på, og ingen konto som kan lekke. Alt du skriver, ligger i én fil på maskinen din.</p>
-        <div class="knapper">
-          <a class="btn lys" href="personvern.html">Les hvordan det virker</a>
-          <a class="btn glass" href="https://github.com/fbedsvaag/okta">Se kildekoden</a>
-        </div>
-      </div>
-      <ul class="punkter">
-        <li class="punkt"><i><svg width="14" height="14" aria-hidden="true"><use href="#hake"/></svg></i><span><b>Ingen sky, ingen konto</b><br><span>Databasen ligger lokalt. Ingen innlogging, ingen synk til en tjeneste du ikke kontrollerer.</span></span></li>
-        <li class="punkt"><i><svg width="14" height="14" aria-hidden="true"><use href="#hake"/></svg></i><span><b>Bare én ting går på nett, og bare hvis du vil</b><br><span>Kalenderen du selv kobler til. Fagsøket mot Udir bruker en liste som følger med appen, så det går ikke på nett.</span></span></li>
-        <li class="punkt"><i><svg width="14" height="14" aria-hidden="true"><use href="#hake"/></svg></i><span><b>Bilder og kjønn blir værende</b><br><span>Elevbilder og kjønn eksporteres aldri, heller ikke til kalenderen eller i PDF-er.</span></span></li>
-        <li class="punkt"><i><svg width="14" height="14" aria-hidden="true"><use href="#hake"/></svg></i><span><b>Åpen kildekode</b><br><span>Du, eller IKT-ansvarlig på skolen, kan lese nøyaktig hva appen gjør.</span></span></li>
-      </ul>
+      <p class="merke">Personvern</p>
+      <h2 id="pv">Elevdataene blir hos deg</h2>
+      <p class="ingress">Ingen konto, ingen sky. Alt ligger i én fil på maskinen din.</p>
     </div>
+    <a class="btn lys" href="personvern.html">Les hvordan →</a>
   </div>
 </section>
 
 <section id="last-ned" class="bredde lastned" aria-labelledby="ln">
   <p class="merke">Last ned</p>
-  <h2 id="ln">Kom i gang på fem minutter</h2>
-  <p class="ingress">Last ned, åpne, importer klasselista. Første gang hjelper Økta deg med fagene og timeplanen.</p>
+  <h2 id="ln">Prøv <i>Økta </i>før neste økt</h2>
   <div class="osvalg" role="tablist" aria-label="Velg maskin">
     <button class="os" type="button" role="tab" id="fane-mac" aria-controls="os-mac" aria-selected="true">Mac</button>
     <button class="os" type="button" role="tab" id="fane-win" aria-controls="os-win" aria-selected="false">Windows</button>
@@ -300,33 +252,19 @@
 
 <section id="sporsmal" class="bredde sporsmal" aria-labelledby="sp">
   <div>
-    <p class="merke">Spørsmål</p>
-    <h2 id="sp">Det folk lurer på</h2>
+    <h2 id="sp">Spørsmål</h2>
     <p class="tekst">Finner du ikke svaret? Bruk «Gi tilbakemelding» i appen.</p>
   </div>
   <dl>
-    <div class="sp apen"><dt><button type="button" aria-expanded="true" aria-controls="svar-1">Koster det noe?<span class="pil" aria-hidden="true">+</span></button></dt><dd id="svar-1"><div><p>Nei. Økta er gratis å bruke, og kildekoden er åpen.</p></div></dd></div>
-    <div class="sp"><dt><button type="button" aria-expanded="false" aria-controls="svar-2">Hvor lagres elevdataene?<span class="pil" aria-hidden="true">+</span></button></dt><dd id="svar-2"><div><p>I én databasefil på maskinen din. Ingenting lastes opp. Vil du ta sikkerhetskopi, kan du kopiere fila eller eksportere et oppsett.</p></div></dd></div>
-    <div class="sp"><dt><button type="button" aria-expanded="false" aria-controls="svar-3">Er det lov å bruke på skolen min?<span class="pil" aria-hidden="true">+</span></button></dt><dd id="svar-3"><div><p>Du er selv ansvarlig for hvordan du behandler opplysninger om elevene. Fordi alt ligger lokalt, er Økta enkel å vurdere: det finnes ingen databehandler utenfor maskinen din. Snakk gjerne med personvernombudet eller IKT-ansvarlig, og vis dem <a href="personvern.html">personvernsiden</a>.</p></div></dd></div>
-    <div class="sp"><dt><button type="button" aria-expanded="false" aria-controls="svar-4">Kan jeg bruke det på flere maskiner?<span class="pil" aria-hidden="true">+</span></button></dt><dd id="svar-4"><div><p>Ikke med automatisk synk ennå. Du kan flytte oppsettet mellom maskiner med eksportfila.</p></div></dd></div>
-    <div class="sp"><dt><button type="button" aria-expanded="false" aria-controls="svar-5">Hvilke fag og trinn passer det for?<span class="pil" aria-hidden="true">+</span></button></dt><dd id="svar-5"><div><p>Alle. Du legger inn fagene dine selv, og kan hente kompetansemålene fra læreplanen med fagsøket.</p></div></dd></div>
-    <div class="sp"><dt><button type="button" aria-expanded="false" aria-controls="svar-6">Hvem lager Økta?<span class="pil" aria-hidden="true">+</span></button></dt><dd id="svar-6"><div><p>En lærer som ville ha et bedre verktøy enn regnearket. Tilbakemeldinger fra andre lærere styrer hva som kommer.</p></div></dd></div>
+    <div class="sp apen"><dt><button type="button" aria-expanded="true" aria-controls="svar-1">Hvor ligger dataene?<span class="pil" aria-hidden="true">+</span></button></dt><dd id="svar-1"><div><p>I én fil på maskinen din. Ingenting lastes opp. Vil du ta sikkerhetskopi, kopierer du fila eller eksporterer et oppsett.</p></div></dd></div>
+    <div class="sp"><dt><button type="button" aria-expanded="false" aria-controls="svar-2">Hva koster det?<span class="pil" aria-hidden="true">+</span></button></dt><dd id="svar-2"><div><p>Kommer.</p></div></dd></div>
   </dl>
-</section>
-
-<section class="bredde slutt" aria-labelledby="avslutning">
-  <span class="appikon"><svg width="56" height="56" aria-hidden="true"><use href="#logo"/></svg></span>
-  <h2 id="avslutning">Mindre administrasjon. Mer tid med elevene.</h2>
-  <div class="knapper">
-    <a class="btn pri" data-os="mac" href="https://github.com/fbedsvaag/okta/releases/latest"><svg width="15" height="15" aria-hidden="true"><use href="#apple"/></svg>Last ned for Mac</a>
-    <a class="btn sek" data-os="win" href="https://github.com/fbedsvaag/okta/releases/latest"><svg width="14" height="14" aria-hidden="true"><use href="#windows"/></svg>Last ned for Windows</a>
-  </div>
 </section>
 
 </main>
 
 <footer class="bredde bunn">
-  <a class="logo" href="./"><svg width="18" height="18" aria-hidden="true"><use href="#logo"/></svg>Økta</a><span>Laget i Norge</span>
+  <a class="logo" href="./"><svg width="18" height="18" aria-hidden="true"><use href="#logo"/></svg>Økta</a><span>Laget av lektor Fredrik Geving Bedsvaag, med sabla god hjelp fra Claude</span>
   <nav aria-label="Bunnmeny">
     <a href="personvern.html">Personvern</a>
     <a href="https://github.com/fbedsvaag/okta/releases">Endringslogg</a>

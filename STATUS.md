@@ -23,22 +23,16 @@ Pages fra `site/` (`.github/workflows/side.yml`).
   står stille på sluttbildet med «Reduser bevegelse».
 - Mobil og nettbrett: én kolonne, teksten før bildene, ingen vannrett
   rulling (sjekket i WebKit på 390 px).
-- Lighthouse: skrivebord 100/100/100/100; mobil ytelse 96, resten 100;
-  personvernsiden 98/100/100.
+- Lighthouse (etter tekstsprinten): skrivebord 100/100/100/100; mobil
+  ytelse 95, resten 100; personvernsiden 98/100/100.
+- Elevkortet, klassekartet, samtalene og kalenderstrømmen er HTML med
+  egne animasjoner i side.js; fargeflatene glir, knappene har glans. Alt
+  står stille med «Reduser bevegelse».
 
-**«Gratis» og «kildekoden er åpen» på siden**, til å ta stilling til:
-
-1. Øverst: «Gratis for lærere · beta 0.3»
-2. Under knappene: «Kildekoden er åpen · Ingen innlogging · Virker uten nett»
-3. Personvern-boksen: punktet «Åpen kildekode» og knappen «Se kildekoden»
-4. Spørsmål: «Koster det noe? Nei. Økta er gratis å bruke, og kildekoden er
-   åpen.»
-5. Personvernsiden: «Les koden selv» og «Kildekode på GitHub» i bunnen
-   (begge sider)
-
-Merk: repoet har ingen lisensfil. Uten lisens er koden synlig, men ikke
-åpen kildekode i juridisk forstand; ingen har lov til å bruke den videre.
-Velg en lisens (eller ta bort ordene) før siden går ut.
+**«Gratis» og «kildekoden er åpen» på siden** (etter tekstsprinten 20.10):
+«Gratis» står ikke lenger noe sted. «Hva koster det?» svarer «Kommer.».
+Lenkene «Kildekode på GitHub» (bunnen) og «Les koden selv» på
+personvernsiden står igjen. Repoet har fortsatt ingen lisensfil.
 
 **Systemkravene** er rettet mot det som faktisk bygges:
 
