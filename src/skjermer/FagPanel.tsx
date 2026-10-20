@@ -36,11 +36,12 @@ import {
   tellSkaringerIFag,
   type ElevRad,
 } from "../data/elever";
-import { Fagfirkant, Felt, Kappet, KONTROLL } from "../ui/felles";
+import { Felt, Kappet, KONTROLL } from "../ui/felles";
 import { finnFag, type GrepFag } from "../data/grep";
 import { hentDekkedeMal } from "../data/perioder";
 import type { FagIAr } from "../data/fag";
 import { TRAFIKKLYS } from "../ui/farger";
+import { Fargevelger } from "../ui/Fargevelger";
 import { hentInnstilling } from "../data/skolear";
 import { LAERERNAVN } from "../data/arsplanark";
 import { Velger } from "../ui/Velger";
@@ -119,7 +120,14 @@ export function FagPanel({
   return (
     <aside className="flex h-full flex-col border-l border-linje bg-ark">
       <header className="flex items-baseline gap-3 border-b border-linje-medium px-5 py-3">
-        <Fagfirkant farge={fag.farge} storrelse={12} klasse="self-center" />
+        {/* Klikk på firkanten bytter fargen på faget (17.3). */}
+        <Fargevelger
+          farge={fag.farge}
+          onVelg={async (farge) => {
+            await endreFag(fag.fagId, { farge });
+            onEndret();
+          }}
+        />
         <span className="text-tittel font-medium">{fag.kode}</span>
         <Kappet verdi={fag.navn} klasse="text-brod text-blekk-dempet" />
         <button

@@ -10,6 +10,7 @@ import {
 } from "../data/fag";
 import { hentInnstilling } from "../data/skolear";
 import { FAGFARGER } from "../ui/farger";
+import { Fargevelger } from "../ui/Fargevelger";
 import { Fagfirkant, Felt, Knapp, Tomtilstand } from "../ui/felles";
 import { Fagvelger } from "./Fagvelger";
 
@@ -151,8 +152,6 @@ function FagRad({
   onApne: () => void;
   onEndret: () => void;
 }) {
-  const [visFarger, setVisFarger] = useState(false);
-
   if (!rediger) {
     return (
       <tr
@@ -182,58 +181,14 @@ function FagRad({
   return (
     <tr className="border-b border-linje-svak">
       <td className="py-1.5">
-        <div className="relative">
-          <button
-            onClick={() => setVisFarger((v) => !v)}
-            title="Bytt farge"
-            className="grid h-5 w-5 place-items-center rounded-vanlig hover:bg-flate"
-          >
-            <Fagfirkant farge={fag.farge} storrelse={10} />
-          </button>
-          {visFarger && (
-            <div className="absolute left-0 top-full z-20 mt-1 w-52 rounded border border-linje bg-ark p-2 shadow-lg">
-              <div className="grid grid-cols-6 gap-1">
-                {FAGFARGER.map((farge) => (
-                  <button
-                    key={farge}
-                    title={farge}
-                    onClick={async () => {
-                      await endreFag(fag.fagId, { farge });
-                      setVisFarger(false);
-                      onEndret();
-                    }}
-                    className={`h-5 w-5 rounded-sm ring-offset-1 hover:ring-1 hover:ring-linje-sterk ${
-                      fag.farge === farge ? "ring-1 ring-blekk-dempet" : ""
-                    }`}
-                    style={{ background: farge }}
-                  />
-                ))}
-              </div>
-
-              <label className="mt-2 flex items-center gap-2 border-t border-linje-medium pt-2 text-liten text-blekk-dempet">
-                <input
-                  type="color"
-                  // Hex, ikke token: <input type="color"> godtar bare en
-                  // bokstavelig hex-verdi, ikke en CSS-variabel.
-                  value={fag.farge ?? "#2f5d8a"}
-                  onChange={async (e) => {
-                    await endreFag(fag.fagId, { farge: e.target.value });
-                    onEndret();
-                  }}
-                  className="h-6 w-8 cursor-pointer rounded border border-linje bg-ark p-0.5"
-                />
-                Egen farge
-              </label>
-
-              <button
-                onClick={() => setVisFarger(false)}
-                className="mt-1 w-full text-liten text-blekk-dempet hover:text-blekk"
-              >
-                Lukk
-              </button>
-            </div>
-          )}
-        </div>
+        <Fargevelger
+          farge={fag.farge}
+          storrelse={10}
+          onVelg={async (farge) => {
+            await endreFag(fag.fagId, { farge });
+            onEndret();
+          }}
+        />
       </td>
 
       <td className="py-1.5">
