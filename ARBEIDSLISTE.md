@@ -777,6 +777,40 @@ Tegningene ligger i `docs/lerret/`. Fila står i parentes.
 - [ ] **18.4 Signering på Mac** (Apple Developer ID og notarisering), så
   advarselen ved første åpning forsvinner. Avventer eieren.
 
+## 19. Ny elev og tilbakemeldinger fra kollegaer (20.10)
+
+- [ ] **19.1 Ny elev** (ElevNy): glasskort under «+ Ny elev» (N). Stort
+  navnefelt med initialer i en farget sirkel og fornavn/etternavn vist
+  hver for seg. Tab flytter skillet («Anne Marie van der Berg»). Duplikat
+  sjekkes mens man skriver: gul linje «X finnes allerede i 3STB · Åpne», og
+  Lagre er av. Klasse som brikker (+ Ny klasse), fag som fargede brikker med
+  hake (filterets fag er valgt fra start), Kontaktelev som bryter. ↵ lagrer
+  og åpner elevkortet, ⇧↵ lagrer og tømmer feltet for neste. «Lagt til nå»
+  viser dem som er laget. Ny rad glir inn i lista med et kort blink. Esc
+  lukker. Erstatter dagens enkle felt.
+- [ ] **19.2 Fast overskrift i Økter-lista.** Kolonneoverskriftene (uke,
+  dato, dag, tid, tema, periode, vurdering) ligger alltid øverst når man
+  scroller (sticky, med glassbakgrunn). Månedsoverskriften under følger med
+  til neste måned tar over.
+- [ ] **19.3 Smidigere markering av flere økter.** Klikk på en rad (ikke
+  bare avkrysningen) velger den. ⇧-klikk velger alt mellom forrige og denne.
+  ⌘-klikk legger til eller tar bort én. Dra over avkrysningene for å male
+  et utvalg. Esc tømmer. Gjelder linja fra 16.3.
+- [ ] **19.4 Ikke skåret betyr til stede, ikke sett** (avgjort 20.10). Ingen
+  ny status og ingen ny tast. Læreren rekker ikke alltid å se alle, og en
+  elev uten skåring var til stede, men ble ikke vurdert. Bare 0 (ikke i
+  økta) teller som fravær. Ikke skåret teller ikke i innsatssnittet, og
+  vises som tom rute i heatmap og elevkort, som i dag.
+  - Ferdig: viser en rolig linje «3 elever er ikke skåret · regnes som til
+    stede», med lenke tilbake til lista. Ingen dialog som stopper.
+  - Neste økt i samme fag: «Følg opp i økta» får «Ikke sett sist: Ada,
+    Jonas» (de som var uten skåring forrige gang).
+  - Filteret i skåret økt (16.1) får «Ikke sett».
+  - Sjekk at fravær, 10 %-grensen og eksport bare regner 0 som fravær.
+- [ ] **19.5 Serier med intervall.** «Ny serie» får Hver uke · Annenhver
+  uke · Hver tredje uke · Hver n-te uke, og A-/B-uke for skoler som har
+  det. Forhåndsvisning av datoene før de lages, ferier hoppes over som før.
+
 ## Ikke nå
 
 Ting som er vurdert og lagt bort med vilje. Står her så de ikke dukker opp
