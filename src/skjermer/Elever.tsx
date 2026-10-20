@@ -7,8 +7,6 @@ import {
   giKlasseNyttNavn,
   hentElever,
   hentKlasser,
-  koblePaFag,
-  opprettElev,
   slettElever,
   slettKlasse,
   type ElevRad,
@@ -16,7 +14,7 @@ import {
 } from "../data/elever";
 import type { FagIAr } from "../data/fag";
 import { hentInnstilling, settInnstilling } from "../data/skolear";
-import { delNavn } from "../import/parser";
+import { NyElev } from "./NyElev";
 import {
   Bryter,
   Fagfirkant,
@@ -104,6 +102,13 @@ export function Elever({
   const [forfalte, setForfalte] = useState<Set<string>>(new Set());
   const [meny, setMeny] = useState<{ x: number; y: number } | null>(null);
   const [nyApen, setNyApen] = useState(false);
+  // Sist lagde elev: raden glir inn med et kort blink (19.1).
+  const [nyeste, setNyeste] = useState<string | null>(null);
+  useEffect(() => {
+    if (!nyeste) return;
+    const t = setTimeout(() => setNyeste(null), 1000);
+    return () => clearTimeout(t);
+  }, [nyeste]);
   // Sortering: klikk på et kolonnehode; samme kolonne igjen snur retningen.
   const [sortering, settSortering] = useLagretInnstilling<{
     kolonne: Sortering;
@@ -253,6 +258,22 @@ export function Elever({
     [grupperte],
   );
 
+  // N åpner «Ny elev», utenom tekstfelter og når et ark ligger over.
+  useEffect(() => {
+    const tast = (e: KeyboardEvent) => {
+      if (e.key.toLowerCase() !== "n" || e.metaKey || e.ctrlKey || e.altKey)
+        return;
+      const mal = e.target as HTMLElement;
+      if (mal.closest?.("input, textarea, select, [contenteditable]")) return;
+      if (fane !== "elever" || document.querySelector("[data-inngang='teppe']"))
+        return;
+      e.preventDefault();
+      setNyApen(true);
+    };
+    window.addEventListener("keydown", tast);
+    return () => window.removeEventListener("keydown", tast);
+  }, [fane]);
+
   // ⌘A velger alle som vises, utenom tekstfelter.
   useEffect(() => {
     const tast = (e: KeyboardEvent) => {
@@ -353,19 +374,31 @@ export function Elever({
           </button>
           <span className="relative">
             <button
+              data-ny-elev
               onClick={() => setNyApen((a) => !a)}
               className="flex h-8 items-center rounded-full bg-aksent px-3.5 text-liten font-medium text-ark hover:bg-aksent-mork"
             >
-              Ny elev
+              + Ny elev
+              <span className="ml-1 text-[11px] opacity-60">N</span>
             </button>
             {nyApen && (
               <NyElev
+                skolearId={skolearId}
+                klasser={klasser}
+                fag={fag}
                 arvFag={filterFag && filterFag !== "uten" ? filterFag : null}
                 onLukk={() => setNyApen(false)}
-                onLaget={async (id) => {
+                onApne={(id) => {
                   setNyApen(false);
-                  await last();
                   ark.apneElev(id);
+                }}
+                onLaget={async (id, apne) => {
+                  setNyeste(id);
+                  await last();
+                  if (apne) {
+                    setNyApen(false);
+                    ark.apneElev(id);
+                  }
                 }}
               />
             )}
@@ -535,6 +568,7 @@ export function Elever({
                   {g.elever.map((e) => (
                     <Elevlinje
                       key={e.id}
+                      ny={nyeste === e.id}
                       valgt={valgte.has(e.id)}
                       onVelg={(spenn) => {
                         setValgte((f) =>
@@ -631,6 +665,7 @@ const RUTENAVN: Record<Rute, string> = {
 };
 
 function Elevlinje({
+  ny,
   valgt,
   onVelg,
   elev,
@@ -641,6 +676,8 @@ function Elevlinje({
   forfalt,
   onApne,
 }: {
+  /** nettopp lagt til: glir inn med et blink */
+  ny: boolean;
   valgt: boolean;
   /** spenn: ⇧ holdt inne */
   onVelg: (spenn: boolean) => void;
@@ -662,7 +699,7 @@ function Elevlinje({
       onKeyDown={(e) => e.key === "Enter" && onApne()}
       className={`${RUTENETT} relative z-[1] h-[46px] cursor-default border-b border-linje-svak px-2.5 text-[calc(14px*var(--tekst-skala))] ${
         valgt ? "bg-valgt" : ""
-      }`}
+      } ${ny ? "elev-inn" : ""}`}
     >
       <Avkrysning
         pa={valgt}
@@ -769,75 +806,6 @@ function Fravaersstolpe({ fravaer }: { fravaer: Fagfravaer | null }) {
         {prosent(p)}
       </span>
     </span>
-  );
-}
-
-/**
- * Ny elev fra verktøylinja: ett felt, «Fornavn Etternavn», Enter. Faget i
- * filteret arves (§4.3). Eleven åpnes i kortet etterpå, der klasse og
- * resten settes.
- */
-function NyElev({
-  arvFag,
-  onLukk,
-  onLaget,
-}: {
-  arvFag: string | null;
-  onLukk: () => void;
-  onLaget: (id: string) => void;
-}) {
-  const [navn, setNavn] = useState("");
-  const [feil, setFeil] = useState<string | null>(null);
-  const boks = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const ute = (e: MouseEvent) => {
-      if (!boks.current?.contains(e.target as Node)) onLukk();
-    };
-    window.addEventListener("mousedown", ute);
-    return () => window.removeEventListener("mousedown", ute);
-  }, [onLukk]);
-
-  async function lag() {
-    const { fornavn, etternavn } = delNavn(navn.trim());
-    if (!fornavn || !etternavn) {
-      setFeil("Skriv fornavn og etternavn.");
-      return;
-    }
-    try {
-      const id = await opprettElev(fornavn, etternavn);
-      if (arvFag) await koblePaFag(id, arvFag);
-      onLaget(id);
-    } catch (e) {
-      setFeil(`Kunne ikke opprette eleven: ${String(e)}`);
-    }
-  }
-
-  return (
-    <div
-      ref={boks}
-      className="glass-meny absolute right-0 top-10 z-50 w-72 rounded-[14px] p-3"
-    >
-      <input
-        autoFocus
-        value={navn}
-        onChange={(e) => {
-          setNavn(e.target.value);
-          setFeil(null);
-        }}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") void lag();
-          if (e.key === "Escape") onLukk();
-        }}
-        placeholder="Fornavn Etternavn"
-        className="w-full rounded-vanlig border border-linje bg-ark px-2 py-1.5 text-brod outline-none focus:border-aksent"
-      />
-      <p
-        className={`mt-1.5 text-etikett ${feil ? "text-feil" : "text-blekk-dempet"}`}
-      >
-        {feil ?? "Enter lagrer og åpner eleven. Klasse og fag settes i kortet."}
-      </p>
-    </div>
   );
 }
 

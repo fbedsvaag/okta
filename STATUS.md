@@ -1,13 +1,24 @@
 # Status
 
-Pr. 2026-10-20, versjon 0.3.0 (beta, utgitt 13.10 som pre-release). Beskriver hvor appen faktisk står, ikke hva
+Pr. 2026-10-20, versjon 0.4.0 (utgitt 20.10). Beskriver hvor appen faktisk står, ikke hva
 den skal bli. Fila eies fritt, i motsetning til SPEC.md.
 
-**717 tester i `npm test` og 25 i `cargo test`, alle grønne på Mac.
+**730 tester i `npm test` og 25 i `cargo test`, alle grønne på Mac.
 `tsc --noEmit` er ren. `npm run build` går gjennom. 27 migrasjoner.**
 
 Utseendet står i `DESIGN.md`, som beskriver appen slik den er bygget.
 Lerretet (`docs/lerret/`) er fasit for det som er tegnet.
+
+## Runde 19 (20.10, ARBEIDSLISTE §19)
+
+- **19.1 Ny elev** (`skjermer/NyElev.tsx`, lerretet ElevNy): glasskort under
+  «+ Ny elev» (N). Navnet deles mens du skriver; Tab flytter skillet når det
+  er tre ord eller flere (`skjermer/elevnavn.ts`). Klasse som brikker (+ Ny
+  klasse), fag som fargebrikker med filterets fag forhåndsvalgt, kontaktelev
+  som bryter (mentor-flagget; krever klasse). Duplikatsjekken fra importen:
+  samme navn stenger Lagre, med «Ny likevel» for to elever med samme navn;
+  skrivefeil-nærhet gir bare en grå linje. ↵ lagrer og åpner kortet, ⇧↵
+  lagrer og tømmer navnet. Klassen huskes til neste gang. Ny rad glir inn.
 
 ## Hjemmesiden (20.10, ARBEIDSLISTE 18.3)
 

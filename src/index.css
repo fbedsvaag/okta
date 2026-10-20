@@ -1820,3 +1820,188 @@ html {
 .kladd:focus {
   box-shadow: inset 0 0 0 1.5px var(--color-aksent);
 }
+
+/* Ny elev (skjermer/NyElev.tsx, 19.1, lerretet ElevNy). */
+.nyelev {
+  animation: nyelev-inn 260ms cubic-bezier(0.34, 1.32, 0.5, 1);
+  transform-origin: top right;
+}
+@keyframes nyelev-inn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.96);
+  }
+}
+.nyelev-del {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 6px;
+  background: var(--color-flate-svak);
+  font-size: calc(12px * var(--tekst-skala));
+  color: var(--color-blekk-dempet);
+}
+.nyelev-del b {
+  font-weight: 600;
+  color: var(--color-blekk);
+}
+.nyelev-lbl {
+  margin: 16px 0 7px;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-blekk-svak);
+}
+.nyelev-ch {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 11px;
+  border-radius: 14px;
+  background: var(--color-flate);
+  color: var(--color-blekk);
+  font-size: calc(13px * var(--tekst-skala));
+  transition:
+    background 160ms,
+    color 160ms,
+    transform 260ms cubic-bezier(0.34, 1.6, 0.5, 1);
+}
+.nyelev-ch:hover {
+  background: var(--color-valgt);
+}
+.nyelev-ch[aria-pressed="true"] {
+  background: var(--color-aksent);
+  color: var(--color-ark);
+  font-weight: 500;
+  transform: scale(1.04);
+}
+.nyelev-ch-ny {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--color-linje);
+  color: var(--color-blekk-dempet);
+}
+.nyelev-fc {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 28px;
+  padding: 0 11px 0 9px;
+  border-radius: 14px;
+  font-size: calc(13px * var(--tekst-skala));
+  font-weight: 500;
+  color: var(--f);
+  background: color-mix(in srgb, var(--f) 10%, var(--color-ark));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--f) 25%, var(--color-ark));
+  transition: all 180ms;
+}
+.nyelev-fc i {
+  display: grid;
+  place-items: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  box-shadow: inset 0 0 0 1.5px var(--f);
+}
+.nyelev-fc i svg {
+  opacity: 0;
+}
+.nyelev-fc[aria-pressed="true"] {
+  background: var(--f);
+  color: #fff;
+}
+.nyelev-fc[aria-pressed="true"] i {
+  background: #fff;
+  box-shadow: none;
+  color: var(--f);
+}
+.nyelev-fc[aria-pressed="true"] i svg {
+  opacity: 1;
+}
+.nyelev-bryt {
+  position: relative;
+  width: 34px;
+  height: 20px;
+  border-radius: 10px;
+  background: var(--color-linje);
+  transition: background 200ms;
+}
+.nyelev-bryt:disabled {
+  opacity: 0.5;
+}
+.nyelev-bryt::after {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(36, 31, 51, 0.25);
+  transition: transform 260ms cubic-bezier(0.34, 1.32, 0.5, 1);
+}
+.nyelev-bryt[aria-checked="true"] {
+  background: var(--color-aksent);
+}
+.nyelev-bryt[aria-checked="true"]::after {
+  transform: translateX(14px);
+}
+.nyelev-kb {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 5px;
+  background: var(--color-ark);
+  box-shadow: inset 0 0 0 1px var(--color-linje);
+  font-size: 10.5px;
+  color: var(--color-blekk-dempet);
+}
+.nyelev-kb-m {
+  background: rgba(255, 255, 255, 0.18);
+  box-shadow: none;
+  color: inherit;
+}
+.nyelev-laget {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: calc(12.5px * var(--tekst-skala));
+  animation: nyelev-laget 420ms cubic-bezier(0.34, 1.32, 0.5, 1);
+}
+@keyframes nyelev-laget {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+}
+/* Den nye raden glir inn i lista med et kort blink. */
+.elev-inn {
+  animation: elev-inn 900ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes elev-inn {
+  0% {
+    opacity: 0;
+    transform: translateY(-8px);
+    background-color: color-mix(in srgb, var(--color-aksent) 16%, transparent);
+  }
+  40% {
+    opacity: 1;
+    transform: none;
+    background-color: color-mix(in srgb, var(--color-aksent) 12%, transparent);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nyelev,
+  .nyelev-laget,
+  .elev-inn {
+    animation: none;
+  }
+}
