@@ -291,6 +291,36 @@ export async function losOkt(
   if (rad) await slett("vurdering_okt", rad.id);
 }
 
+/**
+ * Ny vurdering rett fra økta (ARBEIDSLISTE 16.9): opprettes i faget med
+ * skalaen faget sist brukte (eller den første vurderingsskalaen), knyttes
+ * til økta og får økta som frist. Kriterier og vekt redigeres under
+ * Vurderinger som før.
+ */
+export async function nyVurderingIOkt(
+  okt: { id: string; skolearFagId: string; dato: string },
+  tittel: string,
+  type: Vurderingstype | null,
+): Promise<string> {
+  const [sist] = await hent<{ skalaId: string }>(
+    `SELECT skala_id AS skalaId FROM vurdering
+      WHERE skolear_fag_id = $1 AND slettet IS NULL
+      ORDER BY opprettet DESC LIMIT 1`,
+    [okt.skolearFagId],
+  );
+  const skalaId = sist?.skalaId ?? (await hentVurderingsskalaer())[0]?.id;
+  if (!skalaId) throw new Error("Ingen vurderingsskala finnes.");
+  const id = await opprettVurdering(
+    okt.skolearFagId,
+    skalaId,
+    tittel.trim() || "Ny vurdering",
+    type,
+    okt.dato,
+  );
+  await knyttOkt(id, okt.id);
+  return id;
+}
+
 export async function slettVurdering(id: string): Promise<void> {
   await slett("vurdering", id);
 }

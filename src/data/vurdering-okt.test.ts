@@ -367,3 +367,24 @@ describe("bytte to økter", () => {
     );
   });
 });
+
+describe("ny vurdering fra økta (16.9)", () => {
+  it("lages i faget, knyttes til økta og får økta som frist", async () => {
+    const { nyVurderingIOkt } = await import("./vurderinger");
+    const okt = await opprettOkt(fagId, "MFL1", "2026-10-21", "08:30", 90);
+    const id = await nyVurderingIOkt(
+      { id: okt, skolearFagId: fagId, dato: "2026-10-21" },
+      "Muntlig: byene vokser",
+      "muntlig",
+    );
+    const v = await vurdering(id);
+    expect([v.tittel, v.type, v.frist]).toEqual([
+      "Muntlig: byene vokser",
+      "muntlig",
+      "2026-10-21",
+    ]);
+    expect(
+      (await hentOktVurderinger(skolearId)).get(okt)?.map((x) => x.id),
+    ).toEqual([id]);
+  });
+});

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { angre, angreSiste, type Angring } from "./angre";
 import { hovedtast } from "./taster";
 import { tast } from "./taster";
@@ -78,7 +79,9 @@ export function Toaster() {
   }, []);
 
   if (!t) return null;
-  return (
+  // Rett i <body>: appskallet er sin egen stabel (isolate), og arkene
+  // legger seg over det. Toasten skal stå over alt.
+  return createPortal(
     <div
       role="status"
       className="toast fixed left-1/2 z-[70] flex h-[42px] -translate-x-1/2 items-center gap-3 whitespace-nowrap rounded-full pl-4 pr-1.5 text-[calc(13px*var(--tekst-skala))]"
@@ -107,6 +110,7 @@ export function Toaster() {
           Angre {tast("⌘")}Z
         </button>
       )}
-    </div>
+    </div>,
+    document.body,
   );
 }

@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { confirm as bekreft } from "@tauri-apps/plugin-dialog";
 import {
   endreOkt,
@@ -22,8 +22,13 @@ import {
   hentVurderingsvalg,
   knyttOkt,
   losOkt,
+  nyVurderingIOkt,
+  slettVurdering,
+  type Vurderingstype,
   type Vurderingsvalg,
 } from "../data/vurderinger";
+import { leggTilAngring } from "../ui/angre";
+import { visToast } from "../ui/Toast";
 import { hentOktrader, type Oktrad } from "../data/oktrader";
 import { hentApneOppfolginger } from "../data/elevnotat";
 import { folgOpp, iPerioden, type Oppfolging } from "../data/oktplan";
@@ -296,6 +301,7 @@ function Vurdering({ okt, onEndret }: { okt: Okt; onEndret: () => void }) {
   useEffect(() => lyttVurderinger(last), [okt.skolearFagId, okt.id]);
   const her = valg.filter((v) => v.oktIder.includes(okt.id));
   const andre = valg.filter((v) => !v.oktIder.includes(okt.id));
+  const [ny, setNy] = useState(false);
 
   async function koble(id: string, pa: boolean) {
     if (pa) await knyttOkt(id, okt.id);
@@ -326,22 +332,193 @@ function Vurdering({ okt, onEndret }: { okt: Okt; onEndret: () => void }) {
           </button>
         </span>
       ))}
-      {andre.length > 0 ? (
+      {/*
+        Velgeren har alltid «+ Ny vurdering i denne økta» nederst (16.9),
+        også når faget ikke har noen vurderinger ennå.
+      */}
+      <span className="relative">
         <Velger
           etikett="Knytt til vurdering"
           verdi=""
           plassholder={her.length ? "+" : "+ Knytt til"}
           settVerdi={(v) => void koble(v, true)}
           valg={andre.map((v) => ({ verdi: v.id, tekst: v.tittel }))}
+          handling={{
+            tekst: "+ Ny vurdering i denne økta",
+            onKlikk: () => setNy(true),
+          }}
         />
-      ) : (
-        her.length === 0 && (
-          <span className="flex h-8 items-center text-[calc(13.5px*var(--tekst-skala))] text-blekk-svak">
-            Ingen vurderinger i faget
-          </span>
-        )
-      )}
+        {ny && (
+          <NyVurdering
+            okt={okt}
+            onLukk={() => setNy(false)}
+            onLaget={async (id, tittel) => {
+              setNy(false);
+              last();
+              onEndret();
+              const angring = {
+                tekst: `Vurderingen «${tittel}»`,
+                angre: async () => {
+                  await slettVurdering(id);
+                  last();
+                  onEndret();
+                },
+              };
+              leggTilAngring(angring);
+              visToast(`Vurderingen «${tittel}» er laget og knyttet til økta`, {
+                angring,
+                handling: {
+                  tekst: "Åpne i Vurderinger",
+                  onKlikk: () => ark.apneVurdering(id),
+                },
+              });
+            }}
+          />
+        )}
+      </span>
     </span>
+  );
+}
+
+/**
+ * Det lille skjemaet for en ny vurdering i økta (16.9, lerretet
+ * OktVurdering): navn fylt ut fra temaet med formen som prefiks, form og
+ * når. Kriterier og vekt redigeres under Vurderinger.
+ */
+const FORMER: { id: Vurderingstype | null; navn: string }[] = [
+  { id: "muntlig", navn: "Muntlig" },
+  { id: "skriftlig", navn: "Skriftlig" },
+  { id: "praktisk", navn: "Praktisk" },
+  { id: null, navn: "Annet" },
+];
+
+function NyVurdering({
+  okt,
+  onLukk,
+  onLaget,
+}: {
+  okt: Okt;
+  onLukk: () => void;
+  onLaget: (id: string, tittel: string) => void;
+}) {
+  const [form, setForm] = useState<Vurderingstype | null>("muntlig");
+  const prefiks = (f: Vurderingstype | null) =>
+    FORMER.find((x) => x.id === f)!.navn;
+  const tema = okt.tema?.trim() || okt.fagNavn;
+  const [navn, setNavn] = useState(`${prefiks("muntlig")}: ${tema}`);
+  const [flere, setFlere] = useState(false);
+  const boks = useRef<HTMLDivElement>(null);
+
+  // Lukkes av esc og klikk utenfor, uten å lukke arket under.
+  useEffect(() => {
+    const ut = (e: MouseEvent) => {
+      if (!boks.current?.contains(e.target as Node)) onLukk();
+    };
+    const tast = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      onLukk();
+    };
+    window.addEventListener("mousedown", ut);
+    window.addEventListener("keydown", tast, true);
+    return () => {
+      window.removeEventListener("mousedown", ut);
+      window.removeEventListener("keydown", tast, true);
+    };
+  }, [onLukk]);
+
+  async function lag() {
+    const tittel = navn.trim() || `${prefiks(form)}: ${tema}`;
+    const id = await nyVurderingIOkt(okt, tittel, form);
+    onLaget(id, tittel);
+  }
+
+  const chip = (pa: boolean, tekst: string, klikk: () => void) => (
+    <button
+      key={tekst}
+      onClick={klikk}
+      className={`planvalg-knapp ${pa ? "pa" : ""}`}
+    >
+      {tekst}
+    </button>
+  );
+
+  return (
+    <div
+      ref={boks}
+      className="glass-meny absolute left-0 top-[calc(100%+6px)] z-[60] w-[380px] rounded-[14px] p-4 text-[calc(13px*var(--tekst-skala))]"
+    >
+      <div className="mb-3 flex items-baseline gap-2">
+        <span className="font-semibold">Ny vurdering</span>
+        <span className="text-[calc(12px*var(--tekst-skala))] text-blekk-svak">
+          knyttes til økta {kortDag(okt.dato)}
+        </span>
+      </div>
+      <p className="mb-1 text-[calc(12px*var(--tekst-skala))] text-blekk-dempet">
+        Navn
+      </p>
+      <input
+        autoFocus
+        value={navn}
+        onChange={(e) => setNavn(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            void lag();
+          }
+        }}
+        className={`${felt} w-full`}
+      />
+      <p className="mb-1 mt-3 text-[calc(12px*var(--tekst-skala))] text-blekk-dempet">
+        Form
+      </p>
+      <div className="flex flex-wrap gap-1.5">
+        {FORMER.map((f) =>
+          chip(form === f.id, f.navn, () => {
+            // Formen er prefikset i navnet; byttes formen, byttes prefikset.
+            const rest = navn.replace(
+              /^(Muntlig|Skriftlig|Praktisk|Annet): /,
+              "",
+            );
+            setForm(f.id);
+            setNavn(`${f.navn}: ${rest}`);
+          }),
+        )}
+      </div>
+      <p className="mb-1 mt-3 text-[calc(12px*var(--tekst-skala))] text-blekk-dempet">
+        Når
+      </p>
+      <div className="flex flex-wrap gap-1.5">
+        {chip(!flere, `Denne økta · ${kortDag(okt.dato)}`, () =>
+          setFlere(false),
+        )}
+        {chip(flere, "Over flere økter …", () => setFlere(true))}
+      </div>
+      {flere && (
+        <p className="mt-2 text-[calc(12px*var(--tekst-skala))] leading-normal text-blekk-dempet">
+          Etter at den er laget, velger du de andre øktene i lista eller
+          kalenderen (Vurdering, V). Samtaledager settes opp i Samtaler.
+        </p>
+      )}
+      <div className="mt-4 flex items-center gap-2">
+        <span className="text-[calc(12px*var(--tekst-skala))] text-blekk-svak">
+          Kriterier og vekt: under Vurderinger
+        </span>
+        <button
+          onClick={onLukk}
+          className="ml-auto h-8 rounded-full px-3 text-blekk-dempet hover:bg-flate"
+        >
+          Avbryt
+        </button>
+        <button
+          onClick={() => void lag()}
+          className="h-8 rounded-full bg-aksent px-3.5 font-medium text-ark hover:bg-aksent-mork"
+        >
+          Lag vurdering ↵
+        </button>
+      </div>
+    </div>
   );
 }
 
