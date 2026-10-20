@@ -752,6 +752,31 @@ Tegningene ligger i `docs/lerret/`. Fila står i parentes.
 - [ ] **17.8 Spørsmål:** vises «borte sist» i «Følg opp i økta» alltid når
   en elev var borte forrige økt? Eieren vil beholde det.
 
+## 18. Nøytral og klar for andre skoler (20.10)
+
+- [ ] **18.1 Mentor heter kontaktlærer.** Alt brukeren ser bytter ord:
+  Mentorsamtaler → Kontaktsamtaler, Mentorelev(er) → Kontaktelev(er),
+  Mentorgruppa → Kontaktgruppa, «Ikke lenger mentorelev» → «Ikke lenger
+  kontaktelev», MENTOR i kalenderen → KONTAKT. Gjelder også standardnavnet
+  på CalDAV-kalenderen (f.eks. «kontaktsamtaler»), README, guiden og
+  testdataene. Interne navn i kode og database (tabeller, kolonner,
+  `kildeType: "mentorgruppe"`) kan stå, så ingen migrering trengs. En
+  kalender brukeren allerede har satt opp, beholder navnet sitt.
+- [ ] **18.2 Ingen skolenavn.** Fjern BPG fra eksempler, tester og
+  dokumentasjon (`docs/oppsettfil.md`, `oppsettfil.test.ts`,
+  `docs/klassekart.md`). Bruk «Eksempelskolen».
+- [ ] **18.3 Hjemmeside** (Hjemmeside, lerret runde 17): en statisk side på
+  GitHub Pages fra repoet, i `site/`. Nøytral, for lærere. Seksjoner: hero
+  med nedlasting, fire tillitspunkter, skåring, planlegging, innsats over
+  tid / midtveisvurdering, klassekart og grupper, tre fliser (kalenderstrøm,
+  kontaktsamtaler, import), åtte små funksjoner, personvern (mørk), last ned
+  (Mac/Windows, henter siste versjon fra GitHub Releases), spørsmål,
+  avslutning. Skjermbildene tas fra appen med oppdiktede elever, aldri ekte
+  data. Ingen sporing, ingen analyseskript, ingen fonter fra tredjepart (Geist
+  legges ved).
+- [ ] **18.4 Signering på Mac** (Apple Developer ID og notarisering), så
+  advarselen ved første åpning forsvinner. Avventer eieren.
+
 ## Ikke nå
 
 Ting som er vurdert og lagt bort med vilje. Står her så de ikke dukker opp

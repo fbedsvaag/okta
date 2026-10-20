@@ -876,6 +876,25 @@ function Liste({
     }
   }
 
+  // Et klikk utenfor den utfoldede økta legger den sammen. Klikk i menyer,
+  // ark og toasten over lista teller ikke som «utenfor».
+  useEffect(() => {
+    if (!apen) return;
+    const ut = (e: MouseEvent) => {
+      const t = e.target as HTMLElement;
+      if (t.closest?.(`[data-okt="${CSS.escape(apen)}"]`)) return;
+      if (
+        t.closest?.(
+          ".glass-meny, [role='listbox'], [role='menu'], [role='dialog'], .toast, .flervalgslinje",
+        )
+      )
+        return;
+      setApen(null);
+    };
+    window.addEventListener("mousedown", ut);
+    return () => window.removeEventListener("mousedown", ut);
+  }, [apen]);
+
   // Markøren står alltid synlig.
   useEffect(() => {
     if (!valgt) return;

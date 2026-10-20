@@ -53,6 +53,15 @@ import {
   type Oktrad,
   type Rute,
 } from "../data/oktrader";
+import { useLagretInnstilling } from "../ui/useLagretInnstilling";
+import { lesJson } from "../data/json";
+import {
+  innsatsSnitt,
+  nesteSortering,
+  sammenlign,
+  type Retning,
+  type Sortering,
+} from "./elevsortering";
 
 type Gruppering = "klasse" | "fag" | "alfabetisk";
 const GRUPPERING = "elev_gruppering";
@@ -95,6 +104,17 @@ export function Elever({
   const [forfalte, setForfalte] = useState<Set<string>>(new Set());
   const [meny, setMeny] = useState<{ x: number; y: number } | null>(null);
   const [nyApen, setNyApen] = useState(false);
+  // Sortering: klikk på et kolonnehode; samme kolonne igjen snur retningen.
+  const [sortering, settSortering] = useLagretInnstilling<{
+    kolonne: Sortering;
+    retning: Retning;
+  }>(
+    "elever_sortering",
+    { kolonne: "navn", retning: "opp" },
+    (v) =>
+      lesJson(v, { kolonne: "navn" as Sortering, retning: "opp" as Retning }),
+    JSON.stringify,
+  );
   const liste = useRef<HTMLDivElement>(null);
   // Flere elever samtidig (17.4), samme mønster som i Økter (16.3).
   const [valgte, setValgte] = useState<Set<string>>(new Set());
@@ -171,12 +191,33 @@ export function Elever({
           return false;
         return true;
       })
-      .sort(
-        (a, b) =>
-          a.fornavn.localeCompare(b.fornavn, "nb-NO") ||
-          a.etternavn.localeCompare(b.etternavn, "nb-NO"),
-      );
-  }, [elever, sok, filterFag, baraMentor]);
+      .sort((a, b) => {
+        // Kolonnen det er sortert på, så navnet som tiebreaker.
+        const nokkel = (e: ElevRad): string | number | null => {
+          switch (sortering.kolonne) {
+            case "klasse":
+              return e.klasseNavn;
+            case "fag":
+              return (
+                e.fagIder
+                  .map((id) => fagEtterId.get(id)?.kode ?? "")
+                  .sort((x, y) => x.localeCompare(y, "nb-NO"))[0] ?? null
+              );
+            case "innsats":
+              return innsatsSnitt(tall.get(e.id)?.ruter ?? []);
+            case "fravaer":
+              return tall.get(e.id)?.fravaer?.andel ?? null;
+            default:
+              return null;
+          }
+        };
+        const navn = (e: ElevRad) => `${e.fornavn} ${e.etternavn}`;
+        return sortering.kolonne === "navn"
+          ? sammenlign(navn(a), navn(b), sortering.retning)
+          : sammenlign(nokkel(a), nokkel(b), sortering.retning) ||
+              navn(a).localeCompare(navn(b), "nb-NO");
+      });
+  }, [elever, sok, filterFag, baraMentor, sortering, tall, fagEtterId]);
 
   // Gruppene i rekkefølge. Med fag står en elev under hvert fag hen har.
   const grupperte = useMemo(() => {
@@ -424,13 +465,46 @@ export function Elever({
               }
             />
             <span />
-            <span>Navn</span>
-            <span>Klasse</span>
-            <span>Fag</span>
-            <span>Innsats, siste 10</span>
-            <span title="Prosent av timene i faget. Grensen er 10 %.">
-              Fravær · 10 %
-            </span>
+            {(
+              [
+                ["navn", "Navn", undefined],
+                ["klasse", "Klasse", undefined],
+                ["fag", "Fag", undefined],
+                ["innsats", "Innsats, siste 10", undefined],
+                [
+                  "fravaer",
+                  "Fravær · 10 %",
+                  "Prosent av timene i faget. Grensen er 10 %.",
+                ],
+              ] as const
+            ).map(([k, tekst, tips]) => {
+              const pa = sortering.kolonne === k;
+              return (
+                <button
+                  key={k}
+                  title={tips ?? `Sorter etter ${tekst.toLowerCase()}`}
+                  aria-sort={
+                    pa
+                      ? sortering.retning === "opp"
+                        ? "ascending"
+                        : "descending"
+                      : undefined
+                  }
+                  onClick={() => settSortering(nesteSortering(sortering, k))}
+                  className={`flex min-w-0 items-center gap-1 text-left hover:text-blekk ${
+                    pa ? "font-medium text-blekk" : ""
+                  }`}
+                >
+                  <span className="truncate">{tekst}</span>
+                  <span
+                    aria-hidden
+                    className={`text-[9px] ${pa ? "" : "invisible"}`}
+                  >
+                    {sortering.retning === "opp" ? "▲" : "▼"}
+                  </span>
+                </button>
+              );
+            })}
             <span />
           </div>
 
