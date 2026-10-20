@@ -74,6 +74,7 @@ import {
   type Visning,
 } from "./samtaler/deler";
 import { Velger } from "../ui/Velger";
+import { vurderingsvalg } from "../ui/Vurderingsikon";
 
 /**
  * Samtaletrekkeren, SPEC §4.10.
@@ -850,6 +851,7 @@ export function Samtaler({
                     ...vurderinger
                       .filter((v) => v.skolearFagId === f.id)
                       .map((v) => ({
+                        ...vurderingsvalg(v),
                         verdi: `${f.id}|${v.id}`,
                         tekst: `${v.tittel} (${f.kode})`,
                         gruppe: `${f.kode} · ${f.navn}`,

@@ -205,11 +205,30 @@ function NyFridag({
           verdi={type}
           settVerdi={(v) => setType(v as Fridag["type"])}
           valg={[
-            { verdi: "ferie", tekst: "Ferie" },
-            { verdi: "planlegging", tekst: "Planleggingsdag" },
-            { verdi: "hendelse", tekst: "Hendelse" },
-            { verdi: "helligdag", tekst: "Helligdag (rød dag)" },
-            { verdi: "annet", tekst: "Annet" },
+            // Prikken i dagens tone i kalenderen (17.2). Flatene er lyse, så
+            // kanten gjør prikken synlig.
+            ...(
+              [
+                ["ferie", "Ferie", "var(--color-fri-flate)"],
+                ["planlegging", "Planleggingsdag", "var(--color-fri-flate)"],
+                ["hendelse", "Hendelse", "var(--color-hendelse-flate)"],
+                [
+                  "helligdag",
+                  "Helligdag (rød dag)",
+                  "var(--color-helligdag-kant)",
+                ],
+                ["annet", "Annet", "var(--color-fri-flate)"],
+              ] as const
+            ).map(([verdi, tekst, farge]) => ({
+              verdi,
+              tekst,
+              ikon: (
+                <span
+                  className="inline-block h-2.5 w-2.5 rounded-full shadow-[inset_0_0_0_1px_var(--color-linje-sterk)]"
+                  style={{ background: farge }}
+                />
+              ),
+            })),
           ]}
         />
       </label>

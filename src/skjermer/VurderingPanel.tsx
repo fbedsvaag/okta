@@ -25,6 +25,7 @@ import {
 } from "../data/vurderinger";
 import { taster, type Skala, type Skalaverdi } from "../skala";
 import { hovedtast, harModifikator, tast } from "../ui/taster";
+import { Vurderingsikon } from "../ui/Vurderingsikon";
 
 /**
  * Det utvidede viewet for en vurdering, SPEC §4.6.
@@ -427,7 +428,11 @@ function Felter({
             etikett="Type"
             valg={[
               { verdi: "", tekst: "Ingen type", dempet: true },
-              ...TYPER.map((t) => ({ verdi: t.verdi, tekst: t.navn })),
+              ...TYPER.map((t) => ({
+                verdi: t.verdi,
+                tekst: t.navn,
+                ikon: <Vurderingsikon type={t.verdi} />,
+              })),
             ]}
           />
           {/*

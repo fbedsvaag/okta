@@ -425,6 +425,8 @@ export async function hentOktvalg(skolearFagId: string): Promise<Oktvalg[]> {
 export type Vurderingsvalg = {
   id: string;
   tittel: string;
+  type: Vurderingstype | null;
+  frist: string | null;
   oktIder: string[];
 };
 
@@ -435,9 +437,11 @@ export async function hentVurderingsvalg(
   const rader = await hent<{
     id: string;
     tittel: string;
+    type: Vurderingstype | null;
+    frist: string | null;
     oktIder: string | null;
   }>(
-    `SELECT v.id, v.tittel,
+    `SELECT v.id, v.tittel, v.type, v.frist,
             (SELECT group_concat(vo.okt_id) FROM vurdering_okt vo
               WHERE vo.vurdering_id = v.id AND vo.slettet IS NULL) AS oktIder
        FROM vurdering v

@@ -19,6 +19,7 @@ import {
 import { useArk } from "../ui/Arkstabel";
 import { lyttVurderinger } from "../data/endringer";
 import { Velger } from "../ui/Velger";
+import { Vurderingsikon, vurderingstype } from "../ui/Vurderingsikon";
 
 /**
  * Vurderinger, SPEC §4.6.
@@ -329,9 +330,11 @@ function NyVurdering({
           settVerdi={(v) => setType(v as Vurderingstype | "")}
           valg={[
             { verdi: "", tekst: "Ingen type", dempet: true },
-            { verdi: "skriftlig", tekst: "Skriftlig" },
-            { verdi: "muntlig", tekst: "Muntlig" },
-            { verdi: "praktisk", tekst: "Praktisk" },
+            ...(["skriftlig", "muntlig", "praktisk"] as const).map((t) => ({
+              verdi: t,
+              tekst: vurderingstype(t),
+              ikon: <Vurderingsikon type={t} />,
+            })),
           ]}
         />
       </label>

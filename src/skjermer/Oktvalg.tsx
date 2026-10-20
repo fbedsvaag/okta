@@ -18,6 +18,7 @@ import { leggTilAngring } from "../ui/angre";
 import { Flervalgslinje, Linjeknapp } from "../ui/Flervalg";
 import { visToast } from "../ui/Toast";
 import { harModifikator } from "../ui/taster";
+import { Vurderingsikon, vurderingsvalg } from "../ui/Vurderingsikon";
 
 /**
  * Det man kan gjøre med flere økter på en gang (ARBEIDSLISTE 16.3, lerretet
@@ -285,7 +286,13 @@ export function Oktvalg({
                     }}
                     className="menyrad hover:bg-flate"
                   >
-                    {v.tittel}
+                    <Vurderingsikon type={v.type} />
+                    <span className="min-w-0 truncate">{v.tittel}</span>
+                    {vurderingsvalg(v).hint && (
+                      <span className="menyrad-hint">
+                        {vurderingsvalg(v).hint}
+                      </span>
+                    )}
                   </button>
                 ))}
               </>

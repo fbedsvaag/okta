@@ -50,3 +50,22 @@ export function vurderingstype(
         ? "Skriftlig"
         : "Vurdering";
 }
+
+/**
+ * Et vurderingsvalg i nedtrekksmenyen (17.2, «Lang liste» i Nedtrekk):
+ * ikonet for formen foran, og fristen («4.11») til høyre.
+ */
+export function vurderingsvalg(v: {
+  id: string;
+  tittel: string;
+  type: "skriftlig" | "muntlig" | "praktisk" | null;
+  frist?: string | null;
+}) {
+  const f = v.frist ? new Date(`${v.frist}T12:00:00`) : null;
+  return {
+    verdi: v.id,
+    tekst: v.tittel,
+    ikon: <Vurderingsikon type={v.type} />,
+    hint: f ? `${f.getDate()}.${f.getMonth() + 1}` : undefined,
+  };
+}

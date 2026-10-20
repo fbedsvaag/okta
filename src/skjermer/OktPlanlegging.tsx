@@ -42,6 +42,7 @@ import { idag as dagensDato } from "../db";
 import { Velger } from "../ui/Velger";
 import { Oktplan, usePlanvisning } from "./Oktplan";
 import { Agendafelt, Kladdfelt } from "./Okttekst";
+import { vurderingsvalg } from "../ui/Vurderingsikon";
 
 /**
  * Økta i planlegging (ARBEIDSLISTE 11.5, lerretet «OktPlan»).
@@ -342,7 +343,7 @@ function Vurdering({ okt, onEndret }: { okt: Okt; onEndret: () => void }) {
           verdi=""
           plassholder={her.length ? "+" : "+ Knytt til"}
           settVerdi={(v) => void koble(v, true)}
-          valg={andre.map((v) => ({ verdi: v.id, tekst: v.tittel }))}
+          valg={andre.map(vurderingsvalg)}
           handling={{
             tekst: "+ Ny vurdering i denne økta",
             onKlikk: () => setNy(true),
