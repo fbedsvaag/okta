@@ -1891,7 +1891,8 @@ html {
   border-radius: 14px;
   font-size: calc(13px * var(--tekst-skala));
   font-weight: 500;
-  color: var(--f);
+  /* Fagfargen blandet med blekk: lesbar både lyst og mørkt. */
+  color: color-mix(in srgb, var(--f) 70%, var(--color-blekk));
   background: color-mix(in srgb, var(--f) 10%, var(--color-ark));
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--f) 25%, var(--color-ark));
   transition: all 180ms;

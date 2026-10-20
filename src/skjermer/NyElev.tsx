@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   finnEllerOpprettKlasse,
   hentForDuplikatsjekk,
@@ -82,6 +83,23 @@ export function NyElev({
   const boks = useRef<HTMLDivElement>(null);
   const felt = useRef<HTMLInputElement>(null);
 
+  // Kortet legges i body og festes under knappen. Inne i verktøylinja ble
+  // det klipt bort (linja har fast høyde og skjuler det som stikker ut).
+  const [plass, setPlass] = useState<{ topp: number; hoyre: number } | null>(
+    null,
+  );
+  useLayoutEffect(() => {
+    const finn = () => {
+      const knapp = document.querySelector<HTMLElement>("[data-ny-elev]");
+      if (!knapp) return;
+      const r = knapp.getBoundingClientRect();
+      setPlass({ topp: r.bottom + 8, hoyre: window.innerWidth - r.right });
+    };
+    finn();
+    window.addEventListener("resize", finn);
+    return () => window.removeEventListener("resize", finn);
+  }, []);
+
   useEffect(() => {
     void hentForDuplikatsjekk(skolearId).then(setEksisterende);
   }, [skolearId, laget.length]);
@@ -144,12 +162,18 @@ export function NyElev({
     felt.current?.focus();
   }
 
-  return (
+  if (!plass) return null;
+  return createPortal(
     <div
       ref={boks}
       role="dialog"
       aria-label="Ny elev"
-      className="nyelev glass-meny absolute right-0 top-10 z-50 w-[440px] rounded-[20px]"
+      style={{
+        top: plass.topp,
+        right: plass.hoyre,
+        maxHeight: `calc(100vh - ${plass.topp + 16}px)`,
+      }}
+      className="nyelev glass-meny fixed z-50 w-[440px] max-w-[calc(100vw-32px)] overflow-y-auto rounded-[20px]"
       onKeyDown={(e) => {
         if (e.key === "Escape") {
           e.stopPropagation();
@@ -416,6 +440,7 @@ export function NyElev({
           Lagre og åpne<span className="nyelev-kb nyelev-kb-m">↵</span>
         </button>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
