@@ -1,13 +1,52 @@
 # Status
 
-Pr. 2026-10-14, versjon 0.3.0 (beta, utgitt 13.10 som pre-release). Beskriver hvor appen faktisk står, ikke hva
+Pr. 2026-10-20, versjon 0.3.0 (beta, utgitt 13.10 som pre-release). Beskriver hvor appen faktisk står, ikke hva
 den skal bli. Fila eies fritt, i motsetning til SPEC.md.
 
-**703 tester i `npm test` og 25 i `cargo test`, alle grønne på Mac.
-`tsc --noEmit` er ren. `npm run build` går gjennom. 24 migrasjoner.**
+**717 tester i `npm test` og 25 i `cargo test`, alle grønne på Mac.
+`tsc --noEmit` er ren. `npm run build` går gjennom. 27 migrasjoner.**
 
 Utseendet står i `DESIGN.md`, som beskriver appen slik den er bygget.
 Lerretet (`docs/lerret/`) er fasit for det som er tegnet.
+
+## Runde 16 og 17 (19.–20.10, ARBEIDSLISTE §16 og §17)
+
+Bygget etter lerretene OktFravaer (variant B), OktSkarFilter,
+OktListeMasse, OktBytt, OktTekst og OktVurdering, og ønskene i §17.
+Prøvd i `tauri dev` med dummydata, også i mørk modus.
+
+- **17.7 Fagsøket:** søket i Udirs fagliste virket, men veiviseren for
+  nye brukere hadde det ikke med. Nå står det øverst i veiviseren og er
+  åpent under Fag. Lista følger med appen; ingen nettkall.
+- **16.8 / 16.1:** fravær tydeligere (mørk prikk med kryss, bleket rad),
+  og filteret Alle · Til stede · Borte (A, B) med «Kopier navnene».
+- **16.5:** I dag-linja i Økter-lista.
+- **16.2 / 16.3:** periodebrikke med ett klikk, flervalg med mørk linje
+  nederst (Periode, Tid og rom, Lekse, Vurdering, Flytt, Slett), toast og
+  ⌘Z. Felles deler i `ui/Flervalg.tsx`, `ui/Toast.tsx`, `ui/angre.ts`.
+- **16.4:** bytt to økter med dra eller ⌥↑↓; skårede ligger fast; ⌘Z.
+- **16.6 / 16.7:** agenda med avsnitt (linjeskift i kalenderen) og Kladd
+  (migrering 025). En test sjekker at kladden aldri er i kalenderen,
+  arkivet eller årsplanen.
+- **16.9:** ny vurdering rett fra økta. Typen Underveis · Sluttvurdering
+  fra lerretet er ikke bygget (se under).
+- **17.1:** fagbrikkene i øktlista under Alle fag, husket per visning.
+- **17.2:** ikon og frist i vurderingslistene, ikon på typene, prikk på
+  typene i skoleruta.
+- **17.3:** fargevelger på fagsiden (og samme komponent i fagtabellen).
+- **17.4:** flervalg og sletting i Elever, bekreftet med antall og navn.
+- **17.5:** standard pause per fag (migrering 026), lagt inn i planen i
+  nye økter som «Del 1 · Pause · Del 2».
+- **17.6:** «Teller høyst, min per økt» per fag (migrering 027), et tak
+  som gjelder fagsiden, årsplanen, forsiden og fraværsgrunnlaget.
+
+**Åpent:**
+
+- Forslag til SPEC: skal vurderinger ha Underveis · Sluttvurdering? Det
+  krever en ny kolonne, og SPEC sier at standpunkt settes i InSchool.
+- Angre (⌘Z) gjelder periode, bytte, flytting, tid og rom, lekse,
+  vurdering og sletting av økter. Sletting av elever bekreftes, men kan
+  ikke angres.
 
 ## Runde 15 (14.10, ARBEIDSLISTE §15)
 
