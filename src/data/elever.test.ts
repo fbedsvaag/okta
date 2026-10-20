@@ -102,7 +102,7 @@ describe("mentorgruppa", () => {
 
 describe("elever uten fag", () => {
   it("vises i oversikten så lenge de har en klasse", async () => {
-    // Det vanlige mentortilfellet: du er kontaktlærer for elever du ikke
+    // Det vanlige mentortilfellet: du er mentor for elever du ikke
     // underviser. De har ingen fagkobling, og skal likevel stå i lista.
     await elevIKlasse("Tony", "1STC");
     const elever = await hentElever(skolearId);

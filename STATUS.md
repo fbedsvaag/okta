@@ -14,7 +14,7 @@ Lerretet (`docs/lerret/`) er fasit for det som er tegnet.
 - **19.1 Ny elev** (`skjermer/NyElev.tsx`, lerretet ElevNy): glasskort under
   «+ Ny elev» (N). Navnet deles mens du skriver; Tab flytter skillet når det
   er tre ord eller flere (`skjermer/elevnavn.ts`). Klasse som brikker (+ Ny
-  klasse), fag som fargebrikker med filterets fag forhåndsvalgt, kontaktelev
+  klasse), fag som fargebrikker med filterets fag forhåndsvalgt, mentorelev
   som bryter (mentor-flagget; krever klasse). Duplikatsjekken fra importen:
   samme navn stenger Lagre, med «Ny likevel» for to elever med samme navn;
   skrivefeil-nærhet gir bare en grå linje. ↵ lagrer og åpner kortet, ⇧↵
@@ -89,7 +89,7 @@ personvernsiden står igjen. Repoet har fortsatt ingen lisensfil.
 - «Bare to ting går på nett … fagsøket mot Udir. Søket sender bare
   fagkoden.» Fagsøket går ikke på nett; lista følger med appen
   (`src/assets/grep-fag.json`). Nå: «Bare én ting går på nett …».
-- Personvernsiden sier i tillegg at kontaktsamtaler kan publiseres med
+- Personvernsiden sier i tillegg at mentorsamtaler kan publiseres med
   elevens fornavn og klokkeslett (SPEC §8.1), at «Gi tilbakemelding»
   åpner et skjema i nettleseren, og at Windows-installasjonen laster ned
   WebView2. Det sto ikke i tegningen.

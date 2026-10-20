@@ -37,7 +37,7 @@ type Laget = { id: string; navn: string; hvor: string };
 
 /**
  * Ny elev (ARBEIDSLISTE 19.1, lerretet ElevNy). Glasskort under «+ Ny elev»:
- * navn, klasse, fag og kontaktelev på ett sted. Navnet deles mens du
+ * navn, klasse, fag og mentorelev på ett sted. Navnet deles mens du
  * skriver, og Tab flytter skillet. Navnet sjekkes mot elevene som finnes
  * (§7.1) — samme navn stenger Lagre.
  *
@@ -353,16 +353,16 @@ export function NyElev({
 
         <div className="mt-4 flex items-center gap-2.5 border-t border-linje-medium py-3">
           <span className="text-[calc(13.5px*var(--tekst-skala))]">
-            Kontaktelev
+            Mentorelev
           </span>
           <span className="text-etikett text-blekk-svak">
-            {klasse ? "du er kontaktlærer" : "velg klasse først"}
+            {klasse ? "du er mentor" : "velg klasse først"}
           </span>
           <span className="grow" />
           <button
             role="switch"
             aria-checked={kontakt}
-            aria-label="Kontaktelev"
+            aria-label="Mentorelev"
             disabled={!klasse}
             onClick={() => setKontakt((k) => !k)}
             className="nyelev-bryt"

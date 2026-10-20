@@ -39,7 +39,7 @@ export function LimInn({
 }) {
   const [fagId, setFagId] = useState(startFagId ?? fag[0]?.id ?? "");
   const [klasse, setKlasse] = useState("");
-  // Mentorgruppa limes inn uten fag: du er kontaktlærer for elever du ikke
+  // Mentorgruppa limes inn uten fag: du er mentor for elever du ikke
   // underviser, og da finnes det ingen fagkobling å lage (§7).
   const [somMentor, setSomMentor] = useState(false);
   const [tekst, setTekst] = useState("");

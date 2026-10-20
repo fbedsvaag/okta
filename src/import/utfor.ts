@@ -44,7 +44,7 @@ export type Resultat = {
  *
  * `skolearFagId` kan være null: da opprettes elevene og plasseres i klassen,
  * men ingen fagkobling lages. Det er slik mentorgruppa legges inn — du er
- * kontaktlærer for elever du ikke underviser (§7).
+ * mentor for elever du ikke underviser (§7).
  */
 export async function utforImport(
   rader: Importrad[],
