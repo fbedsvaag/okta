@@ -27,6 +27,12 @@ Lerretet (`docs/lerret/`) er fasit for det som er tegnet.
   velger et vanlig klikk på raden. Uten noe valgt åpner klikket titten som
   før. Dra over avkrysningene maler et utvalg; første rad avgjør om det
   merkes eller tas bort. Esc tømmer (som før).
+- **19.5 Serier med intervall** (`NySerie.tsx`, `lagSerie` med `Rytme`):
+  Hver uke, Annenhver, Hver tredje, Hver n-te, A-uke og B-uke. Ukene telles
+  i kalenderen, så en ferie flytter ikke rytmen. A-/B-uke veksler jevnt fra
+  skoleårets første uke (også over uke 53); «Bytt A og B» lagres per
+  skoleår (`a_uke:<skolear>`). Datoene står under skjemaet mens du velger,
+  og forhåndsvisningen med avhaking er som før.
 
 ## Hjemmesiden (20.10, ARBEIDSLISTE 18.3)
 

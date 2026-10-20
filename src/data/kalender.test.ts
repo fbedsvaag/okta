@@ -3,6 +3,7 @@ import {
   blokkering,
   iso,
   lagSerie,
+  mandag,
   paaskedag,
   roddager,
   roddagerISpenn,
@@ -245,5 +246,70 @@ describe("ukenummer", () => {
       "2026-08-23",
     ].map(ukenummer);
     expect(new Set(uker).size).toBe(1);
+  });
+});
+
+describe("serier med rytme (19.5)", () => {
+  const datoer = (s: { dato: string }[]) => s.map((x) => x.dato);
+
+  it("mandagen i uka", () => {
+    expect(mandag("2026-08-20")).toBe("2026-08-17");
+    expect(mandag("2026-08-17")).toBe("2026-08-17");
+    expect(mandag("2026-08-23")).toBe("2026-08-17");
+  });
+
+  it("annenhver uke fra første uke", () => {
+    expect(
+      datoer(lagSerie(2, "2026-08-17", "2026-09-15", [], { hver: 2 })),
+    ).toEqual(["2026-08-18", "2026-09-01", "2026-09-15"]);
+  });
+
+  it("hver tredje uke", () => {
+    expect(
+      datoer(lagSerie(2, "2026-08-17", "2026-10-13", [], { hver: 3 })),
+    ).toEqual(["2026-08-18", "2026-09-08", "2026-09-29"]);
+  });
+
+  it("B-uke: uka etter en kjent A-uke", () => {
+    expect(
+      datoer(
+        lagSerie(2, "2026-08-17", "2026-09-15", [], {
+          hver: 2,
+          fra: "2026-08-24",
+        }),
+      ),
+    ).toEqual(["2026-08-25", "2026-09-08"]);
+  });
+
+  it("veksler jevnt over nyttår, også med uke 53", () => {
+    expect(
+      datoer(
+        lagSerie(2, "2026-12-14", "2027-01-15", [], {
+          hver: 2,
+          fra: "2026-12-21",
+        }),
+      ),
+    ).toEqual(["2026-12-22", "2027-01-05"]);
+  });
+
+  it("en ferie flytter ikke rytmen", () => {
+    const serie = lagSerie(
+      2,
+      "2026-09-14",
+      "2026-10-13",
+      [
+        {
+          id: "h",
+          skolearId: "ar",
+          navn: "Høstferie",
+          type: "ferie",
+          fra: "2026-09-28",
+          til: "2026-10-02",
+        },
+      ],
+      { hver: 2 },
+    );
+    expect(datoer(serie)).toEqual(["2026-09-15", "2026-09-29", "2026-10-13"]);
+    expect(serie[1].hoppet).toBe("ferie");
   });
 });

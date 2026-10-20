@@ -119,6 +119,31 @@ export function ukedagsnavn(u: Ukedag): string {
 }
 
 /**
+ * Hvor ofte serien går (19.5): hver uke, annenhver, hver tredje … `fra` er
+ * en dato i en uke som skal med; uten den teller serien fra sin første uke.
+ * A-/B-uke er annenhver uke regnet fra en kjent A-uke.
+ *
+ * Ukene telles i kalenderen, ikke i skoleuker: en ferie flytter ikke
+ * rytmen, den faller bare bort som før. Tellingen går jevnt over nyttår,
+ * også når året har en uke 53.
+ */
+export type Rytme = { hver: number; fra?: string };
+
+/** Mandagen i uka datoen ligger i. */
+export function mandag(dato: string): string {
+  const [a, m, d] = dato.slice(0, 10).split("-").map(Number);
+  const t = new Date(Date.UTC(a, m - 1, d));
+  t.setUTCDate(t.getUTCDate() - ((t.getUTCDay() + 6) % 7));
+  return t.toISOString().slice(0, 10);
+}
+
+/** Hele uker fra mandag a til mandag b; negativt når b ligger før a. */
+function ukerMellom(a: string, b: string): number {
+  const ms = (x: string) => Date.parse(`${x}T00:00:00Z`);
+  return Math.round((ms(b) - ms(a)) / (7 * 86_400_000));
+}
+
+/**
  * Alle datoer med gitt ukedag i spennet, med begrunnelse for dem som faller
  * bort. Ingenting fjernes i stillhet — brukeren ser hva som ble hoppet over
  * og hvorfor, og kan hake det inn igjen.
@@ -128,13 +153,19 @@ export function lagSerie(
   fra: string,
   til: string,
   fridager: Fridag[],
+  rytme: Rytme = { hver: 1 },
 ): Seriedag[] {
   const rode = new Map(roddagerISpenn(fra, til).map((r) => [r.dato, r.navn]));
   const dager: Seriedag[] = [];
+  const hver = Math.max(1, Math.floor(rytme.hver));
+  let anker = rytme.fra ? mandag(rytme.fra) : null;
 
   for (const dato of datoerMellom(fra, til)) {
     const d = new Date(`${dato}T00:00:00`);
     if (d.getDay() !== ukedag) continue;
+    anker ??= mandag(dato);
+    const uker = ukerMellom(anker, mandag(dato));
+    if (((uker % hver) + hver) % hver !== 0) continue;
 
     const helg = d.getDay() === 0 || d.getDay() === 6;
     const rod = rode.get(dato);

@@ -1,12 +1,19 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   lagSerie,
+  mandag,
+  ukenummer,
   ukedagsnavn,
+  type Rytme,
   type Fridag,
   type Seriedag,
   type Ukedag,
 } from "../data/kalender";
-import { hentFridager, hentInnstilling } from "../data/skolear";
+import {
+  hentFridager,
+  hentInnstilling,
+  settInnstilling,
+} from "../data/skolear";
 import { opprettOkt } from "../data/okter";
 import type { FagIAr } from "../data/fag";
 import { Felt, Knapp } from "../ui/felles";
@@ -21,6 +28,9 @@ import { Velger } from "../ui/Velger";
  *
  * Ingenting fjernes i stillhet: du ser hva som ble hoppet over og hvorfor,
  * og kan hake det inn igjen.
+ *
+ * Rytmen (19.5): hver uke, annenhver, hver tredje, hver n-te, eller A-/B-uke.
+ * Datoene står under skjemaet mens du velger.
  */
 export function NySerie({
   skolearId,
@@ -49,13 +59,36 @@ export function NySerie({
   const [global, setGlobal] = useState("180");
   const [dager, setDager] = useState<Seriedag[] | null>(null);
   const [jobber, setJobber] = useState(false);
+  const [rytmevalg, setRytmevalg] = useState<RytmeValg>("1");
+  const [nte, setNte] = useState("4");
+  // Mandagen i en A-uke. Uten noe lagret: skoleårets første uke.
+  const [aUke, setAUke] = useState(mandag(skolearStart));
+  const aNokkel = `a_uke:${skolearId}`;
 
   useEffect(() => {
     void hentFridager(skolearId).then(setFridager);
     void hentInnstilling("standard_varighet_min").then((v) =>
       setGlobal(v ?? "180"),
     );
+    void hentInnstilling(aNokkel).then((v) => v && setAUke(mandag(v)));
   }, [skolearId]);
+
+  function byttAUke() {
+    const d = new Date(`${aUke}T00:00:00Z`);
+    d.setUTCDate(d.getUTCDate() + 7);
+    const ny = d.toISOString().slice(0, 10);
+    setAUke(ny);
+    void settInnstilling(aNokkel, ny);
+  }
+
+  const rytme = tilRytme(rytmevalg, nte, aUke);
+  const utkast = useMemo(
+    () =>
+      fra && til && fra < til && rytme
+        ? lagSerie(ukedag, fra, til, fridager, rytme)
+        : null,
+    [ukedag, fra, til, fridager, rytme?.hver, rytme?.fra],
+  );
 
   const valgtFag = fag.find((f) => f.id === fagId);
   const arvet = String(valgtFag?.standardVarighetMin ?? global);
@@ -66,7 +99,7 @@ export function NySerie({
   );
 
   function forhandsvis() {
-    setDager(lagSerie(ukedag, fra, til, fridager));
+    if (utkast) setDager(utkast);
   }
 
   async function lagre() {
@@ -99,6 +132,7 @@ export function NySerie({
         <p className="text-brod">
           <strong>{antallValgt} økter</strong> i {valgtFag?.kode} på{" "}
           {ukedagsnavn(ukedag)}
+          {rytme && rytme.hver > 1 && ` ${rytmetekst(rytmevalg, nte)}`}
           {hoppet.length > 0 && (
             <span className="text-blekk-dempet">
               {" "}
@@ -187,6 +221,24 @@ export function NySerie({
           />
         </label>
 
+        <label className="block">
+          <Etikett>Rytme</Etikett>
+          <Velger
+            verdi={rytmevalg}
+            settVerdi={(v) => setRytmevalg(v as RytmeValg)}
+            valg={RYTMER.map(([verdi, tekst]) => ({ verdi, tekst }))}
+          />
+        </label>
+        {rytmevalg === "n" && (
+          <Felt
+            etikett="Hver"
+            verdi={nte}
+            settVerdi={(v) => setNte(v.replace(/\D/g, "").slice(0, 2))}
+            plassholder="4"
+            bredde="w-16"
+          />
+        )}
+
         <Felt
           etikett="Klokkeslett"
           verdi={klokke}
@@ -219,7 +271,7 @@ export function NySerie({
         <Knapp
           variant="primar"
           onClick={forhandsvis}
-          disabled={!fagId || fra >= til}
+          disabled={!fagId || !utkast}
         >
           Forhåndsvis
         </Knapp>
@@ -228,6 +280,17 @@ export function NySerie({
         </Knapp>
       </div>
 
+      {(rytmevalg === "A" || rytmevalg === "B") && (
+        <p className="mt-2 text-liten text-blekk-dempet">
+          A-uke er uke {abUker(aUke, fra)} …{" "}
+          <button onClick={byttAUke} className="text-aksent hover:underline">
+            Bytt A og B
+          </button>
+        </p>
+      )}
+
+      {utkast && <Datolinje dager={utkast} />}
+
       {fridager.length === 0 && (
         <p className="mt-2 text-liten text-blekk-dempet">
           Ingen ferier er lagt inn på skoleåret ennå. Legg dem inn under
@@ -235,6 +298,84 @@ export function NySerie({
         </p>
       )}
     </div>
+  );
+}
+
+type RytmeValg = "1" | "2" | "3" | "n" | "A" | "B";
+
+const RYTMER: [RytmeValg, string][] = [
+  ["1", "Hver uke"],
+  ["2", "Annenhver uke"],
+  ["3", "Hver tredje uke"],
+  ["n", "Hver n-te uke …"],
+  ["A", "A-uke"],
+  ["B", "B-uke"],
+];
+
+function tilRytme(v: RytmeValg, nte: string, aUke: string): Rytme | null {
+  if (v === "A") return { hver: 2, fra: aUke };
+  if (v === "B") {
+    const d = new Date(`${aUke}T00:00:00Z`);
+    d.setUTCDate(d.getUTCDate() + 7);
+    return { hver: 2, fra: d.toISOString().slice(0, 10) };
+  }
+  const n = v === "n" ? Number(nte) : Number(v);
+  return n >= 1 ? { hver: n } : null;
+}
+
+function rytmetekst(v: RytmeValg, nte: string): string {
+  if (v === "A") return "i A-uker";
+  if (v === "B") return "i B-uker";
+  if (v === "2") return "annenhver uke";
+  if (v === "3") return "hver tredje uke";
+  return `hver ${nte}. uke`;
+}
+
+/** De tre første A-ukene fra og med `fra`, som ukenummer. */
+function abUker(aUke: string, fra: string): string {
+  const d = new Date(`${aUke}T00:00:00Z`);
+  const start = mandag(fra);
+  while (d.toISOString().slice(0, 10) < start)
+    d.setUTCDate(d.getUTCDate() + 14);
+  while (d.toISOString().slice(0, 10) >= start)
+    d.setUTCDate(d.getUTCDate() - 14);
+  d.setUTCDate(d.getUTCDate() + 14);
+  return [0, 1, 2]
+    .map((i) => {
+      const x = new Date(d);
+      x.setUTCDate(x.getUTCDate() + 14 * i);
+      return ukenummer(x.toISOString().slice(0, 10));
+    })
+    .join(", ");
+}
+
+/**
+ * Datoene serien gir, mens du velger: de første og den siste, og hvor mange
+ * som faller bort. Hele lista med avhaking kommer i forhåndsvisningen.
+ */
+function Datolinje({ dager }: { dager: Seriedag[] }) {
+  const blir = dager.filter((d) => d.valgt);
+  const bort = dager.length - blir.length;
+  if (blir.length === 0)
+    return (
+      <p className="mt-2 text-liten text-blekk-dempet">
+        Ingen datoer med dette valget.
+      </p>
+    );
+  const kort = (d: string) =>
+    new Date(`${d}T00:00:00`).toLocaleDateString("nb-NO", {
+      day: "numeric",
+      month: "short",
+    });
+  const forste = blir.slice(0, 5).map((d) => kort(d.dato));
+  return (
+    <p className="mt-2 text-liten tabular-nums text-blekk-dempet">
+      <span className="font-medium text-blekk">{blir.length} økter</span>:{" "}
+      {forste.join(", ")}
+      {blir.length > 5 &&
+        `${blir.length > 6 ? " … " : ", "}${kort(blir[blir.length - 1].dato)}`}
+      {bort > 0 && ` · ${bort} faller bort (helligdager, ferier)`}
+    </p>
   );
 }
 
