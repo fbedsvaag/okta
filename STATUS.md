@@ -89,7 +89,7 @@ personvernsiden står igjen. Repoet har fortsatt ingen lisensfil.
 - «Bare to ting går på nett … fagsøket mot Udir. Søket sender bare
   fagkoden.» Fagsøket går ikke på nett; lista følger med appen
   (`src/assets/grep-fag.json`). Nå: «Bare én ting går på nett …».
-- Personvernsiden sier i tillegg at mentorsamtaler kan publiseres med
+- Personvernsiden sier i tillegg at kontaktsamtaler kan publiseres med
   elevens fornavn og klokkeslett (SPEC §8.1), at «Gi tilbakemelding»
   åpner et skjema i nettleseren, og at Windows-installasjonen laster ned
   WebView2. Det sto ikke i tegningen.
