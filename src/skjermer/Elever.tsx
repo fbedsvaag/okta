@@ -9,6 +9,7 @@ import {
   hentKlasser,
   koblePaFag,
   opprettElev,
+  slettElever,
   slettKlasse,
   type ElevRad,
   type Klasse,
@@ -30,6 +31,14 @@ import { hentForfalte } from "../data/elevnotat";
 import { useArk } from "../ui/Arkstabel";
 import { IVerktoylinja } from "../ui/Verktoylinje";
 import { Hovermarkor } from "../ui/Hovermarkor";
+import {
+  Avkrysning,
+  Flervalgslinje,
+  Linjeknapp,
+  nyttValg,
+} from "../ui/Flervalg";
+import { visToast } from "../ui/Toast";
+import { hovedtast } from "../ui/taster";
 import {
   fravaer,
   GRENSE,
@@ -87,6 +96,9 @@ export function Elever({
   const [meny, setMeny] = useState<{ x: number; y: number } | null>(null);
   const [nyApen, setNyApen] = useState(false);
   const liste = useRef<HTMLDivElement>(null);
+  // Flere elever samtidig (17.4), samme mønster som i Økter (16.3).
+  const [valgte, setValgte] = useState<Set<string>>(new Set());
+  const sistValgt = useRef<string | null>(null);
 
   // Kommer man hit med en elev i sikte, legger kortet seg over lista.
   useEffect(() => {
@@ -193,6 +205,53 @@ export function Elever({
         elever,
       }));
   }, [synlige, gruppering, fagEtterId, filterFag]);
+
+  // Rekkefølgen slik lista står, til ⇧-klikk (17.4).
+  const rekkefolge = useMemo(
+    () => grupperte.flatMap((g) => g.elever.map((e) => e.id)),
+    [grupperte],
+  );
+
+  // ⌘A velger alle som vises, utenom tekstfelter.
+  useEffect(() => {
+    const tast = (e: KeyboardEvent) => {
+      if (!hovedtast(e) || e.key.toLowerCase() !== "a") return;
+      const mal = e.target as HTMLElement;
+      if (mal.closest?.("input, textarea, [contenteditable]")) return;
+      if (fane !== "elever") return;
+      e.preventDefault();
+      setValgte(new Set(synlige.map((x) => x.id)));
+    };
+    window.addEventListener("keydown", tast);
+    return () => window.removeEventListener("keydown", tast);
+  }, [synlige, fane]);
+
+  /**
+   * Sletter de valgte elevene etter en bekreftelse med antall og navn
+   * (17.4). Alt de har (skåringer, notater, vurderinger, samtaler) går med.
+   */
+  async function slettValgte() {
+    const hvem = elever.filter((e) => valgte.has(e.id));
+    if (hvem.length === 0) return;
+    const navn = hvem.map((e) => `${e.fornavn} ${e.etternavn}`);
+    const liste =
+      navn.length <= 12
+        ? navn.join("\n")
+        : `${navn.slice(0, 10).join("\n")}\n… og ${navn.length - 10} til`;
+    const ok = await bekreft(
+      `Slette ${hvem.length === 1 ? "eleven" : `${hvem.length} elever`}?\n\n${liste}\n\n` +
+        "Skåringer, notater, vurderingsresultater og samtaler forsvinner med.",
+    );
+    if (!ok) return;
+    await slettElever(hvem.map((e) => e.id));
+    setValgte(new Set());
+    await last();
+    visToast(
+      hvem.length === 1
+        ? `${navn[0]} er slettet`
+        : `${hvem.length} elever slettet`,
+    );
+  }
 
   const trengerOppfolging = synlige.filter(
     (e) => tall.get(e.id)?.glipper || forfalte.has(e.id),
@@ -352,6 +411,18 @@ export function Elever({
           <div
             className={`${RUTENETT} mt-4 shrink-0 border-b border-linje-medium px-2.5 pb-2 text-[calc(11.5px*var(--tekst-skala))] text-blekk-dempet`}
           >
+            <Avkrysning
+              pa={synlige.length > 0 && synlige.every((e) => valgte.has(e.id))}
+              delvis={valgte.size > 0 && synlige.some((e) => !valgte.has(e.id))}
+              etikett="Velg alle"
+              onKlikk={() =>
+                setValgte(
+                  synlige.every((e) => valgte.has(e.id))
+                    ? new Set()
+                    : new Set(synlige.map((e) => e.id)),
+                )
+              }
+            />
             <span />
             <span>Navn</span>
             <span>Klasse</span>
@@ -375,6 +446,7 @@ export function Elever({
                   Ingen elever passer med filteret.
                 </p>
               )}
+              {/* ⌘A velger alle som vises. */}
               {grupperte.map((g) => (
                 <div key={g.navn ?? "alle"}>
                   {g.navn !== null && (
@@ -389,6 +461,19 @@ export function Elever({
                   {g.elever.map((e) => (
                     <Elevlinje
                       key={e.id}
+                      valgt={valgte.has(e.id)}
+                      onVelg={(spenn) => {
+                        setValgte((f) =>
+                          nyttValg(
+                            f,
+                            rekkefolge,
+                            e.id,
+                            sistValgt.current,
+                            spenn,
+                          ),
+                        );
+                        sistValgt.current = e.id;
+                      }}
                       elev={e}
                       fag={fagEtterId}
                       ruter={tall.get(e.id)?.ruter ?? []}
@@ -404,13 +489,23 @@ export function Elever({
           </div>
         </>
       )}
+
+      <Flervalgslinje
+        antall={valgte.size}
+        hva={["elev", "elever"]}
+        onTom={() => setValgte(new Set())}
+      >
+        <Linjeknapp fare onKlikk={() => void slettValgte()}>
+          Slett
+        </Linjeknapp>
+      </Flervalgslinje>
     </div>
   );
 }
 
 /** Kolonnene i lista, felles for hode og rader (lerretet «Elever»). */
 const RUTENETT =
-  "grid grid-cols-[30px_minmax(0,1.6fr)_54px_minmax(0,1.3fr)_150px_96px_40px] items-center gap-x-4";
+  "grid grid-cols-[16px_30px_minmax(0,1.6fr)_54px_minmax(0,1.3fr)_150px_96px_40px] items-center gap-x-4";
 
 function Pille({
   pa,
@@ -462,6 +557,8 @@ const RUTENAVN: Record<Rute, string> = {
 };
 
 function Elevlinje({
+  valgt,
+  onVelg,
   elev,
   fag,
   ruter,
@@ -470,6 +567,9 @@ function Elevlinje({
   forfalt,
   onApne,
 }: {
+  valgt: boolean;
+  /** spenn: ⇧ holdt inne */
+  onVelg: (spenn: boolean) => void;
   elev: ElevRad;
   fag: Map<string, FagIAr>;
   ruter: Rute[];
@@ -486,8 +586,15 @@ function Elevlinje({
       data-hover
       onClick={onApne}
       onKeyDown={(e) => e.key === "Enter" && onApne()}
-      className={`${RUTENETT} relative z-[1] h-[46px] cursor-default border-b border-linje-svak px-2.5 text-[calc(14px*var(--tekst-skala))]`}
+      className={`${RUTENETT} relative z-[1] h-[46px] cursor-default border-b border-linje-svak px-2.5 text-[calc(14px*var(--tekst-skala))] ${
+        valgt ? "bg-valgt" : ""
+      }`}
     >
+      <Avkrysning
+        pa={valgt}
+        etikett={`Velg ${navn}`}
+        onKlikk={(e) => onVelg(e.shiftKey)}
+      />
       <Elevfoto elevId={elev.id} storrelse={30} navn={navn} />
       <span className="flex min-w-0 items-center gap-2" title={navn}>
         <span className="truncate">
