@@ -318,10 +318,11 @@ export function Okter({
     const rad =
       mal && sone.querySelector<HTMLElement>(`[data-okt="${mal.id}"]`);
     if (!rad) return;
-    // Månedsoverskriften står fast øverst. Raden skal ligge under den med
+    // Kolonnehodet og månedsoverskriften står fast øverst. Raden skal ligge under den med
     // én rad luft, så i dag-linja (16.5) og forrige økt synes over.
-    const overskrift =
-      sone.querySelector<HTMLElement>(".sticky")?.offsetHeight ?? 0;
+    const overskrift = [...sone.querySelectorAll<HTMLElement>("[data-fast]")]
+      .slice(0, 2)
+      .reduce((sum, el) => sum + el.offsetHeight, 0);
     const luft = startValgt ? 0 : 36;
     sone.scrollTop +=
       rad.getBoundingClientRect().top -
@@ -467,7 +468,10 @@ export function Okter({
 
           {/* Én rullesone. Hadde lista hatt sin egen overflow-x, ville
             månedene festet seg til DEN i stedet for til denne. */}
-          <div ref={rullesone} className="min-h-0 flex-1 overflow-auto">
+          <div
+            ref={rullesone}
+            className="min-h-0 flex-1 scroll-pt-[64px] overflow-auto"
+          >
             {lagerNy && (
               <NyOkt
                 fag={fag}
@@ -916,8 +920,10 @@ function Liste({
         mal={markorEl}
         klasse="z-[2] rounded-lg bg-[color-mix(in_srgb,var(--color-aksent)_8%,transparent)]"
       />
+      {/* Kolonnehodet står fast mens lista ruller (19.2), i glass. */}
       <div
-        className="grid h-[26px] items-center gap-x-3 border-b border-linje px-2 text-etikett text-blekk-dempet"
+        data-fast
+        className="okter-hode sticky top-0 z-20 grid h-[26px] items-center gap-x-3 border-b border-linje px-2 text-etikett text-blekk-dempet"
         style={kolonner}
       >
         <Avkrysning
@@ -949,7 +955,10 @@ function Liste({
       */}
       {perManed(okter).map(([maned, gruppe]) => (
         <div key={maned}>
-          <div className="sticky top-0 z-10 border-b border-linje-medium bg-ark/95 px-2 pb-1 pt-3 text-liten font-semibold first-letter:uppercase">
+          <div
+            data-fast
+            className="okter-hode sticky top-[26px] z-10 border-b border-linje-medium px-2 pb-1 pt-3 text-liten font-semibold first-letter:uppercase"
+          >
             {manedsnavn(maned + "-01")}
           </div>
           {gruppe.map((o) => {

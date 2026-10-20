@@ -19,6 +19,9 @@ Lerretet (`docs/lerret/`) er fasit for det som er tegnet.
   samme navn stenger Lagre, med «Ny likevel» for to elever med samme navn;
   skrivefeil-nærhet gir bare en grå linje. ↵ lagrer og åpner kortet, ⇧↵
   lagrer og tømmer navnet. Klassen huskes til neste gang. Ny rad glir inn.
+- **19.2 Fast overskrift i Økter**: kolonnehodet står fast øverst i glass
+  (`.okter-hode`), og månedsoverskriften fester seg rett under det til neste
+  måned tar over. Rullingen til dagens økt og piltastene regner med begge.
 
 ## Hjemmesiden (20.10, ARBEIDSLISTE 18.3)
 
