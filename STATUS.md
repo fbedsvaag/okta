@@ -30,7 +30,7 @@ Pages fra `site/` (`.github/workflows/side.yml`).
   står stille med «Reduser bevegelse».
 
 **«Gratis» og «kildekoden er åpen» på siden** (etter tekstsprinten 20.10):
-«Gratis» står ikke lenger noe sted. «Hva koster det?» svarer «Kommer.».
+«Hva koster det?» svarer «Økta er foreløpig gratis å bruke for alle lærere.» Ellers står «gratis» ikke på siden.
 Lenkene «Kildekode på GitHub» (bunnen) og «Les koden selv» på
 personvernsiden står igjen. Repoet har fortsatt ingen lisensfil.
 
