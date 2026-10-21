@@ -9,6 +9,16 @@ den skal bli. Fila eies fritt, i motsetning til SPEC.md.
 Utseendet står i `DESIGN.md`, som beskriver appen slik den er bygget.
 Lerretet (`docs/lerret/`) er fasit for det som er tegnet.
 
+## Plasser og grupper (21.10, ARBEIDSLISTE §25)
+
+- 25.12: skjult kart per kilde for grupper uten rom; `kart_plassfarge`
+  (migrering 032).
+- 25.1–25.2: «Plasser og grupper» (G P), fanene Klassekart · Grupper.
+- 25.3–25.7: Grupper-fanen med klasse/fag som chip, Antall | Per gruppe,
+  «Bare de som er her» (`hentBorteIDag`), FLIP ved stokking, «Lagrede
+  grupper» med valgt klasse øverst og de andre under.
+- Retning: fra kateteret står tavla nederst, fra elevene øverst.
+
 ## Klassekart fra øktkortet (21.10)
 
 - «Klassekart →» i toppen av øktkortet når faget har et kart. Åpner

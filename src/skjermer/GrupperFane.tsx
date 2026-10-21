@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import {
   endreKart,
+  hentBorteIDag,
   hentKart,
+  hentOppsett,
   hentKildeElever,
   hentRegler,
   kartForKilde,
@@ -18,7 +20,7 @@ import { hentInnstilling } from "../data/skolear";
 import { lyttKlassekart } from "../data/endringer";
 import { useLagretInnstilling } from "../ui/useLagretInnstilling";
 import { fagfarge } from "../ui/farger";
-import { KlassekartGrupper } from "./KlassekartGrupper";
+import { KlassekartGrupper, type AnnetSett } from "./KlassekartGrupper";
 
 /**
  * Grupper-fanen i Plasser og grupper (ARBEIDSLISTE 25.3, lerretet
@@ -65,6 +67,10 @@ export function GrupperFane({ skolearId }: { skolearId: string }) {
   const [kart, setKart] = useState<Kart | null>(null);
   const [elever, setElever] = useState<Kartelev[]>([]);
   const [regler, setRegler] = useState<Elevregel[]>([]);
+  const [borte, setBorte] = useState<Set<string>>(new Set());
+  const [andreSett, setAndreSett] = useState<AnnetSett[]>([]);
+  // Et lagret sett fra en annen kilde, valgt i «Lagrede grupper».
+  const [startOppsett, setStartOppsett] = useState<string | null>(null);
 
   // Kildene: fagene i året, klassene, og mentorgruppa om du er mentor.
   useEffect(() => {
@@ -116,15 +122,32 @@ export function GrupperFane({ skolearId }: { skolearId: string }) {
     let avbrutt = false;
     const last = async () => {
       const id = await kartForKilde(skolearId, kilde.type, kilde.id);
-      const [k, e, r] = await Promise.all([
-        hentKart(skolearId, true).then((a) => a.find((x) => x.id === id)),
+      const [alleKart, e, r, b] = await Promise.all([
+        hentKart(skolearId, true),
         hentKildeElever(kilde.type, kilde.id, skolearId),
         hentRegler(kilde.type, kilde.id),
+        hentBorteIDag(kilde.type, kilde.id, skolearId),
       ]);
+      const k = alleKart.find((x) => x.id === id);
       if (avbrutt || !k) return;
+      // De lagrede settene for de andre kildene, nyeste først.
+      const andre: AnnetSett[] = [];
+      for (const x of alleKart) {
+        if (x.id === id) continue;
+        for (const o of await hentOppsett(x.id, "gruppe"))
+          andre.push({
+            kilde: nokkel({ type: x.kildeType, id: x.kildeId }),
+            kildeNavn: x.kildeNavn,
+            farge: x.farge ? fagfarge(x.farge) : null,
+            oppsett: o,
+          });
+      }
+      andre.sort((a, b) => b.oppsett.tid.localeCompare(a.oppsett.tid));
       setKart(k);
       setElever(e);
       setRegler(r);
+      setBorte(b);
+      setAndreSett(andre);
     };
     void last();
     return () => {
@@ -157,51 +180,63 @@ export function GrupperFane({ skolearId }: { skolearId: string }) {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="ikkeutskrift flex flex-wrap items-center gap-2 pb-3">
-        {kilder.map((k) => {
-          const pa = kilde && nokkel(k) === nokkel(kilde);
-          return (
-            <button
-              key={nokkel(k)}
-              onClick={() => setValgt(nokkel(k))}
-              aria-pressed={!!pa}
-              className={`flex h-[30px] items-center gap-2 rounded-full px-3 text-[13px] ${
-                pa
-                  ? "bg-ark font-medium shadow-[inset_0_0_0_1.5px_var(--color-aksent)]"
-                  : "bg-flate-svak text-blekk-dempet hover:bg-flate"
-              }`}
-            >
-              {k.type === "mentorgruppe" ? (
-                <span className="h-2 w-2 rounded-full bg-aksent" />
-              ) : (
-                <span
-                  className="h-2 w-2 rounded-[2px]"
-                  style={{
-                    background: k.farge
-                      ? fagfarge(k.farge)
-                      : "var(--color-linje-sterk)",
-                  }}
-                />
-              )}
-              {k.navn}
-              <span className="text-etikett tabular-nums text-blekk-svak">
-                {k.antall}
-              </span>
-            </button>
-          );
-        })}
-        <span className="ml-1 text-etikett text-blekk-svak">
-          Faget i økta du har nå er valgt.
-        </span>
-      </div>
       {kart && (
         <KlassekartGrupper
           key={kart.id}
           kart={kart}
           innst={kart.innstillinger}
           elever={elever}
+          borte={borte}
           regler={regler}
+          andreSett={andreSett}
+          startOppsett={startOppsett}
+          onApneAnnet={(k, id) => {
+            setStartOppsett(id);
+            setValgt(k);
+          }}
           onEndreInnst={endreInnst}
+          kildevelger={
+            <>
+              {kilder.map((k) => {
+                const pa = kilde && nokkel(k) === nokkel(kilde);
+                return (
+                  <button
+                    key={nokkel(k)}
+                    onClick={() => {
+                      setStartOppsett(null);
+                      setValgt(nokkel(k));
+                    }}
+                    aria-pressed={!!pa}
+                    className={`flex h-[30px] items-center gap-2 rounded-full px-3 text-[13px] ${
+                      pa
+                        ? "bg-ark font-medium shadow-[inset_0_0_0_1.5px_var(--color-aksent)]"
+                        : "bg-flate-svak text-blekk-dempet hover:bg-flate"
+                    }`}
+                  >
+                    {k.type === "mentorgruppe" ? (
+                      <span className="h-2 w-2 rounded-full bg-aksent" />
+                    ) : (
+                      <span
+                        className="h-2 w-2 rounded-[2px]"
+                        style={{
+                          background: k.farge
+                            ? fagfarge(k.farge)
+                            : "var(--color-linje-sterk)",
+                        }}
+                      />
+                    )}
+                    {k.navn}
+                    <span className="text-etikett tabular-nums text-blekk-svak">
+                      {k.antall}
+                    </span>
+                  </button>
+                );
+              })}
+              <span className="ml-1 text-etikett text-blekk-svak">
+                Faget i økta du har nå er valgt.
+              </span>
+            </>
+          }
         />
       )}
     </div>

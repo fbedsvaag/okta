@@ -458,6 +458,35 @@ export async function kartForKilde(
   return id;
 }
 
+/**
+ * Hvem i kilden som er borte i dag (25.5, «Bare de som er her»): har
+ * «ikke i økta» (en verdi som ikke teller) i en økt i dag — i faget, når
+ * kilden er et fag, ellers i hvilken som helst økt.
+ */
+export async function hentBorteIDag(
+  kildeType: Kildetype,
+  kildeId: string,
+  skolearId: string,
+  dato = new Date().toLocaleDateString("sv-SE"),
+): Promise<Set<string>> {
+  const elever = (await hentKildeElever(kildeType, kildeId, skolearId)).map(
+    (e) => e.id,
+  );
+  if (elever.length === 0) return new Set();
+  const plass = elever.map((_, i) => `$${i + 3}`).join(", ");
+  const rader = await hent<{ id: string }>(
+    `SELECT DISTINCT s.elev_id AS id
+       FROM skaring s
+       JOIN okt o ON o.id = s.okt_id AND o.slettet IS NULL
+       JOIN skalaverdi v ON v.id = s.skalaverdi_id
+      WHERE s.slettet IS NULL AND v.teller_ikke = 1 AND o.dato = $1
+        AND ($2 = '' OR o.skolear_fag_id = $2)
+        AND s.elev_id IN (${plass})`,
+    [dato, kildeType === "fag" ? kildeId : "", ...elever],
+  );
+  return new Set(rader.map((r) => r.id));
+}
+
 // ------------------------------------------------------------ pultfarger
 
 export type Plassfarge = {

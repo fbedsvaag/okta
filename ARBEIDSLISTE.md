@@ -977,11 +977,11 @@ Tegning: `docs/lerret/PlasserGrupper.dc.html`. Grupper skal ikke ligge gjemt inn
 
 - [x] **25.1 Navn.** «Klassekart» → «Plasser og grupper» i menyen (snarvei G P). Bestemt.
 - [x] **25.2 To faner i verktøylinja:** Klassekart · Grupper (samme rekkefølge som navnet). Fanen huskes.
-- [ ] **25.3 Grupper uten kart.** Velg klasse/fag som chip (faget i økta du har nå er valgt). Krever ikke rom eller kart. Bruker samme `fordelGrupper` og historikk som i dag.
-- [ ] **25.4 Antall eller per gruppe.** Seg «Antall | Per gruppe» med − / +, og oppsummering («á 4 · 24 elever» / «6 grupper · 24 elever»).
-- [ ] **25.5 «Bare de som er her»** (på som standard): tar bort de som har fravær i dagens økt, og viser dem overstreket over gruppene.
-- [ ] **25.6** Tilfeldig/Spre/Samle, «Unngå samme som sist», dra elever mellom grupper, Stokk ⌘R med rolig FLIP (420 ms, ingen sprett). Kopier til Teams og Skriv ut lagrer settet.
-- [ ] **25.7 Lagrede grupper** som knapp i verktøylinja med nedtrekksliste (valgt klasse øverst). Gruppene får hele bredden.
+- [x] **25.3 Grupper uten kart.** Velg klasse/fag som chip (faget i økta du har nå er valgt). Krever ikke rom eller kart. Bruker samme `fordelGrupper` og historikk som i dag.
+- [x] **25.4 Antall eller per gruppe.** Seg «Antall | Per gruppe» med − / +, og oppsummering («á 4 · 24 elever» / «6 grupper · 24 elever»).
+- [x] **25.5 «Bare de som er her»** (på som standard): tar bort de som har fravær i dagens økt, og viser dem overstreket over gruppene.
+- [x] **25.6** Tilfeldig/Spre/Samle, «Unngå samme som sist», dra elever mellom grupper, Stokk ⌘R med rolig FLIP (420 ms, ingen sprett). Kopier til Teams og Skriv ut lagrer settet.
+- [x] **25.7 Lagrede grupper** som knapp i verktøylinja med nedtrekksliste (valgt klasse øverst). Gruppene får hele bredden.
 - [ ] **25.9 Bilde til elevene (PNG).** Knapp i verktøylinja åpner forhåndsvisning (1920 × 1080). Overskrift kan skrives, Navn: Fullt · **Fornavn + E.** (standard, «Aksel S.») · Fornavn (får etternavnsinitial hvis to heter det samme), «Dato i hjørnet». Hver gruppe har sin farge (fargelinje med «Gruppe n» + svak tone bak navnene).
   - **ALDRI med i bildet:** innsatsprikken, fravær («Borte i dag»), notater, initialsirkler, modus (Spre/Samle) eller antall elever per gruppe. Bildet tegnes fra en egen funksjon som bare får `{ overskrift, grupper: [{ nr, farge, navn[] }] }` — ingen elevobjekter, så innsats kan ikke lekke inn ved et uhell.
   - Test: render bildet for et sett der elevene har innsats, og sjekk at ingen piksel har trafikklysfargene (#3f9d49, #d9a92f, #c04a3d) og at funksjonen ikke tar imot innsatsfeltet.

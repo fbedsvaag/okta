@@ -157,6 +157,15 @@ describe("kart og elever", () => {
 });
 
 describe("grupper uten kart og pultfarger (25.12)", () => {
+  it("finner hvem som er borte i dag, fra «ikke i økta» i faget", async () => {
+    const okt = await opprettOkt(fag, "MFL1", "2026-10-21", "08:15", 90);
+    await settSkaring(tony, okt, IV);
+    await settSkaring(meadow, okt, GRONN);
+    const borte = await k.hentBorteIDag("fag", fag, ar, "2026-10-21");
+    expect([...borte]).toEqual([tony]);
+    expect((await k.hentBorteIDag("fag", fag, ar, "2026-10-22")).size).toBe(0);
+  });
+
   it("lager ett skjult kart per kilde, som blir det vanlige kartet når det får rom", async () => {
     const id = await k.kartForKilde(ar, "fag", fag);
     expect(await k.kartForKilde(ar, "fag", fag)).toBe(id);

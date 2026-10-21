@@ -1,4 +1,10 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { createPortal } from "react-dom";
 import { invoke } from "@tauri-apps/api/core";
 import {
@@ -38,19 +44,44 @@ import { hovedtast, tast as visTast } from "../ui/taster";
 /** Hvor lenge navnet bruker på å lande når det slippes (ms). */
 const LANDING = 280;
 
+/** Et lagret gruppesett for en annen klasse eller et annet fag (25.7). */
+export type AnnetSett = {
+  kilde: string;
+  kildeNavn: string;
+  farge: string | null;
+  oppsett: Oppsett;
+};
+
 export function KlassekartGrupper({
   kart,
   innst,
-  elever,
+  elever: alle,
+  borte,
   regler,
+  andreSett,
+  startOppsett,
+  onApneAnnet,
   onEndreInnst,
+  kildevelger,
 }: {
   kart: Kart;
   innst: Innstillinger;
   elever: Kartelev[];
+  /** borte i dag (25.5): med «Bare de som er her» er de ikke med */
+  borte: Set<string>;
   regler: Elevregel[];
+  /** settene for de andre kildene, under kildens egne i «Lagrede grupper» */
+  andreSett: AnnetSett[];
+  /** et lagret sett som skal vises i stedet for det siste */
+  startOppsett?: string | null;
+  onApneAnnet: (kilde: string, oppsettId: string) => void;
   onEndreInnst: (endring: Partial<Innstillinger>) => void;
+  /** chipene for klasse/fag, til venstre i linja med Stokk */
+  kildevelger?: ReactNode;
 }) {
+  const bareHer = innst.bareHer !== false;
+  const elever = bareHer ? alle.filter((e) => !borte.has(e.id)) : alle;
+  const borteNa = bareHer ? alle.filter((e) => borte.has(e.id)) : [];
   const [grupper, setGrupper] = useState<string[][]>([]);
   const [navn, setNavn] = useState<(string | null)[]>([]);
   const [historikk, setHistorikk] = useState<Oppsett[]>([]);
@@ -72,15 +103,20 @@ export function KlassekartGrupper({
       });
   }, [visTidligere]);
 
-  const elevAv = new Map(elever.map((e) => [e.id, e]));
-  const antall = innst.antallGrupper;
+  const elevAv = new Map(alle.map((e) => [e.id, e]));
+  // Antall grupper, eller hvor mange per gruppe (25.4).
+  const per = innst.perGruppe ?? null;
+  const antall =
+    per !== null
+      ? Math.max(1, Math.round(elever.length / Math.max(1, per)))
+      : Math.max(1, Math.min(innst.antallGrupper, elever.length || 1));
   const storrelser = gruppestorrelser(elever.length, antall);
   const minst = Math.min(...storrelser);
   const storst = Math.max(...storrelser);
 
   /** Viser et lagret gruppesett, med de elevene som fortsatt er med. */
   function visOppsett(o: Oppsett) {
-    const iKilden = new Set(elever.map((e) => e.id));
+    const iKilden = new Set(alle.map((e) => e.id));
     const n = Math.max(...o.rader.map((r) => r.gruppe ?? 0)) + 1;
     const gr: string[][] = Array.from({ length: n }, () => []);
     const nv: (string | null)[] = Array(n).fill(null);
@@ -94,6 +130,7 @@ export function KlassekartGrupper({
     for (const e of elever)
       if (!med.has(e.id))
         gr.reduce((a, b) => (b.length < a.length ? b : a)).push(e.id);
+    husk();
     setGrupper(gr);
     setNavn(nv);
     setBrudd([]);
@@ -106,19 +143,58 @@ export function KlassekartGrupper({
     void (async () => {
       const h = await hentOppsett(kart.id, "gruppe");
       setHistorikk(h);
-      // Start fra sist brukte gruppesett.
-      if (h[0]) visOppsett(h[0]);
+      // Start fra settet som ble valgt, eller sist brukte.
+      const start = h.find((o) => o.id === startOppsett) ?? h[0];
+      if (start) visOppsett(start);
       else stokk(h);
     })();
-  }, [kart.id, elever]);
+    // Bare når kartet byttes: ikke når elevene lastes på nytt.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [kart.id, startOppsett, alle.length]);
 
-  function stokk(h = historikk, n = antall) {
+  /*
+   * FLIP (25.6): når gruppene stokkes eller antallet endres, glir hvert
+   * navn rolig fra der det sto til den nye plassen (420 ms, ingen sprett).
+   */
+  const foer = useRef<Map<string, DOMRect> | null>(null);
+  function husk() {
+    const m = new Map<string, DOMRect>();
+    document
+      .querySelectorAll<HTMLElement>("[data-elev-rad]")
+      .forEach((el) => m.set(el.dataset.elevRad!, el.getBoundingClientRect()));
+    foer.current = m;
+  }
+  useLayoutEffect(() => {
+    const m = foer.current;
+    foer.current = null;
+    // Første visning (ingenting å flytte fra): ingen animasjon.
+    if (!m || m.size === 0) return;
+    if (document.documentElement.dataset.bevegelse === "av") return;
+    document.querySelectorAll<HTMLElement>("[data-elev-rad]").forEach((el) => {
+      const a = m.get(el.dataset.elevRad!);
+      const b = el.getBoundingClientRect();
+      if (!a) {
+        el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 260 });
+        return;
+      }
+      const dx = a.left - b.left;
+      const dy = a.top - b.top;
+      if (dx || dy)
+        el.animate(
+          [{ transform: `translate(${dx}px, ${dy}px)` }, { transform: "none" }],
+          { duration: 420, easing: "cubic-bezier(.22,1,.36,1)" },
+        );
+    });
+  }, [grupper]);
+
+  function stokk(h = historikk, n = antall, med = elever) {
+    husk();
     const hist = sammenFor(
       h,
       (a, b) => a.gruppe !== null && a.gruppe === b.gruppe,
     );
     const r = fordelGrupper({
-      elever,
+      elever: med,
       antall: n,
       laste: new Map(),
       holdFra: regler.map((x) => [x.elevA, x.elevB] as [string, string]),
@@ -136,12 +212,25 @@ export function KlassekartGrupper({
     setSettNavn("");
   }
 
-  function settAntall(n: number) {
-    const maks = Math.max(1, Math.floor(elever.length / 2));
-    const ny = Math.max(1, Math.min(maks, n));
-    if (ny === antall) return;
-    onEndreInnst({ antallGrupper: ny });
-    stokk(historikk, ny);
+  /** − / +: antall grupper, eller elever per gruppe. */
+  function endreTall(d: number) {
+    if (per !== null) {
+      const ny = Math.max(2, Math.min(elever.length, per + d));
+      if (ny === per) return;
+      onEndreInnst({ perGruppe: ny });
+      stokk(historikk, Math.max(1, Math.round(elever.length / ny)));
+    } else {
+      const maks = Math.max(1, Math.floor(elever.length / 2));
+      const ny = Math.max(1, Math.min(maks, antall + d));
+      if (ny === antall) return;
+      onEndreInnst({ antallGrupper: ny });
+      stokk(historikk, ny);
+    }
+  }
+
+  function settBareHer(pa: boolean) {
+    onEndreInnst({ bareHer: pa });
+    stokk(historikk, antall, pa ? alle.filter((e) => !borte.has(e.id)) : alle);
   }
 
   async function bruk(hvorfor?: string) {
@@ -329,10 +418,11 @@ export function KlassekartGrupper({
           <button
             ref={tidligereKnapp}
             onClick={() => setVisTidligere((v) => !v)}
-            disabled={historikk.length === 0}
+            disabled={historikk.length + andreSett.length === 0}
             className="flex h-8 items-center rounded-full border border-linje-sterk bg-ark/70 px-3.5 text-brod hover:bg-ark disabled:border-transparent disabled:bg-transparent disabled:text-blekk-svak"
           >
-            Tidligere{historikk.length > 0 ? ` (${historikk.length})` : ""}
+            Lagrede grupper
+            <span className="ml-1.5 text-[11px] text-blekk-svak">⌄</span>
           </button>
           <button
             onClick={() => void teams()}
@@ -369,74 +459,112 @@ export function KlassekartGrupper({
         </div>
       </div>
 
-      <div className="ikkeutskrift flex flex-wrap items-center gap-x-[18px] gap-y-3 pb-1.5">
-        <span className="flex items-center gap-2 text-[calc(13.5px*var(--tekst-skala))]">
-          <span className="text-blekk-dempet">Grupper</span>
-          <span className="inline-flex items-center rounded-md shadow-[inset_0_0_0_1px_var(--color-linje)]">
-            <button
-              aria-label="Færre grupper"
-              onClick={() => settAntall(antall - 1)}
-              className="h-7 w-7 text-blekk-dempet hover:text-blekk"
-            >
-              −
-            </button>
-            <span className="min-w-[22px] text-center font-semibold tabular-nums">
-              {storrelser.length}
-            </span>
-            <button
-              aria-label="Flere grupper"
-              onClick={() => settAntall(antall + 1)}
-              className="h-7 w-7 text-blekk-dempet hover:text-blekk"
-            >
-              +
-            </button>
-          </span>
-          <span className="text-[calc(12.5px*var(--tekst-skala))] tabular-nums text-blekk-svak">
-            {elever.length === 0
-              ? ""
-              : minst === storst
-                ? `á ${minst}`
-                : `á ${minst}–${storst}`}
-          </span>
-        </span>
-        <Bryter
-          storrelse="liten"
-          verdi={innst.fordeling}
-          settVerdi={(v) => onEndreInnst({ fordeling: v as Modus })}
-          valg={[
-            { id: "tilfeldig", navn: "Tilfeldig" },
-            { id: "spre", navn: "Spre" },
-            { id: "samle", navn: "Samle" },
-          ]}
-        />
-        <Avkrysning
-          verdi={innst.bland}
-          sett={(v) => onEndreInnst({ bland: v })}
-        >
-          Bland jenter og gutter
-        </Avkrysning>
-        <Avkrysning
-          verdi={innst.unnga}
-          sett={(v) => onEndreInnst({ unnga: v })}
-        >
-          Unngå samme grupper som sist
-        </Avkrysning>
+      <div className="ikkeutskrift flex flex-wrap items-center gap-2 pb-3">
+        {kildevelger}
         <span className="flex-1" />
         <button
           onClick={() => void bruk()}
           disabled={lagret}
           className="flex h-[30px] items-center rounded-full border border-linje-sterk bg-ark px-3 text-[13px] hover:bg-flate disabled:border-transparent disabled:bg-transparent disabled:text-blekk-svak"
         >
-          {lagret ? (historikk[0] ? "Brukt" : "Ikke brukt ennå") : "Bruk"}
+          {lagret ? (historikk[0] ? "Lagret" : "Ikke lagret ennå") : "Lagre"}
         </button>
         <button
           onClick={() => stokk()}
           className="flex h-[30px] items-center gap-2 rounded-full bg-aksent px-3 text-[13px] font-medium text-ark hover:bg-aksent-mork"
         >
-          Stokk på nytt
+          Stokk
           <span className="text-[11px] opacity-65">{visTast("⌘R")}</span>
         </button>
       </div>
+      <div className="ikkeutskrift flex flex-wrap items-center gap-x-3.5 gap-y-2.5 rounded-[14px] bg-flate-svak px-2.5 py-2">
+        <Bryter
+          storrelse="liten"
+          verdi={per !== null ? "per" : "antall"}
+          settVerdi={(v) => {
+            if (v === "per") {
+              onEndreInnst({
+                perGruppe: Math.max(2, Math.round(elever.length / antall)),
+              });
+            } else {
+              onEndreInnst({ perGruppe: null, antallGrupper: antall });
+            }
+          }}
+          valg={[
+            { id: "antall", navn: "Antall" },
+            { id: "per", navn: "Per gruppe" },
+          ]}
+        />
+        <span className="inline-flex items-center rounded-md bg-ark shadow-[inset_0_0_0_1px_var(--color-linje)]">
+          <button
+            aria-label={per !== null ? "Færre per gruppe" : "Færre grupper"}
+            onClick={() => endreTall(-1)}
+            className="h-7 w-7 text-blekk-dempet hover:text-blekk"
+          >
+            −
+          </button>
+          <span className="min-w-[22px] text-center font-semibold tabular-nums">
+            {per ?? storrelser.length}
+          </span>
+          <button
+            aria-label={per !== null ? "Flere per gruppe" : "Flere grupper"}
+            onClick={() => endreTall(1)}
+            className="h-7 w-7 text-blekk-dempet hover:text-blekk"
+          >
+            +
+          </button>
+        </span>
+        <span className="min-w-[118px] text-[calc(12.5px*var(--tekst-skala))] tabular-nums text-blekk-dempet">
+          {elever.length === 0
+            ? ""
+            : per !== null
+              ? `${storrelser.length} grupper · ${elever.length} elever`
+              : `á ${minst === storst ? minst : `${minst}–${storst}`} · ${elever.length} elever`}
+        </span>
+        <Bryter
+          storrelse="liten"
+          verdi={innst.fordeling}
+          settVerdi={(v) => onEndreInnst({ fordeling: v as Modus })}
+          valg={[
+            { id: "tilfeldig", navn: "Tilfeldig", tittel: "Helt tilfeldig" },
+            {
+              id: "spre",
+              navn: "Spre",
+              tittel: "Blander innsats i hver gruppe",
+            },
+            { id: "samle", navn: "Samle", tittel: "Lik innsats sammen" },
+          ]}
+        />
+        <Avkrysning verdi={bareHer} sett={settBareHer}>
+          Bare de som er her
+        </Avkrysning>
+        <Avkrysning
+          verdi={innst.unnga}
+          sett={(v) => onEndreInnst({ unnga: v })}
+        >
+          Unngå samme som sist
+        </Avkrysning>
+        <Avkrysning
+          verdi={innst.bland}
+          sett={(v) => onEndreInnst({ bland: v })}
+        >
+          Bland jenter og gutter
+        </Avkrysning>
+      </div>
+      {borteNa.length > 0 && (
+        <p className="ikkeutskrift mx-0.5 mt-2.5 flex flex-wrap items-center gap-1.5 text-[calc(12.5px*var(--tekst-skala))] text-blekk-dempet">
+          Borte i dag, ikke med:
+          {borteNa.map((e) => (
+            <span
+              key={e.id}
+              className="rounded-full bg-flate-svak px-2 py-0.5 text-blekk-svak line-through"
+            >
+              {e.fornavn} {e.etternavn}
+            </span>
+          ))}
+          <span className="text-blekk-svak">· fra fraværet i dagens økt</span>
+        </p>
+      )}
       {brudd.length > 0 && (
         <p className="ikkeutskrift text-[calc(12px*var(--tekst-skala))] text-varsel">
           {brudd
@@ -567,6 +695,11 @@ export function KlassekartGrupper({
                 style={{ top: tidligerePos.top, right: tidligerePos.right }}
                 className="fixed z-40 max-h-[360px] w-80 overflow-auto rounded-xl bg-ark p-1.5 shadow-[0_12px_32px_rgba(36,31,51,.18),0_0_0_1px_var(--color-linje)]"
               >
+                {historikk.length > 0 && (
+                  <div className="px-2.5 pb-1 pt-1.5 text-etikett font-semibold text-blekk-dempet">
+                    {kart.kildeNavn}
+                  </div>
+                )}
                 {historikk.map((o) => {
                   const n = new Set(o.rader.map((r) => r.gruppe)).size;
                   return (
@@ -607,6 +740,41 @@ export function KlassekartGrupper({
                     </div>
                   );
                 })}
+                {andreSett.length > 0 && (
+                  <div className="px-2.5 pb-1 pt-2.5 text-etikett font-semibold text-blekk-dempet">
+                    Andre klasser og fag
+                  </div>
+                )}
+                {andreSett.map((a) => (
+                  <button
+                    key={a.oppsett.id}
+                    onClick={() => {
+                      setVisTidligere(false);
+                      onApneAnnet(a.kilde, a.oppsett.id);
+                    }}
+                    className="flex w-full items-baseline gap-2 rounded-lg px-2.5 py-2 text-left text-[13px] hover:bg-flate"
+                  >
+                    <span
+                      className="h-2 w-2 shrink-0 self-center rounded-[2px]"
+                      style={{
+                        background: a.farge ?? "var(--color-linje-sterk)",
+                      }}
+                    />
+                    <span className="truncate">
+                      {a.kildeNavn} · {a.oppsett.navn ?? "Uten navn"}
+                    </span>
+                    <span className="ml-auto shrink-0 text-etikett tabular-nums text-blekk-svak">
+                      {new Date(a.oppsett.tid).toLocaleDateString("nb-NO", {
+                        day: "numeric",
+                        month: "short",
+                      })}
+                    </span>
+                  </button>
+                ))}
+                <p className="px-2.5 pb-1.5 pt-2 text-etikett leading-normal text-blekk-svak">
+                  Lagres når du kopierer til Teams, skriver ut eller trykker
+                  Lagre. «Unngå samme som sist» regner på disse.
+                </p>
               </div>
             </>
           )}
