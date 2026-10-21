@@ -114,7 +114,10 @@ export function parseListe(tekst: string): Parseresultat {
  *   "Anna\tReistad"      -> navn "Anna Reistad", ingen klasse
  *   "Anna\tReistad\t1STC" -> navn "Anna Reistad", klasse "1STC"
  */
-function delFelter(linje: string): { navnefelt: string; klasse: string | null } {
+function delFelter(linje: string): {
+  navnefelt: string;
+  klasse: string | null;
+} {
   let klasse: string | null = null;
   let rest = linje;
 

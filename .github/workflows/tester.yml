@@ -1,0 +1,62 @@
+# Testene ved hver push og pull request: typesjekk, formatering, npm test,
+# bygget og cargo test. På Mac, som appen brukes på. Et rødt kryss på GitHub
+# betyr at noe har brukket.
+#
+# Ingen hemmeligheter og bare lesetilgang. Actions er låst til en commit,
+# som i windows.yml (issue #10).
+name: Tester
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "site/**"
+      - "docs/**"
+      - "**.md"
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# En ny push avbryter en kjøring som ikke er ferdig.
+concurrency:
+  group: tester-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@686976e191b89faba57d3206551f0f330d8cb249 # stable
+
+      - uses: swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          workspaces: src-tauri
+
+      - name: Installer avhengigheter
+        run: npm ci
+
+      - name: Typesjekk
+        run: npx tsc --noEmit -p .
+
+      - name: Formatering
+        run: npx prettier --check "src/**/*.{ts,tsx,css}" "!src/prove-*.tsx"
+
+      - name: npm test
+        run: npm test
+
+      - name: Bygg (Vite)
+        run: npm run build
+
+      - name: cargo test
+        run: cargo test --manifest-path src-tauri/Cargo.toml

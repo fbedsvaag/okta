@@ -33,7 +33,10 @@ describe("formatene i SPEC §7", () => {
     );
 
     expect(elever.map((e) => e.fornavn)).toEqual(["Tony", "Carmela"]);
-    expect(hoppetOver.map((h) => h.grunn)).toEqual(["overskrift", "overskrift"]);
+    expect(hoppetOver.map((h) => h.grunn)).toEqual([
+      "overskrift",
+      "overskrift",
+    ]);
   });
 });
 
@@ -99,12 +102,20 @@ describe("de fire dummylistene", () => {
   it("lar de andre listene stå uten klasse", () => {
     for (const fil of ["1STC-MFL1.md", "2STA-MFL2.md", "1STB-ENG1.md"]) {
       const { elever } = parseListe(dummy(fil));
-      expect(elever.every((e) => e.klasse === null), fil).toBe(true);
+      expect(
+        elever.every((e) => e.klasse === null),
+        fil,
+      ).toBe(true);
     }
   });
 
   it("finner La Cerva og de andre partikkelnavnene", () => {
-    const alle = ["1STC-MFL1.md", "2STA-MFL2.md", "1STB-ENG1.md", "1STA-ENGVG1.md"]
+    const alle = [
+      "1STC-MFL1.md",
+      "2STA-MFL2.md",
+      "1STB-ENG1.md",
+      "1STA-ENGVG1.md",
+    ]
       .flatMap((f) => parseListe(dummy(f)).elever)
       .map((e) => e.etternavn);
 
@@ -119,7 +130,9 @@ describe("de fire dummylistene", () => {
     expect(sopranoer.length).toBeGreaterThan(1);
 
     // Duplikatsjekken går på hele navnet, ikke på etternavnet alene.
-    const navn = new Set(sopranoer.map((e) => normalisertNavn(e.fornavn, e.etternavn)));
+    const navn = new Set(
+      sopranoer.map((e) => normalisertNavn(e.fornavn, e.etternavn)),
+    );
     expect(navn.size).toBe(sopranoer.length);
   });
 });
