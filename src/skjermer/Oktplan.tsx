@@ -8,6 +8,7 @@ import {
   klokke,
   lengste,
   lesPlan,
+  begrens,
   lesTittel,
   minutter,
   nyttPunkt,
@@ -80,7 +81,9 @@ export function Oktplan({
   const ferske = useRef(rader);
   ferske.current = rader;
 
-  function lagre(nye: Rad[]) {
+  function lagre(nye_: Rad[]) {
+    // Øktas lengde er et tak: det som vokser, tar fra den lengste andre.
+    const nye = begrens(ferske.current, nye_, okt.varighetMin);
     setRader(nye);
     const tekst = skrivPlan(nye.filter(beholdes), rest);
     sist.current = tekst;
@@ -165,6 +168,7 @@ export function Oktplan({
         }}
         onFlytt={flytt}
         onEndreLive={setRader}
+        begrens={(base, nye) => begrens(base, nye, lengde)}
         onEndret={lagre}
         hent={() => ferske.current}
       />
@@ -242,6 +246,7 @@ function Tidslinje({
   onEndreLive,
   onEndret,
   hent,
+  begrens,
 }: {
   rader: Rad[];
   lengde: number;
@@ -253,6 +258,8 @@ function Tidslinje({
   onEndreLive: (r: Rad[]) => void;
   onEndret: (r: Rad[]) => void;
   hent: () => Rad[];
+  /** øktas lengde som tak, regnet fra der draget begynte */
+  begrens: (base: Rad[], nye: Rad[]) => Rad[];
 }) {
   const linje = useRef<HTMLDivElement>(null);
   const [skilleDras, setSkilleDras] = useState<number | null>(null);
@@ -285,7 +292,7 @@ function Tidslinje({
     setSkilleDras(nr);
     document.documentElement.dataset.drar = "";
     const flytt = (ev: PointerEvent) => {
-      siste = regn(base, (ev.clientX - x0) / perMin) as Rad[];
+      siste = begrens(base, regn(base, (ev.clientX - x0) / perMin) as Rad[]);
       onEndreLive(siste);
     };
     const slipp = () => {

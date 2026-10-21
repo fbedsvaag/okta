@@ -9,6 +9,12 @@ den skal bli. Fila eies fritt, i motsetning til SPEC.md.
 Utseendet står i `DESIGN.md`, som beskriver appen slik den er bygget.
 Lerretet (`docs/lerret/`) er fasit for det som er tegnet.
 
+## Øktplanen holder seg innenfor økta (21.10)
+
+- Øktas lengde er et tak. Vokser et punkt forbi luften, tas tiden fra den
+  lengste andre aktiviteten (`begrens` i `data/oktplan.ts`, testet), både
+  med − / +, lengdevalget, nye punkter og draing i tidslinja.
+
 ## Skoleåret som tavle (21.10, ARBEIDSLISTE 21.1)
 
 - Bryteren Tidslinje · Tavle i Året (huskes). Én kolonne per periode, kort

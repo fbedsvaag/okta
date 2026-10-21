@@ -498,9 +498,11 @@ bredde etter minuttene, pause skravert, luft stiplet, strek ved slutt,
 klokkeslett hvert kvarter) og lista under: ⋮⋮, starttid, tittel, − / + i
 steg på fem, ▸ for beskrivelsen. Man drar i skillet for å flytte tid, i
 enden for å gi eller fylle luft, og feltene eller ⋮⋮ for å stokke om.
-Pauser står fast til de er valgt. «30 min» åpner lengdevalget. Går
-planen over, sies det i vanlig blekk med «Trekk N min fra …»; øktas
-lengde endres aldri. Kompetansemålene er foldet til valgte og periodens
+Pauser står fast til de er valgt. «30 min» åpner lengdevalget. Øktas
+lengde er et tak: blir et punkt lengre enn luften rekker, tas tiden fra den
+lengste andre aktiviteten (ned til 5 min; pauser og ferdige punkter røres
+ikke). Bare når økta selv er gjort kortere, kan planen stå over; da sies
+det i vanlig blekk med «Trekk N min fra …». Øktas lengde endres aldri. Kompetansemålene er foldet til valgte og periodens
 mål, med «Vis alle 17 ▾».
 
 **Øktplan: Enkel | Full** (Innstillinger › Generelt, standard Enkel,

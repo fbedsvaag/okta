@@ -353,6 +353,56 @@ export function lengste(punkter: Planpunkt[]): number {
 }
 
 /**
+ * Øktas lengde er et tak (ønske 21.10): blir et punkt lengre, eller kommer
+ * et nytt til, slik at planen går over, tas tiden fra den lengste andre
+ * aktiviteten — så den nest lengste, osv., ned til STEG (5) min hver.
+ * Pauser og ferdige punkter røres ikke. Er det ikke nok å ta av, blir
+ * punktet som vokste, kortet ned til det som er igjen. Planen går aldri
+ * over lengden fordi noe ble lengre; var den over fra før (økta ble
+ * kortere), står den til læreren retter den.
+ */
+export function begrens<T extends Planpunkt & { id: string }>(
+  gamle: T[],
+  nye: T[],
+  lengde: number,
+): T[] {
+  const over = minutter(nye) - lengde;
+  if (over <= 0 || minutter(nye) <= minutter(gamle)) return nye;
+  const for_ = new Map(gamle.map((p) => [p.id, p.min ?? 0]));
+  const vokste = new Set(
+    nye
+      .filter((p) => !for_.has(p.id) || (p.min ?? 0) > for_.get(p.id)!)
+      .map((p) => p.id),
+  );
+  const ut = nye.map((p) => ({ ...p }));
+  let igjen = over;
+  const kandidater = ut
+    .filter(
+      (p) =>
+        p.type === "aktivitet" &&
+        !p.ferdig &&
+        !vokste.has(p.id) &&
+        (p.min ?? 0) > STEG,
+    )
+    .sort((a, b) => (b.min ?? 0) - (a.min ?? 0));
+  for (const p of kandidater) {
+    if (igjen <= 0) break;
+    const ta = Math.min(igjen, (p.min ?? 0) - STEG);
+    p.min = (p.min ?? 0) - ta;
+    igjen -= ta;
+  }
+  // Ikke nok å ta av: det som vokste, får bare det som er igjen.
+  for (const p of [...ut].reverse()) {
+    if (igjen <= 0) break;
+    if (!vokste.has(p.id)) continue;
+    const ta = Math.min(igjen, Math.max(0, (p.min ?? 0) - STEG));
+    p.min = (p.min ?? 0) - ta;
+    igjen -= ta;
+  }
+  return ut;
+}
+
+/**
  * «Film · 15 min» eller «Film 15 min» skrevet i tittelen: minuttene tas ut
  * av teksten (15.10). Uten minutter står tittelen som den er.
  */

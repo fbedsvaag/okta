@@ -1,6 +1,7 @@
 import type { Planpunkt } from "./oktplan";
 import { describe, expect, it } from "vitest";
 import {
+  begrens,
   folgOpp,
   iPerioden,
   lesPlan,
@@ -492,5 +493,57 @@ describe("følg opp i dag (20.5)", () => {
 
   it("er tom uten økter i dag", () => {
     expect(folgOppIDag([], [])).toEqual([]);
+  });
+});
+
+describe("øktas lengde er et tak (21.10)", () => {
+  const p = (id: string, min: number, d: Partial<Planpunkt> = {}) => ({
+    ...nyttPunkt({ tekst: id, min, ...d }),
+    id,
+  });
+  const min = (l: { id: string; min: number | null }[]) =>
+    l.map((x) => [x.id, x.min]);
+
+  it("det som vokser, tar fra den lengste andre aktiviteten", () => {
+    const gamle = [p("a", 20), p("b", 40), p("c", 30)];
+    const nye = [p("a", 35), p("b", 40), p("c", 30)];
+    expect(min(begrens(gamle, nye, 90))).toEqual([
+      ["a", 35],
+      ["b", 25],
+      ["c", 30],
+    ]);
+  });
+
+  it("luft brukes først, og et nytt punkt tar resten fra den lengste", () => {
+    const gamle = [p("a", 30), p("b", 50)];
+    const nye = [...gamle, p("ny", 10)];
+    expect(min(begrens(gamle, nye, 85))).toEqual([
+      ["a", 30],
+      ["b", 45],
+      ["ny", 10],
+    ]);
+  });
+
+  it("pauser og ferdige punkter røres ikke; ingen blir kortere enn 5", () => {
+    const gamle = [
+      p("a", 10),
+      p("pause", 30, { type: "pause" }),
+      p("ferdig", 30, { ferdig: "09:00" }),
+      p("b", 20),
+    ];
+    const nye = gamle.map((x) => (x.id === "a" ? { ...x, min: 40 } : x));
+    // 120 over 90: b gir 15 (ned til 5), så får a bare 25.
+    expect(min(begrens(gamle, nye, 90))).toEqual([
+      ["a", 25],
+      ["pause", 30],
+      ["ferdig", 30],
+      ["b", 5],
+    ]);
+  });
+
+  it("en plan som allerede var for lang, står når ingenting vokser", () => {
+    const gamle = [p("a", 60), p("b", 60)];
+    const nye = [p("b", 60), p("a", 60)];
+    expect(begrens(gamle, nye, 90)).toBe(nye);
   });
 });
