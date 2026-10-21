@@ -36,8 +36,9 @@ const esc = (s: string) =>
   );
 
 /**
- * Kartet som SVG: rommet, og navnet på hver plass. `fraElevene` snur
- * tegningen, så tavla står nederst — slik elevene ser rommet.
+ * Kartet som SVG: rommet, og navnet på hver plass. Rommet er tegnet med
+ * tavla øverst — slik elevene ser det (`fraElevene`). Fra kateteret snus
+ * tegningen, så tavla står nederst, bak læreren (21.10).
  */
 export function kartSvg({
   tittel,
@@ -61,7 +62,7 @@ export function kartSvg({
   const B = r.b + marg * 2;
   const H = r.h + marg * 2 + topp;
   const snu = (x: number, y: number, b = 0, h = 0) =>
-    fraElevene
+    !fraElevene
       ? { x: r.x + r.b - (x - r.x) - b, y: r.y + r.h - (y - r.y) - h }
       : { x, y };
   const tx = (x: number) => x - r.x + marg;

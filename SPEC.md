@@ -1422,8 +1422,9 @@ sammen før. Ingen lister limes inn.
 
 #### Plasser
 
-- Rommet tegnes med tavle øverst. Bryteren **Fra kateteret / Fra elevene**
-  snur tegningen (for utskrift til elevene).
+- Rommet tegnes (i rom-editoren) med tavla øverst. Bryteren **Fra kateteret
+  / Fra elevene** viser kartet fra lærerens side, med tavla nederst bak
+  læreren, eller fra elevenes, med tavla øverst (for utskrift til elevene).
 - Hver plass viser bilde (eller initialer), fornavn og etternavn. Ledige
   plasser vises tonet.
 - **Lås:** klikk på en plass låser eleven der. Låste blir sittende når det

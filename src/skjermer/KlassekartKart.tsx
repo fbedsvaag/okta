@@ -469,8 +469,9 @@ export function KlassekartKart({
 
   const ramme = romramme(rom?.deler ?? []);
   const skala = Math.min(1.5, Math.max(0.6, plassBredde / (ramme.b + 20)));
+  // Fra kateteret står tavla nederst, bak læreren; fra elevene øverst.
   const snu = (x: number, y: number, b = 0, h = 0) =>
-    innst.fraElevene
+    !innst.fraElevene
       ? {
           x: ramme.x + ramme.b - (x - ramme.x) - b,
           y: ramme.y + ramme.h - (y - ramme.y) - h,
