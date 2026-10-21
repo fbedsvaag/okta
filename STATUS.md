@@ -18,6 +18,9 @@ Lerretet (`docs/lerret/`) er fasit for det som er tegnet.
   opp i økta», «Elever som glipper» og tegnforklaringen i «Innsats over
   tid». Heatmapet i elevkortet viste ikke skåret som «ikke i økta»; nå
   «ikke sett» (19.4 hadde glemt det).
+- **20.1 Trafikklys med form** (i `Skarprikk`): grønn fylt, gul halvfylt
+  (ring og nederste halvdel), rød med lite kryss, 0 med større kryss på
+  mørk grunn. Gjelder alle stedene over.
 
 ## Runde 19 (20.10, ARBEIDSLISTE §19)
 

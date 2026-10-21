@@ -1,3 +1,4 @@
+import { useId } from "react";
 import { NOYTRAL, skalafarge } from "./farger";
 
 /**
@@ -13,6 +14,10 @@ import { NOYTRAL, skalafarge } from "./farger";
  *
  * `farge` overstyrer trafikklysfargen for mellomtrinnene (grønngul,
  * oransje), f.eks. snittfargen til «Elever som glipper».
+ *
+ * Trafikklyset har form, så det kan leses uten fargesyn (20.1): grønn er
+ * fylt, gul halvfylt, rød har et lite kryss. 0 har et større kryss på mørk
+ * grunn.
  */
 export type Skarslag = "g" | "y" | "r" | "o" | "t" | "n" | "k";
 
@@ -68,6 +73,7 @@ export function Skarprikk({
   tittel?: string;
   klasse?: string;
 }) {
+  const klipp = useId();
   const fyll = farge ?? FYLL[slag];
   const r = form === "rund" ? 6 : 2.4;
   const ring =
@@ -87,7 +93,30 @@ export function Skarprikk({
       className={`block shrink-0 ${klasse}`}
     >
       {tittel && <title>{tittel}</title>}
-      {ring ? (
+      {slag === "y" ? (
+        <>
+          <clipPath id={klipp}>
+            <rect width="12" height="12" rx={r} />
+          </clipPath>
+          <rect
+            x="0.75"
+            y="0.75"
+            width="10.5"
+            height="10.5"
+            rx={Math.max(0, r - 0.75)}
+            fill="none"
+            stroke={fyll}
+            strokeWidth="1.5"
+          />
+          <rect
+            y="6"
+            width="12"
+            height="6"
+            fill={fyll}
+            clipPath={`url(#${klipp})`}
+          />
+        </>
+      ) : ring ? (
         <rect
           x="0.75"
           y="0.75"
@@ -100,6 +129,14 @@ export function Skarprikk({
         />
       ) : (
         <rect width="12" height="12" rx={r} fill={fyll} />
+      )}
+      {slag === "r" && (
+        <path
+          d="M4.9 4.9l2.2 2.2M7.1 4.9l-2.2 2.2"
+          stroke="var(--color-ark)"
+          strokeWidth="1.3"
+          strokeLinecap="round"
+        />
       )}
       {slag === "o" && (
         <path
