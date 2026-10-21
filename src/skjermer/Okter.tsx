@@ -1364,7 +1364,7 @@ function Liste({
                           e.stopPropagation();
                           setRedigerer(o.id);
                         }}
-                        className={`-mx-1 min-w-0 truncate border border-transparent px-1 py-0.5 ${
+                        className={`-mx-1 min-w-0 flex-1 truncate border border-transparent px-1 py-0.5 ${
                           o.skaret ? "" : "cursor-grab active:cursor-grabbing"
                         } ${vurd.length > 0 ? "font-semibold" : ""} ${
                           o.tema ? "" : "text-blekk-svakest"
