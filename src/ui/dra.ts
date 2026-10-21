@@ -70,15 +70,18 @@ export function finnMal(
   const b = egen.b + d;
   const midt = (a + b) / 2;
 
-  // Er gruppa kortet står over full, bytter de to plass (§4.10).
+  // Er gruppa kortet står over full, bytter de to plass (§4.10). Står
+  // midten fortsatt på kortets egen plass, er det ingen å bytte med ennå.
+  const over = andre.find((m) => midt >= m.a && midt < m.b);
+  const hjemme = !over && midt >= egen.a && midt < egen.b;
   const under =
-    andre.find((m) => midt >= m.a && midt < m.b) ??
+    over ??
     andre.reduce((best, m) =>
       Math.abs((m.a + m.b) / 2 - midt) < Math.abs((best.a + best.b) / 2 - midt)
         ? m
         : best,
     );
-  if (under.gruppe !== fra.gruppe && full(under.gruppe))
+  if (!hjemme && under.gruppe !== fra.gruppe && full(under.gruppe))
     return { gruppe: under.gruppe, nr: under.nr, etter: false, bytt: true };
 
   // Hvor mange som står foran kortet nå.
@@ -358,6 +361,9 @@ export function useDra({
     /** sant rett etter et drag, så klikket som følger ikke teller */
     draget,
     erDratt,
+    /** toppen (eller venstre kant) plassen hadde da draget begynte */
+    startPos: (p: Plass) =>
+      malt.current.find((m) => m.gruppe === p.gruppe && m.nr === p.nr)?.a,
     byttesMed: (p: Plass) =>
       !!dra?.mal?.bytt && dra.mal.gruppe === p.gruppe && dra.mal.nr === p.nr,
     /** plassen det dratte havner på, mens det dras */

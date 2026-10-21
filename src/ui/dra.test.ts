@@ -91,3 +91,29 @@ describe("forskyvning", () => {
     expect(forskyvning(rader, fra, mal, { gruppe: 0, nr: 1 })).toBe(0);
   });
 });
+
+describe("bytte i en liste der hver rad er sin egen gruppe (Økter)", () => {
+  const rader = [0, 1, 2].map((i) => ({
+    gruppe: i,
+    nr: 0,
+    a: i * 30,
+    b: i * 30 + 30,
+  }));
+  const fra = { gruppe: 1, nr: 0 };
+
+  it("bytter ikke med noen så lenge midten står på egen plass", () => {
+    expect(finnMal(rader, fra, 5, () => true)?.bytt).toBeFalsy();
+    expect(finnMal(rader, fra, -10, () => true)?.bytt).toBeFalsy();
+  });
+
+  it("bytter med raden midten står over", () => {
+    expect(finnMal(rader, fra, 20, () => true)).toMatchObject({
+      gruppe: 2,
+      bytt: true,
+    });
+    expect(finnMal(rader, fra, -20, () => true)).toMatchObject({
+      gruppe: 0,
+      bytt: true,
+    });
+  });
+});

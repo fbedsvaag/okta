@@ -1,4 +1,11 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
 import { flushSync } from "react-dom";
 import { confirm as bekreft } from "@tauri-apps/plugin-dialog";
 import {
@@ -64,7 +71,7 @@ import { hovedtast, harModifikator } from "../ui/taster";
 import { useIdag } from "../ui/useIdag";
 import { Avkrysning, nyttValg } from "../ui/Flervalg";
 import { Oktvalg, settPeriodeMedAngre } from "./Oktvalg";
-import { useDra } from "../ui/dra";
+import { DRATID, useDra } from "../ui/dra";
 import { leggTilAngring } from "../ui/angre";
 import { visToast } from "../ui/Toast";
 import { Fagbrytere, useSkjulteFag } from "./Fagbrytere";
@@ -159,8 +166,40 @@ export function Okter({
       visToast("Skårede økter ligger fast");
       return;
     }
-    if (!(await byttOkter(a.id, b.id))) return;
+    // Byttet vises med en gang; lagringen går etterpå, og lista lastes
+    // på nytt fra databasen når den er ferdig (eller feilet).
+    const felt = [
+      "tema",
+      "agenda",
+      "plan",
+      "lekse",
+      "kompetansemal",
+      "periodeId",
+      "kladd",
+    ] as const;
+    const fra = (o: Okt) => Object.fromEntries(felt.map((f) => [f, o[f]]));
+    setOkter((l) =>
+      l.map((o) =>
+        o.id === a.id
+          ? { ...o, ...fra(b) }
+          : o.id === b.id
+            ? { ...o, ...fra(a) }
+            : o,
+      ),
+    );
+    setVurderinger((m) => {
+      const n = new Map(m);
+      const va = m.get(a.id);
+      const vb = m.get(b.id);
+      n.delete(a.id);
+      n.delete(b.id);
+      if (vb) n.set(a.id, vb);
+      if (va) n.set(b.id, va);
+      return n;
+    });
+    const ok = await byttOkter(a.id, b.id);
     await last();
+    if (!ok) return;
     setBlink(new Set([a.id, b.id]));
     window.setTimeout(() => setBlink(new Set()), 950);
     const tekst = `Byttet ${kortDato(a.dato)} og ${kortDato(b.dato)}: «${
@@ -746,9 +785,7 @@ function Liste({
     dra,
     reg,
     begynn,
-    erDratt,
-    byttesMed,
-    stil,
+    startPos,
     draget: dradd,
   } = useDra({
     full: () => true,
@@ -756,10 +793,83 @@ function Liste({
     onSlipp: (fra, mal) => {
       const a = okter[fra.gruppe];
       const b = okter[mal.gruppe];
-      if (a && b && a.id !== b.id) onBytt(a, b);
+      if (!mal.bytt || !a || !b || a.id === b.id) return;
+      // Skåret: ingen landing; byttet sier selv fra at den ligger fast.
+      if (b.skaret || a.skaret) return onBytt(a, b);
+      // Innholdet du slapp, lander på målraden fra der det svevde.
+      const fraA = startPos(fra);
+      const tilA = startPos(mal);
+      if (fraA !== undefined && tilA !== undefined && dra)
+        setLanding({ id: b.id, y: fraA + dra.d - tilA, fase: 0 });
+      onBytt(a, b);
     },
   });
-  const malOkt = dra?.mal ? okter[dra.mal.gruppe] : undefined;
+
+  /*
+   * Bytte ved å dra (16.4, gjort tydelig 21.10). Datoene står; innholdet
+   * flytter seg. Mens du drar, svever innholdet ditt over radene, og det du
+   * står over, glir opp eller ned til plassen du kom fra. Slik ser du
+   * byttet før du slipper. Ved slipp lander innholdet der det svevde.
+   */
+  const fraNr = dra?.fra.gruppe ?? null;
+  const malNr =
+    dra?.mal?.bytt && dra.mal.gruppe !== fraNr ? dra.mal.gruppe : null;
+  const malOkt = malNr !== null ? okter[malNr] : undefined;
+  const lastMal = !!malOkt && malOkt.skaret > 0;
+  const [landing, setLanding] = useState<{
+    id: string;
+    y: number;
+    fase: 0 | 1;
+  } | null>(null);
+  useLayoutEffect(() => {
+    if (!landing || landing.fase === 1) return;
+    // Én ramme i startposisjonen, så glir det på plass.
+    const r = requestAnimationFrame(() =>
+      setLanding((l) => (l ? { ...l, fase: 1 } : l)),
+    );
+    const t = window.setTimeout(() => setLanding(null), 400);
+    return () => {
+      cancelAnimationFrame(r);
+      window.clearTimeout(t);
+    };
+  }, [landing?.id, landing?.fase]);
+
+  /** Transform for innholdscellene i rad `i` (tema, periode, vurdering, agenda). */
+  function innholdsstil(i: number, id: string): CSSProperties | undefined {
+    if (fraNr === i && dra)
+      return {
+        transform: `translateY(${dra.d}px)`,
+        transition: "none",
+        position: "relative",
+        zIndex: 41,
+      };
+    if (malNr === i && !lastMal && fraNr !== null) {
+      const a = startPos({ gruppe: fraNr, nr: 0 });
+      const b = startPos({ gruppe: i, nr: 0 });
+      return {
+        transform: `translateY(${(a ?? 0) - (b ?? 0)}px)`,
+        transition: `transform ${DRATID}`,
+        position: "relative",
+        zIndex: 31,
+      };
+    }
+    if (landing?.id === id)
+      return landing.fase === 0
+        ? {
+            transform: `translateY(${landing.y}px)`,
+            transition: "none",
+            position: "relative",
+            zIndex: 41,
+          }
+        : {
+            transform: "translateY(0)",
+            transition: `transform ${DRATID}`,
+            position: "relative",
+            zIndex: 41,
+          };
+    if (dra) return { transition: `transform ${DRATID}` };
+    return undefined;
+  }
   const liste = useRef<HTMLDivElement>(null);
 
   // Mal et utvalg ved å dra over avkrysningene (19.3). Første rad avgjør om
@@ -980,6 +1090,7 @@ function Liste({
             {manedsnavn(maned + "-01")}
           </div>
           {gruppe.map((o) => {
+            const i = okter.indexOf(o);
             const erApen = apen === o.id;
             const vurd = vurderinger.get(o.id) ?? [];
             const per = perioder.get(o.id);
@@ -991,15 +1102,6 @@ function Liste({
                 className="relative px-0"
               >
                 {o.id === idagFor && <Idaglinje dato={idag} />}
-                {/* Plassen man drar fra, viser hva som havner her. */}
-                {erDratt({ gruppe: okter.indexOf(o), nr: 0 }) &&
-                  malOkt &&
-                  malOkt.id !== o.id &&
-                  !malOkt.skaret && (
-                    <div className="pointer-events-none absolute inset-0 flex items-center rounded-lg bg-flate-svak pl-[230px] text-[calc(13px*var(--tekst-skala))] italic text-blekk-svak">
-                      «{malOkt.tema || "tom økt"}» havner her
-                    </div>
-                  )}
                 <div
                   onPointerDown={(e) => {
                     // Dra i tittelen eller i ⋮⋮ (16.4). Skårede ligger fast.
@@ -1042,25 +1144,39 @@ function Liste({
                       vurd.length > 0
                         ? "inset 3px 0 0 var(--color-vurdering)"
                         : undefined,
-                    ...stil({ gruppe: okter.indexOf(o), nr: 0 }),
                   }}
                   className={`group relative grid h-[30px] cursor-default items-center gap-x-3 px-2 text-[calc(13px*var(--tekst-skala))] tabular-nums ${
                     blink.has(o.id) ? "bytteblink" : ""
                   } ${
-                    erDratt({ gruppe: okter.indexOf(o), nr: 0 })
-                      ? "z-20 rounded-lg bg-ark shadow-[0_10px_28px_rgba(36,31,51,0.22),inset_0_0_0_1.5px_var(--color-aksent)]"
-                      : byttesMed({ gruppe: okter.indexOf(o), nr: 0 }) &&
-                          !o.skaret
-                        ? "rounded-lg bg-ark opacity-55 shadow-[inset_0_0_0_1.5px_var(--color-linje-sterk)]"
-                        : erApen
-                          ? "rounded-t-lg bg-flate"
-                          : merket.has(o.id)
-                            ? "border-b border-linje-svak bg-valgt"
-                            : vurd.length > 0
-                              ? "border-b border-linje-svak bg-vurdering-flate hover:bg-flate-svak"
-                              : "border-b border-linje-svak hover:bg-flate-svak"
+                    erApen
+                      ? "rounded-t-lg bg-flate"
+                      : merket.has(o.id)
+                        ? "border-b border-linje-svak bg-valgt"
+                        : vurd.length > 0
+                          ? "border-b border-linje-svak bg-vurdering-flate hover:bg-flate-svak"
+                          : "border-b border-linje-svak hover:bg-flate-svak"
                   }`}
                 >
+                  {/* Kortet bak innholdet som svever eller glir (16.4). */}
+                  {(fraNr === i || (malNr === i && !lastMal)) && dra && (
+                    <span
+                      aria-hidden
+                      className={`pointer-events-none absolute -inset-x-2 -inset-y-[3px] rounded-lg bg-ark ${
+                        fraNr === i
+                          ? lastMal
+                            ? "shadow-[0_10px_28px_rgba(36,31,51,0.22),inset_0_0_0_1.5px_var(--color-feil)]"
+                            : "shadow-[0_10px_28px_rgba(36,31,51,0.22),inset_0_0_0_1.5px_var(--color-aksent)]"
+                          : "shadow-[0_4px_14px_rgba(36,31,51,0.12),inset_0_0_0_1px_var(--color-linje-sterk)]"
+                      }`}
+                      style={{
+                        ...innholdsstil(i, o.id),
+                        gridRow: 1,
+                        gridColumn: `${visFag ? 6 : 5} / -1`,
+                        position: "absolute",
+                        zIndex: fraNr === i ? 40 : 30,
+                      }}
+                    />
+                  )}
                   {/* ⋮⋮: dra til en annen økt for å bytte innhold (16.4). */}
                   {!o.skaret && (
                     <span
@@ -1107,7 +1223,10 @@ function Liste({
                     Vurderingsikonet henger ut i mellomrommet foran temaet,
                     så alle titlene starter på samme linje (§6).
                   */}
-                  <span className="relative flex min-w-0 items-center">
+                  <span
+                    className="relative flex min-w-0 items-center"
+                    style={innholdsstil(i, o.id)}
+                  >
                     {vurd.length > 0 && (
                       <Vurderingsikon
                         type={vurd[0].type}
@@ -1142,6 +1261,7 @@ function Liste({
                   {/* Perioden med ett klikk (16.2). */}
                   <span
                     className="min-w-0"
+                    style={innholdsstil(i, o.id)}
                     onClick={(e) => e.stopPropagation()}
                     onDoubleClick={(e) => e.stopPropagation()}
                   >
@@ -1168,13 +1288,15 @@ function Liste({
                     />
                   </span>
                   {/* Bare typen; temaet står i titten og på vurderingen. */}
-                  <Kappet
-                    verdi={[
-                      ...new Set(vurd.map((v) => vurderingstype(v.type))),
-                    ].join(", ")}
-                    tom=""
-                    klasse="text-[calc(12.5px*var(--tekst-skala))] font-semibold text-vurdering-tekst"
-                  />
+                  <span className="min-w-0" style={innholdsstil(i, o.id)}>
+                    <Kappet
+                      verdi={[
+                        ...new Set(vurd.map((v) => vurderingstype(v.type))),
+                      ].join(", ")}
+                      tom=""
+                      klasse="text-[calc(12.5px*var(--tekst-skala))] font-semibold text-vurdering-tekst"
+                    />
+                  </span>
                   {vis.has("varighet") && (
                     <span className="text-right text-blekk-dempet">
                       {o.varighetMin} min
@@ -1184,11 +1306,13 @@ function Liste({
                     <Kappet verdi={o.sted} tom="" klasse="text-blekk-dempet" />
                   )}
                   {vis.has("agenda") && (
-                    <Kappet
-                      verdi={o.agenda}
-                      tom=""
-                      klasse="text-blekk-dempet"
-                    />
+                    <span className="min-w-0" style={innholdsstil(i, o.id)}>
+                      <Kappet
+                        verdi={o.agenda}
+                        tom=""
+                        klasse="text-blekk-dempet"
+                      />
+                    </span>
                   )}
                   {vis.has("logg") && (
                     <Kappet

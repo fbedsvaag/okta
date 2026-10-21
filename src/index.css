@@ -2007,9 +2007,11 @@ html {
   }
 }
 
-/* Kolonnehodet og månedene i Økter (19.2): glass over radene som ruller under. */
+/*
+ * Kolonnehodet og månedene i Økter (19.2) står fast over radene som ruller
+ * under. Tett, ikke glass: i WebKit skinte tekst og periodebrikker gjennom
+ * som fargeklatter selv ved 96 % dekning (21.10).
+ */
 .okter-hode {
-  background: color-mix(in srgb, var(--color-ark) 90%, transparent);
-  -webkit-backdrop-filter: blur(14px) saturate(160%);
-  backdrop-filter: blur(14px) saturate(160%);
+  background: var(--color-ark);
 }
