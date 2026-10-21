@@ -4,6 +4,7 @@ import {
   fordelPlasser,
   gruppestorrelser,
   lagTilfeldig,
+  makkere,
   naboer,
   velgPlasser,
   type Fordelingselev,
@@ -442,5 +443,28 @@ describe("færre elever enn plasser (21.10)", () => {
     });
     const brukt = new Set([...r.plass.values()].map((n) => bord[n - 1].pult));
     expect(brukt).toEqual(new Set(["b0-0", "b0-1"]));
+  });
+});
+
+describe("makkerpar (21.10)", () => {
+  it("ved et firerbord er de to som sitter vannrett ved siden av hverandre makkere", () => {
+    const bord: Fordelingsplass[] = [0, 1, 2, 3].map((s) => ({
+      nr: s + 1,
+      pult: "b",
+      x: (s % 2) * 100,
+      y: Math.floor(s / 2) * 60,
+    }));
+    expect(makkere(bord)).toEqual([
+      [1, 2],
+      [3, 4],
+    ]);
+    // Rotert 90°: makkerne er de som sitter langs bordet, nå loddrett.
+    const rotert = bord.map((p) => ({ ...p, x: p.y, y: p.x }));
+    expect(makkere(rotert)).toEqual([
+      [1, 2],
+      [3, 4],
+    ]);
+    // Naboene (hold fra hverandre, bland) gjelder fortsatt hele bordet.
+    expect(naboer(bord).length).toBeGreaterThan(2);
   });
 });

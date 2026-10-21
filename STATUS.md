@@ -16,6 +16,16 @@ Lerretet (`docs/lerret/`) er fasit for det som er tegnet.
   langt unna gir ikke tom luft.
 - Perioder får nytt navn i Året (klikk navnet), på tavla (kolonnehodet) og i
   Økter (blyant ved hover, eller dobbeltklikk).
+- Makkerpar (`makkere`): ved et firerbord er de to som sitter ved siden av
+  hverandre langs bordet makkere, også når bordet er rotert. Gjelder
+  «Unngå dem som har sittet sammen», «Sitter ved» og Sidemann i Samarbeid;
+  «Hold fra hverandre» og «Bland» gjelder hele bordet. Samarbeid tar nå med
+  alle kart (også klasse og mentorgruppe), ikke bare fag.
+- Universell angring (⌘Z og knappen ved pilene): databaselaget husker
+  radene før hver skriving, så alt som lagres kan angres. Tette skrivinger
+  er én handling. Testet i `src/db/angring.test.ts`.
+- Klassekartet sier hvem parene er («Fredrik D. og Gustav G.»); klikk lyser
+  dem opp i kartet.
 - Vurderinger: fag-brikker med flervalg som i Økter, «Måned · Fag», og
   overskrifter uten grå blokk.
 

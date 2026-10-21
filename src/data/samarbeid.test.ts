@@ -46,12 +46,8 @@ describe("samarbeid (26.1–26.4)", () => {
       ]),
     },
   ];
-  // Plass 1 og 2 deler pult; 3 står alene.
-  const pult = new Map([
-    [1, "a"],
-    [2, "a"],
-    [3, "b"],
-  ]);
+  // Plass 1 og 2 er makkere; 3 står alene.
+  const pult = new Set(["1|2"]);
 
   it("teller grupper og sidemann, nyeste først", () => {
     const s = samarbeidFra(oppsett, "tony", pult);

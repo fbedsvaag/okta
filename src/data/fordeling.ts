@@ -163,6 +163,32 @@ export function velgPlasser(
   return ut;
 }
 
+/**
+ * Makkerpar (21.10): de som sitter ved siden av hverandre langs bordet
+ * (vannrett, eller langs bordet når det er rotert), eller to enkeltpulter
+ * inntil hverandre på samme rad. Ved et firerbord er det to par, ikke seks: de som sitter
+ * overfor eller på skrå, er ikke makkere. Det er disse som teller som «har
+ * sittet sammen» (Unngå, Sitter ved, Samarbeid).
+ */
+export function makkere(plasser: Fordelingsplass[]): [number, number][] {
+  const ut: [number, number][] = [];
+  for (let a = 0; a < plasser.length; a++)
+    for (let b = a + 1; b < plasser.length; b++) {
+      const p = plasser[a];
+      const q = plasser[b];
+      const dx = Math.abs(p.x - q.x);
+      const dy = Math.abs(p.y - q.y);
+      // Langs bordet: én retning likt, den andre én plass (ca. 100) unna.
+      // Det virker også når bordet er rotert. Overfor (60) er ikke makker.
+      const langs =
+        (dy <= 10 && dx >= 80 && dx <= 120) ||
+        (dx <= 10 && dy >= 80 && dy <= 120);
+      if (p.pult === q.pult ? langs : dy <= 10 && dx <= 110)
+        ut.push([p.nr, q.nr]);
+    }
+  return ut;
+}
+
 export type Plassresultat = {
   /** elev → plassnummer */
   plass: Map<string, number>;
@@ -207,6 +233,10 @@ export function fordelPlasser(
   const nabopar = naboer(plasser).map(
     ([a, b]) => [indeks.get(a)!, indeks.get(b)!] as const,
   );
+  // «Unngå dem som har sittet sammen» gjelder makkerparene.
+  const makker = new Set(
+    makkere(plasser).map(([a, b]) => `${indeks.get(a)}|${indeks.get(b)}`),
+  );
   const hold = new Set(inn.holdFra.map(([a, b]) => nokkel(a, b)));
 
   function poeng(sete: (string | null)[]): number {
@@ -219,8 +249,16 @@ export function fordelPlasser(
       if (hold.has(k)) p += V_HOLD;
       const ex = elev.get(x)!;
       const ey = elev.get(y)!;
-      if (inn.bland && ex.kjonn && ex.kjonn === ey.kjonn) p += V_BLAND;
-      if (inn.unnga) p += V_UNNGA * (inn.historikk.get(k) ?? 0);
+      // Jenter og gutter blandes blant makkerne (ved siden av hverandre).
+      if (
+        inn.bland &&
+        makker.has(`${a}|${b}`) &&
+        ex.kjonn &&
+        ex.kjonn === ey.kjonn
+      )
+        p += V_BLAND;
+      if (inn.unnga && makker.has(`${a}|${b}`))
+        p += V_UNNGA * (inn.historikk.get(k) ?? 0);
       if (inn.modus === "spre")
         p += V_MODUS * (1 - Math.abs(ex.innsats - ey.innsats));
     }

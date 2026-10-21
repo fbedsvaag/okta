@@ -84,6 +84,7 @@ export async function settInn(
     `INSERT INTO ${tabell} (${kolonner.join(", ")}) VALUES (${plassholdere})`,
     Object.values(rad),
   );
+  noter([{ tabell, id, felter: { slettet: NAA } }]);
   return id;
 }
 
@@ -104,6 +105,21 @@ export async function settInnEllerOppdater(
   const rad = { ...felter, id: nyId(), opprettet: tid, endret: tid };
   const kolonner = Object.keys(rad);
   const plassholdere = kolonner.map((_, i) => `$${i + 1}`).join(", ");
+  // Til angring: raden slik den var, eller ingen.
+  const finn = async () =>
+    (
+      await hent<Record<string, unknown>>(
+        `SELECT * FROM ${tabell} WHERE ${nokkel
+          .map((k, i) => `${k} = $${i + 1}`)
+          .join(" AND ")}`,
+        nokkel.map((k) => felter[k]),
+      )
+    )[0];
+  const for_ = angrer ? undefined : await finn();
+  const endres = [
+    ...Object.keys(felter).filter((k) => !nokkel.includes(k)),
+    "slettet",
+  ];
   const sett = [
     ...Object.keys(felter)
       .filter((k) => !nokkel.includes(k))
@@ -118,6 +134,13 @@ export async function settInnEllerOppdater(
      ON CONFLICT(${nokkel.join(", ")}) DO UPDATE SET ${sett}`,
     Object.values(rad),
   );
+  if (angrer) return;
+  if (for_)
+    noter([{ tabell, id: for_.id as string, felter: plukk(for_, endres) }]);
+  else {
+    const ny = await finn();
+    if (ny) noter([{ tabell, id: ny.id as string, felter: { slettet: NAA } }]);
+  }
 }
 
 /** UPDATE. Skriver endret automatisk — derfor ligger det her og ikke i hver visning. */
@@ -129,17 +152,20 @@ export async function oppdater(
   const rad = { ...felter, endret: naa() };
   const kolonner = Object.keys(rad);
   const sett = kolonner.map((k, i) => `${k} = $${i + 1}`).join(", ");
+  const for_ = angrer ? undefined : (await gamle(tabell, [id])).get(id);
   await (
     await db()
   ).execute(`UPDATE ${tabell} SET ${sett} WHERE id = $${kolonner.length + 1}`, [
     ...Object.values(rad),
     id,
   ]);
+  if (for_) noter([{ tabell, id, felter: plukk(for_, Object.keys(felter)) }]);
 }
 
 /** Soft delete. Ingenting i appen sletter rader for godt (SPEC §9). */
 export async function slett(tabell: string, id: string): Promise<void> {
   const tid = naa();
+  const for_ = angrer ? undefined : (await gamle(tabell, [id])).get(id);
   await (
     await db()
   ).execute(`UPDATE ${tabell} SET slettet = $1, endret = $2 WHERE id = $3`, [
@@ -147,6 +173,7 @@ export async function slett(tabell: string, id: string): Promise<void> {
     tid,
     id,
   ]);
+  if (for_) noter([{ tabell, id, felter: plukk(for_, ["slettet"]) }]);
 }
 
 // ------------------------------------------------------------ transaksjoner
@@ -165,6 +192,13 @@ export type Setning = { sql: string; verdier: unknown[] };
 export class Transaksjon {
   readonly setninger: Setning[] = [];
   private readonly tid = naa();
+  /** Det som skrives, til angring (rå `execute` angres ikke). */
+  private readonly ops: {
+    type: "inn" | "opp";
+    tabell: string;
+    id: string;
+    felt: string[];
+  }[] = [];
 
   execute(sql: string, verdier: unknown[] = []): void {
     this.setninger.push({ sql, verdier });
@@ -179,10 +213,12 @@ export class Transaksjon {
       `INSERT INTO ${tabell} (${kolonner.join(", ")}) VALUES (${plassholdere})`,
       Object.values(rad),
     );
+    this.ops.push({ type: "inn", tabell, id, felt: [] });
     return id;
   }
 
   oppdater(tabell: string, id: string, felter: Record<string, unknown>): void {
+    this.ops.push({ type: "opp", tabell, id, felt: Object.keys(felter) });
     const rad = { ...felter, endret: this.tid };
     const kolonner = Object.keys(rad);
     const sett = kolonner.map((k, i) => `${k} = $${i + 1}`).join(", ");
@@ -193,6 +229,7 @@ export class Transaksjon {
   }
 
   slett(tabell: string, id: string): void {
+    this.ops.push({ type: "opp", tabell, id, felt: ["slettet"] });
     this.execute(
       `UPDATE ${tabell} SET slettet = $1, endret = $2 WHERE id = $3`,
       [this.tid, this.tid, id],
@@ -202,12 +239,166 @@ export class Transaksjon {
   /** Kjører alt samlet. Feiler én setning, er ingenting lagret. */
   async kjor(): Promise<void> {
     if (this.setninger.length === 0) return;
+    // Til angring: radene slik de var før, lest samlet per tabell.
+    const motsatt: Motsatt[] = [];
+    if (!angrer) {
+      const perTabell = new Map<string, string[]>();
+      for (const o of this.ops)
+        if (o.type === "opp")
+          perTabell.set(o.tabell, [...(perTabell.get(o.tabell) ?? []), o.id]);
+      const for_ = new Map<string, Map<string, Record<string, unknown>>>();
+      for (const [t, ider] of perTabell) for_.set(t, await gamle(t, ider));
+      for (const o of this.ops) {
+        if (o.type === "inn")
+          motsatt.push({
+            tabell: o.tabell,
+            id: o.id,
+            felter: { slettet: NAA },
+          });
+        else {
+          const r = for_.get(o.tabell)?.get(o.id);
+          if (r)
+            motsatt.push({
+              tabell: o.tabell,
+              id: o.id,
+              felter: plukk(r, o.felt),
+            });
+        }
+      }
+    }
     const d = (await db()) as Database & {
       transaksjon?: (s: Setning[]) => Promise<void>;
     };
     // Testbasen (src/db/testbase.ts) kjører transaksjonen selv; i appen gjør
     // Rust det, på én tilkobling fra den samme puljen.
-    if (d.transaksjon) return d.transaksjon(this.setninger);
-    await invoke("transaksjon", { setninger: this.setninger });
+    if (d.transaksjon) await d.transaksjon(this.setninger);
+    else await invoke("transaksjon", { setninger: this.setninger });
+    noter(motsatt);
   }
+}
+
+// ------------------------------------------------------------ angring
+
+/**
+ * Universell angring (⌘Z, 21.10). Hver skriving gjennom laget her husker
+ * hvordan raden var før: en endring skrives tilbake, en ny rad slettes mykt,
+ * en sletting tas tilbake. Skrivinger tett etter hverandre (en handling som
+ * skriver flere steder) er én angring. Innstillingene og sikkerhetskopien
+ * skrives utenom og angres ikke. Loggen lever bare mens appen er åpen.
+ */
+
+/** «Sett til nå» — tiden for den myke slettingen når angringen kjøres. */
+const NAA = "\u0000naa";
+
+type Motsatt = { tabell: string; id: string; felter: Record<string, unknown> };
+
+export type Skriving = {
+  /** sist det ble skrevet i handlingen (ms) */
+  tid: number;
+  motsatt: Motsatt[];
+  tabeller: Set<string>;
+  /** det handlingen selv kalte seg («Byttet 12.10 og 14.10»), ellers null */
+  tekst: string | null;
+  /** en egen angre-funksjon, for det som ikke skriver i basen */
+  egen?: () => Promise<void> | void;
+};
+
+/** Hvor tett skrivinger må komme for å være én handling. */
+const GRUPPE_MS = 600;
+const logg: Skriving[] = [];
+const loggLyttere = new Set<() => void>();
+let angrer = false;
+
+function varsleLogg() {
+  loggLyttere.forEach((f) => f());
+}
+
+function noter(motsatt: Motsatt[]) {
+  if (angrer || motsatt.length === 0) return;
+  const naa = Date.now();
+  const sist = logg[logg.length - 1];
+  if (sist && !sist.egen && naa - sist.tid < GRUPPE_MS) {
+    sist.motsatt.push(...motsatt);
+    sist.tid = naa;
+    for (const m of motsatt) sist.tabeller.add(m.tabell);
+  } else {
+    logg.push({
+      tid: naa,
+      motsatt: [...motsatt],
+      tabeller: new Set(motsatt.map((m) => m.tabell)),
+      tekst: null,
+    });
+    if (logg.length > 100) logg.shift();
+  }
+  varsleLogg();
+}
+
+const plukk = (rad: Record<string, unknown>, felt: string[]) =>
+  Object.fromEntries(felt.map((f) => [f, rad[f] ?? null]));
+
+async function gamle(
+  tabell: string,
+  ider: string[],
+): Promise<Map<string, Record<string, unknown>>> {
+  const ut = new Map<string, Record<string, unknown>>();
+  for (let i = 0; i < ider.length; i += 400) {
+    const del = ider.slice(i, i + 400);
+    const rader = await hent<Record<string, unknown>>(
+      `SELECT * FROM ${tabell} WHERE id IN (${del.map((_, j) => `$${j + 1}`).join(", ")})`,
+      del,
+    );
+    for (const r of rader) ut.set(r.id as string, r);
+  }
+  return ut;
+}
+
+/** Den siste handlingen som kan angres, eller null. */
+export function sisteSkriving(): Skriving | null {
+  return logg[logg.length - 1] ?? null;
+}
+
+/** En egen angring for noe som ikke skriver i basen (eller en test). */
+export function leggTilEgenAngring(
+  tekst: string,
+  egen: () => Promise<void> | void,
+): void {
+  logg.push({ tid: Date.now(), motsatt: [], tabeller: new Set(), tekst, egen });
+  varsleLogg();
+}
+
+/** Angrer den siste handlingen. Gir den tilbake, eller null. */
+export async function angreSkriving(): Promise<Skriving | null> {
+  const s = logg.pop();
+  varsleLogg();
+  if (!s) return null;
+  angrer = true;
+  try {
+    if (s.egen) await s.egen();
+    else {
+      const t = new Transaksjon();
+      const naa_ = naa();
+      for (const m of [...s.motsatt].reverse())
+        t.oppdater(
+          m.tabell,
+          m.id,
+          Object.fromEntries(
+            Object.entries(m.felter).map(([k, v]) => [k, v === NAA ? naa_ : v]),
+          ),
+        );
+      await t.kjor();
+    }
+  } finally {
+    angrer = false;
+  }
+  return s;
+}
+
+export function lyttSkrivinger(f: () => void): () => void {
+  loggLyttere.add(f);
+  return () => loggLyttere.delete(f);
+}
+
+/** Bare til testene. */
+export function tomSkrivelogg(): void {
+  logg.length = 0;
 }

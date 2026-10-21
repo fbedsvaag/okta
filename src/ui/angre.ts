@@ -1,53 +1,112 @@
+import {
+  angreSkriving,
+  leggTilEgenAngring,
+  lyttSkrivinger,
+  sisteSkriving,
+  tomSkrivelogg,
+  type Skriving,
+} from "../db";
+import {
+  varsle,
+  varsleElever,
+  varsleKlassekart,
+  varsleVurderinger,
+} from "../data/endringer";
+
 /**
- * Angre med ⌘Z (ARBEIDSLISTE 16.3, 16.4). Handlinger som endrer mange
- * ting på en gang — periode på flere økter, bytte to økter, slette — legger
- * igjen en angre-funksjon her. ⌘Z utenfor et tekstfelt kjører den siste.
- * Toasten (ui/Toast.tsx) viser det samme som knapp.
+ * Angre med ⌘Z, knappen i verktøylinja og «Angre» i toasten (21.10).
  *
- * Stakken lever bare så lenge appen er åpen; det er en angre-knapp, ikke en
- * historikk.
+ * Universell: databaselaget (src/db) husker hvordan hver rad var før den
+ * ble skrevet, så alt som lagres kan angres — også en endret tittel eller
+ * et feilklikk. Handlinger som har et godt navn («Byttet 12.10 og 14.10»),
+ * gir det til den siste skrivingen med `leggTilAngring`; ellers får den et
+ * navn etter hva som ble endret. Loggen lever bare mens appen er åpen.
  */
 
 export type Angring = { tekst: string; angre: () => Promise<void> | void };
 
-const stakk: Angring[] = [];
-const lyttere = new Set<() => void>();
+/** Hva som ble endret, sagt med vanlige ord. */
+const HVA: Record<string, string> = {
+  okt: "økta",
+  oktnotat: "notatet",
+  okt_kompetansemal: "kompetansemålene",
+  periode: "perioden",
+  periode_kompetansemal: "kompetansemålene",
+  vurdering: "vurderingen",
+  vurdering_okt: "vurderingen",
+  vurderingsresultat: "resultatet",
+  skaring: "skåringen",
+  elev: "eleven",
+  elev_fag: "eleven",
+  elev_klasse: "eleven",
+  elevnotat: "notatet",
+  elevbilde: "bildet",
+  samtale: "samtalen",
+  samtaledag: "samtalene",
+  klassekart: "klassekartet",
+  plassering: "klassekartet",
+  oppsett: "gruppene",
+  kart_plassfarge: "pultfargene",
+  elevregel: "klassekartet",
+  rom: "rommet",
+  fag: "faget",
+  skolear_fag: "faget",
+  skolear: "skoleåret",
+  fridag: "skoleruta",
+  gjoremal: "gjøremålet",
+  skala: "skalaen",
+  skalaverdi: "skalaen",
+  klasse: "klassen",
+};
 
+/** Navnet på en handling i loggen. */
+function navn(s: Skriving): string {
+  if (s.tekst) return s.tekst;
+  const ord = [...new Set([...s.tabeller].map((t) => HVA[t] ?? "en endring"))];
+  return `endringen i ${ord.slice(0, 2).join(" og ")}`;
+}
+
+/**
+ * Gir den siste handlingen et navn. Skjedde det ikke noe i basen nettopp
+ * (en test, eller noe utenfor basen), legges den inn med sin egen angring.
+ */
 export function leggTilAngring(a: Angring): void {
-  stakk.push(a);
-  if (stakk.length > 50) stakk.shift();
-  lyttere.forEach((f) => f());
+  const s = sisteSkriving();
+  if (s && !s.egen && !s.tekst && Date.now() - s.tid < 3000) {
+    s.tekst = a.tekst;
+    return;
+  }
+  leggTilEgenAngring(a.tekst, a.angre);
 }
 
 /** Den siste angringen, eller null. */
 export function sisteAngring(): Angring | null {
-  return stakk[stakk.length - 1] ?? null;
+  const s = sisteSkriving();
+  return s ? { tekst: navn(s), angre: () => void angreSiste() } : null;
 }
 
 /** Kjører og fjerner den siste. Gir teksten tilbake, så den kan vises. */
 export async function angreSiste(): Promise<string | null> {
-  const a = stakk.pop();
-  lyttere.forEach((f) => f());
-  if (!a) return null;
-  await a.angre();
-  return a.tekst;
+  const s = await angreSkriving();
+  if (!s) return null;
+  // Alle skjermer leser på nytt: angringen kan ha rørt hva som helst.
+  varsle();
+  varsleElever();
+  varsleVurderinger();
+  varsleKlassekart();
+  return navn(s);
 }
 
-/** Fjerner en bestemt angring (toasten gjorde den). */
-export async function angre(a: Angring): Promise<void> {
-  const i = stakk.lastIndexOf(a);
-  if (i < 0) return;
-  stakk.splice(i, 1);
-  lyttere.forEach((f) => f());
-  await a.angre();
+/** «Angre» i toasten: den siste handlingen. */
+export async function angre(_a: Angring): Promise<void> {
+  await angreSiste();
 }
 
 export function lyttAngring(f: () => void): () => void {
-  lyttere.add(f);
-  return () => lyttere.delete(f);
+  return lyttSkrivinger(f);
 }
 
 /** Bare til testene. */
 export function tomAngring(): void {
-  stakk.length = 0;
+  tomSkrivelogg();
 }

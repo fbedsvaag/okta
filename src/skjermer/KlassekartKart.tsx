@@ -26,7 +26,7 @@ import {
 } from "../data/klassekart";
 import {
   fordelPlasser,
-  naboer,
+  makkere,
   type Brudd,
   type Modus,
 } from "../data/fordeling";
@@ -120,6 +120,13 @@ export function KlassekartKart({
   const [visk, setVisk] = useState(false);
   const maling = useRef<{ modus: string | null } | null>(null);
   const [visBilde, setVisBilde] = useState(false);
+  // Et par som er klikket i lista over brudd: lyser opp i kartet en stund.
+  const [uthev, setUthev] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    if (uthev.size === 0) return;
+    const t = window.setTimeout(() => setUthev(new Set()), 4000);
+    return () => window.clearTimeout(t);
+  }, [uthev]);
   const [melding, setMelding] = useState<string | null>(null);
   const [lagret, setLagret] = useState(true);
   const [delMeny, setDelMeny] = useState<{ x: number; y: number } | null>(null);
@@ -285,7 +292,7 @@ export function KlassekartKart({
 
   // Naboparene i rommet, og hvem som har sittet sammen før.
   const naboSett = useMemo(
-    () => new Set(naboer(plasser).map(([a, b]) => `${a}|${b}`)),
+    () => new Set(makkere(plasser).map(([a, b]) => `${a}|${b}`)),
     [plasser],
   );
   const sammen = useMemo(
@@ -317,7 +324,7 @@ export function KlassekartKart({
       const nr = naa.get(id);
       if (nr) lasteMap.set(id, nr);
     }
-    const naboer2 = new Set(naboer(seter).map(([a, b]) => `${a}|${b}`));
+    const naboer2 = new Set(makkere(seter).map(([a, b]) => `${a}|${b}`));
     const hist = sammenFor(
       h,
       (a, b) =>
@@ -610,6 +617,39 @@ export function KlassekartKart({
     if (e) elevPa.set(nr, e);
   }
   const utenPlass = elever.filter((e) => !plass.has(e.id) && !borte.has(e.id));
+
+  // Makkerparene slik kartet står nå — også etter bytter for hånd: hvem av
+  // samme kjønn sitter sammen, og hvem har sittet sammen før (21.10).
+  const paPlass = new Map([...plass].map(([id, nr]) => [nr, id]));
+  const sittende = [...naboSett]
+    .map((k) => k.split("|").map(Number))
+    .map(([a, b]) => [paPlass.get(a), paPlass.get(b)])
+    .filter((x): x is [string, string] => !!x[0] && !!x[1]);
+  const sammeKjonn = innst.bland
+    ? sittende.filter(([a, b]) => {
+        const k = elevAv.get(a)?.kjonn;
+        return !!k && k === elevAv.get(b)?.kjonn;
+      })
+    : [];
+  // «Før»: plasseringen som vises, teller ikke med seg selv — den sist
+  // brukte når kartet er lagret, eller den gamle som vises fra en økt.
+  const erMakker = (x: { plass: number | null }, y: { plass: number | null }) =>
+    naboSett.has(`${x.plass}|${y.plass}`) ||
+    naboSett.has(`${y.plass}|${x.plass}`);
+  const for_ = historisk
+    ? sammenFor(
+        historikk.filter((o) => o.tid < historisk.tid),
+        erMakker,
+      )
+    : lagret
+      ? sammenFor(historikk.slice(1), erMakker)
+      : sammen;
+  const satFor = innst.unnga
+    ? sittende.filter(
+        ([a, b]) =>
+          (for_.ganger.get(a < b ? `${a}|${b}` : `${b}|${a}`) ?? 0) > 0,
+      )
+    : [];
   const oftest = [...sammen.ganger].sort((a, b) => b[1] - a[1])[0];
   const navnPa = (id: string) => {
     const e = elevAv.get(id);
@@ -1001,11 +1041,13 @@ export function KlassekartKart({
                           : last
                             ? "var(--color-ark)"
                             : undefined,
-                      boxShadow: pf
-                        ? `inset 3px 0 0 ${pf}`
-                        : last
-                          ? "inset 0 0 0 1.5px var(--color-aksent)"
-                          : undefined,
+                      boxShadow: uthev.has(id)
+                        ? "0 0 0 2.5px var(--color-aksent)"
+                        : pf
+                          ? `inset 3px 0 0 ${pf}`
+                          : last
+                            ? "inset 0 0 0 1.5px var(--color-aksent)"
+                            : undefined,
                       cursor: malPa ? "cell" : undefined,
                     }}
                   >
@@ -1307,8 +1349,46 @@ export function KlassekartKart({
             </Blokk>
 
             <div className="mt-auto flex flex-col gap-2 pt-4">
+              {[
+                {
+                  par: sammeKjonn,
+                  tekst: (n: number) =>
+                    `${n} ${n === 1 ? "par" : "par"} av samme kjønn sitter sammen:`,
+                },
+                {
+                  par: satFor,
+                  tekst: (n: number) =>
+                    `${n} ${n === 1 ? "par" : "par"} har sittet sammen før:`,
+                },
+              ]
+                .filter((x) => x.par.length > 0)
+                .map((x, i) => (
+                  <p
+                    key={`p${i}`}
+                    className="text-[calc(12px*var(--tekst-skala))] leading-normal text-varsel"
+                  >
+                    {x.tekst(x.par.length)}{" "}
+                    {x.par.map(([a, b], j) => (
+                      <span key={`${a}-${b}`}>
+                        {j > 0 && " · "}
+                        <button
+                          onClick={() => setUthev(new Set([a, b]))}
+                          title="Vis dem i kartet"
+                          className="underline decoration-dotted underline-offset-2 hover:text-blekk"
+                        >
+                          {navnPa(a)} og {navnPa(b)}
+                        </button>
+                      </span>
+                    ))}
+                  </p>
+                ))}
               {brudd
-                .filter((b) => b.regel !== "plass")
+                .filter(
+                  (b) =>
+                    b.regel !== "plass" &&
+                    b.regel !== "bland" &&
+                    b.regel !== "unnga",
+                )
                 .map((b, i) => (
                   <p
                     key={i}

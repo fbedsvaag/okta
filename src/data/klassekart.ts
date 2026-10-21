@@ -1,5 +1,6 @@
 import { hent, nyId, oppdater, settInn, slett, Transaksjon } from "../db";
 import { varsleKlassekart } from "./endringer";
+import { makkere } from "./fordeling";
 
 /**
  * Klassekart og gruppegenerator (SPEC §4.11, migrasjon 024).
@@ -932,9 +933,13 @@ export async function hentElevIKart(
     const sitterVed = minPlass
       ? (sist?.rader ?? [])
           .filter((r) => r.elevId !== elevId)
-          .filter(
-            (r) =>
-              plasser.find((p) => p.nr === r.plass)?.pult === minPlass.pult,
+          // Makkerne: ved siden av, vannrett (ikke overfor ved et firerbord).
+          .filter((r) =>
+            makkere(plasser).some(
+              ([a, b]) =>
+                (a === minPlass.nr && b === r.plass) ||
+                (b === minPlass.nr && a === r.plass),
+            ),
           )
           .map((r) => navn.get(r.elevId))
           .filter((x): x is Navn => !!x)

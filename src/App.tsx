@@ -1,4 +1,6 @@
 import { createPortal } from "react-dom";
+import { angreSiste, lyttAngring, sisteAngring } from "./ui/angre";
+import { visToast } from "./ui/Toast";
 import { useSveip } from "./ui/sveip";
 import { hentKart, type Kart } from "./data/klassekart";
 import { lyttElever, lyttKlassekart } from "./data/endringer";
@@ -794,6 +796,7 @@ function Verktoylinje({
       <span className="flex shrink-0 items-center">
         <Pil retning="tilbake" av={!kanTilbake} onKlikk={onTilbake} />
         <Pil retning="fram" av={!kanFram} onKlikk={onFram} />
+        <Angreknapp />
       </span>
       {/* Til body: glasset rundt gjør ellers «fixed» relativ til kapselen. */}
       {sveip !== 0 &&
@@ -911,6 +914,43 @@ function Visningsbryter({
       verdi={visning}
       settVerdi={(v) => ga(v as Visning)}
     />
+  );
+}
+
+/**
+ * Angre (⌘Z), synlig ved pilene (21.10). Angrer den siste handlingen —
+ * hva som helst som er lagret — og sier hva i hjelpeteksten.
+ */
+function Angreknapp() {
+  const [siste, setSiste] = useState(sisteAngring());
+  useEffect(() => lyttAngring(() => setSiste(sisteAngring())), []);
+  return (
+    <button
+      onClick={() =>
+        void angreSiste().then((t) => t && visToast(`Angret: ${t}`))
+      }
+      disabled={!siste}
+      aria-label="Angre"
+      title={
+        siste ? `Angre ${siste.tekst} (${visTast("⌘Z")})` : "Ingenting å angre"
+      }
+      className="ml-0.5 grid h-8 w-8 place-items-center rounded-full text-blekk hover:bg-[var(--glass-valgt)] disabled:text-blekk-svakest disabled:hover:bg-transparent"
+    >
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 16 16"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden
+      >
+        <path d="M5.5 3.5L2.5 6.5l3 3" />
+        <path d="M2.5 6.5h7a4 4 0 010 8H7" />
+      </svg>
+    </button>
   );
 }
 

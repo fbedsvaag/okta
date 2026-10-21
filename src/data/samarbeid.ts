@@ -8,6 +8,7 @@ import {
   type Kart,
   type Oppsett,
 } from "./klassekart";
+import { makkere } from "./fordeling";
 
 /**
  * Samarbeid på elevkortet (ARBEIDSLISTE §26, lerretet ElevSamarbeid): hvem
@@ -29,13 +30,14 @@ export type Hendelse = {
 export type Kilde = "begge" | "grupper" | "sidemann";
 
 /**
- * Hendelsene per klassekamerat: samme gruppe i et gruppesett, eller samme
- * pult i en plassering. `pultAv`: plassnummer → pult, fra kartets rom.
+ * Hendelsene per klassekamerat: samme gruppe i et gruppesett, eller
+ * makkere i en plassering (ved siden av hverandre, vannrett — se
+ * `makkere`). `makkerpar`: «a|b» for plassnumrene som er makkere.
  */
 export function samarbeidFra(
   oppsett: { type: "gruppe" | "plass"; o: Oppsett }[],
   elevId: string,
-  pultAv: Map<number, string>,
+  makkerpar: Set<string>,
 ): Map<string, Hendelse[]> {
   const ut = new Map<string, Hendelse[]>();
   const legg = (id: string, h: Hendelse) =>
@@ -47,11 +49,14 @@ export function samarbeidFra(
       if (r.elevId === elevId) continue;
       if (type === "gruppe" && min.gruppe !== null && r.gruppe === min.gruppe)
         legg(r.elevId, { type: "gruppe", navn: o.navn, tid: o.tid });
-      if (type === "plass" && min.plass && r.plass) {
-        const p = pultAv.get(min.plass);
-        if (p && pultAv.get(r.plass) === p)
-          legg(r.elevId, { type: "sidemann", navn: o.navn, tid: o.tid });
-      }
+      if (
+        type === "plass" &&
+        min.plass &&
+        r.plass &&
+        (makkerpar.has(`${min.plass}|${r.plass}`) ||
+          makkerpar.has(`${r.plass}|${min.plass}`))
+      )
+        legg(r.elevId, { type: "sidemann", navn: o.navn, tid: o.tid });
     }
   }
   for (const l of ut.values()) l.sort((a, b) => b.tid.localeCompare(a.tid));
@@ -73,8 +78,8 @@ export type Samarbeid = {
 };
 
 /**
- * Samarbeidet i hvert fag eleven har et kart (eller lagrede grupper) i.
- * Kartene for fag, også de skjulte gruppekartene.
+ * Samarbeidet i hvert kart eleven er med i — fag, klasse og mentorgruppe,
+ * også de skjulte gruppekartene.
  */
 export async function hentSamarbeid(
   elevId: string,
@@ -86,12 +91,11 @@ export async function hentSamarbeid(
   ]);
   const ut: Samarbeid[] = [];
   for (const k of kartene) {
-    if (k.kildeType !== "fag") continue;
     const elever = await hentKildeElever(k.kildeType, k.kildeId, skolearId);
     if (!elever.some((e) => e.id === elevId)) continue;
     const rom = rommene.find((r) => r.id === k.romId);
-    const pultAv = new Map(
-      plasserIRom(rom?.deler ?? []).map((p) => [p.nr, p.pult]),
+    const makkerpar = new Set(
+      makkere(plasserIRom(rom?.deler ?? [])).map(([a, b]) => `${a}|${b}`),
     );
     const [g, p] = await Promise.all([
       hentOppsett(k.id, "gruppe"),
@@ -108,7 +112,7 @@ export async function hentSamarbeid(
           ...p.map((o) => ({ type: "plass" as const, o })),
         ],
         elevId,
-        pultAv,
+        makkerpar,
       ),
     });
   }
