@@ -109,6 +109,60 @@ export function naboer(plasser: Fordelingsplass[]): [number, number][] {
   return ut;
 }
 
+/**
+ * Plassene som brukes når det er færre elever enn plasser: pultene nærmest
+ * tavla først (plassene er nummerert forfra), og fordelt så ingen sitter
+ * alene ved en pult — står det én igjen, får den en fra pulten foran. På en
+ * pult som ikke fylles, brukes plassene forfra og ved siden av hverandre.
+ * Pulter med en låst elev er alltid med.
+ */
+export function velgPlasser(
+  plasser: Fordelingsplass[],
+  antall: number,
+  laste: Set<number> = new Set(),
+): Set<number> {
+  if (antall >= plasser.length) return new Set(plasser.map((p) => p.nr));
+  const pulter = new Map<string, Fordelingsplass[]>();
+  for (const p of [...plasser].sort((a, b) => a.nr - b.nr))
+    pulter.set(p.pult, [...(pulter.get(p.pult) ?? []), p]);
+  const rekke = [...pulter.values()].sort(
+    (a, b) =>
+      Number(b.some((p) => laste.has(p.nr))) -
+        Number(a.some((p) => laste.has(p.nr))) || a[0].nr - b[0].nr,
+  );
+  // Pultene som trengs, og hvor mange som skal sitte ved hver.
+  const valgt: { seter: Fordelingsplass[]; n: number }[] = [];
+  let igjen = antall;
+  for (const seter of rekke) {
+    if (igjen <= 0 && !seter.some((p) => laste.has(p.nr))) continue;
+    const n = Math.max(
+      seter.filter((p) => laste.has(p.nr)).length,
+      Math.min(seter.length, Math.max(0, igjen)),
+    );
+    valgt.push({ seter, n });
+    igjen -= n;
+  }
+  // Ingen alene: den siste pulten med én får en fra en pult foran som har
+  // minst tre.
+  for (let i = valgt.length - 1; i >= 0; i--) {
+    const v = valgt[i];
+    if (v.n !== 1 || v.seter.length < 2) continue;
+    const giver = valgt.find((x, j) => j !== i && x.n >= 3);
+    if (giver) {
+      giver.n--;
+      v.n++;
+    }
+  }
+  const ut = new Set<number>();
+  for (const v of valgt) {
+    const last = v.seter.filter((p) => laste.has(p.nr));
+    const frie = v.seter.filter((p) => !laste.has(p.nr));
+    for (const p of [...last, ...frie].slice(0, Math.max(v.n, last.length)))
+      ut.add(p.nr);
+  }
+  return ut;
+}
+
 export type Plassresultat = {
   /** elev → plassnummer */
   plass: Map<string, number>;
@@ -140,7 +194,15 @@ export function fordelPlasser(
   }
   const lasteIder = new Set(fast.filter((x): x is string => x !== null));
   const frie = inn.elever.filter((e) => !lasteIder.has(e.id)).map((e) => e.id);
-  const ledige = plasser.map((_, i) => i).filter((i) => fast[i] === null);
+  // Færre elever enn plasser: pultene nærmest tavla, og ingen alene.
+  const iBruk = velgPlasser(
+    plasser,
+    inn.elever.length,
+    new Set([...inn.laste.values()]),
+  );
+  const ledige = plasser
+    .map((_, i) => i)
+    .filter((i) => fast[i] === null && iBruk.has(plasser[i].nr));
 
   const nabopar = naboer(plasser).map(
     ([a, b]) => [indeks.get(a)!, indeks.get(b)!] as const,

@@ -5,6 +5,7 @@ import {
   gruppestorrelser,
   lagTilfeldig,
   naboer,
+  velgPlasser,
   type Fordelingselev,
   type Fordelingsplass,
 } from "./fordeling";
@@ -388,5 +389,58 @@ describe("fordelGrupper", () => {
       laste: new Map(),
     });
     expect(r.brudd).toEqual([]);
+  });
+});
+
+describe("færre elever enn plasser (21.10)", () => {
+  // Åtte bord for fire, to i bredden, fire rader bakover. Plassene er
+  // nummerert forfra.
+  const bord: Fordelingsplass[] = [];
+  let nr = 1;
+  for (let rad = 0; rad < 4; rad++)
+    for (let kol = 0; kol < 2; kol++)
+      for (let s = 0; s < 4; s++)
+        bord.push({
+          nr: nr++,
+          pult: `b${rad}-${kol}`,
+          x: kol * 400 + (s % 2) * 100,
+          y: rad * 200 + Math.floor(s / 2) * 60,
+        });
+
+  it("bruker bordene nærmest tavla, fulle", () => {
+    const i = velgPlasser(bord, 16);
+    expect([...i].sort((a, b) => a - b)).toEqual(
+      Array.from({ length: 16 }, (_, k) => k + 1),
+    );
+  });
+
+  it("ingen sitter alene ved et bord", () => {
+    const i = velgPlasser(bord, 9);
+    const perBord = new Map<string, number>();
+    for (const p of bord)
+      if (i.has(p.nr)) perBord.set(p.pult, (perBord.get(p.pult) ?? 0) + 1);
+    expect([...perBord.values()].every((n) => n >= 2)).toBe(true);
+    expect(i.size).toBe(9);
+  });
+
+  it("fordelPlasser setter elevene der", () => {
+    const elever = Array.from({ length: 6 }, (_, k) => ({
+      id: `e${k}`,
+      kjonn: null,
+      innsats: 0.5,
+    }));
+    const r = fordelPlasser({
+      elever,
+      plasser: bord,
+      laste: new Map(),
+      holdFra: [],
+      historikk: new Map(),
+      modus: "tilfeldig",
+      bland: false,
+      unnga: false,
+      frø: 3,
+    });
+    const brukt = new Set([...r.plass.values()].map((n) => bord[n - 1].pult));
+    expect(brukt).toEqual(new Set(["b0-0", "b0-1"]));
   });
 });
