@@ -43,6 +43,16 @@ Lerretet (`docs/lerret/`) er fasit for det som er tegnet.
   Kompetansemål knyttes med en periode valgt; uten valg «✓ Dekket» med
   prikker eller «Ikke dekket». «Gi N økter perioden» fyller hull. Ikke
   bygget: bryteren Tidslinje · Tavle (21.1), «Skriv ut årsplan» her.
+- **20.7 Fjorårets år som mal** (`data/mal.ts`, `skjermer/Malark.tsx`):
+  «Hent fra i fjor …» i Året når faget fantes året før, og et tilbud øverst
+  i Året når faget ikke har perioder i år. Periodene legges på de samme
+  ukene regnet fra skoleårets første uke; dialogen viser datoene i fjor og
+  i år og antall økter (+/−). Valg: perioder, kompetansemål, tema, plan og
+  agenda (bare der årets økt er tom), vurderinger på nærmeste økt.
+  Erstatter årets perioder (soft delete) i én transaksjon, og angres med
+  ⌘Z. Vurderingene blir vanlige vurderinger: det finnes ingen
+  utkast-status (ville krevd en ny kolonne). Tilbudet kommer i Året, ikke
+  i selve dialogen for nytt skoleår: der finnes ingen økter ennå.
 
 ## Runde 19 (20.10, ARBEIDSLISTE §19)
 

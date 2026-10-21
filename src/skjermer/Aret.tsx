@@ -35,6 +35,8 @@ import {
 import { visToast } from "../ui/Toast";
 import { leggTilAngring } from "../ui/angre";
 import { Vurderingsikon } from "../ui/Vurderingsikon";
+import { finnFjoraret, type Fjorar } from "../data/mal";
+import { Malark } from "./Malark";
 
 /** Fargene en ny periode kan få (lerretet Arsplanlegger). */
 const NYFARGER = [
@@ -95,6 +97,9 @@ export function Aret({ skolear, fag }: { skolear: Skolear; fag: FagIAr }) {
     p: Periode;
   } | null>(null);
   const stripeRef = useRef<HTMLDivElement>(null);
+  // Fjorårets fag, til «Hent fra i fjor …» (20.7).
+  const [fjor, setFjor] = useState<Fjorar | null>(null);
+  const [malApen, setMalApen] = useState(false);
 
   async function last() {
     const [o, f, p, k, v] = await Promise.all([
@@ -121,6 +126,7 @@ export function Aret({ skolear, fag }: { skolear: Skolear; fag: FagIAr }) {
   useEffect(() => {
     void last();
     void finnFag(fag.grepKode).then((g) => setMaal(g?.kompetansemaal ?? []));
+    void finnFjoraret(skolear, fag.fagId).then(setFjor);
     return lytt(() => void last());
   }, [fag.id, skolear.id]);
 
@@ -421,6 +427,17 @@ export function Aret({ skolear, fag }: { skolear: Skolear; fag: FagIAr }) {
               : "Dra periodene inn på året, eller dra over en tom del av året for å lage en ny. Klikk en periode for å knytte mål."}
           </p>
         </div>
+        {fjor && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setMalApen(true);
+            }}
+            className="self-center rounded-full border border-linje bg-ark px-3.5 py-1.5 text-liten hover:bg-flate"
+          >
+            Hent fra i fjor …
+          </button>
+        )}
         <span className="grow" />
         <div className="w-80">
           <div className="flex justify-between text-[calc(12.5px*var(--tekst-skala))]">
@@ -448,6 +465,24 @@ export function Aret({ skolear, fag }: { skolear: Skolear; fag: FagIAr }) {
           </div>
         </div>
       </div>
+
+      {fjor && perioder.length === 0 && fjor.perioder.length > 0 && (
+        <div className="flex shrink-0 items-center gap-3 rounded-xl bg-flate-svak px-4 py-2.5 text-liten">
+          <span>
+            Du hadde {fjor.perioder.length} perioder i {fag.kode} i {fjor.navn}.
+            Vil du bruke dem som utgangspunkt?
+          </span>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setMalApen(true);
+            }}
+            className="rounded-full bg-aksent px-3 py-1 font-medium text-ark"
+          >
+            Hent fra i fjor …
+          </button>
+        </div>
+      )}
 
       {/* Stripa: hele året, økt for økt. */}
       <div
@@ -834,6 +869,18 @@ export function Aret({ skolear, fag }: { skolear: Skolear; fag: FagIAr }) {
           )}
         </div>
       </div>
+
+      {/* Nytt år uten perioder: fjoråret tilbys som mal. */}
+      {malApen && fjor && (
+        <Malark
+          fjor={fjor}
+          skolear={skolear}
+          fag={fag}
+          okter={okter}
+          perioder={perioder}
+          onLukk={() => setMalApen(false)}
+        />
+      )}
 
       {spokelse && (
         <div

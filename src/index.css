@@ -2404,3 +2404,12 @@ textarea,
     transition: none;
   }
 }
+.malrad {
+  display: grid;
+  grid-template-columns: 1.5fr 1.2fr 1.2fr 70px;
+  align-items: center;
+  gap: 10px;
+  min-height: 34px;
+  padding: 0 14px;
+  font-size: calc(13px * var(--tekst-skala));
+}
