@@ -25,14 +25,20 @@ import {
   type Brudd,
   type Modus,
 } from "../data/fordeling";
-import { gruppeListe, kortnavn } from "../data/karttegning";
+import { kortnavn } from "../data/karttegning";
 import { IVerktoylinja } from "../ui/Verktoylinje";
 import { Bryter } from "../ui/felles";
 import { Elevfoto } from "../ui/Elevfoto";
 import { Avkrysning, innsatsfarge } from "./KlassekartKart";
 import { hovedtast, tast as visTast } from "../ui/taster";
 import { PULTFARGER } from "../data/pultfarger";
-import { Gruppebilde } from "./Gruppebilde";
+import {
+  Gruppebilde,
+  somSett,
+  useNavnevalg,
+  type Bildegruppe,
+} from "./Gruppebilde";
+import { gruppeTeams, type Navnevalg } from "../data/gruppebilde";
 
 /**
  * Klassekartet — Grupper (SPEC §4.11, lerretet «KlassekartGrupper»).
@@ -95,6 +101,11 @@ export function KlassekartGrupper({
   const [aktivt, setAktivt] = useState<string | null>(null);
   const [visTidligere, setVisTidligere] = useState(false);
   const [visBilde, setVisBilde] = useState(false);
+  const [valg, setValg] = useNavnevalg();
+  // Det som ble kopiert til Teams, vist under knappen (25.10).
+  const [kopiert, setKopiert] = useState(false);
+  const teamsKnapp = useRef<HTMLButtonElement>(null);
+  const [teamsPos, setTeamsPos] = useState({ top: 0, right: 0 });
   const tidligereKnapp = useRef<HTMLButtonElement>(null);
   const [tidligerePos, setTidligerePos] = useState({ top: 0, right: 0 });
   useLayoutEffect(() => {
@@ -113,7 +124,12 @@ export function KlassekartGrupper({
     per !== null
       ? Math.max(1, Math.round(elever.length / Math.max(1, per)))
       : Math.max(1, Math.min(innst.antallGrupper, elever.length || 1));
-  const storrelser = gruppestorrelser(elever.length, antall);
+  // Det som vises: gruppene på skjermen (et lagret sett kan ha et annet
+  // antall enn innstillingen), ellers det innstillingen gir.
+  const vist = grupper.filter((g) => g.length > 0).map((g) => g.length);
+  const storrelser =
+    vist.length > 0 ? vist : gruppestorrelser(elever.length, antall);
+  const iGruppene = vist.reduce((a, b) => a + b, 0) || elever.length;
   const minst = Math.min(...storrelser);
   const storst = Math.max(...storrelser);
 
@@ -224,8 +240,8 @@ export function KlassekartGrupper({
       stokk(historikk, Math.max(1, Math.round(elever.length / ny)));
     } else {
       const maks = Math.max(1, Math.floor(elever.length / 2));
-      const ny = Math.max(1, Math.min(maks, antall + d));
-      if (ny === antall) return;
+      const ny = Math.max(1, Math.min(maks, storrelser.length + d));
+      if (ny === storrelser.length) return;
       onEndreInnst({ antallGrupper: ny });
       stokk(historikk, ny);
     }
@@ -276,13 +292,32 @@ export function KlassekartGrupper({
     setMelding(`${o.navn ? `«${o.navn}»` : "Gruppesettet"} er slettet`);
   }
 
-  const tekst = () =>
-    gruppeListe({ tittel: kart.kildeNavn, grupper, navn, elever });
+  /** Gruppene slik bildet og Teams får dem: farge og navn, ikke mer. */
+  const bildegrupper = (): Bildegruppe[] =>
+    grupper.map((g, i) => ({
+      farge: GRUPPEFARGER[i % GRUPPEFARGER.length],
+      elever: g
+        .map((id) => elevAv.get(id))
+        .filter((e): e is Kartelev => !!e)
+        .map((e) => ({ fornavn: e.fornavn, etternavn: e.etternavn })),
+    }));
+  const teamsSett = (v: Navnevalg = valg) =>
+    somSett(settNavn.trim() || kart.kildeNavn, bildegrupper(), v);
 
-  async function teams() {
-    await navigator.clipboard.writeText(tekst());
+  /** Som tidsplanen i Samtaler: tabell i Teams, ren tekst andre steder. */
+  async function teams(v: Navnevalg = valg) {
+    const { html, tekst } = gruppeTeams(teamsSett(v));
+    await navigator.clipboard.write([
+      new ClipboardItem({
+        "text/html": new Blob([html], { type: "text/html" }),
+        "text/plain": new Blob([tekst], { type: "text/plain" }),
+      }),
+    ]);
+    const r = teamsKnapp.current?.getBoundingClientRect();
+    if (r)
+      setTeamsPos({ top: r.bottom + 6, right: window.innerWidth - r.right });
+    setKopiert(true);
     if (!lagret) await bruk("Kopiert til Teams, og lagret");
-    else setMelding("Kopiert til Teams");
   }
 
   async function skrivUt() {
@@ -428,10 +463,11 @@ export function KlassekartGrupper({
             <span className="ml-1.5 text-[11px] text-blekk-svak">⌄</span>
           </button>
           <button
+            ref={teamsKnapp}
             onClick={() => void teams()}
             className="flex h-8 items-center rounded-full border border-linje-sterk bg-ark/70 px-3.5 text-brod hover:bg-ark"
           >
-            Kopier til Teams
+            {kopiert ? "Kopiert ✓" : "Kopier til Teams"}
           </button>
           <button
             onClick={() => setVisBilde(true)}
@@ -527,8 +563,8 @@ export function KlassekartGrupper({
           {elever.length === 0
             ? ""
             : per !== null
-              ? `${storrelser.length} grupper · ${elever.length} elever`
-              : `á ${minst === storst ? minst : `${minst}–${storst}`} · ${elever.length} elever`}
+              ? `${storrelser.length} grupper · ${iGruppene} elever`
+              : `á ${minst === storst ? minst : `${minst}–${storst}`} · ${iGruppene} elever`}
         </span>
         <Bryter
           storrelse="liten"
@@ -790,6 +826,72 @@ export function KlassekartGrupper({
         </>,
         document.body,
       )}
+      {kopiert &&
+        createPortal(
+          <>
+            <div
+              className="fixed inset-0 z-30"
+              onClick={() => setKopiert(false)}
+            />
+            <div
+              style={{ top: teamsPos.top, right: teamsPos.right }}
+              className="fixed z-40 w-[420px] rounded-xl bg-ark p-3.5 shadow-[0_12px_32px_rgba(36,31,51,.18),0_0_0_1px_var(--color-linje)]"
+            >
+              <div className="mb-2.5 flex items-center gap-2">
+                <b className="text-[13px] font-semibold">Kopiert som tabell</b>
+                <span className="text-etikett text-blekk-svak">
+                  lim inn i Teams med {visTast("⌘V")}
+                </span>
+                <button
+                  onClick={() => setKopiert(false)}
+                  className="ml-auto px-1 text-blekk-svak hover:text-blekk"
+                  aria-label="Lukk"
+                >
+                  ×
+                </button>
+              </div>
+              <table className="w-full text-[12.5px]">
+                <thead>
+                  <tr className="text-left text-etikett text-blekk-dempet">
+                    <th className="w-24 pb-1 font-semibold">Gruppe</th>
+                    <th className="pb-1 font-semibold">Elever</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {teamsSett().grupper.map((g) => (
+                    <tr key={g.nr} className="border-t border-linje-svak">
+                      <td className="py-1 align-top">
+                        <span style={{ color: g.farge }}>■</span> Gruppe {g.nr}
+                      </td>
+                      <td className="py-1">{g.navn.join(", ")}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <div className="mt-3 flex items-center gap-2">
+                <span className="text-etikett text-blekk-svak">Navn</span>
+                <Bryter
+                  storrelse="liten"
+                  verdi={valg}
+                  settVerdi={(v) => {
+                    setValg(v as Navnevalg);
+                    void teams(v as Navnevalg);
+                  }}
+                  valg={[
+                    { id: "fullt", navn: "Fullt" },
+                    { id: "fe", navn: "Fornavn + E." },
+                    { id: "f", navn: "Fornavn" },
+                  ]}
+                />
+              </div>
+              <p className="mt-2 text-etikett leading-normal text-blekk-svak">
+                Tabell i Teams, ren tekst andre steder. Aldri innsats eller
+                fravær. Settet er lagret.
+              </p>
+            </div>
+          </>,
+          document.body,
+        )}
       {visBilde && (
         <Gruppebilde
           kode={kart.kildeNavn}

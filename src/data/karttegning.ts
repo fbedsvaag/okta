@@ -172,30 +172,6 @@ export function kartListe({
   return [tittel, "", ...linjer].join("\n");
 }
 
-/** «Gruppe 1: Tony S., Meadow S.» — til Teams og utskrift. */
-export function gruppeListe({
-  tittel,
-  grupper,
-  navn: gruppenavn,
-  elever,
-}: {
-  tittel: string;
-  grupper: string[][];
-  navn: (string | null)[];
-  elever: Utelev[];
-}): string {
-  const navn = new Map(elever.map((e) => [e.id, e]));
-  const linjer = grupper.map(
-    (g, i) =>
-      `${gruppenavn[i]?.trim() || `Gruppe ${i + 1}`}: ${g
-        .map((id) => navn.get(id))
-        .filter((e): e is Utelev => !!e)
-        .map(kortnavn)
-        .join(", ")}`,
-  );
-  return [tittel, "", ...linjer].join("\n");
-}
-
 /** SVG-en som PNG, i dobbel oppløsning. Kjører bare i nettleseren. */
 export async function svgSomPng(svg: string): Promise<Blob> {
   const bilde = new Image();

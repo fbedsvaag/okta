@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { plasserIRom, romMal, type Del } from "./klassekart";
-import { gruppeListe, kartListe, kartSvg, kortnavn } from "./karttegning";
+import { kartListe, kartSvg, kortnavn } from "./karttegning";
 
 const deler: Del[] = romMal("par").map((d, i) => ({ ...d, id: `d${i}` }));
 const plasser = plasserIRom(deler);
@@ -44,19 +44,6 @@ describe("kartListe", () => {
       "Pult 1: Tony S., Meadow S.",
       "Pult 2: Paulie G.",
     ]);
-  });
-});
-
-describe("gruppeListe", () => {
-  it("bruker gruppenavnet, eller «Gruppe n»", () => {
-    const t = gruppeListe({
-      tittel: "MFL2",
-      grupper: [["t", "m"], ["p"]],
-      navn: ["Rød", null],
-      elever,
-    });
-    expect(t).toContain("Rød: Tony S., Meadow S.");
-    expect(t).toContain("Gruppe 2: Paulie G.");
   });
 });
 

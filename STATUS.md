@@ -24,6 +24,9 @@ Lerretet (`docs/lerret/`) er fasit for det som er tegnet.
 - 25.9: «Bilde til elevene» (PNG 1920 × 1080) fra Grupper-fanen og fra
   kartets Del-meny med pultfarger. `data/gruppebilde.ts` får bare nummer,
   farge og navn; testet uten trafikklysfarger.
+- 25.10: Kopier til Teams som tabell (`gruppeTeams`, text/html + text/plain),
+  med feltet «Kopiert som tabell» og navnevalget under knappen. Den gamle
+  tekstlista `gruppeListe` er borte.
 - Retning: fra kateteret står tavla nederst, fra elevene øverst.
 
 ## Klassekart fra øktkortet (21.10)
