@@ -1,16 +1,33 @@
 import { Sammenleggknapp, useApen } from "../ui/Sammenleggbar";
 import { Utfold } from "../ui/Utfold";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import type { Skolear } from "../data/skolear";
 import type { FagIAr } from "../data/fag";
 import { hentOkter, type Okt } from "../data/okter";
-import { Fagfirkant, Ikon, Knapp, Tomtilstand } from "../ui/felles";
+import { Bryter, Fagfirkant, Ikon, Knapp, Tomtilstand } from "../ui/felles";
 import { Markdown } from "../ui/Notattekst";
 import { vekslBoks } from "../ui/markdown";
 import { endreOkt } from "../data/okter";
 import { hentPerioder } from "../data/perioder";
 import { useArk } from "../ui/Arkstabel";
-import { Arsoversikt } from "./Arsoversikt";
+import {
+  Glipper,
+  Gjoremalsliste,
+  IFlis,
+  Timeregnskap,
+  Vurderingsfrister,
+  useOversikt,
+} from "./Arsoversikt";
+import { InnsatsOverTid } from "./InnsatsOverTid";
+import { hentOktrader, type Oktrad } from "../data/oktrader";
+import { folgOppIDag } from "../data/oktplan";
+import { hentElever, type ElevRad } from "../data/elever";
+import { lyttElever } from "../data/endringer";
+import { useLagretInnstilling } from "../ui/useLagretInnstilling";
+import { useGlid } from "../ui/useGlid";
+import { IVerktoylinja } from "../ui/Verktoylinje";
+import { Skarprikk } from "../ui/Skarprikk";
+import { mandag } from "../data/kalender";
 import { dagenssetning, hentSamtalerPaDato } from "../data/samtale";
 import { Ukelinje } from "./Ukelinje";
 import { lytt, lyttOktvisning } from "../data/endringer";
@@ -45,104 +62,490 @@ export function IDag({
   const [samtaler, setSamtaler] = useState<
     Awaited<ReturnType<typeof hentSamtalerPaDato>>
   >([]);
+  const [rader, setRader] = useState<Oktrad[]>([]);
+  const [elever, setElever] = useState<Map<string, ElevRad>>(new Map());
+  // Enkel eller Full (20.5), og Uka som timer eller kompakt. Huskes.
+  const [oppsett, settOppsett] = useLagretInnstilling<"enkel" | "full">(
+    "idag_oppsett",
+    "enkel",
+    (v) => (v === "full" ? "full" : "enkel"),
+    String,
+  );
+  const [ukevisning, settUkevisning] = useLagretInnstilling<
+    "timer" | "kompakt"
+  >(
+    "idag_uka",
+    "timer",
+    (v) => (v === "kompakt" ? "kompakt" : "timer"),
+    String,
+  );
+  const rutenett = useRef<HTMLDivElement>(null);
+  useGlid(rutenett, `${oppsett}-${ukevisning}`);
 
   const lastOkter = () => void hentOkter(skolear.id).then(setOkter);
   useEffect(lastOkter, [skolear.id]);
   // Endres en økt i et ark over forsiden, skal uka vise det med en gang.
   useEffect(() => lytt(lastOkter), [skolear.id]);
   useEffect(() => lyttOktvisning(lastOkter), [skolear.id]);
+  useEffect(() => {
+    const last = () => {
+      void hentOktrader(skolear.id).then(setRader);
+      void hentElever(skolear.id).then((e) =>
+        setElever(new Map(e.map((x) => [x.id, x]))),
+      );
+    };
+    last();
+    const av = [lytt(last), lyttElever(last)];
+    return () => av.forEach((f) => f());
+  }, [skolear.id]);
 
   // En økt, en elev eller en vurdering åpnes som et ark over forsiden
   // (Arkstabel) — du blir her.
   const apne = onApneOkt;
   const ark = useArk();
+  const data = useOversikt(skolear.id);
 
   useEffect(() => {
     void hentSamtalerPaDato(skolear.id, isoDato(new Date())).then(setSamtaler);
   }, [skolear.id]);
 
   const idag = isoDato(new Date());
+  const full = oppsett === "full";
+  const kompakt = ukevisning === "kompakt";
+  // Raden under Uka: rett etter den, som rykker opp når Uka er kompakt.
+  const nederst = kompakt ? 4 : 5;
 
   return (
     <div className="mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col overflow-clip">
+      <IVerktoylinja>
+        <span className="ml-auto">
+          <Bryter
+            storrelse="liten"
+            verdi={oppsett}
+            settVerdi={(v) => settOppsett(v as "enkel" | "full")}
+            valg={[
+              { id: "enkel", navn: "Enkel" },
+              { id: "full", navn: "Full" },
+            ]}
+          />
+        </span>
+      </IVerktoylinja>
+
       {/* Datoen blir stående mens resten ruller. */}
-      <div className="shrink-0 pb-2">
+      <div className="flex shrink-0 items-baseline gap-3 pb-3">
         <h1 className="text-[calc(32px*var(--tekst-skala))] font-light leading-tight tracking-overskrift first-letter:uppercase">
           {langDato(idag)}
         </h1>
+        <span className="text-liten text-blekk-dempet">
+          {full
+            ? "Full: alt på én side"
+            : "Enkel: neste økt, hvem du skal følge opp og gjøremålene"}
+        </span>
       </div>
 
       {/* Rullefeltet er skjult — man ruller med styreflata. */}
-      <div className="scrollbar-skjult min-h-0 flex-1 overflow-auto">
-        <Arsoversikt
-          skolearId={skolear.id}
-          skolestart={skolear.start}
-          skoleslutt={skolear.slutt}
-          fag={fag}
-          okter={okter}
-          onApneElev={(elevId) => ark.apneElev(elevId)}
-          onApneVurdering={(id) => ark.apneVurdering(id)}
-        >
-          {/*
-            Samtaledagen står først: er det samtaler i dag, er det dem dagen
-            handler om. Setningen sier hva som venter — hvem du begynner med,
-            hvor mange som står igjen, og når du er ferdig (§4.10).
-          */}
-          {samtaler.length > 0 && (
-            <Bolk tittel="Samtaler" nokkel="forside-samtaler">
-              <p className="py-1 text-brod">
-                {dagenssetning(
-                  samtaler,
-                  new Date().toTimeString().slice(0, 5),
-                  samtaler.every((s) => s.erMentor),
-                )}
-              </p>
-              <button
-                onClick={() => onGaTil("samtaler")}
-                className="text-liten text-blekk-dempet hover:text-blekk"
+      <div className="scrollbar-skjult min-h-0 flex-1 overflow-auto pb-6">
+        {/*
+          Samtaledagen står først: er det samtaler i dag, er det dem dagen
+          handler om (§4.10).
+        */}
+        {samtaler.length > 0 && (
+          <div className="idag-flis mb-4">
+            <h3 className="idag-flis-tittel">Samtaler</h3>
+            <p className="py-1 text-brod">
+              {dagenssetning(
+                samtaler,
+                new Date().toTimeString().slice(0, 5),
+                samtaler.every((s) => s.erMentor),
+              )}
+            </p>
+            <button
+              onClick={() => onGaTil("samtaler")}
+              className="self-start text-liten text-blekk-dempet hover:text-blekk"
+            >
+              Åpne timeplanen <Ikon navn="pil" />
+            </button>
+          </div>
+        )}
+
+        {okter.length === 0 && (
+          <Tomtilstand
+            tekst={
+              fag.length === 0
+                ? "Ingen fag i skoleåret ennå."
+                : "Ingen økter er lagt inn ennå."
+            }
+            handling={
+              <Knapp
+                variant="primar"
+                onClick={() => onGaTil(fag.length === 0 ? "fag" : "okter")}
               >
-                Åpne timeplanen <Ikon navn="pil" />
-              </button>
-            </Bolk>
-          )}
+                {fag.length === 0 ? "Legg inn fagene dine" : "Legg inn økter"}
+              </Knapp>
+            }
+          />
+        )}
 
-          {/*
-            Uten økter er det ingenting å vise — da peker forsiden dit man
-            begynner.
-          */}
-          {okter.length === 0 && (
-            <Tomtilstand
-              tekst={
-                fag.length === 0
-                  ? "Ingen fag i skoleåret ennå."
-                  : "Ingen økter er lagt inn ennå."
-              }
-              handling={
-                <Knapp
-                  variant="primar"
-                  onClick={() => onGaTil(fag.length === 0 ? "fag" : "okter")}
-                >
-                  {fag.length === 0 ? "Legg inn fagene dine" : "Legg inn økter"}
-                </Knapp>
-              }
-            />
-          )}
-
-          {okter.length > 0 && (
+        {/*
+          Rutenettet fra lerretet IDagOppsett: fire kolonner, faste rader,
+          ingen hull. Enkel er de tre øverst; Full legger til Uka og raden
+          under. Flisene glir rolig når oppsettet endres.
+        */}
+        <div ref={rutenett} className="idag-rutenett">
+          <Flis
+            id="okter"
+            tittel="Dagens økter"
+            kol="1 / span 2"
+            rad="1 / span 2"
+          >
             <Dagensokter okter={okter} idag={idag} onApne={apne} />
-          )}
-
-          <Bolk tittel="Uka" nokkel="forside-uka">
-            <Ukelinje
+          </Flis>
+          <Flis
+            id="folgopp"
+            tittel="Følg opp i dag"
+            under="fra forrige økt"
+            kol="3 / span 2"
+            rad="1"
+          >
+            <FolgOppIDag
+              rader={rader}
               okter={okter}
-              forste={skolear.start}
-              siste={skolear.slutt}
               idag={idag}
-              onApneOkt={apne}
+              elever={elever}
+              fag={fag}
+              onApneElev={(id) => ark.apneElev(id)}
             />
-          </Bolk>
-        </Arsoversikt>
+          </Flis>
+          <Flis id="gjoremal" tittel="Gjøremål" kol="3 / span 2" rad="2">
+            <Gjoremalsliste skolearId={skolear.id} />
+          </Flis>
+
+          {full && (
+            <>
+              <Flis
+                id="uka"
+                tittel="Uka"
+                kol="1 / span 4"
+                rad={kompakt ? "3" : "3 / span 2"}
+                handling={
+                  <Bryter
+                    storrelse="liten"
+                    verdi={ukevisning}
+                    settVerdi={(v) => settUkevisning(v as "timer" | "kompakt")}
+                    valg={[
+                      { id: "timer", navn: "Timer" },
+                      { id: "kompakt", navn: "Kompakt" },
+                    ]}
+                  />
+                }
+              >
+                {kompakt ? (
+                  <Ukekompakt okter={okter} idag={idag} onApne={apne} />
+                ) : (
+                  <Ukelinje
+                    okter={okter}
+                    forste={skolear.start}
+                    siste={skolear.slutt}
+                    idag={idag}
+                    onApneOkt={apne}
+                  />
+                )}
+              </Flis>
+              <Flis
+                id="frister"
+                tittel="Vurderingsfrister"
+                kol="1"
+                rad={String(nederst)}
+              >
+                <Vurderingsfrister
+                  rader={data?.kommende ?? []}
+                  onApne={(id) => ark.apneVurdering(id)}
+                />
+              </Flis>
+              <Flis
+                id="glipper"
+                tittel="Elever som glipper"
+                under="siste 10 økter"
+                kol="2 / span 2"
+                rad={String(nederst)}
+              >
+                <Glipper
+                  elever={data?.glipp ?? []}
+                  onApne={(id) => ark.apneElev(id)}
+                />
+              </Flis>
+              <Flis
+                id="innsats"
+                tittel="Innsats over tid"
+                kol="4"
+                rad={String(nederst)}
+              >
+                <Innsatsflis rader={rader} fag={fag} />
+              </Flis>
+            </>
+          )}
+        </div>
+
+        {/*
+          Det tegningen ikke har med, står under rutenettet i Full, så
+          ingenting forsvinner: timeregnskapet og innsatsen uke for uke.
+        */}
+        {full && (
+          <div className="mt-8 space-y-7">
+            <Timeregnskap
+              fag={data?.timer ?? []}
+              mentor={data?.mentor ?? null}
+            />
+            <InnsatsOverTid
+              skolearId={skolear.id}
+              start={skolear.start}
+              slutt={skolear.slutt}
+              fag={fag}
+              okter={okter}
+              tittel="Innsats uke for uke"
+            />
+          </div>
+        )}
       </div>
+    </div>
+  );
+}
+
+/** En flis i rutenettet på I dag (20.5): tittel, og innholdet som ruller. */
+function Flis({
+  id,
+  tittel,
+  under,
+  handling,
+  kol,
+  rad,
+  children,
+}: {
+  id: string;
+  tittel: string;
+  under?: string;
+  handling?: React.ReactNode;
+  kol: string;
+  rad: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section
+      data-glid={id}
+      className="idag-flis"
+      style={{ gridColumn: kol, gridRow: rad }}
+    >
+      <h3 className="idag-flis-tittel">
+        {tittel}
+        {under && <small>{under}</small>}
+        {handling && <span className="ml-auto">{handling}</span>}
+      </h3>
+      <div className="scrollbar-skjult min-h-0 flex-1 overflow-auto">
+        <IFlis.Provider value={true}>{children}</IFlis.Provider>
+      </div>
+    </section>
+  );
+}
+
+const fornavnOgBokstav = (e: ElevRad | undefined) =>
+  e ? `${e.fornavn} ${e.etternavn.charAt(0)}.` : "";
+
+/**
+ * Følg opp i dag (20.5): for hvert fag du har i dag, Rød sist, Ikke sett
+ * sist og Borte sist fra den siste avholdte økta. Bare fornavn og
+ * forbokstav: I dag kan stå på skjermen i klasserommet.
+ */
+function FolgOppIDag({
+  rader,
+  okter,
+  idag,
+  elever,
+  fag,
+  onApneElev,
+}: {
+  rader: Oktrad[];
+  okter: Okt[];
+  idag: string;
+  elever: Map<string, ElevRad>;
+  fag: FagIAr[];
+  onApneElev: (id: string) => void;
+}) {
+  const dagens = okter.filter((o) => o.dato === idag);
+  if (dagens.length === 0)
+    return <p className="text-liten text-blekk-svak">Ingen økter i dag.</p>;
+  const liste = folgOppIDag(rader, dagens);
+  if (liste.length === 0)
+    return (
+      <p className="text-liten text-blekk-svak">
+        Ingen å følge opp fra forrige gang.
+      </p>
+    );
+  const kode = (id: string) => fag.find((f) => f.id === id)?.kode ?? "";
+  const linje = (
+    slag: "r" | "t" | "o",
+    navn: string,
+    ider: { id: string; tillegg?: string }[],
+    fagId: string,
+  ) =>
+    ider.length > 0 && (
+      <div key={`${fagId}-${slag}`} className="idag-fg">
+        <Skarprikk slag={slag} storrelse={11} />
+        <b className="font-medium">{navn}</b>
+        <span className="min-w-0 truncate text-blekk-dempet">
+          {ider.map((x, i) => (
+            <span key={x.id}>
+              {i > 0 && " · "}
+              <button
+                onClick={() => onApneElev(x.id)}
+                className="hover:text-aksent hover:underline"
+              >
+                {fornavnOgBokstav(elever.get(x.id))}
+              </button>
+              {x.tillegg}
+            </span>
+          ))}
+        </span>
+        <span className="text-etikett text-blekk-svak">{kode(fagId)}</span>
+      </div>
+    );
+  return (
+    <div>
+      {liste.map((f) => [
+        linje(
+          "r",
+          "Rød sist",
+          f.rod.map((r) => ({
+            id: r.elevId,
+            tillegg: r.toPaRad ? " (to på rad)" : undefined,
+          })),
+          f.skolearFagId,
+        ),
+        linje(
+          "t",
+          "Ikke sett sist",
+          f.ikkeSett.map((id) => ({ id })),
+          f.skolearFagId,
+        ),
+        linje(
+          "o",
+          "Borte sist",
+          f.borte.map((id) => ({ id })),
+          f.skolearFagId,
+        ),
+      ])}
+    </div>
+  );
+}
+
+/**
+ * Innsats over tid som liten flis (20.5): per fag, andelen grønn, gul, rød
+ * og grått (til stede, ikke sett) av dem som var til stede, hele året.
+ */
+function Innsatsflis({ rader, fag }: { rader: Oktrad[]; fag: FagIAr[] }) {
+  const perFag = fag
+    .map((f) => {
+      const her = rader.filter((r) => r.skolearFagId === f.id && !r.borte);
+      const n = her.length;
+      const del = (p: (r: Oktrad) => boolean) =>
+        n ? her.filter(p).length / n : 0;
+      return {
+        f,
+        n,
+        g: del((r) => r.farge === "gronn"),
+        y: del((r) => r.farge === "gul"),
+        r: del((r) => r.farge === "rod"),
+        t: del((r) => r.ikkeSett === 1),
+      };
+    })
+    .filter((x) => x.n > 0);
+  if (perFag.length === 0)
+    return <p className="text-liten text-blekk-svak">Ingen skåringer ennå.</p>;
+  const pst = (x: number) => `${Math.round(x * 100)} %`;
+  return (
+    <div className="space-y-1.5">
+      {perFag.map((x) => (
+        <div
+          key={x.f.id}
+          className="grid grid-cols-[minmax(0,auto)_1fr] items-center gap-x-2 text-etikett"
+          title={`${pst(x.g)} grønn · ${pst(x.y)} gul · ${pst(x.r)} rød · ${pst(x.t)} ikke sett, av dem som var til stede`}
+        >
+          <span className="flex items-center gap-1 font-medium text-blekk-dempet">
+            <Fagfirkant farge={x.f.farge} />
+            {x.f.kode}
+          </span>
+          <span className="text-right tabular-nums">
+            {pst(x.g)}
+            <span className="ml-1 text-blekk-svak">· {pst(x.t)}</span>
+          </span>
+          <span className="col-span-2 flex h-2 gap-px overflow-hidden rounded">
+            <span style={{ flex: x.g, background: "var(--color-lys-gronn)" }} />
+            <span style={{ flex: x.y, background: "var(--color-lys-gul)" }} />
+            <span style={{ flex: x.r, background: "var(--color-lys-rod)" }} />
+            <span style={{ flex: x.t, background: "var(--color-lys-borte)" }} />
+          </span>
+        </div>
+      ))}
+      <p className="pt-0.5 text-[10.5px] text-blekk-svak">
+        andel av dem som var til stede · grått = ikke sett
+      </p>
+    </div>
+  );
+}
+
+/** Uka i én rad (20.5, Kompakt): fem dager med øktene som små brikker. */
+function Ukekompakt({
+  okter,
+  idag,
+  onApne,
+}: {
+  okter: Okt[];
+  idag: string;
+  onApne: (id: string) => void;
+}) {
+  const man = new Date(`${mandag(idag)}T12:00:00`);
+  const dager = [0, 1, 2, 3, 4].map((i) => {
+    const d = new Date(man);
+    d.setDate(d.getDate() + i);
+    return d.toLocaleDateString("sv-SE");
+  });
+  return (
+    <div className="grid grid-cols-5 gap-1.5">
+      {dager.map((dato) => {
+        const dagens = okter
+          .filter((o) => o.dato === dato)
+          .sort((a, b) =>
+            (a.klokkeslett ?? "").localeCompare(b.klokkeslett ?? ""),
+          );
+        return (
+          <div
+            key={dato}
+            className="min-h-[76px] rounded-lg bg-flate-svak px-[7px] py-1.5 shadow-[inset_0_0_0_1px_var(--color-linje-svak)]"
+          >
+            <div
+              className={`text-etikett first-letter:uppercase ${dato === idag ? "font-semibold text-aksent" : "text-blekk-dempet"}`}
+            >
+              {new Date(`${dato}T12:00:00`).toLocaleDateString("nb-NO", {
+                weekday: "short",
+                day: "numeric",
+              })}
+            </div>
+            {dagens.map((o) => (
+              <button
+                key={o.id}
+                onClick={() => onApne(o.id)}
+                title={o.tema ?? undefined}
+                className="mt-1 flex w-full items-center gap-1 rounded-[5px] bg-ark px-[5px] py-[3px] text-left text-[10.5px] hover:bg-flate"
+              >
+                <Fagfirkant farge={o.farge} />
+                <b className="font-semibold text-blekk-dempet">{o.fagKode}</b>
+                <span className="tabular-nums text-blekk-svak">
+                  {o.klokkeslett}
+                </span>
+              </button>
+            ))}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -422,6 +825,7 @@ function Bolk({
   children: React.ReactNode;
 }) {
   const [apen, setApen] = useApen(nokkel);
+  if (useContext(IFlis)) return <>{children}</>;
   return (
     <section>
       <div

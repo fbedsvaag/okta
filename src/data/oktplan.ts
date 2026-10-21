@@ -613,6 +613,61 @@ export function ikkeSettSist(
   return forrigeOkt(rader, okt, (r) => r.ikkeSett === 1)?.elevIder ?? [];
 }
 
+export type FolgOppFag = {
+  skolearFagId: string;
+  /** rød i siste avholdte økt; `toPaRad` når den før også var rød */
+  rod: { elevId: string; toPaRad: boolean }[];
+  ikkeSett: string[];
+  borte: string[];
+};
+
+/**
+ * «Følg opp i dag» på I dag (20.5): for hvert fag du har i dag, hvem som
+ * var rød, ikke sett og borte i den siste avholdte økta før dagens første.
+ * Fag uten noen å følge opp er ikke med.
+ */
+export function folgOppIDag(
+  rader: Oktrad[],
+  dagens: Pick<Okt, "id" | "dato" | "klokkeslett" | "skolearFagId">[],
+): FolgOppFag[] {
+  const forste = new Map<string, (typeof dagens)[number]>();
+  for (const o of [...dagens].sort((a, b) =>
+    (a.klokkeslett ?? "").localeCompare(b.klokkeslett ?? ""),
+  ))
+    if (!forste.has(o.skolearFagId)) forste.set(o.skolearFagId, o);
+
+  const ut: FolgOppFag[] = [];
+  for (const okt of forste.values()) {
+    const sist = forrigeOkt(rader, okt, () => true);
+    if (!sist) continue;
+    const forFag = rader.filter(
+      (r) => r.skolearFagId === okt.skolearFagId && r.dato < okt.dato,
+    );
+    const sisteOkt = forFag.find(
+      (r) => r.dato === sist.dato && sist.elevIder.includes(r.elevId),
+    )?.oktId;
+    const iSiste = forFag.filter((r) => r.oktId === sisteOkt);
+    const rod = iSiste
+      .filter((r) => !r.borte && r.farge === "rod")
+      .map((r) => {
+        const egne = forFag.filter((x) => x.elevId === r.elevId);
+        const forrige = egne[egne.indexOf(r) - 1];
+        return {
+          elevId: r.elevId,
+          toPaRad: !!forrige && !forrige.borte && forrige.farge === "rod",
+        };
+      });
+    const fag = {
+      skolearFagId: okt.skolearFagId,
+      rod,
+      ikkeSett: iSiste.filter((r) => r.ikkeSett === 1).map((r) => r.elevId),
+      borte: iSiste.filter((r) => r.borte === 1).map((r) => r.elevId),
+    };
+    if (fag.rod.length || fag.ikkeSett.length || fag.borte.length) ut.push(fag);
+  }
+  return ut;
+}
+
 /** Hvor i perioden økta ligger: nummeret, og alle øktene i rekkefølge. */
 export function iPerioden(
   okt: Pick<Okt, "id" | "periodeId">,

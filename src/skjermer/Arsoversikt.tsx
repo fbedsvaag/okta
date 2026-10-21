@@ -2,7 +2,7 @@ import { Sammenleggknapp, useApen } from "../ui/Sammenleggbar";
 import { Skarprikk } from "../ui/Skarprikk";
 import { Elevfoto } from "../ui/Elevfoto";
 import { Utfold } from "../ui/Utfold";
-import { useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import {
   hentGlipp,
   snittfarge,
@@ -15,9 +15,6 @@ import {
   type Kommende,
 } from "../data/dashbord";
 import { Fagmerke, Kappet, Tomtilstand } from "../ui/felles";
-import type { Okt } from "../data/okter";
-import type { FagIAr } from "../data/fag";
-import { InnsatsOverTid } from "./InnsatsOverTid";
 import {
   angreGjoremal,
   angreLoggpost,
@@ -46,35 +43,16 @@ import { useMinutt } from "./Oktlive";
  * vurderingsfrister og elever som glipper i en kolonne til høyre. På smal
  * skjerm legger høyrekolonnen seg under.
  */
-export function Arsoversikt({
-  skolearId,
-  skolestart,
-  skoleslutt,
-  fag,
-  okter,
-  onApneElev,
-  onApneVurdering,
-  children,
-}: {
-  skolearId: string;
-  /** skoleårets spenn: Innsats over tid viser alle ukene i det */
-  skolestart: string;
-  skoleslutt: string;
-  fag: FagIAr[];
-  /** alle øktene i året, så en prikk kan åpne ukas økter */
-  okter: Okt[];
-  onApneElev: (elevId: string) => void;
-  onApneVurdering: (vurderingId: string) => void;
-  children?: React.ReactNode;
-}) {
-  // Alle fire hentes samlet og settes i én state. Før var det fire kall som
-  // hver satte sin egen, og siden hvert panel er innholdsstyrt flyttet
-  // oversikten på seg hver gang et av dem landet — fire ganger ved åpning.
-  //
-  // Avbruddsvakta hører med: bytter man skoleår mens kallene er ute, skal
-  // ikke det gamle årets tall lande i det nye.
+/**
+ * Tallene til flisene på I dag (20.5): timeregnskap, elever som glipper og
+ * vurderingsfrister, hentet samlet. Før var det fire kall som hver satte sin
+ * egen state, og oversikten flyttet på seg fire ganger ved åpning.
+ *
+ * Avbruddsvakta hører med: bytter man skoleår mens kallene er ute, skal
+ * ikke det gamle årets tall lande i det nye.
+ */
+export function useOversikt(skolearId: string): Oversikt | null {
   const [data, setData] = useState<Oversikt | null>(null);
-
   useEffect(() => {
     let avbrutt = false;
     (async () => {
@@ -96,39 +74,13 @@ export function Arsoversikt({
       avbrutt = true;
     };
   }, [skolearId]);
-
-  return (
-    <div className="grid gap-x-10 gap-y-7 lg:grid-cols-[minmax(0,1fr)_20rem]">
-      <div className="min-w-0 space-y-7">
-        {children}
-        <Timeregnskap fag={data?.timer ?? []} mentor={data?.mentor ?? null} />
-      </div>
-      <div className="grid content-start gap-y-7">
-        <Gjoremalsliste skolearId={skolearId} />
-        <Vurderingsfrister
-          rader={data?.kommende ?? []}
-          onApne={onApneVurdering}
-        />
-        <Glipper elever={data?.glipp ?? []} onApne={onApneElev} />
-      </div>
-      {/*
-        Innsats over tid (12.1) går over hele bredden: én søyle per uke for
-        hele skoleåret får ikke plass i venstre spalte.
-      */}
-      <div className="lg:col-span-2">
-        <InnsatsOverTid
-          skolearId={skolearId}
-          start={skolestart}
-          slutt={skoleslutt}
-          fag={fag}
-          okter={okter}
-        />
-      </div>
-    </div>
-  );
+  return data;
 }
 
-type Oversikt = {
+/** Inne i en flis på I dag: panelet viser bare innholdet (flisen har tittelen). */
+export const IFlis = createContext(false);
+
+export type Oversikt = {
   timer: Fagtimer[];
   /** mentorsamtalene, som ikke hører til noe fag (§4.10) */
   mentor: { timer: number; antall: number } | null;
@@ -155,6 +107,8 @@ function Panel({
   children: React.ReactNode;
 }) {
   const [apen, setApen] = useApen(nokkel);
+  const iFlis = useContext(IFlis);
+  if (iFlis) return <>{children}</>;
   return (
     <section>
       <div
@@ -193,7 +147,7 @@ const PRIKKFARGE = {
 
 // ------------------------------------------------------------- timeregnskap
 
-function Timeregnskap({
+export function Timeregnskap({
   fag,
   mentor,
 }: {
@@ -332,7 +286,7 @@ function Fagmaler({ fag }: { fag: Fagtimer }) {
 
 // ------------------------------------------------------------------ glipper
 
-function Glipper({
+export function Glipper({
   elever,
   onApne,
 }: {
@@ -390,7 +344,7 @@ const GJOREMAL_SYNLIGE = 6;
  * og øktlogger (`data/gjoremal.ts`). Krysses av rett her, og et klikk på
  * teksten åpner eleven eller økta det står i.
  */
-function Gjoremalsliste({ skolearId }: { skolearId: string }) {
+export function Gjoremalsliste({ skolearId }: { skolearId: string }) {
   const [liste, setListe] = useState<Gjoremal[]>([]);
   const [alle, setAlle] = useState(false);
   // Loggen (ARBEIDSLISTE 9.5): det som er gjort siste 14 dager, og det du
@@ -610,7 +564,7 @@ function NyttGjoremal({ skolearId }: { skolearId: string }) {
 
 // ------------------------------------------------------------- vurderinger
 
-function Vurderingsfrister({
+export function Vurderingsfrister({
   rader,
   onApne,
 }: {

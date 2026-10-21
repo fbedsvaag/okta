@@ -45,6 +45,7 @@ export function InnsatsOverTid({
   slutt,
   fag,
   okter,
+  tittel = "Innsats over tid",
 }: {
   skolearId: string;
   start: string;
@@ -52,6 +53,7 @@ export function InnsatsOverTid({
   fag: FagIAr[];
   /** øktene i året, så en søyle kan åpne ukas økter */
   okter: Okt[];
+  tittel?: string;
 }) {
   const ark = useArk();
   const boks = useRef<HTMLElement>(null);
@@ -145,7 +147,7 @@ export function InnsatsOverTid({
     <section ref={boks} className="relative">
       <div className="flex items-baseline gap-2.5 border-b border-linje-medium pb-2.5">
         <h2 className="text-[calc(15px*var(--tekst-skala))] font-semibold">
-          Innsats over tid
+          {tittel}
         </h2>
         <span className="flex-1" />
         <span className="flex gap-3 text-[calc(12px*var(--tekst-skala))] text-blekk-dempet">

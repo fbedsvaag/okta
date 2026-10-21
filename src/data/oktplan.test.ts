@@ -15,6 +15,7 @@ import {
   planMedPauser,
   borteSist,
   ikkeSettSist,
+  folgOppIDag,
   livePlan,
   livetid,
   livetekst,
@@ -440,5 +441,56 @@ describe("borte sist", () => {
     ];
     expect(borteSist(rader, okt)?.elevIder).toEqual(["a"]);
     expect(ikkeSettSist(rader, okt)).toEqual(["b"]);
+  });
+});
+
+describe("følg opp i dag (20.5)", () => {
+  const r = (
+    elevId: string,
+    oktId: string,
+    dato: string,
+    farge: string | null,
+    borte = 0,
+    ikkeSett = 0,
+  ) => ({
+    elevId,
+    oktId,
+    dato,
+    klokkeslett: "08:30",
+    borte,
+    ikkeSett,
+    skolearFagId: "f",
+    farge,
+    varighetMin: 90,
+    tema: null,
+  });
+
+  it("grupperer siste avholdte økt i rød, ikke sett og borte", () => {
+    const rader = [
+      r("a", "o1", "2026-10-13", "rod"),
+      r("a", "o2", "2026-10-15", "rod"),
+      r("b", "o2", "2026-10-15", "rod"),
+      r("c", "o2", "2026-10-15", null, 0, 1),
+      r("d", "o2", "2026-10-15", null, 1),
+      r("e", "o2", "2026-10-15", "gronn"),
+    ];
+    const dagens = [
+      { id: "na", dato: "2026-10-20", klokkeslett: "10:00", skolearFagId: "f" },
+    ];
+    expect(folgOppIDag(rader, dagens)).toEqual([
+      {
+        skolearFagId: "f",
+        rod: [
+          { elevId: "a", toPaRad: true },
+          { elevId: "b", toPaRad: false },
+        ],
+        ikkeSett: ["c"],
+        borte: ["d"],
+      },
+    ]);
+  });
+
+  it("er tom uten økter i dag", () => {
+    expect(folgOppIDag([], [])).toEqual([]);
   });
 });

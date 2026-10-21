@@ -3,7 +3,7 @@
 Pr. 2026-10-20, versjon 0.4.0 (utgitt 20.10). Beskriver hvor appen faktisk står, ikke hva
 den skal bli. Fila eies fritt, i motsetning til SPEC.md.
 
-**740 tester i `npm test` og 25 i `cargo test`, alle grønne på Mac.
+**753 tester i `npm test` og 25 i `cargo test`, alle grønne på Mac.
 `tsc --noEmit` er ren. `npm run build` går gjennom. 28 migrasjoner.** Testene kjører på GitHub ved hver push (`tester.yml`, Mac).
 
 Utseendet står i `DESIGN.md`, som beskriver appen slik den er bygget.
@@ -53,6 +53,18 @@ Lerretet (`docs/lerret/`) er fasit for det som er tegnet.
   ⌘Z. Vurderingene blir vanlige vurderinger: det finnes ingen
   utkast-status (ville krevd en ny kolonne). Tilbudet kommer i Året, ikke
   i selve dialogen for nytt skoleår: der finnes ingen økter ennå.
+- **20.5 I dag: Enkel og Full** (`IDag.tsx`, lerretet IDagOppsett).
+  Bryteren øverst til høyre, valget huskes (`idag_oppsett`, standard
+  Enkel). Rutenett med fire kolonner og faste rader som i tegningen, uten
+  hull. Enkel: Dagens økter, Følg opp i dag, Gjøremål. Full: i tillegg Uka
+  (Timer · Kompakt, huskes i `idag_uka`; Kompakt er én rad og flisene under
+  glir opp), Vurderingsfrister, Elever som glipper og Innsats over tid
+  (andel grønn/gul/rød/ikke sett av dem som var til stede, per fag). «Følg
+  opp i dag» grupperer Rød sist (to på rad), Ikke sett sist og Borte sist
+  per fag du har i dag (`folgOppIDag`). Flisene glir rolig ved bytte
+  (`ui/useGlid.ts`, 360 ms, ingen sprett). Timeregnskap og «Innsats uke for
+  uke» (den gamle grafen) står under rutenettet i Full, siden tegningen ikke
+  har dem. Tilpass og størrelser venter (§21.2).
 
 ## Runde 19 (20.10, ARBEIDSLISTE §19)
 
