@@ -145,7 +145,7 @@ export async function hentVurderingsskalaer(): Promise<Skala[]> {
 
 export async function hentSkalaverdier(skalaId: string): Promise<Skalaverdi[]> {
   return hent<Skalaverdi>(
-    "SELECT * FROM skalaverdi WHERE skala_id = $1 ORDER BY rang",
+    "SELECT * FROM skalaverdi WHERE skala_id = $1 AND slettet IS NULL ORDER BY rang",
     [skalaId],
   );
 }

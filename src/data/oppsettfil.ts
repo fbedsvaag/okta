@@ -1,4 +1,4 @@
-import { hent, nyId, Transaksjon } from "../db";
+import { hent, Transaksjon } from "../db";
 import { hentFagIAr } from "./fag";
 import {
   hentAktivtSkolear,
@@ -94,7 +94,7 @@ export async function lagOppsett(valg: {
     for (const s of egne) {
       const verdier = await hent<Oppsettskala["verdier"][number]>(
         `SELECT kode, etikett, rang, farge, bestatt, teller_ikke
-           FROM skalaverdi WHERE skala_id = $1 ORDER BY rang`,
+           FROM skalaverdi WHERE skala_id = $1 AND slettet IS NULL ORDER BY rang`,
         [s.id],
       );
       skalaer.push({ navn: s.navn, bruksomrade: s.bruksomrade, verdier });
@@ -566,22 +566,17 @@ export async function importerOppsett(
       bruksomrade: s.bruksomrade,
       innebygd: 0,
     });
-    // Skalaverdi har ingen tidsstempler, så settInn passer ikke.
+    // Skalaverdi har stempler siden 029, så settInn passer.
     for (const v of s.verdier)
-      t.execute(
-        `INSERT INTO skalaverdi (id, skala_id, kode, etikett, rang, farge, bestatt, teller_ikke)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-        [
-          nyId(),
-          id,
-          v.kode,
-          v.etikett ?? null,
-          v.rang,
-          v.farge ?? null,
-          v.bestatt ?? null,
-          v.teller_ikke ?? 0,
-        ],
-      );
+      t.settInn("skalaverdi", {
+        skala_id: id,
+        kode: v.kode,
+        etikett: v.etikett ?? null,
+        rang: v.rang,
+        farge: v.farge ?? null,
+        bestatt: v.bestatt ?? null,
+        teller_ikke: v.teller_ikke ?? 0,
+      });
   }
 
   await t.kjor();

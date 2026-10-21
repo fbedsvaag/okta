@@ -3,11 +3,24 @@
 Pr. 2026-10-20, versjon 0.4.0 (utgitt 20.10). Beskriver hvor appen faktisk står, ikke hva
 den skal bli. Fila eies fritt, i motsetning til SPEC.md.
 
-**753 tester i `npm test` og 25 i `cargo test`, alle grønne på Mac.
-`tsc --noEmit` er ren. `npm run build` går gjennom. 28 migrasjoner.** Testene kjører på GitHub ved hver push (`tester.yml`, Mac).
+**769 tester i `npm test` og 25 i `cargo test`, alle grønne på Mac.
+`tsc --noEmit` er ren. `npm run build` går gjennom. 29 migrasjoner.** Testene kjører på GitHub ved hver push (`tester.yml`, Mac).
 
 Utseendet står i `DESIGN.md`, som beskriver appen slik den er bygget.
 Lerretet (`docs/lerret/`) er fasit for det som er tegnet.
+
+## Egne karakterskalaer (21.10, ARBEIDSLISTE §22)
+
+`innstillinger/Skalaer.tsx` og `data/skalaer.ts`. Innebygde skalaer er låst
+med «Kopier og endre»; egne under. Maler: egen liste, karakter med + og −,
+poeng 0–maks, kopi av en skala. Redigering av navn, bruk (vurdering/skåring/
+begge) og verdier (kode, forklaring, farge, bestått, teller ikke), ⋮⋮ for
+rekkefølge (= rang), ↵ i siste felt gir ny rad. Taster 1–9 bare med høyst ni
+verdier (`taster` i `skala.ts`); over det skrives koden og ↵ i
+vurderingsføringen. Forhåndsvisning med chips; verdier uten farge er grå.
+Brukte verdier kan ikke slettes, en brukt skala kan ikke slettes (testet).
+Fagets skåringsskala velges i fagpanelet. Migrasjon 029: stempler og
+`slettet` på `skalaverdi` (manglet). 29 migrasjoner.
 
 ## Innstillinger, ny modell (21.10, ARBEIDSLISTE §23)
 

@@ -914,14 +914,17 @@ stund og etterspør dette.
 
 Tegning: `docs/lerret/Skalaer.dc.html` (Innstillinger → Skalaer). Datamodellen finnes allerede (`skala`, `skalaverdi`, `vurdering.skala_id`, `fag.skaringsskala_id`), så dette er bare UI, ingen migrering: `kode` = verdi, `etikett` = forklaring, `slettet` gir myk sletting. Tast 0 for rang 0 (§5) gjelder fortsatt.
 
-- [ ] **22.1 Liste.** Innebygde (Trafikklys, Godkjent, Lav–middels–høy, Karakter 1–6) er låst, med «Kopier og endre». «Dine» under, med antall verdier. «+ Ny skala» nederst.
-- [ ] **22.2 Maler ved ny skala.** Egen liste · Karakter med + og − (1, 2−, 2, 2+ … 6, ferdig utfylt) · Poeng 0–maks · Kopier en skala. Alt kan endres etterpå.
-- [ ] **22.3 Redigering.** Navn; bruk: Vurdering / Skåring / Begge (`bruksomrade`). Per verdi: kode, forklaring, farge (ingen/rød/gul/grønn), bestått, teller ikke. Dra ⋮⋮ for rekkefølge (= `rang`, øverst lavest). Enter i siste felt lager ny rad.
-- [ ] **22.4 Taster.** ≤ 9 verdier: tast 1–9 i rekkefølge. Over 9: ingen taster, læreren skriver koden (f.eks. 4+) og trykker Enter. Vis dette i forhåndsvisningen.
-- [ ] **22.5 Forhåndsvisning.** «Slik ser det ut når du fører»: chips med samme utseende som ved føring.
-- [ ] **22.6 Regler når skalaen er brukt.** Navn, forklaring, farge og rekkefølge kan endres. Verdier som er brukt kan ikke slettes (✕ deaktivert, tooltip sier hvorfor). Resultater beholder verdien sin. Sletting av hele skalaen bare når den ikke er brukt.
-- [ ] **22.7 Velge skalaen.** I «Ny vurdering» og i fagets skåringsskala (filtrert på `bruksomrade`). Egne skalaer følger med i eksport/«Hent fra i fjor».
-- [ ] **22.8 Farge betyr data (20.2).** Verdier uten farge vises nøytralt grå, ikke i heatmap-fargene.
+- [x] **22.1 Liste.** Innebygde (Trafikklys, Godkjent, Lav–middels–høy, Karakter 1–6) er låst, med «Kopier og endre». «Dine» under, med antall verdier. «+ Ny skala» nederst.
+- [x] **22.2 Maler ved ny skala.** Egen liste · Karakter med + og − (1, 2−, 2, 2+ … 6, ferdig utfylt) · Poeng 0–maks · Kopier en skala. Alt kan endres etterpå.
+- [x] **22.3 Redigering.** Navn; bruk: Vurdering / Skåring / Begge (`bruksomrade`). Per verdi: kode, forklaring, farge (ingen/rød/gul/grønn), bestått, teller ikke. Dra ⋮⋮ for rekkefølge (= `rang`, øverst lavest). Enter i siste felt lager ny rad.
+- [x] **22.4 Taster.** ≤ 9 verdier: tast 1–9 i rekkefølge. Over 9: ingen taster, læreren skriver koden (f.eks. 4+) og trykker Enter. Vis dette i forhåndsvisningen.
+- [x] **22.5 Forhåndsvisning.** «Slik ser det ut når du fører»: chips med samme utseende som ved føring.
+- [x] **22.6 Regler når skalaen er brukt.** Navn, forklaring, farge og rekkefølge kan endres. Verdier som er brukt kan ikke slettes (✕ deaktivert, tooltip sier hvorfor). Resultater beholder verdien sin. Sletting av hele skalaen bare når den ikke er brukt.
+- [x] **22.7 Velge skalaen.** I «Ny vurdering» og i fagets skåringsskala (filtrert på `bruksomrade`). Egne skalaer følger med i eksport/«Hent fra i fjor».
+- [x] **22.8 Farge betyr data (20.2).** Verdier uten farge vises nøytralt grå, ikke i heatmap-fargene.
+- Merknad (21.10): `skalaverdi` manglet `slettet`, `opprettet` og `endret`
+  (001), så «ingen migrering» holdt ikke. Migrasjon 029 legger dem til,
+  etter regel 2 i CLAUDE.md. Ellers ingen endring i datamodellen.
 
 ## 23. Innstillinger, ny modell (21.10) — godkjent
 

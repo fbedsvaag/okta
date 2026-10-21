@@ -191,6 +191,12 @@ fn migrations() -> Vec<Migration> {
             sql: include_str!("../migrations/028_fjern_oppfolging.sql"),
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 29,
+            description: "stempler og myk sletting på skalaverdi",
+            sql: include_str!("../migrations/029_skalaverdi_stempler.sql"),
+            kind: MigrationKind::Up,
+        },
     ]
 }
 

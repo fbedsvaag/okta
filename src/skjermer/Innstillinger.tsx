@@ -5,6 +5,7 @@ import { lagrePalett, PALETT, PALETTER, type Palett } from "../ui/palett";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { DelOppsett } from "./Oppsettfil";
+import { Skalaer } from "./innstillinger/Skalaer";
 import {
   endreSkolear,
   hentFridager,
@@ -28,13 +29,6 @@ import {
 import { revealItemInDir } from "@tauri-apps/plugin-opener";
 import { appDataDir } from "@tauri-apps/api/path";
 import { erMac } from "../ui/taster";
-import {
-  hentSkalaer,
-  hentVerdier,
-  taster,
-  type Skala,
-  type Skalaverdi,
-} from "../skala";
 import type { Skolear } from "../data/skolear";
 import type { Fridag } from "../data/kalender";
 import * as kalender from "../data/kalenderfeed";
@@ -179,7 +173,9 @@ export function Innstillinger({
   ];
 
   return (
-    <div className="mx-auto flex min-h-0 w-full max-w-5xl flex-1 flex-col">
+    <div
+      className={`mx-auto flex min-h-0 w-full flex-1 flex-col ${side === "skalaer" ? "max-w-7xl" : "max-w-5xl"}`}
+    >
       <IVerktoylinja>
         <span className="text-liten text-blekk-svak">{SIDENAVN[side]}</span>
         <span className="relative ml-auto">
@@ -305,7 +301,7 @@ export function Innstillinger({
         </nav>
 
         <div className="min-h-0 overflow-auto pb-10 pl-10 pr-2 pt-1.5">
-          <div key={side} className="max-w-[720px]">
+          <div key={side} className={side === "skalaer" ? "" : "max-w-[720px]"}>
             {side === "deg" && <SideDeg skolear={skolear} />}
             {side === "generelt" && <SideGenerelt />}
             {side === "skolear" && (
@@ -319,7 +315,7 @@ export function Innstillinger({
             {side === "fag" && (
               <SideFag fag={fag} onEndret={onEndret} onApneFag={onApneFag} />
             )}
-            {side === "skalaer" && <SideSkalaer />}
+            {side === "skalaer" && <Skalaer />}
             {side === "utseende" && <SideUtseende />}
             {side === "kopi" && <SideKopi skolear={skolear} />}
             {side === "personvern" && <SidePersonvern />}
@@ -890,58 +886,6 @@ function SideFag({
 }
 
 // ---------------------------------------------------------------- Skalaer
-
-function SideSkalaer() {
-  const [skalaer, setSkalaer] = useState<Skala[]>([]);
-  const [verdier, setVerdier] = useState<Record<string, Skalaverdi[]>>({});
-  useEffect(() => {
-    void (async () => {
-      const s = await hentSkalaer();
-      const v: Record<string, Skalaverdi[]> = {};
-      for (const skala of s) v[skala.id] = await hentVerdier(skala.id);
-      setSkalaer(s);
-      setVerdier(v);
-    })();
-  }, []);
-  return (
-    <Side
-      tittel="Skalaer"
-      intro="Brukes når du fører vurderinger og skårer økter. Tastene følger rekkefølgen; verdien som betyr «ingenting her» får alltid 0."
-    >
-      <Gruppe>
-        {skalaer.map((skala, i) => (
-          <Rad
-            key={skala.id}
-            k={i === 0 ? "skalaer" : undefined}
-            tittel={
-              <>
-                {skala.navn}{" "}
-                <span className="text-blekk-svak">· {skala.bruksomrade}</span>
-              </>
-            }
-            under={
-              <div className="flex flex-wrap gap-1">
-                {(verdier[skala.id] ?? []).map((v) => {
-                  const t = taster(verdier[skala.id] ?? []).get(v.id);
-                  return (
-                    <span
-                      key={v.id}
-                      title={v.etikett ?? undefined}
-                      className="inline-flex h-6 items-center gap-1.5 rounded-xl bg-flate px-2 text-etikett"
-                    >
-                      {t && <span className="text-blekk-svak">{t}</span>}
-                      {v.kode}
-                    </span>
-                  );
-                })}
-              </div>
-            }
-          />
-        ))}
-      </Gruppe>
-    </Side>
-  );
-}
 
 // --------------------------------------------------------------- Utseende
 

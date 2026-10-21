@@ -45,6 +45,7 @@ import { Fargevelger } from "../ui/Fargevelger";
 import { hentInnstilling } from "../data/skolear";
 import { LAERERNAVN } from "../data/arsplanark";
 import { Velger } from "../ui/Velger";
+import { hentSkalaer, type Skala } from "../skala";
 
 /**
  * Fagportalen — faget sett ovenfra.
@@ -210,7 +211,7 @@ export function FagPanel({
                   onEndret();
                 }}
               />
-              <span />
+              <Skaringsskala fag={fag} onEndret={onEndret} />
               <Felt
                 etikett="Pause etter, minutter"
                 verdi={
@@ -1043,4 +1044,47 @@ function kort(dato: string): string {
     day: "2-digit",
     month: "2-digit",
   });
+}
+
+/**
+ * Skalaen faget skåres med (ARBEIDSLISTE 22.7): skalaene for skåring eller
+ * begge. Øktene som er skåret, beholder verdiene sine.
+ */
+function Skaringsskala({
+  fag,
+  onEndret,
+}: {
+  fag: FagIAr;
+  onEndret: () => void;
+}) {
+  const [skalaer, setSkalaer] = useState<Skala[]>([]);
+  useEffect(() => {
+    void hentSkalaer().then((s) =>
+      setSkalaer(s.filter((x) => x.bruksomrade !== "vurdering")),
+    );
+  }, []);
+  const verdi =
+    fag.skaringsskalaId ?? skalaer.find((s) => s.innebygd)?.id ?? "";
+  return (
+    <label className="block">
+      <span className="mb-1 block text-etikett uppercase tracking-etikett text-blekk-dempet">
+        Skåringsskala
+      </span>
+      <Velger
+        verdi={verdi}
+        bredde="w-full"
+        valg={skalaer.map((s) => ({ verdi: s.id, tekst: s.navn }))}
+        settVerdi={async (v) => {
+          if (v === verdi) return;
+          const ok = await bekreft(
+            "Bytte skåringsskala for faget?\n\nØktene som er skåret, beholder " +
+              "verdiene sine. Nye skåringer bruker den nye skalaen.",
+          );
+          if (!ok) return;
+          await endreFagIAr(fag.id, { skaringsskala_id: v });
+          onEndret();
+        }}
+      />
+    </label>
+  );
 }

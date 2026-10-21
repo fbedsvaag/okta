@@ -54,6 +54,9 @@ export function VurderingPanel({
   const [okter, setOkter] = useState<Oktvalg[]>([]);
   const [markert, setMarkert] = useState(0);
   const [kommentarFor, setKommentarFor] = useState<string | null>(null);
+  // Over ni verdier har skalaen ingen taster: koden skrives og ↵ fører
+  // (ARBEIDSLISTE 22.4).
+  const [skrevet, setSkrevet] = useState("");
   const liste = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -118,6 +121,31 @@ export function VurderingPanel({
     // ⌘-snarveiene (⌘K søk, ⌘[ tilbake) hører til appen, ikke lista.
     if (harModifikator(e)) return;
 
+    if (tastekart.size === 0 && verdier.length > 0) {
+      if (e.key === "Enter" && skrevet) {
+        e.preventDefault();
+        const v = verdier.find(
+          (x) =>
+            x.kode.toLocaleLowerCase("nb-NO") ===
+            skrevet.trim().toLocaleLowerCase("nb-NO"),
+        );
+        setSkrevet("");
+        if (v) void foer(markert, v);
+        return;
+      }
+      if (e.key === "Backspace" && skrevet) {
+        e.preventDefault();
+        return setSkrevet((t) => t.slice(0, -1));
+      }
+      if (e.key === "Escape" && skrevet) {
+        e.preventDefault();
+        return setSkrevet("");
+      }
+      if (e.key.length === 1 && e.key !== " " && e.key.toLowerCase() !== "k") {
+        e.preventDefault();
+        return setSkrevet((t) => t + e.key);
+      }
+    }
     if (e.key === "Escape") return onLukk();
     if (e.key === "ArrowDown" || (e.key === "Tab" && !e.shiftKey)) {
       e.preventDefault();
@@ -176,6 +204,17 @@ export function VurderingPanel({
           </span>
           <span className="text-liten tabular-nums text-blekk-dempet">
             {antallFort} av {elever.length} ført
+            {tastekart.size === 0 && verdier.length > 0 && (
+              <span className="ml-2 text-blekk-svak">
+                {skrevet ? (
+                  <>
+                    Skriver <b className="text-blekk">{skrevet}</b> ↵
+                  </>
+                ) : (
+                  "skriv verdien og trykk ↵"
+                )}
+              </span>
+            )}
           </span>
         </div>
 
