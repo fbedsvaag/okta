@@ -36,6 +36,7 @@ import {
   nyttValg,
 } from "../ui/Flervalg";
 import { visToast } from "../ui/Toast";
+import { Skarprikk } from "../ui/Skarprikk";
 import { hovedtast } from "../ui/taster";
 import {
   fravaer,
@@ -649,15 +650,6 @@ function Pille({
   );
 }
 
-const RUTEFARGE: Record<Rute, string> = {
-  g: "var(--color-lys-gronn)",
-  y: "var(--color-lys-gul)",
-  r: "var(--color-lys-rod)",
-  o: "var(--color-lys-borte)",
-  n: "var(--color-linje-sterk)",
-  // Ikke skåret (19.4): til stede, ikke sett. Tom rute med kant.
-  t: "transparent",
-};
 const RUTENAVN: Record<Rute, string> = {
   g: "grønn",
   y: "gul",
@@ -746,15 +738,12 @@ function Elevlinje({
           <span className="text-blekk-svakest">–</span>
         ) : (
           ruter.map((r, i) => (
-            <span
+            <Skarprikk
               key={i}
-              title={RUTENAVN[r]}
-              className="h-[11px] w-[11px] rounded-[2px]"
-              style={{
-                background: RUTEFARGE[r],
-                boxShadow:
-                  r === "t" ? "inset 0 0 0 1px var(--color-linje)" : undefined,
-              }}
+              slag={r}
+              form="firkant"
+              storrelse={11}
+              tittel={RUTENAVN[r]}
             />
           ))
         )}

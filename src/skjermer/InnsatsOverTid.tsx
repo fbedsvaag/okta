@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Skarprikk } from "../ui/Skarprikk";
 import type { FagIAr } from "../data/fag";
 import type { Okt } from "../data/okter";
 import { hentOktrader, type Oktrad } from "../data/oktrader";
@@ -157,10 +158,7 @@ export function InnsatsOverTid({
             ] as const
           ).map(([k, navn]) => (
             <span key={k} className="inline-flex items-center gap-[5px]">
-              <i
-                className="inline-block h-[9px] w-[9px] rounded-[2px]"
-                style={{ background: FARGE[k] }}
-              />
+              <Skarprikk slag={k} form="firkant" storrelse={9} />
               {navn}
             </span>
           ))}

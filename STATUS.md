@@ -9,6 +9,16 @@ den skal bli. Fila eies fritt, i motsetning til SPEC.md.
 Utseendet står i `DESIGN.md`, som beskriver appen slik den er bygget.
 Lerretet (`docs/lerret/`) er fasit for det som er tegnet.
 
+## Runde 20 (21.10, ARBEIDSLISTE §20)
+
+- **20.3 Én skårprikk** (`ui/Skarprikk.tsx`): rød, gul, grønn, 0 = ikke i
+  økta (mørk med kryss), ikke sett (tom ring), uten farge og kommer. Rund
+  eller firkant. Brukt i skåringen, filteret og «Borte sist» i økta,
+  heatmapet og notatene i elevkortet, Elever-lista, fagoversikten, «Følg
+  opp i økta», «Elever som glipper» og tegnforklaringen i «Innsats over
+  tid». Heatmapet i elevkortet viste ikke skåret som «ikke i økta»; nå
+  «ikke sett» (19.4 hadde glemt det).
+
 ## Runde 19 (20.10, ARBEIDSLISTE §19)
 
 - **19.1 Ny elev** (`skjermer/NyElev.tsx`, lerretet ElevNy): glasskort under

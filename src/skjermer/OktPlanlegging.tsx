@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { Skarprikk } from "../ui/Skarprikk";
 import { confirm as bekreft } from "@tauri-apps/plugin-dialog";
 import {
   endreOkt,
@@ -787,17 +788,11 @@ function FolgOpp({ okt, skolearId }: { okt: Okt; skolearId: string }) {
               onClick={() => ark.apneElev(o.elevId)}
               className="flex w-full items-center gap-2 py-[3px] text-left text-[calc(13px*var(--tekst-skala))] hover:underline"
             >
-              <span
-                className="h-[7px] w-[7px] shrink-0 rounded-full"
-                style={{
-                  background:
-                    o.grunn === "rod"
-                      ? "var(--color-lys-rod)"
-                      : o.grunn === "borte"
-                        ? "var(--color-lys-borte)"
-                        : "var(--color-aksent)",
-                }}
-              />
+              {o.grunn === "punkt" ? (
+                <span className="h-[9px] w-[9px] shrink-0 rounded-full bg-aksent" />
+              ) : (
+                <Skarprikk slag={o.grunn === "rod" ? "r" : "o"} storrelse={9} />
+              )}
               <span className="truncate">
                 {e.fornavn}:{" "}
                 {o.grunn === "rod"
@@ -812,7 +807,7 @@ function FolgOpp({ okt, skolearId }: { okt: Okt; skolearId: string }) {
       )}
       {ikkeSettNavn.length > 0 && (
         <p className="mt-1 flex gap-2 py-[3px] text-[calc(13px*var(--tekst-skala))]">
-          <span className="mt-[6px] h-[7px] w-[7px] shrink-0 rounded-full shadow-[inset_0_0_0_1.5px_var(--color-linje-sterk)]" />
+          <Skarprikk slag="t" storrelse={9} klasse="mt-[5px]" />
           <span>
             <span className="text-blekk-dempet">Ikke sett sist:</span>{" "}
             {ikkeSettNavn.join(", ")}

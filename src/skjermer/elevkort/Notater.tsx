@@ -1,4 +1,5 @@
 import { useApen } from "../../ui/Sammenleggbar";
+import { Skarprikk, slagFraVerdi } from "../../ui/Skarprikk";
 import { Utfold } from "../../ui/Utfold";
 import { useEffect, useState } from "react";
 import { Tidslinjedato, Tidslinjestrek } from "../../ui/Tidslinje";
@@ -264,11 +265,17 @@ function Oktnotatrad({
               Økt
             </span>
             {notat.farge && (
-              <span
-                title={notat.verdi ?? undefined}
-                className="h-2 w-2 shrink-0 self-center rounded-full"
-                style={{ background: skalafarge(notat.farge) }}
-              />
+              <span title={notat.verdi ?? undefined} className="self-center">
+                <Skarprikk
+                  slag={slagFraVerdi({ farge: notat.farge })}
+                  farge={
+                    ["gronn", "gul", "rod"].includes(notat.farge)
+                      ? undefined
+                      : skalafarge(notat.farge)
+                  }
+                  storrelse={8}
+                />
+              </span>
             )}
             <span className="shrink-0 text-blekk-svak">{notat.fagKode}</span>
             {notat.tema && (

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { Skarprikk } from "../ui/Skarprikk";
 import type { FagIAr } from "../data/fag";
 import type { Skolear } from "../data/skolear";
 import {
@@ -448,15 +449,14 @@ export function Fagoversikt({
                         <span
                           key={i}
                           title={`${kortDag(siste16[i].dato)}${siste16[i].tema ? ` · ${siste16[i].tema}` : ""}${r ? ` · ${RUTENAVN[r]}` : ""}`}
-                          className="h-3.5 w-3.5 rounded-[2px]"
-                          style={{
-                            background: r ? RUTEFARGE[r] : "transparent",
-                            boxShadow:
-                              r && r !== "t"
-                                ? undefined
-                                : "inset 0 0 0 1px var(--color-linje)",
-                          }}
-                        />
+                        >
+                          {/* Ingen rad: eleven var ikke i faget da. */}
+                          <Skarprikk
+                            slag={r ?? "k"}
+                            form="firkant"
+                            storrelse={14}
+                          />
+                        </span>
                       ))}
                     </span>
                   </button>
@@ -722,17 +722,12 @@ function Gruppe({
             </span>
             <span className="flex shrink-0 gap-[2px]">
               {ruter.map((r, i) => (
-                <span
+                <Skarprikk
                   key={i}
-                  title={RUTENAVN[r]}
-                  className="h-2.5 w-2.5 rounded-[2px]"
-                  style={{
-                    background: RUTEFARGE[r],
-                    boxShadow:
-                      r === "t"
-                        ? "inset 0 0 0 1px var(--color-linje)"
-                        : undefined,
-                  }}
+                  slag={r}
+                  form="firkant"
+                  storrelse={10}
+                  tittel={RUTENAVN[r]}
                 />
               ))}
             </span>

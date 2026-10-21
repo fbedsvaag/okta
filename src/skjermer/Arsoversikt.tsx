@@ -1,4 +1,5 @@
 import { Sammenleggknapp, useApen } from "../ui/Sammenleggbar";
+import { Skarprikk } from "../ui/Skarprikk";
 import { Elevfoto } from "../ui/Elevfoto";
 import { Utfold } from "../ui/Utfold";
 import { useEffect, useState } from "react";
@@ -171,6 +172,15 @@ function Panel({
     </section>
   );
 }
+
+/** Formen til snittprikken: nærmeste av de tre trafikklysene (20.1). */
+const SNITTSLAG = {
+  gronn: "g",
+  gronngul: "g",
+  gul: "y",
+  oransje: "r",
+  rod: "r",
+} as const;
 
 /** Snittfargen til «Elever som glipper», i trafikklysets fem trinn. */
 const PRIKKFARGE = {
@@ -345,10 +355,10 @@ function Glipper({
                 title={`Snitt ${Math.round(e.snitt * 100)} av 100 over ${e.antall} skåringer, sist ${norskDato(e.siste)}`}
                 className="flex w-full items-center gap-2 py-1 text-left text-brod hover:text-aksent"
               >
-                <span
-                  aria-hidden
-                  className="h-2.5 w-2.5 shrink-0 rounded-full"
-                  style={{ background: PRIKKFARGE[snittfarge(e.snitt)] }}
+                <Skarprikk
+                  slag={SNITTSLAG[snittfarge(e.snitt)]}
+                  farge={PRIKKFARGE[snittfarge(e.snitt)]}
+                  storrelse={10}
                 />
                 <Elevfoto elevId={e.elevId} storrelse={20} />
                 <Kappet verdi={`${e.fornavn} ${e.etternavn}`} />

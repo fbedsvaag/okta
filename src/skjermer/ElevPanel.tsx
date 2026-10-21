@@ -69,7 +69,13 @@ import {
   type Fagfravaer,
 } from "../data/oktrader";
 import { lytt } from "../data/endringer";
-import { NOYTRAL, skalafarge } from "../ui/farger";
+import { skalafarge } from "../ui/farger";
+import {
+  SKARNAVN,
+  Skarprikk,
+  slagFraVerdi,
+  type Skarslag,
+} from "../ui/Skarprikk";
 import { hovedtast, harModifikator, tast as visTast } from "../ui/taster";
 import { useSisteSvar } from "../ui/sisteSvar";
 import { Klassevelger, Navnefelt } from "./elevkort/Redigering";
@@ -931,32 +937,14 @@ function Klassekartboks({
 }
 /** Tegnforklaringen over innsatsen. */
 function Tegnforklaring() {
-  const rute = (bg: string, kant = false) => (
-    <span
-      className="h-2 w-2 rounded-[2px]"
-      style={{
-        background: bg,
-        boxShadow: kant ? "inset 0 0 0 1px var(--color-linje)" : undefined,
-      }}
-    />
-  );
   return (
     <span className="flex flex-wrap gap-2.5 text-[calc(11.5px*var(--tekst-skala))] text-blekk-dempet">
-      <span className="inline-flex items-center gap-[5px]">
-        {rute(skalafarge("gronn"))}Grønn
-      </span>
-      <span className="inline-flex items-center gap-[5px]">
-        {rute(skalafarge("gul"))}Gul
-      </span>
-      <span className="inline-flex items-center gap-[5px]">
-        {rute(skalafarge("rod"))}Rød
-      </span>
-      <span className="inline-flex items-center gap-[5px]">
-        {rute(NOYTRAL)}Ikke i økta
-      </span>
-      <span className="inline-flex items-center gap-[5px]">
-        {rute("transparent", true)}Kommer
-      </span>
+      {(["g", "y", "r", "o", "t", "k"] as const).map((s) => (
+        <span key={s} className="inline-flex items-center gap-[5px]">
+          <Skarprikk slag={s} form="firkant" storrelse={8} />
+          <span className="first-letter:uppercase">{SKARNAVN[s]}</span>
+        </span>
+      ))}
     </span>
   );
 }
@@ -1033,40 +1021,43 @@ function Innsatsrute({
 }) {
   const kommer = rute.avholdt === 0 && rute.dato >= idag;
   const avholdt = rute.avholdt > 0;
-  const ikkeIOkta =
-    rute.tellerIkke === 1 || (avholdt && rute.verdiKode === null);
+  // 19.4: ikke skåret i en avholdt økt er «ikke sett», ikke «ikke i økta».
+  const slag: Skarslag | null = kommer
+    ? "k"
+    : !avholdt
+      ? null
+      : rute.tellerIkke === 1
+        ? "o"
+        : rute.verdiKode === null
+          ? "t"
+          : slagFraVerdi({ farge: rute.verdiFarge ?? null });
   const tittel = [
     kortDato(rute.dato),
     rute.tema,
-    kommer
-      ? "kommer"
-      : !avholdt
-        ? "ikke holdt"
-        : ikkeIOkta
-          ? "ikke i økta"
-          : (rute.verdiKode ?? ""),
+    slag === null
+      ? "ikke holdt"
+      : slag === "n"
+        ? (rute.verdiKode ?? "")
+        : SKARNAVN[slag],
     rute.notat,
   ]
     .filter(Boolean)
     .join(" · ");
   return (
-    <button
-      onClick={onKlikk}
-      title={tittel}
-      className="h-2 w-2 rounded-[2px]"
-      style={{
-        background: kommer
-          ? "transparent"
-          : !avholdt
-            ? "transparent"
-            : ikkeIOkta
-              ? NOYTRAL
-              : rute.verdiFarge
-                ? skalafarge(rute.verdiFarge)
-                : NOYTRAL,
-        boxShadow: kommer ? "inset 0 0 0 1px var(--color-linje)" : undefined,
-      }}
-    />
+    <button onClick={onKlikk} title={tittel} className="h-2 w-2">
+      {slag && (
+        <Skarprikk
+          slag={slag}
+          form="firkant"
+          storrelse={8}
+          farge={
+            slag === "n" && rute.verdiFarge
+              ? skalafarge(rute.verdiFarge)
+              : undefined
+          }
+        />
+      )}
+    </button>
   );
 }
 /**

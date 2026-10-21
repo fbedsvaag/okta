@@ -33,6 +33,7 @@ import { Liveplan, Nalinje, useMinutt, visesLive } from "./Oktlive";
 import { usePlanvisning } from "./Oktplan";
 import { hentOktrader } from "../data/oktrader";
 import { visToast } from "../ui/Toast";
+import { Skarprikk, slagFraVerdi } from "../ui/Skarprikk";
 
 /**
  * Økta som ark, SPEC §4.4 og DESIGN.md §10 (lerretet «OktArk»).
@@ -453,13 +454,26 @@ export function OktPanel({
                         id: "tilstede",
                         navn: `Til stede ${elever.length - antallBorte}`,
                       },
-                      { id: "borte", navn: `Borte ${antallBorte}` },
+                      {
+                        id: "borte",
+                        navn: (
+                          <span className="inline-flex items-center gap-1.5">
+                            <Skarprikk slag="o" storrelse={9} />
+                            Borte {antallBorte}
+                          </span>
+                        ),
+                      },
                       // Bare når økta er i gang: før det er alle «ikke sett».
                       ...(antallSkaret > 0
                         ? [
                             {
                               id: "ikkesett",
-                              navn: `Ikke sett ${antallIkkeSett}`,
+                              navn: (
+                                <span className="inline-flex items-center gap-1.5">
+                                  <Skarprikk slag="t" storrelse={9} />
+                                  Ikke sett {antallIkkeSett}
+                                </span>
+                              ),
                             },
                           ]
                         : []),
@@ -858,18 +872,11 @@ function Merke({
         className="grid h-6 w-7 place-items-center rounded-md"
       >
         <span
-          className={`grid h-[13px] w-[13px] place-items-center rounded-full bg-borte shadow-[0_0_0_2px_var(--color-ark),0_0_0_3.5px_var(--color-borte)] ${
+          className={`rounded-full shadow-[0_0_0_2px_var(--color-ark),0_0_0_3.5px_var(--color-borte)] ${
             pop ? "pop" : ""
           }`}
         >
-          <svg width="7" height="7" viewBox="0 0 8 8" aria-hidden>
-            <path
-              d="M1.5 1.5l5 5M6.5 1.5l-5 5"
-              stroke="var(--color-ark)"
-              strokeWidth="1.6"
-              strokeLinecap="round"
-            />
-          </svg>
+          <Skarprikk slag="o" storrelse={13} />
         </span>
       </button>
     );
@@ -886,12 +893,17 @@ function Merke({
             : "opacity-20 hover:bg-bord hover:opacity-70"
       }`}
     >
-      <span
-        className={`block rounded-full ${pa ? "h-[15px] w-[15px]" : "h-[13px] w-[13px]"} ${
-          pa && pop ? "pop" : ""
-        }`}
-        style={{ background: farge }}
-      />
+      <span className={pa && pop ? "pop" : ""}>
+        <Skarprikk
+          slag={slagFraVerdi(verdi)}
+          farge={
+            verdi.farge && !["gronn", "gul", "rod"].includes(verdi.farge)
+              ? farge
+              : undefined
+          }
+          storrelse={pa ? 15 : 13}
+        />
+      </span>
     </button>
   );
 }
@@ -1058,7 +1070,7 @@ function BorteSist({
               title={`${e.fornavn} ${e.etternavn}: vis i lista`}
               className="inline-flex h-[26px] items-center gap-1.5 rounded-full bg-ark px-2.5 text-[calc(12.5px*var(--tekst-skala))] shadow-[inset_0_0_0_1px_var(--color-linje)] hover:shadow-[inset_0_0_0_1px_var(--color-aksent)]"
             >
-              <span className="h-[7px] w-[7px] rounded-full bg-borte" />
+              <Skarprikk slag="o" storrelse={9} />
               {navn(e)}
             </button>
           ))}
