@@ -279,6 +279,16 @@ export type Innstillinger = {
   fraElevene: boolean;
   /** visningen kartet sist sto i */
   visning: "plasser" | "grupper";
+  /**
+   * Et skjult kart som bare bærer gruppene for en klasse eller et fag
+   * (Grupper-fanen, 25.3/25.12). Står ikke blant klassekartene. Får det et
+   * rom, blir det et vanlig kart med den samme historikken.
+   */
+  bareGrupper?: boolean;
+  /** «Per gruppe» i stedet for antall grupper (25.4); null = antall */
+  perGruppe?: number | null;
+  /** «Bare de som er her» (25.5) */
+  bareHer?: boolean;
 };
 
 export const STANDARD: Innstillinger = {
@@ -312,8 +322,14 @@ function tolkInnstillinger(json: string | null): Innstillinger {
   }
 }
 
-/** Kartene i skoleåret, med navnet på kilden og rommet. */
-export async function hentKart(skolearId: string): Promise<Kart[]> {
+/**
+ * Kartene i skoleåret, med navnet på kilden og rommet. De skjulte
+ * gruppekartene (`bareGrupper`) er bare med når `medSkjulte` er satt.
+ */
+export async function hentKart(
+  skolearId: string,
+  medSkjulte = false,
+): Promise<Kart[]> {
   const rader = await hent<{
     id: string;
     skolearId: string;
@@ -348,6 +364,8 @@ export async function hentKart(skolearId: string): Promise<Kart[]> {
   );
   const ut: Kart[] = [];
   for (const r of rader) {
+    const innstillinger = tolkInnstillinger(r.innstillinger);
+    if (innstillinger.bareGrupper && !medSkjulte) continue;
     const elever = await hentKildeElever(r.kildeType, r.kildeId, skolearId);
     ut.push({
       id: r.id,
@@ -363,7 +381,7 @@ export async function hentKart(skolearId: string): Promise<Kart[]> {
       farge: r.farge,
       romId: r.romId,
       romNavn: r.romNavn,
-      innstillinger: tolkInnstillinger(r.innstillinger),
+      innstillinger,
       antall: elever.length,
     });
   }
@@ -376,6 +394,20 @@ export async function opprettKart(k: {
   kildeId: string;
   romId: string | null;
 }): Promise<string> {
+  // Har kilden et skjult gruppekart, blir det kartet — med historikken.
+  const skjult = (await hentKart(k.skolearId, true)).find(
+    (x) =>
+      x.innstillinger.bareGrupper &&
+      x.kildeType === k.kildeType &&
+      x.kildeId === k.kildeId,
+  );
+  if (skjult) {
+    await endreKart(skjult.id, {
+      romId: k.romId,
+      innstillinger: { ...skjult.innstillinger, bareGrupper: false },
+    });
+    return skjult.id;
+  }
   const id = await settInn("klassekart", {
     skolear_id: k.skolearId,
     kilde_type: k.kildeType,
@@ -397,6 +429,71 @@ export async function endreKart(
       innstillinger: JSON.stringify(felter.innstillinger),
     }),
   });
+  varsleKlassekart();
+}
+
+/**
+ * Kartet gruppene for en klasse eller et fag hører til (Grupper-fanen):
+ * kildens kart om det finnes, ellers et nytt, skjult kart uten rom. Slik
+ * deler fanen og klassekartet én historikk.
+ */
+export async function kartForKilde(
+  skolearId: string,
+  kildeType: Kildetype,
+  kildeId: string,
+): Promise<string> {
+  const finnes = (await hentKart(skolearId, true)).filter(
+    (x) => x.kildeType === kildeType && x.kildeId === kildeId,
+  );
+  const valgt = finnes.find((x) => !x.innstillinger.bareGrupper) ?? finnes[0];
+  if (valgt) return valgt.id;
+  const id = await settInn("klassekart", {
+    skolear_id: skolearId,
+    kilde_type: kildeType,
+    kilde_id: kildeId,
+    rom_id: null,
+    innstillinger: JSON.stringify({ ...STANDARD, bareGrupper: true }),
+  });
+  varsleKlassekart();
+  return id;
+}
+
+// ------------------------------------------------------------ pultfarger
+
+export type Plassfarge = {
+  plass: number;
+  farge: string;
+  gruppenavn: string | null;
+};
+
+/** Gruppefargene på pultene i kartet (25.11). */
+export async function hentPlassfarger(kartId: string): Promise<Plassfarge[]> {
+  return hent<Plassfarge>(
+    `SELECT plass, farge, gruppenavn FROM kart_plassfarge
+      WHERE klassekart_id = $1 AND slettet IS NULL ORDER BY plass`,
+    [kartId],
+  );
+}
+
+/** Lagrer alle pultfargene i kartet på nytt, i én transaksjon (#2). */
+export async function lagrePlassfarger(
+  kartId: string,
+  farger: Plassfarge[],
+): Promise<void> {
+  const gamle = await hent<{ id: string }>(
+    "SELECT id FROM kart_plassfarge WHERE klassekart_id = $1 AND slettet IS NULL",
+    [kartId],
+  );
+  const t = new Transaksjon();
+  for (const g of gamle) t.slett("kart_plassfarge", g.id);
+  for (const f of farger)
+    t.settInn("kart_plassfarge", {
+      klassekart_id: kartId,
+      plass: f.plass,
+      farge: f.farge,
+      gruppenavn: f.gruppenavn?.trim() || null,
+    });
+  await t.kjor();
   varsleKlassekart();
 }
 
@@ -759,7 +856,8 @@ export async function hentElevIKart(
   skolearId: string,
 ): Promise<ElevIKart[]> {
   const [kartene, rommene] = await Promise.all([
-    hentKart(skolearId),
+    // Også de skjulte gruppekartene: gruppeloggen hører til eleven.
+    hentKart(skolearId, true),
     hentRom(),
   ]);
   const ut: ElevIKart[] = [];

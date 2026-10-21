@@ -156,6 +156,47 @@ describe("kart og elever", () => {
   });
 });
 
+describe("grupper uten kart og pultfarger (25.12)", () => {
+  it("lager ett skjult kart per kilde, som blir det vanlige kartet når det får rom", async () => {
+    const id = await k.kartForKilde(ar, "fag", fag);
+    expect(await k.kartForKilde(ar, "fag", fag)).toBe(id);
+    expect(await k.hentKart(ar)).toEqual([]);
+    expect((await k.hentKart(ar, true)).map((x) => x.id)).toEqual([id]);
+
+    await k.lagreOppsett(
+      id,
+      "gruppe",
+      [{ elevId: tony, gruppe: 0 }],
+      "Fra fanen",
+    );
+    const rom = await k.opprettRom("Rom 214", []);
+    const kart = await k.opprettKart({
+      skolearId: ar,
+      kildeType: "fag",
+      kildeId: fag,
+      romId: rom,
+    });
+    expect(kart).toBe(id);
+    const synlige = await k.hentKart(ar);
+    expect(synlige.map((x) => x.romId)).toEqual([rom]);
+    expect((await k.hentOppsett(kart, "gruppe"))[0].navn).toBe("Fra fanen");
+  });
+
+  it("lagrer pultfargene på nytt hver gang", async () => {
+    const kart = await k.kartForKilde(ar, "fag", fag);
+    await k.lagrePlassfarger(kart, [
+      { plass: 1, farge: "#4f7ac0", gruppenavn: "Gruppe 1" },
+      { plass: 2, farge: "#4f7ac0", gruppenavn: "Gruppe 1" },
+    ]);
+    await k.lagrePlassfarger(kart, [
+      { plass: 3, farge: "#c9922e", gruppenavn: " Lesere " },
+    ]);
+    expect(await k.hentPlassfarger(kart)).toEqual([
+      { plass: 3, farge: "#c9922e", gruppenavn: "Lesere" },
+    ]);
+  });
+});
+
 describe("oppsett og historikk", () => {
   it("har navn, kan få nytt navn og slettes, og viser hvem som var i gruppe sammen", async () => {
     const kart = await k.opprettKart({
