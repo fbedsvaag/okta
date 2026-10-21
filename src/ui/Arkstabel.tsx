@@ -95,7 +95,8 @@ export function useArk(): Api {
 }
 
 /** Skjermene et ark kan sende deg videre til. Stabelen lukkes først. */
-export type Utgang = "okter" | "samtaler" | "vurderinger" | "liminn";
+export type Utgang =
+  "okter" | "samtaler" | "vurderinger" | "liminn" | "klassekart";
 
 export function Arkstabel({
   skolearId,

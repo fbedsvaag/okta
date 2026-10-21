@@ -9,6 +9,11 @@ den skal bli. Fila eies fritt, i motsetning til SPEC.md.
 Utseendet står i `DESIGN.md`, som beskriver appen slik den er bygget.
 Lerretet (`docs/lerret/`) er fasit for det som er tegnet.
 
+## Klassekart fra øktkortet (21.10)
+
+- «Klassekart →» i toppen av øktkortet når faget har et kart. Åpner
+  plassene «Fra kateteret» uten å endre kartets lagrede visning.
+
 ## Lagrede gruppesett og gruppelogg (21.10)
 
 - Navn på gruppesettet i verktøylinja; «Bruk» lagrer det med navnet.

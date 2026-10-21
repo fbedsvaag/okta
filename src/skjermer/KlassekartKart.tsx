@@ -58,6 +58,16 @@ import { Velger } from "../ui/Velger";
  * — det gjør også utskrift og kopiering — og de lagrede plasseringene er
  * historikken «Unngå dem som har sittet sammen» regner på.
  */
+/**
+ * Kartet som skal vises fra kateteret neste gang det åpnes — lenken i
+ * øktkortet («Klassekart»), der læreren ser om alle sitter riktig. Gjelder
+ * bare den ene visningen; kartets lagrede valg røres ikke.
+ */
+let fraKateteretNeste: string | null = null;
+export function visFraKateteret(kartId: string): void {
+  fraKateteretNeste = kartId;
+}
+
 export function KlassekartKart({
   kartId,
   skolearId,
@@ -74,6 +84,12 @@ export function KlassekartKart({
   const [regler, setRegler] = useState<Elevregel[]>([]);
   const [historikk, setHistorikk] = useState<Oppsett[]>([]);
   const [innst, setInnst] = useState<Innstillinger | null>(null);
+  // Åpnet fra øktkortet: plassene, fra kateteret, så lenge kartet står
+  // åpent — også når det lastes på nytt — til læreren endrer noe selv.
+  const fraKateteret = useRef(fraKateteretNeste === kartId);
+  if (fraKateteretNeste === kartId) fraKateteretNeste = null;
+  // Kartets egne, lagrede valg — det som lagres når noe endres.
+  const lagretInnst = useRef<Innstillinger | null>(null);
 
   // Plasseringen på skjermen. Ikke lagret før «Bruk», utskrift eller kopi.
   const [plass, setPlass] = useState<Map<string, number>>(new Map());
@@ -98,7 +114,12 @@ export function KlassekartKart({
     ]);
     const rommet = r.find((x) => x.id === k.romId) ?? null;
     setKart(k);
-    setInnst(k.innstillinger);
+    lagretInnst.current = k.innstillinger;
+    setInnst(
+      fraKateteret.current
+        ? { ...k.innstillinger, visning: "plasser", fraElevene: false }
+        : k.innstillinger,
+    );
     setRom(rommet);
     setElever(e);
     setRegler(g);
@@ -200,7 +221,10 @@ export function KlassekartKart({
     if (!innst) return;
     const ny = { ...innst, ...endring };
     setInnst(ny);
-    void endreKart(kartId, { innstillinger: ny });
+    // Kateter-visningen fra øktkortet lagres ikke; bare det læreren endret.
+    const lagres = { ...(lagretInnst.current ?? innst), ...endring };
+    lagretInnst.current = lagres;
+    void endreKart(kartId, { innstillinger: lagres });
   }
 
   async function bruk(hvorfor?: string) {

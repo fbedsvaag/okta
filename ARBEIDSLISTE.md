@@ -971,6 +971,19 @@ Vurderinger som hentes fra i fjor, er forslag til læreren har sett på dem.
 - [x] **24.4** «Bekreft» i vurderingspanelet og «Bekreft alle» over lista i
   Vurderinger. Ett klikk, ingen spørsmål. Testet i `mal.test.ts`.
 
+## 25. Plasser og grupper (21.10) — tegnet, venter på svar
+
+Tegning: `docs/lerret/PlasserGrupper.dc.html`. Grupper skal ikke ligge gjemt inne i et klassekart.
+
+- [ ] **25.1 Navn.** «Klassekart» → «Plasser og grupper» i menyen (snarvei G P). Vurder alternativer før vi bestemmer.
+- [ ] **25.2 To faner i verktøylinja:** Grupper (står først) · Klassekart. Fanen huskes.
+- [ ] **25.3 Grupper uten kart.** Velg klasse/fag som chip (faget i økta du har nå er valgt). Krever ikke rom eller kart. Bruker samme `fordelGrupper` og historikk som i dag.
+- [ ] **25.4 Antall eller per gruppe.** Seg «Antall | Per gruppe» med − / +, og oppsummering («á 4 · 24 elever» / «6 grupper · 24 elever»).
+- [ ] **25.5 «Bare de som er her»** (på som standard): tar bort de som har fravær i dagens økt, og viser dem overstreket over gruppene.
+- [ ] **25.6** Tilfeldig/Spre/Samle, «Unngå samme som sist», dra elever mellom grupper, Stokk ⌘R med rolig FLIP (420 ms, ingen sprett). Kopier til Teams og Skriv ut lagrer settet.
+- [ ] **25.7 Lagrede grupper** i høyre kolonne, på tvers av fag. Klikk åpner settet.
+- [ ] **25.8 Klassekart-fanen:** kort per kart med liten plasskisse, rom som chips, «Nytt rom» og «Nytt kart» i verktøylinja.
+
 ## Ikke nå
 
 Ting som er vurdert og lagt bort med vilje. Står her så de ikke dukker opp

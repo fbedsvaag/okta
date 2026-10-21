@@ -13,6 +13,8 @@ import { OktPlanlegging } from "./OktPlanlegging";
 import { Tastestripe, Tasthint } from "../ui/Tastestripe";
 import { Markdown, Markdownfelt } from "../ui/Notattekst";
 import { useArk } from "../ui/Arkstabel";
+import { hentKart } from "../data/klassekart";
+import { visFraKateteret } from "./KlassekartKart";
 import { hentPerioder, type Periode } from "../data/perioder";
 import {
   endreOkt,
@@ -74,6 +76,16 @@ export function OktPanel({
 }) {
   // Eleven som nettopp fikk en verdi: prikken hans «popper» (DESIGN.md §8).
   const [sistSatt, setSistSatt] = useState<string | null>(null);
+  // Klassekartet til faget, til lenken i toppen: se om alle sitter riktig.
+  const [kartId, setKartId] = useState<string | null>(null);
+  useEffect(() => {
+    void hentKart(skolearId).then((k) =>
+      setKartId(
+        k.find((x) => x.kildeType === "fag" && x.kildeId === okt.skolearFagId)
+          ?.id ?? null,
+      ),
+    );
+  }, [skolearId, okt.skolearFagId]);
   // To moduser i samme ark (11.3): skåring og logg, eller planlegging.
   const [modus, setModus] = useState<Oktmodus>(
     () => startModus ?? standardModus(okt, new Date()),
@@ -394,6 +406,21 @@ export function OktPanel({
                   />
                   {periode.navn}
                 </span>
+              </>
+            )}
+            {kartId && (
+              <>
+                ·
+                <button
+                  onClick={() => {
+                    visFraKateteret(kartId);
+                    ark.gaTil("klassekart", kartId);
+                  }}
+                  title="Se kartet fra kateteret"
+                  className="text-blekk-dempet underline-offset-2 hover:text-blekk hover:underline"
+                >
+                  Klassekart →
+                </button>
               </>
             )}
           </p>
