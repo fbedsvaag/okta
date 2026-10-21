@@ -37,6 +37,10 @@ import { leggTilAngring } from "../ui/angre";
 import { Vurderingsikon } from "../ui/Vurderingsikon";
 import { finnFjoraret, type Fjorar } from "../data/mal";
 import { Malark } from "./Malark";
+import { ArsTavle } from "./ArsTavle";
+import { Bryter } from "../ui/felles";
+import { IVerktoylinja } from "../ui/Verktoylinje";
+import { useLagretInnstilling } from "../ui/useLagretInnstilling";
 
 /** Fargene en ny periode kan få (lerretet Arsplanlegger). */
 const NYFARGER = [
@@ -144,6 +148,13 @@ export function Aret({ skolear, fag }: { skolear: Skolear; fag: FagIAr }) {
   }, []);
 
   const stripe = useMemo(() => lagStripe(okter, fridager), [okter, fridager]);
+  // Tidslinje eller tavle (21.1). Valget huskes, for alle fag.
+  const [visning, settVisning] = useLagretInnstilling<"tidslinje" | "tavle">(
+    "aret_visning",
+    "tidslinje",
+    (v) => (v === "tavle" ? "tavle" : "tidslinje"),
+    String,
+  );
   const N = stripe.length;
   const lagret = useMemo(() => spennene(stripe), [stripe]);
 
@@ -411,11 +422,42 @@ export function Aret({ skolear, fag }: { skolear: Skolear; fag: FagIAr }) {
       </p>
     );
 
+  const bryter = (
+    <IVerktoylinja>
+      <span className="ml-auto shrink-0">
+        <Bryter
+          storrelse="liten"
+          verdi={visning}
+          settVerdi={(v) => settVisning(v === "tavle" ? "tavle" : "tidslinje")}
+          valg={[
+            { id: "tidslinje", navn: "Tidslinje" },
+            { id: "tavle", navn: "Tavle" },
+          ]}
+        />
+      </span>
+    </IVerktoylinja>
+  );
+
+  if (visning === "tavle")
+    return (
+      <>
+        {bryter}
+        <ArsTavle
+          fag={fag}
+          stripe={stripe}
+          perioder={perioder}
+          koblinger={koblinger}
+          vurderinger={vurderinger}
+        />
+      </>
+    );
+
   return (
     <div
       className="flex min-h-0 flex-1 flex-col gap-3.5"
       onClick={() => setValgt(null)}
     >
+      {bryter}
       <div className="flex shrink-0 items-end gap-5">
         <div>
           <h1 className="text-[calc(30px*var(--tekst-skala))] font-light tracking-overskrift">

@@ -9,6 +9,13 @@ den skal bli. Fila eies fritt, i motsetning til SPEC.md.
 Utseendet står i `DESIGN.md`, som beskriver appen slik den er bygget.
 Lerretet (`docs/lerret/`) er fasit for det som er tegnet.
 
+## Skoleåret som tavle (21.10, ARBEIDSLISTE 21.1)
+
+- Bryteren Tidslinje · Tavle i Året (huskes). Én kolonne per periode, kort
+  per økt, tema skrives rett inn. Dra et kort: datoene står, temaene imellom
+  rykker ett hakk, mål og vurdering følger (fristen også). − økt / + økt
+  flytter grensen. Testet i `tavle.test.ts`.
+
 ## Kalender og fagvalg (21.10)
 
 - Kalenderstrømmen (lokal iCal-adresse på 127.0.0.1) er fjernet, med den

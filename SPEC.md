@@ -731,6 +731,10 @@ Med et fag valgt er bryteren Oversikt | Året | Økter | Kalender (ARBEIDSLISTE
   Vurderingene kommer som **utkast**: dempet ikon og «utkast» i Året, Økter
   og Vurderinger, og ikke blant fristene i I dag før de er bekreftet. «Bekreft»
   i vurderingen eller «Bekreft alle» over lista gjør dem vanlige.
+- **Tavle** (bryteren Tidslinje · Tavle i Året): én kolonne per periode og et
+  kort per økt. Et kort dras til en ny plass: datoene står, temaene imellom
+  rykker ett hakk, og mål og vurdering følger temaet. Skårede økter ligger
+  fast.
 
 #### Listevisning (standard)
 

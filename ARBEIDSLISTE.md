@@ -872,7 +872,7 @@ I dag (20.5). Det som venter på betaen, står i §21.
 Tegningene ligger klare. Ta dem opp når betatesterne har brukt Økta en
 stund og etterspør dette.
 
-- [ ] **21.1 Skoleåret som tavle** (ArsTavle). Bryteren «Tidslinje · Tavle»
+- [x] **21.1 Skoleåret som tavle** (ArsTavle, bygget 21.10). Bryteren «Tidslinje · Tavle»
   øverst til høyre i Året, valget huskes.
   - Én kolonne per periode fra august til juni, scroll
       sidelengs. Kolonnehodet har farge, datoer, kompetansemål og antall
@@ -881,6 +881,10 @@ stund og etterspør dette.
       over i en annen periode: datoene står, temaene etter rykker ett hakk,
       og vurderingen følger temaet. «− økt / + økt» flytter grensen mot neste
       periode. Ferier står som egne linjer.
+  - Bygget: `data/tavle.ts` (kolonner, `flyttInnhold`), `skjermer/ArsTavle.tsx`.
+    Økter uten periode blir en egen grå kolonne. Skårede økter ligger fast.
+    «+ Ny periode» legger en uplassert eller ny periode på de første 8
+    øktene uten periode. Flytting og grenser angres med ⌘Z.
 - [ ] **21.2 I dag som fliser med Tilpass** (IDagOppsett). Egen-oppsett,
   S/M/L/XL, dra fliser, − skjuler, «+ navn» for skjulte. Inspirert av
   widgets på iPhone og Mac. Øverst til høyre: Enkel · Full · Egen og «Tilpass».
