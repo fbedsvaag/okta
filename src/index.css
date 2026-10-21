@@ -2015,3 +2015,18 @@ html {
 .okter-hode {
   background: var(--color-ark);
 }
+
+/* Dra og bytt i Økter: forhåndsvisningen på plassen du drar fra. */
+.dra-forhand {
+  animation: dra-forhand 150ms ease-out;
+}
+@keyframes dra-forhand {
+  from {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dra-forhand {
+    animation: none;
+  }
+}

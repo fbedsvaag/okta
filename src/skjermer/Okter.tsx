@@ -843,16 +843,10 @@ function Liste({
         position: "relative",
         zIndex: 41,
       };
-    if (malNr === i && !lastMal && fraNr !== null) {
-      const a = startPos({ gruppe: fraNr, nr: 0 });
-      const b = startPos({ gruppe: i, nr: 0 });
-      return {
-        transform: `translateY(${(a ?? 0) - (b ?? 0)}px)`,
-        transition: `transform ${DRATID}`,
-        position: "relative",
-        zIndex: 31,
-      };
-    }
+    // Det du står over, blir der det er, tonet ned. Det reiser ikke til
+    // plassen du kom fra; der vises en stille forhåndsvisning i stedet.
+    if (malNr === i && !lastMal)
+      return { opacity: 0.3, transition: "opacity 150ms ease-out" };
     if (landing?.id === id)
       return landing.fase === 0
         ? {
@@ -867,7 +861,7 @@ function Liste({
             position: "relative",
             zIndex: 41,
           };
-    if (dra) return { transition: `transform ${DRATID}` };
+    if (dra) return { transition: "opacity 150ms ease-out" };
     return undefined;
   }
   const liste = useRef<HTMLDivElement>(null);
@@ -1158,24 +1152,57 @@ function Liste({
                   }`}
                 >
                   {/* Kortet bak innholdet som svever eller glir (16.4). */}
-                  {(fraNr === i || (malNr === i && !lastMal)) && dra && (
+                  {fraNr === i && dra && (
                     <span
                       aria-hidden
                       className={`pointer-events-none absolute -inset-x-2 -inset-y-[3px] rounded-lg bg-ark ${
-                        fraNr === i
-                          ? lastMal
-                            ? "shadow-[0_10px_28px_rgba(36,31,51,0.22),inset_0_0_0_1.5px_var(--color-feil)]"
-                            : "shadow-[0_10px_28px_rgba(36,31,51,0.22),inset_0_0_0_1.5px_var(--color-aksent)]"
-                          : "shadow-[0_4px_14px_rgba(36,31,51,0.12),inset_0_0_0_1px_var(--color-linje-sterk)]"
+                        lastMal
+                          ? "shadow-[0_10px_28px_rgba(36,31,51,0.22),inset_0_0_0_1.5px_var(--color-feil)]"
+                          : "shadow-[0_10px_28px_rgba(36,31,51,0.22),inset_0_0_0_1.5px_var(--color-aksent)]"
                       }`}
                       style={{
                         ...innholdsstil(i, o.id),
                         gridRow: 1,
                         gridColumn: `${visFag ? 6 : 5} / -1`,
                         position: "absolute",
-                        zIndex: fraNr === i ? 40 : 30,
+                        zIndex: 40,
                       }}
                     />
+                  )}
+                  {/* Plassen du drar fra: hva som havner her, tonet inn. */}
+                  {fraNr === i && malOkt && !lastMal && (
+                    <span
+                      key={malOkt.id}
+                      aria-hidden
+                      className="dra-forhand pointer-events-none absolute inset-y-0 grid min-w-0 items-center gap-x-3 text-blekk-dempet"
+                      style={{
+                        gridRow: 1,
+                        gridColumn: `${visFag ? 6 : 5} / -1`,
+                        // Samme kolonner som raden, så perioden står under Periode.
+                        gridTemplateColumns: spor
+                          .split(" ")
+                          .slice(visFag ? 5 : 4)
+                          .join(" "),
+                        left: 0,
+                        right: 0,
+                      }}
+                    >
+                      <span className="-ml-2 min-w-0 truncate border-l-2 border-aksent/50 pl-2">
+                        {malOkt.tema || "tom økt"}
+                      </span>
+                      {perioder.get(malOkt.id) && (
+                        <span className="flex min-w-0 items-center gap-1.5 pl-2.5 text-[calc(12.5px*var(--tekst-skala))]">
+                          <span
+                            className="h-[7px] w-[7px] rounded-full"
+                            style={{
+                              background:
+                                perioder.get(malOkt.id)!.farge ?? undefined,
+                            }}
+                          />
+                          {perioder.get(malOkt.id)!.navn}
+                        </span>
+                      )}
+                    </span>
                   )}
                   {/* ⋮⋮: dra til en annen økt for å bytte innhold (16.4). */}
                   {!o.skaret && (

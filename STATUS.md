@@ -23,8 +23,9 @@ Lerretet (`docs/lerret/`) er fasit for det som er tegnet.
   (`.okter-hode`), og månedsoverskriften fester seg rett under det til neste
   måned tar over. Rullingen til dagens økt og piltastene regner med begge.
 - **Dra og bytt i Økter, gjort tydelig (21.10).** Datoene står, innholdet
-  (tema, periode, vurdering, agenda) svever med pekeren, og det du står
-  over, glir til plassen du kom fra, så byttet synes før du slipper. Ved
+  (tema, periode, vurdering, agenda) svever med pekeren. Det du står over,
+  tones ned der det står, og på plassen du kom fra tones en stille
+  forhåndsvisning av det inn. Ingenting annet reiser (det spratt for mye). Ved
   slipp lander innholdet der det svevde, og byttet vises med en gang mens
   lagringen går i bakgrunnen. Ingen bytte før midten har forlatt egen rad
   (`finnMal`). Rødt kort over en skåret økt. Kolonnehodet er tett, ikke
