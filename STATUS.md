@@ -21,6 +21,12 @@ Lerretet (`docs/lerret/`) er fasit for det som er tegnet.
 - **20.1 Trafikklys med form** (i `Skarprikk`): grønn fylt, gul halvfylt
   (ring og nederste halvdel), rød med lite kryss, 0 med større kryss på
   mørk grunn. Gjelder alle stedene over.
+- **20.2 Farge betyr data.** Fagmerket er en nøytral brikke med firkant;
+  blokkene i Uka (I dag) og i kalenderen er nøytrale med firkant;
+  periodebrikker og periodefiltre er nøytrale med prikk; stolpene i
+  Timeregnskap og periodestolpene på fagsiden er grå; fagbryterne er
+  nøytrale med firkant. Fagknappene i fagvelgeren likeså. Ikke rørt:
+  klassekartet og periodelinja i økta (utenfor 20.2).
 
 ## Runde 19 (20.10, ARBEIDSLISTE §19)
 

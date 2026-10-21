@@ -31,7 +31,6 @@ import {
 import type { FagIAr } from "../data/fag";
 import { Bryter, Fagfirkant, Knapp } from "../ui/felles";
 import { Kalenderuke } from "./Kalenderuke";
-import { fagfarge } from "../ui/farger";
 import { hentSamtaledager, type Samtaledag } from "../data/samtale";
 import { Fagbrytere, SAMTALER, useSkjulteFag } from "./Fagbrytere";
 
@@ -804,7 +803,7 @@ function Dag({
         <div
           key={o.id}
           className="group/okt relative shrink-0 rounded-[5px] hover:brightness-95"
-          style={{ background: o.farge ? `${o.farge}1c` : undefined }}
+          style={{ background: "var(--color-flate)" }}
         >
           <button
             onClick={(e) => {
@@ -817,10 +816,8 @@ function Dag({
             className="block w-full min-w-0 px-[7px] pb-[5px] pt-1 text-left"
           >
             <span className="flex min-w-0 items-baseline gap-1.5 text-mikro leading-[1.2]">
-              <span
-                className="min-w-0 truncate font-semibold"
-                style={{ color: o.farge ? fagfarge(o.farge) : undefined }}
-              >
+              <span className="flex min-w-0 items-center gap-1 truncate font-semibold text-blekk-dempet">
+                <Fagfirkant farge={o.farge} klasse="self-center" />
                 {o.fagKode}
               </span>
               {o.klokkeslett && (

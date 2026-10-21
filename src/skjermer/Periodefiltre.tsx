@@ -137,8 +137,7 @@ export function Periodefiltre({
 }
 
 /**
- * Perioden som merkelapp: prikk og svak tone i periodefargen (DESIGN.md
- * §4). Brukes både som filter her og på raden i øktlista.
+ * Perioden som merkelapp: nøytral, med prikk i periodefargen (20.2). Brukes både som filter her og på raden i øktlista.
  */
 export function Periodemerke({
   navn,
@@ -152,7 +151,7 @@ export function Periodemerke({
   return (
     <span
       className={`inline-flex max-w-full items-center gap-1.5 rounded-stor px-1.5 py-0.5 text-liten ${klasse}`}
-      style={{ background: farge ? `${farge}24` : "var(--color-flate)" }}
+      style={{ background: "var(--color-flate)" }}
       title={navn}
     >
       <span
@@ -193,7 +192,7 @@ function Merkelapp({
           ? "border-aksent font-medium text-blekk"
           : "border-transparent text-blekk-dempet hover:text-blekk"
       }`}
-      style={{ background: farge ? `${farge}24` : "var(--color-flate)" }}
+      style={{ background: "var(--color-flate)" }}
     >
       <span
         aria-hidden

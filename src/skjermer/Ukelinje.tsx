@@ -1,7 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { Okt } from "../data/okter";
-import { Ikon } from "../ui/felles";
-import { fagfarge } from "../ui/farger";
+import { Fagfirkant, Ikon } from "../ui/felles";
 import { ukenummer } from "../data/kalender";
 
 /**
@@ -527,20 +526,15 @@ function Blokk({
         height: hoyde,
         left: `calc(${(bane / baner) * 100}% + 2px)`,
         width: `calc(${100 / baner}% - 4px)`,
-        // Svak tone i fagfargen oppå arket (DESIGN.md §4) — gradienten er
-        // bare en måte å legge tonen over bg-ark på, så den ikke blir
-        // gjennomsiktig mot rutenettet under.
-        backgroundImage: okt.farge
-          ? `linear-gradient(${okt.farge}1c, ${okt.farge}1c)`
-          : undefined,
+        // Nøytral flate; faget vises som firkant (20.2).
+        backgroundImage:
+          "linear-gradient(var(--color-flate), var(--color-flate))",
       }}
     >
       {/* Fag og klokkeslett, så tittelen i inntil to linjer (15.1). */}
       <span className="flex min-w-0 items-baseline gap-1.5 text-mikro leading-[1.2]">
-        <span
-          className="min-w-0 truncate font-semibold"
-          style={{ color: okt.farge ? fagfarge(okt.farge) : undefined }}
-        >
+        <span className="flex min-w-0 items-center gap-1 truncate font-semibold text-blekk-dempet">
+          <Fagfirkant farge={okt.farge} klasse="self-center" />
           {okt.fagKode}
         </span>
         {okt.klokkeslett && (

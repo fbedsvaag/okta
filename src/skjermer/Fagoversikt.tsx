@@ -340,7 +340,8 @@ export function Fagoversikt({
             {stolper.length > 0 && (
               <div className="mt-2.5 flex gap-[2px]">
                 {stolper.map((s) => {
-                  const f = s.farge ?? "var(--color-blekk-svak)";
+                  // Nøytrale; perioden står i verktøytipset (20.2).
+                  const f = "var(--color-blekk-svak)";
                   return (
                     <span
                       key={s.id}

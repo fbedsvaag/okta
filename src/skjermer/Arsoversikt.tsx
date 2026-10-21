@@ -249,7 +249,8 @@ function Fagmaler({ fag }: { fag: Fagtimer }) {
   const andel = mal && mal > 0 ? timer / mal : null;
   const holdtAndel = mal && mal > 0 ? Math.min(holdt, timer) / mal : null;
   const over = andel !== null && andel > 1;
-  const farge = fag.farge ?? "var(--color-aksent)";
+  // Nøytral stolpe; faget vises som firkant (20.2).
+  const farge = "var(--color-blekk-dempet)";
 
   return (
     <li>

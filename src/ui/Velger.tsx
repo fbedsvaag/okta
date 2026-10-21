@@ -135,13 +135,6 @@ export function Velger({
         className={`velger ${variant === "vanlig" ? "" : variant} ${
           variant === "brikke" && !valgt ? "tom" : ""
         } ${bredde}`}
-        style={
-          variant === "brikke" && valgt?.farge
-            ? {
-                background: `color-mix(in srgb, ${valgt.farge} 12%, var(--color-ark))`,
-              }
-            : undefined
-        }
       >
         {valgt && <Merke valg={valgt} />}
         <span

@@ -304,10 +304,9 @@ export function Fagfirkant({
 }
 
 /**
- * Fagkode som fargemerke, som i nedtrekkslistene i Airtable. Fargen er fagets
- * egen, tonet ned til bakgrunn og beholdt full styrke på teksten — da leses
- * koden fortsatt godt, og §13 holder: fargeflatene er svake, trafikklyset er
- * det eneste stedet med mettet farge.
+ * Fagkoden som merke: nøytral brikke med fagets lille firkant foran
+ * (ARBEIDSLISTE 20.2). Farge betyr data: bare trafikklyset er mettet, så
+ * faget får ikke flate eller tekst i sin farge.
  */
 export function Fagmerke({
   kode,
@@ -318,16 +317,13 @@ export function Fagmerke({
   farge: string | null;
   liten?: boolean;
 }) {
-  // Blir stående som hex, ikke token: linja under limer "1f" bakpå for å få
-  // fargen med alfa, og `var(--color-…)1f` er ikke en gyldig verdi.
-  const f = farge ?? "#6b6b6b";
   return (
     <span
-      className={`inline-block whitespace-nowrap rounded-stor font-medium ${
+      className={`inline-flex items-center gap-1 whitespace-nowrap rounded-stor bg-flate font-medium text-blekk-dempet ${
         liten ? "px-1 py-0 text-etikett" : "px-1.5 py-0.5 text-liten"
       }`}
-      style={{ background: `${f}1f`, color: fagfarge(f) }}
     >
+      <Fagfirkant farge={farge} />
       {kode}
     </span>
   );
@@ -653,28 +649,25 @@ function Fagknapp({
   onClick: () => void;
   children: React.ReactNode;
 }) {
-  // Som i Fagmerke: hex med alfa limt bakpå, fordi var(--color-…)1f ikke er
-  // en gyldig fargeverdi.
-  const f = farge ?? "var(--color-blekk-dempet)";
+  // Nøytral; faget vises som firkant (20.2).
   const stil = aktiv
-    ? farge
-      ? { background: `${farge}1f`, color: farge, borderColor: farge }
-      : {
-          background: "var(--color-valgt)",
-          color: "var(--color-blekk)",
-          borderColor: "var(--color-linje-sterk)",
-        }
-    : { color: f };
+    ? {
+        background: "var(--color-valgt)",
+        color: "var(--color-blekk)",
+        borderColor: "var(--color-linje-sterk)",
+      }
+    : { color: "var(--color-blekk-dempet)" };
 
   return (
     <button
       onClick={onClick}
       aria-pressed={aktiv}
       style={stil}
-      className={`whitespace-nowrap rounded-liten border px-2 py-1 text-liten font-medium ${
+      className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-liten border px-2 py-1 text-liten font-medium ${
         aktiv ? "" : "border-linje hover:bg-flate"
       }`}
     >
+      {farge && <Fagfirkant farge={farge} />}
       {children}
     </button>
   );

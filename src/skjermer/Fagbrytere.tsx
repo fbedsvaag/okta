@@ -1,5 +1,5 @@
 import type { FagIAr } from "../data/fag";
-import { fagfarge } from "../ui/farger";
+import { Fagfirkant } from "../ui/felles";
 import { lesJson } from "../data/json";
 import { useLagretInnstilling } from "../ui/useLagretInnstilling";
 
@@ -29,10 +29,10 @@ export function Fagbrytere({
     ...fag.map((f) => ({
       id: f.id,
       navn: f.kode,
-      farge: f.farge ? fagfarge(f.farge) : "var(--color-blekk-dempet)",
+      farge: f.farge,
     })),
     ...(samtaler
-      ? [{ id: SAMTALER, navn: "Mentorsamtaler", farge: "var(--color-aksent)" }]
+      ? [{ id: SAMTALER, navn: "Mentorsamtaler", farge: null }]
       : []),
   ];
   if (valg.length < 2) return null;
@@ -47,7 +47,6 @@ export function Fagbrytere({
             title={`${av ? "Vis" : "Skjul"} ${v.navn}`}
             aria-pressed={!av}
             className={`fagbryter ${av ? "av" : ""}`}
-            style={{ "--fc": v.farge } as React.CSSProperties}
           >
             <span className="fagbryter-boks">
               {!av && (
@@ -63,6 +62,7 @@ export function Fagbrytere({
                 </svg>
               )}
             </span>
+            {v.farge && <Fagfirkant farge={v.farge} />}
             {v.navn}
           </button>
         );
