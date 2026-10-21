@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<title>I dag, fliser</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#d4cee2}
+:root{--pal:#4a3d7d;--pal-lys:#e3ddf0;--pal-mid:#b2a8d2;--pal-svak:#f4f2f9;--ease-sprett:cubic-bezier(.34,1.32,.5,1)}
+.pt{position:relative;z-index:1;display:flex;align-items:center;gap:9px;height:32px;padding:0 10px;border-radius:10px;color:#2e2840;font-size:14px}
+.pt.on{font-weight:500;color:#241f33}
+.under{position:relative;z-index:1;display:flex;align-items:center;gap:8px;min-height:28px;margin-left:22px;padding:3px 10px;border-radius:8px;color:#2e2840;font-size:13px}
+.under.on{font-weight:500}
+.under::before{content:"";position:absolute;left:-11px;top:-1px;bottom:-1px;width:1.5px;border-radius:1px;background:rgba(36,31,51,.16)}
+.kbd{margin-left:auto;font-size:11px;color:#6b6482;letter-spacing:.04em;font-weight:400}
+.navmark{position:absolute;left:8px;right:8px;border-radius:10px;background:rgba(255,255,255,.88);box-shadow:0 1px 3px rgba(36,31,51,.14),inset 0 1px 0 #fff;pointer-events:none}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;height:30px;padding:0 13px;border-radius:999px;border:1px solid #d9d4e8;background:#fff;color:#241f33;font:inherit;font-size:13px;cursor:pointer;white-space:nowrap}
+.btn.pri{background:var(--pal);border-color:var(--pal);color:#fff;font-weight:500}
+.btn.stille{border-color:transparent;background:transparent;color:#645d7a}
+.seg{position:relative;display:inline-flex;padding:2px;border-radius:999px;background:rgba(36,31,51,.06)}
+.seg button{all:unset;position:relative;z-index:1;cursor:pointer;height:26px;display:inline-flex;align-items:center;justify-content:center;font-size:12.5px;color:#645d7a;transition:color 200ms}
+.seg button.on{color:#241f33;font-weight:500}
+.tommel{position:absolute;top:2px;left:2px;height:26px;border-radius:999px;background:#fff;box-shadow:0 1px 3px rgba(36,31,51,.16);transition:transform 340ms var(--ease-sprett),width 340ms var(--ease-sprett)}
+.chip{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 9px;border-radius:12px;background:var(--pal-svak);font-size:12px;white-space:nowrap}
+.fk{width:8px;height:8px;border-radius:2px;flex:none;display:inline-block}
+.av{border-radius:50%;overflow:hidden;flex:none;display:inline-block;background:var(--pal-lys)}
+.ell{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.num{font-variant-numeric:tabular-nums}
+.h{font-size:13px;font-weight:600;margin:0}
+.kort{border-radius:14px;background:#fff;box-shadow:inset 0 0 0 1px #ece9f3;padding:16px 18px}
+.hm{border-radius:2px;display:inline-block}
+.g{background:#3f9d49}.y{background:#d9a92f}.r{background:#c04a3d}.o{background:#d5d8dd}
+.glide{transition:transform 260ms var(--ease-sprett),height 260ms var(--ease-sprett)}
+@media (prefers-reduced-motion: reduce){.glide,.tommel{transition:none!important}}
+
+.urull{height:240px;overflow:auto;padding-top:8px;scrollbar-width:thin}
+.uev{position:absolute;box-sizing:border-box;border-radius:6px;padding:3px 6px 3px 8px;font-size:10.5px;overflow:hidden;z-index:1}
+.uev b{font-weight:600}
+.miniseg{display:inline-flex;padding:2px;border-radius:999px;background:rgba(36,31,51,.06)}
+.miniseg button{all:unset;cursor:pointer;height:22px;padding:0 10px;border-radius:999px;font-size:11.5px;font-weight:400;color:#645d7a}
+.miniseg button.on{background:#fff;color:#241f33;font-weight:500;box-shadow:0 1px 3px rgba(36,31,51,.14)}
+
+.bolk{border-radius:16px;background:#fff;box-shadow:inset 0 0 0 1px #ece9f3;padding:14px 16px;transition:box-shadow 200ms,opacity 200ms}
+.bolk h3{margin:0 0 8px;font-size:13.5px;font-weight:600;display:flex;align-items:center;gap:8px}
+.bolk h3 small{font-weight:400;color:#9a90b8;font-size:12px}
+.redig .bolk{box-shadow:inset 0 0 0 1.5px dashed;box-shadow:inset 0 0 0 1.5px #c9c2dd}
+.bolk .gr{display:none;color:#b9b2cc;cursor:grab;letter-spacing:-1px;font-size:13px;touch-action:none}
+.redig .bolk .gr{display:inline}
+.bolk.loft{box-shadow:0 14px 34px rgba(36,31,51,.22),inset 0 0 0 1.5px #4a3d7d;position:relative;z-index:5}
+.okt{display:flex;gap:16px;padding:12px 0;border-top:1px solid #f3f1f8}
+.okt:first-of-type{border-top:none;padding-top:4px}
+.tid{width:64px;flex:none}
+.tid b{display:block;font-size:20px;font-weight:400}
+.tid span{font-size:12px;color:#645d7a}
+.okt.stor .tid b{font-size:24px}
+.fk{width:10px;height:10px;border-radius:3px;flex:none;display:inline-block}
+.meta{font-size:12.5px;color:#645d7a;margin-top:3px}
+.pagar{font-size:12px;color:#4a3d7d;font-weight:500}
+.notat{margin-top:10px;padding:10px 12px;border-radius:10px;background:#f7f6fb;font-size:13px;line-height:1.5;color:#3a3446}
+.notat b{display:block;font-size:11.5px;font-weight:500;color:#9a90b8;margin-bottom:2px}
+.fg{display:grid;grid-template-columns:16px 104px 1fr auto;gap:8px;align-items:center;min-height:30px;font-size:13px;border-top:1px solid #f6f4fa}
+.fg:first-of-type{border-top:none}
+.fg span:nth-child(3){color:#3a3446}
+.fg .fag{font-size:11.5px;color:#9a90b8}
+.fo{display:grid;grid-template-columns:16px auto 1fr auto;gap:8px;align-items:center;height:30px;font-size:13px}
+.fo span:nth-child(3){color:#645d7a}
+.fo .fag{font-size:11.5px;color:#9a90b8}
+.sk{width:12px;height:12px;border-radius:50%}
+.sk.r{background:#c04a3d}.sk.o{background:#5f5a70;box-shadow:0 0 0 2px #fff,0 0 0 3px #5f5a70;width:9px;height:9px;margin:1.5px}.sk.t{box-shadow:inset 0 0 0 1.5px #b9b2cc}
+.gj{display:flex;align-items:center;gap:9px;height:30px;font-size:13px;border-top:1px solid #f6f4fa}
+.gj:first-of-type{border-top:none}
+.bx{width:14px;height:14px;border-radius:4px;box-shadow:inset 0 0 0 1.5px #b9b2cc;flex:none}
+.panel{position:absolute;z-index:20;right:0;top:44px;width:330px;padding:16px;border-radius:18px;background:rgba(255,255,255,.97);backdrop-filter:blur(24px);box-shadow:0 24px 60px rgba(36,31,51,.24),0 0 0 .5px rgba(36,31,51,.12);animation:pp 220ms cubic-bezier(.34,1.32,.5,1);transform-origin:top right}
+@keyframes pp{from{opacity:0;transform:scale(.96) translateY(-4px)}to{opacity:1;transform:none}}
+.pr{display:flex;align-items:center;gap:10px;height:34px;padding:0 8px;border-radius:9px;font-size:13.5px}
+.pr:hover{background:#f7f6fb}
+.pr .gr{color:#b9b2cc;letter-spacing:-1px;cursor:grab;touch-action:none}
+.pr.av span.n{color:#9a90b8}
+.pr.loft{background:#fff;box-shadow:0 8px 20px rgba(36,31,51,.18),inset 0 0 0 1px #e3ddf0}
+.bryt{all:unset;cursor:pointer;position:relative;width:32px;height:19px;border-radius:10px;background:#d9d4e8;transition:background 200ms;flex:none}
+.bryt::after{content:"";position:absolute;left:2px;top:2px;width:15px;height:15px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(36,31,51,.25);transition:transform 260ms cubic-bezier(.34,1.32,.5,1)}
+.bryt.on{background:#4a3d7d}
+.bryt.on::after{transform:translateX(13px)}
+.glb{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#9a90b8;margin:10px 8px 4px}
+.skjult{font-size:12.5px;color:#9a90b8;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.skjult button{all:unset;cursor:pointer;height:24px;padding:0 10px;border-radius:12px;box-shadow:inset 0 0 0 1px #e3ddf0;color:#645d7a}
+.skjult button:hover{background:#f7f6fb}
+
+.wg{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-auto-rows:150px;gap:16px}
+.w{position:relative;border-radius:20px;background:#fff;box-shadow:inset 0 0 0 1px #ece9f3,0 1px 3px rgba(36,31,51,.05);padding:14px 16px;overflow:hidden;display:flex;flex-direction:column;transition:box-shadow 200ms,transform 200ms}
+
+.w h3{margin:0 0 8px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px;flex:none}
+.w h3 small{font-weight:400;color:#9a90b8;font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.w .inn{flex:1;min-height:0;overflow:hidden}
+.redig .w{cursor:grab;box-shadow:inset 0 0 0 1.5px #c9c2dd}
+.redig .w:hover{box-shadow:inset 0 0 0 1.5px #9a90b8}
+.redig .w.loft{transform:scale(1.03);box-shadow:0 18px 40px rgba(36,31,51,.25),inset 0 0 0 2px #4a3d7d;z-index:5;cursor:grabbing}
+.redig .w.mal{box-shadow:inset 0 0 0 2px #4a3d7d;background:#f7f6fb}
+.fjern{display:none;position:absolute;left:8px;top:8px;width:20px;height:20px;border-radius:50%;background:#8a8399;color:#fff;font-size:14px;line-height:20px;text-align:center;cursor:pointer;z-index:3}
+.redig .fjern{display:block}
+.redig .w h3{padding-left:22px}
+.storl{display:none;position:absolute;right:10px;bottom:10px;padding:3px;border-radius:999px;background:rgba(36,31,51,.82);backdrop-filter:blur(8px);z-index:3;gap:2px}
+.redig .storl{display:flex}
+.storl button{all:unset;cursor:pointer;height:22px;min-width:24px;padding:0 6px;border-radius:999px;color:#d9d4e8;font-size:11px;font-weight:600;text-align:center}
+.storl button.on{background:#fff;color:#241f33}
+.tall b{display:block;font-size:40px;font-weight:300;letter-spacing:-.02em;line-height:1}
+.tall span{font-size:12.5px;color:#645d7a}
+.tallu{margin-top:8px;font-size:12px;color:#3a3446;line-height:1.4}
+.w.XL .urull{height:250px}
+.w.M .notat{display:none}
+.w.S h3 small{display:none}
+.w.S h3{white-space:nowrap}
+.hull{border-radius:20px;box-shadow:inset 0 0 0 1.5px #e3ddf0;display:grid;place-items:center;color:#b9b2cc;font-size:12.5px;background:repeating-linear-gradient(135deg,transparent 0 8px,rgba(227,221,240,.35) 8px 16px)}
+.w.M .okt+.okt{display:none}
+
+</style>
+</helmet>
+<div style="position:relative;height:1260px;padding:24px;box-sizing:border-box;overflow:hidden;font-family:'Geist',-apple-system,sans-serif;color:#241f33;font-size:14px">
+<div aria-hidden="true" style="position:absolute;left:-120px;top:-80px;width:620px;height:620px;border-radius:50%;background:#8a7bc2;filter:blur(70px);opacity:.75"></div>
+<div aria-hidden="true" style="position:absolute;left:-60px;top:560px;width:520px;height:520px;border-radius:50%;background:#5f9e98;filter:blur(80px);opacity:.7"></div>
+<div aria-hidden="true" style="position:absolute;right:-100px;top:-60px;width:700px;height:500px;border-radius:50%;background:#b8aee0;filter:blur(90px);opacity:.6"></div>
+<div style="position:relative;display:flex;height:1212px;border-radius:16px;overflow:hidden;background:rgba(236,234,241,.42);backdrop-filter:blur(40px) saturate(160%);box-shadow:0 24px 70px rgba(36,31,51,.28),0 0 0 1px rgba(36,31,51,.14)">
+<nav aria-label="Hovedmeny" style="position:relative;width:236px;flex:none;margin:10px;padding:12px 8px;box-sizing:border-box;display:flex;flex-direction:column;gap:2px;border-radius:22px;background:rgba(255,255,255,.5);backdrop-filter:blur(28px) saturate(170%);border:1px solid rgba(255,255,255,.75);box-shadow:inset 0 1px 0 rgba(255,255,255,.95),0 10px 30px rgba(36,31,51,.14)">
+<div style="display:flex;align-items:center;gap:8px;padding:2px 8px 10px"><svg width="20" height="20" viewBox="0 0 1024 1024" aria-hidden="true"><rect x="40" y="40" width="944" height="944" rx="215" fill="#241F33"></rect><rect x="290" y="330" width="200" height="364" rx="44" fill="#EEEDFE"></rect><rect x="516" y="330" width="100" height="364" rx="40" fill="#C9C2DD"></rect><rect x="642" y="330" width="100" height="364" rx="40" fill="#9A90B8"></rect></svg><span style="font-weight:600;font-size:14px">Økta</span><span class="num" style="margin-left:auto;font-size:11px;color:#4b4560">2026/27</span></div>
+<div style="display:flex;align-items:center;gap:8px;height:30px;padding:0 12px;margin-bottom:10px;border-radius:999px;background:rgba(255,255,255,.55);border:1px solid rgba(255,255,255,.75);font-size:13px;color:#4b4560">Søk<span class="kbd">⌘K</span></div>
+<div class="navmark" style="top:91px;height:32px;"></div><div class="pt on">I dag<span class="kbd">G D</span></div><div class="pt ">Økter<span class="kbd">G Ø</span></div><div class="pt ">Elever<span class="kbd">G E</span></div><div class="pt ">Vurderinger<span class="kbd">G V</span></div><div class="pt ">Samtaler<span class="kbd">G S</span></div><div class="pt ">Klassekart<span class="kbd">G K</span></div>
+<div style="flex:1"></div><div class="pt">Gi tilbakemelding</div><div class="pt">Innstillinger<span class="kbd">⌘,</span></div></nav>
+<main style="position:relative;flex:1;min-width:0;margin:10px 10px 10px 0;background:#fff;border-radius:16px;box-shadow:0 1px 3px rgba(36,31,51,.10);display:flex;flex-direction:column;overflow:hidden">
+<header style="display:flex;align-items:center;gap:10px;margin:10px 12px 0;padding:0 8px 0 18px;height:48px;border-radius:999px;background:rgba(255,255,255,.7);backdrop-filter:blur(28px) saturate(170%);border:1px solid rgba(255,255,255,.8);box-shadow:inset 0 1px 0 rgba(255,255,255,.95),0 6px 20px rgba(36,31,51,.10),0 0 0 .5px rgba(36,31,51,.08);flex:none"><span style="font-weight:600">I dag</span><span style="color:#9a90b8;font-size:13px">Uke 41</span><span style="flex:1"></span>
+<div class="seg"><span class="tommel" style="left:{{tL}};width:{{tW}}"></span><sc-for list="{{moduser}}" as="m" hint-placeholder-count="3"><button class="{{m.kl}}" style="width:{{m.w}}" onClick="{{m.klikk}}">{{m.n}}</button></sc-for></div>
+<button class="{{redKl}}" onClick="{{redig}}">{{redT}}</button></header>
+<div style="flex:1;min-height:0;overflow:hidden;padding:18px 30px 0"><div class="{{rotKl}}" style="height:100%;overflow:auto;padding-bottom:20px">
+<div style="display:flex;align-items:baseline;gap:12px;margin-bottom:16px"><span style="font-size:32px;font-weight:300;letter-spacing:-.015em">Mandag 5. oktober</span><span style="font-size:13px;color:#645d7a">{{under}}</span></div>
+<div class="wg" data-wg="1"><sc-for list="{{hull}}" as="h" hint-placeholder-count="0"><div class="hull" style="grid-column:{{h.gc}};grid-row:{{h.gr}}">{{h.t}}</div></sc-for><sc-for list="{{widgets}}" as="w" hint-placeholder-count="5"><div class="{{w.kl}}" data-w="{{w.id}}" style="grid-column:{{w.gc}};grid-row:{{w.gr}}" onPointerDown="{{w.ned}}"><span class="fjern" onPointerDown="{{stopp}}" onClick="{{w.fjern}}" title="Skjul">−</span><h3>{{w.n}}<small>{{w.sm}}</small><sc-if value="{{w.ukeBryter}}" hint-placeholder-val="{{ false }}"><span style="flex:1"></span><span class="miniseg" onPointerDown="{{stopp}}"><button class="{{w.vTL}}" onClick="{{w.tilTL}}">Timer</button><button class="{{w.vK}}" onClick="{{w.tilK}}">Kompakt</button></span></sc-if></h3><div class="inn"><sc-if value="{{w.s_okter}}" hint-placeholder-val="{{ false }}"><div class="okt stor"><div class="tid"><b>08:30</b><span>til 11:30</span></div><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:8px"><span class="fk" style="background:#9a5a2c"></span><span style="font-size:20px;font-weight:500">Markedsføringsmiksen: pris</span><span style="flex:1"></span><span class="pagar">● Pågår</span></div>
+<div class="meta">MFL2 · Rom 214 · Markedsmiks</div>
+<div class="notat"><b>Fra forrige økt · tor 1.10</b>Halve klassen ble ikke ferdig med SWOT. Start med ti minutter oppsummering før pris.</div></div><button class="btn pri" style="align-self:flex-start">Skår økta ↵</button></div>
+<div class="okt"><div class="tid"><b>12:30</b><span>til 14:00</span></div><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:8px"><span class="fk" style="background:#3d7a5a"></span><span style="font-size:17px;font-weight:500">Narrative perspective</span><span style="flex:1"></span><span style="font-size:12px;color:#645d7a">om 1 t 50 min</span></div><div class="meta">ENG1 · Rom 108 · Short stories</div></div><button class="btn" style="align-self:flex-start">Åpne</button></div></sc-if><sc-if value="{{w.s_folgopp}}" hint-placeholder-val="{{ false }}"><div class="fg"><span class="sk r"></span><b>Rød sist</b><span>Kristian H. (to på rad) · Vegard S.</span><span class="fag">MFL2</span></div>
+<div class="fg"><span class="sk t"></span><b>Ikke sett sist</b><span>Ada L. · Jonas L. · Maja L.</span><span class="fag">MFL2</span></div>
+<div class="fg"><span class="sk o"></span><b>Borte sist</b><span>Andreas S.</span><span class="fag">MFL2</span></div>
+<div class="fg"><span class="sk t"></span><b>Ikke sett sist</b><span>Sara H.</span><span class="fag">ENG1</span></div></sc-if><sc-if value="{{w.s_gjoremal}}" hint-placeholder-val="{{ false }}"><div class="gj"><span class="bx"></span><span style="flex:1">Snakke med Kristian om fraværet</span><span style="color:#c04a3d;font-size:12px">i dag</span></div>
+<div class="gj"><span class="bx"></span><span style="flex:1">Rette SWOT-innleveringer</span><span class="num" style="color:#9a90b8;font-size:12px">tor 8.10</span></div>
+<div class="gj"><span class="bx"></span><span style="flex:1">Bestille rom til muntlig presentasjon</span><span class="num" style="color:#9a90b8;font-size:12px">fre 9.10</span></div></sc-if><sc-if value="{{w.s_uka}}" hint-placeholder-val="{{ false }}"><sc-if value="{{w.timer}}" hint-placeholder-val="{{ false }}"><div style="display:grid;grid-template-columns:repeat(5,1fr);margin-left:34px;font-size:12px;padding-bottom:6px"><span style="padding-left:6px;color:#4a3d7d;font-weight:600">Man 5</span><span style="padding-left:6px;color:#645d7a">Tir 6</span><span style="padding-left:6px;color:#645d7a">Ons 7</span><span style="padding-left:6px;color:#645d7a">Tor 8</span><span style="padding-left:6px;color:#645d7a">Fre 9</span></div><div class="urull"><div style="position:relative;margin-left:34px;height:320px"><div style="position:absolute;left:0;right:0;top:0px;border-top:1px solid #f3f1f8"><span style="position:absolute;left:-30px;top:-7px;font-size:10.5px;color:#9a90b8" class="num">08</span></div><div style="position:absolute;left:0;right:0;top:40px;border-top:1px solid #f3f1f8"><span style="position:absolute;left:-30px;top:-7px;font-size:10.5px;color:#9a90b8" class="num">09</span></div><div style="position:absolute;left:0;right:0;top:80px;border-top:1px solid #f3f1f8"><span style="position:absolute;left:-30px;top:-7px;font-size:10.5px;color:#9a90b8" class="num">10</span></div><div style="position:absolute;left:0;right:0;top:120px;border-top:1px solid #f3f1f8"><span style="position:absolute;left:-30px;top:-7px;font-size:10.5px;color:#9a90b8" class="num">11</span></div><div style="position:absolute;left:0;right:0;top:160px;border-top:1px solid #f3f1f8"><span style="position:absolute;left:-30px;top:-7px;font-size:10.5px;color:#9a90b8" class="num">12</span></div><div style="position:absolute;left:0;right:0;top:200px;border-top:1px solid #f3f1f8"><span style="position:absolute;left:-30px;top:-7px;font-size:10.5px;color:#9a90b8" class="num">13</span></div><div style="position:absolute;left:0;right:0;top:240px;border-top:1px solid #f3f1f8"><span style="position:absolute;left:-30px;top:-7px;font-size:10.5px;color:#9a90b8" class="num">14</span></div><div style="position:absolute;left:0;right:0;top:280px;border-top:1px solid #f3f1f8"><span style="position:absolute;left:-30px;top:-7px;font-size:10.5px;color:#9a90b8" class="num">15</span></div><div style="position:absolute;left:0;right:0;top:320px;border-top:1px solid #f3f1f8"><span style="position:absolute;left:-30px;top:-7px;font-size:10.5px;color:#9a90b8" class="num">16</span></div><div style="position:absolute;top:0;bottom:0;left:0%;width:20%;border-left:1px solid #f3f1f8;background:rgba(74,61,125,.035)"></div><div style="position:absolute;top:0;bottom:0;left:20%;width:20%;border-left:1px solid #f3f1f8;"></div><div style="position:absolute;top:0;bottom:0;left:40%;width:20%;border-left:1px solid #f3f1f8;"></div><div style="position:absolute;top:0;bottom:0;left:60%;width:20%;border-left:1px solid #f3f1f8;"></div><div style="position:absolute;top:0;bottom:0;left:80%;width:20%;border-left:1px solid #f3f1f8;"></div><div class="uev" style="left:calc(0% + 3px);width:calc(20% - 6px);top:21.0px;height:117.0px;background:#9a5a2c1c;box-shadow:inset 3px 0 0 #9a5a2c"><b style="color:#9a5a2c">MFL2</b> <span class="num">08:30</span><div class="ell" style="font-size:11.5px">Markedsføringsmiksen: pris</div><div style="font-size:10.5px;color:#9a90b8">Rom 214</div></div><div class="uev" style="left:calc(0% + 3px);width:calc(20% - 6px);top:181.0px;height:57.0px;background:#3d7a5a1c;box-shadow:inset 3px 0 0 #3d7a5a"><b style="color:#3d7a5a">ENG1</b> <span class="num">12:30</span><div class="ell" style="font-size:11.5px">Narrative perspective</div><div style="font-size:10.5px;color:#9a90b8">Rom 108</div></div><div class="uev" style="left:calc(20% + 3px);width:calc(20% - 6px);top:21.0px;height:57.0px;background:#3d7a5a1c;box-shadow:inset 3px 0 0 #3d7a5a"><b style="color:#3d7a5a">ENG1</b> <span class="num">08:30</span><div class="ell" style="font-size:11.5px">Short stories, workshop</div><div style="font-size:10.5px;color:#9a90b8">Rom 108</div></div><div class="uev" style="left:calc(40% + 3px);width:calc(20% - 6px);top:41px;height:97.0px;background:#2e6a8e1c;box-shadow:inset 3px 0 0 #2e6a8e"><b style="color:#2e6a8e">MFL1</b> <span class="num">09:00</span><div class="ell" style="font-size:11.5px">Kundebehov og segmentering</div><div style="font-size:10.5px;color:#9a90b8">Rom 216</div></div><div class="uev" style="left:calc(60% + 3px);width:calc(20% - 6px);top:181.0px;height:117.0px;background:#9a5a2c1c;box-shadow:inset 3px 0 0 #9a5a2c"><b style="color:#9a5a2c">MFL2</b> <span class="num">12:30</span><div class="ell" style="font-size:11.5px">Pris: case Kiwi mot Meny</div><div style="font-size:10.5px;color:#9a90b8">Rom 214</div></div><div class="uev" style="left:calc(80% + 3px);width:calc(20% - 6px);top:91.0px;height:57.0px;background:#3d7a5a1c;box-shadow:inset 3px 0 0 #3d7a5a"><b style="color:#3d7a5a">ENG1</b> <span class="num">10:15</span><div class="ell" style="font-size:11.5px">Essay planning</div><div style="font-size:10.5px;color:#9a90b8">Rom 108</div></div><div style="position:absolute;left:0;width:20%;top:106.66666666666664px;border-top:1.5px solid #241f33;z-index:3"><span style="position:absolute;left:-5px;top:-4.5px;width:8px;height:8px;border-radius:50%;background:#241f33"></span><span class="num" style="position:absolute;right:4px;top:-9px;font-size:10px;font-weight:600;background:#fff;padding:0 3px">10:40</span></div></div></div></sc-if><sc-if value="{{w.kompakt}}" hint-placeholder-val="{{ true }}"><div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px"><div style="border-radius:8px;background:#fbfafd;box-shadow:inset 0 0 0 1px #f1eef6;padding:6px 7px;min-height:76px"><div style="font-size:11px;color:#4a3d7d;font-weight:600">Man 5</div><div style="margin-top:4px;padding:3px 5px;border-radius:5px;background:#9a5a2c1a;font-size:10.5px"><b style="color:#9a5a2c;font-weight:600">MFL2</b> 08:30</div><div style="margin-top:4px;padding:3px 5px;border-radius:5px;background:#3d7a5a1a;font-size:10.5px"><b style="color:#3d7a5a;font-weight:600">ENG1</b> 12:30</div></div><div style="border-radius:8px;background:#fbfafd;box-shadow:inset 0 0 0 1px #f1eef6;padding:6px 7px;min-height:76px"><div style="font-size:11px;color:#645d7a;font-weight:500">Tir 6</div><div style="margin-top:4px;padding:3px 5px;border-radius:5px;background:#3d7a5a1a;font-size:10.5px"><b style="color:#3d7a5a;font-weight:600">ENG1</b> 08:30</div></div><div style="border-radius:8px;background:#fbfafd;box-shadow:inset 0 0 0 1px #f1eef6;padding:6px 7px;min-height:76px"><div style="font-size:11px;color:#645d7a;font-weight:500">Ons 7</div><div style="margin-top:4px;padding:3px 5px;border-radius:5px;background:#2e6a8e1a;font-size:10.5px"><b style="color:#2e6a8e;font-weight:600">MFL1</b> 09:00</div></div><div style="border-radius:8px;background:#fbfafd;box-shadow:inset 0 0 0 1px #f1eef6;padding:6px 7px;min-height:76px"><div style="font-size:11px;color:#645d7a;font-weight:500">Tor 8</div><div style="margin-top:4px;padding:3px 5px;border-radius:5px;background:#9a5a2c1a;font-size:10.5px"><b style="color:#9a5a2c;font-weight:600">MFL2</b> 12:30</div></div><div style="border-radius:8px;background:#fbfafd;box-shadow:inset 0 0 0 1px #f1eef6;padding:6px 7px;min-height:76px"><div style="font-size:11px;color:#645d7a;font-weight:500">Fre 9</div><div style="margin-top:4px;padding:3px 5px;border-radius:5px;background:#3d7a5a1a;font-size:10.5px"><b style="color:#3d7a5a;font-weight:600">ENG1</b> 10:15</div></div></div></sc-if></sc-if><sc-if value="{{w.s_frister}}" hint-placeholder-val="{{ false }}"><div class="gj"><span class="fk" style="background:#9a5a2c"></span><span style="flex:1">Muntlig presentasjon: prisstrategi</span><span class="num" style="color:#645d7a;font-size:12px">tor 15.10</span></div>
+<div class="gj"><span class="fk" style="background:#3d7a5a"></span><span style="flex:1">Essay: narrative perspective</span><span class="num" style="color:#645d7a;font-size:12px">fre 23.10</span></div></sc-if><sc-if value="{{w.s_glipper}}" hint-placeholder-val="{{ false }}"><div class="gj"><span style="flex:1">Kristian Haugland</span><span style="font-size:12px;color:#9a90b8;width:40px">2STA</span><span style="display:flex;gap:2px"><span style="width:9px;height:9px;border-radius:2px;background:#d9a92f"></span><span style="width:9px;height:9px;border-radius:2px;background:#c04a3d"></span><span style="width:9px;height:9px;border-radius:2px;background:#d9a92f"></span><span style="width:9px;height:9px;border-radius:2px;background:#d9a92f"></span><span style="width:9px;height:9px;border-radius:2px;background:#c04a3d"></span><span style="width:9px;height:9px;border-radius:2px;background:#d5d8dd"></span><span style="width:9px;height:9px;border-radius:2px;background:#d9a92f"></span><span style="width:9px;height:9px;border-radius:2px;background:#c04a3d"></span><span style="width:9px;height:9px;border-radius:2px;background:#d9a92f"></span><span style="width:9px;height:9px;border-radius:2px;background:#c04a3d"></span></span></div><div class="gj"><span style="flex:1">Andreas Solheim</span><span style="font-size:12px;color:#9a90b8;width:40px">2STB</span><span style="display:flex;gap:2px"><span style="width:9px;height:9px;border-radius:2px;background:#c04a3d"></span><span style="width:9px;height:9px;border-radius:2px;background:#d9a92f"></span><span style="width:9px;height:9px;border-radius:2px;background:#d9a92f"></span><span style="width:9px;height:9px;border-radius:2px;background:#c04a3d"></span><span style="width:9px;height:9px;border-radius:2px;background:#d5d8dd"></span><span style="width:9px;height:9px;border-radius:2px;background:#d5d8dd"></span><span style="width:9px;height:9px;border-radius:2px;background:#d9a92f"></span><span style="width:9px;height:9px;border-radius:2px;background:#d9a92f"></span><span style="width:9px;height:9px;border-radius:2px;background:#c04a3d"></span><span style="width:9px;height:9px;border-radius:2px;background:#d9a92f"></span></span></div><div class="gj"><span style="flex:1">Jakob Aasen</span><span style="font-size:12px;color:#9a90b8;width:40px">2STA</span><span style="display:flex;gap:2px"><span style="width:9px;height:9px;border-radius:2px;background:#3f9d49"></span><span style="width:9px;height:9px;border-radius:2px;background:#d9a92f"></span><span style="width:9px;height:9px;border-radius:2px;background:#c04a3d"></span><span style="width:9px;height:9px;border-radius:2px;background:#c04a3d"></span><span style="width:9px;height:9px;border-radius:2px;background:#d9a92f"></span><span style="width:9px;height:9px;border-radius:2px;background:#d5d8dd"></span><span style="width:9px;height:9px;border-radius:2px;background:#d9a92f"></span><span style="width:9px;height:9px;border-radius:2px;background:#c04a3d"></span><span style="width:9px;height:9px;border-radius:2px;background:#d9a92f"></span><span style="width:9px;height:9px;border-radius:2px;background:#d9a92f"></span></span></div><div class="gj"><span style="flex:1">Ada Lie</span><span style="font-size:12px;color:#9a90b8;width:40px">2STB</span><span style="display:flex;gap:2px"><span style="width:9px;height:9px;border-radius:2px;background:#d9a92f"></span><span style="width:9px;height:9px;border-radius:2px;background:#d9a92f"></span><span style="width:9px;height:9px;border-radius:2px;background:#d5d8dd"></span><span style="width:9px;height:9px;border-radius:2px;background:#d9a92f"></span><span style="width:9px;height:9px;border-radius:2px;background:#d9a92f"></span><span style="width:9px;height:9px;border-radius:2px;background:#c04a3d"></span><span style="width:9px;height:9px;border-radius:2px;background:#d9a92f"></span><span style="width:9px;height:9px;border-radius:2px;background:#d9a92f"></span><span style="width:9px;height:9px;border-radius:2px;background:#d5d8dd"></span><span style="width:9px;height:9px;border-radius:2px;background:#d9a92f"></span></span></div></sc-if><sc-if value="{{w.s_innsats}}" hint-placeholder-val="{{ false }}"><div style="display:flex;gap:10px;font-size:11px;color:#645d7a;margin-bottom:4px"><span><i style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#3f9d49"></i> grønn</span><span><i style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#d9a92f"></i> gul</span><span><i style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#c04a3d"></i> rød</span><span><i style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#d5d8dd"></i> til stede, ikke sett</span></div><div style="display:grid;grid-template-columns:44px 1fr 84px;gap:8px;align-items:center;margin-top:6px;font-size:12px" title="64% grønn · 20% gul · 6% rød · 10% ikke sett"><b style="color:#2e6a8e;font-weight:600">MFL1</b><span style="display:flex;height:8px;border-radius:4px;overflow:hidden;gap:1px"><span style="flex:64;background:#3f9d49"></span><span style="flex:20;background:#d9a92f"></span><span style="flex:6;background:#c04a3d"></span><span style="flex:10;background:#d5d8dd"></span></span><span class="num" style="text-align:right;white-space:nowrap">64 % <span style="color:#9a90b8;margin-left:4px">· 10 %</span></span></div><div style="display:grid;grid-template-columns:44px 1fr 84px;gap:8px;align-items:center;margin-top:6px;font-size:12px" title="55% grønn · 25% gul · 9% rød · 11% ikke sett"><b style="color:#9a5a2c;font-weight:600">MFL2</b><span style="display:flex;height:8px;border-radius:4px;overflow:hidden;gap:1px"><span style="flex:55;background:#3f9d49"></span><span style="flex:25;background:#d9a92f"></span><span style="flex:9;background:#c04a3d"></span><span style="flex:11;background:#d5d8dd"></span></span><span class="num" style="text-align:right;white-space:nowrap">55 % <span style="color:#9a90b8;margin-left:4px">· 11 %</span></span></div><div style="display:grid;grid-template-columns:44px 1fr 84px;gap:8px;align-items:center;margin-top:6px;font-size:12px" title="49% grønn · 25% gul · 10% rød · 16% ikke sett"><b style="color:#3d7a5a;font-weight:600">ENG1</b><span style="display:flex;height:8px;border-radius:4px;overflow:hidden;gap:1px"><span style="flex:49;background:#3f9d49"></span><span style="flex:25;background:#d9a92f"></span><span style="flex:10;background:#c04a3d"></span><span style="flex:16;background:#d5d8dd"></span></span><span class="num" style="text-align:right;white-space:nowrap">49 % <span style="color:#9a90b8;margin-left:4px">· 16 %</span></span></div></sc-if><sc-if value="{{w.l_okter}}" hint-placeholder-val="{{ false }}"><div style="font-size:24px;font-weight:300" class="num">08:30</div><div style="display:flex;align-items:center;gap:6px;margin-top:4px"><span class="fk" style="background:#9a5a2c"></span><b style="font-size:13px">Markedsføringsmiksen: pris</b></div><div class="pagar" style="margin-top:6px">● Pågår</div></sc-if><sc-if value="{{w.l_folgopp}}" hint-placeholder-val="{{ false }}"><div class="tall"><b class="num">7</b><span>elever å følge opp</span></div><div class="tallu">2 røde · 4 ikke sett · 1 borte</div></sc-if><sc-if value="{{w.l_gjoremal}}" hint-placeholder-val="{{ false }}"><div class="tall"><b class="num">3</b><span>åpne gjøremål</span></div><div class="tallu">Snakke med Kristian · i dag</div></sc-if><sc-if value="{{w.l_uka}}" hint-placeholder-val="{{ false }}"></sc-if><sc-if value="{{w.l_frister}}" hint-placeholder-val="{{ false }}"><div class="tall"><b class="num">15.10</b><span>neste frist</span></div><div class="tallu">Muntlig: prisstrategi</div></sc-if><sc-if value="{{w.l_glipper}}" hint-placeholder-val="{{ false }}"><div class="tall"><b class="num">4</b><span>elever som glipper</span></div><div class="tallu">siste 10 økter</div></sc-if><sc-if value="{{w.l_innsats}}" hint-placeholder-val="{{ false }}"><div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:1px"><b style="color:#2e6a8e;font-size:12px">MFL1</b><span class="num" style="font-size:18px;font-weight:300">64<span style="font-size:12px"> %</span></span></div><div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:1px"><b style="color:#9a5a2c;font-size:12px">MFL2</b><span class="num" style="font-size:18px;font-weight:300">55<span style="font-size:12px"> %</span></span></div><div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:1px"><b style="color:#3d7a5a;font-size:12px">ENG1</b><span class="num" style="font-size:18px;font-weight:300">49<span style="font-size:12px"> %</span></span></div></sc-if></div><span class="storl" onPointerDown="{{stopp}}"><sc-for list="{{w.storr}}" as="z" hint-placeholder-count="3"><button class="{{z.kl}}" onClick="{{z.klikk}}" title="{{z.t}}">{{z.n}}</button></sc-for></span></div></sc-for></div>
+<sc-if value="{{harSkjult}}" hint-placeholder-val="{{ true }}"><div class="skjult" style="margin-top:16px">{{skjultT}}<sc-for list="{{skjult}}" as="s" hint-placeholder-count="3"><button onClick="{{s.vis}}">+ {{s.n}}</button></sc-for></div></sc-if>
+</div></div>
+</main>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1260}}'>
+var W = [{"id": "okter", "n": "Dagens økter", "z": ["M", "L", "XL"]}, {"id": "folgopp", "n": "Følg opp i dag", "z": ["S", "M", "L"]}, {"id": "gjoremal", "n": "Gjøremål", "z": ["S", "M", "L"]}, {"id": "uka", "n": "Uka", "z": ["M", "L", "XL"]}, {"id": "frister", "n": "Vurderingsfrister", "z": ["S", "M"]}, {"id": "glipper", "n": "Elever som glipper", "z": ["S", "M", "L"]}, {"id": "innsats", "n": "Innsats over tid", "z": ["S", "M"]}];
+var SM = { okter: '2 økter', folgopp: 'fra forrige økt', uka: 'uke 41', gjoremal: '3 åpne', frister: 'neste 3 uker', glipper: 'siste 10 økter', innsats: 'andel av dem som var til stede · grått = ikke sett' };
+var ZN = { S: 'Liten', M: 'Middels', L: 'Stor', XL: 'Bred' };
+var PRE = { enkel: { paa: { okter: 1, folgopp: 1, gjoremal: 1 }, str: { okter: 'L', folgopp: 'M', gjoremal: 'M' }, ord: ['okter', 'folgopp', 'gjoremal', 'uka', 'frister', 'glipper', 'innsats'] },
+  full: { paa: { okter: 1, folgopp: 1, gjoremal: 1, uka: 1, frister: 1, glipper: 1, innsats: 1 }, str: { okter: 'L', folgopp: 'M', gjoremal: 'M', uka: 'XL', frister: 'S', glipper: 'M', innsats: 'S' }, ord: ['okter', 'folgopp', 'gjoremal', 'uka', 'frister', 'glipper', 'innsats'] } };
+function kopiPre(m) { var p = PRE[m]; return { paa: Object.assign({}, p.paa), str: Object.assign({ uka: 'XL', frister: 'S', glipper: 'M', innsats: 'S' }, p.str), ord: p.ord.slice() }; }
+class Component extends DCLogic {
+  constructor(p) { super(p); var k = kopiPre('full'); this.state = { modus: 'full', paa: k.paa, str: k.str, ord: k.ord, red: false, loft: null, mal: null }; }
+  flip(fn) {
+    var for0 = {}; document.querySelectorAll('[data-w]').forEach(function (n) { for0[n.getAttribute('data-w')] = n.getBoundingClientRect(); });
+    fn();
+    var kjor = function () { document.querySelectorAll('[data-w]').forEach(function (n) { var a = for0[n.getAttribute('data-w')]; if (!a || !n.animate) return; var b = n.getBoundingClientRect(), dx = a.left - b.left, dy = a.top - b.top, sx = a.width / b.width, sy = a.height / b.height;
+      if (Math.abs(dx) < 1 && Math.abs(dy) < 1 && Math.abs(sx - 1) < .01 && Math.abs(sy - 1) < .01) return;
+      n.animate([{ transform: 'translate(' + dx + 'px,' + dy + 'px)' }, { transform: 'none' }], { duration: 360, easing: 'cubic-bezier(.22,1,.36,1)' }); }); };
+    setTimeout(function () { requestAnimationFrame(kjor); }, 0);
+  }
+  velg(m) { var self = this; if (m === 'egen') { this.setState({ modus: 'egen' }); return; } var k = kopiPre(m); this.flip(function () { self.setState({ modus: m, paa: k.paa, str: k.str, ord: k.ord }); }); }
+  dra(e, id) {
+    if (!this.state.red) return;
+    e.preventDefault();
+    var self = this, x0 = e.clientX, y0 = e.clientY, flyttet = false;
+    var flytt = function (ev) {
+      if (!flyttet && Math.abs(ev.clientX - x0) + Math.abs(ev.clientY - y0) < 6) return;
+      if (!flyttet) { flyttet = true; self.setState({ loft: id }); }
+      var mal = null; document.querySelectorAll('[data-w]').forEach(function (n) { var r = n.getBoundingClientRect(); if (ev.clientX >= r.left && ev.clientX <= r.right && ev.clientY >= r.top && ev.clientY <= r.bottom) mal = n.getAttribute('data-w'); });
+      if (mal !== self.state.mal) self.setState({ mal: mal && mal !== id ? mal : null });
+    };
+    var slipp = function () { window.removeEventListener('pointermove', flytt); window.removeEventListener('pointerup', slipp); var mal = self.state.mal;
+      if (mal) { var o = self.state.ord.slice(), a = o.indexOf(id), b = o.indexOf(mal); o.splice(a, 1); o.splice(b, 0, id); self.flip(function () { self.setState({ ord: o, modus: 'egen', mal: null, loft: null }); }); } else self.setState({ loft: null, mal: null }); };
+    window.addEventListener('pointermove', flytt); window.addEventListener('pointerup', slipp);
+  }
+  renderVals() {
+    var self = this, st = this.state, by = {}; W.forEach(function (w) { by[w.id] = w; });
+    var stopp = function (e) { e.stopPropagation(); };
+    var widgets = st.ord.filter(function (id) { return st.paa[id]; }).map(function (id) {
+      var w = by[id], z = st.str[id], o = { id: id, n: w.n, sm: SM[id], kl: 'w ' + z + (st.loft === id ? ' loft' : '') + (st.mal === id ? ' mal' : ''),
+        ned: function (e) { self.dra(e, id); },
+        fjern: function (e) { e.stopPropagation(); var p = Object.assign({}, st.paa); delete p[id]; self.flip(function () { self.setState({ paa: p, modus: 'egen' }); }); },
+        storr: w.z.map(function (s) { return { n: s, t: ZN[s], kl: s === z ? 'on' : '', klikk: function (e) { e.stopPropagation(); var x = Object.assign({}, st.str); x[id] = s; self.flip(function () { self.setState({ str: x, modus: 'egen' }); }); } }; }),
+        timer: z === 'XL' && st.ukeV !== 'k', kompakt: !(z === 'XL' && st.ukeV !== 'k'), ukeBryter: id === 'uka' && z === 'XL', 
+        vTL: st.ukeV !== 'k' ? 'on' : '', vK: st.ukeV === 'k' ? 'on' : '', tilTL: function (e) { e.stopPropagation(); self.flip(function () { self.setState({ ukeV: 'tl' }); }); }, tilK: function (e) { e.stopPropagation(); self.flip(function () { self.setState({ ukeV: 'k' }); }); } };
+      W.forEach(function (x) { o['s_' + x.id] = x.id === id && (z !== 'S' || x.id === 'uka'); o['l_' + x.id] = x.id === id && z === 'S' && x.id !== 'uka'; });
+      return o; });
+    var DIM = { S: [1, 1], M: [2, 1], L: [2, 2], XL: [4, 2] }, opp = {}, plass = {};
+    var fri = function (r, c, w, h) { for (var y = r; y < r + h; y++) for (var x2 = c; x2 < c + w; x2++) if (x2 > 3 || opp[y + ',' + x2]) return false; return true; };
+    widgets.forEach(function (o) { var d = DIM[st.str[o.id]]; if (o.id === 'uka' && st.str.uka === 'XL' && st.ukeV === 'k') d = [4, 1]; for (var r = 0; r < 40; r++) { var ok = -1; for (var c = 0; c <= 4 - d[0]; c++) if (fri(r, c, d[0], d[1])) { ok = c; break; } if (ok >= 0) { for (var y = r; y < r + d[1]; y++) for (var x2 = ok; x2 < ok + d[0]; x2++) opp[y + ',' + x2] = o.id; plass[o.id] = { r: r, c: ok, w: d[0], h: d[1] }; break; } } });
+    var maxR = 0; Object.keys(plass).forEach(function (k) { maxR = Math.max(maxR, plass[k].r + plass[k].h); });
+    var hull = [];
+    for (var r = 0; r < maxR; r++) for (var c = 0; c < 4; c++) if (!opp[r + ',' + c]) {
+      var venstre = opp[r + ',' + (c - 1)], p2 = venstre ? plass[venstre] : null;
+      if (!st.red && p2 && p2.h === 1 && p2.r === r && p2.c + p2.w === c) { p2.w++; opp[r + ',' + c] = venstre; }
+      else { opp[r + ',' + c] = '_'; hull.push({ gc: (c + 1) + ' / span 1', gr: (r + 1) + ' / span 1', t: st.red ? 'Ledig plass' : '' }); }
+    }
+    widgets.forEach(function (o) { var p3 = plass[o.id]; o.gc = (p3.c + 1) + ' / span ' + p3.w; o.gr = (p3.r + 1) + ' / span ' + p3.h;
+      if (st.str[o.id] === 'S' && p3.w > 1) { o.kl = o.kl.replace(' S', ' M'); W.forEach(function (x) { if (x.id === o.id) { o['s_' + x.id] = true; o['l_' + x.id] = false; } }); } });
+    var M = [['enkel', 'Enkel', 64], ['full', 'Full', 52], ['egen', 'Egen', 58]], x = 2, tL = '2px', tW = '64px';
+    var moduser = M.map(function (m) { if (m[0] === st.modus) { tL = x + 'px'; tW = m[2] + 'px'; } x += m[2]; return { n: m[1], w: m[2] + 'px', kl: m[0] === st.modus ? 'on' : '', klikk: function () { self.velg(m[0]); } }; });
+    var skjult = st.ord.filter(function (id) { return !st.paa[id]; });
+    return {
+      widgets: widgets, hull: hull, moduser: moduser, tL: tL, tW: tW, rotKl: st.red ? 'redig' : '', stopp: stopp,
+      redKl: 'btn' + (st.red ? ' pri' : ''), redT: st.red ? 'Ferdig' : 'Tilpass',
+      redig: function () { self.setState({ red: !st.red }); },
+      under: st.red ? 'Dra en flis for å flytte den. Velg størrelse nede til høyre, − skjuler.' : { enkel: 'Enkel: neste økt, hvem du skal følge opp og gjøremålene', full: 'Full: alt på én side', egen: 'Ditt eget oppsett' }[st.modus],
+      harSkjult: skjult.length > 0, skjultT: st.red ? 'Legg til:' : 'Skjult:',
+      skjult: skjult.map(function (id) { return { n: by[id].n, vis: function () { var p = Object.assign({}, st.paa); p[id] = 1; self.flip(function () { self.setState({ paa: p, modus: 'egen' }); }); } }; })
+    };
+  }
+}
+</script>
+</body>
+</html>

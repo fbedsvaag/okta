@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<title>Skoleåret, tavle</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#d4cee2}
+:root{--pal:#4a3d7d;--pal-lys:#e3ddf0;--pal-mid:#b2a8d2;--pal-svak:#f4f2f9;--ease-sprett:cubic-bezier(.34,1.32,.5,1)}
+.pt{position:relative;z-index:1;display:flex;align-items:center;gap:9px;height:32px;padding:0 10px;border-radius:10px;color:#2e2840;font-size:14px}
+.pt.on{font-weight:500;color:#241f33}
+.under{position:relative;z-index:1;display:flex;align-items:center;gap:8px;min-height:28px;margin-left:22px;padding:3px 10px;border-radius:8px;color:#2e2840;font-size:13px}
+.under.on{font-weight:500}
+.under::before{content:"";position:absolute;left:-11px;top:-1px;bottom:-1px;width:1.5px;border-radius:1px;background:rgba(36,31,51,.16)}
+.kbd{margin-left:auto;font-size:11px;color:#6b6482;letter-spacing:.04em;font-weight:400}
+.navmark{position:absolute;left:8px;right:8px;border-radius:10px;background:rgba(255,255,255,.88);box-shadow:0 1px 3px rgba(36,31,51,.14),inset 0 1px 0 #fff;pointer-events:none}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;height:30px;padding:0 13px;border-radius:999px;border:1px solid #d9d4e8;background:#fff;color:#241f33;font:inherit;font-size:13px;cursor:pointer;white-space:nowrap}
+.btn.pri{background:var(--pal);border-color:var(--pal);color:#fff;font-weight:500}
+.btn.stille{border-color:transparent;background:transparent;color:#645d7a}
+.seg{position:relative;display:inline-flex;padding:2px;border-radius:999px;background:rgba(36,31,51,.06)}
+.seg button{all:unset;position:relative;z-index:1;cursor:pointer;height:26px;display:inline-flex;align-items:center;justify-content:center;font-size:12.5px;color:#645d7a;transition:color 200ms}
+.seg button.on{color:#241f33;font-weight:500}
+.tommel{position:absolute;top:2px;left:2px;height:26px;border-radius:999px;background:#fff;box-shadow:0 1px 3px rgba(36,31,51,.16);transition:transform 340ms var(--ease-sprett),width 340ms var(--ease-sprett)}
+.chip{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 9px;border-radius:12px;background:var(--pal-svak);font-size:12px;white-space:nowrap}
+.fk{width:8px;height:8px;border-radius:2px;flex:none;display:inline-block}
+.av{border-radius:50%;overflow:hidden;flex:none;display:inline-block;background:var(--pal-lys)}
+.ell{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.num{font-variant-numeric:tabular-nums}
+.h{font-size:13px;font-weight:600;margin:0}
+.kort{border-radius:14px;background:#fff;box-shadow:inset 0 0 0 1px #ece9f3;padding:16px 18px}
+.hm{border-radius:2px;display:inline-block}
+.g{background:#3f9d49}.y{background:#d9a92f}.r{background:#c04a3d}.o{background:#d5d8dd}
+.glide{transition:transform 260ms var(--ease-sprett),height 260ms var(--ease-sprett)}
+@media (prefers-reduced-motion: reduce){.glide,.tommel{transition:none!important}}
+
+.tavle{display:flex;gap:14px;height:100%;overflow-x:auto;padding-bottom:8px;scrollbar-width:thin}
+.kol{flex:0 0 262px;display:flex;flex-direction:column;border-radius:16px;background:#f7f6fb;box-shadow:inset 0 0 0 1px #ece9f3;min-height:0}
+.kh{padding:12px 12px 8px;border-bottom:1px solid #ece9f3}
+.kh .bar{height:4px;border-radius:2px;margin-bottom:8px}
+.kh b{font-size:14px;font-weight:600}
+.kh .m{font-size:11.5px;color:#9a90b8;margin-top:2px}
+.kh .mal{display:flex;gap:3px;margin-top:6px;flex-wrap:wrap}
+.kh .mal span{font-size:10.5px;color:#645d7a;background:#fff;border-radius:5px;padding:1px 5px;box-shadow:inset 0 0 0 1px #ece9f3}
+.kl{flex:1;min-height:0;overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:6px;scrollbar-width:thin}
+.kort{display:grid;grid-template-columns:10px 58px minmax(0,1fr) 14px;align-items:center;gap:6px;padding:7px 8px;border-radius:10px;background:#fff;box-shadow:0 1px 2px rgba(36,31,51,.06),inset 0 0 0 1px #ece9f3;font-size:12.5px;transition:box-shadow 160ms,transform 160ms}
+.kort .gr{color:#c9c2dd;cursor:grab;font-size:11px;letter-spacing:-1px;touch-action:none}
+.kort .d{font-size:11px;color:#9a90b8;white-space:nowrap}
+.kort input{all:unset;min-width:0;font-size:12.5px;color:#241f33}
+.kort input::placeholder{color:#c9c2dd}
+.kort.loft{box-shadow:0 12px 28px rgba(36,31,51,.22),inset 0 0 0 1.5px var(--pc);transform:scale(1.02);position:relative;z-index:5}
+.kort.ferie{background:transparent;box-shadow:none;color:#9a90b8;font-style:italic;font-size:11.5px;display:block;padding:2px 8px}
+.vik{width:14px;height:14px;border-radius:4px;background:#c9922e;display:grid;place-items:center}
+.kf{display:flex;align-items:center;gap:6px;padding:8px 10px;border-top:1px solid #ece9f3;font-size:11.5px;color:#645d7a}
+.kf button{all:unset;cursor:pointer;height:22px;padding:0 8px;border-radius:11px;background:#fff;box-shadow:inset 0 0 0 1px #e3ddf0;font-size:11.5px}
+.kf button:hover{background:#f4f2f9}
+.nykol{flex:0 0 200px;border-radius:16px;box-shadow:inset 0 0 0 1.5px #d9d4e8;display:flex;flex-direction:column;gap:8px;padding:14px;color:#645d7a;font-size:12.5px}
+.nykol .pc{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:10px;background:#fff;box-shadow:inset 0 0 0 1px #ece9f3;color:#241f33}
+.toast{position:absolute;z-index:40;left:50%;bottom:16px;transform:translateX(-50%);height:38px;padding:0 16px;border-radius:999px;background:rgba(36,31,51,.92);color:#fff;font-size:13px;display:flex;align-items:center;white-space:nowrap}
+
+</style>
+</helmet>
+<div style="position:relative;height:1060px;padding:24px;box-sizing:border-box;overflow:hidden;font-family:'Geist',-apple-system,sans-serif;color:#241f33;font-size:14px">
+<div aria-hidden="true" style="position:absolute;left:-120px;top:-80px;width:620px;height:620px;border-radius:50%;background:#8a7bc2;filter:blur(70px);opacity:.75"></div>
+<div aria-hidden="true" style="position:absolute;left:-60px;top:560px;width:520px;height:520px;border-radius:50%;background:#5f9e98;filter:blur(80px);opacity:.7"></div>
+<div aria-hidden="true" style="position:absolute;right:-100px;top:-60px;width:700px;height:500px;border-radius:50%;background:#b8aee0;filter:blur(90px);opacity:.6"></div>
+<div style="position:relative;display:flex;height:1012px;border-radius:16px;overflow:hidden;background:rgba(236,234,241,.42);backdrop-filter:blur(40px) saturate(160%);box-shadow:0 24px 70px rgba(36,31,51,.28),0 0 0 1px rgba(36,31,51,.14)">
+<nav aria-label="Hovedmeny" style="position:relative;width:236px;flex:none;margin:10px;padding:12px 8px;box-sizing:border-box;display:flex;flex-direction:column;gap:2px;border-radius:22px;background:rgba(255,255,255,.5);backdrop-filter:blur(28px) saturate(170%);border:1px solid rgba(255,255,255,.75);box-shadow:inset 0 1px 0 rgba(255,255,255,.95),0 10px 30px rgba(36,31,51,.14)">
+<div style="display:flex;align-items:center;gap:8px;padding:2px 8px 10px"><svg width="20" height="20" viewBox="0 0 1024 1024" aria-hidden="true"><rect x="40" y="40" width="944" height="944" rx="215" fill="#241F33"></rect><rect x="290" y="330" width="200" height="364" rx="44" fill="#EEEDFE"></rect><rect x="516" y="330" width="100" height="364" rx="40" fill="#C9C2DD"></rect><rect x="642" y="330" width="100" height="364" rx="40" fill="#9A90B8"></rect></svg><span style="font-weight:600;font-size:14px">Økta</span><span class="num" style="margin-left:auto;font-size:11px;color:#4b4560">2026/27</span></div>
+<div style="display:flex;align-items:center;gap:8px;height:30px;padding:0 12px;margin-bottom:10px;border-radius:999px;background:rgba(255,255,255,.55);border:1px solid rgba(255,255,255,.75);font-size:13px;color:#4b4560">Søk<span class="kbd">⌘K</span></div>
+<div class="navmark" style="top:231px;height:34px;left:30px"></div><div class="pt ">I dag<span class="kbd">G D</span></div><div class="pt on">Økter<span class="kbd">G Ø</span></div><div class="under "><span class="fk" style="background:#c9c2dd"></span>Alle fag<span class="kbd"></span></div><div class="under "><span class="fk" style="background:#2e6a8e"></span>MFL1<span class="kbd"></span></div><div class="under on"><span class="fk" style="background:#9a5a2c"></span>MFL2<span class="kbd"></span></div><div class="under "><span class="fk" style="background:#3d7a5a"></span>ENG1<span class="kbd"></span></div><div class="pt ">Elever<span class="kbd">G E</span></div><div class="pt ">Vurderinger<span class="kbd">G V</span></div><div class="pt ">Samtaler<span class="kbd">G S</span></div><div class="pt ">Klassekart<span class="kbd">G K</span></div>
+<div style="flex:1"></div><div class="pt">Gi tilbakemelding</div><div class="pt">Innstillinger<span class="kbd">⌘,</span></div></nav>
+<main style="position:relative;flex:1;min-width:0;margin:10px 10px 10px 0;background:#fff;border-radius:16px;box-shadow:0 1px 3px rgba(36,31,51,.10);display:flex;flex-direction:column;overflow:hidden">
+<header style="display:flex;align-items:center;gap:10px;margin:10px 12px 0;padding:0 8px 0 18px;height:48px;border-radius:999px;background:rgba(255,255,255,.7);backdrop-filter:blur(28px) saturate(170%);border:1px solid rgba(255,255,255,.8);box-shadow:inset 0 1px 0 rgba(255,255,255,.95),0 6px 20px rgba(36,31,51,.10),0 0 0 .5px rgba(36,31,51,.08);flex:none"><span style="font-size:18px;color:#241f33">‹</span><span style="font-size:18px;color:#c9c2dd;margin-right:6px">›</span><span class="fk" style="width:11px;height:11px;border-radius:3px;background:#9a5a2c"></span><span style="font-weight:600;font-size:15px">MFL2</span>
+<div class="seg" style="margin-left:6px"><span class="tommel" style="left:78px;width:62px"></span><button style="width:76px">Oversikt</button><button class="on" style="width:62px">Året</button><button style="width:64px">Økter</button><button style="width:80px">Kalender</button></div>
+<span style="flex:1"></span><div class="seg"><span class="tommel" style="left:82px;width:64px"></span><button style="width:80px">Tidslinje</button><button class="on" style="width:64px">Tavle</button></div></header>
+<div style="flex:1;min-height:0;overflow:hidden;padding:16px 28px 16px"><div style="position:relative;height:100%;display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;align-items:flex-end;gap:16px"><div><div style="font-size:30px;font-weight:300;letter-spacing:-.015em">Skoleåret i MFL2 · tavle</div>
+<div style="font-size:13px;color:#645d7a;margin-top:2px">Hver periode er en kolonne, hver økt et kort. Skriv tema rett inn, dra kort for å flytte innhold. Datoene står, temaene flytter seg.</div></div>
+<span style="flex:1"></span><span class="num" style="font-size:12.5px;color:#645d7a">{{fylt}} av {{tot}} økter har tema</span></div>
+<div class="tavle" data-tavle="1"><sc-for list="{{kol}}" as="c" hint-placeholder-count="5"><div class="kol" style="--pc:{{c.c}}">
+<div class="kh"><div class="bar" style="background:{{c.c}}"></div><b>{{c.n}}</b><div class="m num">{{c.m}}</div><div class="mal"><sc-for list="{{c.mal}}" as="m" hint-placeholder-count="3"><span class="num">{{m}}</span></sc-for></div></div>
+<div class="kl"><sc-for list="{{c.kort}}" as="k" hint-placeholder-count="6"><div><sc-if value="{{k.fer}}" hint-placeholder-val="{{ false }}"><div class="kort ferie">{{k.ft}}</div></sc-if><sc-if value="{{k.ekte}}" hint-placeholder-val="{{ true }}"><div class="{{k.kl}}" data-k="{{k.k}}"><span class="gr" onPointerDown="{{k.dra}}">⋮⋮</span><span class="d num">{{k.d}}</span><input value="{{k.t}}" placeholder="Skriv tema …" data-ki="{{k.k}}" onInput="{{k.skriv}}" onKeyDown="{{k.tast}}"><span><sc-if value="{{k.v}}" hint-placeholder-val="{{ false }}"><span class="vik" title="{{k.vn}}"><svg width="8" height="8" viewBox="0 0 10 10"><path d="M2 8l.5-2 4-4 1.5 1.5-4 4z" fill="#fff"/></svg></span></sc-if></span></div></sc-if></div></sc-for></div>
+<div class="kf"><span class="num">{{c.ant}} økter</span><span style="flex:1"></span><sc-if value="{{c.kanEndre}}" hint-placeholder-val="{{ true }}"><button onClick="{{c.minus}}" title="Gi siste økt til neste periode">− økt</button><button onClick="{{c.pluss}}" title="Ta første økt fra neste periode">+ økt</button></sc-if></div>
+</div></sc-for>
+<div class="nykol"><b style="color:#241f33;font-size:13px">+ Ny periode</b><span>Dra en periode hit, eller lag en ny. Den tar øktene etter forrige kolonne.</span></div>
+</div>
+<sc-if value="{{harToast}}" hint-placeholder-val="{{ false }}"><div class="toast">{{toastT}}</div></sc-if>
+</div></div>
+</main>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1060}}'>
+var SLOT = [{"u": 34, "d": "man 17.8", "f": "", "m": 8}, {"u": 34, "d": "tor 20.8", "f": "", "m": 8}, {"u": 35, "d": "man 24.8", "f": "", "m": 8}, {"u": 35, "d": "tor 27.8", "f": "", "m": 8}, {"u": 36, "d": "man 31.8", "f": "", "m": 8}, {"u": 36, "d": "tor 3.9", "f": "", "m": 9}, {"u": 37, "d": "man 7.9", "f": "", "m": 9}, {"u": 37, "d": "tor 10.9", "f": "", "m": 9}, {"u": 38, "d": "man 14.9", "f": "", "m": 9}, {"u": 38, "d": "tor 17.9", "f": "", "m": 9}, {"u": 39, "d": "man 21.9", "f": "", "m": 9}, {"u": 39, "d": "tor 24.9", "f": "", "m": 9}, {"u": 40, "d": "man 28.9", "f": "", "m": 9}, {"u": 40, "d": "tor 1.10", "f": "", "m": 10}, {"u": 41, "d": "man 5.10", "f": "Høstferie", "m": 10}, {"u": 41, "d": "tor 8.10", "f": "Høstferie", "m": 10}, {"u": 42, "d": "man 12.10", "f": "", "m": 10}, {"u": 42, "d": "tor 15.10", "f": "", "m": 10}, {"u": 43, "d": "man 19.10", "f": "", "m": 10}, {"u": 43, "d": "tor 22.10", "f": "", "m": 10}, {"u": 44, "d": "man 26.10", "f": "", "m": 10}, {"u": 44, "d": "tor 29.10", "f": "", "m": 10}, {"u": 45, "d": "man 2.11", "f": "", "m": 11}, {"u": 45, "d": "tor 5.11", "f": "", "m": 11}, {"u": 46, "d": "man 9.11", "f": "", "m": 11}, {"u": 46, "d": "tor 12.11", "f": "", "m": 11}, {"u": 47, "d": "man 16.11", "f": "", "m": 11}, {"u": 47, "d": "tor 19.11", "f": "", "m": 11}, {"u": 48, "d": "man 23.11", "f": "", "m": 11}, {"u": 48, "d": "tor 26.11", "f": "", "m": 11}, {"u": 49, "d": "man 30.11", "f": "", "m": 11}, {"u": 49, "d": "tor 3.12", "f": "", "m": 12}, {"u": 50, "d": "man 7.12", "f": "", "m": 12}, {"u": 50, "d": "tor 10.12", "f": "", "m": 12}, {"u": 51, "d": "man 14.12", "f": "", "m": 12}, {"u": 51, "d": "tor 17.12", "f": "", "m": 12}, {"u": 52, "d": "man 21.12", "f": "Jul", "m": 12}, {"u": 52, "d": "tor 24.12", "f": "Jul", "m": 12}, {"u": 53, "d": "man 28.12", "f": "Jul", "m": 12}, {"u": 53, "d": "tor 31.12", "f": "Jul", "m": 12}, {"u": 1, "d": "man 4.1", "f": "Jul", "m": 1}, {"u": 1, "d": "tor 7.1", "f": "Jul", "m": 1}, {"u": 2, "d": "man 11.1", "f": "", "m": 1}, {"u": 2, "d": "tor 14.1", "f": "", "m": 1}, {"u": 3, "d": "man 18.1", "f": "", "m": 1}, {"u": 3, "d": "tor 21.1", "f": "", "m": 1}, {"u": 4, "d": "man 25.1", "f": "", "m": 1}, {"u": 4, "d": "tor 28.1", "f": "", "m": 1}, {"u": 5, "d": "man 1.2", "f": "", "m": 2}, {"u": 5, "d": "tor 4.2", "f": "", "m": 2}, {"u": 6, "d": "man 8.2", "f": "", "m": 2}, {"u": 6, "d": "tor 11.2", "f": "", "m": 2}, {"u": 7, "d": "man 15.2", "f": "", "m": 2}, {"u": 7, "d": "tor 18.2", "f": "", "m": 2}, {"u": 8, "d": "man 22.2", "f": "", "m": 2}, {"u": 8, "d": "tor 25.2", "f": "", "m": 2}, {"u": 9, "d": "man 1.3", "f": "Vinterferie", "m": 3}, {"u": 9, "d": "tor 4.3", "f": "Vinterferie", "m": 3}, {"u": 10, "d": "man 8.3", "f": "", "m": 3}, {"u": 10, "d": "tor 11.3", "f": "", "m": 3}, {"u": 11, "d": "man 15.3", "f": "", "m": 3}, {"u": 11, "d": "tor 18.3", "f": "", "m": 3}, {"u": 12, "d": "man 22.3", "f": "", "m": 3}, {"u": 12, "d": "tor 25.3", "f": "", "m": 3}, {"u": 13, "d": "man 29.3", "f": "Påske", "m": 3}, {"u": 13, "d": "tor 1.4", "f": "Påske", "m": 4}, {"u": 14, "d": "man 5.4", "f": "", "m": 4}, {"u": 14, "d": "tor 8.4", "f": "", "m": 4}, {"u": 15, "d": "man 12.4", "f": "", "m": 4}, {"u": 15, "d": "tor 15.4", "f": "", "m": 4}, {"u": 16, "d": "man 19.4", "f": "", "m": 4}, {"u": 16, "d": "tor 22.4", "f": "", "m": 4}, {"u": 17, "d": "man 26.4", "f": "", "m": 4}, {"u": 17, "d": "tor 29.4", "f": "", "m": 4}, {"u": 18, "d": "man 3.5", "f": "", "m": 5}, {"u": 18, "d": "tor 6.5", "f": "", "m": 5}, {"u": 19, "d": "man 10.5", "f": "", "m": 5}, {"u": 19, "d": "tor 13.5", "f": "", "m": 5}, {"u": 20, "d": "man 17.5", "f": "", "m": 5}, {"u": 20, "d": "tor 20.5", "f": "", "m": 5}, {"u": 21, "d": "man 24.5", "f": "", "m": 5}, {"u": 21, "d": "tor 27.5", "f": "", "m": 5}, {"u": 22, "d": "man 31.5", "f": "", "m": 5}, {"u": 22, "d": "tor 3.6", "f": "", "m": 6}, {"u": 23, "d": "man 7.6", "f": "", "m": 6}, {"u": 23, "d": "tor 10.6", "f": "", "m": 6}, {"u": 24, "d": "man 14.6", "f": "", "m": 6}, {"u": 24, "d": "tor 17.6", "f": "", "m": 6}], EKTE = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 58, 59, 60, 61, 62, 63, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87];
+var PER = [{"id": "a", "n": "Markedsanalyse", "c": "#c9922e", "s": 0, "l": 12, "m": [0, 1, 3]}, {"id": "b", "n": "Markedsmiks", "c": "#2f9a8a", "s": 14, "l": 16, "m": [2, 4, 5]}, {"id": "c", "n": "Merkevare", "c": "#c0607a", "s": 34, "l": 14, "m": [6, 7]}, {"id": "d", "n": "Markedskommunikasjon", "c": "#4f7ac0", "s": -1, "l": 14, "m": [5, 8]}, {"id": "e", "n": "Eksamenstrening", "c": "#7d6bb0", "s": -1, "l": 10, "m": []}], START = [{"id": 0, "t": "Oppstart: hva er markedsføring?", "v": ""}, {"id": 1, "t": "Markedsføringsprosessen", "v": ""}, {"id": 2, "t": "Mikromiljøet", "v": ""}, {"id": 3, "t": "Makromiljøet (PESTEL)", "v": ""}, {"id": 4, "t": "Konkurrentanalyse", "v": ""}, {"id": 5, "t": "SWOT-analyse", "v": ""}, {"id": 6, "t": "SWOT i grupper", "v": ""}, {"id": 7, "t": "Markedsundersøkelser: metode", "v": ""}, {"id": 8, "t": "Lag og test en spørreundersøkelse", "v": ""}, {"id": 9, "t": "Skriftlig prøve: markedsanalyse", "v": ""}, {"id": 10, "t": "Analyse av egne data", "v": ""}, {"id": 11, "t": "", "v": "Skriftlig prøve: markedsanalyse"}, {"id": 12, "t": "", "v": ""}, {"id": 13, "t": "", "v": ""}, {"id": 14, "t": "Produktbeslutninger: case", "v": ""}, {"id": 15, "t": "Muntlig: prisstrategi", "v": "Muntlig: prisstrategi"}, {"id": 16, "t": "Muntlig: prisstrategi", "v": ""}, {"id": 17, "t": "Muntlig: prisstrategi", "v": ""}, {"id": 18, "t": "Pris: case Kiwi mot Meny", "v": ""}, {"id": 19, "t": "Distribusjon og kanalvalg", "v": ""}, {"id": 20, "t": "", "v": ""}, {"id": 21, "t": "", "v": ""}, {"id": 22, "t": "", "v": ""}, {"id": 23, "t": "", "v": ""}, {"id": 24, "t": "", "v": ""}, {"id": 25, "t": "", "v": ""}, {"id": 26, "t": "", "v": ""}, {"id": 27, "t": "", "v": ""}, {"id": 28, "t": "", "v": ""}, {"id": 29, "t": "", "v": "Fagsamtale: merkevare"}, {"id": 30, "t": "Merkevare: hva er det?", "v": ""}, {"id": 31, "t": "Identitet og posisjonering", "v": ""}, {"id": 32, "t": "Merkevarepyramiden", "v": ""}, {"id": 33, "t": "Merkevare: case", "v": ""}, {"id": 34, "t": "", "v": ""}, {"id": 35, "t": "", "v": ""}, {"id": 36, "t": "", "v": ""}, {"id": 37, "t": "", "v": ""}, {"id": 38, "t": "", "v": ""}, {"id": 39, "t": "", "v": ""}, {"id": 40, "t": "", "v": ""}, {"id": 41, "t": "", "v": ""}, {"id": 42, "t": "", "v": ""}, {"id": 43, "t": "", "v": ""}, {"id": 44, "t": "Kommunikasjonsmodellen", "v": ""}, {"id": 45, "t": "Reklame og PR", "v": ""}, {"id": 46, "t": "Sosiale medier", "v": ""}, {"id": 47, "t": "Innholdsmarkedsføring", "v": ""}, {"id": 48, "t": "Influensere og etikk", "v": ""}, {"id": 49, "t": "Markedsføringsloven", "v": ""}, {"id": 50, "t": "Kampanjeplanlegging", "v": ""}, {"id": 51, "t": "", "v": "Kampanje: presentasjon"}, {"id": 52, "t": "", "v": ""}, {"id": 53, "t": "", "v": ""}, {"id": 54, "t": "", "v": ""}, {"id": 55, "t": "", "v": ""}, {"id": 56, "t": "", "v": ""}, {"id": 57, "t": "", "v": ""}, {"id": 58, "t": "", "v": ""}, {"id": 59, "t": "", "v": ""}, {"id": 60, "t": "Eksamensformen", "v": ""}, {"id": 61, "t": "Gammel eksamen: oppgave 1", "v": ""}, {"id": 62, "t": "Gammel eksamen: oppgave 2", "v": ""}, {"id": 63, "t": "", "v": "Heldagsprøve"}, {"id": 64, "t": "", "v": ""}, {"id": 65, "t": "", "v": ""}, {"id": 66, "t": "", "v": ""}, {"id": 67, "t": "", "v": ""}, {"id": 68, "t": "", "v": ""}, {"id": 69, "t": "", "v": ""}, {"id": 70, "t": "", "v": ""}, {"id": 71, "t": "", "v": ""}, {"id": 72, "t": "", "v": ""}, {"id": 73, "t": "", "v": ""}, {"id": 74, "t": "", "v": ""}, {"id": 75, "t": "", "v": ""}], GR0 = [0, 12, 30, 44, 60, 76];
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { kort: START.map(function (k) { return Object.assign({}, k); }), gr: GR0.slice(), loft: null, toast: '' }; }
+  vis(t) { var s = this; this.setState({ toast: t }); clearTimeout(this._t); this._t = setTimeout(function () { s.setState({ toast: '' }); }, 3500); }
+  dra(e, k) {
+    e.preventDefault(); var self = this, cur = k, y0 = e.clientY, x0 = e.clientX, flyttet = false;
+    var flytt = function (ev) {
+      if (!flyttet && Math.abs(ev.clientY - y0) + Math.abs(ev.clientX - x0) < 4) return; if (!flyttet) { flyttet = true; self.setState({ loft: self.state.kort[cur].id }); }
+      var mal = -1; document.querySelectorAll('[data-k]').forEach(function (n) { var r = n.getBoundingClientRect(); if (ev.clientX >= r.left && ev.clientX <= r.right && ev.clientY >= r.top && ev.clientY <= r.bottom) mal = +n.getAttribute('data-k'); });
+      if (mal >= 0 && mal !== cur) { var a = self.state.kort.slice(); var x = a.splice(cur, 1)[0]; a.splice(mal, 0, x); self.setState({ kort: a }); cur = mal; }
+    };
+    var slipp = function () { window.removeEventListener('pointermove', flytt); window.removeEventListener('pointerup', slipp); if (flyttet) self.vis('Flyttet til ' + SLOT[EKTE[cur]].d + '. Temaene etter har rykket ett hakk.'); self.setState({ loft: null }); };
+    window.addEventListener('pointermove', flytt); window.addEventListener('pointerup', slipp);
+  }
+  renderVals() {
+    var self = this, st = this.state, gr = st.gr;
+    var kol = PER.map(function (p, pi) {
+      var a = gr[pi], b = gr[pi + 1], liste = [], forrige = -1;
+      for (var k = a; k < b; k++) {
+        (function (k) {
+          var si = EKTE[k];
+          if (forrige >= 0 && si - forrige > 1) { for (var f = forrige + 1; f < si; f++) if (SLOT[f].f && (f === forrige + 1)) liste.push({ fer: true, ekte: false, ft: SLOT[f].f }); }
+          forrige = si;
+          var c = st.kort[k];
+          liste.push({ fer: false, ekte: true, k: k, d: SLOT[si].d, t: c.t, v: !!c.v, vn: c.v, kl: 'kort' + (st.loft === c.id ? ' loft' : ''),
+            dra: function (e) { self.dra(e, k); },
+            skriv: function (e) { var x = st.kort.slice(); x[k] = Object.assign({}, x[k], { t: e.target.value }); self.setState({ kort: x }); },
+            tast: function (e) { if (e.key === 'Enter' || e.key === 'ArrowDown') { e.preventDefault(); var n = document.querySelector('[data-ki="' + (k + 1) + '"]'); if (n) n.focus(); } if (e.key === 'ArrowUp') { e.preventDefault(); var n2 = document.querySelector('[data-ki="' + (k - 1) + '"]'); if (n2) n2.focus(); } } });
+        })(k);
+      }
+      return { n: p.n, c: p.c, m: SLOT[EKTE[a]].d + ' → ' + SLOT[EKTE[b - 1]].d, mal: p.m.map(function (i) { return String(i + 1); }), kort: liste, ant: b - a, kanEndre: pi < PER.length - 1,
+        minus: function () { if (gr[pi + 1] - gr[pi] <= 1) return; var g = gr.slice(); g[pi + 1]--; self.setState({ gr: g }); self.vis('«' + p.n + '» slutter nå ' + SLOT[EKTE[g[pi + 1] - 1]].d); },
+        pluss: function () { if (gr[pi + 2] - gr[pi + 1] <= 1) return; var g = gr.slice(); g[pi + 1]++; self.setState({ gr: g }); self.vis('«' + p.n + '» slutter nå ' + SLOT[EKTE[g[pi + 1] - 1]].d); } };
+    });
+    return { kol: kol, tot: st.kort.length, fylt: st.kort.filter(function (k) { return k.t; }).length, harToast: !!st.toast, toastT: st.toast };
+  }
+}
+</script>
+</body>
+</html>

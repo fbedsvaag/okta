@@ -811,6 +811,105 @@ Tegningene ligger i `docs/lerret/`. Fila står i parentes.
   uke · Hver tredje uke · Hver n-te uke, og A-/B-uke for skoler som har
   det. Forhåndsvisning av datoene før de lages, ferier hoppes over som før.
 
+## 20. Design og skoleåret (21.10)
+
+Rekkefølge: rydderunden først (20.1–20.4), så Skoleåret (20.6–20.7), så
+I dag (20.5). Det som venter på betaen, står i §21.
+
+- [ ] **20.1 Trafikklys med form.** For fargeblinde: grønn fylt, gul
+  halvfylt, rød med lite kryss. Samme mønster i skåring, heatmap,
+  elevkort og filter.
+- [ ] **20.2 Farge betyr data.** Bare trafikklysene har sterk farge. Fag
+  vises som liten firkant, periode som prikk, resten er nøytralt. Gå
+  gjennom I dag, kalender og fagside.
+- [ ] **20.3 Én skårprikk-komponent** brukt overalt: rød, gul, grønn,
+  0 = ikke i økta (mørk med kryss), ikke skåret = ikke sett (tom).
+- [ ] **20.4 Tastestripa tones ned** etter at man har brukt tastene noen
+  ganger, og kommer tilbake når man holder ⌘.
+- [ ] **20.6 Skoleåret** (Arsplanlegger): ny fane «Året» i faget, mellom
+  Oversikt og Økter. Stedet for det store bildet.
+  - Hele skoleåret som én stripe. Enheten er øktene fra timeplanen (ikke
+    uker); ferier er skravert og har ingen økter. Måneder og «I dag» vises.
+  - Periodene dras inn fra lista, flyttes sidelengs og forlenges i begge
+    ender. De hopper til økter, og en boble viser «man 12.10 → man 14.12 ·
+    19 økter» mens man drar. Start og slutt kan ikke ligge i en ferie.
+  - Ny periode: dra over en tom del av stripa, skriv navn, velg farge, ↵.
+    Et enkelt klikk lager en periode på åtte økter.
+  - Vurderingene står som gule merker under periodene, med navn og dato
+    ved hover.
+  - Perioder og økter: ▸ folder ut øktene i perioden med dato, ferie som
+    egen linje, og tema som kan skrives rett inn (↵ eller ↓ til neste, ↑
+    tilbake). Det er samme tema som i Økter-lista.
+  - Periodekortet viser vurderingene som er planlagt i perioden som en
+    rolig grå linje under datolinja («Vurdering: navn · dato»), uten gult.
+    Gult brukes bare i tidslinja og i den utfoldede lista. I den utfoldede lista står
+    vurderingsmerket mellom dato og tema.
+  - Kompetansemål: med en periode valgt, klikk for å knytte. Uten valg
+    (Esc, klikk utenfor, ✕) viser hvert mål bare «✓ Dekket» med fargeprikker
+    for periodene, eller «Ikke dekket».
+  - «Gi N økter perioden» setter perioden på alle økter i spennet.
+  - Årsplan-PDF-en bygger på dette.
+- [ ] **20.7 Bruk fjorårets år som mal** («Hent fra i fjor …» i Året, og
+  tilbys når et nytt skoleår opprettes). Viser hver periode med datoene i
+  fjor og i år og antall økter (+1/−1 der ferier har flyttet seg). Velg
+  hva som blir med: perioder, kompetansemål, tema på øktene (i rekkefølge),
+  vurderinger (som utkast på nærmeste økt), plan og agenda. Ingenting om
+  elevene blir med. Erstatter årets perioder, kan angres.
+- [ ] **20.5 I dag: Enkel og Full** (IDagOppsett, bare bryteren øverst til
+  høyre). Enkel (standard): Dagens økter, Følg opp i dag og Gjøremål. Full: i
+  tillegg Uka, Vurderingsfrister, Elever som glipper og Innsats over tid.
+  Bruk samme rutenett og plassering som i tegningen for Full (ingen hull).
+  - Følg opp i dag grupperes i Rød sist, Ikke sett sist og Borte sist, per
+    fag du har i dag.
+  - Innsats over tid viser grønn, gul, rød og grått (til stede, ikke sett),
+    regnet av dem som var til stede.
+  - Uka har bryteren Timer (tidslinje med scroll, standard) og Kompakt.
+    Kompakt krymper flisen til én rad, og flisene under glir rolig opp.
+  - Valget huskes. Tilpass, størrelser og flytting kommer i §21.
+
+## 21. Etter betaen (tegnet, venter på tilbakemeldinger)
+
+Tegningene ligger klare. Ta dem opp når betatesterne har brukt Økta en
+stund og etterspør dette.
+
+- [ ] **21.1 Skoleåret som tavle** (ArsTavle). Bryteren «Tidslinje · Tavle»
+  øverst til høyre i Året, valget huskes.
+  - Én kolonne per periode fra august til juni, scroll
+      sidelengs. Kolonnehodet har farge, datoer, kompetansemål og antall
+      økter. Hver økt er et kort med dato, vurderingsmerke og tema som
+      skrives rett inn (↵/↓ neste, ↑ forrige). Dra et kort til ny plass, også
+      over i en annen periode: datoene står, temaene etter rykker ett hakk,
+      og vurderingen følger temaet. «− økt / + økt» flytter grensen mot neste
+      periode. Ferier står som egne linjer.
+- [ ] **21.2 I dag som fliser med Tilpass** (IDagOppsett). Egen-oppsett,
+  S/M/L/XL, dra fliser, − skjuler, «+ navn» for skjulte. Inspirert av
+  widgets på iPhone og Mac. Øverst til høyre: Enkel · Full · Egen og «Tilpass».
+    - Rutenett med fire kolonner og faste radhøyder. Flisene har størrelsene
+      S (1×1), M (2×1), L (2×2) og XL (4×2), og hver flis har sine lovlige
+      størrelser (Uka: M/L/XL, Frister: S/M osv.).
+    - S viser en kortversjon: stort tall og én linje («7 elever å følge opp»,
+      «15.10 neste frist», «3 åpne gjøremål»).
+    - Plassering pakkes i rekkefølge, og rutenettet skal alltid gå opp: et
+      hull fylles ved at flisen til venstre strekkes (S blir M og viser den
+      lange versjonen). I Tilpass vises hull som «Ledig plass».
+    - Tilpass: flisene står stille (ingen vipping), får en tynn kant, kan dras til ny plass, har S/M/L/XL nede
+      til høyre og − øverst til venstre for å skjule. Skjulte fliser står
+      nederst som «+ navn». Endringer gir «Egen». «Ferdig» avslutter.
+    - Enkel: Dagens økter (L), Følg opp i dag (M), Gjøremål (M). Full: i
+      tillegg Uka (XL), Vurderingsfrister (S), Elever som glipper (M),
+      Innsats over tid (S).
+    - Følg opp i dag grupperes i Rød sist, Ikke sett sist og Borte sist, per
+      fag du har i dag.
+    - Innsats over tid viser grønn, gul, rød og grått (til stede, ikke sett),
+      regnet av dem som var til stede.
+    - Uka i XL har bryteren Timer (tidslinje med scroll, standard) og Kompakt.
+      Kompakt krymper flisen til én rad (4×1).
+    - Når flisene flytter seg (størrelse, rekkefølge, skjul, oppsett, Kompakt),
+      glir de rolig til ny plass (FLIP, ca. 350 ms, myk ut-kurve uten overskyting).
+      Mens man drar, markeres bare målet; flisene byttes først når man slipper.
+      Skal føles som samtaletrekkeren og skåringslista, ikke sprette.
+    - Huskes per bruker. Samme valg i Innstillinger → I dag.
+
 ## Ikke nå
 
 Ting som er vurdert og lagt bort med vilje. Står her så de ikke dukker opp

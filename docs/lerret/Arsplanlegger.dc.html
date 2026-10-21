@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<title>Skoleåret</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#d4cee2}
+:root{--pal:#4a3d7d;--pal-lys:#e3ddf0;--pal-mid:#b2a8d2;--pal-svak:#f4f2f9;--ease-sprett:cubic-bezier(.34,1.32,.5,1)}
+.pt{position:relative;z-index:1;display:flex;align-items:center;gap:9px;height:32px;padding:0 10px;border-radius:10px;color:#2e2840;font-size:14px}
+.pt.on{font-weight:500;color:#241f33}
+.under{position:relative;z-index:1;display:flex;align-items:center;gap:8px;min-height:28px;margin-left:22px;padding:3px 10px;border-radius:8px;color:#2e2840;font-size:13px}
+.under.on{font-weight:500}
+.under::before{content:"";position:absolute;left:-11px;top:-1px;bottom:-1px;width:1.5px;border-radius:1px;background:rgba(36,31,51,.16)}
+.kbd{margin-left:auto;font-size:11px;color:#6b6482;letter-spacing:.04em;font-weight:400}
+.navmark{position:absolute;left:8px;right:8px;border-radius:10px;background:rgba(255,255,255,.88);box-shadow:0 1px 3px rgba(36,31,51,.14),inset 0 1px 0 #fff;pointer-events:none}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;height:30px;padding:0 13px;border-radius:999px;border:1px solid #d9d4e8;background:#fff;color:#241f33;font:inherit;font-size:13px;cursor:pointer;white-space:nowrap}
+.btn.pri{background:var(--pal);border-color:var(--pal);color:#fff;font-weight:500}
+.btn.stille{border-color:transparent;background:transparent;color:#645d7a}
+.seg{position:relative;display:inline-flex;padding:2px;border-radius:999px;background:rgba(36,31,51,.06)}
+.seg button{all:unset;position:relative;z-index:1;cursor:pointer;height:26px;display:inline-flex;align-items:center;justify-content:center;font-size:12.5px;color:#645d7a;transition:color 200ms}
+.seg button.on{color:#241f33;font-weight:500}
+.tommel{position:absolute;top:2px;left:2px;height:26px;border-radius:999px;background:#fff;box-shadow:0 1px 3px rgba(36,31,51,.16);transition:transform 340ms var(--ease-sprett),width 340ms var(--ease-sprett)}
+.chip{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 9px;border-radius:12px;background:var(--pal-svak);font-size:12px;white-space:nowrap}
+.fk{width:8px;height:8px;border-radius:2px;flex:none;display:inline-block}
+.av{border-radius:50%;overflow:hidden;flex:none;display:inline-block;background:var(--pal-lys)}
+.ell{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.num{font-variant-numeric:tabular-nums}
+.h{font-size:13px;font-weight:600;margin:0}
+.kort{border-radius:14px;background:#fff;box-shadow:inset 0 0 0 1px #ece9f3;padding:16px 18px}
+.hm{border-radius:2px;display:inline-block}
+.g{background:#3f9d49}.y{background:#d9a92f}.r{background:#c04a3d}.o{background:#d5d8dd}
+.glide{transition:transform 260ms var(--ease-sprett),height 260ms var(--ease-sprett)}
+@media (prefers-reduced-motion: reduce){.glide,.tommel{transition:none!important}}
+.strip{position:relative;height:142px;border-radius:14px;background:#fff;box-shadow:inset 0 0 0 1px #ece9f3;user-select:none;flex:none}
+.sl{position:absolute;top:24px;bottom:30px}
+.sl.f{background:repeating-linear-gradient(135deg,#f7f6fb 0 4px,#efecf5 4px 8px)}
+.sl.uk{border-left:1px solid #f3f1f8}
+.sl.mk{border-left:1px solid #e3ddf0}
+.mnd{position:absolute;top:6px;font-size:11px;color:#645d7a;font-weight:500}
+.bar{position:absolute;height:34px;border-radius:9px;box-sizing:border-box;padding:4px 8px;color:#fff;font-size:12px;font-weight:500;cursor:grab;white-space:nowrap;transition:left 200ms cubic-bezier(.34,1.32,.5,1),width 200ms cubic-bezier(.34,1.32,.5,1),top 220ms,box-shadow 160ms,opacity 200ms;box-shadow:0 1px 2px rgba(36,31,51,.15)}
+.bar>.inn{overflow:hidden;text-overflow:ellipsis}
+.bar.dra{transition:none;cursor:grabbing;box-shadow:0 10px 24px rgba(36,31,51,.28);z-index:5}
+.bar.valgt{box-shadow:0 0 0 2px #fff,0 0 0 3.5px #241f33,0 6px 16px rgba(36,31,51,.2);z-index:3}
+.bar.dim{opacity:.4}
+.bar small{display:block;font-size:10.5px;font-weight:400;opacity:.85;overflow:hidden;text-overflow:ellipsis}
+.hk{position:absolute;top:0;bottom:0;width:10px;cursor:ew-resize}
+.hk.v{left:0}.hk.h{right:0}
+.hk::after{content:"";position:absolute;top:9px;bottom:9px;width:2px;border-radius:1px;background:rgba(255,255,255,.7)}
+.hk.v::after{left:3px}.hk.h::after{right:3px}
+.boble{position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);padding:5px 10px;border-radius:8px;background:#241f33;color:#fff;font-size:12px;font-weight:500;white-space:nowrap;box-shadow:0 8px 20px rgba(36,31,51,.3);pointer-events:none;animation:bob 160ms ease-out;z-index:9}
+.boble::after{content:"";position:absolute;left:50%;top:100%;margin-left:-5px;border:5px solid transparent;border-top-color:#241f33}
+@keyframes bob{from{opacity:0;transform:translate(-50%,4px)}to{opacity:1;transform:translateX(-50%)}}
+.nu{position:absolute;top:22px;bottom:28px;width:0;border-left:1.5px solid #241f33;z-index:0}
+.vm{position:absolute;bottom:7px;width:16px;height:16px;margin-left:-8px;border-radius:5px;background:#c9922e;display:grid;place-items:center;z-index:2;box-shadow:0 0 0 2px #fff}
+.vm span{display:none;position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);padding:4px 8px;border-radius:6px;background:#241f33;color:#fff;font-size:11.5px;white-space:nowrap}
+.vm:hover span{display:block}
+.vlinje{position:absolute;top:24px;bottom:24px;width:0;border-left:1px dashed #e3c48a;z-index:1;pointer-events:none}
+.pk{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:12px;background:#fff;box-shadow:inset 0 0 0 1px #ece9f3;cursor:pointer;transition:box-shadow 160ms}
+.pk:hover{box-shadow:inset 0 0 0 1px #d9d4e8}
+.pk.valgt{box-shadow:inset 0 0 0 1.5px #241f33}
+.pk .gr{color:#b9b2cc;cursor:grab;font-size:13px;letter-spacing:-1px;touch-action:none}
+.pk.ute{background:#fbfafd;box-shadow:inset 0 0 0 1.5px #d9d4e8}
+.pil{all:unset;cursor:pointer;width:22px;height:22px;border-radius:6px;display:grid;place-items:center;color:#9a90b8;font-size:11px;transition:transform 260ms cubic-bezier(.34,1.32,.5,1),background 160ms}
+.pil:hover{background:#f4f2f9;color:#241f33}
+.pil.ned{transform:rotate(90deg)}
+.okl{margin:2px 0 6px 18px;padding:4px 0 4px 12px;border-left:2px solid var(--pc);display:flex;flex-direction:column}
+.or{display:grid;grid-template-columns:62px 16px minmax(0,1fr);align-items:center;gap:8px;height:28px;font-size:13px}
+.or .dt{font-size:11.5px;color:#9a90b8;font-variant-numeric:tabular-nums}
+.or input{all:unset;min-width:0;height:26px;padding:0 6px;border-radius:6px;font-size:13px;color:#241f33}
+.or input::placeholder{color:#c9c2dd}
+.or input:hover{background:#f7f6fb}
+.or input:focus{background:#fff;box-shadow:inset 0 0 0 1.5px var(--pc)}
+.ferie{font-size:11.5px;color:#9a90b8;font-style:italic;height:22px;display:flex;align-items:center;padding-left:70px}
+.ghost{position:fixed;z-index:50;pointer-events:none;height:30px;border-radius:8px;padding:0 10px;display:flex;align-items:center;color:#fff;font-size:12px;font-weight:500;box-shadow:0 12px 28px rgba(36,31,51,.3);transform:translate(-20px,-15px)}
+.mr{display:grid;grid-template-columns:22px minmax(0,1fr) 150px;align-items:center;gap:10px;padding:6px 10px;border-radius:10px;cursor:pointer;font-size:13px;transition:background 160ms}
+.mr:hover{background:#f7f6fb}
+.mr.koblet{background:color-mix(in srgb,var(--pc) 9%,#fff);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--pc) 30%,#fff)}
+.bx{width:16px;height:16px;border-radius:5px;box-shadow:inset 0 0 0 1.5px #c9c2dd;display:grid;place-items:center;background:#fff;transition:all 180ms}
+.mr.koblet .bx{background:var(--pc);box-shadow:none}
+.nr{font-size:12px;color:#9a90b8;text-align:center}
+.dek{display:flex;align-items:center;gap:8px}
+.dek .b{flex:1;height:8px;border-radius:4px;background:#f1eef6;overflow:hidden;display:flex;gap:1px}
+.dek .b i{display:block;height:100%;transition:width 300ms}
+.dek .t{font-size:11.5px;color:#645d7a;width:54px;text-align:right}
+.tom{font-size:11.5px;color:#a2574a;font-weight:500}
+.toast{position:absolute;z-index:40;left:50%;bottom:10px;transform:translateX(-50%);display:flex;align-items:center;gap:12px;height:40px;padding:0 6px 0 16px;border-radius:999px;background:rgba(36,31,51,.92);color:#fff;font-size:13px;box-shadow:0 14px 40px rgba(36,31,51,.3);white-space:nowrap}
+.toast button{all:unset;cursor:pointer;height:28px;padding:0 12px;border-radius:999px;background:rgba(255,255,255,.14);font-size:12.5px}
+.chipx{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 6px 0 10px;border-radius:12px;font-size:12px;color:#fff}
+.chipx b{width:16px;height:16px;border-radius:50%;background:rgba(255,255,255,.25);display:grid;place-items:center;font-weight:400;font-size:11px}
+.vik{width:15px;height:15px;border-radius:4px;background:#c9922e;display:grid;place-items:center}
+
+.ok{font-size:11.5px;color:#2f7a4a;font-weight:500}
+.nybar{position:absolute;top:30px;height:34px;border-radius:9px;border:1.5px dashed;box-sizing:border-box;display:flex;align-items:center;padding:0 8px;font-size:11.5px;color:#241f33;pointer-events:none;z-index:6}
+.nyform{position:absolute;z-index:20;top:76px;width:320px;padding:14px;border-radius:16px;background:rgba(255,255,255,.98);box-shadow:0 20px 50px rgba(36,31,51,.25),0 0 0 .5px rgba(36,31,51,.12);animation:bob 200ms ease-out}
+.nyinp{all:unset;display:block;width:100%;box-sizing:border-box;margin-top:6px;font-size:18px;font-weight:300;padding:4px 0;border-bottom:1.5px solid #e3ddf0}
+.nyinp:focus{border-color:#4a3d7d}
+.nysw{all:unset;cursor:pointer;width:24px;height:24px;border-radius:7px;transition:transform 200ms cubic-bezier(.34,1.6,.5,1)}
+.nysw:hover{transform:scale(1.12)}
+.nysw.on{box-shadow:0 0 0 2px #fff,0 0 0 3.5px #241f33}
+.slor{position:absolute;inset:-16px -28px;z-index:30;background:rgba(36,31,51,.22);backdrop-filter:blur(2px);display:grid;place-items:center}
+.malark{width:640px;padding:24px 26px 20px;border-radius:22px;background:rgba(255,255,255,.97);box-shadow:0 30px 80px rgba(36,31,51,.32);animation:bob 220ms ease-out}
+.malr{display:grid;grid-template-columns:1.5fr 1.2fr 1.2fr 70px;gap:10px;align-items:center;height:36px;padding:0 14px;border-top:1px solid #f3f1f8;font-size:13px}
+.malr.hd{height:30px;border-top:none;background:#f7f6fb;font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:#9a90b8}
+.malv{display:flex;align-items:flex-start;gap:10px;font-size:13px;cursor:pointer;padding:4px 0}
+.mbx{width:16px;height:16px;flex:none;margin-top:1px;border-radius:5px;box-shadow:inset 0 0 0 1.5px #c9c2dd;display:grid;place-items:center;background:#fff}
+.mbx svg{opacity:0}
+.mbx.on{background:#4a3d7d;box-shadow:none}
+.mbx.on svg{opacity:1}
+.vmeta{display:flex;align-items:center;gap:5px;margin-top:3px;font-size:11.5px;color:#9a90b8;min-width:0}
+.or input.vt{font-weight:500}
+
+</style>
+</helmet>
+<div style="position:relative;height:1060px;padding:24px;box-sizing:border-box;overflow:hidden;font-family:'Geist',-apple-system,sans-serif;color:#241f33;font-size:14px">
+<div aria-hidden="true" style="position:absolute;left:-120px;top:-80px;width:620px;height:620px;border-radius:50%;background:#8a7bc2;filter:blur(70px);opacity:.75"></div>
+<div aria-hidden="true" style="position:absolute;left:-60px;top:560px;width:520px;height:520px;border-radius:50%;background:#5f9e98;filter:blur(80px);opacity:.7"></div>
+<div aria-hidden="true" style="position:absolute;right:-100px;top:-60px;width:700px;height:500px;border-radius:50%;background:#b8aee0;filter:blur(90px);opacity:.6"></div>
+<div style="position:relative;display:flex;height:1012px;border-radius:16px;overflow:hidden;background:rgba(236,234,241,.42);backdrop-filter:blur(40px) saturate(160%);box-shadow:0 24px 70px rgba(36,31,51,.28),0 0 0 1px rgba(36,31,51,.14)">
+<nav aria-label="Hovedmeny" style="position:relative;width:236px;flex:none;margin:10px;padding:12px 8px;box-sizing:border-box;display:flex;flex-direction:column;gap:2px;border-radius:22px;background:rgba(255,255,255,.5);backdrop-filter:blur(28px) saturate(170%);border:1px solid rgba(255,255,255,.75);box-shadow:inset 0 1px 0 rgba(255,255,255,.95),0 10px 30px rgba(36,31,51,.14)">
+<div style="display:flex;align-items:center;gap:8px;padding:2px 8px 10px"><svg width="20" height="20" viewBox="0 0 1024 1024" aria-hidden="true"><rect x="40" y="40" width="944" height="944" rx="215" fill="#241F33"></rect><rect x="290" y="330" width="200" height="364" rx="44" fill="#EEEDFE"></rect><rect x="516" y="330" width="100" height="364" rx="40" fill="#C9C2DD"></rect><rect x="642" y="330" width="100" height="364" rx="40" fill="#9A90B8"></rect></svg><span style="font-weight:600;font-size:14px">Økta</span><span class="num" style="margin-left:auto;font-size:11px;color:#4b4560">2026/27</span></div>
+<div style="display:flex;align-items:center;gap:8px;height:30px;padding:0 12px;margin-bottom:10px;border-radius:999px;background:rgba(255,255,255,.55);border:1px solid rgba(255,255,255,.75);font-size:13px;color:#4b4560">Søk<span class="kbd">⌘K</span></div>
+<div class="navmark" style="top:231px;height:34px;left:30px"></div><div class="pt ">I dag<span class="kbd">G D</span></div><div class="pt on">Økter<span class="kbd">G Ø</span></div><div class="under "><span class="fk" style="background:#c9c2dd"></span>Alle fag<span class="kbd"></span></div><div class="under "><span class="fk" style="background:#2e6a8e"></span>MFL1<span class="kbd"></span></div><div class="under on"><span class="fk" style="background:#9a5a2c"></span>MFL2<span class="kbd"></span></div><div class="under "><span class="fk" style="background:#3d7a5a"></span>ENG1<span class="kbd"></span></div><div class="pt ">Elever<span class="kbd">G E</span></div><div class="pt ">Vurderinger<span class="kbd">G V</span></div><div class="pt ">Samtaler<span class="kbd">G S</span></div><div class="pt ">Klassekart<span class="kbd">G K</span></div>
+<div style="flex:1"></div><div class="pt">Gi tilbakemelding</div><div class="pt">Innstillinger<span class="kbd">⌘,</span></div></nav>
+<main style="position:relative;flex:1;min-width:0;margin:10px 10px 10px 0;background:#fff;border-radius:16px;box-shadow:0 1px 3px rgba(36,31,51,.10);display:flex;flex-direction:column;overflow:hidden">
+<header style="display:flex;align-items:center;gap:10px;margin:10px 12px 0;padding:0 8px 0 18px;height:48px;border-radius:999px;background:rgba(255,255,255,.7);backdrop-filter:blur(28px) saturate(170%);border:1px solid rgba(255,255,255,.8);box-shadow:inset 0 1px 0 rgba(255,255,255,.95),0 6px 20px rgba(36,31,51,.10),0 0 0 .5px rgba(36,31,51,.08);flex:none"><span style="font-size:18px;color:#241f33">‹</span><span style="font-size:18px;color:#c9c2dd;margin-right:6px">›</span><span class="fk" style="width:11px;height:11px;border-radius:3px;background:#9a5a2c"></span><span style="font-weight:600;font-size:15px">MFL2</span>
+<div class="seg" style="margin-left:6px"><span class="tommel" style="left:78px;width:62px"></span><button style="width:76px">Oversikt</button><button class="on" style="width:62px">Året</button><button style="width:64px">Økter</button><button style="width:80px">Kalender</button></div>
+<span style="flex:1"></span><span style="font-size:12.5px;color:#645d7a">man og tor · 90 min</span><button class="btn">Skriv ut årsplan</button></header>
+<div style="flex:1;min-height:0;overflow:hidden;padding:16px 28px 16px"><div style="position:relative;height:100%;display:flex;flex-direction:column;gap:14px" onClick="{{tom}}">
+<div style="display:flex;align-items:flex-end;gap:18px;flex:none">
+<div><div style="font-size:30px;font-weight:300;letter-spacing:-.015em">Skoleåret i MFL2</div>
+<div style="font-size:13px;color:#645d7a;margin-top:2px">{{hjelp}}</div></div>
+<button class="btn" style="align-self:center" onClick="{{malApne}}">Hent fra i fjor …</button>
+<span style="flex:1"></span>
+<div style="width:320px"><div style="display:flex;justify-content:space-between;font-size:12.5px"><span><b class="num" style="font-weight:600">{{okter}}</b> av 76 økter har periode</span><span style="color:{{malF}}">{{malT}}</span></div>
+<div style="display:flex;gap:2px;margin-top:6px;height:6px;border-radius:3px;overflow:hidden;background:#ece9f3"><sc-for list="{{fordeling}}" as="f" hint-placeholder-count="4"><span style="width:{{f.w}};background:{{f.c}};transition:width 300ms"></span></sc-for></div></div>
+</div>
+<div class="strip" data-strip="1" style="--w:calc(100% / 88)" onPointerDown="{{stripNed}}" onClick="{{stopp}}"><div class="sl mk" style="left:calc(0 * var(--w));width:var(--w)" title="man 17.8"></div><div class="sl" style="left:calc(1 * var(--w));width:var(--w)" title="tor 20.8"></div><div class="sl uk" style="left:calc(2 * var(--w));width:var(--w)" title="man 24.8"></div><div class="sl" style="left:calc(3 * var(--w));width:var(--w)" title="tor 27.8"></div><div class="sl uk" style="left:calc(4 * var(--w));width:var(--w)" title="man 31.8"></div><div class="sl mk" style="left:calc(5 * var(--w));width:var(--w)" title="tor 3.9"></div><div class="sl uk" style="left:calc(6 * var(--w));width:var(--w)" title="man 7.9"></div><div class="sl" style="left:calc(7 * var(--w));width:var(--w)" title="tor 10.9"></div><div class="sl uk" style="left:calc(8 * var(--w));width:var(--w)" title="man 14.9"></div><div class="sl" style="left:calc(9 * var(--w));width:var(--w)" title="tor 17.9"></div><div class="sl uk" style="left:calc(10 * var(--w));width:var(--w)" title="man 21.9"></div><div class="sl" style="left:calc(11 * var(--w));width:var(--w)" title="tor 24.9"></div><div class="sl uk" style="left:calc(12 * var(--w));width:var(--w)" title="man 28.9"></div><div class="sl mk" style="left:calc(13 * var(--w));width:var(--w)" title="tor 1.10"></div><div class="sl f uk" style="left:calc(14 * var(--w));width:var(--w)" title="man 5.10 · Høstferie"></div><div class="sl f" style="left:calc(15 * var(--w));width:var(--w)" title="tor 8.10 · Høstferie"></div><div class="sl uk" style="left:calc(16 * var(--w));width:var(--w)" title="man 12.10"></div><div class="sl" style="left:calc(17 * var(--w));width:var(--w)" title="tor 15.10"></div><div class="sl uk" style="left:calc(18 * var(--w));width:var(--w)" title="man 19.10"></div><div class="sl" style="left:calc(19 * var(--w));width:var(--w)" title="tor 22.10"></div><div class="sl uk" style="left:calc(20 * var(--w));width:var(--w)" title="man 26.10"></div><div class="sl" style="left:calc(21 * var(--w));width:var(--w)" title="tor 29.10"></div><div class="sl mk" style="left:calc(22 * var(--w));width:var(--w)" title="man 2.11"></div><div class="sl" style="left:calc(23 * var(--w));width:var(--w)" title="tor 5.11"></div><div class="sl uk" style="left:calc(24 * var(--w));width:var(--w)" title="man 9.11"></div><div class="sl" style="left:calc(25 * var(--w));width:var(--w)" title="tor 12.11"></div><div class="sl uk" style="left:calc(26 * var(--w));width:var(--w)" title="man 16.11"></div><div class="sl" style="left:calc(27 * var(--w));width:var(--w)" title="tor 19.11"></div><div class="sl uk" style="left:calc(28 * var(--w));width:var(--w)" title="man 23.11"></div><div class="sl" style="left:calc(29 * var(--w));width:var(--w)" title="tor 26.11"></div><div class="sl uk" style="left:calc(30 * var(--w));width:var(--w)" title="man 30.11"></div><div class="sl mk" style="left:calc(31 * var(--w));width:var(--w)" title="tor 3.12"></div><div class="sl uk" style="left:calc(32 * var(--w));width:var(--w)" title="man 7.12"></div><div class="sl" style="left:calc(33 * var(--w));width:var(--w)" title="tor 10.12"></div><div class="sl uk" style="left:calc(34 * var(--w));width:var(--w)" title="man 14.12"></div><div class="sl" style="left:calc(35 * var(--w));width:var(--w)" title="tor 17.12"></div><div class="sl f uk" style="left:calc(36 * var(--w));width:var(--w)" title="man 21.12 · Jul"></div><div class="sl f" style="left:calc(37 * var(--w));width:var(--w)" title="tor 24.12 · Jul"></div><div class="sl f uk" style="left:calc(38 * var(--w));width:var(--w)" title="man 28.12 · Jul"></div><div class="sl f" style="left:calc(39 * var(--w));width:var(--w)" title="tor 31.12 · Jul"></div><div class="sl f mk" style="left:calc(40 * var(--w));width:var(--w)" title="man 4.1 · Jul"></div><div class="sl f" style="left:calc(41 * var(--w));width:var(--w)" title="tor 7.1 · Jul"></div><div class="sl uk" style="left:calc(42 * var(--w));width:var(--w)" title="man 11.1"></div><div class="sl" style="left:calc(43 * var(--w));width:var(--w)" title="tor 14.1"></div><div class="sl uk" style="left:calc(44 * var(--w));width:var(--w)" title="man 18.1"></div><div class="sl" style="left:calc(45 * var(--w));width:var(--w)" title="tor 21.1"></div><div class="sl uk" style="left:calc(46 * var(--w));width:var(--w)" title="man 25.1"></div><div class="sl" style="left:calc(47 * var(--w));width:var(--w)" title="tor 28.1"></div><div class="sl mk" style="left:calc(48 * var(--w));width:var(--w)" title="man 1.2"></div><div class="sl" style="left:calc(49 * var(--w));width:var(--w)" title="tor 4.2"></div><div class="sl uk" style="left:calc(50 * var(--w));width:var(--w)" title="man 8.2"></div><div class="sl" style="left:calc(51 * var(--w));width:var(--w)" title="tor 11.2"></div><div class="sl uk" style="left:calc(52 * var(--w));width:var(--w)" title="man 15.2"></div><div class="sl" style="left:calc(53 * var(--w));width:var(--w)" title="tor 18.2"></div><div class="sl uk" style="left:calc(54 * var(--w));width:var(--w)" title="man 22.2"></div><div class="sl" style="left:calc(55 * var(--w));width:var(--w)" title="tor 25.2"></div><div class="sl f mk" style="left:calc(56 * var(--w));width:var(--w)" title="man 1.3 · Vinterferie"></div><div class="sl f" style="left:calc(57 * var(--w));width:var(--w)" title="tor 4.3 · Vinterferie"></div><div class="sl uk" style="left:calc(58 * var(--w));width:var(--w)" title="man 8.3"></div><div class="sl" style="left:calc(59 * var(--w));width:var(--w)" title="tor 11.3"></div><div class="sl uk" style="left:calc(60 * var(--w));width:var(--w)" title="man 15.3"></div><div class="sl" style="left:calc(61 * var(--w));width:var(--w)" title="tor 18.3"></div><div class="sl uk" style="left:calc(62 * var(--w));width:var(--w)" title="man 22.3"></div><div class="sl" style="left:calc(63 * var(--w));width:var(--w)" title="tor 25.3"></div><div class="sl f uk" style="left:calc(64 * var(--w));width:var(--w)" title="man 29.3 · Påske"></div><div class="sl f mk" style="left:calc(65 * var(--w));width:var(--w)" title="tor 1.4 · Påske"></div><div class="sl uk" style="left:calc(66 * var(--w));width:var(--w)" title="man 5.4"></div><div class="sl" style="left:calc(67 * var(--w));width:var(--w)" title="tor 8.4"></div><div class="sl uk" style="left:calc(68 * var(--w));width:var(--w)" title="man 12.4"></div><div class="sl" style="left:calc(69 * var(--w));width:var(--w)" title="tor 15.4"></div><div class="sl uk" style="left:calc(70 * var(--w));width:var(--w)" title="man 19.4"></div><div class="sl" style="left:calc(71 * var(--w));width:var(--w)" title="tor 22.4"></div><div class="sl uk" style="left:calc(72 * var(--w));width:var(--w)" title="man 26.4"></div><div class="sl" style="left:calc(73 * var(--w));width:var(--w)" title="tor 29.4"></div><div class="sl mk" style="left:calc(74 * var(--w));width:var(--w)" title="man 3.5"></div><div class="sl" style="left:calc(75 * var(--w));width:var(--w)" title="tor 6.5"></div><div class="sl uk" style="left:calc(76 * var(--w));width:var(--w)" title="man 10.5"></div><div class="sl" style="left:calc(77 * var(--w));width:var(--w)" title="tor 13.5"></div><div class="sl uk" style="left:calc(78 * var(--w));width:var(--w)" title="man 17.5"></div><div class="sl" style="left:calc(79 * var(--w));width:var(--w)" title="tor 20.5"></div><div class="sl uk" style="left:calc(80 * var(--w));width:var(--w)" title="man 24.5"></div><div class="sl" style="left:calc(81 * var(--w));width:var(--w)" title="tor 27.5"></div><div class="sl uk" style="left:calc(82 * var(--w));width:var(--w)" title="man 31.5"></div><div class="sl mk" style="left:calc(83 * var(--w));width:var(--w)" title="tor 3.6"></div><div class="sl uk" style="left:calc(84 * var(--w));width:var(--w)" title="man 7.6"></div><div class="sl" style="left:calc(85 * var(--w));width:var(--w)" title="tor 10.6"></div><div class="sl uk" style="left:calc(86 * var(--w));width:var(--w)" title="man 14.6"></div><div class="sl" style="left:calc(87 * var(--w));width:var(--w)" title="tor 17.6"></div><div class="mnd" style="left:calc(0 * var(--w) + 4px)">aug</div><div class="mnd" style="left:calc(5 * var(--w) + 4px)">sep</div><div class="mnd" style="left:calc(13 * var(--w) + 4px)">okt</div><div class="mnd" style="left:calc(22 * var(--w) + 4px)">nov</div><div class="mnd" style="left:calc(31 * var(--w) + 4px)">des</div><div class="mnd" style="left:calc(40 * var(--w) + 4px)">jan</div><div class="mnd" style="left:calc(48 * var(--w) + 4px)">feb</div><div class="mnd" style="left:calc(56 * var(--w) + 4px)">mar</div><div class="mnd" style="left:calc(65 * var(--w) + 4px)">apr</div><div class="mnd" style="left:calc(74 * var(--w) + 4px)">mai</div><div class="mnd" style="left:calc(83 * var(--w) + 4px)">jun</div><div class="nu" style="left:calc(19 * var(--w))"></div><div style="position:absolute;top:6px;left:calc(19 * var(--w) + 5px);font-size:10.5px;font-weight:600;white-space:nowrap;color:#241f33;background:#fff;padding:0 3px">I dag</div><div class="vlinje" style="left:calc(11 * var(--w) + var(--w) / 2)"></div><div class="vm" style="left:calc(11 * var(--w) + var(--w) / 2)"><svg width="9" height="9" viewBox="0 0 10 10"><path d="M2 8l.5-2 4-4 1.5 1.5-4 4z" fill="#fff"/></svg><span>Skriftlig prøve: markedsanalyse · tor 24.9</span></div><div class="vlinje" style="left:calc(17 * var(--w) + var(--w) / 2)"></div><div class="vm" style="left:calc(17 * var(--w) + var(--w) / 2)"><svg width="9" height="9" viewBox="0 0 10 10"><path d="M1.5 2.5h7v4h-4l-2 1.5v-1.5h-1z" fill="#fff"/></svg><span>Muntlig: prisstrategi · tor 15.10</span></div><div class="vlinje" style="left:calc(31 * var(--w) + var(--w) / 2)"></div><div class="vm" style="left:calc(31 * var(--w) + var(--w) / 2)"><svg width="9" height="9" viewBox="0 0 10 10"><path d="M1.5 2.5h7v4h-4l-2 1.5v-1.5h-1z" fill="#fff"/></svg><span>Fagsamtale: merkevare · tor 3.12</span></div><div class="vlinje" style="left:calc(61 * var(--w) + var(--w) / 2)"></div><div class="vm" style="left:calc(61 * var(--w) + var(--w) / 2)"><svg width="9" height="9" viewBox="0 0 10 10"><path d="M1.5 2.5h7v4h-4l-2 1.5v-1.5h-1z" fill="#fff"/></svg><span>Kampanje: presentasjon · tor 18.3</span></div><div class="vlinje" style="left:calc(75 * var(--w) + var(--w) / 2)"></div><div class="vm" style="left:calc(75 * var(--w) + var(--w) / 2)"><svg width="9" height="9" viewBox="0 0 10 10"><path d="M2 8l.5-2 4-4 1.5 1.5-4 4z" fill="#fff"/></svg><span>Heldagsprøve · tor 6.5</span></div>
+<sc-if value="{{harNy}}" hint-placeholder-val="{{ false }}"><div class="nybar" style="left:calc({{nyS}} * var(--w) + 1px);width:calc({{nyL}} * var(--w) - 2px);border-color:{{nyC}};background:{{nyBg}}"><span class="num">{{nyT}}</span></div></sc-if>
+<sc-if value="{{harForm}}" hint-placeholder-val="{{ false }}"><div class="nyform" style="left:min(calc({{nyS}} * var(--w)), calc(100% - 330px))" onPointerDown="{{stopp}}" onClick="{{stopp}}">
+<div style="font-size:12px;color:#645d7a" class="num">Ny periode · {{nyT}}</div>
+<input class="nyinp" data-nyinp="1" placeholder="Navn på perioden" onInput="{{nySkriv}}" onKeyDown="{{nyTast}}">
+<div style="display:flex;gap:6px;margin-top:10px"><sc-for list="{{nyFarger}}" as="c" hint-placeholder-count="8"><button class="{{c.kl}}" style="background:{{c.c}}" onClick="{{c.klikk}}"></button></sc-for></div>
+<div style="display:flex;align-items:center;gap:8px;margin-top:12px"><span style="font-size:11.5px;color:#9a90b8">↵ lag · esc avbryt</span><span style="flex:1"></span><button class="btn" style="height:28px;font-size:12.5px" onClick="{{nyAvbryt}}">Avbryt</button><button class="btn pri" style="height:28px;font-size:12.5px" onClick="{{nyLag}}">Lag periode</button></div>
+</div></sc-if>
+<sc-for list="{{barer}}" as="b" hint-placeholder-count="3"><div class="{{b.kl}}" style="left:calc({{b.s}} * var(--w) + 1px);width:calc({{b.l}} * var(--w) - 2px);top:{{b.t}}px;background:{{b.c}}" onPointerDown="{{b.ned}}" onClick="{{b.stopp}}"><div class="inn">{{b.n}}<small class="num">{{b.info}}</small></div><span class="hk v" onPointerDown="{{b.hkv}}"></span><span class="hk h" onPointerDown="{{b.hkh}}"></span><sc-if value="{{b.boble}}" hint-placeholder-val="{{ false }}"><div class="boble num">{{b.bobleT}}</div></sc-if></div></sc-for>
+</div>
+<div style="flex:1;min-height:0;display:grid;grid-template-columns:430px minmax(0,1fr);gap:22px">
+<div style="display:flex;flex-direction:column;gap:8px;min-height:0;overflow:auto;padding:2px 4px 60px 2px" onClick="{{stopp}}">
+<div style="display:flex;align-items:baseline;gap:8px"><b style="font-size:14px;font-weight:600">Perioder og økter</b><span style="font-size:12px;color:#9a90b8">▸ viser øktene · skriv titler rett inn, ↵ går til neste</span></div>
+<sc-for list="{{liste}}" as="p" hint-placeholder-count="5"><div>
+<div class="{{p.kl}}" onClick="{{p.velg}}"><button class="{{p.pilKl}}" onClick="{{p.fold}}" title="Vis øktene">▶</button><span class="gr" onPointerDown="{{p.dra}}" title="Dra inn på året">⋮⋮</span><span style="width:12px;height:12px;border-radius:4px;background:{{p.c}};flex:none"></span><span style="flex:1;min-width:0"><span style="display:block;font-size:13.5px;font-weight:500">{{p.n}}</span><span class="num" style="display:block;font-size:11.5px;color:#9a90b8">{{p.info}}</span><sc-for list="{{p.vurd}}" as="w" hint-placeholder-count="1"><span class="vmeta"><span style="flex:none">Vurdering:</span><span class="ell" style="color:#3a3446">{{w.n}}</span><span class="num" style="flex:none">{{w.d}}</span></span></sc-for></span><span style="display:flex;gap:3px"><sc-for list="{{p.mal}}" as="m" hint-placeholder-count="2"><span class="num" style="font-size:10.5px;color:#645d7a;background:#f4f2f9;border-radius:5px;padding:1px 5px">{{m}}</span></sc-for></span></div>
+<sc-if value="{{p.apen}}" hint-placeholder-val="{{ false }}"><div class="okl" style="--pc:{{p.c}}"><sc-for list="{{p.okter}}" as="o" hint-placeholder-count="4"><div><sc-if value="{{o.ferie}}" hint-placeholder-val="{{ false }}"><div class="ferie">{{o.ft}}</div></sc-if><sc-if value="{{o.ekte}}" hint-placeholder-val="{{ true }}"><div class="or"><span class="dt">{{o.d}}</span><span style="display:grid;place-items:center"><sc-if value="{{o.v}}" hint-placeholder-val="{{ false }}"><span class="vik" title="{{o.vn}}"><svg width="9" height="9" viewBox="0 0 10 10"><path d="M2 8l.5-2 4-4 1.5 1.5-4 4z" fill="#fff"/></svg></span></sc-if></span><input value="{{o.t}}" placeholder="{{o.ph}}" data-slot="{{o.i}}" onInput="{{o.skriv}}" onKeyDown="{{o.tast}}"></div></sc-if></div></sc-for></div></sc-if>
+</div></sc-for>
+<div class="pk ute" style="justify-content:center;color:#4a3d7d;font-size:13px">+ Ny periode</div>
+<sc-if value="{{harValgt}}" hint-placeholder-val="{{ false }}"><button class="btn" style="margin-top:6px;align-self:flex-start" onClick="{{lagOkter}}"><span>Gi {{vAntall}} økter perioden «{{vNavn}}»</span></button></sc-if>
+</div>
+<div style="min-height:0;display:flex;flex-direction:column" onClick="{{stopp}}">
+<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;height:26px"><b style="font-size:14px;font-weight:600">Kompetansemål</b>
+<sc-if value="{{harV}}" hint-placeholder-val="{{ false }}"><span style="font-size:12px;color:#9a90b8">klikk for å knytte til</span><button class="chipx" style="background:{{vC}}" onClick="{{tom}}">{{vNavn}}<b>✕</b></button></sc-if>
+<sc-if value="{{ingenV}}" hint-placeholder-val="{{ true }}"><span style="font-size:12px;color:#9a90b8">hvor godt hvert mål er dekket gjennom året</span></sc-if>
+<span style="flex:1"></span><span style="font-size:12px;color:#645d7a">{{dekket}}</span></div>
+<sc-for list="{{maal}}" as="m" hint-placeholder-count="10"><div class="{{m.kl}}" style="--pc:{{m.pc}}" onClick="{{m.klikk}}"><sc-if value="{{m.medBoks}}" hint-placeholder-val="{{ false }}"><span class="bx"><svg width="10" height="10" viewBox="0 0 10 10"><path d="M1.5 5.2l2.2 2.2L8.5 2.6" stroke="#fff" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span></sc-if><sc-if value="{{m.utenBoks}}" hint-placeholder-val="{{ true }}"><span class="nr num">{{m.nr}}</span></sc-if><span class="ell" style="color:{{m.tf}}">{{m.t}}</span><span class="dek" style="justify-content:flex-end"><sc-if value="{{m.tom}}" hint-placeholder-val="{{ false }}"><span class="tom">Ikke dekket</span></sc-if><sc-if value="{{m.har}}" hint-placeholder-val="{{ true }}"><span style="display:flex;gap:3px"><sc-for list="{{m.dots}}" as="d" hint-placeholder-count="2"><i style="width:8px;height:8px;border-radius:50%;background:{{d}}"></i></sc-for></span><span class="ok">✓ Dekket</span></sc-if></span></div></sc-for>
+</div></div>
+<sc-if value="{{harGhost}}" hint-placeholder-val="{{ false }}"><div class="ghost" style="left:{{gx}}px;top:{{gy}}px;background:{{gc}}">{{gn}}</div></sc-if>
+<sc-if value="{{malApen}}" hint-placeholder-val="{{ false }}"><div class="slor" onClick="{{malLukk}}"><div class="malark" onClick="{{stopp}}">
+<div style="display:flex;align-items:baseline;gap:10px"><span style="font-size:22px;font-weight:300">Bruk 2025/26 som mal</span><span style="font-size:13px;color:#645d7a">MFL2 · 5 perioder · 74 økter med tema</span></div>
+<div style="font-size:13px;color:#645d7a;margin-top:6px;line-height:1.5">Periodene legges på de samme ukene i år, og øktene følger med i rekkefølge. Ferier og helligdager er flyttet, så noen perioder får en økt mer eller mindre. Ingenting om elevene blir med.</div>
+<div style="margin-top:16px;border-radius:12px;box-shadow:inset 0 0 0 1px #ece9f3;overflow:hidden">
+<div class="malr hd"><span>Periode</span><span>I fjor</span><span>I år</span><span>Økter</span></div>
+<sc-for list="{{malRader}}" as="r" hint-placeholder-count="5"><div class="malr"><span style="display:flex;align-items:center;gap:8px"><i style="width:10px;height:10px;border-radius:3px;background:{{r.c}}"></i>{{r.n}}</span><span class="num" style="color:#9a90b8">{{r.fj}}</span><span class="num">{{r.ar}}</span><span class="num" style="color:{{r.df}}">{{r.ok}}</span></div></sc-for>
+</div>
+<div style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#9a90b8;margin:18px 0 8px">Ta med</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 18px"><sc-for list="{{malValg}}" as="v" hint-placeholder-count="6"><label class="malv" onClick="{{v.klikk}}"><span class="{{v.kl}}"><svg width="10" height="10" viewBox="0 0 10 10"><path d="M1.5 5.2l2.2 2.2L8.5 2.6" stroke="#fff" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span><b style="font-weight:500">{{v.n}}</b><span style="display:block;font-size:11.5px;color:#9a90b8">{{v.u}}</span></span></label></sc-for></div>
+<div style="display:flex;align-items:center;gap:10px;margin-top:20px;padding-top:14px;border-top:1px solid #ece9f3"><span style="font-size:12px;color:#9a90b8">Erstatter periodene du har lagt inn i år. Kan angres.</span><span style="flex:1"></span><button class="btn" onClick="{{malLukk}}">Avbryt</button><button class="btn pri" onClick="{{malBruk}}">Legg inn</button></div>
+</div></div></sc-if>
+<sc-if value="{{harToast}}" hint-placeholder-val="{{ false }}"><div class="toast">{{toastT}}<button onClick="{{angre}}">Angre</button></div></sc-if>
+</div>
+</div>
+</main>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1060}}'>
+var SLOT = [{"u": 34, "d": "man 17.8", "f": "", "m": 8}, {"u": 34, "d": "tor 20.8", "f": "", "m": 8}, {"u": 35, "d": "man 24.8", "f": "", "m": 8}, {"u": 35, "d": "tor 27.8", "f": "", "m": 8}, {"u": 36, "d": "man 31.8", "f": "", "m": 8}, {"u": 36, "d": "tor 3.9", "f": "", "m": 9}, {"u": 37, "d": "man 7.9", "f": "", "m": 9}, {"u": 37, "d": "tor 10.9", "f": "", "m": 9}, {"u": 38, "d": "man 14.9", "f": "", "m": 9}, {"u": 38, "d": "tor 17.9", "f": "", "m": 9}, {"u": 39, "d": "man 21.9", "f": "", "m": 9}, {"u": 39, "d": "tor 24.9", "f": "", "m": 9}, {"u": 40, "d": "man 28.9", "f": "", "m": 9}, {"u": 40, "d": "tor 1.10", "f": "", "m": 10}, {"u": 41, "d": "man 5.10", "f": "Høstferie", "m": 10}, {"u": 41, "d": "tor 8.10", "f": "Høstferie", "m": 10}, {"u": 42, "d": "man 12.10", "f": "", "m": 10}, {"u": 42, "d": "tor 15.10", "f": "", "m": 10}, {"u": 43, "d": "man 19.10", "f": "", "m": 10}, {"u": 43, "d": "tor 22.10", "f": "", "m": 10}, {"u": 44, "d": "man 26.10", "f": "", "m": 10}, {"u": 44, "d": "tor 29.10", "f": "", "m": 10}, {"u": 45, "d": "man 2.11", "f": "", "m": 11}, {"u": 45, "d": "tor 5.11", "f": "", "m": 11}, {"u": 46, "d": "man 9.11", "f": "", "m": 11}, {"u": 46, "d": "tor 12.11", "f": "", "m": 11}, {"u": 47, "d": "man 16.11", "f": "", "m": 11}, {"u": 47, "d": "tor 19.11", "f": "", "m": 11}, {"u": 48, "d": "man 23.11", "f": "", "m": 11}, {"u": 48, "d": "tor 26.11", "f": "", "m": 11}, {"u": 49, "d": "man 30.11", "f": "", "m": 11}, {"u": 49, "d": "tor 3.12", "f": "", "m": 12}, {"u": 50, "d": "man 7.12", "f": "", "m": 12}, {"u": 50, "d": "tor 10.12", "f": "", "m": 12}, {"u": 51, "d": "man 14.12", "f": "", "m": 12}, {"u": 51, "d": "tor 17.12", "f": "", "m": 12}, {"u": 52, "d": "man 21.12", "f": "Jul", "m": 12}, {"u": 52, "d": "tor 24.12", "f": "Jul", "m": 12}, {"u": 53, "d": "man 28.12", "f": "Jul", "m": 12}, {"u": 53, "d": "tor 31.12", "f": "Jul", "m": 12}, {"u": 1, "d": "man 4.1", "f": "Jul", "m": 1}, {"u": 1, "d": "tor 7.1", "f": "Jul", "m": 1}, {"u": 2, "d": "man 11.1", "f": "", "m": 1}, {"u": 2, "d": "tor 14.1", "f": "", "m": 1}, {"u": 3, "d": "man 18.1", "f": "", "m": 1}, {"u": 3, "d": "tor 21.1", "f": "", "m": 1}, {"u": 4, "d": "man 25.1", "f": "", "m": 1}, {"u": 4, "d": "tor 28.1", "f": "", "m": 1}, {"u": 5, "d": "man 1.2", "f": "", "m": 2}, {"u": 5, "d": "tor 4.2", "f": "", "m": 2}, {"u": 6, "d": "man 8.2", "f": "", "m": 2}, {"u": 6, "d": "tor 11.2", "f": "", "m": 2}, {"u": 7, "d": "man 15.2", "f": "", "m": 2}, {"u": 7, "d": "tor 18.2", "f": "", "m": 2}, {"u": 8, "d": "man 22.2", "f": "", "m": 2}, {"u": 8, "d": "tor 25.2", "f": "", "m": 2}, {"u": 9, "d": "man 1.3", "f": "Vinterferie", "m": 3}, {"u": 9, "d": "tor 4.3", "f": "Vinterferie", "m": 3}, {"u": 10, "d": "man 8.3", "f": "", "m": 3}, {"u": 10, "d": "tor 11.3", "f": "", "m": 3}, {"u": 11, "d": "man 15.3", "f": "", "m": 3}, {"u": 11, "d": "tor 18.3", "f": "", "m": 3}, {"u": 12, "d": "man 22.3", "f": "", "m": 3}, {"u": 12, "d": "tor 25.3", "f": "", "m": 3}, {"u": 13, "d": "man 29.3", "f": "Påske", "m": 3}, {"u": 13, "d": "tor 1.4", "f": "Påske", "m": 4}, {"u": 14, "d": "man 5.4", "f": "", "m": 4}, {"u": 14, "d": "tor 8.4", "f": "", "m": 4}, {"u": 15, "d": "man 12.4", "f": "", "m": 4}, {"u": 15, "d": "tor 15.4", "f": "", "m": 4}, {"u": 16, "d": "man 19.4", "f": "", "m": 4}, {"u": 16, "d": "tor 22.4", "f": "", "m": 4}, {"u": 17, "d": "man 26.4", "f": "", "m": 4}, {"u": 17, "d": "tor 29.4", "f": "", "m": 4}, {"u": 18, "d": "man 3.5", "f": "", "m": 5}, {"u": 18, "d": "tor 6.5", "f": "", "m": 5}, {"u": 19, "d": "man 10.5", "f": "", "m": 5}, {"u": 19, "d": "tor 13.5", "f": "", "m": 5}, {"u": 20, "d": "man 17.5", "f": "", "m": 5}, {"u": 20, "d": "tor 20.5", "f": "", "m": 5}, {"u": 21, "d": "man 24.5", "f": "", "m": 5}, {"u": 21, "d": "tor 27.5", "f": "", "m": 5}, {"u": 22, "d": "man 31.5", "f": "", "m": 5}, {"u": 22, "d": "tor 3.6", "f": "", "m": 6}, {"u": 23, "d": "man 7.6", "f": "", "m": 6}, {"u": 23, "d": "tor 10.6", "f": "", "m": 6}, {"u": 24, "d": "man 14.6", "f": "", "m": 6}, {"u": 24, "d": "tor 17.6", "f": "", "m": 6}];
+var MAAL = ["gjøre rede for markedsføringens rolle i samfunnet og i virksomheter", "analysere markedssituasjonen til en virksomhet", "utarbeide og vurdere tiltak i markedsføringsmiksen", "gjennomføre en markedsundersøkelse og presentere resultatene", "drøfte prisstrategier og hvordan de påvirker etterspørselen", "planlegge og vurdere distribusjons- og kommunikasjonstiltak", "gjøre rede for hva en merkevare er, og hvordan den bygges", "vurdere etiske sider ved merkevarebygging", "planlegge, gjennomføre og evaluere en kampanje", "gjøre rede for regelverk som gjelder markedsføring"];
+var START = [{"id": "a", "n": "Markedsanalyse", "c": "#c9922e", "s": 0, "l": 12, "m": [0, 1, 3]}, {"id": "b", "n": "Markedsmiks", "c": "#2f9a8a", "s": 14, "l": 16, "m": [2, 4, 5]}, {"id": "c", "n": "Merkevare", "c": "#c0607a", "s": 34, "l": 14, "m": [6, 7]}, {"id": "d", "n": "Markedskommunikasjon", "c": "#4f7ac0", "s": -1, "l": 14, "m": [5, 8]}, {"id": "e", "n": "Eksamenstrening", "c": "#7d6bb0", "s": -1, "l": 10, "m": []}];
+var TITLER = {"0": "Oppstart: hva er markedsføring?", "1": "Markedsføringsprosessen", "2": "Mikromiljøet", "3": "Makromiljøet (PESTEL)", "4": "Konkurrentanalyse", "5": "SWOT-analyse", "6": "SWOT i grupper", "7": "Markedsundersøkelser: metode", "8": "Lag og test en spørreundersøkelse", "9": "Skriftlig prøve: markedsanalyse", "10": "Analyse av egne data", "14": "Markedsføringsmiksen: oversikt", "15": "Produkt og livssyklus", "16": "Produktbeslutninger: case", "17": "Muntlig: prisstrategi", "18": "Muntlig: prisstrategi", "19": "Muntlig: prisstrategi", "20": "Pris: case Kiwi mot Meny", "21": "Distribusjon og kanalvalg"};
+var VURD = {"11": "Skriftlig prøve: markedsanalyse", "17": "Muntlig: prisstrategi", "31": "Fagsamtale: merkevare", "61": "Kampanje: presentasjon", "75": "Heldagsprøve"};
+var N = SLOT.length, MAKS = 16;
+function okter(p) { if (p.s < 0) return 0; var n = 0; for (var i = p.s; i < p.s + p.l && i < N; i++) if (!SLOT[i].f) n++; return n; }
+function ekte(i, retn) { while (i >= 0 && i < N && SLOT[i].f) i += retn; return Math.max(0, Math.min(N - 1, i)); }
+function spenn(p) { return SLOT[ekte(p.s, 1)].d + ' → ' + SLOT[ekte(p.s + p.l - 1, -1)].d; }
+function kopi(a) { return a.map(function (x) { return Object.assign({}, x, { m: x.m.slice() }); }); }
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { per: kopi(START), valgt: null, apen: { b: true }, titler: Object.assign({}, TITLER), ghost: null, dra: null, toast: '', forrige: null, ny: null, form: false, nyNavn: '', nyC: '#e0563b', mal: false, malV: { per: true, maal: true, tema: true, vurd: true, plan: false } }; }
+  componentDidMount() { var self = this; this._esc = function (e) { if (e.key === 'Escape' && !(e.target && e.target.tagName === 'INPUT')) self.setState({ valgt: null, ny: null, form: false, mal: false }); }; window.addEventListener('keydown', this._esc); }
+  componentWillUnmount() { window.removeEventListener('keydown', this._esc); }
+  sett(per, tekst) { this.setState({ forrige: kopi(this.state.per), per: per, toast: tekst || '' }); var s = this; clearTimeout(this._t); if (tekst) this._t = setTimeout(function () { s.setState({ toast: '' }); }, 5000); }
+  slotVed(x) { var r = document.querySelector('[data-strip]').getBoundingClientRect(); return Math.floor((x - r.left) / (r.width / N)); }
+  dra(e, id, modus) {
+    e.preventDefault(); e.stopPropagation();
+    var self = this, x0 = e.clientX, p0 = self.state.per.filter(function (p) { return p.id === id; })[0], s0 = p0.s, l0 = p0.l;
+    var el = document.querySelector('[data-strip]'), bw = el.getBoundingClientRect().width / N;
+    self.setState({ valgt: id, dra: modus === 'liste' ? null : id });
+    var flytt = function (ev) {
+      var per = kopi(self.state.per), p = per.filter(function (q) { return q.id === id; })[0];
+      if (modus === 'liste') { self.setState({ ghost: { x: ev.clientX, y: ev.clientY, c: p.c, n: p.n } }); return; }
+      var d = Math.round((ev.clientX - x0) / bw);
+      if (modus === 'flytt') p.s = ekte(Math.max(0, Math.min(N - p.l, s0 + d)), d >= 0 ? 1 : -1);
+      else if (modus === 'h') { p.l = Math.max(1, Math.min(N - p.s, l0 + d)); while (p.l > 1 && SLOT[p.s + p.l - 1].f) p.l--; }
+      else { var ns = ekte(Math.max(0, Math.min(s0 + l0 - 1, s0 + d)), 1); p.l = s0 + l0 - ns; p.s = ns; }
+      self.setState({ per: per });
+    };
+    var slipp = function (ev) {
+      window.removeEventListener('pointermove', flytt); window.removeEventListener('pointerup', slipp);
+      if (modus === 'liste') {
+        var r = el.getBoundingClientRect(); self.setState({ ghost: null });
+        if (ev.clientY >= r.top - 20 && ev.clientY <= r.bottom + 20 && ev.clientX >= r.left && ev.clientX <= r.right) {
+          var per = kopi(self.state.per), p = per.filter(function (q) { return q.id === id; })[0];
+          p.s = ekte(Math.max(0, Math.min(N - p.l, self.slotVed(ev.clientX))), 1);
+          self.sett(per, '«' + p.n + '» lagt inn: ' + spenn(p));
+        }
+        return;
+      }
+      self.setState({ dra: null });
+    };
+    window.addEventListener('pointermove', flytt); window.addEventListener('pointerup', slipp);
+  }
+  stripNed(e) {
+    if (this.state.form) { this.setState({ ny: null, form: false }); return; }
+    var self = this, a = this.slotVed(e.clientX); if (a < 0 || a >= N) return;
+    a = ekte(a, 1); self.setState({ ny: { s: a, l: 1 }, valgt: null });
+    var flytt = function (ev) { var b = Math.max(0, Math.min(N - 1, self.slotVed(ev.clientX))); var s = Math.min(a, b), l = Math.abs(b - a) + 1; self.setState({ ny: { s: s, l: l } }); };
+    var slipp = function () { window.removeEventListener('pointermove', flytt); window.removeEventListener('pointerup', slipp);
+      var n = self.state.ny; if (!n) return; if (n.l < 2) n = { s: n.s, l: 8 };
+      self.setState({ ny: n, form: true, nyNavn: '' }); setTimeout(function () { var i = document.querySelector('[data-nyinp]'); if (i) i.focus(); }, 40); };
+    window.addEventListener('pointermove', flytt); window.addEventListener('pointerup', slipp);
+  }
+  lagNy() {
+    var st = this.state, navn = (st.nyNavn || '').trim(); if (!navn || !st.ny) return;
+    var per = kopi(st.per), id = 'n' + Date.now(); per.push({ id: id, n: navn, c: st.nyC, s: st.ny.s, l: st.ny.l, m: [] });
+    var a = Object.assign({}, st.apen); a[id] = true;
+    this.setState({ ny: null, form: false, valgt: id, apen: a }); this.sett(per, '«' + navn + '» laget: ' + spenn(per[per.length - 1]));
+  }
+  renderVals() {
+    var self = this, st = this.state, per = st.per, v = per.filter(function (p) { return p.id === st.valgt; })[0];
+    var plassert = per.filter(function (p) { return p.s >= 0; }).sort(function (a, b) { return a.s - b.s; });
+    var spor = [], lane = {};
+    plassert.forEach(function (p) { var k = 0; while (spor[k] !== undefined && spor[k] > p.s) k++; spor[k] = p.s + p.l; lane[p.id] = k; });
+    var tot = SLOT.filter(function (s) { return !s.f; }).length;
+    var sumO = plassert.reduce(function (s, p) { return s + okter(p); }, 0);
+    var dekk = MAAL.map(function (m, i) { return plassert.filter(function (p) { return p.m.indexOf(i) >= 0; }); });
+    var stopp = function (e) { e.stopPropagation(); };
+    var oktliste = function (p) {
+      if (p.s < 0) return [];
+      var ut = [], forrigeFerie = '';
+      for (var i = p.s; i < p.s + p.l && i < N; i++) {
+        (function (i) {
+          var s = SLOT[i];
+          if (s.f) { if (forrigeFerie !== s.f) ut.push({ ferie: true, ekte: false, ft: s.f }); forrigeFerie = s.f; return; }
+          forrigeFerie = '';
+          ut.push({ ferie: false, ekte: true, i: i, d: s.d, t: st.titler[i] || '', v: !!VURD[i], vn: VURD[i] || '', ph: VURD[i] ? VURD[i] : 'Skriv tema …',
+            skriv: function (e) { var t = Object.assign({}, self.state.titler); t[i] = e.target.value; self.setState({ titler: t }); },
+            tast: function (e) {
+              if (e.key === 'Enter' || (e.key === 'ArrowDown')) { e.preventDefault(); var alle = Array.prototype.slice.call(document.querySelectorAll('[data-slot]')); var k = alle.indexOf(e.target); if (alle[k + 1]) alle[k + 1].focus(); }
+              if (e.key === 'ArrowUp') { e.preventDefault(); var a2 = Array.prototype.slice.call(document.querySelectorAll('[data-slot]')); var k2 = a2.indexOf(e.target); if (a2[k2 - 1]) a2[k2 - 1].focus(); }
+              if (e.key === 'Escape') e.target.blur();
+            } });
+        })(i);
+      }
+      return ut;
+    };
+    return {
+      hjelp: v ? 'Dra perioden sidelengs eller i endene. Den hopper til øktene dine. Esc eller klikk utenfor for å se hele året.' : 'Dra periodene inn på året, eller dra over en tom del av året for å lage en ny. Klikk en periode for å knytte mål.',
+      okter: sumO, malT: sumO >= tot ? 'Alle økter har periode' : (tot - sumO) + ' økter uten periode', malF: sumO >= tot ? '#2f7a4a' : '#8a5a00',
+      fordeling: plassert.map(function (p) { return { w: (okter(p) / tot * 100) + '%', c: p.c }; }),
+      barer: plassert.map(function (p) { return { n: p.n, c: p.c, s: p.s, l: p.l, t: 30 + lane[p.id] * 40, info: okter(p) + ' økter · ' + SLOT[ekte(p.s, 1)].d,
+        kl: 'bar' + (st.valgt === p.id ? ' valgt' : '') + (st.dra === p.id ? ' dra' : '') + (v && v.id !== p.id ? ' dim' : ''),
+        boble: st.dra === p.id, bobleT: spenn(p) + ' · ' + okter(p) + ' økter',
+        stopp: stopp, ned: function (e) { self.dra(e, p.id, 'flytt'); }, hkh: function (e) { self.dra(e, p.id, 'h'); }, hkv: function (e) { self.dra(e, p.id, 'v'); } }; }),
+      liste: per.map(function (p) { var ap = !!st.apen[p.id] && p.s >= 0; return { n: p.n, c: p.c, kl: 'pk' + (st.valgt === p.id ? ' valgt' : '') + (p.s < 0 ? ' ute' : ''),
+        info: p.s < 0 ? 'ikke lagt inn · dra den inn på året' : spenn(p) + ' · ' + okter(p) + ' økter',
+        mal: p.m.map(function (i) { return String(i + 1); }), apen: ap, vurd: p.s < 0 ? [] : Object.keys(VURD).map(Number).filter(function (i) { return i >= p.s && i < p.s + p.l; }).sort(function (a, b) { return a - b; }).map(function (i) { return { n: VURD[i], d: SLOT[i].d }; }), pilKl: 'pil' + (ap ? ' ned' : ''), okter: ap ? oktliste(p) : [],
+        fold: function (e) { e.stopPropagation(); var a = Object.assign({}, st.apen); a[p.id] = !a[p.id]; self.setState({ apen: a }); },
+        velg: function (e) { e.stopPropagation(); self.setState({ valgt: st.valgt === p.id ? null : p.id }); }, dra: function (e) { self.dra(e, p.id, 'liste'); } }; }),
+      harValgt: !!(v && v.s >= 0), harV: !!v, ingenV: !v, vNavn: v ? v.n : '', vC: v ? v.c : '#241f33', vAntall: v ? okter(v) : 0,
+      lagOkter: function (e) { e.stopPropagation(); self.setState({ toast: okter(v) + ' økter fra ' + spenn(v) + ' fikk perioden «' + v.n + '»' }); },
+      tom: function (e) { if (e) e.stopPropagation(); if (st.valgt) self.setState({ valgt: null }); }, stopp: stopp,
+      dekket: dekk.filter(function (d) { return d.length; }).length + ' av ' + MAAL.length + ' dekket',
+      maal: MAAL.map(function (t, i) { var k = v && v.m.indexOf(i) >= 0, n = dekk[i].reduce(function (s, p) { return s + okter(p); }, 0);
+        return { nr: i + 1, t: t, kl: 'mr' + (k ? ' koblet' : ''), pc: v ? v.c : '#4a3d7d', tf: dekk[i].length ? '#241f33' : '#645d7a', medBoks: !!v, utenBoks: !v,
+          tom: !dekk[i].length, har: dekk[i].length > 0, n: n + ' økter', dots: dekk[i].map(function (p) { return p.c; }),
+          seg: dekk[i].map(function (p) { return { c: p.c, w: Math.min(100, okter(p) / 30 * 100) + '%' }; }),
+          klikk: function (e) { e.stopPropagation(); if (!v) return; var per2 = kopi(per), q = per2.filter(function (x) { return x.id === v.id; })[0]; var j = q.m.indexOf(i); if (j >= 0) q.m.splice(j, 1); else { q.m.push(i); q.m.sort(function (a, b) { return a - b; }); } self.setState({ per: per2 }); } }; }),
+      stripNed: function (e) { if (e.target.closest && (e.target.closest('.bar') || e.target.closest('.nyform') || e.target.closest('.vm'))) return; e.preventDefault(); self.stripNed(e); },
+      harNy: !!st.ny, harForm: !!st.form, nyS: st.ny ? st.ny.s : 0, nyL: st.ny ? st.ny.l : 1, nyC: st.nyC, nyBg: st.nyC + '22',
+      nyT: st.ny ? spenn(st.ny) + ' · ' + okter(st.ny) + ' økter' : '',
+      nySkriv: function (e) { self.setState({ nyNavn: e.target.value }); },
+      nyTast: function (e) { if (e.key === 'Enter') { e.preventDefault(); self.lagNy(); } if (e.key === 'Escape') self.setState({ ny: null, form: false }); },
+      nyFarger: ['#e0563b', '#f08a24', '#1aa37a', '#2b8fb8', '#6a4fa0', '#d43d8c', '#5b8c3a', '#a98b5d'].map(function (c) { return { c: c, kl: 'nysw' + (st.nyC === c ? ' on' : ''), klikk: function (e) { e.stopPropagation(); self.setState({ nyC: c }); var i = document.querySelector('[data-nyinp]'); if (i) i.focus(); } }; }),
+      nyAvbryt: function (e) { e.stopPropagation(); self.setState({ ny: null, form: false }); }, nyLag: function (e) { e.stopPropagation(); self.lagNy(); },
+      malApen: st.mal, malApne: function (e) { e.stopPropagation(); self.setState({ mal: true }); }, malLukk: function (e) { if (e) e.stopPropagation(); self.setState({ mal: false }); },
+      malRader: [['Markedsanalyse', '#c9922e', 'man 18.8 → tor 25.9', 'man 17.8 → tor 24.9', '12', '#241f33'], ['Markedsmiks', '#2f9a8a', 'man 6.10 → tor 3.12', 'man 12.10 → tor 3.12', '15 (−1)', '#8a5a00'], ['Merkevare', '#c0607a', 'man 7.12 → tor 4.2', 'man 7.12 → tor 4.2', '14', '#241f33'], ['Markedskommunikasjon', '#4f7ac0', 'man 15.2 → tor 22.4', 'man 15.2 → tor 22.4', '16 (+1)', '#2f7a4a'], ['Eksamenstrening', '#7d6bb0', 'man 26.4 → tor 10.6', 'man 26.4 → tor 10.6', '13', '#241f33']].map(function (r) { return { n: r[0], c: r[1], fj: r[2], ar: r[3], ok: r[4], df: r[5] }; }),
+      malValg: [['per', 'Perioder', 'navn, farge og lengde'], ['maal', 'Kompetansemål', 'koblingene til periodene'], ['tema', 'Tema på øktene', '74 økter, i rekkefølge'], ['vurd', 'Vurderinger', 'som utkast på nærmeste økt'], ['plan', 'Plan og agenda', 'aktivitetene inne i øktene']].map(function (v) { return { n: v[1], u: v[2], kl: 'mbx' + (st.malV[v[0]] ? ' on' : ''), klikk: function (e) { e.preventDefault(); e.stopPropagation(); var x = Object.assign({}, st.malV); x[v[0]] = !x[v[0]]; self.setState({ malV: x }); } }; }),
+      malBruk: function (e) { e.stopPropagation(); var per = kopi(START).map(function (p, i) { var s = [0, 14, 34, 50, 72][i]; return Object.assign(p, { s: s, l: [12, 16, 18, 20, 14][i], m: p.m.length ? p.m : [0, 1, 2, 3, 4, 5, 6, 7, 8, 9] }); }); self.setState({ mal: false }); self.sett(per, '5 perioder og 74 økttemaer lagt inn fra 2025/26'); },
+      harGhost: !!st.ghost, gx: st.ghost ? st.ghost.x : 0, gy: st.ghost ? st.ghost.y : 0, gc: st.ghost ? st.ghost.c : '', gn: st.ghost ? st.ghost.n : '',
+      harToast: !!st.toast, toastT: st.toast, angre: function (e) { e.stopPropagation(); if (st.forrige) self.setState({ per: st.forrige, forrige: null, toast: '' }); else self.setState({ toast: '' }); }
+    };
+  }
+}
+
+</script>
+</body>
+</html>
