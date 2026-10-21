@@ -30,6 +30,19 @@ Lerretet (`docs/lerret/`) er fasit for det som er tegnet.
 - **20.4 Tastestripa tones ned** etter 25 tastetrykk utenfor felt (telles
   per stripe i `innstilling`, `tastestripe:skaring|planlegging|titt`).
   Helt synlig mens ⌘ holdes og når musa er over.
+- **20.6 Skoleåret** (`skjermer/Aret.tsx`, `data/aret.ts`): ny fane «Året»
+  mellom Oversikt og Økter. Stripa er øktene i faget, med ferier skravert på
+  ukedagene faget har; måneder, «I dag» og vurderingsmerker. Perioden står
+  fortsatt på økta (SPEC §3.3, ingen skjemaendring): å dra en periode, en
+  ende eller over et tomt felt setter `okt.periode_id` på øktene i spennet
+  i én transaksjon, og `start`/`slutt` følger. Ingen overlapp: en ende
+  skyver grensen mot naboen (som beholder minst én økt), hele perioden
+  stopper mot naboene. Boble med spenn og antall mens man drar; angres med
+  ⌘Z. Uplasserte perioder dras inn fra lista (8 økter). Periodekortet viser
+  spenn, vurderinger og målnumre; ▸ folder ut øktene med tema (↵/↓, ↑).
+  Kompetansemål knyttes med en periode valgt; uten valg «✓ Dekket» med
+  prikker eller «Ikke dekket». «Gi N økter perioden» fyller hull. Ikke
+  bygget: bryteren Tidslinje · Tavle (21.1), «Skriv ut årsplan» her.
 
 ## Runde 19 (20.10, ARBEIDSLISTE §19)
 

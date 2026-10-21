@@ -39,6 +39,7 @@ import { Veiviser } from "./skjermer/Veiviser";
 import { IDag } from "./skjermer/IDag";
 import { Fag } from "./skjermer/Fag";
 import { Elever } from "./skjermer/Elever";
+import { Aret } from "./skjermer/Aret";
 import { LimInn } from "./skjermer/LimInn";
 import { Okter } from "./skjermer/Okter";
 import { Skoleruta } from "./skjermer/Skoleruta";
@@ -81,6 +82,8 @@ type Visning =
   | "okter"
   /** fagsiden: Oversikt i Økter når et fag er valgt (11.2) */
   | "oversikt"
+  /** skoleåret i faget (20.6) */
+  | "aret"
   | "vurderinger"
   | "samtaler"
   | "innstillinger"
@@ -157,7 +160,7 @@ export default function App() {
       // Står du i liste eller kalender, blir du der. Fra fagsiden til «Alle
       // fag» går du til lista, for alle fag har ingen fagside.
       if (na.visning === "okter" || na.visning === "kalender") return h;
-      if (na.visning === "oversikt" && id) return h;
+      if ((na.visning === "oversikt" || na.visning === "aret") && id) return h;
       // Ellers åpner et fag fagsiden (11.2), og «Alle fag» lista.
       const steder = [
         ...h.steder.slice(0, h.peker + 1),
@@ -451,7 +454,9 @@ export default function App() {
               erOktvisning(visning) ? (
                 <Visningsbryter
                   visning={
-                    visning === "oversikt" && !valgtFag ? "okter" : visning
+                    (visning === "oversikt" || visning === "aret") && !valgtFag
+                      ? "okter"
+                      : visning
                   }
                   medFag={!!valgtFag}
                   ga={ga}
@@ -502,6 +507,14 @@ export default function App() {
                     skolear={skolear}
                     fag={valgtFag}
                     onRedigerFag={() => ga("fagside", valgtFag.id)}
+                  />
+                )}
+
+                {visning === "aret" && valgtFag && (
+                  <Aret
+                    key={`${versjon}-${valgtFag.id}`}
+                    skolear={skolear}
+                    fag={valgtFag}
                   />
                 )}
 
@@ -651,7 +664,8 @@ export default function App() {
                 )}
 
                 {(visning === "okter" ||
-                  (visning === "oversikt" && !valgtFag)) && (
+                  ((visning === "oversikt" || visning === "aret") &&
+                    !valgtFag)) && (
                   <Okter
                     key={versjon}
                     skolear={skolear}
@@ -680,6 +694,7 @@ const SKJERMNAVN: Record<Visning, string> = {
   idag: "I dag",
   okter: "Økter",
   oversikt: "Økter",
+  aret: "Økter",
   kalender: "Økter",
   elever: "Elever",
   elev: "Elever",
@@ -866,7 +881,7 @@ function aktivtPunkt(v: Visning): Menypunkt | "innstillinger" | null {
 
 /** Visningene som hører under Økter-fanen. */
 function erOktvisning(v: Visning): boolean {
-  return v === "okter" || v === "kalender" || v === "oversikt";
+  return v === "okter" || v === "kalender" || v === "oversikt" || v === "aret";
 }
 
 /**
@@ -888,6 +903,7 @@ function Visningsbryter({
   const valg = medFag
     ? [
         { id: "oversikt", navn: "Oversikt" },
+        { id: "aret", navn: "Året" },
         { id: "okter", navn: "Økter" },
         { id: "kalender", navn: "Kalender" },
       ]
