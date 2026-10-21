@@ -1,4 +1,5 @@
 import { slettForElevI } from "./klassekart";
+import { slettForElevI as slettOnskerI } from "./onsker";
 import { varsleElever } from "./endringer";
 import { slettElevbildeI } from "./elevbilde";
 import {
@@ -547,6 +548,7 @@ async function slettElevHeltI(t: Transaksjon, elevId: string): Promise<void> {
   }
   await slettElevbildeI(t, elevId);
   await slettForElevI(t, elevId);
+  await slettOnskerI(t, elevId);
   t.slett("elev", elevId);
 }
 
@@ -673,6 +675,12 @@ export async function slettEleverIAr(skolearId: string): Promise<void> {
       `SELECT p.id FROM plassering p
          JOIN klassekart k ON k.id = p.klassekart_id
         WHERE k.skolear_id = $1 AND p.slettet IS NULL`,
+    ],
+    [
+      "neste_sammen",
+      `SELECT n.id FROM neste_sammen n
+         JOIN skolear_fag sf ON sf.id = n.skolear_fag_id
+        WHERE sf.skolear_id = $1 AND n.slettet IS NULL`,
     ],
     [
       "elevregel",
