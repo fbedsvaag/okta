@@ -2490,6 +2490,14 @@ textarea,
   }
 }
 
+/* Tavla: innholdet som slippes, glir ned på plassen sin (som i Økter). */
+.tavle-lander {
+  transition:
+    left 280ms cubic-bezier(0.22, 1, 0.36, 1),
+    top 280ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 280ms ease-out;
+}
+
 /* Grupper: plassen eleven får i gruppa den dras over, glir rolig opp, og
    raden den forlater, glir sammen — før man slipper. */
 .gruppe-plass {

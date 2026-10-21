@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import type { FagIAr } from "../data/fag";
-import { endreOkt, type Okt, type OktVurdering } from "../data/okter";
+import { endreOkt, type OktVurdering } from "../data/okter";
 import type { Periode } from "../data/perioder";
 import {
   baklengs,
@@ -9,10 +9,13 @@ import {
   type Endring,
   type Plass,
 } from "../data/aret";
-import { byttInnhold, kilder, kolonner, tilKolonne } from "../data/tavle";
+import { byttInnhold, kolonner, tilKolonne } from "../data/tavle";
 import { visToast } from "../ui/Toast";
 import { leggTilAngring } from "../ui/angre";
 import { Vurderingsikon } from "../ui/Vurderingsikon";
+
+/** Hvor lenge innholdet bruker på å lande når det slippes (ms). */
+const LANDING = 280;
 
 /** En periode som legges inn fra tavla, får så mange økter. */
 const STANDARD = 8;
@@ -56,23 +59,26 @@ export function ArsTavle({
   );
   const fylt = rekke.filter((o) => o.tema).length;
 
-  /** Kortet som dras, og målet: et annet kort (bytt) eller en nabokolonne. */
+  /**
+   * Kortet som dras, og målet: et annet kort (bytt) eller en nabokolonne.
+   * `x`/`y` er der innholdet svever (øvre venstre hjørne), `b` bredden.
+   * `lander`: sluppet, og innholdet glir ned på plassen sin.
+   */
   const [dra, setDra] = useState<{
     fra: number;
     mal: number;
     kol: number | null;
+    x: number;
+    y: number;
+    b: number;
+    lander?: boolean;
   } | null>(null);
   const [nyNavn, setNyNavn] = useState("");
   const tavle = useRef<HTMLDivElement>(null);
 
-  /** Hvor innholdet på hver plass kommer fra mens et kort dras. */
-  const vis = useMemo(
-    () =>
-      dra && dra.kol === null && dra.fra !== dra.mal
-        ? kilder(dra.fra, dra.mal)
-        : null,
-    [dra],
-  );
+  /** Kortet du står over, når et slipp der er et bytte. */
+  const malNr = dra && dra.kol === null && dra.fra !== dra.mal ? dra.mal : null;
+  const lastMal = malNr !== null && rekke[malNr].skaret > 0;
   /** Øktene som får målkolonnens periode når kortet slippes der. */
   const plassering = useMemo(
     () =>
@@ -82,7 +88,7 @@ export function ArsTavle({
     [dra, kol, rekke],
   );
   const skalFlyttes = new Set(plassering?.map((e) => e.oktId));
-  const innhold = (nr: number): Okt => rekke[vis?.get(nr) ?? nr];
+  const vis = dra !== null;
 
   function fokus(nr: number) {
     tavle.current
@@ -128,11 +134,26 @@ export function ArsTavle({
     visToast(tekst, { angring });
   }
 
+  /** Øvre venstre hjørne av kortet på plass `nr`, på skjermen. */
+  const hjorne = (nr: number) =>
+    tavle.current
+      ?.querySelector<HTMLElement>(`[data-tavle-kort="${nr}"]`)
+      ?.getBoundingClientRect();
+
+  /*
+   * Som i Økter-lista (16.4): innholdet du drar, svever med pekeren; det du
+   * står over, tones ned; plassen du kom fra viser det som havner der. Ved
+   * slipp glir innholdet ned på målet (eller tilbake), og så byttes de.
+   */
   function begynnDra(e: React.PointerEvent, nr: number) {
     if (rekke[nr].skaret > 0) return;
     e.preventDefault();
     const x0 = e.clientX;
     const y0 = e.clientY;
+    const start = hjorne(nr);
+    const dx = x0 - (start?.left ?? x0);
+    const dy = y0 - (start?.top ?? y0);
+    const b = start?.width ?? 246;
     let flyttet = false;
     let mal = nr;
     let kolMal: number | null = null;
@@ -160,15 +181,39 @@ export function ArsTavle({
         kolMal = i === egen ? null : i;
         mal = nr;
       }
-      setDra({ fra: nr, mal, kol: kolMal });
+      setDra({
+        fra: nr,
+        mal,
+        kol: kolMal,
+        x: ev.clientX - dx,
+        y: ev.clientY - dy,
+        b,
+      });
     };
     const slipp = () => {
       window.removeEventListener("pointermove", flytt_);
       window.removeEventListener("pointerup", slipp);
-      setDra(null);
-      if (!flyttet) return;
-      if (kolMal !== null) void plasserKort(nr, kolMal);
-      else if (mal !== nr) void bytt(nr, mal);
+      if (!flyttet) {
+        setDra(null);
+        return;
+      }
+      if (kolMal !== null) {
+        setDra(null);
+        void plasserKort(nr, kolMal);
+        return;
+      }
+      // Glir ned på målet, eller tilbake når det ikke blir noe bytte.
+      const byttes = mal !== nr && rekke[mal].skaret === 0;
+      const land = hjorne(byttes ? mal : nr);
+      setDra((d) =>
+        d && land ? { ...d, x: land.left, y: land.top, lander: true } : d,
+      );
+      window.setTimeout(() => {
+        setDra(null);
+        if (byttes) void bytt(nr, mal);
+        else if (mal !== nr)
+          visToast("Skårede økter ligger fast og kan ikke byttes.");
+      }, LANDING);
     };
     window.addEventListener("pointermove", flytt_);
     window.addEventListener("pointerup", slipp);
@@ -290,10 +335,13 @@ export function ArsTavle({
                       </div>
                     );
                   const { okt, nr } = p;
-                  const o = innhold(nr);
+                  const o = okt;
                   const v = (vurderinger.get(o.id) ?? [])[0];
-                  const loftet =
-                    dra?.kol === null && dra.mal === nr && dra.fra !== dra.mal;
+                  // Plassen du drar fra: viser det som havner her.
+                  const erFra = dra?.kol === null && dra.fra === nr;
+                  const forhand = erFra && malNr !== null ? rekke[malNr] : null;
+                  // Det du står over, tones ned der det står.
+                  const tonet = malNr === nr && !lastMal;
                   // Skal over i nabokolonnen: kanten i den periodens farge.
                   const malFarge =
                     skalFlyttes.has(okt.id) && dra?.kol != null
@@ -305,15 +353,15 @@ export function ArsTavle({
                     <div
                       key={okt.id}
                       data-tavle-kort={nr}
-                      className={`grid grid-cols-[10px_58px_minmax(0,1fr)_14px] items-center gap-1.5 rounded-[10px] bg-ark px-2 py-[7px] text-[calc(12.5px*var(--tekst-skala))] ${
-                        loftet
-                          ? "relative z-[5] shadow-[0_12px_28px_rgba(36,31,51,.22)]"
-                          : "shadow-[0_1px_2px_rgba(36,31,51,.06),inset_0_0_0_1px_var(--color-linje-svak)]"
-                      }`}
+                      className={`grid grid-cols-[10px_58px_minmax(0,1fr)_14px] items-center gap-1.5 rounded-[10px] bg-ark px-2 py-[7px] text-[calc(12.5px*var(--tekst-skala))] shadow-[0_1px_2px_rgba(36,31,51,.06),inset_0_0_0_1px_var(--color-linje-svak)]`}
                       style={
-                        loftet
+                        erFra
                           ? {
-                              boxShadow: `0 12px 28px rgba(36,31,51,.22), inset 0 0 0 1.5px ${farge}`,
+                              boxShadow: "none",
+                              background: "transparent",
+                              outline:
+                                "1.5px dashed color-mix(in srgb, var(--color-aksent) 50%, transparent)",
+                              outlineOffset: "-1.5px",
                             }
                           : malFarge
                             ? { boxShadow: `inset 0 0 0 2px ${malFarge}` }
@@ -338,40 +386,65 @@ export function ArsTavle({
                       <span className="whitespace-nowrap text-etikett tabular-nums text-blekk-svak">
                         {kort(okt.dato)}
                       </span>
-                      <input
-                        key={`${o.id}-${o.tema ?? ""}`}
-                        data-tavle-nr={nr}
-                        defaultValue={o.tema ?? ""}
-                        readOnly={!!vis}
-                        placeholder={v?.tittel ?? "Skriv tema …"}
-                        onBlur={(e) => {
-                          const t = e.currentTarget.value.trim();
-                          if (t !== (okt.tema ?? ""))
-                            void endreOkt(okt.id, { tema: t || null });
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" || e.key === "ArrowDown") {
-                            e.preventDefault();
-                            fokus(nr + 1);
-                          } else if (e.key === "ArrowUp") {
-                            e.preventDefault();
-                            fokus(nr - 1);
-                          } else if (e.key === "Escape") {
-                            e.currentTarget.value = okt.tema ?? "";
-                            e.currentTarget.blur();
-                          }
-                        }}
-                        className="min-w-0 truncate bg-transparent text-blekk outline-none placeholder:text-blekk-svakest"
-                      />
-                      <span>
-                        {v && (
-                          <Vurderingsikon
-                            type={v.type}
-                            utkast={v.utkast === 1}
-                            klasse="!h-3.5 !w-3.5"
+                      {erFra ? (
+                        <span
+                          key={forhand?.id ?? "tom"}
+                          className={`dra-forhand col-span-2 min-w-0 truncate ${
+                            lastMal ? "text-feil" : "text-blekk-dempet"
+                          }`}
+                        >
+                          {forhand
+                            ? lastMal
+                              ? "Skåret, ligger fast"
+                              : forhand.tema || "tom økt"
+                            : ""}
+                        </span>
+                      ) : (
+                        <>
+                          <input
+                            style={
+                              tonet
+                                ? {
+                                    opacity: 0.3,
+                                    transition: "opacity 150ms ease-out",
+                                  }
+                                : undefined
+                            }
+                            key={`${o.id}-${o.tema ?? ""}`}
+                            data-tavle-nr={nr}
+                            defaultValue={o.tema ?? ""}
+                            readOnly={!!vis}
+                            placeholder={v?.tittel ?? "Skriv tema …"}
+                            onBlur={(e) => {
+                              const t = e.currentTarget.value.trim();
+                              if (t !== (okt.tema ?? ""))
+                                void endreOkt(okt.id, { tema: t || null });
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" || e.key === "ArrowDown") {
+                                e.preventDefault();
+                                fokus(nr + 1);
+                              } else if (e.key === "ArrowUp") {
+                                e.preventDefault();
+                                fokus(nr - 1);
+                              } else if (e.key === "Escape") {
+                                e.currentTarget.value = okt.tema ?? "";
+                                e.currentTarget.blur();
+                              }
+                            }}
+                            className="min-w-0 truncate bg-transparent text-blekk outline-none placeholder:text-blekk-svakest"
                           />
-                        )}
-                      </span>
+                          <span style={tonet ? { opacity: 0.3 } : undefined}>
+                            {v && (
+                              <Vurderingsikon
+                                type={v.type}
+                                utkast={v.utkast === 1}
+                                klasse="!h-3.5 !w-3.5"
+                              />
+                            )}
+                          </span>
+                        </>
+                      )}
                     </div>
                   );
                 })}
@@ -404,6 +477,37 @@ export function ArsTavle({
             </section>
           );
         })}
+
+        {dra && dra.kol === null && (
+          <div
+            aria-hidden
+            className={`pointer-events-none fixed z-50 grid grid-cols-[10px_58px_minmax(0,1fr)_14px] items-center gap-1.5 rounded-[10px] bg-ark px-2 py-[7px] text-[calc(12.5px*var(--tekst-skala))] ${
+              dra.lander ? "tavle-lander" : ""
+            }`}
+            style={{
+              left: dra.x,
+              top: dra.y,
+              width: dra.b,
+              boxShadow: `0 10px 28px rgba(36,31,51,.22), inset 0 0 0 1.5px ${
+                lastMal ? "var(--color-feil)" : "var(--color-aksent)"
+              }`,
+            }}
+          >
+            <span className="text-[11px] tracking-[-1px] text-aksent">⋮⋮</span>
+            <span />
+            <span className="min-w-0 truncate text-blekk">
+              {rekke[dra.fra].tema || "tom økt"}
+            </span>
+            <span>
+              {(vurderinger.get(rekke[dra.fra].id) ?? [])[0] && (
+                <Vurderingsikon
+                  type={(vurderinger.get(rekke[dra.fra].id) ?? [])[0].type}
+                  klasse="!h-3.5 !w-3.5"
+                />
+              )}
+            </span>
+          </div>
+        )}
 
         <section className="flex w-[200px] shrink-0 flex-col gap-2 rounded-2xl p-3.5 text-liten text-blekk-dempet shadow-[inset_0_0_0_1.5px_var(--color-linje)]">
           <b className="text-brod font-semibold text-blekk">+ Ny periode</b>
