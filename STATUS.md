@@ -9,6 +9,16 @@ den skal bli. Fila eies fritt, i motsetning til SPEC.md.
 Utseendet står i `DESIGN.md`, som beskriver appen slik den er bygget.
 Lerretet (`docs/lerret/`) er fasit for det som er tegnet.
 
+## Etter testing 21.10 kveld
+
+- Klassekart: færre elever enn plasser gir pultene nærmest tavla og ingen
+  alene (`velgPlasser`). Rommet fyller vinduet uten rulling; dør og vinduer
+  langt unna gir ikke tom luft.
+- Perioder får nytt navn i Året (klikk navnet), på tavla (kolonnehodet) og i
+  Økter (blyant ved hover, eller dobbeltklikk).
+- Vurderinger: fag-brikker med flervalg som i Økter, «Måned · Fag», og
+  overskrifter uten grå blokk.
+
 ## Plasser og grupper (21.10, ARBEIDSLISTE §25)
 
 - 25.12: skjult kart per kilde for grupper uten rom; `kart_plassfarge`

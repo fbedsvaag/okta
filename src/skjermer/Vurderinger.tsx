@@ -10,6 +10,7 @@ import {
 import type { FagIAr } from "../data/fag";
 import type { Skala } from "../skala";
 import {
+  Bryter,
   Fagfirkant,
   Felt,
   Ikon,
@@ -20,6 +21,8 @@ import {
 import { useArk } from "../ui/Arkstabel";
 import { lyttVurderinger } from "../data/endringer";
 import { Velger } from "../ui/Velger";
+import { Fagbrytere, useSkjulteFag } from "./Fagbrytere";
+import { useLagretInnstilling } from "../ui/useLagretInnstilling";
 import {
   Utkastmerke,
   Vurderingsikon,
@@ -44,6 +47,15 @@ export function Vurderinger({
   const [skalaer, setSkalaer] = useState<Skala[]>([]);
   const [valgt, setValgt] = useState<string | null>(null);
   const [filterFag, setFilterFag] = useState("");
+  // «Alle fag»: fagene som brikker, flervalg, som i Økter. Huskes.
+  const [skjultFag, vekslFag] = useSkjulteFag("vurderinger_skjulte_fag");
+  // Lista gruppert etter måned (frist) eller fag.
+  const [gruppering, setGruppering] = useLagretInnstilling<"maned" | "fag">(
+    "vurderinger_gruppering",
+    "maned",
+    (v) => (v === "fag" ? "fag" : "maned"),
+    String,
+  );
   const [sok, setSok] = useState("");
   const [lagerNy, setLagerNy] = useState(false);
   const ark = useArk();
@@ -69,10 +81,11 @@ export function Vurderinger({
     const s = sok.trim().toLocaleLowerCase("nb-NO");
     return vurderinger.filter((v) => {
       if (filterFag && v.skolearFagId !== filterFag) return false;
+      if (!filterFag && skjultFag.has(v.skolearFagId)) return false;
       if (s && !v.tittel.toLocaleLowerCase("nb-NO").includes(s)) return false;
       return true;
     });
-  }, [vurderinger, filterFag, sok]);
+  }, [vurderinger, filterFag, sok, skjultFag]);
 
   // Hvor mange vurderinger hvert fag har. Står i fagfilteret, så man ser
   // hvilke fag som mangler vurderinger uten å måtte klikke seg gjennom dem.
@@ -114,7 +127,25 @@ export function Vurderinger({
                 })),
               ]}
             />
-            <div className="ml-auto">
+            {!filterFag && (
+              <Fagbrytere
+                klasse=""
+                fag={fag}
+                samtaler={false}
+                skjult={skjultFag}
+                onVeksle={vekslFag}
+              />
+            )}
+            <div className="ml-auto flex items-center gap-2">
+              <Bryter
+                storrelse="liten"
+                verdi={gruppering}
+                settVerdi={(v) => setGruppering(v === "fag" ? "fag" : "maned")}
+                valg={[
+                  { id: "maned", navn: "Måned" },
+                  { id: "fag", navn: "Fag" },
+                ]}
+              />
               <Knapp variant="primar" onClick={() => setLagerNy(true)}>
                 + Ny vurdering
               </Knapp>
@@ -173,10 +204,30 @@ export function Vurderinger({
                   </Knapp>
                 </div>
               )}
-              {perManed(synlige).map(([maned, gruppe]) => (
-                <div key={maned}>
-                  <div className="sticky top-0 z-10 border-y border-linje-medium bg-flate px-2 py-1 text-etikett uppercase tracking-etikett text-blekk-dempet">
-                    {maned === "uten" ? "Uten frist" : manedsnavn(maned)}
+              {(gruppering === "fag"
+                ? perFag(synlige, fag)
+                : perManed(synlige)
+              ).map(([nokkel, gruppe]) => (
+                <div key={nokkel}>
+                  {/* Overskrift som i Økter: tekst, ingen grå blokk. */}
+                  <div className="sticky top-0 z-10 flex items-center gap-2 border-b border-linje-medium bg-ark px-2 pb-1 pt-3 text-liten font-semibold first-letter:uppercase">
+                    {gruppering === "fag" ? (
+                      <>
+                        <Fagfirkant
+                          farge={
+                            fag.find((f) => f.id === nokkel)?.farge ?? null
+                          }
+                        />
+                        {fag.find((f) => f.id === nokkel)?.kode ?? "Fag"}
+                        <span className="font-normal text-blekk-svak">
+                          {fag.find((f) => f.id === nokkel)?.navn}
+                        </span>
+                      </>
+                    ) : nokkel === "uten" ? (
+                      "Uten frist"
+                    ) : (
+                      manedsnavn(nokkel)
+                    )}
                   </div>
                   {gruppe.map((v) => (
                     <Rad
@@ -426,11 +477,25 @@ function perManed(rader: Vurdering[]): [string, Vurdering[]][] {
   return navn.map((n) => [n, kart.get(n)!]);
 }
 
+/** Vurderingene gruppert per fag, i fagenes rekkefølge; innen fag etter frist. */
+function perFag(rader: Vurdering[], fag: FagIAr[]): [string, Vurdering[]][] {
+  return fag
+    .map(
+      (f) =>
+        [f.id, rader.filter((v) => v.skolearFagId === f.id)] as [
+          string,
+          Vurdering[],
+        ],
+    )
+    .filter(([, l]) => l.length > 0);
+}
+
 function manedsnavn(maned: string): string {
-  return new Date(`${maned}-01T00:00:00`).toLocaleDateString("nb-NO", {
+  const t = new Date(`${maned}-01T00:00:00`).toLocaleDateString("nb-NO", {
     month: "long",
     year: "numeric",
   });
+  return t.charAt(0).toUpperCase() + t.slice(1);
 }
 
 function iDag(): string {
