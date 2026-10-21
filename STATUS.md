@@ -31,6 +31,10 @@ Lerretet (`docs/lerret/`) er fasit for det som er tegnet.
   lagringen går i bakgrunnen. Ingen bytte før midten har forlatt egen rad
   (`finnMal`). Rødt kort over en skåret økt. Kolonnehodet er tett, ikke
   glass: brikkene skinte gjennom som klatter.
+- **Tema i Økter endres med dobbeltklikk (21.10)**, eller T på markøren.
+  Ellers er temaet vanlig tekst som raden kan dras i uten at noe markeres.
+  Enter lagrer og går til neste rads tema (⇧↵ forrige), Esc avbryter.
+  Dobbeltklikk ellers på raden og Enter åpner økta som før.
 - **19.3 Smidigere markering i Økter**: ⌘-klikk på en rad tar én, ⇧-klikk
   et spenn fra forrige klikk (eller fra markøren), og når noe alt er valgt,
   velger et vanlig klikk på raden. Uten noe valgt åpner klikket titten som

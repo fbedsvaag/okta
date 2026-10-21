@@ -963,16 +963,19 @@ function Liste({
   ].join(" ");
   const kolonner = { gridTemplateColumns: spor };
 
-  /** Enter hopper til neste rads tema, Shift+Enter til forrige. */
-  function hopp(fra: HTMLInputElement, retning: 1 | -1) {
-    const felt = [
-      ...document.querySelectorAll<HTMLInputElement>("input[data-tema]"),
-    ];
-    const neste = felt[felt.indexOf(fra) + retning];
-    if (neste) {
-      neste.focus();
-      neste.select();
-    } else fra.blur();
+  /**
+   * Temaet endres med dobbeltklikk (eller T), ikke ett klikk: da kan raden
+   * dras i temaet uten at teksten markeres (21.10). Enter lagrer og går til
+   * neste rads tema, Shift+Enter til forrige, så et helt år kan fylles ut
+   * i ett strekk.
+   */
+  const [redigerer, setRedigerer] = useState<string | null>(null);
+  function hopp(fra: string, retning: 1 | -1) {
+    const i = okter.findIndex((o) => o.id === fra);
+    const neste = okter[i + retning];
+    setRedigerer(neste?.id ?? null);
+    if (neste) onMarkor(neste.id);
+    else liste.current?.focus();
   }
 
   function flytt(retning: 1 | -1) {
@@ -1020,6 +1023,9 @@ function Liste({
     } else if (e.key === " ") {
       e.preventDefault();
       if (valgt) setApen((a) => (a === valgt ? null : valgt));
+    } else if (e.key.toLowerCase() === "t") {
+      e.preventDefault();
+      if (valgt) setRedigerer(valgt);
     } else if (e.key === "Enter") {
       e.preventDefault();
       if (valgt) onVelg(valgt);
@@ -1130,15 +1136,16 @@ function Liste({
                     if (o.skaret > 0) return;
                     const mal = e.target as HTMLElement;
                     const p = { gruppe: okter.indexOf(o), nr: 0 };
-                    if (mal.closest("[data-grep]")) begynn(e, p);
-                    else if (mal.closest("input[data-tema]"))
-                      begynn(e, p, true);
+                    if (mal.closest("[data-grep], [data-tema-tekst]"))
+                      begynn(e, p);
                   }}
                   onPointerEnter={() => malOver(o.id)}
                   onMouseDown={(e) => e.shiftKey && e.preventDefault()}
                   onClick={(e) => {
                     if (dradd.current || malt.current) return;
                     if ((e.target as HTMLElement).closest("input")) return;
+                    // Andre klikk i et dobbeltklikk: titten blir stående.
+                    if (e.detail > 1) return;
                     // Markering (19.3): ⌘ tar én, ⇧ et spenn, og når noe
                     // alt er valgt, velger et klikk på raden.
                     if (hovedtast(e) || e.shiftKey || merket.size > 0) {
@@ -1167,7 +1174,7 @@ function Liste({
                         ? "inset 3px 0 0 var(--color-vurdering)"
                         : undefined,
                   }}
-                  className={`group relative grid h-[30px] cursor-default items-center gap-x-3 px-2 text-[calc(13px*var(--tekst-skala))] tabular-nums ${
+                  className={`group relative grid h-[30px] cursor-default select-none items-center gap-x-3 px-2 text-[calc(13px*var(--tekst-skala))] tabular-nums ${
                     blink.has(o.id) ? "bytteblink" : ""
                   } ${
                     erApen
@@ -1304,30 +1311,59 @@ function Liste({
                         klasse="absolute -left-[21px] top-1/2 -mt-2"
                       />
                     )}
-                    <input
-                      data-tema
-                      defaultValue={o.tema ?? ""}
-                      key={o.tema ?? ""}
-                      placeholder="Skriv tema …"
-                      title={o.tema ?? undefined}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          e.preventDefault();
-                          hopp(e.currentTarget, e.shiftKey ? -1 : 1);
+                    {redigerer === o.id ? (
+                      <input
+                        data-tema
+                        autoFocus
+                        defaultValue={o.tema ?? ""}
+                        placeholder="Skriv tema …"
+                        onFocus={(e) => e.currentTarget.select()}
+                        onKeyDown={(e) => {
+                          const ny = e.currentTarget.value.trim() || null;
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            if (ny !== o.tema) onTema(o.id, ny);
+                            hopp(o.id, e.shiftKey ? -1 : 1);
+                          }
+                          if (e.key === "Escape") {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            e.currentTarget.value = o.tema ?? "";
+                            setRedigerer(null);
+                            liste.current?.focus();
+                          }
+                        }}
+                        onBlur={(e) => {
+                          const ny = e.target.value.trim() || null;
+                          if (ny !== o.tema) onTema(o.id, ny);
+                          setRedigerer((r) => (r === o.id ? null : r));
+                        }}
+                        className={`-mx-1 w-full min-w-0 truncate rounded border border-aksent bg-ark px-1 py-0.5 outline-none placeholder:text-blekk-svakest ${
+                          vurd.length > 0 ? "font-semibold" : ""
+                        }`}
+                      />
+                    ) : (
+                      <span
+                        data-tema-tekst
+                        title={
+                          o.tema
+                            ? `${o.tema} · dobbeltklikk for å endre`
+                            : "Dobbeltklikk for å skrive tema"
                         }
-                        if (e.key === "Escape") {
-                          e.currentTarget.value = o.tema ?? "";
-                          e.currentTarget.blur();
-                        }
-                      }}
-                      onBlur={(e) => {
-                        const ny = e.target.value.trim() || null;
-                        if (ny !== o.tema) onTema(o.id, ny);
-                      }}
-                      className={`-mx-1 w-full min-w-0 truncate rounded border border-transparent bg-transparent px-1 py-0.5 outline-none placeholder:text-blekk-svakest hover:border-linje focus:border-aksent focus:bg-ark ${
-                        vurd.length > 0 ? "font-semibold" : ""
-                      }`}
-                    />
+                        onDoubleClick={(e) => {
+                          e.stopPropagation();
+                          setRedigerer(o.id);
+                        }}
+                        className={`-mx-1 min-w-0 truncate border border-transparent px-1 py-0.5 ${
+                          o.skaret ? "" : "cursor-grab active:cursor-grabbing"
+                        } ${vurd.length > 0 ? "font-semibold" : ""} ${
+                          o.tema ? "" : "text-blekk-svakest"
+                        }`}
+                      >
+                        {o.tema || "Skriv tema …"}
+                      </span>
+                    )}
                   </span>
                   {/* Perioden med ett klikk (16.2). */}
                   <span
