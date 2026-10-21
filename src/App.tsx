@@ -698,7 +698,7 @@ const SKJERMNAVN: Record<Visning, string> = {
   fagside: "Fag",
   innstillinger: "Innstillinger",
   skoleruta: "Skoleruta",
-  klassekart: "Klassekart",
+  klassekart: "Plasser og grupper",
 };
 
 /**

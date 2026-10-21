@@ -168,7 +168,7 @@ i verktøylinja kapselform. ⌘K-vinduet har 26 px.
 - Logo, «Økta» og skoleåret øverst
 - Søk (⌘K) som felt
 - I dag · Økter · Elever · Vurderinger · Samtaler, hver med snarvei til
-  høyre: G D, G Ø, G E, G V, G S, G K (Klassekart, med kartene som
+  høyre: G D, G Ø, G E, G V, G S, G P (Plasser og grupper, med kartene som
   undermeny — SPEC §4.11)
 - Innstillinger (⌘,) nederst
 

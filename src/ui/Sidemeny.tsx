@@ -39,6 +39,8 @@ export const G_SNARVEIER: Record<string, Menypunkt> = {
   e: "elever",
   v: "vurderinger",
   s: "samtaler",
+  p: "klassekart",
+  // G K var snarveien før «Plasser og grupper» (25.1); den virker fortsatt.
   k: "klassekart",
 };
 
@@ -48,7 +50,7 @@ const PUNKTER: { id: Menypunkt; navn: string; tast: string }[] = [
   { id: "elever", navn: "Elever", tast: "G E" },
   { id: "vurderinger", navn: "Vurderinger", tast: "G V" },
   { id: "samtaler", navn: "Samtaler", tast: "G S" },
-  { id: "klassekart", navn: "Klassekart", tast: "G K" },
+  { id: "klassekart", navn: "Plasser og grupper", tast: "G P" },
 ];
 
 /** Så lenge musa må hvile på et punkt før undermenyen rulles ut. */

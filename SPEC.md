@@ -1471,7 +1471,7 @@ testene er deterministiske.
 
 #### Sidemenyen og navigasjon
 
-Klassekart (G K) står i sidemenyen. Under det, som undermeny (DESIGN §6):
+Plasser og grupper (G P, før G K) står i sidemenyen, med fanene Klassekart · Grupper. Under det, som undermeny (DESIGN §6):
 kartene for skoleåret (fagfirkant, kilde, rom og antall) og «+ Nytt kart».
 Klikk på selve «Klassekart» gir en oversikt over kart og rom.
 

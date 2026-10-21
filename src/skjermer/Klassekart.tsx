@@ -14,11 +14,13 @@ import {
 } from "../data/klassekart";
 import { hentFagIAr, type FagIAr } from "../data/fag";
 import { hentKlasser, type Klasse } from "../data/elever";
-import { Fagfirkant } from "../ui/felles";
+import { Bryter, Fagfirkant } from "../ui/felles";
 import { KlassekartKart } from "./KlassekartKart";
 import { IVerktoylinja } from "../ui/Verktoylinje";
 import { KlassekartRom } from "./KlassekartRom";
 import { Velger } from "../ui/Velger";
+import { useLagretInnstilling } from "../ui/useLagretInnstilling";
+import { GrupperFane } from "./GrupperFane";
 
 /**
  * Klassekart (SPEC §4.11). `id` sier hva som vises:
@@ -71,7 +73,46 @@ export function Klassekart({
         onRedigerRom={(romId) => onGa(romId ? `rom:${romId}` : `rom:ny:${id}`)}
       />
     );
-  return <Oversikt skolearId={skolearId} onGa={onGa} />;
+  return <Faner skolearId={skolearId} onGa={onGa} />;
+}
+
+/**
+ * Plasser og grupper (25.1–25.2): fanene Klassekart · Grupper i
+ * verktøylinja, i samme rekkefølge som navnet. Fanen huskes.
+ */
+function Faner({
+  skolearId,
+  onGa,
+}: {
+  skolearId: string;
+  onGa: (id: string | null) => void;
+}) {
+  const [fane, setFane] = useLagretInnstilling<"klassekart" | "grupper">(
+    "plasser_fane",
+    "klassekart",
+    (v) => (v === "grupper" ? "grupper" : "klassekart"),
+    String,
+  );
+  return (
+    <>
+      <IVerktoylinja>
+        <Bryter
+          storrelse="liten"
+          verdi={fane}
+          settVerdi={(v) => setFane(v === "grupper" ? "grupper" : "klassekart")}
+          valg={[
+            { id: "klassekart", navn: "Klassekart" },
+            { id: "grupper", navn: "Grupper" },
+          ]}
+        />
+      </IVerktoylinja>
+      {fane === "grupper" ? (
+        <GrupperFane skolearId={skolearId} />
+      ) : (
+        <Oversikt skolearId={skolearId} onGa={onGa} />
+      )}
+    </>
+  );
 }
 
 function Oversikt({

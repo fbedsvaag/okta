@@ -975,8 +975,8 @@ Vurderinger som hentes fra i fjor, er forslag til læreren har sett på dem.
 
 Tegning: `docs/lerret/PlasserGrupper.dc.html`. Grupper skal ikke ligge gjemt inne i et klassekart.
 
-- [ ] **25.1 Navn.** «Klassekart» → «Plasser og grupper» i menyen (snarvei G P). Bestemt.
-- [ ] **25.2 To faner i verktøylinja:** Klassekart · Grupper (samme rekkefølge som navnet). Fanen huskes.
+- [x] **25.1 Navn.** «Klassekart» → «Plasser og grupper» i menyen (snarvei G P). Bestemt.
+- [x] **25.2 To faner i verktøylinja:** Klassekart · Grupper (samme rekkefølge som navnet). Fanen huskes.
 - [ ] **25.3 Grupper uten kart.** Velg klasse/fag som chip (faget i økta du har nå er valgt). Krever ikke rom eller kart. Bruker samme `fordelGrupper` og historikk som i dag.
 - [ ] **25.4 Antall eller per gruppe.** Seg «Antall | Per gruppe» med − / +, og oppsummering («á 4 · 24 elever» / «6 grupper · 24 elever»).
 - [ ] **25.5 «Bare de som er her»** (på som standard): tar bort de som har fravær i dagens økt, og viser dem overstreket over gruppene.

@@ -21,7 +21,7 @@ import {
 } from "../data/fordeling";
 import { gruppeListe, kortnavn } from "../data/karttegning";
 import { IVerktoylinja } from "../ui/Verktoylinje";
-import { Bryter, Fagfirkant } from "../ui/felles";
+import { Bryter } from "../ui/felles";
 import { Elevfoto } from "../ui/Elevfoto";
 import { Avkrysning, innsatsfarge } from "./KlassekartKart";
 import { hovedtast, tast as visTast } from "../ui/taster";
@@ -305,26 +305,6 @@ export function KlassekartGrupper({
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <IVerktoylinja>
-        {kart.kildeType === "mentorgruppe" ? (
-          <span className="h-2.5 w-2.5 rounded-full bg-aksent" />
-        ) : (
-          <Fagfirkant farge={kart.farge} storrelse={10} />
-        )}
-        <h2 className="text-[calc(15px*var(--tekst-skala))] font-semibold">
-          {kart.kildeNavn}
-        </h2>
-        <span className="text-liten text-blekk-dempet">
-          {elever.length} elever
-        </span>
-        <Bryter
-          storrelse="liten"
-          verdi="grupper"
-          settVerdi={(v) => onEndreInnst({ visning: v as "plasser" })}
-          valg={[
-            { id: "plasser", navn: "Plasser" },
-            { id: "grupper", navn: "Grupper" },
-          ]}
-        />
         {melding && (
           <span role="status" className="truncate text-liten text-aksent">
             {melding}

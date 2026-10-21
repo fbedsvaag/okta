@@ -44,7 +44,6 @@ import {
   Menyvalg,
 } from "../ui/felles";
 import { Elevfoto } from "../ui/Elevfoto";
-import { KlassekartGrupper } from "./KlassekartGrupper";
 import { hovedtast, tast as visTast } from "../ui/taster";
 import { filnavnAv, lagreFil } from "../data/filer";
 import { Velger } from "../ui/Velger";
@@ -456,17 +455,6 @@ export function KlassekartKart({
 
   if (!kart || !innst) return null;
 
-  if (innst.visning === "grupper")
-    return (
-      <KlassekartGrupper
-        kart={kart}
-        innst={innst}
-        elever={elever}
-        regler={regler}
-        onEndreInnst={endreInnst}
-      />
-    );
-
   const ramme = romramme(rom?.deler ?? []);
   const skala = Math.min(1.5, Math.max(0.6, plassBredde / (ramme.b + 20)));
   // Fra kateteret står tavla nederst, bak læreren; fra elevene øverst.
@@ -507,15 +495,6 @@ export function KlassekartKart({
         <span className="text-liten text-blekk-dempet">
           {rom?.navn ?? "Uten rom"}
         </span>
-        <Bryter
-          storrelse="liten"
-          verdi="plasser"
-          settVerdi={(v) => endreInnst({ visning: v as "grupper" })}
-          valg={[
-            { id: "plasser", navn: "Plasser" },
-            { id: "grupper", navn: "Grupper" },
-          ]}
-        />
         {melding && (
           <span role="status" className="truncate text-liten text-aksent">
             {melding}
