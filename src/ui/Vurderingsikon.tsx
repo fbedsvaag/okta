@@ -7,11 +7,14 @@ export function Vurderingsikon({
   type,
   klasse = "",
   utkast = false,
+  noytral = false,
 }: {
   type: "skriftlig" | "muntlig" | "praktisk" | null;
   klasse?: string;
   /** hentet fra i fjor og ikke bekreftet (§24): dempet */
   utkast?: boolean;
+  /** grått i stedet for gull, der gullet ville stjele blikket (elevkortet) */
+  noytral?: boolean;
 }) {
   return (
     <span
@@ -19,7 +22,7 @@ export function Vurderingsikon({
         (type === "muntlig" ? "Muntlig vurdering" : "Skriftlig vurdering") +
         (utkast ? " (utkast)" : "")
       }
-      className={`inline-grid h-4 w-4 shrink-0 place-items-center rounded-[4px] bg-vurdering ${
+      className={`inline-grid h-4 w-4 shrink-0 place-items-center rounded-[4px] ${noytral ? "bg-flate shadow-[inset_0_0_0_1px_var(--color-linje)]" : "bg-vurdering"} ${
         utkast ? "opacity-40" : ""
       } ${klasse}`}
     >
@@ -28,7 +31,7 @@ export function Vurderingsikon({
         viewBox="0 0 12 12"
         className="h-[11px] w-[11px]"
         fill="none"
-        stroke="#fff"
+        stroke={noytral ? "var(--color-blekk-dempet)" : "#fff"}
         strokeWidth={1.3}
         strokeLinecap="round"
         strokeLinejoin="round"

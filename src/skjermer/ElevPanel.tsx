@@ -1062,7 +1062,8 @@ function Innsatsrute({
 }
 /**
  * En vurdering på elevkortet: ikon, tittel og kommentar, dato og resultat.
- * En kommende muntlig vurdering har gyllen strek og en vei til Samtaler.
+ * En kommende muntlig vurdering har en vei til Samtaler. Alt i nøytrale
+ * farger: gullet hører hjemme i Økter og Året, her stjal det blikket.
  */
 function Vurderingsrad({
   v,
@@ -1077,19 +1078,10 @@ function Vurderingsrad({
   const kommende = !v.resultat && !!v.frist && v.frist >= idagIso();
   const gull = kommende && type === "muntlig";
   return (
-    <div
-      className={`grid grid-cols-[16px_minmax(0,1fr)_56px_minmax(0,120px)] items-center gap-x-2.5 border-b border-linje-svak py-2.5 ${
-        gull ? "-mx-2.5 rounded-md bg-vurdering-flate px-2.5" : ""
-      }`}
-      style={
-        gull ? { boxShadow: "inset 3px 0 0 var(--color-vurdering)" } : undefined
-      }
-    >
-      <Vurderingsikon type={type} />
+    <div className="grid grid-cols-[16px_minmax(0,1fr)_56px_minmax(0,120px)] items-center gap-x-2.5 border-b border-linje-svak py-2.5">
+      <Vurderingsikon type={type} noytral />
       <button onClick={onApne} className="min-w-0 text-left">
-        <span
-          className={`block truncate hover:underline ${gull ? "font-semibold" : "font-medium"}`}
-        >
+        <span className="block truncate font-medium hover:underline">
           {v.tittel}
         </span>
         {v.kommentar && (
@@ -1098,15 +1090,13 @@ function Vurderingsrad({
           </span>
         )}
       </button>
-      <span
-        className={`text-etikett tabular-nums ${gull ? "text-vurdering-tekst" : "text-blekk-dempet"}`}
-      >
+      <span className="text-etikett tabular-nums text-blekk-dempet">
         {v.frist ? kortDato(v.frist) : ""}
       </span>
       {gull ? (
         <button
           onClick={onSamtaler}
-          className="whitespace-nowrap text-right text-[calc(12.5px*var(--tekst-skala))] font-medium text-vurdering-tekst hover:underline"
+          className="whitespace-nowrap text-right text-[calc(12.5px*var(--tekst-skala))] text-blekk-dempet hover:text-blekk hover:underline"
         >
           Åpne i <i>Samtaler</i> →
         </button>
