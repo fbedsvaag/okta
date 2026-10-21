@@ -633,6 +633,23 @@ første» er riktig; et blankt panel er ikke.
 
 ### 4.1 I dag (startskjerm)
 
+**Enkel og Full** (ARBEIDSLISTE 20.5, lerretet IDagOppsett). Bryteren øverst
+til høyre, valget huskes; Enkel er standard. Innholdet står som fliser i et
+rutenett med fire kolonner og faste rader, uten hull.
+
+- **Enkel:** Dagens økter (stor), Følg opp i dag og Gjøremål.
+- **Full:** i tillegg Uka over hele bredden, og under den Vurderingsfrister,
+  Elever som glipper og Innsats over tid. Uka har bryteren Timer · Kompakt;
+  Kompakt er én rad, og flisene under glir rolig opp.
+- **Følg opp i dag:** per fag du har i dag, gruppert i Rød sist (med «to på
+  rad»), Ikke sett sist og Borte sist, fra den siste avholdte økta. Bare
+  fornavn og forbokstav.
+- **Innsats over tid** (flisen): per fag, andelen grønn, gul, rød og grått
+  (til stede, ikke sett), regnet av dem som var til stede.
+- Timeregnskapet og innsatsen uke for uke står under rutenettet i Full.
+- Flisene glir rolig til ny plass (360 ms, myk ut-kurve, ingen sprett).
+  Tilpasning av fliser og størrelser kommer senere (ARBEIDSLISTE 21.2).
+
 Øverst datoen, og under den **Dagens økter**. Under hver økt står notatet fra
 forrige økt i faget, og det kan foldes ut. Et klikk åpner økta notatet ble
 skrevet i.
@@ -683,6 +700,34 @@ Bryteren er da Oversikt | Økter | Kalender. Fagsiden viser timene mot
 årstimetallet, neste økter, kommende vurderinger, klassen økt for økt,
 elevene nå med fraværet, kompetansemålene med hvor langt de er dekket, og
 øktloggene.
+
+#### Året
+
+Med et fag valgt er bryteren Oversikt | Året | Økter | Kalender (ARBEIDSLISTE
+20.6, lerretet Arsplanlegger). Året er hele skoleåret som én stripe av
+**økter** (ikke uker), med ferier skravert på ukedagene faget har, måneder,
+«I dag» og vurderingene som gule merker.
+
+- Periodene er felt på stripa. De dras inn fra lista, flyttes sidelengs og
+  forlenges i begge ender, og hopper til økter; en boble viser spenn og antall
+  mens man drar. Start og slutt ligger aldri i en ferie.
+- **Perioden står fortsatt på økta (§3.3).** Å dra setter perioden på øktene i
+  det nye spennet og tar den fra øktene som falt utenfor, i én omgang som kan
+  angres. Perioder overlapper ikke: en ende som dras inn i naboen, flytter
+  grensen (naboen beholder minst én økt), og en periode som flyttes, stopper
+  mot naboene.
+- Ny periode: dra over en tom del av stripa, skriv navn, velg farge, ↵. Et
+  enkelt klikk gir åtte økter.
+- Under stripa: periodene med øktene foldet ut (dato, vurderingsmerke, tema
+  som skrives rett inn, ↵/↓ og ↑), og kompetansemålene. Med en periode valgt
+  knyttes mål med et klikk; uten valg viser hvert mål «✓ Dekket» med
+  periodeprikker, eller «Ikke dekket». «Gi N økter perioden» fyller hull.
+- **Fjoråret som mal** («Hent fra i fjor …»): periodene legges på de samme
+  ukene regnet fra skoleårets første uke, med datoene i fjor og i år og
+  antall økter (+/−). Man velger perioder, kompetansemål, tema, plan og agenda
+  (fylles bare der årets økt er tom) og vurderinger. Ingenting om elevene.
+  Erstatter årets perioder og kan angres. Tilbys i Året når faget ikke har
+  perioder i år.
 
 #### Listevisning (standard)
 
@@ -905,10 +950,13 @@ Notatet fra denne økta står i en egen kolonne på raden; N åpner feltet der.
 Står markøren på en elev uten notat, vises siste skåringsnotat i grått i den
 samme kolonnen.
 
-**Alle elever i en avholdt økt har en verdi mellom `0` og `3`.** Det finnes ingen
-fjerde tilstand. De du ikke har trykket på er `0` — «ikke i økta» — og det
-dekker både den som var borte og den du ikke rakk. `0` teller ikke i noen
-sammenstilling (§5.1), så det forurenser ingenting.
+**En elev du ikke har trykket på i en avholdt økt, var til stede, men ble ikke
+sett** (ARBEIDSLISTE 19.4). Det er ikke fravær og teller ikke i noen
+sammenstilling, heller ikke i innsatssnittet; det vises som en tom ring i
+heatmap og elevkort. Bare `0` — «ikke i økta» — er fravær (§4.12). Ved Ferdig
+sier en rolig linje fra hvor mange som ikke er skåret, uten å stoppe deg.
+Filteret over lista har Alle · Til stede · Borte · Ikke sett, og «Følg opp i
+økta» viser «Ikke sett sist».
 
 Før du har trykket på noen som helst er økta ikke avholdt, og radene står tomme.
 
@@ -1499,6 +1547,11 @@ en nedtrekksliste.
 | Rød | `1` | 10 | rod | 0 |
 | Gul | `2` | 20 | gul | 0 |
 | Grønn | `3` | 30 | gronn | 0 |
+
+**Trafikklyset har form**, så det kan leses uten fargesyn (ARBEIDSLISTE 20.1):
+grønn er fylt, gul halvfylt, rød har et lite kryss, og `0` et større kryss på
+mørk grunn. Ikke skåret er en tom ring. Én komponent tegner skåringen overalt
+(skåring, heatmap, elevkort, filter, I dag).
 
 **Fargen er innsats i den enkelte økta.** Det er den definisjonen appen skal vise
 som hjelpetekst, og den som følger med eksporten (§8) slik at heatmapet er
