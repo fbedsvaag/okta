@@ -505,43 +505,59 @@ export function Okter({
             </div>
           )}
 
+          {/*
+            Ny økt og ny serie flyter som et kort over lista, der du står:
+            lå de øverst i lista, var de ute av syne når man hadde rullet ned.
+          */}
+          {(lagerNy || lagerSerie) && (
+            <div
+              className="okter-flytende"
+              onKeyDown={(e) => {
+                if (e.key !== "Escape") return;
+                e.stopPropagation();
+                setLagerNy(false);
+                setLagerSerie(false);
+              }}
+            >
+              {lagerNy && (
+                <NyOkt
+                  fag={fag}
+                  startFagId={filterFag || fag[0]?.id}
+                  sisteDato={
+                    okter.length > 0 ? okter[okter.length - 1].dato : undefined
+                  }
+                  onLagret={async (id) => {
+                    setLagerNy(false);
+                    await last();
+                    apne(id);
+                  }}
+                  onAvbryt={() => setLagerNy(false)}
+                />
+              )}
+
+              {lagerSerie && (
+                <NySerie
+                  skolearId={skolearId}
+                  skolearStart={skolearStart}
+                  skolearSlutt={skolearSlutt}
+                  fag={fag}
+                  startFagId={filterFag || fag[0]?.id}
+                  onLagret={async () => {
+                    setLagerSerie(false);
+                    await last();
+                  }}
+                  onAvbryt={() => setLagerSerie(false)}
+                />
+              )}
+            </div>
+          )}
+
           {/* Én rullesone. Hadde lista hatt sin egen overflow-x, ville
             månedene festet seg til DEN i stedet for til denne. */}
           <div
             ref={rullesone}
             className="min-h-0 flex-1 scroll-pt-[64px] overflow-auto"
           >
-            {lagerNy && (
-              <NyOkt
-                fag={fag}
-                startFagId={filterFag || fag[0]?.id}
-                sisteDato={
-                  okter.length > 0 ? okter[okter.length - 1].dato : undefined
-                }
-                onLagret={async (id) => {
-                  setLagerNy(false);
-                  await last();
-                  apne(id);
-                }}
-                onAvbryt={() => setLagerNy(false)}
-              />
-            )}
-
-            {lagerSerie && (
-              <NySerie
-                skolearId={skolearId}
-                skolearStart={skolearStart}
-                skolearSlutt={skolearSlutt}
-                fag={fag}
-                startFagId={filterFag || fag[0]?.id}
-                onLagret={async () => {
-                  setLagerSerie(false);
-                  await last();
-                }}
-                onAvbryt={() => setLagerSerie(false)}
-              />
-            )}
-
             {okter.length === 0 && !lagerNy && !lagerSerie ? (
               <Tomtilstand
                 tekst={
