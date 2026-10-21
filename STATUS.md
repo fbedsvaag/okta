@@ -38,6 +38,9 @@ Lerretet (`docs/lerret/`) er fasit for det som er tegnet.
 
 - «Klassekart →» i toppen av øktkortet når faget har et kart. Åpner
   plassene «Fra kateteret» uten å endre kartets lagrede visning.
+- Et kart gjelder til et nytt er brukt. Fra en eldre økt vises plasseringen
+  som gjaldt den dagen (`gjeldendeOppsett`), låst, med «Slik satt de …» og
+  «Vis gjeldende kart». Var kartet ikke brukt ennå, sies det.
 
 ## Lagrede gruppesett og gruppelogg (21.10)
 

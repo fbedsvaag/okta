@@ -268,6 +268,19 @@ describe("oppsett og historikk", () => {
     expect(ganger.get(k.parNokkel(tony, meadow))).toBe(1);
   });
 
+  it("finner plasseringen som gjaldt en dag: den siste brukt på eller før", () => {
+    const o = (id: string, tid: string) => ({ id, tid, navn: null, rader: [] });
+    const h = [
+      o("ny", "2026-10-21T08:00:00"),
+      o("okt", "2026-10-07T19:42:00"),
+      o("aug", "2026-08-20T10:00:00"),
+    ];
+    expect(k.gjeldendeOppsett(h, "2026-10-14")?.id).toBe("okt");
+    expect(k.gjeldendeOppsett(h, "2026-10-21")?.id).toBe("ny");
+    expect(k.gjeldendeOppsett(h, "2026-10-07")?.id).toBe("okt");
+    expect(k.gjeldendeOppsett(h, "2026-08-19")).toBeNull();
+  });
+
   it("vekter de siste oppsettene tyngst", () => {
     const o = (a: string, b: string) => ({
       id: a + b,

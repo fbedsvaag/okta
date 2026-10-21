@@ -1422,6 +1422,8 @@ sammen før. Ingen lister limes inn.
 
 #### Plasser
 
+- Et kart gjelder til et nytt er tatt i bruk. «Klassekart →» i øktkortet
+  viser plasseringen som gjaldt den dagen, låst, for dokumentasjonens skyld.
 - Rommet tegnes (i rom-editoren) med tavla øverst. Bryteren **Fra kateteret
   / Fra elevene** viser kartet fra lærerens side, med tavla nederst bak
   læreren, eller fra elevenes, med tavla øverst (for utskrift til elevene).

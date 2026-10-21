@@ -9,6 +9,7 @@ import {
   hentPlassfarger,
   hentRegler,
   hentRom,
+  gjeldendeOppsett,
   lagreOppsett,
   lagrePlassfarger,
   leggTilRegel,
@@ -66,9 +67,14 @@ import { Gruppebilde } from "./Gruppebilde";
  * øktkortet («Klassekart»), der læreren ser om alle sitter riktig. Gjelder
  * bare den ene visningen; kartets lagrede valg røres ikke.
  */
-let fraKateteretNeste: string | null = null;
-export function visFraKateteret(kartId: string): void {
-  fraKateteretNeste = kartId;
+let fraKateteretNeste: { kartId: string; dato: string | null } | null = null;
+/**
+ * `dato`: økta lenken kom fra. Da vises plasseringen som gjaldt den dagen —
+ * et kart gjelder til et nytt er brukt, og det gamle skal fortsatt kunne
+ * ses fra økta, for dokumentasjonens skyld.
+ */
+export function visFraKateteret(kartId: string, dato?: string): void {
+  fraKateteretNeste = { kartId, dato: dato ?? null };
 }
 
 export function KlassekartKart({
@@ -89,8 +95,14 @@ export function KlassekartKart({
   const [innst, setInnst] = useState<Innstillinger | null>(null);
   // Åpnet fra øktkortet: plassene, fra kateteret, så lenge kartet står
   // åpent — også når det lastes på nytt — til læreren endrer noe selv.
-  const fraKateteret = useRef(fraKateteretNeste === kartId);
-  if (fraKateteretNeste === kartId) fraKateteretNeste = null;
+  const fraKateteret = useRef(fraKateteretNeste?.kartId === kartId);
+  // Dagen økta var, når lenken kom fra en økt; null ellers.
+  const oktDato = useRef(
+    fraKateteretNeste?.kartId === kartId ? fraKateteretNeste.dato : null,
+  );
+  if (fraKateteretNeste?.kartId === kartId) fraKateteretNeste = null;
+  // En eldre plassering vises, låst: «Slik satt de …» (dokumentasjon).
+  const [historisk, setHistorisk] = useState<Oppsett | null>(null);
   // Kartets egne, lagrede valg — det som lagres når noe endres.
   const lagretInnst = useRef<Innstillinger | null>(null);
 
@@ -153,8 +165,23 @@ export function KlassekartKart({
     const iKilden = new Set(e.map((x) => x.id));
     const ny = new Map<string, number>();
     const las = new Set<string>();
-    if (h[0])
-      for (const rad of h[0].rader)
+    // Fra en økt: plasseringen som gjaldt den dagen. Er den eldre enn den
+    // siste, vises den låst, slik den var.
+    let kilde = h[0];
+    const dato = oktDato.current;
+    if (dato) {
+      const da = gjeldendeOppsett(h, dato);
+      if (da && da.id !== h[0]?.id) {
+        kilde = da;
+        setHistorisk(da);
+      } else {
+        setHistorisk(null);
+        if (!da && h.length > 0)
+          setMelding("Kartet var ikke tatt i bruk ennå den dagen");
+      }
+    }
+    if (kilde)
+      for (const rad of kilde.rader)
         if (rad.plass && finnes.has(rad.plass) && iKilden.has(rad.elevId)) {
           ny.set(rad.elevId, rad.plass);
           if (rad.last) las.add(rad.elevId);
@@ -167,9 +194,11 @@ export function KlassekartKart({
     }
     const opptatt = new Set(ny.values());
     const ledige = seter.filter((p) => !opptatt.has(p.nr));
-    for (const el of e)
-      if (!ny.has(el.id) && ledige.length > 0)
-        ny.set(el.id, ledige.shift()!.nr);
+    // Nye elever får ledig plass — men ikke i en gammel plassering.
+    if (kilde === h[0])
+      for (const el of e)
+        if (!ny.has(el.id) && ledige.length > 0)
+          ny.set(el.id, ledige.shift()!.nr);
     setPlass(ny);
     setLaste(las);
   }
@@ -226,7 +255,7 @@ export function KlassekartKart({
     window.addEventListener("pointerup", slutt);
     return () => window.removeEventListener("pointerup", slutt);
   });
-  const malPa = farge === "grupper";
+  const malPa = farge === "grupper" && !historisk;
 
   function fyll(par: boolean) {
     const pf = fyllPulter(plasser, par);
@@ -404,7 +433,7 @@ export function KlassekartKart({
       const k = e.key.toLowerCase();
       if (k === "r" && !e.shiftKey) {
         e.preventDefault();
-        stokk();
+        if (!historisk) stokk();
       } else if (k === "p" && !e.shiftKey) {
         e.preventDefault();
         void skrivUt();
@@ -716,6 +745,38 @@ export function KlassekartKart({
         aria-label="Klasserommet"
         className="ikkeutskrift flex min-w-0 flex-1 flex-col gap-3.5 pr-6"
       >
+        {historisk && (
+          <div className="flex items-center gap-3 rounded-xl bg-flate-svak px-3.5 py-2 text-[calc(13px*var(--tekst-skala))]">
+            <span>
+              Slik satt de{" "}
+              {new Date(`${oktDato.current}T12:00:00`).toLocaleDateString(
+                "nb-NO",
+                { weekday: "long", day: "numeric", month: "long" },
+              )}
+              <span className="text-blekk-dempet">
+                {" "}
+                · kartet brukt{" "}
+                {new Date(historisk.tid)
+                  .toLocaleDateString("nb-NO", {
+                    day: "numeric",
+                    month: "numeric",
+                  })
+                  .replace(/\.$/, "")}
+                {historisk.navn ? ` («${historisk.navn}»)` : ""}, låst
+              </span>
+            </span>
+            <button
+              onClick={() => {
+                oktDato.current = null;
+                setHistorisk(null);
+                void last();
+              }}
+              className="ml-auto h-[28px] shrink-0 rounded-full border border-linje-sterk bg-ark px-3 hover:bg-flate"
+            >
+              Vis gjeldende kart
+            </button>
+          </div>
+        )}
         <p className="text-[calc(12px*var(--tekst-skala))] tabular-nums text-blekk-svak">
           {elever.length} elever · {plasser.length} plasser · {laste.size} låst
           {borte.size > 0 && ` · ${borte.size} ikke til stede`}
@@ -898,6 +959,8 @@ export function KlassekartKart({
                       ev.preventDefault();
                       // Med gruppefarger maler et klikk pulten (25.11).
                       if (malPa) return mal(nr, true);
+                      // En gammel plassering er dokumentasjon: den står.
+                      if (historisk) return;
                       setDra({
                         elevId: id,
                         x: ev.clientX,
@@ -1209,6 +1272,7 @@ export function KlassekartKart({
                       key={id}
                       onPointerDown={(ev) => {
                         ev.preventDefault();
+                        if (historisk) return;
                         setDra({
                           elevId: id,
                           x: ev.clientX,
@@ -1247,7 +1311,8 @@ export function KlassekartKart({
                 ))}
               <button
                 onClick={() => stokk()}
-                className="flex h-[38px] items-center justify-center gap-2 rounded-full bg-aksent text-[calc(14px*var(--tekst-skala))] font-medium text-ark hover:bg-aksent-mork"
+                disabled={!!historisk}
+                className="flex h-[38px] items-center justify-center gap-2 rounded-full bg-aksent text-[calc(14px*var(--tekst-skala))] font-medium text-ark hover:bg-aksent-mork disabled:opacity-40"
               >
                 Stokk på nytt
                 <span className="text-[11px] opacity-65">{visTast("⌘R")}</span>
@@ -1257,11 +1322,13 @@ export function KlassekartKart({
                 disabled={lagret}
                 className="flex h-[34px] items-center justify-center rounded-full border border-linje-sterk bg-ark text-brod hover:bg-flate disabled:border-transparent disabled:bg-transparent disabled:text-blekk-svak"
               >
-                {lagret
-                  ? historikk[0]
-                    ? `Brukt ${tidspunkt(historikk[0].tid)}`
-                    : "Ikke brukt ennå"
-                  : "Bruk"}
+                {historisk
+                  ? `Viser plasseringen brukt ${tidspunkt(historisk.tid)}`
+                  : lagret
+                    ? historikk[0]
+                      ? `Brukt ${tidspunkt(historikk[0].tid)}`
+                      : "Ikke brukt ennå"
+                    : "Bruk"}
               </button>
               <p className="text-center text-[calc(12px*var(--tekst-skala))] tabular-nums text-blekk-dempet">
                 {laste.size === 0

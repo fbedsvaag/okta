@@ -743,6 +743,19 @@ export async function hentOppsett(
 }
 
 /**
+ * Plasseringen som gjaldt en dag (dokumentasjon fra øktkortet): den siste
+ * som var tatt i bruk på eller før dagen. Et kart gjelder til et nytt er
+ * brukt. `historikk` er nyeste først, som fra `hentOppsett`. Null når
+ * kartet ikke var brukt ennå.
+ */
+export function gjeldendeOppsett(
+  historikk: Oppsett[],
+  dato: string,
+): Oppsett | null {
+  return historikk.find((o) => o.tid.slice(0, 10) <= dato) ?? null;
+}
+
+/**
  * Hvem som har delt pult eller gruppe før, og hvor mange ganger. Nøkkelen er
  * de to id-ene sortert og skilt med «|». Vekten er størst for de siste
  * oppsettene: det nyeste teller 1, det forrige 0,8, så 0,64 …

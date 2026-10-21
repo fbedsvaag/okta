@@ -413,7 +413,7 @@ export function OktPanel({
                 ·
                 <button
                   onClick={() => {
-                    visFraKateteret(kartId);
+                    visFraKateteret(kartId, okt.dato);
                     ark.gaTil("klassekart", kartId);
                   }}
                   title="Se kartet fra kateteret"
