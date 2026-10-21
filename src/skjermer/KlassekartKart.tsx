@@ -34,6 +34,7 @@ import {
   kartListe,
   kartSvg,
   kortnavn,
+  innenfor,
   romramme,
   svgSomPng,
 } from "../data/karttegning";
@@ -571,11 +572,14 @@ export function KlassekartKart({
   // ------------------------------------------------------------- tegne
 
   const flateRef = useRef<HTMLDivElement>(null);
-  const [plassBredde, setPlassBredde] = useState(800);
+  // Flaten kartet har: rommet skal fylle den, uten rulling (21.10).
+  const [flate, setFlate] = useState({ b: 800, h: 600 });
   useEffect(() => {
     const el = flateRef.current;
     if (!el) return;
-    const o = new ResizeObserver(() => setPlassBredde(el.clientWidth));
+    const o = new ResizeObserver(() =>
+      setFlate({ b: el.clientWidth, h: el.clientHeight }),
+    );
     o.observe(el);
     return () => o.disconnect();
   }, [rom !== null]);
@@ -583,7 +587,11 @@ export function KlassekartKart({
   if (!kart || !innst) return null;
 
   const ramme = romramme(rom?.deler ?? []);
-  const skala = Math.min(1.5, Math.max(0.6, plassBredde / (ramme.b + 20)));
+  // Så stort det kan være, mens det fortsatt får plass i høyden og bredden.
+  const skala = Math.min(
+    1.6,
+    Math.max(0.55, Math.min((flate.b - 8) / ramme.b, (flate.h - 8) / ramme.h)),
+  );
   // Fra kateteret står tavla nederst, bak læreren; fra elevene øverst.
   const snu = (x: number, y: number, b = 0, h = 0) =>
     !innst.fraElevene
@@ -781,7 +789,10 @@ export function KlassekartKart({
           {elever.length} elever · {plasser.length} plasser · {laste.size} låst
           {borte.size > 0 && ` · ${borte.size} ikke til stede`}
         </p>
-        <div ref={flateRef} className="min-h-0 flex-1 overflow-auto">
+        <div
+          ref={flateRef}
+          className="flex min-h-0 flex-1 items-center justify-center overflow-auto"
+        >
           {!rom ? (
             <div className="rounded-xl border border-dashed border-linje px-4 py-10 text-center text-brod text-blekk-dempet">
               <p>Kartet har ikke noe rom ennå.</p>
@@ -797,68 +808,70 @@ export function KlassekartKart({
               className="relative"
               style={{ width: ramme.b * skala, height: ramme.h * skala }}
             >
-              {rom.deler.map((d) => {
-                const s = storrelse(d);
-                const p = snu(d.x, d.y, s.b, s.h);
-                const stil = {
-                  left: px(p.x),
-                  top: py(p.y),
-                  width: s.b * skala,
-                  height: s.h * skala,
-                };
-                if (DELER[d.type].plasser.length > 0)
+              {rom.deler
+                .filter((d) => innenfor(d, ramme))
+                .map((d) => {
+                  const s = storrelse(d);
+                  const p = snu(d.x, d.y, s.b, s.h);
+                  const stil = {
+                    left: px(p.x),
+                    top: py(p.y),
+                    width: s.b * skala,
+                    height: s.h * skala,
+                  };
+                  if (DELER[d.type].plasser.length > 0)
+                    return (
+                      <div
+                        key={d.id}
+                        className="absolute rounded-[10px] bg-flate shadow-[inset_0_0_0_1px_var(--color-linje-medium)]"
+                        style={stil}
+                      />
+                    );
+                  if (d.type === "tavle")
+                    return (
+                      <div
+                        key={d.id}
+                        className="absolute flex items-center justify-center rounded-md bg-linje-medium text-[12px] tracking-[0.06em] text-blekk-dempet"
+                        style={{ ...stil, minHeight: 24 }}
+                      >
+                        TAVLE
+                      </div>
+                    );
+                  if (d.type === "kateter")
+                    return (
+                      <div
+                        key={d.id}
+                        className="absolute flex items-center justify-center rounded-lg text-[12px] text-blekk-svak shadow-[inset_0_0_0_1.5px_var(--color-linje)]"
+                        style={stil}
+                      >
+                        Kateter
+                      </div>
+                    );
+                  if (d.type === "dor")
+                    return (
+                      <div
+                        key={d.id}
+                        className="absolute flex items-end text-[11px] text-blekk-svak"
+                        style={stil}
+                      >
+                        Dør
+                      </div>
+                    );
                   return (
                     <div
                       key={d.id}
-                      className="absolute rounded-[10px] bg-flate shadow-[inset_0_0_0_1px_var(--color-linje-medium)]"
-                      style={stil}
+                      className="absolute"
+                      style={{
+                        ...stil,
+                        background:
+                          "repeating-linear-gradient(90deg, var(--color-linje) 0 12px, transparent 12px 18px)",
+                        backgroundSize: "100% 4px",
+                        backgroundRepeat: "no-repeat",
+                        backgroundPosition: "center",
+                      }}
                     />
                   );
-                if (d.type === "tavle")
-                  return (
-                    <div
-                      key={d.id}
-                      className="absolute flex items-center justify-center rounded-md bg-linje-medium text-[12px] tracking-[0.06em] text-blekk-dempet"
-                      style={{ ...stil, minHeight: 24 }}
-                    >
-                      TAVLE
-                    </div>
-                  );
-                if (d.type === "kateter")
-                  return (
-                    <div
-                      key={d.id}
-                      className="absolute flex items-center justify-center rounded-lg text-[12px] text-blekk-svak shadow-[inset_0_0_0_1.5px_var(--color-linje)]"
-                      style={stil}
-                    >
-                      Kateter
-                    </div>
-                  );
-                if (d.type === "dor")
-                  return (
-                    <div
-                      key={d.id}
-                      className="absolute flex items-end text-[11px] text-blekk-svak"
-                      style={stil}
-                    >
-                      Dør
-                    </div>
-                  );
-                return (
-                  <div
-                    key={d.id}
-                    className="absolute"
-                    style={{
-                      ...stil,
-                      background:
-                        "repeating-linear-gradient(90deg, var(--color-linje) 0 12px, transparent 12px 18px)",
-                      backgroundSize: "100% 4px",
-                      backgroundRepeat: "no-repeat",
-                      backgroundPosition: "center",
-                    }}
-                  />
-                );
-              })}
+                })}
 
               {/* De ledige plassene, og slippmål for dra. */}
               {plasser.map((p) => {

@@ -14,8 +14,36 @@ export function kortnavn(e: Pick<Utelev, "fornavn" | "etternavn">): string {
   return forbokstav ? `${e.fornavn} ${forbokstav.toUpperCase()}.` : e.fornavn;
 }
 
-/** Rammen rundt alt som er tegnet i rommet. */
+/**
+ * Rammen rundt rommet slik kartet tegnes: pultene, tavla og kateteret.
+ * Dør og vinduer teller ikke med — står de langt unna, ville de bare gitt
+ * tom luft (21.10). De tegnes når de er innenfor rammen.
+ */
 export function romramme(deler: Del[]): {
+  x: number;
+  y: number;
+  b: number;
+  h: number;
+} {
+  const viktige = deler.filter((d) => d.type !== "dor" && d.type !== "vindu");
+  return heleRammen(viktige.length > 0 ? viktige : deler);
+}
+
+/** Om en del ligger innenfor rammen (dør og vinduer langt unna gjør ikke). */
+export function innenfor(
+  d: Del,
+  r: { x: number; y: number; b: number; h: number },
+): boolean {
+  const { b, h } = storrelse(d);
+  return (
+    d.x >= r.x - 40 &&
+    d.y >= r.y - 40 &&
+    d.x + b <= r.x + r.b + 40 &&
+    d.y + h <= r.y + r.h + 40
+  );
+}
+
+function heleRammen(deler: Del[]): {
   x: number;
   y: number;
   b: number;
@@ -85,6 +113,7 @@ export function kartSvg({
     `<text x="${marg}" y="34" font-size="18" font-weight="600" fill="#241f33">${esc(tittel)}</text>`,
   );
   for (const d of deler) {
+    if (!innenfor(d, r)) continue;
     const { b, h } = storrelse(d);
     const p = snu(d.x, d.y, b, h);
     const x = tx(p.x);
