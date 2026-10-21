@@ -205,7 +205,7 @@ seg sammen og pila går. Ny skjerm: én rad.
 **Visningsbryteren i Økter står i verktøylinja**, rett etter tittelen og på
 samme sted i alle visningene. Uten fag: «Økter» og Liste | Kalender. Med et
 fag valgt (fra undermenyen eller ⌘1–9): fagfirkant og kode som tittel, og
-Oversikt | Økter | Kalender. Et fag i undermenyen åpner Oversikt (fagsiden).
+Oversikt | Økter | Kalender. Et fag i undermenyen åpner alltid Oversikt (fagsiden), også fra lista eller kalenderen.
 Periodevisningen er tatt bort. Kalenderen har sin egen bryter, Uke | Måned.
 
 **Merkelapper** (piller) brukes der noe skal kunne tas i: periodene, fagfilter,

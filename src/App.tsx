@@ -152,16 +152,18 @@ export default function App() {
     });
   }, []);
 
-  /** Et fag fra undermenyen eller ⌘1–9: Økter, filtrert på faget. */
+  /**
+   * Et fag fra undermenyen eller ⌘1–9: Oversikt for faget (11.2), også fra
+   * lista eller kalenderen. Står du i Året, blir du der. «Alle fag» har
+   * ingen oversikt: da lista, eller kalenderen hvis du står i den.
+   */
   const velgFag = useCallback((id: string) => {
     setOktFag(id);
     setHistorikk((h) => {
       const na = h.steder[h.peker];
-      // Står du i liste eller kalender, blir du der. Fra fagsiden til «Alle
-      // fag» går du til lista, for alle fag har ingen fagside.
-      if (na.visning === "okter" || na.visning === "kalender") return h;
-      if ((na.visning === "oversikt" || na.visning === "aret") && id) return h;
-      // Ellers åpner et fag fagsiden (11.2), og «Alle fag» lista.
+      if (id && (na.visning === "oversikt" || na.visning === "aret")) return h;
+      if (!id && (na.visning === "okter" || na.visning === "kalender"))
+        return h;
       const steder = [
         ...h.steder.slice(0, h.peker + 1),
         { visning: (id ? "oversikt" : "okter") as Visning, id: null },
