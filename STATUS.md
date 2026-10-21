@@ -15,6 +15,7 @@ Lerretet (`docs/lerret/`) er fasit for det som er tegnet.
   lille webserveren i Rust. Kalender betyr nå bare CalDAV (§8.1). Et gammelt
   abonnement i Apple Kalender slutter å oppdatere seg og kan slettes der.
 - Et fag i sidemenyen (og ⌘1–9) åpner alltid fagets Oversikt.
+- Valglinja i Elever har «Mentorelever» / «Ikke mentorelever» for alle valgte.
 
 ## Utkast for vurderinger (21.10, ARBEIDSLISTE §24)
 

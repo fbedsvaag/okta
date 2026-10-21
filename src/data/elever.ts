@@ -324,6 +324,31 @@ export async function settMentor(
   return true;
 }
 
+/**
+ * Mentormerket for flere elever under ett (valglinja i Elever), i én
+ * transaksjon. Elever uten klasse i året hoppes over. Gir hvor mange som
+ * ble endret.
+ */
+export async function settMentorFor(
+  elevIder: string[],
+  skolearId: string,
+  pa: boolean,
+): Promise<number> {
+  if (elevIder.length === 0) return 0;
+  const plass = elevIder.map((_, i) => `$${i + 2}`).join(", ");
+  const rader = await hent<{ id: string }>(
+    `SELECT id FROM elev_klasse
+      WHERE skolear_id = $1 AND slettet IS NULL AND elev_id IN (${plass})`,
+    [skolearId, ...elevIder],
+  );
+  const t = new Transaksjon();
+  for (const r of rader)
+    t.oppdater("elev_klasse", r.id, { mentor: pa ? 1 : 0 });
+  await t.kjor();
+  varsleElever();
+  return rader.length;
+}
+
 export async function settKlasse(
   elevId: string,
   skolearId: string,

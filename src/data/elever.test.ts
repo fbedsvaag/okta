@@ -16,6 +16,7 @@ const {
   koblePaFag,
   settKlasse,
   settMentor,
+  settMentorFor,
   slettEleverIAr,
   tellEleverIAr,
   tellSkaringerIFag,
@@ -100,6 +101,22 @@ describe("mentorgruppa", () => {
 
     expect((await hentElever(skolearId))[0].mentor).toBe(true);
     expect((await hentElever(nesteAr))[0].mentor).toBe(false);
+  });
+});
+
+describe("mentormerket for mange (valglinja)", () => {
+  it("setter og fjerner merket for alle valgte, og hopper over elever uten klasse", async () => {
+    const a = await elevIKlasse("Tony", "1STC");
+    const b = await elevIKlasse("Carmela", "1STC");
+    const uten = await opprettElev("Paulie", "Gualtieri");
+
+    expect(await settMentorFor([a, b, uten], skolearId, true)).toBe(2);
+    let mentor = (await hentElever(skolearId)).filter((e) => e.mentor);
+    expect(mentor.map((e) => e.id).sort()).toEqual([a, b].sort());
+
+    expect(await settMentorFor([a, b], skolearId, false)).toBe(2);
+    mentor = (await hentElever(skolearId)).filter((e) => e.mentor);
+    expect(mentor).toEqual([]);
   });
 });
 

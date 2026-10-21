@@ -7,6 +7,7 @@ import {
   giKlasseNyttNavn,
   hentElever,
   hentKlasser,
+  settMentorFor,
   slettElever,
   slettKlasse,
   type ElevRad,
@@ -316,6 +317,29 @@ export function Elever({
     );
   }
 
+  /** Alle valgte er mentorelever: da fjerner knappen merket, ellers setter den. */
+  const valgteErMentor =
+    valgte.size > 0 &&
+    elever.filter((e) => valgte.has(e.id)).every((e) => e.mentor);
+
+  async function mentorForValgte() {
+    const hvem = elever.filter((e) => valgte.has(e.id));
+    const pa = !valgteErMentor;
+    const n = await settMentorFor(
+      hvem.map((e) => e.id),
+      skolearId,
+      pa,
+    );
+    await last();
+    const uten = hvem.length - n;
+    visToast(
+      (pa
+        ? `${n} ${n === 1 ? "elev er mentorelev" : "elever er mentorelever"}`
+        : `${n} ${n === 1 ? "elev er ikke lenger mentorelev" : "elever er ikke lenger mentorelever"}`) +
+        (pa && uten > 0 ? ` · ${uten} uten klasse ble hoppet over` : ""),
+    );
+  }
+
   const trengerOppfolging = synlige.filter(
     (e) => tall.get(e.id)?.glipper || forfalte.has(e.id),
   ).length;
@@ -604,6 +628,9 @@ export function Elever({
         hva={["elev", "elever"]}
         onTom={() => setValgte(new Set())}
       >
+        <Linjeknapp onKlikk={() => void mentorForValgte()}>
+          {valgteErMentor ? "Ikke mentorelever" : "Mentorelever"}
+        </Linjeknapp>
         <Linjeknapp fare onKlikk={() => void slettValgte()}>
           Slett
         </Linjeknapp>
