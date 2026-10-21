@@ -2479,3 +2479,13 @@ textarea,
   background: var(--color-ark);
   box-shadow: 0 18px 48px rgba(36, 31, 51, 0.22);
 }
+
+/* Forhåndsvisningen når noe dras og byttes: tones rolig inn. */
+.dra-forhand {
+  animation: dra-forhand 150ms ease-out;
+}
+@keyframes dra-forhand {
+  from {
+    opacity: 0;
+  }
+}

@@ -317,6 +317,8 @@ export function KlassekartKart({
     x: number;
     y: number;
     flyttet: boolean;
+    /** plassen pekeren står over, til forhåndsvisningen */
+    mal?: number | null;
   } | null>(null);
   const draRef = useRef(dra);
   draRef.current = dra;
@@ -363,6 +365,7 @@ export function KlassekartKart({
             y: e.clientY,
             flyttet:
               d.flyttet || Math.hypot(e.clientX - d.x, e.clientY - d.y) > 4,
+            mal: malVed(e.clientX, e.clientY),
           },
       );
     const slipp = (e: PointerEvent) => {
@@ -394,6 +397,26 @@ export function KlassekartKart({
       window.removeEventListener("pointerup", slipp);
     };
   }, [dra !== null]);
+
+  /** Plassen under pekeren mens det dras, eller null. */
+  function malVed(x: number, y: number): number | null {
+    const el = document
+      .elementFromPoint(x, y)
+      ?.closest<HTMLElement>("[data-plass]");
+    return el ? Number(el.dataset.plass) : null;
+  }
+
+  // Forhåndsvisning (som i Økter): eleven som sitter der du sikter, tones
+  // ned, og på plassen du drar fra tones den eleven inn.
+  const fraPlass = dra?.flyttet ? plass.get(dra.elevId) : undefined;
+  const malPlass =
+    dra?.flyttet && dra.mal != null && dra.mal !== fraPlass ? dra.mal : null;
+  const byttesMed =
+    malPlass != null
+      ? ([...plass].find(
+          ([id, nr]) => nr === malPlass && id !== dra?.elevId,
+        )?.[0] ?? null)
+      : null;
 
   // ------------------------------------------------------------- tegne
 
@@ -656,7 +679,11 @@ export function KlassekartKart({
                   <div
                     key={p.nr}
                     data-plass={p.nr}
-                    className="absolute flex items-center justify-center rounded-[7px] text-[12px] text-linje-sterk"
+                    className={`absolute flex items-center justify-center rounded-[7px] text-[12px] text-linje-sterk transition-shadow duration-150 ${
+                      malPlass === p.nr && !elevPa.has(p.nr)
+                        ? "shadow-[inset_0_0_0_1.5px_var(--color-aksent)]"
+                        : ""
+                    }`}
                     style={{
                       left: px(q.x) - 48 * skala,
                       top: py(q.y) - 27 * skala,
@@ -668,6 +695,41 @@ export function KlassekartKart({
                   </div>
                 );
               })}
+
+              {/* Den som byttes, tonet inn på plassen du drar fra. */}
+              {byttesMed &&
+                fraPlass != null &&
+                (() => {
+                  const p = plasser.find((x) => x.nr === fraPlass);
+                  const e = elevAv.get(byttesMed);
+                  if (!p || !e) return null;
+                  const q = snu(p.x, p.y);
+                  return (
+                    <div
+                      key={`forhand-${byttesMed}`}
+                      aria-hidden
+                      className="dra-forhand pointer-events-none absolute z-[2] flex items-center gap-2 overflow-hidden rounded-[7px] bg-ark px-2 text-blekk-dempet shadow-[inset_0_0_0_1.5px_var(--color-aksent)]"
+                      style={{
+                        left: px(q.x) - 48 * skala,
+                        top: py(q.y) - 27 * skala,
+                        width: 96 * skala,
+                        height: 54 * skala,
+                      }}
+                    >
+                      {skala >= 0.9 && (
+                        <Elevfoto elevId={byttesMed} storrelse={24} />
+                      )}
+                      <span className="flex min-w-0 flex-col leading-tight">
+                        <span className="truncate text-[calc(13px*var(--tekst-skala))] font-medium">
+                          {e.fornavn}
+                        </span>
+                        <span className="truncate text-[calc(11px*var(--tekst-skala))]">
+                          {e.etternavn}
+                        </span>
+                      </span>
+                    </div>
+                  );
+                })()}
 
               {/*
                 Elevene, med nøkkel på eleven og ikke på plassen: stokkes
@@ -697,8 +759,12 @@ export function KlassekartKart({
                         flyttet: false,
                       });
                     }}
-                    className={`kartelev absolute flex cursor-grab items-center gap-2 overflow-hidden rounded-[7px] px-2 text-left hover:bg-ark/70 ${
-                      dra?.flyttet && dra.elevId === id ? "opacity-30" : ""
+                    className={`kartelev absolute flex cursor-grab items-center gap-2 overflow-hidden rounded-[7px] px-2 text-left transition-opacity duration-150 hover:bg-ark/70 ${
+                      dra?.flyttet && dra.elevId === id
+                        ? "opacity-30"
+                        : byttesMed === id
+                          ? "opacity-35"
+                          : ""
                     }`}
                     style={{
                       left: px(q.x) - 48 * skala,
