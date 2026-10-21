@@ -654,7 +654,10 @@ export function OktPanel({
             </aside>
           </div>
 
-          <Tastestripe klasse="shrink-0 justify-start gap-4 px-[22px]">
+          <Tastestripe
+            id="skaring"
+            klasse="shrink-0 justify-start gap-4 px-[22px]"
+          >
             <Tasthint
               taster={plott
                 .filter((v) => v.rang > 0)

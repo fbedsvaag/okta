@@ -1559,7 +1559,7 @@ function Titt({
           </div>
         </div>
       </div>
-      <Tastestripe>
+      <Tastestripe id="titt">
         <Tasthint taster={["↑", "↓"]}>neste økt</Tasthint>
         <Tasthint taster={["mellomrom"]}>lukk</Tasthint>
         <button

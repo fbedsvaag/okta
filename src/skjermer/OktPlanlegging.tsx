@@ -185,7 +185,10 @@ export function OktPlanlegging({
         </aside>
       </div>
 
-      <Tastestripe klasse="shrink-0 justify-start gap-4 px-[22px]">
+      <Tastestripe
+        id="planlegging"
+        klasse="shrink-0 justify-start gap-4 px-[22px]"
+      >
         <Tasthint taster={[tast("⌘"), "←", "→"]}>forrige / neste økt</Tasthint>
         <Tasthint taster={["↵"]}>
           {enkel ? "ny linje" : "ny aktivitet"}

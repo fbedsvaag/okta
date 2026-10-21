@@ -27,6 +27,9 @@ Lerretet (`docs/lerret/`) er fasit for det som er tegnet.
   Timeregnskap og periodestolpene på fagsiden er grå; fagbryterne er
   nøytrale med firkant. Fagknappene i fagvelgeren likeså. Ikke rørt:
   klassekartet og periodelinja i økta (utenfor 20.2).
+- **20.4 Tastestripa tones ned** etter 25 tastetrykk utenfor felt (telles
+  per stripe i `innstilling`, `tastestripe:skaring|planlegging|titt`).
+  Helt synlig mens ⌘ holdes og når musa er over.
 
 ## Runde 19 (20.10, ARBEIDSLISTE §19)
 
