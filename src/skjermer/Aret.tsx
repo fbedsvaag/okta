@@ -10,6 +10,7 @@ import {
   type OktVurdering,
 } from "../data/okter";
 import {
+  endrePeriode,
   hentPerioder,
   hentPeriodemal,
   settPeriodemal,
@@ -37,6 +38,7 @@ import { leggTilAngring } from "../ui/angre";
 import { Vurderingsikon } from "../ui/Vurderingsikon";
 import { finnFjoraret, type Fjorar } from "../data/mal";
 import { Malark } from "./Malark";
+import { Redigerbartnavn } from "../ui/Redigerbartnavn";
 import { ArsTavle } from "./ArsTavle";
 import { Bryter } from "../ui/felles";
 import { IVerktoylinja } from "../ui/Verktoylinje";
@@ -759,6 +761,10 @@ export function Aret({ skolear, fag }: { skolear: Skolear; fag: FagIAr }) {
                 })
               }
               onDra={(e) => draFraLista(e, p)}
+              onNavn={async (navn) => {
+                await endrePeriode(p.id, { navn });
+                await last();
+              }}
               onTema={(id, tema) => {
                 setOkter((l) =>
                   l.map((o) => (o.id === id ? { ...o, tema } : o)),
@@ -955,6 +961,7 @@ function Periodekort({
   onFold,
   onDra,
   onTema,
+  onNavn,
 }: {
   p: Periode;
   spenn: Spenn | null;
@@ -968,6 +975,7 @@ function Periodekort({
   onFold: () => void;
   onDra: (e: React.PointerEvent) => void;
   onTema: (oktId: string, tema: string | null) => void;
+  onNavn: (navn: string) => void | Promise<void>;
 }) {
   const plasser = spenn ? stripe.slice(spenn.fra, spenn.til + 1) : [];
   const vurd = plasser.flatMap((x) =>
@@ -1015,7 +1023,7 @@ function Periodekort({
         />
         <span className="min-w-0 flex-1">
           <span className="block text-[calc(13.5px*var(--tekst-skala))] font-medium">
-            {p.navn}
+            <Redigerbartnavn verdi={p.navn} onLagre={onNavn} />
           </span>
           <span className="block text-etikett tabular-nums text-blekk-svak">
             {spenn

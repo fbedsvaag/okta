@@ -182,28 +182,41 @@ function Merkelapp({
   onDobbeltklikk?: () => void;
 }) {
   return (
-    <button
-      onClick={onKlikk}
-      onDoubleClick={onDobbeltklikk}
-      title={tittel}
-      aria-pressed={aktiv}
-      className={`inline-flex items-center gap-1.5 rounded-stor border px-2 py-0.5 text-liten ${
-        aktiv
-          ? "border-aksent font-medium text-blekk"
-          : "border-transparent text-blekk-dempet hover:text-blekk"
-      }`}
-      style={{ background: "var(--color-flate)" }}
-    >
-      <span
-        aria-hidden
-        className="h-2 w-2 rounded-full"
-        style={{ background: farge ?? "var(--color-linje-sterk)" }}
-      />
-      {navn}
-      <span className="tabular-nums text-blekk-svak">
-        {tall?.antall ?? 0} · {timerKort(tall?.minutter ?? 0)}
-      </span>
-    </button>
+    <span className="group relative inline-flex">
+      <button
+        onClick={onKlikk}
+        onDoubleClick={onDobbeltklikk}
+        title={tittel}
+        aria-pressed={aktiv}
+        className={`inline-flex items-center gap-1.5 rounded-stor border px-2 py-0.5 text-liten ${
+          aktiv
+            ? "border-aksent font-medium text-blekk"
+            : "border-transparent text-blekk-dempet hover:text-blekk"
+        }`}
+        style={{ background: "var(--color-flate)" }}
+      >
+        <span
+          aria-hidden
+          className="h-2 w-2 rounded-full"
+          style={{ background: farge ?? "var(--color-linje-sterk)" }}
+        />
+        {navn}
+        <span className="tabular-nums text-blekk-svak">
+          {tall?.antall ?? 0} · {timerKort(tall?.minutter ?? 0)}
+        </span>
+      </button>
+      {/* Nytt navn uten å måtte vite om dobbeltklikket (21.10). */}
+      {onDobbeltklikk && (
+        <button
+          onClick={onDobbeltklikk}
+          title="Gi nytt navn"
+          aria-label={`Gi ${navn} nytt navn`}
+          className="ml-0.5 rounded px-1 text-[12px] text-blekk-svak opacity-0 hover:text-blekk focus:opacity-100 group-hover:opacity-100"
+        >
+          ✎
+        </button>
+      )}
+    </span>
   );
 }
 

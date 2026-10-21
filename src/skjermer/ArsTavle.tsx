@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from "react";
 import type { FagIAr } from "../data/fag";
 import { endreOkt, type OktVurdering } from "../data/okter";
-import type { Periode } from "../data/perioder";
+import { endrePeriode, type Periode } from "../data/perioder";
 import {
   baklengs,
   nyPeriode,
@@ -13,6 +13,7 @@ import { byttInnhold, kolonner, tilKolonne } from "../data/tavle";
 import { visToast } from "../ui/Toast";
 import { leggTilAngring } from "../ui/angre";
 import { Vurderingsikon } from "../ui/Vurderingsikon";
+import { Redigerbartnavn } from "../ui/Redigerbartnavn";
 
 /** Hvor lenge innholdet bruker på å lande når det slippes (ms). */
 const LANDING = 280;
@@ -304,7 +305,14 @@ export function ArsTavle({
                 <b
                   className={`text-brod font-semibold ${k.periode ? "" : "text-blekk-dempet"}`}
                 >
-                  {k.periode?.navn ?? "Uten periode"}
+                  {k.periode ? (
+                    <Redigerbartnavn
+                      verdi={k.periode.navn}
+                      onLagre={(navn) => endrePeriode(k.periode!.id, { navn })}
+                    />
+                  ) : (
+                    "Uten periode"
+                  )}
                 </b>
                 <div className="mt-0.5 text-etikett tabular-nums text-blekk-svak">
                   {kort(forste.dato)} → {kort(siste.dato)}

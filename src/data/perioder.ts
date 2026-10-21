@@ -1,5 +1,6 @@
 import { hent, oppdater, settInn, slett } from "../db";
 import type { Okt } from "./okter";
+import { varsle } from "./endringer";
 
 /**
  * Perioder, SPEC §3.3 og §4.2.
@@ -103,6 +104,7 @@ export async function endrePeriode(
     if (p?.start && p.slutt)
       await fargeleggSpenn(id, p.skolearFagId, p.start, p.slutt);
   }
+  varsle();
 }
 
 async function fargeleggSpenn(
