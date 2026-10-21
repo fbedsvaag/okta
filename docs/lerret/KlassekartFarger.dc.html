@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<title>Klassekart med gruppefarger</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#d4cee2}
+:root{--pal:#4a3d7d;--pal-lys:#e3ddf0;--pal-mid:#b2a8d2;--pal-svak:#f4f2f9;--ease-sprett:cubic-bezier(.34,1.32,.5,1)}
+.pt{position:relative;z-index:1;display:flex;align-items:center;gap:9px;height:32px;padding:0 10px;border-radius:10px;color:#2e2840;font-size:14px}
+.pt.on{font-weight:500;color:#241f33}
+.under{position:relative;z-index:1;display:flex;align-items:center;gap:8px;min-height:28px;margin-left:22px;padding:3px 10px;border-radius:8px;color:#2e2840;font-size:13px}
+.under.on{font-weight:500}
+.under::before{content:"";position:absolute;left:-11px;top:-1px;bottom:-1px;width:1.5px;border-radius:1px;background:rgba(36,31,51,.16)}
+.kbd{margin-left:auto;font-size:11px;color:#6b6482;letter-spacing:.04em;font-weight:400}
+.navmark{position:absolute;left:8px;right:8px;border-radius:10px;background:rgba(255,255,255,.88);box-shadow:0 1px 3px rgba(36,31,51,.14),inset 0 1px 0 #fff;pointer-events:none}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;height:30px;padding:0 13px;border-radius:999px;border:1px solid #d9d4e8;background:#fff;color:#241f33;font:inherit;font-size:13px;cursor:pointer;white-space:nowrap}
+.btn.pri{background:var(--pal);border-color:var(--pal);color:#fff;font-weight:500}
+.btn.stille{border-color:transparent;background:transparent;color:#645d7a}
+.seg{position:relative;display:inline-flex;padding:2px;border-radius:999px;background:rgba(36,31,51,.06)}
+.seg button{all:unset;position:relative;z-index:1;cursor:pointer;height:26px;display:inline-flex;align-items:center;justify-content:center;font-size:12.5px;color:#645d7a;transition:color 200ms}
+.seg button.on{color:#241f33;font-weight:500}
+.tommel{position:absolute;top:2px;left:2px;height:26px;border-radius:999px;background:#fff;box-shadow:0 1px 3px rgba(36,31,51,.16);transition:transform 340ms var(--ease-sprett),width 340ms var(--ease-sprett)}
+.chip{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 9px;border-radius:12px;background:var(--pal-svak);font-size:12px;white-space:nowrap}
+.fk{width:8px;height:8px;border-radius:2px;flex:none;display:inline-block}
+.av{border-radius:50%;overflow:hidden;flex:none;display:inline-block;background:var(--pal-lys)}
+.ell{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.num{font-variant-numeric:tabular-nums}
+.h{font-size:13px;font-weight:600;margin:0}
+.kort{border-radius:14px;background:#fff;box-shadow:inset 0 0 0 1px #ece9f3;padding:16px 18px}
+.hm{border-radius:2px;display:inline-block}
+.g{background:#3f9d49}.y{background:#d9a92f}.r{background:#c04a3d}.o{background:#d5d8dd}
+.glide{transition:transform 260ms var(--ease-sprett),height 260ms var(--ease-sprett)}
+@media (prefers-reduced-motion: reduce){.glide,.tommel{transition:none!important}}
+
+.rom{display:grid;grid-template-columns:repeat(3,1fr);gap:18px 40px;user-select:none}
+.bord{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;border-radius:14px;background:#f4f2f9}
+.pl{position:relative;display:flex;align-items:center;gap:8px;height:52px;padding:0 10px;border-radius:10px;background:#fff;box-shadow:0 1px 1px rgba(36,31,51,.05);font-size:13px;line-height:1.15;cursor:pointer;transition:background 220ms,box-shadow 220ms}
+.pl small{display:block;font-size:11.5px;color:#8a82a3}
+.pl .ini{width:24px;height:24px;flex:none;border-radius:50%;background:#e3ddf0;font-size:9.5px;font-weight:600;display:grid;place-items:center;color:#4a3d7d}
+.pl.ledig{background:transparent;box-shadow:inset 0 0 0 1px #e3ddf0;color:#b8b0cc}
+.malmodus .pl{cursor:crosshair}
+.pl .fb{position:absolute;left:0;top:6px;bottom:6px;width:4px;border-radius:0 3px 3px 0}
+.tavle{height:30px;border-radius:8px;background:#eeebf5;display:grid;place-items:center;font-size:11.5px;letter-spacing:.08em;color:#8a82a3;margin:0 auto 20px;width:50%}
+.panel{width:290px;flex:none;border-left:1px solid #f1eff6;padding:4px 0 0 22px;display:flex;flex-direction:column;gap:16px;font-size:13px}
+.ph{font-size:12px;font-weight:600;color:#645d7a;margin-bottom:8px}
+.sw{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+.sw button{all:unset;cursor:pointer;width:28px;height:28px;border-radius:9px;transition:box-shadow 200ms,transform 200ms}
+.sw button.on{box-shadow:0 0 0 2px #fff,0 0 0 4px #241f33}
+.sw button.visk{display:grid;place-items:center;background:#fff;box-shadow:inset 0 0 0 1.5px #d9d4e8;color:#8a82a3;font-size:13px}
+.sw button.visk.on{box-shadow:inset 0 0 0 1.5px #d9d4e8,0 0 0 2px #fff,0 0 0 4px #241f33}
+.leg{display:flex;align-items:center;gap:9px;height:34px;border-bottom:1px solid #f3f1f8}
+.leg i{width:14px;height:14px;border-radius:4px;flex:none}
+.leg input{all:unset;flex:1;min-width:0;font-size:13px;padding:3px 6px;border-radius:6px}
+.leg input:hover{background:#f7f6fb}.leg input:focus{background:#fff;box-shadow:inset 0 0 0 1.5px var(--pal)}
+.leg small{color:#9a90b8;font-size:11.5px;white-space:nowrap}
+.tips{font-size:12px;color:#9a90b8;line-height:1.45}
+.lenke{all:unset;cursor:pointer;color:var(--pal);font-size:13px}
+.forslag{display:flex;flex-direction:column;gap:6px}
+.forslag button{all:unset;cursor:pointer;display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:10px;box-shadow:inset 0 0 0 1px #ece9f3;font-size:12.5px}
+.forslag button:hover{box-shadow:inset 0 0 0 1.5px var(--pal)}
+.mini{display:grid;grid-template-columns:repeat(2,8px);gap:2px}.mini i{width:8px;height:6px;border-radius:2px}
+
+</style>
+</helmet>
+<div style="position:relative;height:1060px;padding:24px;box-sizing:border-box;overflow:hidden;font-family:'Geist',-apple-system,sans-serif;color:#241f33;font-size:14px">
+<div aria-hidden="true" style="position:absolute;left:-120px;top:-80px;width:620px;height:620px;border-radius:50%;background:#8a7bc2;filter:blur(70px);opacity:.75"></div>
+<div aria-hidden="true" style="position:absolute;left:-60px;top:560px;width:520px;height:520px;border-radius:50%;background:#5f9e98;filter:blur(80px);opacity:.7"></div>
+<div aria-hidden="true" style="position:absolute;right:-100px;top:-60px;width:700px;height:500px;border-radius:50%;background:#b8aee0;filter:blur(90px);opacity:.6"></div>
+<div style="position:relative;display:flex;height:1012px;border-radius:16px;overflow:hidden;background:rgba(236,234,241,.42);backdrop-filter:blur(40px) saturate(160%);box-shadow:0 24px 70px rgba(36,31,51,.28),0 0 0 1px rgba(36,31,51,.14)">
+<nav aria-label="Hovedmeny" style="position:relative;width:236px;flex:none;margin:10px;padding:12px 8px;box-sizing:border-box;display:flex;flex-direction:column;gap:2px;border-radius:22px;background:rgba(255,255,255,.5);backdrop-filter:blur(28px) saturate(170%);border:1px solid rgba(255,255,255,.75);box-shadow:inset 0 1px 0 rgba(255,255,255,.95),0 10px 30px rgba(36,31,51,.14)">
+<div style="display:flex;align-items:center;gap:8px;padding:2px 8px 10px"><svg width="20" height="20" viewBox="0 0 1024 1024" aria-hidden="true"><rect x="40" y="40" width="944" height="944" rx="215" fill="#241F33"></rect><rect x="290" y="330" width="200" height="364" rx="44" fill="#EEEDFE"></rect><rect x="516" y="330" width="100" height="364" rx="40" fill="#C9C2DD"></rect><rect x="642" y="330" width="100" height="364" rx="40" fill="#9A90B8"></rect></svg><span style="font-weight:600;font-size:14px">Økta</span><span class="num" style="margin-left:auto;font-size:11px;color:#4b4560">2026/27</span></div>
+<div style="display:flex;align-items:center;gap:8px;height:30px;padding:0 12px;margin-bottom:10px;border-radius:999px;background:rgba(255,255,255,.55);border:1px solid rgba(255,255,255,.75);font-size:13px;color:#4b4560">Søk<span class="kbd">⌘K</span></div>
+<div class="navmark" style="top:261px;height:32px;"></div><div class="pt ">I dag<span class="kbd">G D</span></div><div class="pt ">Økter<span class="kbd">G Ø</span></div><div class="pt ">Elever<span class="kbd">G E</span></div><div class="pt ">Vurderinger<span class="kbd">G V</span></div><div class="pt ">Samtaler<span class="kbd">G S</span></div><div class="pt on">Plasser og grupper<span class="kbd">G P</span></div>
+<div style="flex:1"></div><div class="pt">Innstillinger<span class="kbd">⌘,</span></div></nav>
+<main style="position:relative;flex:1;min-width:0;margin:10px 10px 10px 0;background:#fff;border-radius:16px;box-shadow:0 1px 3px rgba(36,31,51,.10);display:flex;flex-direction:column;overflow:hidden">
+<header style="display:flex;align-items:center;gap:10px;margin:10px 12px 0;padding:0 8px 0 18px;height:48px;border-radius:999px;background:rgba(255,255,255,.7);backdrop-filter:blur(28px) saturate(170%);border:1px solid rgba(255,255,255,.8);box-shadow:inset 0 1px 0 rgba(255,255,255,.95),0 6px 20px rgba(36,31,51,.10),0 0 0 .5px rgba(36,31,51,.08);flex:none"><span style="font-size:18px;color:#645d7a;margin-right:2px">‹</span><span class="fk" style="width:11px;height:11px;border-radius:3px;background:#9a5a2c"></span><span style="font-weight:600;font-size:15px">MFL2</span><span style="font-size:13px;color:#645d7a">Rom 214</span>
+<span style="flex:1"></span><div class="seg"><span class="tommel" style="left:2px;width:102px"></span><button class="on" style="width:102px">Fra kateteret</button><button style="width:94px">Fra elevene</button></div>
+<button class="btn">Rediger rom</button><button class="btn">Del<span style="color:#9a90b8;font-size:11px">⌄</span></button></header>
+<div style="flex:1;min-height:0;overflow:hidden;padding:16px 28px 16px"><div style="display:flex;height:100%;min-height:0">
+<div style="flex:1;min-width:0;padding:4px 26px 0 0" class="{{romKl}}">
+<div style="display:flex;align-items:center;gap:10px;font-size:12.5px;color:#9a90b8;margin-bottom:8px"><span>26 elever · 30 plasser</span><span style="flex:1"></span><span>{{hint}}</span></div>
+<div class="tavle">TAVLE</div>
+<div class="rom" onPointerLeave="{{slipp}}"><sc-for list="{{bord}}" as="b" hint-placeholder-count="15"><div class="bord"><sc-for list="{{b.p}}" as="p" hint-placeholder-count="2"><div class="{{p.kl}}" style="background:{{p.bg}}" onPointerDown="{{p.ned}}" onPointerEnter="{{p.inn}}"><span class="fb" style="background:{{p.f}}"></span><sc-if value="{{p.har}}" hint-placeholder-val="{{ true }}"><span class="ini">{{p.ini}}</span><span>{{p.fn}}<small>{{p.en}}</small></span></sc-if><sc-if value="{{p.tom}}" hint-placeholder-val="{{ false }}"><span>Ledig</span></sc-if></div></sc-for></div></sc-for></div>
+</div>
+<div class="panel">
+<div><div class="ph">Farge på pultene</div><div class="seg"><span class="tommel" style="left:{{vx}};width:{{vw}}"></span><sc-for list="{{vis}}" as="v" hint-placeholder-count="3"><button class="{{v.kl}}" style="width:{{v.w}}" onClick="{{v.klikk}}">{{v.n}}</button></sc-for></div>
+<div class="tips" style="margin-top:6px">{{visHint}}</div></div>
+<sc-if value="{{erG}}" hint-placeholder-val="{{ true }}">
+<div><div class="ph">Pensel</div><div class="sw"><sc-for list="{{pensler}}" as="s" hint-placeholder-count="8"><button class="{{s.kl}}" style="background:{{s.c}}" onClick="{{s.klikk}}" title="{{s.t}}"></button></sc-for><button class="{{viskKl}}" onClick="{{viskT}}" title="Visk ut">⌫</button></div>
+<div class="tips" style="margin-top:8px">Klikk en pult for å fargelegge den, eller dra over flere. Klikk igjen for å ta bort.</div></div>
+<div><div class="ph">Fyll ut for meg</div><div class="forslag">
+<button onClick="{{fyll4}}"><span class="mini"><i style="background:#4f7ac0"></i><i style="background:#4f7ac0"></i><i style="background:#4f7ac0"></i><i style="background:#4f7ac0"></i></span>To og to par · bordet foran og bak</button>
+<button onClick="{{fyll2}}"><span class="mini"><i style="background:#4f7ac0"></i><i style="background:#4f7ac0"></i><i style="background:#c9922e"></i><i style="background:#c9922e"></i></span>Hvert bord sin gruppe</button>
+</div><div style="margin-top:8px"><button class="lenke" onClick="{{tom}}">Fjern alle farger</button></div></div>
+<div><div class="ph">Gruppene</div><sc-for list="{{leg}}" as="l" hint-placeholder-count="4"><div class="leg"><i style="background:{{l.c}}"></i><input value="{{l.n}}" onInput="{{l.skriv}}"><small>{{l.ant}}</small></div></sc-for>
+<sc-if value="{{ingenLeg}}" hint-placeholder-val="{{ false }}"><div class="tips">Ingen farger ennå.</div></sc-if></div>
+<div class="tips">Fargen hører til pulten. Stokker du plassene, blir fargene stående, og elevene får nye grupper. Kommer med i utskrift og bilde, aldri innsatsen.</div>
+<button class="btn" style="align-self:flex-start" onClick="{{tilGrupper}}">{{tilGrupperT}}</button>
+</sc-if>
+</div></div></div>
+</main>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1060}}'>
+var SEATS = [{"r": 0, "c": 0, "s": 0, "e": {"f": "Elias", "e": "Lie", "i": "r"}}, {"r": 0, "c": 0, "s": 1, "e": {"f": "Maja", "e": "Eide", "i": "y"}}, {"r": 0, "c": 1, "s": 0, "e": {"f": "Mathias", "e": "Strand", "i": "y"}}, {"r": 0, "c": 1, "s": 1, "e": {"f": "Ingrid", "e": "Solberg", "i": "g"}}, {"r": 0, "c": 2, "s": 0, "e": {"f": "Sigrid", "e": "Strand", "i": "y"}}, {"r": 0, "c": 2, "s": 1, "e": {"f": "Filip", "e": "Rønning", "i": "g"}}, {"r": 1, "c": 0, "s": 0, "e": {"f": "Hedda", "e": "Haugen", "i": "y"}}, {"r": 1, "c": 0, "s": 1, "e": {"f": "Ella", "e": "Lie", "i": "y"}}, {"r": 1, "c": 1, "s": 0, "e": {"f": "Emil", "e": "Rønning", "i": "y"}}, {"r": 1, "c": 1, "s": 1, "e": {"f": "Thea", "e": "Lie", "i": "y"}}, {"r": 1, "c": 2, "s": 0, "e": {"f": "Oskar", "e": "Haugen", "i": "g"}}, {"r": 1, "c": 2, "s": 1, "e": {"f": "Sander", "e": "Nygård", "i": "y"}}, {"r": 2, "c": 0, "s": 0, "e": {"f": "Aksel", "e": "Berg", "i": "y"}}, {"r": 2, "c": 0, "s": 1, "e": {"f": "Frida", "e": "Lund", "i": "y"}}, {"r": 2, "c": 1, "s": 0, "e": {"f": "Kasper", "e": "Vik", "i": "y"}}, {"r": 2, "c": 1, "s": 1, "e": {"f": "Sara", "e": "Moen", "i": "g"}}, {"r": 2, "c": 2, "s": 0, "e": {"f": "Tobias", "e": "Strand", "i": "r"}}, {"r": 2, "c": 2, "s": 1, "e": null}, {"r": 3, "c": 0, "s": 0, "e": {"f": "Ada", "e": "Rønning", "i": "y"}}, {"r": 3, "c": 0, "s": 1, "e": {"f": "Isak", "e": "Aas", "i": "g"}}, {"r": 3, "c": 1, "s": 0, "e": {"f": "Mina", "e": "Haugen", "i": "r"}}, {"r": 3, "c": 1, "s": 1, "e": {"f": "Henrik", "e": "Solberg", "i": "y"}}, {"r": 3, "c": 2, "s": 0, "e": {"f": "Johannes", "e": "Vik", "i": "g"}}, {"r": 3, "c": 2, "s": 1, "e": null}, {"r": 4, "c": 0, "s": 0, "e": {"f": "Live", "e": "Berg", "i": "g"}}, {"r": 4, "c": 0, "s": 1, "e": {"f": "Jonas", "e": "Sæther", "i": "r"}}, {"r": 4, "c": 1, "s": 0, "e": {"f": "Selma", "e": "Aas", "i": "y"}}, {"r": 4, "c": 1, "s": 1, "e": {"f": "Nora", "e": "Lund", "i": "g"}}, {"r": 4, "c": 2, "s": 0, "e": null}, {"r": 4, "c": 2, "s": 1, "e": null}], GF = ["#4f7ac0", "#c9922e", "#2f9a8a", "#c0607a", "#7d6bb0", "#5f8a3a", "#9a5a2c", "#2e6a8e"];
+var IC = { g: '#3f9d49', y: '#d9a92f', r: '#c04a3d' };
+class Component extends DCLogic {
+  constructor(p) { super(p); var f = SEATS.map(function () { return -1; });
+    // start: to og to par i første kolonne, så læreren ser poenget
+    [0, 1, 6, 7].forEach(function (i) { f[i] = 0; }); [12, 13, 18, 19].forEach(function (i) { f[i] = 1; }); [2, 3, 8, 9].forEach(function (i) { f[i] = 2; });
+    this.state = { vis: 'grupper', f: f, pensel: 3, visk: false, navn: {}, sendt: false }; this.maler = false; }
+  componentDidMount() { var self = this; this._opp = function () { self.maler = false; }; window.addEventListener('pointerup', this._opp); }
+  componentWillUnmount() { window.removeEventListener('pointerup', this._opp); }
+  mal(i, start) { var f = this.state.f.slice(), st = this.state;
+    if (start) { this.modus = st.visk || f[i] === st.pensel ? -1 : st.pensel; }
+    if (f[i] === this.modus) return; f[i] = this.modus; this.setState({ f: f, sendt: false }); }
+  fyll(par) { var f = SEATS.map(function () { return -1; }), n = 0, map = {};
+    SEATS.forEach(function (s, i) { if (!s.e) return; var key = par ? s.c + ':' + Math.floor(s.r / 2) : s.c + ':' + s.r; if (!(key in map)) map[key] = n++; f[i] = map[key] % GF.length; });
+    this.setState({ f: f, sendt: false }); }
+  renderVals() {
+    var self = this, st = this.state, o = {}, erG = st.vis === 'grupper';
+    var V = [['ingen', 'Ingen', 66], ['innsats', 'Innsats', 72], ['grupper', 'Grupper', 76]], x = 2;
+    o.vis = V.map(function (v) { if (v[0] === st.vis) { o.vx = x + 'px'; o.vw = v[2] + 'px'; } x += v[2]; return { n: v[1], w: v[2] + 'px', kl: v[0] === st.vis ? 'on' : '', klikk: function () { self.setState({ vis: v[0] }); } }; });
+    o.visHint = st.vis === 'innsats' ? 'Snitt av trafikklyset de siste 10 øktene. Vises bare for deg.' : st.vis === 'grupper' ? 'Du bestemmer hvem som er sammen.' : 'Ingen farger på pultene.';
+    o.erG = erG; o.romKl = erG ? 'malmodus' : '';
+    o.hint = erG ? (st.visk ? 'Visker ut' : 'Fargelegger') : 'Klikk en pult for å låse eleven der · dra for å bytte';
+    // rekkefølge: lesing fra tavla, venstre til høyre
+    var orden = [], sett = {}; SEATS.forEach(function (s, i) { var g = st.f[i]; if (g >= 0 && !sett[g]) { sett[g] = 1; orden.push(g); } });
+    var nr = {}; orden.forEach(function (g, j) { nr[g] = j + 1; });
+    var bord = []; for (var r = 0; r < 5; r++) for (var c = 0; c < 3; c++) {
+      var p = SEATS.map(function (s, i) { return [s, i]; }).filter(function (x) { return x[0].r === r && x[0].c === c; }).map(function (x) { var s = x[0], i = x[1], g = st.f[i], e = s.e;
+        var bg = '#fff', fb = 'transparent';
+        if (erG && g >= 0) { bg = GF[g] + '24'; fb = GF[g]; }
+        else if (st.vis === 'innsats' && e) { bg = IC[e.i] + '22'; fb = IC[e.i]; }
+        if (!e && !(erG && g >= 0)) bg = 'transparent';
+        return { kl: 'pl' + (e ? '' : ' ledig'), bg: bg, f: fb, har: !!e, tom: !e, ini: e ? (e.f[0] + e.e[0]).toUpperCase() : '', fn: e ? e.f : '', en: e ? e.e : '',
+          ned: function (ev) { if (!erG) return; ev.preventDefault(); self.maler = true; self.mal(i, true); },
+          inn: function () { if (erG && self.maler) self.mal(i, false); } }; });
+      bord.push({ p: p }); }
+    o.bord = bord; o.slipp = function () {};
+    o.pensler = GF.map(function (c, i) { return { c: c, t: 'Gruppe ' + (nr[i] || ''), kl: !st.visk && st.pensel === i ? 'on' : '', klikk: function () { self.setState({ pensel: i, visk: false }); } }; });
+    o.viskKl = 'visk' + (st.visk ? ' on' : ''); o.viskT = function () { self.setState({ visk: !st.visk }); };
+    o.fyll4 = function () { self.fyll(true); }; o.fyll2 = function () { self.fyll(false); };
+    o.tom = function () { self.setState({ f: SEATS.map(function () { return -1; }) }); };
+    o.leg = orden.map(function (g) { var ant = SEATS.filter(function (s, i) { return st.f[i] === g && s.e; }).length;
+      return { c: GF[g], n: st.navn[g] != null ? st.navn[g] : 'Gruppe ' + nr[g], ant: ant + (ant === 1 ? ' elev' : ' elever'),
+        skriv: function (e) { var n = Object.assign({}, st.navn); n[g] = e.target.value; self.setState({ navn: n }); } }; });
+    o.ingenLeg = orden.length === 0;
+    o.tilGrupper = function () { self.setState({ sendt: true }); }; o.tilGrupperT = st.sendt ? 'Lagret som gruppesett ✓' : 'Bruk som gruppesett';
+    return o;
+  }
+}
+</script>
+</body>
+</html>

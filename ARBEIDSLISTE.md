@@ -971,18 +971,38 @@ Vurderinger som hentes fra i fjor, er forslag til læreren har sett på dem.
 - [x] **24.4** «Bekreft» i vurderingspanelet og «Bekreft alle» over lista i
   Vurderinger. Ett klikk, ingen spørsmål. Testet i `mal.test.ts`.
 
-## 25. Plasser og grupper (21.10) — tegnet, venter på svar
+## 25. Plasser og grupper (21.10) — godkjent
 
 Tegning: `docs/lerret/PlasserGrupper.dc.html`. Grupper skal ikke ligge gjemt inne i et klassekart.
 
-- [ ] **25.1 Navn.** «Klassekart» → «Plasser og grupper» i menyen (snarvei G P). Vurder alternativer før vi bestemmer.
-- [ ] **25.2 To faner i verktøylinja:** Grupper (står først) · Klassekart. Fanen huskes.
+- [ ] **25.1 Navn.** «Klassekart» → «Plasser og grupper» i menyen (snarvei G P). Bestemt.
+- [ ] **25.2 To faner i verktøylinja:** Klassekart · Grupper (samme rekkefølge som navnet). Fanen huskes.
 - [ ] **25.3 Grupper uten kart.** Velg klasse/fag som chip (faget i økta du har nå er valgt). Krever ikke rom eller kart. Bruker samme `fordelGrupper` og historikk som i dag.
 - [ ] **25.4 Antall eller per gruppe.** Seg «Antall | Per gruppe» med − / +, og oppsummering («á 4 · 24 elever» / «6 grupper · 24 elever»).
 - [ ] **25.5 «Bare de som er her»** (på som standard): tar bort de som har fravær i dagens økt, og viser dem overstreket over gruppene.
 - [ ] **25.6** Tilfeldig/Spre/Samle, «Unngå samme som sist», dra elever mellom grupper, Stokk ⌘R med rolig FLIP (420 ms, ingen sprett). Kopier til Teams og Skriv ut lagrer settet.
-- [ ] **25.7 Lagrede grupper** i høyre kolonne, på tvers av fag. Klikk åpner settet.
+- [ ] **25.7 Lagrede grupper** som knapp i verktøylinja med nedtrekksliste (valgt klasse øverst). Gruppene får hele bredden.
+- [ ] **25.9 Bilde til elevene (PNG).** Knapp i verktøylinja åpner forhåndsvisning (1920 × 1080). Overskrift kan skrives, Navn: Fullt · **Fornavn + E.** (standard, «Aksel S.») · Fornavn (får etternavnsinitial hvis to heter det samme), «Dato i hjørnet». Hver gruppe har sin farge (fargelinje med «Gruppe n» + svak tone bak navnene).
+  - **ALDRI med i bildet:** innsatsprikken, fravær («Borte i dag»), notater, initialsirkler, modus (Spre/Samle) eller antall elever per gruppe. Bildet tegnes fra en egen funksjon som bare får `{ overskrift, grupper: [{ nr, farge, navn[] }] }` — ingen elevobjekter, så innsats kan ikke lekke inn ved et uhell.
+  - Test: render bildet for et sett der elevene har innsats, og sjekk at ingen piksel har trafikklysfargene (#3f9d49, #d9a92f, #c04a3d) og at funksjonen ikke tar imot innsatsfeltet.
+  - Lagres via lagre-dialog (Tauri), filnavn «MFL2 Veggavis.png». Lagrer også settet i historikken, som Kopier til Teams.
+  - Eksempel: `docs/lerret/PlasserGrupper-eksempel.png`.
+- [ ] **25.10 Kopier til Teams som tabell**, samme mønster som tidsplanen i Samtaler (`somTeamsHtml` + `ClipboardItem` med `text/html` og `text/plain`). Overskrift i fet, så tabell «Gruppe | Elever» med fargekvadrat ■ i gruppens farge foran «Gruppe n», og navnene kommaseparert. Ren tekst: «Gruppe 1: Aksel S., Maja B., …». Navnevalget (Fullt · Fornavn + E. · Fornavn) er det samme som for bildet, og huskes. Et lite felt under knappen viser hva som ble kopiert. Erstatter dagens tekstliste i `karttegning.ts`. Samme regel som 25.9: funksjonen får bare nummer, farge og navn, og en test sjekker at innsats og fravær aldri er med.
+- [ ] **25.11 Gruppefarger i klassekartet.** Tegning: `docs/lerret/KlassekartFarger.dc.html`. «Farge på pultene» får et tredje valg: Ingen · Innsats · **Grupper**. Med Grupper: pensel med 8 farger + visk ut; klikk en pult eller dra over flere for å fargelegge, klikk igjen tar bort. «Fyll ut for meg»: *To og to par* (bordet foran og bak = gruppe på 4, det vanligste) og *Hvert bord sin gruppe*; så justerer læreren for hånd. Gruppene listes med farge, navn som kan skrives om («Gruppe 1» som standard, nummerert lesende fra tavla) og antall. Fargen hører til **pulten**, ikke eleven: stokker du plassene, blir fargene stående. Kommer med i utskrift og PNG av kartet, aldri innsatsen. «Bruk som gruppesett» lagrer det som et gruppesett (historikken i 25.7/§26).
+- [ ] **25.12 Datamodell.** `oppsett.klassekart_id` er NOT NULL i dag, men 25.3 lager grupper uten kart. Løsning: knytt oppsett til kilden (fag/klasse) i stedet, eller lag et skjult kart per kilde. Velg det som gir minst migrering. Pultfargene lagres på rommets plasser per kart (ny tabell `kart_plassfarge(kart_id, plass_id, farge, gruppenavn)`).
 - [ ] **25.8 Klassekart-fanen:** kort per kart med liten plasskisse, rom som chips, «Nytt rom» og «Nytt kart» i verktøylinja.
+
+## 26. Samarbeid på elevkortet (21.10) — godkjent
+
+Tegning: `docs/lerret/ElevSamarbeid.dc.html`. Ny fane «Samarbeid» på elevkortet, per fag.
+
+- [ ] **26.1 Diagram.** Eleven i midten, klassekameratene i ring rundt. Avstand = hvor ofte de har vært sammen (ofte · av og til · aldri ytterst, stiplet). Tykkere strek = flere ganger. Hover/klikk løfter eleven fram.
+- [ ] **26.2 Kilde.** Lagrede gruppesett og sidemann i klassekartene (`oppsett` type gruppe/plass, `sammenFor`). Valg: Begge · Grupper · Sidemann. Sidemann = samme bord.
+- [ ] **26.3 «Har aldri vært sammen med …»** som chips, og «Sett sammen neste gang»: gruppelageren prøver å få eleven i gruppe med noen av disse ved neste Stokk i faget (myk regel, ikke tvang).
+- [ ] **26.4 Detaljer** for ett par: hver gang de var sammen (gruppe/sidemann, navnet på settet, dato).
+- [ ] **26.5 «Oftest sammen»**: topp 6 med stolpe.
+- [ ] **26.6 Bare for læreren.** Aldri i eksport, utskrift, Teams eller samtaler. Ingen ny lagring: alt regnes ut fra historikken.
+- [ ] **26.7 Senere:** hele klassen som matrise eller nettverk på fagsiden («hvem har ingen jobbet med?»).
 
 ## Ikke nå
 
