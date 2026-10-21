@@ -59,6 +59,7 @@ export const INDEKS: Oppslag[] = [
     tittel: "Jeg er mentor",
     ord: ["kontaktlærer", "mentorelever", "kontaktelever", "samtaler"],
   },
+  { side: "deg", k: "skole", tittel: "Skole", ord: ["skolenavn", "årsplan"] },
   { side: "deg", k: "mentorklasse", tittel: "Mentorklasse", ord: ["klasse"] },
   {
     side: "generelt",
@@ -87,6 +88,12 @@ export const INDEKS: Oppslag[] = [
     k: "fri",
     tittel: "Ferier og fridager",
     ord: ["skoleruta", "ferie", "planleggingsdag"],
+  },
+  {
+    side: "skolear",
+    k: "nyfri",
+    tittel: "Legg til ferie eller fridag",
+    ord: ["høstferie", "vinterferie", "påske", "jul"],
   },
   { side: "skolear", k: "nytt", tittel: "Neste skoleår", ord: ["nytt år"] },
   {
@@ -147,6 +154,30 @@ export const INDEKS: Oppslag[] = [
     ord: ["gdpr", "personvern", "data"],
   },
   {
+    side: "personvern",
+    k: "visbilder",
+    tittel: "Vis elevbilder",
+    ord: ["bilder", "foto", "skjul", "projektor"],
+  },
+  {
+    side: "personvern",
+    k: "slettbilder",
+    tittel: "Slett alle elevbilder",
+    ord: ["bilder", "foto"],
+  },
+  {
+    side: "personvern",
+    k: "slettelev",
+    tittel: "Slett en elev helt",
+    ord: ["fjern elev", "slett"],
+  },
+  {
+    side: "personvern",
+    k: "slettar",
+    tittel: "Slett elevene fra et tidligere år",
+    ord: ["i fjor", "gamle elever", "rydd", "slett"],
+  },
+  {
     side: "kalender",
     k: "strom",
     tittel: "Kalenderstrøm",
@@ -174,6 +205,12 @@ export const INDEKS: Oppslag[] = [
     ord: ["del", "kollega", "eksporter", "importer"],
   },
   { side: "om", k: "versjon", tittel: "Versjon" },
+  {
+    side: "om",
+    k: "oppdatering",
+    tittel: "Se etter oppdatering",
+    ord: ["ny versjon", "oppdater", "github"],
+  },
   {
     side: "om",
     k: "tilbake",

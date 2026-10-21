@@ -25,10 +25,11 @@ export function tittel(ark: Ark): string {
   return `${kode} · ${ark.fagNavn}`;
 }
 
-/** Linja under tittelen: år, faglærer og rom — det som finnes av dem. */
+/** Linja under tittelen: år, skole, faglærer og rom — det som finnes av dem. */
 export function undertittel(ark: Ark): string {
   return [
     `Årsplan ${ark.skolearNavn}`,
+    ark.skole,
     ark.laerer && `Faglærer: ${ark.laerer}`,
     ark.rom && `Rom: ${ark.rom}`,
   ]

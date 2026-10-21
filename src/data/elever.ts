@@ -45,6 +45,16 @@ export type ElevRad = {
 
 // ------------------------------------------------------------------ klasser
 
+/** Alle elevene, på tvers av år, sortert etter navn (Personvern, 23.9). */
+export async function hentAlleElever(): Promise<
+  { id: string; fornavn: string; etternavn: string }[]
+> {
+  return hent(
+    `SELECT id, fornavn, etternavn FROM elev WHERE slettet IS NULL
+      ORDER BY fornavn COLLATE NOCASE, etternavn COLLATE NOCASE`,
+  );
+}
+
 export async function hentKlasser(skolearId: string): Promise<Klasse[]> {
   return hent<Klasse>(
     `SELECT k.id, k.navn,
@@ -489,6 +499,12 @@ export async function slettElevHelt(elevId: string): Promise<void> {
   // Alt leses først, og slettingen skjer i én transaksjon: enten er hele
   // eleven borte, eller ingenting (#2).
   const t = new Transaksjon();
+  await slettElevHeltI(t, elevId);
+  await t.kjor();
+  varsleElever();
+}
+
+async function slettElevHeltI(t: Transaksjon, elevId: string): Promise<void> {
   for (const tabell of [
     "skaring",
     "oktnotat",
@@ -507,6 +523,147 @@ export async function slettElevHelt(elevId: string): Promise<void> {
   await slettElevbildeI(t, elevId);
   await slettForElevI(t, elevId);
   t.slett("elev", elevId);
+}
+
+// ------------------------------------------- elevene fra et tidligere år
+
+/** Elevene i året: med klasse eller fag der. */
+async function eleverIAr(skolearId: string): Promise<string[]> {
+  const rader = await hent<{ id: string }>(
+    `SELECT elev_id AS id FROM elev_klasse
+      WHERE skolear_id = $1 AND slettet IS NULL
+     UNION
+     SELECT ef.elev_id FROM elev_fag ef
+       JOIN skolear_fag sf ON sf.id = ef.skolear_fag_id
+      WHERE sf.skolear_id = $1 AND ef.slettet IS NULL`,
+    [skolearId],
+  );
+  return rader.map((r) => r.id);
+}
+
+/** Elevene i året som også har klasse eller fag i et annet år. */
+async function iAndreAr(skolearId: string): Promise<Set<string>> {
+  const rader = await hent<{ id: string }>(
+    `SELECT elev_id AS id FROM elev_klasse
+      WHERE skolear_id <> $1 AND slettet IS NULL
+     UNION
+     SELECT ef.elev_id FROM elev_fag ef
+       JOIN skolear_fag sf ON sf.id = ef.skolear_fag_id
+      WHERE sf.skolear_id <> $1 AND sf.slettet IS NULL
+        AND ef.slettet IS NULL`,
+    [skolearId],
+  );
+  return new Set(rader.map((r) => r.id));
+}
+
+export type Elevar = {
+  elever: number;
+  /** elever som bare finnes i året, og forsvinner helt */
+  helt: number;
+  skaringer: number;
+  vurderinger: number;
+  notater: number;
+};
+
+/** Hva «Slett elevene fra et tidligere år» tar med seg (23.9). */
+export async function tellEleverIAr(skolearId: string): Promise<Elevar> {
+  const elever = await eleverIAr(skolearId);
+  const andre = await iAndreAr(skolearId);
+  const [r] = await hent<Omit<Elevar, "elever" | "helt">>(
+    `SELECT
+       (SELECT COUNT(*) FROM skaring s
+          JOIN okt o ON o.id = s.okt_id
+          JOIN skolear_fag sf ON sf.id = o.skolear_fag_id
+         WHERE sf.skolear_id = $1 AND s.slettet IS NULL) AS skaringer,
+       (SELECT COUNT(*) FROM vurderingsresultat r
+          JOIN vurdering v ON v.id = r.vurdering_id
+          JOIN skolear_fag sf ON sf.id = v.skolear_fag_id
+         WHERE sf.skolear_id = $1 AND r.slettet IS NULL) AS vurderinger,
+       (SELECT COUNT(*) FROM elevnotat
+         WHERE skolear_id = $1 AND slettet IS NULL) AS notater`,
+    [skolearId],
+  );
+  return {
+    elever: elever.length,
+    helt: elever.filter((id) => !andre.has(id)).length,
+    skaringer: r?.skaringer ?? 0,
+    vurderinger: r?.vurderinger ?? 0,
+    notater: r?.notater ?? 0,
+  };
+}
+
+/**
+ * Sletter elevene fra ett skoleår (Innstillinger › Personvern, 23.9).
+ * Fag, økter, vurderinger og planer blir stående. Det som går, er alt som
+ * knytter elever til året: skår, resultater, notater, samtaler, klasser,
+ * fag og klassekart. En elev som bare finnes i dette året, slettes helt
+ * (med bilde); en som også går i et annet år, beholder det året.
+ * Én transaksjon (#2).
+ */
+export async function slettEleverIAr(skolearId: string): Promise<void> {
+  const elever = await eleverIAr(skolearId);
+  const andre = await iAndreAr(skolearId);
+  const t = new Transaksjon();
+  const sql: [string, string][] = [
+    [
+      "skaring",
+      `SELECT s.id FROM skaring s JOIN okt o ON o.id = s.okt_id
+         JOIN skolear_fag sf ON sf.id = o.skolear_fag_id
+        WHERE sf.skolear_id = $1 AND s.slettet IS NULL`,
+    ],
+    [
+      "oktnotat",
+      `SELECT n.id FROM oktnotat n JOIN okt o ON o.id = n.okt_id
+         JOIN skolear_fag sf ON sf.id = o.skolear_fag_id
+        WHERE sf.skolear_id = $1 AND n.slettet IS NULL`,
+    ],
+    [
+      "vurderingsresultat",
+      `SELECT r.id FROM vurderingsresultat r
+         JOIN vurdering v ON v.id = r.vurdering_id
+         JOIN skolear_fag sf ON sf.id = v.skolear_fag_id
+        WHERE sf.skolear_id = $1 AND r.slettet IS NULL`,
+    ],
+    [
+      "elevnotat",
+      "SELECT id FROM elevnotat WHERE skolear_id = $1 AND slettet IS NULL",
+    ],
+    [
+      "samtale",
+      `SELECT s.id FROM samtale s JOIN samtaledag d ON d.id = s.samtaledag_id
+        WHERE d.skolear_id = $1 AND s.slettet IS NULL`,
+    ],
+    [
+      "elev_fag",
+      `SELECT ef.id FROM elev_fag ef
+         JOIN skolear_fag sf ON sf.id = ef.skolear_fag_id
+        WHERE sf.skolear_id = $1 AND ef.slettet IS NULL`,
+    ],
+    [
+      "elev_klasse",
+      "SELECT id FROM elev_klasse WHERE skolear_id = $1 AND slettet IS NULL",
+    ],
+    [
+      "plassering",
+      `SELECT p.id FROM plassering p
+         JOIN klassekart k ON k.id = p.klassekart_id
+        WHERE k.skolear_id = $1 AND p.slettet IS NULL`,
+    ],
+    [
+      "elevregel",
+      `SELECT id FROM elevregel WHERE slettet IS NULL AND kilde_id IN (
+         SELECT id FROM skolear_fag WHERE skolear_id = $1
+         UNION SELECT id FROM klasse WHERE skolear_id = $1
+         UNION SELECT $1)`,
+    ],
+  ];
+  for (const [tabell, q] of sql)
+    for (const r of await hent<{ id: string }>(q, [skolearId]))
+      t.slett(tabell, r.id);
+  // Elever som bare fantes i året: resten av dem også. En rad som kommer
+  // med to ganger, får bare samme sletting igjen.
+  for (const id of elever.filter((e) => !andre.has(e)))
+    await slettElevHeltI(t, id);
   await t.kjor();
   varsleElever();
 }

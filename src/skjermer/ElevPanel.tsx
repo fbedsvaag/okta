@@ -1,4 +1,4 @@
-import { Plassholder } from "../ui/Elevfoto";
+import { Plassholder, visesElevbilder } from "../ui/Elevfoto";
 import { useEffect, useRef, useState } from "react";
 import { useArk } from "../ui/Arkstabel";
 import { Elevbilde } from "../ui/Elevbilde";
@@ -466,7 +466,7 @@ export function ElevPanel({
       <div className="min-h-0 flex-1 overflow-auto px-[30px] pb-[30px] pt-[22px]">
         {/* Identitet */}
         <div className="flex items-start gap-5">
-          {bilde ? (
+          {bilde && visesElevbilder() ? (
             <Elevbilde src={bilde} storrelse={76} hjorne={38} alt="" />
           ) : (
             <Plassholder storrelse={76} kjonn={elev.kjonn} />

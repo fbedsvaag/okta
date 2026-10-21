@@ -154,6 +154,7 @@ function Topp({ ark }: { ark: Ark }) {
           </h1>
         </div>
         <div className="text-right text-[12px] leading-[1.6] text-[#3a3450]">
+          {ark.skole && <div>{ark.skole}</div>}
           {ark.laerer && (
             <div>
               <span className="text-[#6b6480]">Faglærer</span> {ark.laerer}

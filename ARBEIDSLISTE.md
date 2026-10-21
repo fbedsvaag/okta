@@ -938,14 +938,17 @@ Tegning: `docs/lerret/Innstillinger2.dc.html`. Samme innhold som i dag, men i de
 - [x] **23.6 Generelt** får «I dag: Enkel/Full» (20.5). **Skoleår** får ferier og fridager, «Start 2027/28» (20.7) og tidligere år.
 - [x] **23.7 Personvern** starter med fire hake-linjer om hva som lagres og sendes, deretter innsyn, slett elev og slett et års elever.
 - [x] **23.8 Lys/mørk** ligger nederst i Utseende med merknad om at mørk ikke er ferdig.
-- [ ] **23.9 TODO, ikke bygget ennå** (avtalt 21.10):
-  - *Deg:* feltet Skole (står i toppen av utskrifter).
-  - *Personvern:* «Vis elevbilder» (av = initialer overalt), «Slett en elev
-    helt» (alle år og kopier eldre enn 30 dager) og «Slett elevene fra et
-    tidligere år». Innsyn har i dag bare en henvisning til elevkortet.
-  - *Om Økta:* «Se etter oppdatering» (krever nettkall; må avklares mot
-    regel 1 i CLAUDE.md).
-  - *Skoleår:* ferier legges til og fjernes inline (i dag via Skoleruta).
+- [x] **23.9 Det som ventet** (avtalt 21.10, bygget samme dag):
+  - *Deg:* feltet Skole. Står i toppen av årsplanen og i PDF-en.
+  - *Personvern:* «Vis elevbilder» (av = plassholderen overalt; bildene
+    blir liggende), «Slett alle elevbilder», «Slett en elev helt» (alle år)
+    og «Slett elevene fra et tidligere år» (fag, økter og planer står; en
+    elev som bare finnes i det året, slettes helt). Sikkerhetskopiene røres
+    ikke: de er veien tilbake.
+  - *Om Økta:* «Se etter oppdatering» åpner utgivelsessiden på GitHub i
+    nettleseren. Appen gjør ingen nettkall selv (regel 1).
+  - *Skoleår:* ferier legges til og fjernes rett i lista. Skoleruta er der
+    for hendelser og resten.
   - Avvik fra tegningen: «Jeg er mentor» i stedet for «kontaktlærer» (appen
     bruker mentor-ordene; språkvalg senere).
 

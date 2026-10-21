@@ -9,6 +9,16 @@ den skal bli. Fila eies fritt, i motsetning til SPEC.md.
 Utseendet står i `DESIGN.md`, som beskriver appen slik den er bygget.
 Lerretet (`docs/lerret/`) er fasit for det som er tegnet.
 
+## Innstillinger, det som ventet (21.10, ARBEIDSLISTE 23.9)
+
+- Skole under Deg, i toppen av årsplanen.
+- Personvern: bryter for elevbilder, slett alle bilder, slett en elev helt,
+  slett elevene fra et tidligere år (`slettEleverIAr`, testet).
+- Om Økta: «Se etter oppdatering» åpner GitHub i nettleseren, ingen nettkall.
+- Ferier legges til og fjernes på Skoleår-siden.
+- Klassekart-eksporten (PNG, utklipp, liste) er sjekket: bare fornavn og
+  forbokstav, aldri innsatsfarge, kjønn eller bilde. Testen er strammet inn.
+
 ## Egne karakterskalaer (21.10, ARBEIDSLISTE §22)
 
 `innstillinger/Skalaer.tsx` og `data/skalaer.ts`. Innebygde skalaer er låst

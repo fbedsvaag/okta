@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { hentAlleElevbilder, hentAlleKjonn } from "../data/elevbilde";
+import { hentInnstilling, settInnstilling } from "../data/skolear";
 import { lyttElever } from "../data/endringer";
 import { Elevbilde } from "./Elevbilde";
 
@@ -13,15 +14,26 @@ import { Elevbilde } from "./Elevbilde";
  */
 
 let bilder: Map<string, string> | null = null;
+/**
+ * «Vis elevbilder» (Innstillinger › Personvern, 23.9). Av: plassholderen
+ * overalt, f.eks. når skjermen vises for klassen. Bildene slettes ikke.
+ */
+export const VIS_ELEVBILDER = "vis_elevbilder";
+let visBilder = true;
 let kjonnene: Map<string, "j" | "g"> = new Map();
 let henter: Promise<void> | null = null;
 const abonnenter = new Set<() => void>();
 
 function hent() {
-  henter ??= Promise.all([hentAlleElevbilder(), hentAlleKjonn()])
-    .then(([m, k]) => {
+  henter ??= Promise.all([
+    hentAlleElevbilder(),
+    hentAlleKjonn(),
+    hentInnstilling(VIS_ELEVBILDER).catch(() => null),
+  ])
+    .then(([m, k, vis]) => {
       bilder = m;
       kjonnene = k;
+      visBilder = vis !== "av";
       abonnenter.forEach((f) => f());
     })
     .catch((e) => console.error("elevbilder:", e))
@@ -31,6 +43,18 @@ function hent() {
 }
 
 let lytter: (() => void) | null = null;
+
+/** Slår bildene av eller på overalt, og husker valget. */
+export async function settVisElevbilder(pa: boolean): Promise<void> {
+  visBilder = pa;
+  abonnenter.forEach((f) => f());
+  await settInnstilling(VIS_ELEVBILDER, pa ? "pa" : "av");
+}
+
+/** Om bildene vises (til bryteren i innstillingene). */
+export function visesElevbilder(): boolean {
+  return visBilder;
+}
 
 /** Alle bildene, etter elev. Tom til de er hentet. */
 export function useElevbilder(): Map<string, string> {
@@ -45,7 +69,7 @@ export function useElevbilder(): Map<string, string> {
       abonnenter.delete(oppdater);
     };
   }, []);
-  return bilder ?? new Map();
+  return visBilder ? (bilder ?? new Map()) : new Map();
 }
 
 export function Elevfoto({

@@ -14,6 +14,7 @@ import {
 import { taster, type Skalaverdi } from "../skala";
 import { skalafarge, TEMATEKST } from "../ui/farger";
 import { hentElevbilde } from "../data/elevbilde";
+import { visesElevbilder } from "../ui/Elevfoto";
 import { hentInnstilling, settInnstilling } from "../data/skolear";
 import { Elevbilde } from "../ui/Elevbilde";
 import { useInngang } from "../ui/bevegelse";
@@ -319,7 +320,7 @@ export function Samtalenotat({
           </span>
         ))}
         <div className="flex items-center gap-4 px-6 pb-4 pt-5">
-          {bilde ? (
+          {bilde && visesElevbilder() ? (
             <Elevbilde src={bilde} storrelse={56} hjorne={14} />
           ) : (
             <span className="grid h-14 w-14 shrink-0 place-items-center rounded-[14px] bg-flate text-tittel font-medium text-blekk-dempet">

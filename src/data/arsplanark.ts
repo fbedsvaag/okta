@@ -21,6 +21,8 @@ import { fasteTider } from "./fagside";
 
 /** Innstillingen med lærerens navn — standard faglærer i alle fag. */
 export const LAERERNAVN = "laerer_navn";
+/** Skolens navn, øverst på utskrifter (Innstillinger › Deg). Tomt = ingenting. */
+export const SKOLENAVN = "skole_navn";
 
 /**
  * Årsplanarket, SPEC §4.9.
@@ -170,6 +172,8 @@ export type Ark = {
   fagNavn: string;
   skolearNavn: string;
   laerer: string | null;
+  /** skolens navn fra Innstillinger › Deg; null når det ikke er satt */
+  skole: string | null;
   rom: string | null;
   arknotat: string | null;
   /** fra Udir når faget har kode, ellers fritekst som én bolk */
@@ -211,6 +215,7 @@ export function byggArk(inn: {
   perioder: Periode[];
   medPerioder: boolean;
   laererNavn: string | null;
+  skoleNavn?: string | null;
   kompetansemal: Kompetansemaal[];
   samtaletimer: number;
   /** kompetansemålkodene per økt og per periode (okt_/periode_kompetansemal) */
@@ -281,6 +286,7 @@ export function byggArk(inn: {
     fagNavn: fag.navn,
     skolearNavn: skolear.navn,
     laerer: med("laerer") ? (tom(fag.laerer) ?? tom(inn.laererNavn)) : null,
+    skole: tom(inn.skoleNavn ?? null),
     rom: med("rom") ? tom(fag.rom) : null,
     arknotat: med("arknotat") ? tom(fag.arknotat) : null,
     kompetansemal: med("kompetansemal") ? inn.kompetansemal : [],
@@ -375,6 +381,7 @@ export async function hentArk(
     oktmal,
     periodemal,
     fridager,
+    skoleNavn,
   ] = await Promise.all([
     hentOkter(skolear.id),
     hentOktVurderinger(skolear.id),
@@ -385,6 +392,7 @@ export async function hentArk(
     hentOktmalForFag(fag.id),
     hentPeriodemal(fag.id),
     hentFridager(skolear.id),
+    hentInnstilling(SKOLENAVN),
   ]);
   return byggArk({
     skolear,
@@ -394,6 +402,7 @@ export async function hentArk(
     perioder,
     medPerioder,
     laererNavn,
+    skoleNavn,
     kompetansemal: grep?.kompetansemaal ?? [],
     samtaletimer: samtale.get(fag.id)?.timer ?? 0,
     oktmal,

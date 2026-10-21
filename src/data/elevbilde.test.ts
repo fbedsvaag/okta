@@ -7,7 +7,7 @@ vi.mock("@tauri-apps/plugin-sql", () => ({
 }));
 
 const { opprettElev, slettElevHelt } = await import("./elever");
-const { settElevbilde, hentElevbilde, slettElevbilde } =
+const { settElevbilde, hentElevbilde, slettElevbilde, slettAlleElevbilder } =
   await import("./elevbilde");
 const { hent } = await import("../db");
 
@@ -44,5 +44,17 @@ describe("elevbilde", () => {
       [elev],
     );
     expect(rad.bilde).toBeNull();
+  });
+
+  it("alle kan fjernes under ett, og ingen bilder blir liggende", async () => {
+    const a = await opprettElev("Tony", "Soprano");
+    const b = await opprettElev("Carmela", "Soprano");
+    await settElevbilde(a, BILDE, "InSchool");
+    await settElevbilde(b, BILDE, "InSchool");
+    expect(await slettAlleElevbilder()).toBe(2);
+    const igjen = await hent<{ n: number }>(
+      "SELECT COUNT(*) AS n FROM elevbilde WHERE bilde IS NOT NULL",
+    );
+    expect(igjen[0].n).toBe(0);
   });
 });

@@ -78,6 +78,10 @@ describe("personvern i det som går ut", () => {
       expect(ut).not.toMatch(/kjonn|kjønn|innsats|0\.13|0\.97/i);
       expect(ut).not.toContain("data:image");
       expect(ut).not.toContain("<image");
+      // Ingen innsatsfarge på pultene: verken trafikklyset eller tokens.
+      expect(ut).not.toMatch(
+        /#3f9d49|#d9a92f|#c04a3d|lys-gronn|lys-gul|lys-rod/i,
+      );
     }
     expect(svg).toContain("Tony S.");
   });

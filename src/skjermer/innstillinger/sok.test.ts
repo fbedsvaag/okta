@@ -19,6 +19,8 @@ describe("søk i innstillingene (23.3)", () => {
     expect(sok("backup")[0]).toMatchObject({ side: "kopi", k: "kopinaa" });
     expect(sok("icloud")[0]).toMatchObject({ side: "kalender", k: "strom" });
     expect(sok("kontaktlærer")[0]).toMatchObject({ side: "deg", k: "mentor" });
+    expect(sok("projektor")[0]).toMatchObject({ k: "visbilder" });
+    expect(sok("gamle elever")[0]).toMatchObject({ k: "slettar" });
   });
 
   it("treffer sidens navn", () => {

@@ -16,6 +16,8 @@ const {
   koblePaFag,
   settKlasse,
   settMentor,
+  slettEleverIAr,
+  tellEleverIAr,
   tellSkaringerIFag,
 } = await import("./elever");
 const { leggFagIAr } = await import("./fag");
@@ -229,5 +231,56 @@ describe("ny elev i én transaksjon (19.1)", () => {
       }),
     ).rejects.toThrow();
     expect(await hentElever(skolearId)).toHaveLength(for_);
+  });
+});
+
+describe("slett elevene fra et tidligere år (23.9)", () => {
+  it("tar elevene og skåren fra året, men lar fag, økter og andre år stå", async () => {
+    const gronn = "5ca1ade1-0001-4000-8000-000000000004";
+    const fjor = await opprettSkolear("2025/26", "2025-08-18", "2026-06-19");
+    const fjorFag = await leggFagIAr(fjor, "MFL1", "Markedsføring", null);
+    const fjorOkt = await opprettOkt(fjorFag, "MFL1", "2025-09-01", null, 90);
+    const iarFag = await leggFagIAr(skolearId, "MFL2", "Markedsføring 2", null);
+    const iarOkt = await opprettOkt(iarFag, "MFL2", "2026-09-01", null, 90);
+
+    // Tony gikk i fjor og går i år, Paulie bare i fjor.
+    const tony = await opprettElev("Tony", "Soprano");
+    const paulie = await opprettElev("Paulie", "Gualtieri");
+    for (const e of [tony, paulie]) {
+      await koblePaFag(e, fjorFag);
+      await settKlasse(e, fjor, await finnEllerOpprettKlasse(fjor, "1STA"));
+      await settSkaring(e, fjorOkt, gronn);
+    }
+    await koblePaFag(tony, iarFag);
+    await settSkaring(tony, iarOkt, gronn);
+
+    expect(await tellEleverIAr(fjor)).toMatchObject({
+      elever: 2,
+      helt: 1,
+      skaringer: 2,
+    });
+
+    await slettEleverIAr(fjor);
+
+    const levende = await base.select<{ id: string }[]>(
+      "SELECT id FROM elev WHERE slettet IS NULL",
+    );
+    expect(levende.map((r) => r.id)).toEqual([tony]);
+    expect(await tellSkaringerIFag(tony, fjorFag)).toBe(0);
+    expect(await tellSkaringerIFag(tony, iarFag)).toBe(1);
+    expect((await hentElever(fjor)).length).toBe(0);
+    expect((await hentElever(skolearId)).map((e) => e.id)).toEqual([tony]);
+
+    // Fag og økter i fjor står.
+    const [okt] = await base.select<{ slettet: string | null }[]>(
+      "SELECT slettet FROM okt WHERE id = $1",
+      [fjorOkt],
+    );
+    expect(okt.slettet).toBeNull();
+    const [fag] = await base.select<{ slettet: string | null }[]>(
+      "SELECT slettet FROM skolear_fag WHERE id = $1",
+      [fjorFag],
+    );
+    expect(fag.slettet).toBeNull();
   });
 });

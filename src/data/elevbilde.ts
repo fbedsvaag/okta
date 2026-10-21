@@ -76,3 +76,18 @@ export async function slettElevbildeI(
   t.oppdater("elevbilde", rad.id, { bilde: null });
   t.slett("elevbilde", rad.id);
 }
+
+/** Fjerner alle bildene (Personvern, 23.9). Gir hvor mange som gikk. */
+export async function slettAlleElevbilder(): Promise<number> {
+  const rader = await hent<{ id: string }>(
+    "SELECT id FROM elevbilde WHERE slettet IS NULL",
+  );
+  const t = new Transaksjon();
+  for (const r of rader) {
+    t.oppdater("elevbilde", r.id, { bilde: null });
+    t.slett("elevbilde", r.id);
+  }
+  await t.kjor();
+  varsleElever();
+  return rader.length;
+}

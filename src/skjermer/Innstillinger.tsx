@@ -10,6 +10,8 @@ import {
   endreSkolear,
   hentFridager,
   hentInnstilling,
+  opprettFridag,
+  slettFridag,
   hentSkolear,
   opprettSkolear,
   settAktivtSkolear,
@@ -34,7 +36,7 @@ import type { Fridag } from "../data/kalender";
 import * as kalender from "../data/kalenderfeed";
 import * as caldav from "../data/caldav";
 import { skrivArkiv } from "../data/arkiv";
-import { LAERERNAVN } from "../data/arsplanark";
+import { LAERERNAVN, SKOLENAVN } from "../data/arsplanark";
 import { Merke } from "../ui/logo";
 import { getVersion } from "@tauri-apps/api/app";
 import { open, confirm as bekreft } from "@tauri-apps/plugin-dialog";
@@ -58,11 +60,19 @@ import { visToast } from "../ui/Toast";
 import { giTilbakemelding } from "../ui/Sidemeny";
 import { SKJEMA_URL } from "../tilbakemelding";
 import {
+  hentAlleElever,
   hentElever,
   hentKlasser,
   settMentor,
+  slettElevHelt,
+  slettEleverIAr,
+  slettElevtekst,
+  tellEleverIAr,
+  tellForElever,
   type Klasse,
 } from "../data/elever";
+import { slettAlleElevbilder } from "../data/elevbilde";
+import { settVisElevbilder, visesElevbilder } from "../ui/Elevfoto";
 import {
   GAMLE,
   SIDENAVN,
@@ -318,7 +328,9 @@ export function Innstillinger({
             {side === "skalaer" && <Skalaer />}
             {side === "utseende" && <SideUtseende />}
             {side === "kopi" && <SideKopi skolear={skolear} />}
-            {side === "personvern" && <SidePersonvern />}
+            {side === "personvern" && (
+              <SidePersonvern skolear={skolear} onEndret={onEndret} />
+            )}
             {side === "kalender" && (
               <SideKalender skolear={skolear} fag={fag} />
             )}
@@ -355,11 +367,13 @@ const MENTORKLASSE = "mentor_klasse";
 
 function SideDeg({ skolear }: { skolear: Skolear }) {
   const [navn, setNavn] = useState("");
+  const [skole, setSkole] = useState("");
   const [mentor, setMentor] = useState(false);
   const [klasse, setKlasse] = useState("");
   const [klasser, setKlasser] = useState<Klasse[]>([]);
   useEffect(() => {
     void hentInnstilling(LAERERNAVN).then((v) => setNavn(v ?? ""));
+    void hentInnstilling(SKOLENAVN).then((v) => setSkole(v ?? ""));
     void hentInnstilling(MENTOR).then((v) => setMentor(v === "pa"));
     void hentInnstilling(MENTORKLASSE).then((v) => setKlasse(v ?? ""));
     void hentKlasser(skolear.id).then(setKlasser);
@@ -392,6 +406,19 @@ function SideDeg({ skolear }: { skolear: Skolear }) {
             onChange={(e) => {
               setNavn(e.target.value);
               void settInnstilling(LAERERNAVN, e.target.value.trim());
+            }}
+          />
+        </Rad>
+        <Rad
+          k="skole"
+          tittel="Skole"
+          hjelp="Står i toppen av årsplanen. Tomt felt = ingenting."
+        >
+          <Feltinput
+            value={skole}
+            onChange={(e) => {
+              setSkole(e.target.value);
+              void settInnstilling(SKOLENAVN, e.target.value.trim());
             }}
           />
         </Rad>
@@ -598,6 +625,7 @@ function SideSkolear({
 }) {
   const [ar, setAr] = useState<Skolear[]>([]);
   const [fri, setFri] = useState<Fridag[]>([]);
+  const [nyFri, setNyFri] = useState({ navn: "", fra: "", til: "" });
   const [navn, setNavn] = useState(skolear.navn);
   useEffect(() => {
     void hentSkolear().then(setAr);
@@ -703,13 +731,70 @@ function SideSkolear({
                   ? datoTekst(f.fra)
                   : `${datoTekst(f.fra)} – ${datoTekst(f.til)}`}
               </span>
+              <button
+                aria-label={`Fjern ${f.navn}`}
+                title="Fjern"
+                onClick={async () => {
+                  await slettFridag(f.id);
+                  setFri(await hentFridager(skolear.id));
+                  onEndret();
+                }}
+                className="px-1 text-blekk-svak hover:text-feil"
+              >
+                ×
+              </button>
             </div>
           ))
         )}
+        <form
+          data-k="nyfri"
+          className="inn-rad flex-nowrap gap-2 py-2"
+          onSubmit={async (e) => {
+            e.preventDefault();
+            const n = nyFri.navn.trim();
+            if (!n || !nyFri.fra) return;
+            const til =
+              nyFri.til && nyFri.til >= nyFri.fra ? nyFri.til : nyFri.fra;
+            await opprettFridag(skolear.id, n, "ferie", nyFri.fra, til);
+            setNyFri({ navn: "", fra: "", til: "" });
+            setFri(await hentFridager(skolear.id));
+            onEndret();
+          }}
+        >
+          <Feltinput
+            bredde="min-w-0 flex-1"
+            placeholder="Ny ferie eller fridag"
+            aria-label="Navn"
+            value={nyFri.navn}
+            onChange={(e) => setNyFri({ ...nyFri, navn: e.target.value })}
+          />
+          <Feltinput
+            type="date"
+            bredde="w-[140px]"
+            aria-label="Fra"
+            min={skolear.start}
+            max={skolear.slutt}
+            value={nyFri.fra}
+            onChange={(e) => setNyFri({ ...nyFri, fra: e.target.value })}
+          />
+          <span className="text-blekk-svak">–</span>
+          <Feltinput
+            type="date"
+            bredde="w-[140px]"
+            aria-label="Til"
+            min={nyFri.fra || skolear.start}
+            max={skolear.slutt}
+            value={nyFri.til}
+            onChange={(e) => setNyFri({ ...nyFri, til: e.target.value })}
+          />
+          <Knapp type="submit" disabled={!nyFri.navn.trim() || !nyFri.fra}>
+            Legg til
+          </Knapp>
+        </form>
         <Rad
           k="fri"
           tittel="Skoleruta"
-          hjelp="Legg til og endre ferier, fridager og hendelser."
+          hjelp="Hendelser, planleggingsdager og alt annet ved ruta."
         >
           <Knapp onClick={onApneSkoleruta}>
             Åpne skoleruta <Ikon navn="pil" />
@@ -1232,13 +1317,90 @@ function SideKopi({ skolear }: { skolear: Skolear }) {
 
 // ------------------------------------------------------------- Personvern
 
-function SidePersonvern() {
+function SidePersonvern({
+  skolear,
+  onEndret,
+}: {
+  skolear: Skolear;
+  onEndret: () => void;
+}) {
   const [datamappe, setDatamappe] = useState<string | null>(null);
+  const [visBilder, setVisBilder] = useState(visesElevbilder);
+  const [elever, setElever] = useState<
+    { id: string; fornavn: string; etternavn: string }[]
+  >([]);
+  const [elev, setElev] = useState("");
+  const [ar, setAr] = useState<Skolear[]>([]);
+  const [tidligere, setTidligere] = useState("");
+  const lesInn = () => {
+    void hentAlleElever().then(setElever);
+    void hentSkolear().then((a) => setAr(a.filter((x) => x.id !== skolear.id)));
+  };
   useEffect(() => {
     void appDataDir()
       .then(setDatamappe)
       .catch(() => {});
-  }, []);
+    lesInn();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [skolear.id]);
+
+  async function slettEn() {
+    const e = elever.find((x) => x.id === elev);
+    if (!e) return;
+    const n = await tellForElever([e.id]);
+    if (!(await bekreft(slettElevtekst([`${e.fornavn} ${e.etternavn}`], n))))
+      return;
+    await slettElevHelt(e.id);
+    setElev("");
+    lesInn();
+    onEndret();
+    visToast(`${e.fornavn} ${e.etternavn} er slettet`);
+  }
+
+  async function slettAr() {
+    const a = ar.find((x) => x.id === tidligere);
+    if (!a) return;
+    const n = await tellEleverIAr(a.id);
+    if (n.elever === 0) {
+      visToast(`Ingen elever i ${a.navn}`);
+      return;
+    }
+    const hva = [
+      n.skaringer && `${n.skaringer} skåringer`,
+      n.vurderinger && `${n.vurderinger} vurderingsresultater`,
+      n.notater && `${n.notater} notater`,
+    ].filter(Boolean);
+    const ok = await bekreft(
+      `Slette elevene fra ${a.navn}?\n\n` +
+        `${n.elever} elever. ` +
+        (n.helt > 0
+          ? `${n.helt} av dem finnes bare i ${a.navn} og slettes helt. `
+          : "") +
+        (n.elever - n.helt > 0
+          ? `${n.elever - n.helt} går også i et annet år og blir der. `
+          : "") +
+        (hva.length > 0 ? `Med dem går ${hva.join(", ")} fra ${a.navn}.` : "") +
+        "\n\nFag, økter og planer blir stående.\n\n" +
+        "Sikkerhetskopien fra i dag er veien tilbake.",
+    );
+    if (!ok) return;
+    await slettEleverIAr(a.id);
+    setTidligere("");
+    lesInn();
+    onEndret();
+    visToast(`Elevene fra ${a.navn} er slettet`);
+  }
+
+  async function slettBilder() {
+    const ok = await bekreft(
+      "Slette alle elevbildene?\n\nBildene tømmes fra basen. " +
+        "Du kan lese dem inn igjen fra InSchool-utskriften.",
+    );
+    if (!ok) return;
+    const n = await slettAlleElevbilder();
+    visToast(n === 1 ? "1 bilde er slettet" : `${n} bilder er slettet`);
+  }
+
   const linjer = [
     "Alt ligger på denne maskinen. Ingen konto, ingen sky.",
     "Økta går bare på nett hvis du slår på publisering til en kalenderserver. Søket i Udirs fag er lokalt.",
@@ -1268,6 +1430,27 @@ function SidePersonvern() {
           hjelp="Notatfeltene er ditt arbeidsmateriale. Helse, hjemmeforhold og andre særlige kategorier hører ikke hjemme der."
         />
         <Rad
+          k="visbilder"
+          tittel="Vis elevbilder"
+          hjelp="Av: alle bildene byttes med plassholderen, f.eks. når skjermen vises for klassen. Bildene blir liggende."
+        >
+          <Vippebryter
+            pa={visBilder}
+            etikett="Vis elevbilder"
+            onBytt={(pa) => {
+              setVisBilder(pa);
+              void settVisElevbilder(pa);
+            }}
+          />
+        </Rad>
+        <Rad
+          k="slettbilder"
+          tittel="Slett alle elevbilder"
+          hjelp="Tømmer bildene fra basen. Elevene blir stående."
+        >
+          <Knapp onClick={() => void slettBilder()}>Slett bildene</Knapp>
+        </Rad>
+        <Rad
           tittel="Databasen"
           hjelp={
             <>
@@ -1279,6 +1462,56 @@ function SidePersonvern() {
             </>
           }
         />
+      </Gruppe>
+      <Gruppe
+        tittel="Slett"
+        fot="Sikkerhetskopien fra i dag er veien tilbake hvis det var feil."
+      >
+        <Rad
+          k="slettelev"
+          tittel="Slett en elev helt"
+          hjelp="Eleven og alt som er ført på hen, i alle skoleår."
+        >
+          <select
+            value={elev}
+            onChange={(e) => setElev(e.target.value)}
+            className="inn-felt"
+          >
+            <option value="">Velg elev</option>
+            {elever.map((e) => (
+              <option key={e.id} value={e.id}>
+                {e.fornavn} {e.etternavn}
+              </option>
+            ))}
+          </select>
+          <Knapp onClick={() => void slettEn()} disabled={!elev}>
+            Slett
+          </Knapp>
+        </Rad>
+        <Rad
+          k="slettar"
+          tittel="Slett elevene fra et tidligere år"
+          hjelp="Elevene og skåren deres fra året går. Fag, økter og planer blir stående."
+        >
+          <select
+            value={tidligere}
+            onChange={(e) => setTidligere(e.target.value)}
+            className="inn-felt"
+            disabled={ar.length === 0}
+          >
+            <option value="">
+              {ar.length === 0 ? "Ingen andre år" : "Velg år"}
+            </option>
+            {ar.map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.navn}
+              </option>
+            ))}
+          </select>
+          <Knapp onClick={() => void slettAr()} disabled={!tidligere}>
+            Slett
+          </Knapp>
+        </Rad>
       </Gruppe>
     </Side>
   );
@@ -1598,6 +1831,9 @@ function SideKalender({ skolear, fag }: { skolear: Skolear; fag: FagIAr[] }) {
 
 // ---------------------------------------------------------------- Om Økta
 
+/** Siste utgivelse. Åpnes i nettleseren; appen selv går aldri dit (§1). */
+const UTGIVELSER_URL = "https://github.com/fbedsvaag/okta/releases/latest";
+
 function SideOm() {
   const [versjon, setVersjon] = useState("");
   const [datamappe, setDatamappe] = useState<string | null>(null);
@@ -1621,6 +1857,21 @@ function SideOm() {
             <Merke storrelse={18} />
             {versjon || "–"}
           </span>
+        </Rad>
+        <Rad
+          k="oppdatering"
+          tittel="Se etter oppdatering"
+          hjelp="Åpner siste utgivelse på GitHub i nettleseren. Økta sjekker aldri selv."
+        >
+          <Knapp
+            onClick={() =>
+              void import("@tauri-apps/plugin-opener").then((o) =>
+                o.openUrl(UTGIVELSER_URL),
+              )
+            }
+          >
+            Åpne …
+          </Knapp>
         </Rad>
         {SKJEMA_URL && (
           <Rad
