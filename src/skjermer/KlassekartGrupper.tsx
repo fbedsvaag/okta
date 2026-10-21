@@ -171,23 +171,31 @@ export function KlassekartGrupper({
     x: number;
     y: number;
     flyttet: boolean;
+    /** gruppa pekeren er over nå; null = ingen */
+    mal: number | null;
   } | null>(null);
   const draRef = useRef(dra);
   draRef.current = dra;
 
   useEffect(() => {
     if (!dra) return;
-    const flytter = (e: PointerEvent) =>
+    const flytter = (e: PointerEvent) => {
+      const over = document
+        .elementFromPoint(e.clientX, e.clientY)
+        ?.closest<HTMLElement>("[data-gruppe]");
+      const mal = over ? Number(over.dataset.gruppe) : null;
       setDra(
         (d) =>
           d && {
             ...d,
             x: e.clientX,
             y: e.clientY,
+            mal,
             flyttet:
               d.flyttet || Math.hypot(e.clientX - d.x, e.clientY - d.y) > 4,
           },
       );
+    };
     const slipp = (e: PointerEvent) => {
       const d = draRef.current;
       setDra(null);
@@ -364,14 +372,25 @@ export function KlassekartGrupper({
       <div className="ikkeutskrift grid min-h-0 flex-1 auto-rows-min grid-cols-[repeat(auto-fill,minmax(240px,1fr))] content-start gap-3.5 overflow-auto pb-7 pt-3">
         {grupper.map((g, i) => {
           const farge = GRUPPEFARGER[i % GRUPPEFARGER.length];
+          // Forhåndsvisningen før man slipper: eleven forlater sin gruppe og
+          // får en plass nederst i gruppa pekeren er over.
+          const flytter =
+            dra?.flyttet &&
+            dra.mal !== null &&
+            !grupper[dra.mal]?.includes(dra.elevId);
+          const mottar = flytter && dra.mal === i;
+          const mister = flytter && g.includes(dra.elevId);
+          const antall = g.length + (mottar ? 1 : 0) - (mister ? 1 : 0);
           return (
             <section
               key={i}
               data-gruppe={i}
               className="rounded-xl px-3 pb-2.5 pt-3"
               style={{
-                background: `color-mix(in srgb, ${farge} 6%, var(--color-ark))`,
-                boxShadow: `inset 0 0 0 1px color-mix(in srgb, ${farge} 20%, transparent)`,
+                background: `color-mix(in srgb, ${farge} ${mottar ? 12 : 6}%, var(--color-ark))`,
+                boxShadow: mottar
+                  ? `inset 0 0 0 2px ${farge}`
+                  : `inset 0 0 0 1px color-mix(in srgb, ${farge} 20%, transparent)`,
               }}
             >
               <div className="flex items-center gap-2 px-1 pb-2">
@@ -390,7 +409,7 @@ export function KlassekartGrupper({
                   className="w-32 rounded bg-transparent text-[calc(14px*var(--tekst-skala))] font-semibold outline-none focus:bg-ark"
                 />
                 <span className="ml-auto text-[12px] tabular-nums text-blekk-dempet">
-                  {g.length} elever
+                  {antall} elever
                 </span>
               </div>
               <div className="flex flex-col gap-1">
@@ -407,10 +426,15 @@ export function KlassekartGrupper({
                           x: ev.clientX,
                           y: ev.clientY,
                           flyttet: false,
+                          mal: null,
                         });
                       }}
                       className={`flex h-9 cursor-grab items-center gap-[9px] rounded-lg bg-ark px-2 shadow-[0_0_0_1px_var(--color-linje-medium)] ${
-                        dra?.flyttet && dra.elevId === id ? "opacity-30" : ""
+                        dra?.flyttet && dra.elevId === id
+                          ? mister
+                            ? "gruppe-forlater"
+                            : "opacity-30"
+                          : ""
                       }`}
                     >
                       <Elevfoto
@@ -430,6 +454,18 @@ export function KlassekartGrupper({
                     </div>
                   );
                 })}
+                {mottar && (
+                  <div
+                    className="gruppe-plass flex h-9 items-center gap-[9px] overflow-hidden rounded-lg bg-ark px-2"
+                    style={{ boxShadow: `inset 0 0 0 1.5px ${farge}` }}
+                  >
+                    <Elevfoto elevId={dra.elevId} storrelse={24} />
+                    <span className="truncate text-[calc(13.5px*var(--tekst-skala))] text-blekk-dempet">
+                      {elevAv.get(dra.elevId)?.fornavn}{" "}
+                      {elevAv.get(dra.elevId)?.etternavn}
+                    </span>
+                  </div>
+                )}
               </div>
             </section>
           );

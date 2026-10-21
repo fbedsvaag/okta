@@ -9,6 +9,11 @@ den skal bli. Fila eies fritt, i motsetning til SPEC.md.
 Utseendet står i `DESIGN.md`, som beskriver appen slik den er bygget.
 Lerretet (`docs/lerret/`) er fasit for det som er tegnet.
 
+## Grupper: se flyttingen før du slipper (21.10)
+
+- Mens en elev dras, vokser gruppa pekeren er over (plass nederst, kant i
+  gruppefargen, tallet oppdatert), og raden glir ut av gruppa den kom fra.
+
 ## Øktplanen holder seg innenfor økta (21.10)
 
 - Øktas lengde er et tak. Vokser et punkt forbi luften, tas tiden fra den
