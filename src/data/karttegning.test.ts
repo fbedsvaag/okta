@@ -86,6 +86,25 @@ describe("personvern i det som går ut", () => {
     expect(svg).toContain("Tony S.");
   });
 
+  it("tegner gruppefargene på pultene, men aldri trafikklyset", () => {
+    const farget = kartSvg({
+      tittel: "MFL2",
+      deler,
+      plasser,
+      plass,
+      elever,
+      fraElevene: false,
+      plassfarger: new Map([
+        [1, "#4f7ac0"],
+        [2, "#4f7ac0"],
+        [3, "url(javascript:x)"],
+      ]),
+    });
+    expect(farget).toContain('fill="#4f7ac0"');
+    expect(farget).not.toContain("javascript");
+    expect(farget).not.toMatch(/#3f9d49|#d9a92f|#c04a3d|innsats/i);
+  });
+
   it("snur tegningen fra elevenes side", () => {
     const snudd = kartSvg({
       tittel: "MFL2",

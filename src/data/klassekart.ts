@@ -312,6 +312,8 @@ export type Kart = {
   romNavn: string | null;
   innstillinger: Innstillinger;
   antall: number;
+  /** sist endret, lokal ISO */
+  endret: string;
 };
 
 function tolkInnstillinger(json: string | null): Innstillinger {
@@ -341,8 +343,9 @@ export async function hentKart(
     romId: string | null;
     romNavn: string | null;
     innstillinger: string | null;
+    endret: string;
   }>(
-    `SELECT k.id, k.skolear_id AS skolearId, k.kilde_type AS kildeType,
+    `SELECT k.id, k.endret, k.skolear_id AS skolearId, k.kilde_type AS kildeType,
             k.kilde_id AS kildeId,
             COALESCE(NULLIF(f.alias, ''), f.kode) AS fagKode, f.farge,
             kl.navn AS klasse, r.id AS romId, r.navn AS romNavn,
@@ -383,6 +386,7 @@ export async function hentKart(
       romNavn: r.romNavn,
       innstillinger,
       antall: elever.length,
+      endret: r.endret,
     });
   }
   return ut.sort((a, b) => a.kildeNavn.localeCompare(b.kildeNavn, "nb-NO"));

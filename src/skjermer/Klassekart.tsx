@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { confirm as bekreft } from "@tauri-apps/plugin-dialog";
 import {
+  DELER,
   endreKart,
   hentKart,
   hentRom,
@@ -8,6 +9,8 @@ import {
   plasserIRom,
   slettKart,
   slettRom,
+  storrelse,
+  type Del,
   type Kart,
   type Kildetype,
   type Rom,
@@ -19,6 +22,7 @@ import { KlassekartKart } from "./KlassekartKart";
 import { IVerktoylinja } from "../ui/Verktoylinje";
 import { KlassekartRom } from "./KlassekartRom";
 import { Velger } from "../ui/Velger";
+import { romramme } from "../data/karttegning";
 import { useLagretInnstilling } from "../ui/useLagretInnstilling";
 import { GrupperFane } from "./GrupperFane";
 
@@ -149,103 +153,94 @@ function Oversikt({
         </span>
       </IVerktoylinja>
 
-      <h1 className="text-[calc(26px*var(--tekst-skala))] font-light leading-tight tracking-overskrift">
-        Klassekart
-      </h1>
-      <p className="mb-5 mt-1 text-liten text-blekk-dempet">
-        Hvem sitter hvor, og hvem jobber sammen. Rommene tegnes én gang og
-        brukes av alle kartene.
+      <p className="mb-3.5 mt-0.5 text-liten text-blekk-dempet">
+        Dine klassekart
       </p>
+      <div className="grid max-w-[900px] grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-3">
+        {kart.map((k) => {
+          const r = rom.find((x) => x.id === k.romId);
+          return (
+            <div
+              key={k.id}
+              className="group relative flex flex-col gap-2 rounded-[14px] bg-ark p-3.5 shadow-[inset_0_0_0_1px_var(--color-linje-svak)] hover:shadow-[inset_0_0_0_1px_var(--color-linje)]"
+            >
+              <button
+                onClick={() => onGa(k.id)}
+                className="absolute inset-0 rounded-[14px]"
+                aria-label={`Åpne kartet for ${k.kildeNavn}`}
+              />
+              <div className="flex items-center gap-2">
+                {k.kildeType === "mentorgruppe" ? (
+                  <span className="h-2.5 w-2.5 rounded-full bg-aksent" />
+                ) : (
+                  <Fagfirkant farge={k.farge} storrelse={10} />
+                )}
+                <b className="font-semibold">{k.kildeNavn}</b>
+                <span className="ml-auto text-etikett text-blekk-svak">
+                  {k.romNavn ?? "Uten rom"}
+                </span>
+              </div>
+              <Plasskisse deler={r?.deler ?? []} />
+              <div className="flex items-center text-etikett text-blekk-dempet">
+                <span className="tabular-nums">
+                  {k.antall} elever · endret{" "}
+                  {new Date(k.endret.replace(" ", "T"))
+                    .toLocaleDateString("nb-NO", {
+                      day: "numeric",
+                      month: "numeric",
+                    })
+                    .replace(/\.$/, "")}
+                </span>
+                <button
+                  onClick={async () => {
+                    if (
+                      !(await bekreft(
+                        `Slette kartet for ${k.kildeNavn}? Historikken over hvem som har sittet sammen, går med.`,
+                      ))
+                    )
+                      return;
+                    await slettKart(k.id);
+                    last();
+                  }}
+                  className="relative ml-auto text-blekk-svak opacity-0 hover:text-feil group-hover:opacity-100"
+                >
+                  Slett
+                </button>
+              </div>
+            </div>
+          );
+        })}
+        <button
+          onClick={() => onGa("nytt")}
+          className="grid min-h-[130px] place-items-center rounded-[14px] text-aksent shadow-[inset_0_0_0_1.5px_var(--color-linje)] hover:bg-flate-svak"
+        >
+          + Nytt kart
+        </button>
+      </div>
 
-      <Seksjon tittel="Kart" antall={kart.length}>
-        {kart.length === 0 && (
-          <p className="py-6 text-center text-brod text-blekk-dempet">
-            Ingen kart ennå.{" "}
-            <button
-              onClick={() => onGa("nytt")}
-              className="text-aksent hover:underline"
-            >
-              Lag det første
-            </button>
-          </p>
-        )}
-        {kart.map((k) => (
-          <li
-            key={k.id}
-            className="group grid h-10 grid-cols-[10px_minmax(0,1fr)_9rem_7rem_6rem_3rem] items-center gap-x-3 border-b border-linje-svak text-brod"
-          >
-            {k.kildeType === "mentorgruppe" ? (
-              <span className="h-2.5 w-2.5 rounded-full bg-aksent" />
-            ) : (
-              <Fagfirkant farge={k.farge} storrelse={10} />
-            )}
-            <button
-              onClick={() => onGa(k.id)}
-              className="truncate text-left font-medium hover:underline"
-            >
-              {k.kildeNavn}
-            </button>
-            <span className="truncate text-blekk-dempet">
-              {k.romNavn ?? "Uten rom"}
-            </span>
-            <span className="tabular-nums text-blekk-dempet">
-              {k.antall} elever
-            </span>
-            <span className="text-blekk-dempet">
-              {k.innstillinger.visning === "grupper" ? "Grupper" : "Plasser"}
-            </span>
-            <button
-              onClick={async () => {
-                if (
-                  !(await bekreft(
-                    `Slette kartet for ${k.kildeNavn}? Historikken over hvem som har sittet sammen, går med.`,
-                  ))
-                )
-                  return;
-                await slettKart(k.id);
-                last();
-              }}
-              className="text-liten text-blekk-svak opacity-0 hover:text-feil group-hover:opacity-100"
-            >
-              Slett
-            </button>
-          </li>
-        ))}
-      </Seksjon>
-
-      <div className="mt-6" />
-      <Seksjon tittel="Rom" antall={rom.length}>
-        {rom.length === 0 && (
-          <p className="py-6 text-center text-brod text-blekk-dempet">
-            Ingen rom ennå.{" "}
-            <button
-              onClick={() => onGa("rom:ny")}
-              className="text-aksent hover:underline"
-            >
-              Tegn det første
-            </button>
-          </p>
-        )}
+      <h2 className="mx-0.5 mb-1 mt-7 text-etikett font-semibold text-blekk-dempet">
+        Rom
+      </h2>
+      <p className="mb-3 text-liten text-blekk-dempet">Dine tegnede rom</p>
+      <div className="flex flex-wrap gap-2">
         {rom.map((r) => (
-          <li
+          <span
             key={r.id}
-            className="group grid h-10 grid-cols-[10px_minmax(0,1fr)_9rem_7rem_6rem_3rem] items-center gap-x-3 border-b border-linje-svak text-brod"
+            className="group inline-flex h-[30px] items-center gap-1 rounded-full bg-flate-svak pl-3 pr-1.5 text-[13px]"
           >
-            <span />
             <button
               onClick={() => onGa(`rom:${r.id}`)}
-              className="truncate text-left font-medium hover:underline"
+              title={
+                r.brukesAv === 0
+                  ? "Ikke i bruk"
+                  : `${r.brukesAv} kart bruker rommet`
+              }
+              className="hover:underline"
             >
-              {r.navn}
+              {r.navn} · {plasserIRom(r.deler).length} plasser
             </button>
-            <span className="tabular-nums text-blekk-dempet">
-              {plasserIRom(r.deler).length} plasser
-            </span>
-            <span className="text-blekk-dempet">
-              {r.brukesAv === 0 ? "Ikke i bruk" : `${r.brukesAv} kart`}
-            </span>
-            <span />
             <button
+              aria-label={`Slett ${r.navn}`}
               onClick={async () => {
                 if (
                   !(await bekreft(
@@ -258,36 +253,83 @@ function Oversikt({
                 await slettRom(r.id);
                 last();
               }}
-              className="text-liten text-blekk-svak opacity-0 hover:text-feil group-hover:opacity-100"
+              className="px-1 text-blekk-svak opacity-0 hover:text-feil group-hover:opacity-100"
             >
-              Slett
+              ×
             </button>
-          </li>
+          </span>
         ))}
-      </Seksjon>
+        <button
+          onClick={() => onGa("rom:ny")}
+          className="inline-flex h-[30px] items-center rounded-full px-3 text-[13px] text-aksent shadow-[inset_0_0_0_1px_var(--color-linje)] hover:bg-flate-svak"
+        >
+          + Nytt rom
+        </button>
+      </div>
     </div>
   );
 }
 
-function Seksjon({
-  tittel,
-  antall,
-  children,
-}: {
-  tittel: string;
-  antall: number;
-  children: React.ReactNode;
-}) {
+/** Rommet i miniatyr på kartkortet (25.8): pultene, tavla og kateteret. */
+function Plasskisse({ deler }: { deler: Del[] }) {
+  if (deler.length === 0)
+    return (
+      <div className="grid h-[86px] place-items-center rounded-lg bg-flate-svak text-etikett text-blekk-svak">
+        Ikke tegnet ennå
+      </div>
+    );
+  const r = romramme(deler);
+  const m = 20;
   return (
-    <section>
-      <h2 className="flex items-baseline gap-2 border-b border-linje pb-1.5">
-        <span className="text-brod font-semibold">{tittel}</span>
-        <span className="text-liten tabular-nums text-blekk-svak">
-          {antall}
-        </span>
-      </h2>
-      <ul>{children}</ul>
-    </section>
+    <svg
+      viewBox={`${r.x - m} ${r.y - m} ${r.b + m * 2} ${r.h + m * 2}`}
+      className="h-[86px] w-full rounded-lg bg-flate-svak"
+      preserveAspectRatio="xMidYMid meet"
+      aria-hidden
+    >
+      {deler.map((d) => {
+        const { b, h } = storrelse(d);
+        if (DELER[d.type].plasser.length > 0)
+          return (
+            <rect
+              key={d.id}
+              x={d.x}
+              y={d.y}
+              width={b}
+              height={h}
+              rx={10}
+              fill="var(--color-linje)"
+            />
+          );
+        if (d.type === "tavle")
+          return (
+            <rect
+              key={d.id}
+              x={d.x}
+              y={d.y}
+              width={b}
+              height={h}
+              rx={6}
+              fill="var(--color-blekk-svak)"
+            />
+          );
+        if (d.type === "kateter")
+          return (
+            <rect
+              key={d.id}
+              x={d.x}
+              y={d.y}
+              width={b}
+              height={h}
+              rx={10}
+              fill="none"
+              stroke="var(--color-linje-sterk)"
+              strokeWidth={6}
+            />
+          );
+        return null;
+      })}
+    </svg>
   );
 }
 

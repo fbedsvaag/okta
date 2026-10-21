@@ -17,6 +17,10 @@ Lerretet (`docs/lerret/`) er fasit for det som er tegnet.
 - 25.3–25.7: Grupper-fanen med klasse/fag som chip, Antall | Per gruppe,
   «Bare de som er her» (`hentBorteIDag`), FLIP ved stokking, «Lagrede
   grupper» med valgt klasse øverst og de andre under.
+- 25.8: Klassekart-fanen med kort per kart (plasskisse) og rom som chips.
+- 25.11: «Farge på pultene: Ingen · Innsats · Grupper», pensel og viskelær,
+  «To og to par» / «Hvert bord sin gruppe» (`data/pultfarger.ts`), gruppene
+  med navn, «Bruk som gruppesett». Fargene i SVG/PNG/utskrift, aldri innsats.
 - Retning: fra kateteret står tavla nederst, fra elevene øverst.
 
 ## Klassekart fra øktkortet (21.10)

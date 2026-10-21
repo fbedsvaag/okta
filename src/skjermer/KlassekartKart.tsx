@@ -6,9 +6,11 @@ import {
   hentKart,
   hentKildeElever,
   hentOppsett,
+  hentPlassfarger,
   hentRegler,
   hentRom,
   lagreOppsett,
+  lagrePlassfarger,
   leggTilRegel,
   plasserIRom,
   sammenFor,
@@ -47,6 +49,7 @@ import { Elevfoto } from "../ui/Elevfoto";
 import { hovedtast, tast as visTast } from "../ui/taster";
 import { filnavnAv, lagreFil } from "../data/filer";
 import { Velger } from "../ui/Velger";
+import { fyllPulter, gruppeorden, PULTFARGER } from "../data/pultfarger";
 
 /**
  * Klassekartet — Plasser (SPEC §4.11, lerretet «Klassekart»).
@@ -95,7 +98,13 @@ export function KlassekartKart({
   const [laste, setLaste] = useState<Set<string>>(new Set());
   const [borte, setBorte] = useState<Set<string>>(new Set());
   const [brudd, setBrudd] = useState<Brudd[]>([]);
-  const [farge, setFarge] = useState<"ingen" | "innsats">("ingen");
+  const [farge, setFarge] = useState<"ingen" | "innsats" | "grupper">("ingen");
+  // Gruppefargene på pultene (25.11): plassnummer → farge, og navnene.
+  const [pultfarge, setPultfarge] = useState<Map<number, string>>(new Map());
+  const [gruppenavn, setGruppenavn] = useState<Map<string, string>>(new Map());
+  const [pensel, setPensel] = useState(0);
+  const [visk, setVisk] = useState(false);
+  const maling = useRef<{ modus: string | null } | null>(null);
   const [melding, setMelding] = useState<string | null>(null);
   const [lagret, setLagret] = useState(true);
   const [delMeny, setDelMeny] = useState<{ x: number; y: number } | null>(null);
@@ -105,12 +114,22 @@ export function KlassekartKart({
   async function last() {
     const k = (await hentKart(skolearId)).find((x) => x.id === kartId);
     if (!k) return;
-    const [r, e, g, h] = await Promise.all([
+    const [r, e, g, h, pf] = await Promise.all([
       hentRom(),
       hentKildeElever(k.kildeType, k.kildeId, skolearId),
       hentRegler(k.kildeType, k.kildeId),
       hentOppsett(kartId, "plass"),
+      hentPlassfarger(kartId),
     ]);
+    setPultfarge(new Map(pf.map((x) => [x.plass, x.farge])));
+    setGruppenavn(
+      new Map(
+        pf
+          .filter((x) => x.gruppenavn)
+          .map((x) => [x.farge, x.gruppenavn as string]),
+      ),
+    );
+    if (pf.length > 0) setFarge((f) => (f === "ingen" ? "grupper" : f));
     const rommet = r.find((x) => x.id === k.romId) ?? null;
     setKart(k);
     lagretInnst.current = k.innstillinger;
@@ -156,6 +175,81 @@ export function KlassekartKart({
   useEffect(() => {
     void last();
   }, [kartId, skolearId]);
+
+  // ------------------------------------------------- gruppefarger (25.11)
+
+  const orden = gruppeorden(pultfarge);
+  const navnFor = (f: string) =>
+    gruppenavn.get(f) ?? `Gruppe ${orden.indexOf(f) + 1}`;
+
+  function lagreFarger(pf: Map<number, string>, nv = gruppenavn) {
+    void lagrePlassfarger(
+      kartId,
+      [...pf].map(([nr, f]) => ({
+        plass: nr,
+        farge: f,
+        gruppenavn: nv.get(f) ?? null,
+      })),
+    );
+  }
+
+  /** Klikk en pult, eller dra over flere: maler, eller tar bort. */
+  function mal(nr: number, start: boolean) {
+    if (start)
+      maling.current = {
+        modus:
+          visk || pultfarge.get(nr) === PULTFARGER[pensel]
+            ? null
+            : PULTFARGER[pensel],
+      };
+    const m = maling.current;
+    if (!m) return;
+    setPultfarge((pf) => {
+      if ((pf.get(nr) ?? null) === m.modus) return pf;
+      const ny = new Map(pf);
+      if (m.modus) ny.set(nr, m.modus);
+      else ny.delete(nr);
+      return ny;
+    });
+  }
+  useEffect(() => {
+    const slutt = () => {
+      if (!maling.current) return;
+      maling.current = null;
+      setPultfarge((pf) => {
+        lagreFarger(pf);
+        return pf;
+      });
+    };
+    window.addEventListener("pointerup", slutt);
+    return () => window.removeEventListener("pointerup", slutt);
+  });
+  const malPa = farge === "grupper";
+
+  function fyll(par: boolean) {
+    const pf = fyllPulter(plasser, par);
+    setPultfarge(pf);
+    setGruppenavn(new Map());
+    lagreFarger(pf, new Map());
+  }
+
+  /** «Bruk som gruppesett»: elevene på de fargede plassene, som grupper. */
+  async function brukSomGrupper() {
+    const plassTil = new Map([...plass].map(([id, nr]) => [nr, id]));
+    const rader = [...pultfarge]
+      .filter(([nr]) => plassTil.has(nr))
+      .map(([nr, f]) => ({
+        elevId: plassTil.get(nr)!,
+        gruppe: orden.indexOf(f),
+        gruppenavn: navnFor(f),
+      }));
+    if (rader.length === 0) {
+      setMelding("Ingen elever sitter på fargede pulter");
+      return;
+    }
+    await lagreOppsett(kartId, "gruppe", rader);
+    setMelding(`${orden.length} grupper er lagret som gruppesett`);
+  }
 
   // Naboparene i rommet, og hvem som har sittet sammen før.
   const naboSett = useMemo(
@@ -252,6 +346,8 @@ export function KlassekartKart({
       plass,
       elever,
       fraElevene: innst?.fraElevene ?? false,
+      // Gruppefargene kommer med når de vises; innsatsen aldri.
+      plassfarger: farge === "grupper" ? pultfarge : undefined,
     });
 
   async function skrivUt(pdf = false) {
@@ -679,11 +775,23 @@ export function KlassekartKart({
               {/* De ledige plassene, og slippmål for dra. */}
               {plasser.map((p) => {
                 const q = snu(p.x, p.y);
+                const pf = malPa ? pultfarge.get(p.nr) : undefined;
                 return (
                   <div
                     key={p.nr}
                     data-plass={p.nr}
+                    onPointerDown={
+                      malPa
+                        ? (ev) => {
+                            ev.preventDefault();
+                            mal(p.nr, true);
+                          }
+                        : undefined
+                    }
+                    onPointerEnter={malPa ? () => mal(p.nr, false) : undefined}
                     className={`absolute flex items-center justify-center rounded-[7px] text-[12px] text-linje-sterk transition-shadow duration-150 ${
+                      malPa ? "cursor-cell" : ""
+                    } ${
                       malPlass === p.nr && !elevPa.has(p.nr)
                         ? "shadow-[inset_0_0_0_1.5px_var(--color-aksent)]"
                         : ""
@@ -693,6 +801,10 @@ export function KlassekartKart({
                       top: py(q.y) - 27 * skala,
                       width: 96 * skala,
                       height: 54 * skala,
+                      ...(pf && {
+                        background: `color-mix(in srgb, ${pf} 16%, transparent)`,
+                        boxShadow: `inset 3px 0 0 ${pf}`,
+                      }),
                     }}
                   >
                     {!elevPa.has(p.nr) && "Ledig"}
@@ -749,6 +861,7 @@ export function KlassekartKart({
                   farge === "innsats" && e.harSkar
                     ? innsatsfarge(e.innsats)
                     : null;
+                const pf = malPa ? pultfarge.get(nr) : undefined;
                 return (
                   <button
                     key={id}
@@ -756,6 +869,8 @@ export function KlassekartKart({
                     title={`${e.fornavn} ${e.etternavn}${last ? " (låst)" : ""}`}
                     onPointerDown={(ev) => {
                       ev.preventDefault();
+                      // Med gruppefarger maler et klikk pulten (25.11).
+                      if (malPa) return mal(nr, true);
                       setDra({
                         elevId: id,
                         x: ev.clientX,
@@ -763,6 +878,7 @@ export function KlassekartKart({
                         flyttet: false,
                       });
                     }}
+                    onPointerEnter={malPa ? () => mal(nr, false) : undefined}
                     className={`kartelev absolute flex cursor-grab items-center gap-2 overflow-hidden rounded-[7px] px-2 text-left transition-opacity duration-150 hover:bg-ark/70 ${
                       dra?.flyttet && dra.elevId === id
                         ? "opacity-30"
@@ -775,14 +891,19 @@ export function KlassekartKart({
                       top: py(q.y) - 27 * skala,
                       width: 96 * skala,
                       height: 54 * skala,
-                      background: tone
-                        ? `color-mix(in srgb, ${tone} 12%, transparent)`
+                      background: pf
+                        ? `color-mix(in srgb, ${pf} 16%, var(--color-ark))`
+                        : tone
+                          ? `color-mix(in srgb, ${tone} 12%, transparent)`
+                          : last
+                            ? "var(--color-ark)"
+                            : undefined,
+                      boxShadow: pf
+                        ? `inset 3px 0 0 ${pf}`
                         : last
-                          ? "var(--color-ark)"
+                          ? "inset 0 0 0 1.5px var(--color-aksent)"
                           : undefined,
-                      boxShadow: last
-                        ? "inset 0 0 0 1.5px var(--color-aksent)"
-                        : undefined,
+                      cursor: malPa ? "cell" : undefined,
                     }}
                   >
                     {skala >= 0.9 && (
@@ -843,7 +964,11 @@ export function KlassekartKart({
         )}
         <p className="flex items-center gap-3.5 text-[calc(12px*var(--tekst-skala))] text-blekk-svak">
           <span className="ml-auto">
-            Klikk en plass for å låse eleven der · dra for å bytte
+            {malPa
+              ? visk
+                ? "Visker ut"
+                : "Fargelegger · klikk eller dra over pultene"
+              : "Klikk en plass for å låse eleven der · dra for å bytte"}
           </span>
         </p>
       </section>
@@ -852,153 +977,273 @@ export function KlassekartKart({
         aria-label="Fordeling"
         className="ikkeutskrift -my-2 -mr-2 flex w-[300px] shrink-0 flex-col overflow-auto border-l border-linje-medium bg-flate-svak px-5 pb-5 pt-1"
       >
-        <Blokk tittel="Fordel etter">
-          <Bryter
-            fyll
-            storrelse="liten"
-            verdi={innst.fordeling}
-            settVerdi={(v) => endreInnst({ fordeling: v as Modus })}
-            valg={[
-              { id: "tilfeldig", navn: "Tilfeldig" },
-              { id: "spre", navn: "Spre" },
-              { id: "samle", navn: "Samle" },
-            ]}
-          />
-          <p className="mt-2 text-[calc(12.5px*var(--tekst-skala))] leading-normal text-blekk-dempet">
-            {FORDELINGSTEKST[innst.fordeling]}
-          </p>
-        </Blokk>
-        <Blokk>
-          <Avkrysning
-            verdi={innst.bland}
-            sett={(v) => endreInnst({ bland: v })}
-          >
-            Bland jenter og gutter
-          </Avkrysning>
-          <div className="mt-2.5" />
-          <Avkrysning
-            verdi={innst.unnga}
-            sett={(v) => endreInnst({ unnga: v })}
-          >
-            Unngå dem som har sittet sammen
-          </Avkrysning>
-          <p className="ml-[25px] mt-1.5 text-[calc(12px*var(--tekst-skala))] text-blekk-dempet">
-            {oftest
-              ? `Oftest: ${oftest[0]
-                  .split("|")
-                  .map((id) => elevAv.get(id)?.fornavn ?? "?")
-                  .join(
-                    " og ",
-                  )}, ${oftest[1]} ${oftest[1] === 1 ? "gang" : "ganger"}`
-              : "Ingen har sittet sammen ennå"}
-          </p>
-        </Blokk>
-        <Blokk tittel="Hold fra hverandre">
-          <Regler
-            regler={regler}
-            elever={elever}
-            navnPa={navnPa}
-            onLeggTil={async (a, b) => {
-              await leggTilRegel(kart.kildeType, kart.kildeId, a, b);
-              setRegler(await hentRegler(kart.kildeType, kart.kildeId));
-            }}
-            onSlett={async (id) => {
-              await slettRegel(id);
-              setRegler(await hentRegler(kart.kildeType, kart.kildeId));
-            }}
-          />
-        </Blokk>
         <Blokk tittel="Farge på pultene">
           <Bryter
             fyll
             storrelse="liten"
             verdi={farge}
-            settVerdi={(v) => setFarge(v as "ingen" | "innsats")}
+            settVerdi={(v) => setFarge(v as "ingen" | "innsats" | "grupper")}
             valg={[
               { id: "ingen", navn: "Ingen" },
               { id: "innsats", navn: "Innsats" },
+              { id: "grupper", navn: "Grupper" },
             ]}
           />
           <p className="mt-2 text-[calc(12px*var(--tekst-skala))] text-blekk-svak">
-            Innsats = snitt av trafikklyset de siste 10 øktene. Vises bare for
-            deg.
+            {farge === "innsats"
+              ? "Innsats = snitt av trafikklyset de siste 10 øktene. Vises bare for deg."
+              : farge === "grupper"
+                ? "Du bestemmer hvem som er sammen."
+                : "Ingen farger på pultene."}
           </p>
         </Blokk>
-        <Blokk tittel="Ikke til stede i dag" siste>
-          <div
-            data-borte
-            className={`flex min-h-11 flex-wrap items-center gap-2 rounded-lg px-2.5 py-2 shadow-[inset_0_0_0_1.5px_var(--color-linje-medium)] ${
-              dra?.flyttet ? "bg-valgt/40" : ""
-            }`}
-          >
-            {[...borte].map((id) => {
-              const e = elevAv.get(id);
-              if (!e) return null;
-              return (
-                <span
-                  key={id}
-                  onPointerDown={(ev) => {
-                    ev.preventDefault();
-                    setDra({
-                      elevId: id,
-                      x: ev.clientX,
-                      y: ev.clientY,
-                      flyttet: false,
-                    });
-                  }}
-                  className="inline-flex h-[26px] cursor-grab items-center gap-1.5 rounded-full bg-flate pl-1 pr-2.5 text-[calc(12.5px*var(--tekst-skala))]"
+        {malPa ? (
+          <>
+            <Blokk tittel="Pensel">
+              <div className="flex flex-wrap items-center gap-1.5">
+                {PULTFARGER.map((f, i) => (
+                  <button
+                    key={f}
+                    onClick={() => {
+                      setPensel(i);
+                      setVisk(false);
+                    }}
+                    title={orden.includes(f) ? navnFor(f) : `Farge ${i + 1}`}
+                    aria-pressed={!visk && pensel === i}
+                    className="h-6 w-6 rounded-md"
+                    style={{
+                      background: f,
+                      boxShadow:
+                        !visk && pensel === i
+                          ? "0 0 0 2px var(--color-ark), 0 0 0 3.5px var(--color-blekk)"
+                          : undefined,
+                    }}
+                  />
+                ))}
+                <button
+                  onClick={() => setVisk((v) => !v)}
+                  aria-pressed={visk}
+                  title="Visk ut"
+                  className={`grid h-6 w-6 place-items-center rounded-md text-[12px] ${
+                    visk
+                      ? "bg-ark shadow-[inset_0_0_0_1.5px_var(--color-blekk)]"
+                      : "bg-ark text-blekk-dempet shadow-[inset_0_0_0_1px_var(--color-linje)]"
+                  }`}
                 >
-                  <Elevfoto elevId={id} storrelse={20} />
-                  {e.fornavn}
-                </span>
-              );
-            })}
-            <span className="text-[calc(12px*var(--tekst-skala))] text-blekk-svak">
-              Dra en elev hit
-            </span>
-          </div>
-        </Blokk>
-
-        <div className="mt-auto flex flex-col gap-2 pt-4">
-          {brudd
-            .filter((b) => b.regel !== "plass")
-            .map((b, i) => (
-              <p
-                key={i}
-                className="text-[calc(12px*var(--tekst-skala))] text-varsel"
-              >
-                {b.regel === "hold"
-                  ? `${b.tekst
-                      .split("|")
-                      .map(navnPa)
-                      .join(" og ")} sitter sammen, og begge er låst.`
-                  : b.tekst}
+                  ⌫
+                </button>
+              </div>
+              <p className="mt-2 text-[calc(12px*var(--tekst-skala))] text-blekk-svak">
+                Klikk en pult for å fargelegge den, eller dra over flere. Klikk
+                igjen for å ta bort.
               </p>
-            ))}
-          <button
-            onClick={() => stokk()}
-            className="flex h-[38px] items-center justify-center gap-2 rounded-full bg-aksent text-[calc(14px*var(--tekst-skala))] font-medium text-ark hover:bg-aksent-mork"
-          >
-            Stokk på nytt
-            <span className="text-[11px] opacity-65">{visTast("⌘R")}</span>
-          </button>
-          <button
-            onClick={() => void bruk()}
-            disabled={lagret}
-            className="flex h-[34px] items-center justify-center rounded-full border border-linje-sterk bg-ark text-brod hover:bg-flate disabled:border-transparent disabled:bg-transparent disabled:text-blekk-svak"
-          >
-            {lagret
-              ? historikk[0]
-                ? `Brukt ${tidspunkt(historikk[0].tid)}`
-                : "Ikke brukt ennå"
-              : "Bruk"}
-          </button>
-          <p className="text-center text-[calc(12px*var(--tekst-skala))] tabular-nums text-blekk-dempet">
-            {laste.size === 0
-              ? "Ingen er låst"
-              : `${laste.size} låste ${laste.size === 1 ? "elev blir" : "elever blir"} sittende`}
-          </p>
-        </div>
+            </Blokk>
+            <Blokk tittel="Fyll ut for meg">
+              <div className="flex flex-col gap-1.5">
+                <button
+                  onClick={() => fyll(true)}
+                  className="rounded-lg bg-ark px-2.5 py-2 text-left text-[calc(12.5px*var(--tekst-skala))] shadow-[inset_0_0_0_1px_var(--color-linje)] hover:bg-flate"
+                >
+                  To og to par · bordet foran og bak
+                </button>
+                <button
+                  onClick={() => fyll(false)}
+                  className="rounded-lg bg-ark px-2.5 py-2 text-left text-[calc(12.5px*var(--tekst-skala))] shadow-[inset_0_0_0_1px_var(--color-linje)] hover:bg-flate"
+                >
+                  Hvert bord sin gruppe
+                </button>
+              </div>
+              <button
+                onClick={() => {
+                  setPultfarge(new Map());
+                  lagreFarger(new Map());
+                }}
+                className="mt-2 text-[calc(12px*var(--tekst-skala))] text-blekk-dempet hover:text-feil"
+              >
+                Fjern alle farger
+              </button>
+            </Blokk>
+            <Blokk tittel="Gruppene" siste>
+              {orden.length === 0 && (
+                <p className="text-[calc(12px*var(--tekst-skala))] text-blekk-svak">
+                  Ingen farger ennå.
+                </p>
+              )}
+              {orden.map((f) => {
+                const n = [...plass.values()].filter(
+                  (nr) => pultfarge.get(nr) === f,
+                ).length;
+                return (
+                  <div key={f} className="flex items-center gap-2 py-1">
+                    <span
+                      className="h-3 w-3 shrink-0 rounded-[3px]"
+                      style={{ background: f }}
+                    />
+                    <input
+                      value={navnFor(f)}
+                      aria-label="Gruppenavn"
+                      onChange={(e) => {
+                        const nv = new Map(gruppenavn).set(f, e.target.value);
+                        setGruppenavn(nv);
+                      }}
+                      onBlur={() => lagreFarger(pultfarge)}
+                      className="min-w-0 flex-1 rounded bg-transparent px-1 text-[calc(13px*var(--tekst-skala))] outline-none focus:bg-ark"
+                    />
+                    <span className="shrink-0 text-etikett tabular-nums text-blekk-svak">
+                      {n} {n === 1 ? "elev" : "elever"}
+                    </span>
+                  </div>
+                );
+              })}
+              <p className="mt-2 text-[calc(12px*var(--tekst-skala))] leading-normal text-blekk-svak">
+                Fargen hører til pulten. Stokker du plassene, blir fargene
+                stående, og elevene får nye grupper. Kommer med i utskrift og
+                bilde, aldri innsatsen.
+              </p>
+              <button
+                onClick={() => void brukSomGrupper()}
+                disabled={orden.length === 0}
+                className="mt-3 flex h-[32px] items-center rounded-full border border-linje-sterk bg-ark px-3.5 text-brod hover:bg-flate disabled:opacity-50"
+              >
+                Bruk som gruppesett
+              </button>
+            </Blokk>
+          </>
+        ) : (
+          <>
+            <Blokk tittel="Fordel etter">
+              <Bryter
+                fyll
+                storrelse="liten"
+                verdi={innst.fordeling}
+                settVerdi={(v) => endreInnst({ fordeling: v as Modus })}
+                valg={[
+                  { id: "tilfeldig", navn: "Tilfeldig" },
+                  { id: "spre", navn: "Spre" },
+                  { id: "samle", navn: "Samle" },
+                ]}
+              />
+              <p className="mt-2 text-[calc(12.5px*var(--tekst-skala))] leading-normal text-blekk-dempet">
+                {FORDELINGSTEKST[innst.fordeling]}
+              </p>
+            </Blokk>
+            <Blokk>
+              <Avkrysning
+                verdi={innst.bland}
+                sett={(v) => endreInnst({ bland: v })}
+              >
+                Bland jenter og gutter
+              </Avkrysning>
+              <div className="mt-2.5" />
+              <Avkrysning
+                verdi={innst.unnga}
+                sett={(v) => endreInnst({ unnga: v })}
+              >
+                Unngå dem som har sittet sammen
+              </Avkrysning>
+              <p className="ml-[25px] mt-1.5 text-[calc(12px*var(--tekst-skala))] text-blekk-dempet">
+                {oftest
+                  ? `Oftest: ${oftest[0]
+                      .split("|")
+                      .map((id) => elevAv.get(id)?.fornavn ?? "?")
+                      .join(
+                        " og ",
+                      )}, ${oftest[1]} ${oftest[1] === 1 ? "gang" : "ganger"}`
+                  : "Ingen har sittet sammen ennå"}
+              </p>
+            </Blokk>
+            <Blokk tittel="Hold fra hverandre">
+              <Regler
+                regler={regler}
+                elever={elever}
+                navnPa={navnPa}
+                onLeggTil={async (a, b) => {
+                  await leggTilRegel(kart.kildeType, kart.kildeId, a, b);
+                  setRegler(await hentRegler(kart.kildeType, kart.kildeId));
+                }}
+                onSlett={async (id) => {
+                  await slettRegel(id);
+                  setRegler(await hentRegler(kart.kildeType, kart.kildeId));
+                }}
+              />
+            </Blokk>
+            <Blokk tittel="Ikke til stede i dag" siste>
+              <div
+                data-borte
+                className={`flex min-h-11 flex-wrap items-center gap-2 rounded-lg px-2.5 py-2 shadow-[inset_0_0_0_1.5px_var(--color-linje-medium)] ${
+                  dra?.flyttet ? "bg-valgt/40" : ""
+                }`}
+              >
+                {[...borte].map((id) => {
+                  const e = elevAv.get(id);
+                  if (!e) return null;
+                  return (
+                    <span
+                      key={id}
+                      onPointerDown={(ev) => {
+                        ev.preventDefault();
+                        setDra({
+                          elevId: id,
+                          x: ev.clientX,
+                          y: ev.clientY,
+                          flyttet: false,
+                        });
+                      }}
+                      className="inline-flex h-[26px] cursor-grab items-center gap-1.5 rounded-full bg-flate pl-1 pr-2.5 text-[calc(12.5px*var(--tekst-skala))]"
+                    >
+                      <Elevfoto elevId={id} storrelse={20} />
+                      {e.fornavn}
+                    </span>
+                  );
+                })}
+                <span className="text-[calc(12px*var(--tekst-skala))] text-blekk-svak">
+                  Dra en elev hit
+                </span>
+              </div>
+            </Blokk>
+
+            <div className="mt-auto flex flex-col gap-2 pt-4">
+              {brudd
+                .filter((b) => b.regel !== "plass")
+                .map((b, i) => (
+                  <p
+                    key={i}
+                    className="text-[calc(12px*var(--tekst-skala))] text-varsel"
+                  >
+                    {b.regel === "hold"
+                      ? `${b.tekst
+                          .split("|")
+                          .map(navnPa)
+                          .join(" og ")} sitter sammen, og begge er låst.`
+                      : b.tekst}
+                  </p>
+                ))}
+              <button
+                onClick={() => stokk()}
+                className="flex h-[38px] items-center justify-center gap-2 rounded-full bg-aksent text-[calc(14px*var(--tekst-skala))] font-medium text-ark hover:bg-aksent-mork"
+              >
+                Stokk på nytt
+                <span className="text-[11px] opacity-65">{visTast("⌘R")}</span>
+              </button>
+              <button
+                onClick={() => void bruk()}
+                disabled={lagret}
+                className="flex h-[34px] items-center justify-center rounded-full border border-linje-sterk bg-ark text-brod hover:bg-flate disabled:border-transparent disabled:bg-transparent disabled:text-blekk-svak"
+              >
+                {lagret
+                  ? historikk[0]
+                    ? `Brukt ${tidspunkt(historikk[0].tid)}`
+                    : "Ikke brukt ennå"
+                  : "Bruk"}
+              </button>
+              <p className="text-center text-[calc(12px*var(--tekst-skala))] tabular-nums text-blekk-dempet">
+                {laste.size === 0
+                  ? "Ingen er låst"
+                  : `${laste.size} låste ${laste.size === 1 ? "elev blir" : "elever blir"} sittende`}
+              </p>
+            </div>
+          </>
+        )}
       </aside>
 
       {dra?.flyttet && (

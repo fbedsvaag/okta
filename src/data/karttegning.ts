@@ -47,6 +47,7 @@ export function kartSvg({
   plass,
   elever,
   fraElevene,
+  plassfarger,
 }: {
   tittel: string;
   deler: Del[];
@@ -55,6 +56,8 @@ export function kartSvg({
   plass: Map<string, number>;
   elever: Utelev[];
   fraElevene: boolean;
+  /** gruppefargene på plassene (25.11); aldri innsats */
+  plassfarger?: Map<number, string>;
 }): string {
   const r = romramme(deler);
   const marg = 30;
@@ -114,6 +117,12 @@ export function kartSvg({
   for (const p of plasser) {
     const q = snu(p.x, p.y);
     const e = elevPa.get(p.nr);
+    const f = plassfarger?.get(p.nr);
+    if (f && /^#[0-9a-f]{6}$/i.test(f))
+      ut.push(
+        `<rect x="${tx(q.x) - 46}" y="${ty(q.y) - 25}" width="92" height="50" rx="7" fill="${f}" fill-opacity="0.16"/>`,
+        `<rect x="${tx(q.x) - 46}" y="${ty(q.y) - 25}" width="4" height="50" rx="2" fill="${f}"/>`,
+      );
     ut.push(
       e
         ? `<text x="${tx(q.x)}" y="${ty(q.y) + 5}" font-size="14" font-weight="500" text-anchor="middle" fill="#241f33">${esc(kortnavn(e))}</text>`

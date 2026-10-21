@@ -220,11 +220,7 @@ export function Sidemeny({
     klassekart: (
       <>
         {klassekart.map((k) => {
-          const meta = `${
-            k.innstillinger.visning === "grupper"
-              ? "Grupper"
-              : (k.romNavn ?? "Uten rom")
-          } · ${k.antall} elever`;
+          const meta = `${k.romNavn ?? "Uten rom"} · ${k.antall} elever`;
           return (
             <Underpunkt
               key={k.id}
