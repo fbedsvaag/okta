@@ -1,5 +1,7 @@
 import {
   angreSkriving,
+  gjorOmSkriving,
+  sisteOmigjen,
   leggTilEgenAngring,
   lyttSkrivinger,
   sisteSkriving,
@@ -90,6 +92,23 @@ export async function angreSiste(): Promise<string | null> {
   const s = await angreSkriving();
   if (!s) return null;
   // Alle skjermer leser på nytt: angringen kan ha rørt hva som helst.
+  varsle();
+  varsleElever();
+  varsleVurderinger();
+  varsleKlassekart();
+  return navn(s);
+}
+
+/** Det som kan gjøres om (⇧⌘Z), eller null. */
+export function sisteGjorOm(): { tekst: string } | null {
+  const s = sisteOmigjen();
+  return s ? { tekst: navn(s) } : null;
+}
+
+/** Gjør om det som sist ble angret. Gir teksten tilbake. */
+export async function gjorOmSiste(): Promise<string | null> {
+  const s = await gjorOmSkriving();
+  if (!s) return null;
   varsle();
   varsleElever();
   varsleVurderinger();

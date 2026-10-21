@@ -6,7 +6,8 @@ vi.mock("@tauri-apps/plugin-sql", () => ({
   default: { load: async () => base },
 }));
 
-const { angreSkriving, tomSkrivelogg, hent } = await import("./index");
+const { angreSkriving, gjorOmSkriving, tomSkrivelogg, hent } =
+  await import("./index");
 const { opprettSkolear } = await import("../data/skolear");
 const { leggFagIAr } = await import("../data/fag");
 const { opprettOkt, endreOkt, settSkaring, slettOkt, byttOkter } =
@@ -87,5 +88,21 @@ describe("universell angring (21.10)", () => {
     await endreOkt(id, { tema: "x" });
     await angreSkriving();
     expect(await angreSkriving()).toBeNull();
+  });
+
+  it("⇧⌘Z gjør om det som ble angret, og noe nytt tømmer gjør om", async () => {
+    const id = await opprettOkt(fag, "HIS3", "2026-09-01", "08:30", 90);
+    await endreOkt(id, { tema: "A" });
+    tomSkrivelogg();
+    await endreOkt(id, { tema: "B" });
+    await angreSkriving();
+    expect((await okt(id)).tema).toBe("A");
+    await gjorOmSkriving();
+    expect((await okt(id)).tema).toBe("B");
+    await angreSkriving();
+    expect((await okt(id)).tema).toBe("A");
+    await endreOkt(id, { tema: "C" });
+    expect(await gjorOmSkriving()).toBeNull();
+    expect((await okt(id)).tema).toBe("C");
   });
 });

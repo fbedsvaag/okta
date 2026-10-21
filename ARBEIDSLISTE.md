@@ -1007,7 +1007,12 @@ Tegning: `docs/lerret/ElevSamarbeid.dc.html`. Ny fane «Samarbeid» på elevkort
 - [x] **26.4 Detaljer** for ett par: hver gang de var sammen (gruppe/sidemann, navnet på settet, dato).
 - [x] **26.5 «Oftest sammen»**: topp 6 med stolpe.
 - [x] **26.6 Bare for læreren.** Aldri i eksport, utskrift, Teams eller samtaler. Ingen ny lagring: alt regnes ut fra historikken.
-- [ ] **26.7 Senere:** hele klassen som matrise eller nettverk på fagsiden («hvem har ingen jobbet med?»).
+- [ ] **26.7 Ønsker på elevkortet.** Boks «Trives med · vil gjerne sitte med» øverst i Samarbeid: chips med ★, kilde (Samtale · Eleven · Sett selv) og dato, «gjensidig» når begge har nevnt hverandre, × fjerner. «+ Legg til» med navnesøk. «Nevnt av andre» under. Avkrysning «Ta hensyn når jeg stokker grupper og plasser» (myk regel i fordelGrupper, aldri tvang). I ringdiagrammet er ønskede elever grønnblå med ★. Bør også kunne legges inn fra samtalen (Samtaler → eleven → «Vil gjerne være med …»).
+- [ ] **26.8 Datamodell.** Ny tabell `elevonske(id, elev_id, onsker_elev_id, kilde, dato, samtale_id NULL, opprettet, slettet)`. Ikke knyttet til fag: gjelder i alle fag der begge er. Myk sletting. Sletting av elev (Personvern) sletter ønskene begge veier.
+- [ ] **26.9 Klassen — relasjonskart i faget.** Tegning: `docs/lerret/KlasseRelasjoner.dc.html`. Ny fane «Klassen» på fagsiden (Oversikt · Året · Økter · Kalender · Klassen). Nettverk der elever som ofte har vært sammen havner nær hverandre (fast plassering, regnes én gang, står stille når filteret byttes). Bånd = samarbeid (tykkelse etter antall), piler = ønsker, tykk grønnblå strek = gjensidig. Filtre: Begge · Grupper · Sidemann, og av/på for Samarbeid og Ønsker. Klikk en elev: båndene hennes løftes fram, resten dempes, kort med sammendrag og «Åpne elevkort».
+- [ ] **26.10 Panelet ved kartet:** Gjensidige ønsker · Ønsker som ikke er oppfylt ennå (ønsket, men aldri sammen) · Har vært sammen med færrest · Ikke nevnt i noen samtale ennå (med forklaring om at det bare betyr at ingenting er skrevet).
+- [ ] **26.11 Personvern.** Ønsker og relasjonskart er bare for læreren: aldri i eksport, utskrift, Teams, bilde, kalender eller oppsettfil. Test for det.
+- [ ] **26.12 Senere:** matrise som alternativ visning.
 
 ## Ikke nå
 

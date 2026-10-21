@@ -1,5 +1,11 @@
 import { createPortal } from "react-dom";
-import { angreSiste, lyttAngring, sisteAngring } from "./ui/angre";
+import {
+  angreSiste,
+  gjorOmSiste,
+  lyttAngring,
+  sisteAngring,
+  sisteGjorOm,
+} from "./ui/angre";
 import { visToast } from "./ui/Toast";
 import { useSveip } from "./ui/sveip";
 import { hentKart, type Kart } from "./data/klassekart";
@@ -923,34 +929,72 @@ function Visningsbryter({
  */
 function Angreknapp() {
   const [siste, setSiste] = useState(sisteAngring());
-  useEffect(() => lyttAngring(() => setSiste(sisteAngring())), []);
+  const [om, setOm] = useState(sisteGjorOm());
+  useEffect(
+    () =>
+      lyttAngring(() => {
+        setSiste(sisteAngring());
+        setOm(sisteGjorOm());
+      }),
+    [],
+  );
   return (
-    <button
-      onClick={() =>
-        void angreSiste().then((t) => t && visToast(`Angret: ${t}`))
-      }
-      disabled={!siste}
-      aria-label="Angre"
-      title={
-        siste ? `Angre ${siste.tekst} (${visTast("⌘Z")})` : "Ingenting å angre"
-      }
-      className="ml-0.5 grid h-8 w-8 place-items-center rounded-full text-blekk hover:bg-[var(--glass-valgt)] disabled:text-blekk-svakest disabled:hover:bg-transparent"
-    >
-      <svg
-        width="16"
-        height="16"
-        viewBox="0 0 16 16"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden
+    <>
+      <button
+        onClick={() =>
+          void angreSiste().then((t) => t && visToast(`Angret: ${t}`))
+        }
+        disabled={!siste}
+        aria-label="Angre"
+        title={
+          siste
+            ? `Angre ${siste.tekst} (${visTast("⌘Z")})`
+            : "Ingenting å angre"
+        }
+        className="ml-0.5 grid h-8 w-8 place-items-center rounded-full text-blekk hover:bg-[var(--glass-valgt)] disabled:text-blekk-svakest disabled:hover:bg-transparent"
       >
-        <path d="M5.5 3.5L2.5 6.5l3 3" />
-        <path d="M2.5 6.5h7a4 4 0 010 8H7" />
-      </svg>
-    </button>
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 16 16"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden
+        >
+          <path d="M5.5 3.5L2.5 6.5l3 3" />
+          <path d="M2.5 6.5h7a4 4 0 010 8H7" />
+        </svg>
+      </button>
+      {/* Gjør om (⇧⌘Z): bare synlig når noe er angret. */}
+      {om && (
+        <button
+          onClick={() =>
+            void gjorOmSiste().then((t) => t && visToast(`Gjort om: ${t}`))
+          }
+          aria-label="Gjør om"
+          title={`Gjør om ${om.tekst} (${visTast("⇧⌘Z")})`}
+          className="grid h-8 w-8 place-items-center rounded-full text-blekk hover:bg-[var(--glass-valgt)]"
+        >
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 16 16"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden
+          >
+            <path d="M10.5 3.5l3 3-3 3" />
+            <path d="M13.5 6.5h-7a4 4 0 000 8H9" />
+          </svg>
+        </button>
+      )}
+    </>
   );
 }
 

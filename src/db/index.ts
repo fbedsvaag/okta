@@ -306,6 +306,8 @@ export type Skriving = {
 /** Hvor tett skrivinger må komme for å være én handling. */
 const GRUPPE_MS = 600;
 const logg: Skriving[] = [];
+/** Det som er angret, og kan gjøres om igjen (⇧⌘Z). */
+const omigjen: Skriving[] = [];
 const loggLyttere = new Set<() => void>();
 let angrer = false;
 
@@ -315,6 +317,8 @@ function varsleLogg() {
 
 function noter(motsatt: Motsatt[]) {
   if (angrer || motsatt.length === 0) return;
+  // Noe nytt er gjort: det som var angret, kan ikke gjøres om lenger.
+  omigjen.length = 0;
   const naa = Date.now();
   const sist = logg[logg.length - 1];
   if (sist && !sist.egen && naa - sist.tid < GRUPPE_MS) {
@@ -363,7 +367,41 @@ export function leggTilEgenAngring(
   egen: () => Promise<void> | void,
 ): void {
   logg.push({ tid: Date.now(), motsatt: [], tabeller: new Set(), tekst, egen });
+  omigjen.length = 0;
   varsleLogg();
+}
+
+/**
+ * Skriver `motsatt` tilbake, og gir det som trengs for å gå den andre
+ * veien: radene slik de var rett før.
+ */
+async function skrivTilbake(motsatt: Motsatt[]): Promise<Motsatt[]> {
+  const perTabell = new Map<string, string[]>();
+  for (const m of motsatt)
+    perTabell.set(m.tabell, [...(perTabell.get(m.tabell) ?? []), m.id]);
+  const na = new Map<string, Map<string, Record<string, unknown>>>();
+  for (const [t, ider] of perTabell) na.set(t, await gamle(t, ider));
+  const tilbake: Motsatt[] = [];
+  const t = new Transaksjon();
+  const naa_ = naa();
+  for (const m of [...motsatt].reverse()) {
+    const r = na.get(m.tabell)?.get(m.id);
+    if (r)
+      tilbake.unshift({
+        tabell: m.tabell,
+        id: m.id,
+        felter: plukk(r, Object.keys(m.felter)),
+      });
+    t.oppdater(
+      m.tabell,
+      m.id,
+      Object.fromEntries(
+        Object.entries(m.felter).map(([k, v]) => [k, v === NAA ? naa_ : v]),
+      ),
+    );
+  }
+  await t.kjor();
+  return tilbake;
 }
 
 /** Angrer den siste handlingen. Gir den tilbake, eller null. */
@@ -374,23 +412,32 @@ export async function angreSkriving(): Promise<Skriving | null> {
   angrer = true;
   try {
     if (s.egen) await s.egen();
-    else {
-      const t = new Transaksjon();
-      const naa_ = naa();
-      for (const m of [...s.motsatt].reverse())
-        t.oppdater(
-          m.tabell,
-          m.id,
-          Object.fromEntries(
-            Object.entries(m.felter).map(([k, v]) => [k, v === NAA ? naa_ : v]),
-          ),
-        );
-      await t.kjor();
-    }
+    else omigjen.push({ ...s, motsatt: await skrivTilbake(s.motsatt) });
   } finally {
     angrer = false;
+    varsleLogg();
   }
   return s;
+}
+
+/** Gjør om det som sist ble angret (⇧⌘Z). Gir det tilbake, eller null. */
+export async function gjorOmSkriving(): Promise<Skriving | null> {
+  const s = omigjen.pop();
+  varsleLogg();
+  if (!s) return null;
+  angrer = true;
+  try {
+    logg.push({ ...s, tid: 0, motsatt: await skrivTilbake(s.motsatt) });
+  } finally {
+    angrer = false;
+    varsleLogg();
+  }
+  return s;
+}
+
+/** Det som kan gjøres om, eller null. */
+export function sisteOmigjen(): Skriving | null {
+  return omigjen[omigjen.length - 1] ?? null;
 }
 
 export function lyttSkrivinger(f: () => void): () => void {
@@ -401,4 +448,5 @@ export function lyttSkrivinger(f: () => void): () => void {
 /** Bare til testene. */
 export function tomSkrivelogg(): void {
   logg.length = 0;
+  omigjen.length = 0;
 }

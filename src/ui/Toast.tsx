@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { angre, angreSiste, type Angring } from "./angre";
+import { angre, angreSiste, gjorOmSiste, type Angring } from "./angre";
 import { hovedtast } from "./taster";
 import { tast } from "./taster";
 
@@ -66,13 +66,19 @@ export function Toaster() {
   // ⌘Z skrivingen, som det skal.
   useEffect(() => {
     const tast = (e: KeyboardEvent) => {
-      if (!hovedtast(e) || e.shiftKey || e.key.toLowerCase() !== "z") return;
+      if (!hovedtast(e) || e.key.toLowerCase() !== "z") return;
       const mal = e.target as HTMLElement;
       if (mal.closest?.("input, textarea, [contenteditable]")) return;
       e.preventDefault();
-      void angreSiste().then((tekst) => {
-        if (tekst) visToast(`Angret: ${tekst}`);
-      });
+      // ⇧⌘Z gjør om det som ble angret.
+      if (e.shiftKey)
+        void gjorOmSiste().then((tekst) => {
+          if (tekst) visToast(`Gjort om: ${tekst}`);
+        });
+      else
+        void angreSiste().then((tekst) => {
+          if (tekst) visToast(`Angret: ${tekst}`);
+        });
     };
     window.addEventListener("keydown", tast);
     return () => window.removeEventListener("keydown", tast);
