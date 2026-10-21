@@ -910,6 +910,32 @@ stund og etterspør dette.
       Skal føles som samtaletrekkeren og skåringslista, ikke sprette.
     - Huskes per bruker. Samme valg i Innstillinger → I dag.
 
+## 22. Egne karakterskalaer (21.10)
+
+Tegning: `docs/lerret/Skalaer.dc.html` (Innstillinger → Skalaer). Datamodellen finnes allerede (`skala`, `skalaverdi`, `vurdering.skala_id`, `fag.skaringsskala_id`), så dette er bare UI, ingen migrering: `kode` = verdi, `etikett` = forklaring, `slettet` gir myk sletting. Tast 0 for rang 0 (§5) gjelder fortsatt.
+
+- [ ] **22.1 Liste.** Innebygde (Trafikklys, Godkjent, Lav–middels–høy, Karakter 1–6) er låst, med «Kopier og endre». «Dine» under, med antall verdier. «+ Ny skala» nederst.
+- [ ] **22.2 Maler ved ny skala.** Egen liste · Karakter med + og − (1, 2−, 2, 2+ … 6, ferdig utfylt) · Poeng 0–maks · Kopier en skala. Alt kan endres etterpå.
+- [ ] **22.3 Redigering.** Navn; bruk: Vurdering / Skåring / Begge (`bruksomrade`). Per verdi: kode, forklaring, farge (ingen/rød/gul/grønn), bestått, teller ikke. Dra ⋮⋮ for rekkefølge (= `rang`, øverst lavest). Enter i siste felt lager ny rad.
+- [ ] **22.4 Taster.** ≤ 9 verdier: tast 1–9 i rekkefølge. Over 9: ingen taster, læreren skriver koden (f.eks. 4+) og trykker Enter. Vis dette i forhåndsvisningen.
+- [ ] **22.5 Forhåndsvisning.** «Slik ser det ut når du fører»: chips med samme utseende som ved føring.
+- [ ] **22.6 Regler når skalaen er brukt.** Navn, forklaring, farge og rekkefølge kan endres. Verdier som er brukt kan ikke slettes (✕ deaktivert, tooltip sier hvorfor). Resultater beholder verdien sin. Sletting av hele skalaen bare når den ikke er brukt.
+- [ ] **22.7 Velge skalaen.** I «Ny vurdering» og i fagets skåringsskala (filtrert på `bruksomrade`). Egne skalaer følger med i eksport/«Hent fra i fjor».
+- [ ] **22.8 Farge betyr data (20.2).** Verdier uten farge vises nøytralt grå, ikke i heatmap-fargene.
+
+## 23. Innstillinger, ny modell (21.10) — godkjent
+
+Tegning: `docs/lerret/Innstillinger2.dc.html`. Samme innhold som i dag, men i det nye skallet. Endringer:
+
+- [ ] **23.1 Oppsett.** Undermeny med ikoner i grupper: Deg · Daglig bruk (Generelt, Skoleår, Fag, Skalaer, Utseende) · Trygghet (Sikkerhetskopi, Personvern) · Utenfor Økta (Kalender, Del med kollegaer) · Om Økta. Markøren glir rolig (360 ms, ingen sprett).
+- [ ] **23.2 Kort med rader.** Tittel og hjelpetekst til venstre, kontroll til høyre. Brytere for av/på, seg for valg.
+- [ ] **23.3 Søk i innstillinger** i verktøylinja. Treff hopper til siden og blinker raden kort.
+- [ ] **23.4 Nye sider.** *Deg* (navn, skole, «Jeg er kontaktlærer» + klasse). *Fag* (fargebytte inline med brukte farger dempet, Legg til fag via Udir, Fagbanken). *Om Økta* (versjon, Gi tilbakemelding, datamappe).
+- [ ] **23.5 Slått sammen.** Kalenderstrøm + Kalenderserver → *Kalender*. Arkiv → under *Sikkerhetskopi*.
+- [ ] **23.6 Generelt** får «I dag: Enkel/Full» (20.5). **Skoleår** får ferier og fridager, «Start 2027/28» (20.7) og tidligere år.
+- [ ] **23.7 Personvern** starter med fire hake-linjer om hva som lagres og sendes, deretter innsyn, slett elev og slett et års elever.
+- [ ] **23.8 Lys/mørk** ligger nederst i Utseende med merknad om at mørk ikke er ferdig.
+
 ## Ikke nå
 
 Ting som er vurdert og lagt bort med vilje. Står her så de ikke dukker opp

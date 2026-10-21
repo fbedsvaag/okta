@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<title>Skalaer</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#d4cee2}
+:root{--pal:#4a3d7d;--pal-lys:#e3ddf0;--pal-mid:#b2a8d2;--pal-svak:#f4f2f9;--ease-sprett:cubic-bezier(.34,1.32,.5,1)}
+.pt{position:relative;z-index:1;display:flex;align-items:center;gap:9px;height:32px;padding:0 10px;border-radius:10px;color:#2e2840;font-size:14px}
+.pt.on{font-weight:500;color:#241f33}
+.under{position:relative;z-index:1;display:flex;align-items:center;gap:8px;min-height:28px;margin-left:22px;padding:3px 10px;border-radius:8px;color:#2e2840;font-size:13px}
+.under.on{font-weight:500}
+.under::before{content:"";position:absolute;left:-11px;top:-1px;bottom:-1px;width:1.5px;border-radius:1px;background:rgba(36,31,51,.16)}
+.kbd{margin-left:auto;font-size:11px;color:#6b6482;letter-spacing:.04em;font-weight:400}
+.navmark{position:absolute;left:8px;right:8px;border-radius:10px;background:rgba(255,255,255,.88);box-shadow:0 1px 3px rgba(36,31,51,.14),inset 0 1px 0 #fff;pointer-events:none}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;height:30px;padding:0 13px;border-radius:999px;border:1px solid #d9d4e8;background:#fff;color:#241f33;font:inherit;font-size:13px;cursor:pointer;white-space:nowrap}
+.btn.pri{background:var(--pal);border-color:var(--pal);color:#fff;font-weight:500}
+.btn.stille{border-color:transparent;background:transparent;color:#645d7a}
+.seg{position:relative;display:inline-flex;padding:2px;border-radius:999px;background:rgba(36,31,51,.06)}
+.seg button{all:unset;position:relative;z-index:1;cursor:pointer;height:26px;display:inline-flex;align-items:center;justify-content:center;font-size:12.5px;color:#645d7a;transition:color 200ms}
+.seg button.on{color:#241f33;font-weight:500}
+.tommel{position:absolute;top:2px;left:2px;height:26px;border-radius:999px;background:#fff;box-shadow:0 1px 3px rgba(36,31,51,.16);transition:transform 340ms var(--ease-sprett),width 340ms var(--ease-sprett)}
+.chip{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 9px;border-radius:12px;background:var(--pal-svak);font-size:12px;white-space:nowrap}
+.fk{width:8px;height:8px;border-radius:2px;flex:none;display:inline-block}
+.av{border-radius:50%;overflow:hidden;flex:none;display:inline-block;background:var(--pal-lys)}
+.ell{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.num{font-variant-numeric:tabular-nums}
+.h{font-size:13px;font-weight:600;margin:0}
+.kort{border-radius:14px;background:#fff;box-shadow:inset 0 0 0 1px #ece9f3;padding:16px 18px}
+.hm{border-radius:2px;display:inline-block}
+.g{background:#3f9d49}.y{background:#d9a92f}.r{background:#c04a3d}.o{background:#d5d8dd}
+.glide{transition:transform 260ms var(--ease-sprett),height 260ms var(--ease-sprett)}
+@media (prefers-reduced-motion: reduce){.glide,.tommel{transition:none!important}}
+
+.sk-l{display:flex;flex-direction:column;gap:2px}
+.sk-r{display:flex;align-items:center;gap:10px;height:38px;padding:0 12px;border-radius:10px;font-size:13.5px;cursor:pointer}
+.sk-r:hover{background:#f7f6fb}
+.sk-r.on{background:#fff;box-shadow:inset 0 0 0 1px #e3ddf0,0 1px 3px rgba(36,31,51,.06);font-weight:500}
+.sk-r small{margin-left:auto;font-size:11.5px;color:#9a90b8;font-weight:400}
+.gl{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#9a90b8;margin:14px 12px 4px}
+.vr{display:grid;grid-template-columns:14px 34px 150px minmax(0,1fr) 120px 78px 70px 22px;align-items:center;gap:10px;height:40px;padding:0 10px;border-bottom:1px solid #f3f1f8;font-size:13px;background:#fff;transition:box-shadow 160ms}
+.vr.hd{height:30px;font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:#9a90b8;border-bottom:1px solid #ece9f3}
+.vr.loft{box-shadow:0 10px 24px rgba(36,31,51,.18),inset 0 0 0 1.5px #4a3d7d;position:relative;z-index:3;border-radius:8px}
+.vr .gr{color:#c9c2dd;cursor:grab;letter-spacing:-1px;touch-action:none}
+.vr input{all:unset;min-width:0;height:28px;padding:0 8px;border-radius:6px;font-size:13px}
+.vr input:hover{background:#f7f6fb}
+.vr input:focus{background:#fff;box-shadow:inset 0 0 0 1.5px #4a3d7d}
+.vr input::placeholder{color:#c9c2dd}
+.vr input.kode{font-weight:600}
+.tast{display:inline-grid;place-items:center;min-width:22px;height:22px;border-radius:6px;background:#fff;box-shadow:inset 0 0 0 1px #d9d4e8,0 1px 0 #d9d4e8;font-size:11.5px;color:#4b4560}
+.far{display:flex;gap:5px}
+.far button{all:unset;cursor:pointer;width:18px;height:18px;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08);transition:transform 200ms}
+.far button.on{box-shadow:0 0 0 2px #fff,0 0 0 3.5px #241f33}
+.far button.ingen{background:#fff;box-shadow:inset 0 0 0 1.5px #d9d4e8}
+.far button.ingen.on{box-shadow:inset 0 0 0 1.5px #d9d4e8,0 0 0 2px #fff,0 0 0 3.5px #241f33}
+.bx{all:unset;cursor:pointer;width:16px;height:16px;border-radius:5px;box-shadow:inset 0 0 0 1.5px #c9c2dd;display:grid;place-items:center;background:#fff}
+.bx.on{background:#4a3d7d;box-shadow:none}
+.bx svg{opacity:0}.bx.on svg{opacity:1}
+.slett{all:unset;cursor:pointer;color:#c9c2dd;font-size:15px;text-align:center}
+.slett:hover{color:#c04a3d}
+.slett.av{cursor:default;opacity:.35}
+.chipv{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 11px;border-radius:14px;font-size:13px;font-weight:500;background:#f4f2f9;color:#241f33}
+.chipv.rod{background:#c04a3d1f;color:#9b3227}.chipv.gul{background:#d9a92f26;color:#8a5a00}.chipv.gronn{background:#3f9d4920;color:#2f7a4a}
+.chipv.valgt{background:#4a3d7d;color:#fff}
+.mal{display:flex;flex-direction:column;gap:4px;padding:12px 14px;border-radius:14px;background:#fff;box-shadow:inset 0 0 0 1px #ece9f3;cursor:pointer;transition:box-shadow 160ms}
+.mal:hover{box-shadow:inset 0 0 0 1.5px #4a3d7d}
+.slor{position:absolute;inset:-18px -28px;z-index:30;background:rgba(36,31,51,.22);display:grid;place-items:center}
+.malark{width:560px;padding:22px 24px;border-radius:22px;background:rgba(255,255,255,.98);box-shadow:0 30px 80px rgba(36,31,51,.32)}
+.info{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:10px;background:#f7f6fb;font-size:12.5px;color:#645d7a;line-height:1.45}
+
+</style>
+</helmet>
+<div style="position:relative;height:1060px;padding:24px;box-sizing:border-box;overflow:hidden;font-family:'Geist',-apple-system,sans-serif;color:#241f33;font-size:14px">
+<div aria-hidden="true" style="position:absolute;left:-120px;top:-80px;width:620px;height:620px;border-radius:50%;background:#8a7bc2;filter:blur(70px);opacity:.75"></div>
+<div aria-hidden="true" style="position:absolute;left:-60px;top:560px;width:520px;height:520px;border-radius:50%;background:#5f9e98;filter:blur(80px);opacity:.7"></div>
+<div aria-hidden="true" style="position:absolute;right:-100px;top:-60px;width:700px;height:500px;border-radius:50%;background:#b8aee0;filter:blur(90px);opacity:.6"></div>
+<div style="position:relative;display:flex;height:1012px;border-radius:16px;overflow:hidden;background:rgba(236,234,241,.42);backdrop-filter:blur(40px) saturate(160%);box-shadow:0 24px 70px rgba(36,31,51,.28),0 0 0 1px rgba(36,31,51,.14)">
+<nav aria-label="Hovedmeny" style="position:relative;width:236px;flex:none;margin:10px;padding:12px 8px;box-sizing:border-box;display:flex;flex-direction:column;gap:2px;border-radius:22px;background:rgba(255,255,255,.5);backdrop-filter:blur(28px) saturate(170%);border:1px solid rgba(255,255,255,.75);box-shadow:inset 0 1px 0 rgba(255,255,255,.95),0 10px 30px rgba(36,31,51,.14)">
+<div style="display:flex;align-items:center;gap:8px;padding:2px 8px 10px"><svg width="20" height="20" viewBox="0 0 1024 1024" aria-hidden="true"><rect x="40" y="40" width="944" height="944" rx="215" fill="#241F33"></rect><rect x="290" y="330" width="200" height="364" rx="44" fill="#EEEDFE"></rect><rect x="516" y="330" width="100" height="364" rx="40" fill="#C9C2DD"></rect><rect x="642" y="330" width="100" height="364" rx="40" fill="#9A90B8"></rect></svg><span style="font-weight:600;font-size:14px">Økta</span><span class="num" style="margin-left:auto;font-size:11px;color:#4b4560">2026/27</span></div>
+<div style="display:flex;align-items:center;gap:8px;height:30px;padding:0 12px;margin-bottom:10px;border-radius:999px;background:rgba(255,255,255,.55);border:1px solid rgba(255,255,255,.75);font-size:13px;color:#4b4560">Søk<span class="kbd">⌘K</span></div>
+<div class="navmark" style="top:91px;height:32px;"></div><div class="pt ">I dag<span class="kbd">G D</span></div><div class="pt ">Økter<span class="kbd">G Ø</span></div><div class="pt ">Elever<span class="kbd">G E</span></div><div class="pt ">Vurderinger<span class="kbd">G V</span></div><div class="pt ">Samtaler<span class="kbd">G S</span></div><div class="pt ">Klassekart<span class="kbd">G K</span></div>
+<div style="flex:1"></div><div class="pt">Innstillinger<span class="kbd">⌘,</span></div></nav>
+<main style="position:relative;flex:1;min-width:0;margin:10px 10px 10px 0;background:#fff;border-radius:16px;box-shadow:0 1px 3px rgba(36,31,51,.10);display:flex;flex-direction:column;overflow:hidden">
+<header style="display:flex;align-items:center;gap:10px;margin:10px 12px 0;padding:0 8px 0 18px;height:48px;border-radius:999px;background:rgba(255,255,255,.7);backdrop-filter:blur(28px) saturate(170%);border:1px solid rgba(255,255,255,.8);box-shadow:inset 0 1px 0 rgba(255,255,255,.95),0 6px 20px rgba(36,31,51,.10),0 0 0 .5px rgba(36,31,51,.08);flex:none"><span style="font-weight:600;font-size:15px">Innstillinger</span><span style="font-size:13px;color:#9a90b8">Skalaer</span></header>
+<div style="flex:1;min-height:0;overflow:hidden;padding:18px 28px 20px"><div style="position:relative;height:100%;display:grid;grid-template-columns:260px minmax(0,1fr);gap:26px">
+<div><div style="font-size:30px;font-weight:300;letter-spacing:-.015em;margin-bottom:6px">Skalaer</div>
+<div style="font-size:12.5px;color:#645d7a;margin-bottom:6px;line-height:1.45">Brukes når du fører vurderinger og skårer økter.</div>
+<div class="gl">Innebygde</div><div class="sk-l"><sc-for list="{{inne}}" as="s" hint-placeholder-count="4"><div class="{{s.kl}}" onClick="{{s.velg}}">{{s.n}}<small style="white-space:nowrap;margin-left:auto;padding-left:8px">{{s.ant}}</small></div></sc-for></div>
+<div class="gl">Dine</div><div class="sk-l"><sc-for list="{{egne}}" as="s" hint-placeholder-count="2"><div class="{{s.kl}}" onClick="{{s.velg}}">{{s.n}}<small style="white-space:nowrap;margin-left:auto;padding-left:8px">{{s.ant}}</small></div></sc-for>
+<div class="sk-r" style="color:#4a3d7d" onClick="{{nyApne}}">+ Ny skala</div></div>
+</div>
+<div style="min-width:0;display:flex;flex-direction:column;gap:14px">
+<div style="display:flex;align-items:center;gap:12px;margin-top:6px">
+<input value="{{navn}}" onInput="{{skrivNavn}}" style="all:unset;font-size:24px;font-weight:300;letter-spacing:-.01em;min-width:0;flex:1" {{laasAttr}}>
+<sc-if value="{{innebygd}}" hint-placeholder-val="{{ false }}"><span style="font-size:12px;color:#645d7a;background:#f4f2f9;border-radius:6px;padding:3px 8px">Innebygd · kan ikke endres</span><button class="btn" onClick="{{kopier}}">Kopier og endre</button></sc-if>
+<sc-if value="{{egen}}" hint-placeholder-val="{{ true }}"><div class="seg"><span class="tommel" style="left:{{bL}};width:{{bW}}"></span><sc-for list="{{bruk}}" as="b" hint-placeholder-count="3"><button class="{{b.kl}}" style="width:{{b.w}}" onClick="{{b.klikk}}">{{b.n}}</button></sc-for></div></sc-if>
+</div>
+<div class="kort" style="padding:4px 0">
+<div class="vr hd"><span></span><span>Tast</span><span>Verdi</span><span>Forklaring</span><span>Farge</span><span>Bestått</span><span>Teller ikke</span><span></span></div>
+<div data-liste="1" style="max-height:520px;overflow:auto"><sc-for list="{{verdier}}" as="v" hint-placeholder-count="6"><div class="{{v.kl}}" data-vr="{{v.i}}">
+<span class="gr" onPointerDown="{{v.dra}}">{{v.grep}}</span><span><span class="tast num">{{v.tast}}</span></span>
+<input class="kode" value="{{v.kode}}" placeholder="Verdi" onInput="{{v.skrivK}}" onKeyDown="{{v.tastK}}" data-kode="{{v.i}}" {{v.laas}}>
+<input value="{{v.et}}" placeholder="Forklaring som vises ved føring" onInput="{{v.skrivE}}" {{v.laas}}>
+<span class="far"><sc-for list="{{v.farger}}" as="f" hint-placeholder-count="4"><button class="{{f.kl}}" style="background:{{f.c}}" title="{{f.t}}" onClick="{{f.klikk}}"></button></sc-for></span>
+<span><button class="{{v.bkl}}" onClick="{{v.bestatt}}" title="Regnes som bestått"><svg width="9" height="9" viewBox="0 0 10 10"><path d="M1.5 5.2l2.2 2.2L8.5 2.6" stroke="#fff" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></button></span>
+<span><button class="{{v.tkl}}" onClick="{{v.teller}}" title="Holdes utenfor snitt og statistikk, f.eks. «Ikke levert»"><svg width="9" height="9" viewBox="0 0 10 10"><path d="M1.5 5.2l2.2 2.2L8.5 2.6" stroke="#fff" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></button></span>
+<button class="{{v.skl}}" onClick="{{v.slett}}" title="{{v.stip}}">×</button>
+</div></sc-for></div>
+<sc-if value="{{egen}}" hint-placeholder-val="{{ true }}"><div style="display:flex;align-items:center;gap:10px;padding:10px 14px"><button class="btn" onClick="{{leggTil}}">+ Legg til verdi</button><span style="font-size:12px;color:#9a90b8">↵ i siste felt lager en ny · dra ⋮⋮ for rekkefølge, øverst er lavest</span></div></sc-if>
+</div>
+<div style="display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:16px">
+<div class="kort"><div style="font-size:12px;font-weight:600;margin-bottom:10px">Slik ser det ut når du fører</div>
+<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;font-size:13px"><span style="width:26px;height:26px;border-radius:50%;background:#e3ddf0"></span><b style="font-weight:500">Ada Lie</b><span style="color:#9a90b8">· {{forhHint}}</span></div>
+<div style="display:flex;gap:6px;flex-wrap:wrap"><sc-for list="{{forh}}" as="c" hint-placeholder-count="5"><span class="{{c.kl}}" onClick="{{c.klikk}}" title="{{c.et}}"><span class="tast num" style="min-width:18px;height:18px;font-size:10.5px;{{c.ts}}">{{c.tast}}</span>{{c.kode}}</span></sc-for></div>
+<div style="margin-top:10px;font-size:12px;color:#645d7a;min-height:16px">{{forhT}}</div></div>
+<div class="info"><span style="font-size:15px">ⓘ</span><span>{{infoT}}</span></div>
+</div>
+</div>
+<sc-if value="{{nyApen}}" hint-placeholder-val="{{ false }}"><div class="slor" onClick="{{nyLukk}}"><div class="malark" onClick="{{stopp}}">
+<div style="font-size:20px;font-weight:300">Ny skala</div><div style="font-size:13px;color:#645d7a;margin:4px 0 14px">Velg et utgangspunkt. Du kan endre alt etterpå.</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><sc-for list="{{maler}}" as="m" hint-placeholder-count="4"><div class="mal" onClick="{{m.klikk}}"><b style="font-size:14px;font-weight:600">{{m.n}}</b><span style="font-size:12.5px;color:#645d7a;line-height:1.4">{{m.u}}</span></div></sc-for></div>
+<div style="display:flex;justify-content:flex-end;margin-top:16px"><button class="btn" onClick="{{nyLukk}}">Avbryt</button></div>
+</div></div></sc-if>
+</div></div>
+</main>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1060}}'>
+var START = [{"id": "t", "n": "Trafikklys", "b": "skaring", "inn": true, "v": [["Ikke i økta", "", "", 0, 1], ["Rød", "Ikke i gang", "rod", null, 0], ["Gul", "Delvis innsats", "gul", null, 0], ["Grønn", "Jobbet med det planlagte", "gronn", null, 0]]}, {"id": "g", "n": "Godkjent", "b": "vurdering", "inn": true, "v": [["Ikke levert", "", "rod", 0, 0], ["Ikke godkjent", "", "gul", 0, 0], ["Godkjent", "", "gronn", 1, 0]]}, {"id": "l", "n": "Lav–middels–høy", "b": "vurdering", "inn": true, "v": [["Lav", "", "", null, 0], ["Middels", "", "", null, 0], ["Høy", "", "", null, 0]]}, {"id": "k", "n": "Karakter 1–6", "b": "vurdering", "inn": true, "v": [["1", "", "", 0, 0], ["2", "", "", 1, 0], ["3", "", "", 1, 0], ["4", "", "", 1, 0], ["5", "", "", 1, 0], ["6", "", "", 1, 0]]}, {"id": "pm", "n": "Karakter med pluss og minus", "b": "vurdering", "inn": false, "bruk": 2, "v": [["1", "", "", 0, 0], ["2−", "", "", 1, 0], ["2", "", "", 1, 0], ["2+", "", "", 1, 0], ["3−", "", "", 1, 0], ["3", "", "", 1, 0], ["3+", "", "", 1, 0], ["4−", "", "", 1, 0], ["4", "", "", 1, 0], ["4+", "", "", 1, 0], ["5−", "", "", 1, 0], ["5", "", "", 1, 0], ["5+", "", "", 1, 0], ["6−", "", "", 1, 0], ["6", "", "", 1, 0]]}, {"id": "mo", "n": "Måloppnåelse", "b": "vurdering", "inn": false, "bruk": 0, "v": [["Ikke vist", "Har ikke vist kompetanse ennå", "rod", 0, 0], ["Under utvikling", "Viser noe kompetanse", "gul", 1, 0], ["Godt", "Viser god kompetanse", "gronn", 1, 0], ["Svært godt", "Viser svært god kompetanse", "gronn", 1, 0]]}];
+var MALER = [["liste", "Egen liste", "Skriv inn verdiene selv, for eksempel Ikke vist · Under utvikling · Godt"], ["pm", "Karakter med + og −", "1 til 6 med 2−, 2, 2+ … ferdig utfylt"], ["poeng", "Poeng", "Fra 0 til et maks du velger, for eksempel 0–20"], ["kopi", "Kopier en skala", "Start fra en av de innebygde og endre den"]];
+var FC = { '': '#ffffff', rod: '#c04a3d', gul: '#d9a92f', gronn: '#3f9d49' }, FN = { '': 'Ingen farge', rod: 'Rød', gul: 'Gul', gronn: 'Grønn' };
+function kopi(a) { return a.map(function (s) { return Object.assign({}, s, { v: s.v.map(function (x) { return x.slice(); }) }); }); }
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { sk: kopi(START), valgt: 'mo', ny: false, forh: -1, loft: -1 }; }
+  sett(fn) { var sk = kopi(this.state.sk), s = sk.filter(function (x) { return x.id === this.state.valgt; }, this)[0]; fn(s); this.setState({ sk: sk }); }
+  dra(e, i) {
+    e.preventDefault(); var self = this, cur = i, y0 = e.clientY, fl = false;
+    var flytt = function (ev) { if (!fl && Math.abs(ev.clientY - y0) < 4) return; if (!fl) { fl = true; self.setState({ loft: cur }); }
+      var mal = -1; document.querySelectorAll('[data-vr]').forEach(function (n) { var r = n.getBoundingClientRect(); if (ev.clientY >= r.top && ev.clientY <= r.bottom) mal = +n.getAttribute('data-vr'); });
+      if (mal >= 0 && mal !== cur) { self.sett(function (s) { var x = s.v.splice(cur, 1)[0]; s.v.splice(mal, 0, x); }); cur = mal; self.setState({ loft: cur }); } };
+    var slipp = function () { window.removeEventListener('pointermove', flytt); window.removeEventListener('pointerup', slipp); self.setState({ loft: -1 }); };
+    window.addEventListener('pointermove', flytt); window.addEventListener('pointerup', slipp);
+  }
+  lagFra(m) {
+    var sk = kopi(this.state.sk), id = 'n' + Date.now(), s;
+    if (m === 'pm') s = { n: 'Karakter med + og −', v: ['1', '2−', '2', '2+', '3−', '3', '3+', '4−', '4', '4+', '5−', '5', '5+', '6−', '6'].map(function (k) { return [k, '', '', k === '1' ? 0 : 1, 0]; }) };
+    else if (m === 'poeng') s = { n: 'Poeng 0–20', v: Array.apply(null, Array(21)).map(function (_, i) { return [String(i), '', '', null, 0]; }) };
+    else if (m === 'kopi') { var g = sk.filter(function (x) { return x.id === 'k'; })[0]; s = { n: g.n + ' (kopi)', v: g.v.map(function (x) { return x.slice(); }) }; }
+    else s = { n: 'Ny skala', v: [['', '', '', null, 0], ['', '', '', null, 0], ['', '', '', null, 0]] };
+    sk.push(Object.assign({ id: id, b: 'vurdering', inn: false, bruk: 0 }, s)); this.setState({ sk: sk, valgt: id, ny: false });
+    setTimeout(function () { var i = document.querySelector('[data-kode="0"]'); if (i) i.focus(); }, 60);
+  }
+  renderVals() {
+    var self = this, st = this.state, s = st.sk.filter(function (x) { return x.id === st.valgt; })[0], egen = !s.inn;
+    var liste = function (inn) { return st.sk.filter(function (x) { return x.inn === inn; }).map(function (x) { return { n: x.n, ant: x.v.length + ' verdier', kl: 'sk-r' + (x.id === st.valgt ? ' on' : ''), velg: function () { self.setState({ valgt: x.id, forh: -1 }); } }; }); };
+    var tastene = s.v.map(function (v, i) { if (s.id === 't') return String(i); return s.v.length <= 9 ? String(i + 1) : ''; });
+    var B = [['vurdering', 'Vurdering', 90], ['skaring', 'Skåring', 76], ['begge', 'Begge', 66]], x = 2, bL = '2px', bW = '90px';
+    var bruk = B.map(function (b) { if (b[0] === s.b) { bL = x + 'px'; bW = b[2] + 'px'; } x += b[2]; return { n: b[1], w: b[2] + 'px', kl: b[0] === s.b ? 'on' : '', klikk: function () { self.sett(function (q) { q.b = b[0]; }); } }; });
+    var brukt = s.bruk || 0;
+    return {
+      inne: liste(true), egne: liste(false), navn: s.n, innebygd: !egen, egen: egen, laasAttr: egen ? '' : 'readonly',
+      skrivNavn: function (e) { var v = e.target.value; self.sett(function (q) { q.n = v; }); },
+      kopier: function () { var sk = kopi(st.sk), id = 'n' + Date.now(); sk.push({ id: id, n: s.n + ' (kopi)', b: s.b, inn: false, bruk: 0, v: s.v.map(function (x) { return x.slice(); }) }); self.setState({ sk: sk, valgt: id }); },
+      bruk: bruk, bL: bL, bW: bW,
+      verdier: s.v.map(function (v, i) { return { i: i, kode: v[0], et: v[1], tast: tastene[i] || '–', grep: egen ? '⋮⋮' : '', laas: egen ? '' : 'readonly', kl: 'vr' + (st.loft === i ? ' loft' : ''),
+        dra: function (e) { if (egen) self.dra(e, i); },
+        skrivK: function (e) { var t = e.target.value; self.sett(function (q) { q.v[i][0] = t; }); },
+        tastK: function (e) { if (e.key === 'Enter' && egen) { e.preventDefault(); if (i === s.v.length - 1) self.sett(function (q) { q.v.push(['', '', '', null, 0]); }); setTimeout(function () { var n = document.querySelector('[data-kode="' + (i + 1) + '"]'); if (n) n.focus(); }, 30); } },
+        skrivE: function (e) { var t = e.target.value; self.sett(function (q) { q.v[i][1] = t; }); },
+        farger: ['', 'rod', 'gul', 'gronn'].map(function (f) { return { c: FC[f], t: FN[f], kl: (f === '' ? 'ingen' : '') + (v[2] === f ? ' on' : ''), klikk: function () { if (egen) self.sett(function (q) { q.v[i][2] = f; }); } }; }),
+        bkl: 'bx' + (v[3] === 1 ? ' on' : ''), bestatt: function () { if (egen) self.sett(function (q) { q.v[i][3] = q.v[i][3] === 1 ? 0 : 1; }); },
+        tkl: 'bx' + (v[4] ? ' on' : ''), teller: function () { if (egen) self.sett(function (q) { q.v[i][4] = q.v[i][4] ? 0 : 1; }); },
+        skl: 'slett' + (egen && !brukt ? '' : ' av'), stip: !egen ? 'Innebygd' : brukt ? 'Skalaen er brukt, verdier kan ikke slettes' : 'Slett verdien',
+        slett: function () { if (egen && !brukt && s.v.length > 2) self.sett(function (q) { q.v.splice(i, 1); }); } }; }),
+      leggTil: function () { self.sett(function (q) { q.v.push(['', '', '', null, 0]); }); setTimeout(function () { var n = document.querySelector('[data-kode="' + s.v.length + '"]'); if (n) n.focus(); }, 30); },
+      forhHint: s.v.length <= 9 ? 'trykk en tast eller klikk' : 'skriv verdien eller klikk',
+      forh: s.v.filter(function (v) { return v[0]; }).map(function (v, i) { return { kode: v[0], et: v[1], tast: tastene[s.v.indexOf(v)] || '', ts: tastene[s.v.indexOf(v)] ? '' : 'display:none', kl: 'chipv ' + v[2] + (st.forh === i ? ' valgt' : ''), klikk: function () { self.setState({ forh: i }); } }; }),
+      forhT: st.forh >= 0 && s.v[st.forh] ? (s.v[st.forh][1] || s.v[st.forh][0]) + (s.v[st.forh][4] ? ' · telles ikke i snittet' : '') + (s.v[st.forh][3] === 1 ? ' · bestått' : s.v[st.forh][3] === 0 ? ' · ikke bestått' : '') : 'Klikk en verdi for å se hvordan den registreres.',
+      infoT: !egen ? 'Innebygde skalaer kan ikke endres, men du kan kopiere dem og gjøre kopien til din egen.' : brukt ? 'Brukt i ' + brukt + ' vurderinger. Du kan endre navn, forklaring, farge og rekkefølge. Verdier som er brukt, kan ikke slettes, og resultatene som er ført, beholder verdien sin.' : 'Ikke brukt ennå. Velg den når du lager en vurdering, eller som skåringsskala for et fag. ' + (s.v.length <= 9 ? 'Med 9 verdier eller færre får hver verdi en tast.' : 'Over 9 verdier: når du fører, skriver du verdien (for eksempel 4+) og trykker Enter.'),
+      nyApen: st.ny, nyApne: function () { self.setState({ ny: true }); }, nyLukk: function () { self.setState({ ny: false }); }, stopp: function (e) { e.stopPropagation(); },
+      maler: MALER.map(function (m) { return { n: m[1], u: m[2], klikk: function () { self.lagFra(m[0]); } }; })
+    };
+  }
+}
+</script>
+</body>
+</html>
