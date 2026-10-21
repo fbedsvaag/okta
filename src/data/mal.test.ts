@@ -12,8 +12,14 @@ const { opprettOkt, hentOkter, endreOkt } = await import("./okter");
 const { opprettSkolear } = await import("./skolear");
 const { opprettPeriode, hentPerioder, settPeriodemal, hentPeriodemal } =
   await import("./perioder");
-const { opprettVurdering, knyttOkt, hentVurderingsskalaer } =
-  await import("./vurderinger");
+const {
+  opprettVurdering,
+  knyttOkt,
+  hentVurderingsskalaer,
+  hentVurderinger,
+  bekreftUtkast,
+} = await import("./vurderinger");
+const { hentKommendeVurderinger } = await import("./dashbord");
 
 describe("datoene i fjor og i år", () => {
   it("samme uke og ukedag regnet fra skoleårets første uke", () => {
@@ -89,6 +95,17 @@ describe("fjoråret som mal", () => {
     // Tema fylles bare der det var tomt.
     expect(etter.map((o) => o.tema)).toEqual(["Oppstart", "Mitt eget", null]);
     expect((await hentPeriodemal(sfIar)).get(ny.id)).toEqual(["KM1"]);
+
+    // Vurderingen kommer som utkast (§24): ikke blant fristene før den er
+    // bekreftet.
+    const [kopi] = await hentVurderinger(iar);
+    expect(kopi.utkast).toBe(1);
+    expect(await hentKommendeVurderinger(iar, 10)).toEqual([]);
+    await bekreftUtkast([kopi.id]);
+    expect((await hentVurderinger(iar))[0].utkast).toBe(0);
+    expect(
+      (await hentKommendeVurderinger(iar, 10)).map((r) => r.vurderingId),
+    ).toEqual([kopi.id]);
 
     await angre();
     etter = (await hentOkter(iar)).filter((o) => o.skolearFagId === sfIar);

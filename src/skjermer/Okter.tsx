@@ -1137,6 +1137,8 @@ function Liste({
             const i = okter.indexOf(o);
             const erApen = apen === o.id;
             const vurd = vurderinger.get(o.id) ?? [];
+            // Utkast (§24) markeres ikke som vurderingsdag før de er bekreftet.
+            const fast = vurd.some((v) => v.utkast !== 1);
             const per = perioder.get(o.id);
             return (
               <div
@@ -1194,10 +1196,9 @@ function Liste({
                   style={{
                     ...kolonner,
                     // Gyllen strek til venstre på økter med vurdering (§6).
-                    boxShadow:
-                      vurd.length > 0
-                        ? "inset 3px 0 0 var(--color-vurdering)"
-                        : undefined,
+                    boxShadow: fast
+                      ? "inset 3px 0 0 var(--color-vurdering)"
+                      : undefined,
                   }}
                   className={`group relative grid h-[30px] cursor-default select-none items-center gap-x-3 px-2 text-[calc(13px*var(--tekst-skala))] tabular-nums ${
                     blink.has(o.id) ? "bytteblink" : ""
@@ -1206,7 +1207,7 @@ function Liste({
                       ? "rounded-t-lg bg-flate"
                       : merket.has(o.id)
                         ? "border-b border-linje-svak bg-valgt"
-                        : vurd.length > 0
+                        : fast
                           ? "border-b border-linje-svak bg-vurdering-flate hover:bg-flate-svak"
                           : "border-b border-linje-svak hover:bg-flate-svak"
                   }`}
@@ -1333,6 +1334,7 @@ function Liste({
                     {vurd.length > 0 && (
                       <Vurderingsikon
                         type={vurd[0].type}
+                        utkast={vurd.every((v) => v.utkast === 1)}
                         klasse="absolute -left-[21px] top-1/2 -mt-2"
                       />
                     )}
@@ -1365,7 +1367,7 @@ function Liste({
                           setRedigerer((r) => (r === o.id ? null : r));
                         }}
                         className={`-mx-1 w-full min-w-0 truncate rounded border border-aksent bg-ark px-1 py-0.5 outline-none placeholder:text-blekk-svakest ${
-                          vurd.length > 0 ? "font-semibold" : ""
+                          fast ? "font-semibold" : ""
                         }`}
                       />
                     ) : (
@@ -1382,7 +1384,7 @@ function Liste({
                         }}
                         className={`-mx-1 min-w-0 flex-1 truncate border border-transparent px-1 py-0.5 ${
                           o.skaret ? "" : "cursor-grab active:cursor-grabbing"
-                        } ${vurd.length > 0 ? "font-semibold" : ""} ${
+                        } ${fast ? "font-semibold" : ""} ${
                           o.tema ? "" : "text-blekk-svakest"
                         }`}
                       >
@@ -1423,7 +1425,13 @@ function Liste({
                   <span className="min-w-0" style={innholdsstil(i, o.id)}>
                     <Kappet
                       verdi={[
-                        ...new Set(vurd.map((v) => vurderingstype(v.type))),
+                        ...new Set(
+                          vurd.map(
+                            (v) =>
+                              vurderingstype(v.type) +
+                              (v.utkast === 1 ? " (utkast)" : ""),
+                          ),
+                        ),
                       ].join(", ")}
                       tom=""
                       klasse="text-[calc(12.5px*var(--tekst-skala))] font-semibold text-vurdering-tekst"
@@ -1546,7 +1554,8 @@ function Titt({
                     onClick={() => onApneVurdering(v)}
                     className="text-left font-medium text-vurdering-tekst hover:underline"
                   >
-                    {v.tittel} · Åpne i{" "}
+                    {v.tittel}
+                    {v.utkast === 1 && " (utkast)"} · Åpne i{" "}
                     <i>{v.type === "muntlig" ? "Samtaler" : "Vurderinger"}</i> →
                   </button>
                 ))}

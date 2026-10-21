@@ -547,9 +547,10 @@ export function Aret({ skolear, fag }: { skolear: Skolear; fag: FagIAr }) {
             className="aret-vm"
             style={{ left: `calc(${i} * var(--w) + var(--w) / 2)` }}
           >
-            <Vurderingsikon type={vu.type} />
+            <Vurderingsikon type={vu.type} utkast={vu.utkast === 1} />
             <span className="aret-vm-tips">
-              {vu.tittel} · {kort(stripe[i].dato)}
+              {vu.tittel}
+              {vu.utkast === 1 && " (utkast)"} · {kort(stripe[i].dato)}
             </span>
           </span>
         ))}
@@ -984,7 +985,9 @@ function Periodekort({
               key={`${v.id}-${dato}`}
               className="mt-0.5 flex min-w-0 items-center gap-1.5 text-etikett text-blekk-svak"
             >
-              <span className="shrink-0">Vurdering:</span>
+              <span className="shrink-0">
+                {v.utkast === 1 ? "Utkast:" : "Vurdering:"}
+              </span>
               <span className="truncate text-blekk-dempet">{v.tittel}</span>
               <span className="shrink-0 tabular-nums">{kort(dato)}</span>
             </span>
@@ -1026,6 +1029,7 @@ function Periodekort({
                   {(vurderinger.get(x.okt.id) ?? [])[0] && (
                     <Vurderingsikon
                       type={(vurderinger.get(x.okt.id) ?? [])[0].type}
+                      utkast={(vurderinger.get(x.okt.id) ?? [])[0].utkast === 1}
                     />
                   )}
                 </span>

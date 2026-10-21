@@ -429,6 +429,7 @@ export async function hentKommendeVurderinger(
          JOIN skolear_fag sf ON sf.id = v.skolear_fag_id AND sf.slettet IS NULL
          JOIN fag f          ON f.id = sf.fag_id
         WHERE v.slettet IS NULL AND sf.skolear_id = $1 AND v.frist IS NOT NULL
+          AND v.utkast = 0
      )
      SELECT * FROM alle
       WHERE elever = 0 OR fort < elever

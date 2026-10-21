@@ -728,6 +728,9 @@ Med et fag valgt er bryteren Oversikt | Året | Økter | Kalender (ARBEIDSLISTE
   (fylles bare der årets økt er tom) og vurderinger. Ingenting om elevene.
   Erstatter årets perioder og kan angres. Tilbys i Året når faget ikke har
   perioder i år.
+  Vurderingene kommer som **utkast**: dempet ikon og «utkast» i Året, Økter
+  og Vurderinger, og ikke blant fristene i I dag før de er bekreftet. «Bekreft»
+  i vurderingen eller «Bekreft alle» over lista gjør dem vanlige.
 
 #### Listevisning (standard)
 

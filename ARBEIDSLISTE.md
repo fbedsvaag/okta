@@ -952,6 +952,19 @@ Tegning: `docs/lerret/Innstillinger2.dc.html`. Samme innhold som i dag, men i de
   - Avvik fra tegningen: «Jeg er mentor» i stedet for «kontaktlærer» (appen
     bruker mentor-ordene; språkvalg senere).
 
+## 24. Utkast for vurderinger (21.10) — godkjent
+
+Vurderinger som hentes fra i fjor, er forslag til læreren har sett på dem.
+
+- [x] **24.1** `vurdering.utkast` (migrering 030, 0 = bekreftet). «Hent fra i
+  fjor» lager vurderingene med `utkast = 1`.
+- [x] **24.2** Dempet ikon og «utkast» i Året, Økter, Vurderinger og
+  fagoversikten. I Økter får en utkastdag ikke gul stripe eller fet tekst.
+- [x] **24.3** Utkast står ikke blant vurderingsfristene i I dag. Kalenderen
+  og CalDAV sender ikke vurderinger i det hele tatt, så der trengs ikke noe.
+- [x] **24.4** «Bekreft» i vurderingspanelet og «Bekreft alle» over lista i
+  Vurderinger. Ett klikk, ingen spørsmål. Testet i `mal.test.ts`.
+
 ## Ikke nå
 
 Ting som er vurdert og lagt bort med vilje. Står her så de ikke dukker opp

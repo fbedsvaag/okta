@@ -197,6 +197,12 @@ fn migrations() -> Vec<Migration> {
             sql: include_str!("../migrations/029_skalaverdi_stempler.sql"),
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 30,
+            description: "utkast for vurderinger",
+            sql: include_str!("../migrations/030_vurdering_utkast.sql"),
+            kind: MigrationKind::Up,
+        },
     ]
 }
 

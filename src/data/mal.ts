@@ -236,6 +236,8 @@ export async function brukMal(
         type: v.type,
         beskrivelse: v.beskrivelse,
         frist: okt.dato,
+        // Et forslag til det er bekreftet (§24).
+        utkast: 1,
       });
       nye.push({ tabell: "vurdering", id });
       nye.push({

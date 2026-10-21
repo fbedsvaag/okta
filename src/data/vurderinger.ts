@@ -1,5 +1,6 @@
-import { hent, oppdater, settInn, slett } from "../db";
+import { hent, oppdater, settInn, slett, Transaksjon } from "../db";
 import type { Skala, Skalaverdi } from "../skala";
+import { varsleVurderinger } from "./endringer";
 
 /**
  * Vurderinger, SPEC §3.4 og §4.6.
@@ -23,6 +24,8 @@ export type Vurdering = {
   /** øktene vurderingen holdes i — én, flere, eller ingen */
   oktIder: string[];
   beskrivelse: string | null;
+  /** 1 = hentet fra i fjor og ikke bekreftet ennå (§24) */
+  utkast: number;
   /** antall resultater med en skalaverdi satt */
   fort: number;
   /** antall elever koblet til faget */
@@ -61,7 +64,7 @@ export async function hentVurderinger(skolearId: string): Promise<Vurdering[]> {
             f.farge          AS farge,
             v.skala_id       AS skalaId,
             sk.navn          AS skalaNavn,
-            v.tittel, v.type, v.frist, v.beskrivelse,
+            v.tittel, v.type, v.frist, v.beskrivelse, v.utkast,
             (SELECT group_concat(vo.okt_id) FROM vurdering_okt vo
                JOIN okt o ON o.id = vo.okt_id AND o.slettet IS NULL
               WHERE vo.vurdering_id = v.id AND vo.slettet IS NULL) AS oktIder,
@@ -450,4 +453,15 @@ export async function hentVurderingsvalg(
     [skolearFagId],
   );
   return rader.map((r) => ({ ...r, oktIder: delListe(r.oktIder) }));
+}
+
+/**
+ * Bekrefter vurderinger hentet fra i fjor (§24): fra utkast til vanlige
+ * vurderinger, med frist i I dag. Ett klikk, ingen spørsmål.
+ */
+export async function bekreftUtkast(ider: string[]): Promise<void> {
+  const t = new Transaksjon();
+  for (const id of ider) t.oppdater("vurdering", id, { utkast: 0 });
+  await t.kjor();
+  varsleVurderinger();
 }

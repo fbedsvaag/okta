@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import {
+  bekreftUtkast,
   hentVurderinger,
   hentVurderingsskalaer,
   opprettVurdering,
@@ -19,7 +20,11 @@ import {
 import { useArk } from "../ui/Arkstabel";
 import { lyttVurderinger } from "../data/endringer";
 import { Velger } from "../ui/Velger";
-import { Vurderingsikon, vurderingstype } from "../ui/Vurderingsikon";
+import {
+  Utkastmerke,
+  Vurderingsikon,
+  vurderingstype,
+} from "../ui/Vurderingsikon";
 
 /**
  * Vurderinger, SPEC §4.6.
@@ -149,6 +154,25 @@ export function Vurderinger({
             />
           ) : (
             <div>
+              {synlige.some((v) => v.utkast === 1) && (
+                <div className="flex items-center gap-3 border-b border-linje-svak px-2 py-2 text-liten text-blekk-dempet">
+                  <Utkastmerke />
+                  <span className="flex-1">
+                    {synlige.filter((v) => v.utkast === 1).length} hentet fra i
+                    fjor. De står ikke blant fristene før du bekrefter dem.
+                  </span>
+                  <Knapp
+                    onClick={async () => {
+                      await bekreftUtkast(
+                        synlige.filter((v) => v.utkast === 1).map((v) => v.id),
+                      );
+                      await last();
+                    }}
+                  >
+                    Bekreft alle
+                  </Knapp>
+                </div>
+              )}
               {perManed(synlige).map(([maned, gruppe]) => (
                 <div key={maned}>
                   <div className="sticky top-0 z-10 border-y border-linje-medium bg-flate px-2 py-1 text-etikett uppercase tracking-etikett text-blekk-dempet">
@@ -238,7 +262,14 @@ function Rad({
       >
         {vurdering.frist ? kortDato(vurdering.frist) : "ingen frist"}
       </span>
-      <Kappet verdi={vurdering.tittel} klasse="flex-1" />
+      <span
+        className={`flex min-w-0 flex-1 items-center gap-2 ${
+          vurdering.utkast === 1 ? "opacity-60" : ""
+        }`}
+      >
+        <Kappet verdi={vurdering.tittel} klasse="min-w-0" />
+        {vurdering.utkast === 1 && <Utkastmerke />}
+      </span>
       {!kompakt && (
         <>
           <span className="w-20 shrink-0 text-blekk-dempet">

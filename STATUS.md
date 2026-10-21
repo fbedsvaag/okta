@@ -9,6 +9,11 @@ den skal bli. Fila eies fritt, i motsetning til SPEC.md.
 Utseendet står i `DESIGN.md`, som beskriver appen slik den er bygget.
 Lerretet (`docs/lerret/`) er fasit for det som er tegnet.
 
+## Utkast for vurderinger (21.10, ARBEIDSLISTE §24)
+
+- Vurderinger fra «Hent fra i fjor» er utkast til de er bekreftet: dempet i
+  Året, Økter og Vurderinger, ikke blant fristene i I dag. Migrering 030.
+
 ## Innstillinger, det som ventet (21.10, ARBEIDSLISTE 23.9)
 
 - Skole under Deg, i toppen av årsplanen.

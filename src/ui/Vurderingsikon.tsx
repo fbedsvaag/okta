@@ -6,14 +6,22 @@
 export function Vurderingsikon({
   type,
   klasse = "",
+  utkast = false,
 }: {
   type: "skriftlig" | "muntlig" | "praktisk" | null;
   klasse?: string;
+  /** hentet fra i fjor og ikke bekreftet (§24): dempet */
+  utkast?: boolean;
 }) {
   return (
     <span
-      title={type === "muntlig" ? "Muntlig vurdering" : "Skriftlig vurdering"}
-      className={`inline-grid h-4 w-4 shrink-0 place-items-center rounded-[4px] bg-vurdering ${klasse}`}
+      title={
+        (type === "muntlig" ? "Muntlig vurdering" : "Skriftlig vurdering") +
+        (utkast ? " (utkast)" : "")
+      }
+      className={`inline-grid h-4 w-4 shrink-0 place-items-center rounded-[4px] bg-vurdering ${
+        utkast ? "opacity-40" : ""
+      } ${klasse}`}
     >
       <svg
         aria-hidden
@@ -68,4 +76,15 @@ export function vurderingsvalg(v: {
     ikon: <Vurderingsikon type={v.type} />,
     hint: f ? `${f.getDate()}.${f.getMonth() + 1}` : undefined,
   };
+}
+
+/** «Utkast» ved en vurdering hentet fra i fjor (§24). Nøytral, ikke farge. */
+export function Utkastmerke({ klasse = "" }: { klasse?: string }) {
+  return (
+    <span
+      className={`shrink-0 rounded-full border border-dashed border-linje-sterk px-1.5 text-etikett leading-[16px] text-blekk-dempet ${klasse}`}
+    >
+      Utkast
+    </span>
+  );
 }

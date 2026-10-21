@@ -399,7 +399,7 @@ export function Fagoversikt({
                     onClick={() => ark.apneVurdering(v.id)}
                     className="flex items-center gap-[9px] text-left text-[calc(13px*var(--tekst-skala))]"
                   >
-                    <Vurderingsikon type={v.type} />
+                    <Vurderingsikon type={v.type} utkast={v.utkast === 1} />
                     <span className="min-w-0 flex-1">
                       <b className="block truncate font-semibold">{v.tittel}</b>
                       <span className="block text-[calc(12px*var(--tekst-skala))] text-varsel">
@@ -586,7 +586,11 @@ export function Fagoversikt({
                           {kortDag(okt.dato)}
                         </span>
                         {(oktvurd.get(okt.id) ?? []).slice(0, 1).map((v) => (
-                          <Vurderingsikon key={v.id} type={v.type} />
+                          <Vurderingsikon
+                            key={v.id}
+                            type={v.type}
+                            utkast={v.utkast === 1}
+                          />
                         ))}
                         <b className="text-[calc(14px*var(--tekst-skala))] font-semibold">
                           {okt.tema ?? "Uten tema"}

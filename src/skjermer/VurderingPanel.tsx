@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Elevfoto } from "../ui/Elevfoto";
 import { useArk } from "../ui/Arkstabel";
-import { Fagfirkant, Ikon, Kappet } from "../ui/felles";
+import { Fagfirkant, Ikon, Kappet, Knapp } from "../ui/felles";
 import { Velger } from "../ui/Velger";
 import { confirm as bekreft } from "@tauri-apps/plugin-dialog";
 import {
@@ -22,10 +22,11 @@ import {
   type Vurdering,
   type VurderingElev,
   type Vurderingstype,
+  bekreftUtkast,
 } from "../data/vurderinger";
 import { taster, type Skala, type Skalaverdi } from "../skala";
 import { hovedtast, harModifikator, tast } from "../ui/taster";
-import { Vurderingsikon } from "../ui/Vurderingsikon";
+import { Utkastmerke, Vurderingsikon } from "../ui/Vurderingsikon";
 
 /**
  * Det utvidede viewet for en vurdering, SPEC §4.6.
@@ -181,6 +182,21 @@ export function VurderingPanel({
         />
         <span className="text-brod font-semibold">{vurdering.fagKode}</span>
         <Kappet verdi={vurdering.tittel} klasse="text-brod text-blekk-dempet" />
+        {vurdering.utkast === 1 && (
+          <span className="flex shrink-0 items-center gap-2 self-center">
+            <Utkastmerke />
+            <Knapp
+              variant="primar"
+              tittel="Gjør utkastet til en vanlig vurdering med frist i I dag"
+              onClick={async () => {
+                await bekreftUtkast([vurdering.id]);
+                onEndret();
+              }}
+            >
+              Bekreft
+            </Knapp>
+          </span>
+        )}
         <button
           onClick={onLukk}
           className="ml-auto shrink-0 text-liten text-blekk-svak hover:text-blekk"
