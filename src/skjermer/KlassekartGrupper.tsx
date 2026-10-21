@@ -31,6 +31,8 @@ import { Bryter } from "../ui/felles";
 import { Elevfoto } from "../ui/Elevfoto";
 import { Avkrysning, innsatsfarge } from "./KlassekartKart";
 import { hovedtast, tast as visTast } from "../ui/taster";
+import { PULTFARGER } from "../data/pultfarger";
+import { Gruppebilde } from "./Gruppebilde";
 
 /**
  * Klassekartet — Grupper (SPEC §4.11, lerretet «KlassekartGrupper»).
@@ -92,6 +94,7 @@ export function KlassekartGrupper({
   const [settNavn, setSettNavn] = useState("");
   const [aktivt, setAktivt] = useState<string | null>(null);
   const [visTidligere, setVisTidligere] = useState(false);
+  const [visBilde, setVisBilde] = useState(false);
   const tidligereKnapp = useRef<HTMLButtonElement>(null);
   const [tidligerePos, setTidligerePos] = useState({ top: 0, right: 0 });
   useLayoutEffect(() => {
@@ -429,6 +432,12 @@ export function KlassekartGrupper({
             className="flex h-8 items-center rounded-full border border-linje-sterk bg-ark/70 px-3.5 text-brod hover:bg-ark"
           >
             Kopier til Teams
+          </button>
+          <button
+            onClick={() => setVisBilde(true)}
+            className="flex h-8 items-center rounded-full border border-linje-sterk bg-ark/70 px-3.5 text-brod hover:bg-ark"
+          >
+            Bilde til elevene
           </button>
           <button
             onClick={() => void skrivUt()}
@@ -781,6 +790,24 @@ export function KlassekartGrupper({
         </>,
         document.body,
       )}
+      {visBilde && (
+        <Gruppebilde
+          kode={kart.kildeNavn}
+          startOverskrift={settNavn.trim() || "Grupper"}
+          grupper={grupper.map((g, i) => ({
+            farge: GRUPPEFARGER[i % GRUPPEFARGER.length],
+            elever: g
+              .map((id) => elevAv.get(id))
+              .filter((e): e is Kartelev => !!e)
+              .map((e) => ({ fornavn: e.fornavn, etternavn: e.etternavn })),
+          }))}
+          onLagret={async () => {
+            if (!lagret) await bruk("Bildet er lagret, og gruppene med");
+            else setMelding("Bildet er lagret");
+          }}
+          onLukk={() => setVisBilde(false)}
+        />
+      )}
       {dra?.flyttet && (
         <div
           className={`pointer-events-none fixed z-50 flex -translate-x-1/2 -translate-y-1/2 items-center gap-2 rounded-lg bg-ark px-3 py-1.5 text-brod ${
@@ -798,14 +825,5 @@ export function KlassekartGrupper({
   );
 }
 
-/** Gruppefargene fra lerretet. Bare på skjermen, aldri på papiret. */
-const GRUPPEFARGER = [
-  "#4f7fc0",
-  "#c9922e",
-  "#2f9a8a",
-  "#c0607a",
-  "#8a6fc8",
-  "#6f8f3a",
-  "#b0674a",
-  "#3f7f9f",
-];
+/** Gruppefargene: de samme som på pultene, og aldri trafikklyset. */
+const GRUPPEFARGER = PULTFARGER;

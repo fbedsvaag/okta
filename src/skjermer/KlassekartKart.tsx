@@ -50,6 +50,7 @@ import { hovedtast, tast as visTast } from "../ui/taster";
 import { filnavnAv, lagreFil } from "../data/filer";
 import { Velger } from "../ui/Velger";
 import { fyllPulter, gruppeorden, PULTFARGER } from "../data/pultfarger";
+import { Gruppebilde } from "./Gruppebilde";
 
 /**
  * Klassekartet — Plasser (SPEC §4.11, lerretet «Klassekart»).
@@ -105,6 +106,7 @@ export function KlassekartKart({
   const [pensel, setPensel] = useState(0);
   const [visk, setVisk] = useState(false);
   const maling = useRef<{ modus: string | null } | null>(null);
+  const [visBilde, setVisBilde] = useState(false);
   const [melding, setMelding] = useState<string | null>(null);
   const [lagret, setLagret] = useState(true);
   const [delMeny, setDelMeny] = useState<{ x: number; y: number } | null>(null);
@@ -664,6 +666,13 @@ export function KlassekartKart({
               Lagre som PNG…
             </Menylinje>
           </Menyvalg>
+          {pultfarge.size > 0 && (
+            <Menyvalg onKlikk={() => setVisBilde(true)}>
+              <Menylinje under="Gruppene fra pultfargene, 1920 × 1080">
+                Bilde til elevene …
+              </Menylinje>
+            </Menyvalg>
+          )}
           <Menyvalg onKlikk={() => void kopierListe()}>
             <Menylinje under="Pult for pult, som tekst">
               Kopier som liste
@@ -674,6 +683,24 @@ export function KlassekartKart({
             bilder blir aldri med.
           </p>
         </Kontekstmeny>
+      )}
+
+      {visBilde && (
+        <Gruppebilde
+          kode={kart.kildeNavn}
+          startOverskrift="Grupper"
+          grupper={orden.map((f) => ({
+            farge: f,
+            elever: [...plass]
+              .filter(([, nr]) => pultfarge.get(nr) === f)
+              .sort((a, b) => a[1] - b[1])
+              .map(([id]) => elevAv.get(id))
+              .filter((e): e is Kartelev => !!e)
+              .map((e) => ({ fornavn: e.fornavn, etternavn: e.etternavn })),
+          }))}
+          onLagret={() => brukSomGrupper()}
+          onLukk={() => setVisBilde(false)}
+        />
       )}
 
       {/* Papiret: bare navn, ingen bilder, farger eller kjønn. */}

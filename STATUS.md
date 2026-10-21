@@ -21,6 +21,9 @@ Lerretet (`docs/lerret/`) er fasit for det som er tegnet.
 - 25.11: «Farge på pultene: Ingen · Innsats · Grupper», pensel og viskelær,
   «To og to par» / «Hvert bord sin gruppe» (`data/pultfarger.ts`), gruppene
   med navn, «Bruk som gruppesett». Fargene i SVG/PNG/utskrift, aldri innsats.
+- 25.9: «Bilde til elevene» (PNG 1920 × 1080) fra Grupper-fanen og fra
+  kartets Del-meny med pultfarger. `data/gruppebilde.ts` får bare nummer,
+  farge og navn; testet uten trafikklysfarger.
 - Retning: fra kateteret står tavla nederst, fra elevene øverst.
 
 ## Klassekart fra øktkortet (21.10)
