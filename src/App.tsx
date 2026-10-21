@@ -568,6 +568,7 @@ export default function App() {
                     fag={fag}
                     onEndret={last}
                     onApneSkoleruta={() => ga("skoleruta")}
+                    onApneFag={() => ga("fag")}
                     startSide={apneId ?? undefined}
                     key={apneId ?? ""}
                   />

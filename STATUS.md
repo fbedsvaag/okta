@@ -9,6 +9,19 @@ den skal bli. Fila eies fritt, i motsetning til SPEC.md.
 Utseendet står i `DESIGN.md`, som beskriver appen slik den er bygget.
 Lerretet (`docs/lerret/`) er fasit for det som er tegnet.
 
+## Innstillinger, ny modell (21.10, ARBEIDSLISTE §23)
+
+`Innstillinger.tsx` med `innstillinger/sok.ts` (søkeindeks) og
+`innstillinger/byggeklosser.tsx` (Side, Gruppe, Rad, Vippebryter). Undermeny
+med ikoner i gruppene Deg · Daglig bruk · Trygghet · Utenfor Økta · Om Økta;
+markøren glir 360 ms uten sprett. Søket i verktøylinja hopper til raden og
+blinker den. Kalenderstrøm og kalenderserver er slått sammen til Kalender;
+Arkiv ligger under Sikkerhetskopi. Nye sider: Deg (navn, «Jeg er mentor» og
+klasse, som gjør klassens elever til mentorelever), Fag (farge inline med
+brukte farger dempet), Om Økta. Skoleår har «Start 2027/28 … Forbered»
+(lager neste år med samme fag, ikke aktivt) og Andre år. Gamle side-id-er
+virker fortsatt (`GAMLE`). Ikke bygget: se 23.9.
+
 ## Runde 20 (21.10, ARBEIDSLISTE §20)
 
 - **20.3 Én skårprikk** (`ui/Skarprikk.tsx`): rød, gul, grønn, 0 = ikke i

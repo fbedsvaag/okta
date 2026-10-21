@@ -927,14 +927,24 @@ Tegning: `docs/lerret/Skalaer.dc.html` (Innstillinger → Skalaer). Datamodellen
 
 Tegning: `docs/lerret/Innstillinger2.dc.html`. Samme innhold som i dag, men i det nye skallet. Endringer:
 
-- [ ] **23.1 Oppsett.** Undermeny med ikoner i grupper: Deg · Daglig bruk (Generelt, Skoleår, Fag, Skalaer, Utseende) · Trygghet (Sikkerhetskopi, Personvern) · Utenfor Økta (Kalender, Del med kollegaer) · Om Økta. Markøren glir rolig (360 ms, ingen sprett).
-- [ ] **23.2 Kort med rader.** Tittel og hjelpetekst til venstre, kontroll til høyre. Brytere for av/på, seg for valg.
-- [ ] **23.3 Søk i innstillinger** i verktøylinja. Treff hopper til siden og blinker raden kort.
-- [ ] **23.4 Nye sider.** *Deg* (navn, skole, «Jeg er kontaktlærer» + klasse). *Fag* (fargebytte inline med brukte farger dempet, Legg til fag via Udir, Fagbanken). *Om Økta* (versjon, Gi tilbakemelding, datamappe).
-- [ ] **23.5 Slått sammen.** Kalenderstrøm + Kalenderserver → *Kalender*. Arkiv → under *Sikkerhetskopi*.
-- [ ] **23.6 Generelt** får «I dag: Enkel/Full» (20.5). **Skoleår** får ferier og fridager, «Start 2027/28» (20.7) og tidligere år.
-- [ ] **23.7 Personvern** starter med fire hake-linjer om hva som lagres og sendes, deretter innsyn, slett elev og slett et års elever.
-- [ ] **23.8 Lys/mørk** ligger nederst i Utseende med merknad om at mørk ikke er ferdig.
+- [x] **23.1 Oppsett.** Undermeny med ikoner i grupper: Deg · Daglig bruk (Generelt, Skoleår, Fag, Skalaer, Utseende) · Trygghet (Sikkerhetskopi, Personvern) · Utenfor Økta (Kalender, Del med kollegaer) · Om Økta. Markøren glir rolig (360 ms, ingen sprett).
+- [x] **23.2 Kort med rader.** Tittel og hjelpetekst til venstre, kontroll til høyre. Brytere for av/på, seg for valg.
+- [x] **23.3 Søk i innstillinger** i verktøylinja. Treff hopper til siden og blinker raden kort.
+- [x] **23.4 Nye sider.** *Deg* (navn, skole, «Jeg er kontaktlærer» + klasse). *Fag* (fargebytte inline med brukte farger dempet, Legg til fag via Udir, Fagbanken). *Om Økta* (versjon, Gi tilbakemelding, datamappe).
+- [x] **23.5 Slått sammen.** Kalenderstrøm + Kalenderserver → *Kalender*. Arkiv → under *Sikkerhetskopi*.
+- [x] **23.6 Generelt** får «I dag: Enkel/Full» (20.5). **Skoleår** får ferier og fridager, «Start 2027/28» (20.7) og tidligere år.
+- [x] **23.7 Personvern** starter med fire hake-linjer om hva som lagres og sendes, deretter innsyn, slett elev og slett et års elever.
+- [x] **23.8 Lys/mørk** ligger nederst i Utseende med merknad om at mørk ikke er ferdig.
+- [ ] **23.9 TODO, ikke bygget ennå** (avtalt 21.10):
+  - *Deg:* feltet Skole (står i toppen av utskrifter).
+  - *Personvern:* «Vis elevbilder» (av = initialer overalt), «Slett en elev
+    helt» (alle år og kopier eldre enn 30 dager) og «Slett elevene fra et
+    tidligere år». Innsyn har i dag bare en henvisning til elevkortet.
+  - *Om Økta:* «Se etter oppdatering» (krever nettkall; må avklares mot
+    regel 1 i CLAUDE.md).
+  - *Skoleår:* ferier legges til og fjernes inline (i dag via Skoleruta).
+  - Avvik fra tegningen: «Jeg er mentor» i stedet for «kontaktlærer» (appen
+    bruker mentor-ordene; språkvalg senere).
 
 ## Ikke nå
 

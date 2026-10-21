@@ -356,23 +356,37 @@ export function Sidemeny({
  * utklippstavla og åpner skjemaet i nettleseren. Samme stil som
  * Innstillinger-raden under.
  */
+/**
+ * Kopierer versjon, system og skjerm til utklippstavla og åpner skjemaet i
+ * nettleseren. `etterKopi` kalles når linja er kopiert, før nettleseren
+ * åpnes. Brukes også fra Om Økta i innstillingene.
+ */
+export async function giTilbakemelding(
+  visning: string,
+  etterKopi?: () => void,
+): Promise<void> {
+  const [versjon, system] = await Promise.all([
+    getVersion(),
+    invoke<string>("systemversjon").catch(() => "ukjent system"),
+  ]);
+  await navigator.clipboard.writeText(
+    tilbakemeldingslinje(versjon, system, visning),
+  );
+  etterKopi?.();
+  // Nettleseren legger seg foran appen. Vent litt, så bekreftelsen
+  // rekker å bli lest først.
+  await new Promise((r) => setTimeout(r, 1300));
+  const { openUrl } = await import("@tauri-apps/plugin-opener");
+  await openUrl(SKJEMA_URL);
+}
+
 function GiTilbakemelding({ visning }: { visning: string }) {
   const [kopiert, setKopiert] = useState(false);
   async function klikk() {
-    const [versjon, system] = await Promise.all([
-      getVersion(),
-      invoke<string>("systemversjon").catch(() => "ukjent system"),
-    ]);
-    await navigator.clipboard.writeText(
-      tilbakemeldingslinje(versjon, system, visning),
-    );
-    setKopiert(true);
-    setTimeout(() => setKopiert(false), 6000);
-    // Nettleseren legger seg foran appen. Vent litt, så bekreftelsen
-    // rekker å bli lest først.
-    await new Promise((r) => setTimeout(r, 1300));
-    const { openUrl } = await import("@tauri-apps/plugin-opener");
-    await openUrl(SKJEMA_URL);
+    await giTilbakemelding(visning, () => {
+      setKopiert(true);
+      setTimeout(() => setKopiert(false), 6000);
+    });
   }
   return (
     <div className="flex items-center gap-1 pt-2">

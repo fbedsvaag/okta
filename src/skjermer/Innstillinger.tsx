@@ -2,13 +2,15 @@ import { lagreTema, TEMA, type Tema } from "../ui/tema";
 import { GLASS, lagreGlass, type Glass } from "../ui/glass";
 import { BEVEGELSE, lagreBevegelse, type Bevegelse } from "../ui/bevegelse";
 import { lagrePalett, PALETT, PALETTER, type Palett } from "../ui/palett";
-import { createContext, useContext, useEffect, useRef, useState } from "react";
-import { Hovermarkor } from "../ui/Hovermarkor";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { DelOppsett } from "./Oppsettfil";
 import {
   endreSkolear,
+  hentFridager,
   hentInnstilling,
   hentSkolear,
+  opprettSkolear,
   settAktivtSkolear,
   settInnstilling,
   settTekstskala,
@@ -34,6 +36,7 @@ import {
   type Skalaverdi,
 } from "../skala";
 import type { Skolear } from "../data/skolear";
+import type { Fridag } from "../data/kalender";
 import * as kalender from "../data/kalenderfeed";
 import * as caldav from "../data/caldav";
 import { skrivArkiv } from "../data/arkiv";
@@ -41,8 +44,8 @@ import { LAERERNAVN } from "../data/arsplanark";
 import { Merke } from "../ui/logo";
 import { getVersion } from "@tauri-apps/api/app";
 import { open, confirm as bekreft } from "@tauri-apps/plugin-dialog";
-import type { FagIAr } from "../data/fag";
-import { Bryter, Felt, Knapp, Ikon } from "../ui/felles";
+import { endreFag, leggFagIAr, type FagIAr } from "../data/fag";
+import { Bryter, Fagfirkant, Knapp, Ikon } from "../ui/felles";
 import {
   bevegelseshjelp,
   filbehandler,
@@ -53,1143 +56,391 @@ import {
 } from "../ui/plattformord";
 import { invoke } from "@tauri-apps/api/core";
 import { PLANVISNING, lesPlanvisning, type Planvisning } from "../data/oktplan";
+import { FAGFARGER } from "../ui/farger";
+import { useArk } from "../ui/Arkstabel";
+import { IVerktoylinja } from "../ui/Verktoylinje";
+import { useLagretInnstilling } from "../ui/useLagretInnstilling";
+import { visToast } from "../ui/Toast";
+import { giTilbakemelding } from "../ui/Sidemeny";
+import { SKJEMA_URL } from "../tilbakemelding";
+import {
+  hentElever,
+  hentKlasser,
+  settMentor,
+  type Klasse,
+} from "../data/elever";
+import {
+  GAMLE,
+  SIDENAVN,
+  sok,
+  type Oppslag,
+  type Sideid,
+} from "./innstillinger/sok";
+import {
+  Feltinput,
+  Gruppe,
+  Hake,
+  Menyikon,
+  Rad,
+  Side,
+  Sti,
+  Vippebryter,
+} from "./innstillinger/byggeklosser";
 
 /**
- * Globale innstillinger, SPEC §4.8.
+ * Innstillinger, SPEC §4.8, i den nye modellen (ARBEIDSLISTE 23, lerretet
+ * Innstillinger2): undermeny med ikoner i grupper, kort med rader (tittel og
+ * hjelp til venstre, kontroll til høyre), og søk i verktøylinja som hopper
+ * til raden og blinker den.
  *
- * Bare det som gjelder på tvers av skoleår ligger her. Skoleårets egne
- * rammer — datoer, ferier, planleggingsdager — ligger under skoleåret,
- * fordi de er forskjellige hvert år.
+ * Bare det som gjelder på tvers av skoleår ligger her, pluss skoleårets
+ * egne datoer og fagene i året.
  */
 export function Innstillinger({
   skolear,
   fag,
   onEndret,
   onApneSkoleruta,
+  onApneFag,
   startSide,
   oppsettTekst,
   onOppsettLest,
 }: {
-  /** en oppsettfil åpnet med dobbeltklikk: vises under Del oppsett */
+  /** en oppsettfil åpnet med dobbeltklikk: vises under Del med kollegaer */
   oppsettTekst?: string | null;
   onOppsettLest?: () => void;
   skolear: Skolear;
   fag: FagIAr[];
   /** siden som står framme når skjermen åpnes, f.eks. «skolear» */
   startSide?: string;
-  /** Skoleruta — ferier, fridager og hendelser. Lå før i menyen. */
+  /** Skoleruta — ferier, fridager og hendelser. */
   onApneSkoleruta: () => void;
+  /** Fag i år: der fag legges til og fagbanken står */
+  onApneFag?: () => void;
   /** laster skoleåret og fagene på nytt — uten å laste hele appen, som
       ville sendt deg tilbake til startskjermen */
   onEndret: () => void;
 }) {
-  const sidemeny = useRef<HTMLElement>(null);
-  const [dav, setDav] = useState<caldav.Oppsett>({
-    base: "",
-    bruker: "",
-    pa: false,
-    kalendere: {},
-    mentorPa: false,
-    mentorKalender: "",
+  const [side, setSide] = useState<Sideid>(() => {
+    const s = GAMLE[startSide ?? ""] ?? startSide;
+    return s && s in SIDENAVN ? (s as Sideid) : "generelt";
   });
-  const [davPassord, setDavPassord] = useState("");
-  const [davHarPassord, setDavHarPassord] = useState(false);
-  const [davMelding, setDavMelding] = useState<string | null>(null);
-  const [tekstskala, setTekstskala] = useState("0.93");
   useEffect(() => {
-    if (oppsettTekst) setSide("deloppsett");
+    if (oppsettTekst) setSide("del");
   }, [oppsettTekst]);
-  const [side, setSide] = useState<Sideid>(() =>
-    SIDER.some((g) => g.sider.some((x) => x.id === startSide))
-      ? (startSide as Sideid)
-      : "generelt",
+
+  // Markøren i undermenyen glir til siden som er valgt (360 ms).
+  const meny = useRef<HTMLDivElement>(null);
+  const [markorY, setMarkorY] = useState<number | null>(null);
+  useLayoutEffect(() => {
+    const k = meny.current?.querySelector<HTMLElement>(`[data-side="${side}"]`);
+    if (k) setMarkorY(k.offsetTop);
+  }, [side]);
+
+  // Søket: hopper til siden og blinker raden.
+  const [sokTekst, setSokTekst] = useState("");
+  const [sokValg, setSokValg] = useState(0);
+  // Treffene legges over vinduet: verktøylinja klipper det som stikker ut.
+  const sokFelt = useRef<HTMLLabelElement>(null);
+  const ekstra = useMemo<Oppslag[]>(
+    () =>
+      fag.map((f) => ({
+        side: "fag",
+        k: `fag-${f.id}`,
+        tittel: `${f.kode} ${f.navn}`,
+      })),
+    [fag],
   );
-  const [tema, setTema] = useState<Tema>("system");
-  const [glass, setGlass] = useState<Glass>("pa");
-  const [bevegelse, setBevegelse] = useState<Bevegelse>("system");
-  const [palett, setPalett] = useState<Palett>("fiolett");
-  const [davFeil, setDavFeil] = useState<string | null>(null);
-  const [davJobber, setDavJobber] = useState(false);
-  const [arkivmappe, setArkivmappe] = useState("");
-  const [arkivMelding, setArkivMelding] = useState<string | null>(null);
-  const [arkiverer, setArkiverer] = useState(false);
-  const [versjon, setVersjon] = useState("");
-  const [ar, setAr] = useState<Skolear[]>([]);
-  const [feedPa, setFeedPa] = useState(false);
-  const [feedUrl, setFeedUrl] = useState("");
-  const [feedFeil, setFeedFeil] = useState<string | null>(null);
-  const [kopiert, setKopiert] = useState(false);
-  const [varighet, setVarighet] = useState("180");
-  const [planvisning, setPlanvisning] = useState<Planvisning>("enkel");
-  const [lagret, setLagret] = useState(false);
-  const [skalaer, setSkalaer] = useState<Skala[]>([]);
-  const [kopier, setKopier] = useState<Kopi[]>([]);
-  const [kopimappe, setKopimappe] = useState("");
-  // Der databasen faktisk ligger, fra Tauri: Application Support på Mac,
-  // AppData\Roaming på Windows (14.5).
-  const [datamappe, setDatamappe] = useState<string | null>(null);
-  const [tarKopi, setTarKopi] = useState(false);
-  // Beskjed etter «Ta kopi nå»: at det gikk, og hva fila heter.
-  const [kopimelding, setKopimelding] = useState<{
-    ok: boolean;
-    tekst: string;
-  } | null>(null);
-  const [verdier, setVerdier] = useState<Record<string, Skalaverdi[]>>({});
-
-  /**
-   * Bytter arbeidsfila. Handlingen er stor nok til å fortjene en tydelig
-   * bekreftelse — men den er ikke uopprettelig: den nåværende basen sikres
-   * i backup-mappa først.
-   */
-  async function gjenopprett(sti: string, navn: string) {
-    const svar = await bekreft(
-      `Gjenopprett fra ${navn}?\n\n` +
-        `Alt du har lagt inn etter at denne kopien ble tatt, forsvinner fra ` +
-        `arbeidsfila. Den nåværende basen legges i backup-mappa først, så du ` +
-        `kan gå tilbake.\n\nAppen starter på nytt.`,
-    );
-    if (!svar) return;
-
-    try {
-      await gjenopprettFra(sti);
-    } catch (e) {
-      alert(`Gjenopprettingen stoppet: ${e}`);
-    }
+  const treff = sok(sokTekst, ekstra);
+  function hopp(x: Oppslag) {
+    setSide(x.side);
+    setSokTekst("");
+    window.setTimeout(() => {
+      const rad = document.querySelector<HTMLElement>(
+        `[data-k="${CSS.escape(x.k)}"]`,
+      );
+      if (!rad) return;
+      rad.scrollIntoView({ block: "center", behavior: "smooth" });
+      rad.classList.remove("inn-blink");
+      void rad.offsetWidth;
+      rad.classList.add("inn-blink");
+    }, 80);
   }
 
-  async function velgFil() {
-    const valgt = await open({
-      multiple: false,
-      directory: false,
-      filters: [{ name: "SQLite-database", extensions: ["sqlite", "db"] }],
-    });
-    if (typeof valgt === "string") {
-      await gjenopprett(valgt, valgt.split("/").pop() ?? valgt);
-    }
-  }
-
-  useEffect(() => {
-    void hentInnstilling(TEKSTSKALA).then((v) => setTekstskala(v ?? "0.93"));
-    void hentInnstilling(TEMA).then((v) =>
-      setTema(v === "lys" || v === "mork" ? v : "system"),
-    );
-    void hentInnstilling(GLASS).then((v) => setGlass(v === "av" ? "av" : "pa"));
-    void hentInnstilling(BEVEGELSE).then((v) =>
-      setBevegelse(v === "pa" || v === "dempet" || v === "av" ? v : "system"),
-    );
-    void hentInnstilling(PALETT).then((v) => {
-      const p = PALETTER.find((x) => x.id === v);
-      setPalett(p ? p.id : "fiolett");
-    });
-  }, []);
-
-  useEffect(() => {
-    void (async () => {
-      setDav(await caldav.hentOppsett());
-      setDavHarPassord(await caldav.harPassord());
-      setArkivmappe((await invoke<string | null>("hent_arkivmappe")) ?? "");
-      setVersjon(await getVersion().catch(() => ""));
-      setAr(await hentSkolear());
-    })();
-  }, []);
-
-  useEffect(() => {
-    void (async () => {
-      const pa = await kalender.erPa();
-      setFeedPa(pa);
-      if (pa) setFeedUrl(await kalender.hentUrl());
-    })();
-  }, []);
-
-  async function lastKopier() {
-    setKopier(await hentKopier());
-    setKopimappe(await hentKopimappe());
-  }
-
-  useEffect(() => {
-    void lastKopier();
-    void appDataDir()
-      .then(setDatamappe)
-      .catch(() => {});
-    void hentInnstilling("standard_varighet_min").then((v) =>
-      setVarighet(v ?? "180"),
-    );
-    void hentInnstilling(PLANVISNING).then((v) =>
-      setPlanvisning(lesPlanvisning(v)),
-    );
-    void (async () => {
-      const s = await hentSkalaer();
-      const v: Record<string, Skalaverdi[]> = {};
-      for (const skala of s) v[skala.id] = await hentVerdier(skala.id);
-      setSkalaer(s);
-      setVerdier(v);
-    })();
-  }, []);
+  const MENY: { gruppe: string | null; sider: Sideid[] }[] = [
+    { gruppe: null, sider: ["deg"] },
+    {
+      gruppe: "Daglig bruk",
+      sider: ["generelt", "skolear", "fag", "skalaer", "utseende"],
+    },
+    { gruppe: "Trygghet", sider: ["kopi", "personvern"] },
+    { gruppe: "Utenfor Økta", sider: ["kalender", "del"] },
+    { gruppe: "", sider: ["om"] },
+  ];
 
   return (
-    <div className="mx-auto flex min-h-0 w-full max-w-5xl flex-1 gap-8">
-      <nav
-        ref={sidemeny}
-        className="relative w-48 shrink-0 overflow-y-auto pt-1"
-      >
-        {/* Hover glir fra side til side (10.3). */}
-        <Hovermarkor
-          beholder={sidemeny}
-          klasse="hovermarkor-tonet rounded-stor"
-        />
-        {SIDER.map((g) => (
-          <div key={g.gruppe} className="mb-4">
-            <p className="mb-1 px-2 text-etikett uppercase tracking-etikett text-blekk-dempet">
-              {g.gruppe}
-            </p>
-            <ul className="space-y-px">
-              {g.sider.map((sd) => (
-                <li key={sd.id}>
-                  <button
-                    onClick={() => setSide(sd.id)}
-                    aria-current={side === sd.id ? "page" : undefined}
-                    data-hover
-                    className={`relative z-[1] w-full rounded-stor px-2 py-1 text-left text-brod ${
-                      side === sd.id
-                        ? "bg-valgt font-medium text-blekk"
-                        : "text-blekk-dempet hover:text-blekk"
-                    }`}
-                  >
-                    {sd.navn}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
-      </nav>
-
-      <div className="min-h-0 min-w-0 max-w-2xl flex-1 overflow-auto">
-        <Side.Provider value={side}>
-          <Bolk id="skolear" tittel="Skoleår">
-            <p className="mb-3 text-brod text-blekk-dempet">
-              Ett år er aktivt om gangen. Å bytte rører ingen data. Det endrer
-              bare hva appen viser.
-            </p>
-            <Knapp onClick={onApneSkoleruta}>
-              Skoleruta: ferier og fridager <Ikon navn="pil" />
-            </Knapp>
-            <div className="mb-3" />
-
-            {ar.length === 0 ? (
-              <p className="text-brod text-blekk-svak">Ingen skoleår ennå.</p>
-            ) : (
-              <ul className="max-w-2xl divide-y divide-linje-svak">
-                {ar.map((a) => {
-                  const aktivt = a.id === skolear.id;
-                  return (
-                    <li
-                      key={a.id}
-                      className="flex items-center gap-3 py-1.5 text-brod"
-                    >
-                      <span
-                        className={`w-24 shrink-0 tabular-nums ${aktivt ? "font-medium" : ""}`}
-                      >
-                        {a.navn}
-                      </span>
-                      <span className="tabular-nums text-liten text-blekk-dempet">
-                        {a.start} – {a.slutt}
-                      </span>
-                      <span className="ml-auto flex items-center gap-2">
-                        {aktivt ? (
-                          <span className="text-liten text-blekk-dempet">
-                            aktivt
-                          </span>
-                        ) : (
-                          <Knapp
-                            onClick={async () => {
-                              await settAktivtSkolear(a.id);
-                              // Hele appen henger på det aktive året, så alt må
-                              // leses på nytt — men du skal bli stående i
-                              // innstillingene, ikke kastes til startskjermen.
-                              setAr(await hentSkolear());
-                              onEndret();
-                            }}
-                          >
-                            Gjør aktivt
-                          </Knapp>
-                        )}
-                        <button
-                          onClick={async () => {
-                            const n = await tellForSkolear(a.id);
-                            const ok = await bekreft(
-                              `Slette skoleåret ${a.navn}?\n\n` +
-                                `${n.fag} fag i året, ${n.okter} økter, ` +
-                                `${n.skaringer} skåringer, ${n.vurderinger} vurderinger, ` +
-                                `${n.klasser} klasser.\n\n` +
-                                "Fagene blir stående i fagbanken, og elevene blir " +
-                                "stående. De lever på tvers av år. Det som " +
-                                "forsvinner er dette årets økter og koblinger.\n\n" +
-                                "Sikkerhetskopien fra i dag er veien tilbake.",
-                            );
-                            if (!ok) return;
-                            // slettSkolear flytter selv pekeren til aktivt år,
-                            // også når det slettede året var det siste.
-                            await slettSkolear(a.id);
-                            setAr(await hentSkolear());
-                            onEndret();
-                          }}
-                          className="text-liten text-blekk-svak hover:text-feil"
-                        >
-                          Slett
-                        </button>
-                      </span>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-
-            <div className="mt-4 flex flex-wrap items-end gap-3">
-              <Felt
-                etikett="Navn"
-                verdi={skolear.navn}
-                settVerdi={() => {}}
-                bredde="w-28"
-              />
-              <Felt
-                etikett="Første skoledag"
-                type="date"
-                verdi={skolear.start}
-                settVerdi={async (v) => {
-                  if (v) {
-                    await endreSkolear(skolear.id, { start: v });
-                    setAr(await hentSkolear());
-                  }
-                }}
-                bredde="w-40"
-              />
-              <Felt
-                etikett="Siste skoledag"
-                type="date"
-                verdi={skolear.slutt}
-                settVerdi={async (v) => {
-                  if (v) {
-                    await endreSkolear(skolear.id, { slutt: v });
-                    setAr(await hentSkolear());
-                  }
-                }}
-                bredde="w-40"
-              />
-            </div>
-          </Bolk>
-
-          <Bolk id="utseende" tittel="Utseende">
-            <Rad
-              etikett="Lys eller mørk"
-              hjelp={`«Som ${systemnavn()}» skifter av seg selv når maskinen gjør det. Utskriften av årsplanen er alltid lys.`}
+    <div className="mx-auto flex min-h-0 w-full max-w-5xl flex-1 flex-col">
+      <IVerktoylinja>
+        <span className="text-liten text-blekk-svak">{SIDENAVN[side]}</span>
+        <span className="relative ml-auto">
+          <label
+            ref={sokFelt}
+            className="flex h-8 w-60 items-center gap-2 rounded-full bg-[color-mix(in_srgb,var(--color-blekk)_5%,transparent)] px-3 focus-within:bg-ark/80"
+          >
+            <svg
+              width="13"
+              height="13"
+              viewBox="0 0 16 16"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.6"
+              className="shrink-0 text-blekk-svak"
+              aria-hidden
             >
-              <Bryter
-                valg={[
-                  { id: "system", navn: `Som ${systemnavn()}` },
-                  { id: "lys", navn: "Lys" },
-                  { id: "mork", navn: "Mørk" },
-                ]}
-                verdi={tema}
-                settVerdi={(v) => {
-                  setTema(v as Tema);
-                  void lagreTema(v as Tema);
-                }}
-              />
-            </Rad>
-            <Rad
-              etikett="Palett"
-              hjelp="Bytter aksenten, markeringen og grunnen. Trafikklyset og fagfargene er like i alle."
-            >
-              {/*
-            Forhåndsvisningen er paletten i miniatyr: grunnen, et hvitt ark
-            med en valgt rad, og en knapp i aksenten. Hexene står her og ikke
-            som tokens med vilje — alle seks skal vises samtidig, uavhengig
-            av hvilken som er på.
-          */}
-              <div className="grid max-w-md grid-cols-3 gap-2">
-                {PALETTER.map((p) => (
-                  <button
-                    key={p.id}
-                    onClick={() => {
-                      setPalett(p.id);
-                      void lagrePalett(p.id);
-                    }}
-                    aria-pressed={palett === p.id}
-                    className={`rounded-stor border p-1.5 text-left text-liten ${
-                      palett === p.id
-                        ? "border-aksent ring-1 ring-aksent"
-                        : "border-linje hover:border-linje-sterk"
-                    }`}
-                  >
-                    <span
-                      aria-hidden
-                      className="flex h-12 gap-1 rounded-liten p-1.5"
-                      style={{ background: p.bord }}
-                    >
-                      <span className="flex flex-1 flex-col gap-1 rounded-[3px] bg-white p-1">
-                        <span
-                          className="h-1.5 rounded-[2px]"
-                          style={{ background: p.valgt }}
-                        />
-                        <span className="h-1.5 rounded-[2px] bg-[#f0eef6]" />
-                      </span>
-                      <span
-                        className="w-4 self-end rounded-[3px]"
-                        style={{ background: p.aksent, height: 12 }}
-                      />
-                    </span>
-                    <span className="mt-1 block px-0.5">{p.navn}</span>
-                  </button>
-                ))}
-              </div>
-            </Rad>
-            <Rad etikett="Glass" hjelp={glasshjelp()}>
-              <Bryter
-                valg={[
-                  { id: "pa", navn: "På" },
-                  { id: "av", navn: "Av" },
-                ]}
-                verdi={glass}
-                settVerdi={(v) => {
-                  setGlass(v as Glass);
-                  void lagreGlass(v as Glass);
-                }}
-              />
-            </Rad>
-            <Rad etikett="Bevegelse" hjelp={bevegelseshjelp()}>
-              <Bryter
-                valg={[
-                  { id: "system", navn: `Som ${systemnavn()}` },
-                  { id: "pa", navn: "På" },
-                  { id: "dempet", navn: "Dempet" },
-                  { id: "av", navn: "Av" },
-                ]}
-                verdi={bevegelse}
-                settVerdi={(v) => {
-                  setBevegelse(v as Bevegelse);
-                  void lagreBevegelse(v as Bevegelse);
-                }}
-              />
-            </Rad>
-          </Bolk>
-
-          <Bolk id="generelt" tittel="Generelt">
-            {/*
-          Hele typeskalaen ganges med dette tallet, så forholdet mellom
-          gradene holder seg uansett valg — det er hierarkiet som bærer, ikke
-          de absolutte tallene.
-        */}
-            <Rad
-              etikett="Tekststørrelse"
-              hjelp="Gjelder med en gang. Skåringslista er den tetteste skjermen: med Større får færre enn tretti elever plass uten å rulle."
-            >
-              <Bryter
-                valg={TEKSTVALG.map((t) => ({ id: t.verdi, navn: t.navn }))}
-                verdi={narmesteTekstvalg(tekstskala)}
-                settVerdi={async (v) => {
-                  setTekstskala(v);
-                  settTekstskala(v);
-                  await settInnstilling(TEKSTSKALA, v);
-                }}
-              />
-            </Rad>
-            <Rad
-              etikett="Øktplan"
-              hjelp="Enkel: en liste med minutter. Full: tidslinje du drar i, beskrivelser og pauser. Det som er skrevet i Full, blir liggende om du bytter."
-            >
-              <Bryter
-                valg={[
-                  { id: "enkel", navn: "Enkel" },
-                  { id: "full", navn: "Full" },
-                ]}
-                verdi={planvisning}
-                settVerdi={async (v) => {
-                  setPlanvisning(lesPlanvisning(v));
-                  await settInnstilling(PLANVISNING, v);
-                }}
-              />
-            </Rad>
-          </Bolk>
-
-          <Bolk id="generelt" tittel="Standardverdier">
-            <Laerernavn />
-            <div className="flex items-end gap-3">
-              <label className="block">
-                <Etikett>Standard varighet på nye økter</Etikett>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="number"
-                    value={varighet}
-                    onChange={(e) => {
-                      setVarighet(e.target.value);
-                      setLagret(false);
-                    }}
-                    className="w-24 rounded border border-linje px-2 py-1.5 text-brod tabular-nums"
-                  />
-                  <span className="text-brod text-blekk-dempet">minutter</span>
-                </div>
-              </label>
-              <Knapp
-                onClick={async () => {
-                  const n = Math.round(Number(varighet));
-                  if (n > 0) {
-                    await settInnstilling("standard_varighet_min", String(n));
-                    setLagret(true);
-                  }
+              <circle cx="7" cy="7" r="4.6" />
+              <path d="M10.5 10.5l3 3" strokeLinecap="round" />
+            </svg>
+            <input
+              value={sokTekst}
+              onChange={(e) => {
+                setSokTekst(e.target.value);
+                setSokValg(0);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "ArrowDown") {
+                  e.preventDefault();
+                  setSokValg((v) => Math.min(treff.length - 1, v + 1));
+                } else if (e.key === "ArrowUp") {
+                  e.preventDefault();
+                  setSokValg((v) => Math.max(0, v - 1));
+                } else if (e.key === "Enter" && treff[sokValg]) {
+                  hopp(treff[sokValg]);
+                } else if (e.key === "Escape") {
+                  e.stopPropagation();
+                  setSokTekst("");
+                }
+              }}
+              placeholder="Søk i innstillinger"
+              aria-label="Søk i innstillinger"
+              className="uten-fokusring min-w-0 flex-1 bg-transparent text-liten outline-none placeholder:text-blekk-svak"
+            />
+          </label>
+          {sokTekst.trim() &&
+            sokFelt.current &&
+            createPortal(
+              <div
+                className="glass-meny fixed z-50 w-80 rounded-[14px] p-[5px]"
+                style={{
+                  top: sokFelt.current.getBoundingClientRect().bottom + 6,
+                  right:
+                    window.innerWidth -
+                    sokFelt.current.getBoundingClientRect().right,
                 }}
               >
-                Lagre
-              </Knapp>
-              {lagret && (
-                <span className="inline-flex items-center gap-1 pb-2 text-liten text-aksent">
-                  <Ikon navn="hake" /> lagret
-                </span>
-              )}
-            </div>
-            <p className="mt-2 text-liten text-blekk-dempet">
-              Varighet arves i tre ledd: denne verdien → fagets egen standard →
-              øktas egen verdi. Sett fagets standard under Fag hvis ett fag
-              alltid har en annen lengde.
-            </p>
-          </Bolk>
-
-          <Bolk id="skalaer" tittel="Skalaer">
-            <p className="mb-3 text-liten text-blekk-dempet">
-              Tastene utledes av rekkefølgen, ikke av kode. Verdien som betyr
-              «ingenting her» får alltid <code>0</code>. Egne skalaer kan lages
-              senere, se §5.3.
-            </p>
-            {skalaer.map((skala) => (
-              <div key={skala.id} className="mb-4">
-                <p className="text-brod font-medium">
-                  {skala.navn}{" "}
-                  <span className="font-normal text-blekk-dempet">
-                    · {skala.bruksomrade}
-                  </span>
-                </p>
-                <div className="mt-1 flex flex-wrap gap-1.5">
-                  {(verdier[skala.id] ?? []).map((v) => {
-                    const t = taster(verdier[skala.id] ?? []).get(v.id);
-                    return (
-                      <span
-                        key={v.id}
-                        title={v.etikett ?? undefined}
-                        className="flex items-center gap-1.5 rounded-sm border border-linje px-2 py-0.5 text-liten"
-                      >
-                        {t && (
-                          <kbd className="rounded-sm bg-flate px-1 font-mono text-etikett text-blekk-dempet">
-                            {t}
-                          </kbd>
-                        )}
-                        {v.kode}
-                        {v.teller_ikke === 1 && (
-                          <span className="text-blekk-svak">teller ikke</span>
-                        )}
-                      </span>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
-          </Bolk>
-
-          <Bolk id="kalenderstrom" tittel="Kalenderstrøm">
-            <p className="mb-2 text-brod text-blekk-dempet">
-              Lar kalenderen din abonnere på årsplanen, slik at den oppdaterer
-              seg selv. Strømmen serveres bare til denne maskinen, og inneholder
-              <strong className="font-medium">
-                {" "}
-                fagkode, tema, dato og varighet
-              </strong>{" "}
-              og ingen elevnavn, skåringer eller notater.
-            </p>
-
-            <label className="flex items-center gap-2 text-brod">
-              <input
-                type="checkbox"
-                checked={feedPa}
-                onChange={async (e) => {
-                  const pa = e.target.checked;
-                  setFeedPa(pa);
-                  setFeedFeil(null);
-                  await kalender.settPa(pa);
-                  if (!pa) return;
-                  try {
-                    setFeedUrl(await kalender.start(skolear));
-                  } catch (err) {
-                    setFeedFeil(String(err));
-                    setFeedPa(false);
-                    await kalender.settPa(false);
-                  }
-                }}
-              />
-              Del årsplanen som kalenderstrøm
-            </label>
-
-            {feedFeil && <p className="mt-2 text-brod text-feil">{feedFeil}</p>}
-
-            {feedPa && feedUrl && (
-              <div className="mt-3">
-                <div className="flex items-center gap-2">
-                  <code className="flex-1 truncate rounded-vanlig border border-linje bg-flate px-2 py-1 text-liten">
-                    {feedUrl}
-                  </code>
-                  <Knapp
-                    onClick={async () => {
-                      await navigator.clipboard.writeText(feedUrl);
-                      setKopiert(true);
-                      setTimeout(() => setKopiert(false), 1500);
-                    }}
-                  >
-                    {kopiert ? "Kopiert" : "Kopier"}
-                  </Knapp>
-                </div>
-                {erMac ? (
-                  <>
-                    <p className="mt-2 text-liten text-blekk-dempet">
-                      I Kalender: <em>Arkiv → Nytt kalenderabonnement</em>, lim
-                      inn adressen, og velg oppdatering hvert femte minutt.
-                    </p>
-                    <p className="mt-1 text-liten text-blekk-dempet">
-                      Velger du <em>iCloud</em> som plassering, lastes
-                      timeplanen opp til Apple og følger med til telefonen.
-                      Velger du <em>På min Mac</em>, blir den her, men da bare
-                      på denne maskinen. Strømmen oppdaterer seg bare mens appen
-                      kjører.
-                    </p>
-                  </>
-                ) : (
-                  <p className="mt-2 text-liten text-blekk-dempet">
-                    Lim inn adressen som et kalenderabonnement i
-                    kalenderprogrammet på denne maskinen. Adressen virker bare
-                    her, og strømmen oppdaterer seg bare mens appen kjører.
+                {treff.length === 0 ? (
+                  <p className="px-3 py-2.5 text-liten text-blekk-svak">
+                    Ingen treff
                   </p>
+                ) : (
+                  treff.map((x, i) => (
+                    <button
+                      key={`${x.side}:${x.k}`}
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => hopp(x)}
+                      className={`flex w-full items-baseline gap-2 rounded-[9px] px-2.5 py-2 text-left text-liten ${
+                        i === sokValg ? "bg-flate" : "hover:bg-flate"
+                      }`}
+                    >
+                      <span className="truncate">{x.tittel}</span>
+                      <small className="ml-auto shrink-0 text-etikett text-blekk-svak">
+                        {SIDENAVN[x.side]}
+                      </small>
+                    </button>
+                  ))
                 )}
-              </div>
+              </div>,
+              document.body,
             )}
-          </Bolk>
+        </span>
+      </IVerktoylinja>
 
-          <Bolk id="arkiv" tittel="Arkiv">
-            <p className="mb-3 text-brod text-blekk-dempet">
-              Hele basen skrevet ut som markdown og CSV: én fil per elev, én per
-              fag. Kan åpnes i Obsidian eller hva som helst annet, også om denne
-              appen ikke finnes lenger. Skrives ved hver oppstart.
-            </p>
-            <p className="mb-3 text-liten text-blekk-dempet">
-              Denne mappa <em>kan</em> ligge i en skytjeneste. Det er vanlige
-              tekstfiler. Databasen selv skal aldri det.
-            </p>
-
-            <div className="flex flex-wrap items-center gap-2">
-              <Knapp
-                onClick={async () => {
-                  const valgt = await invoke<string | null>("velg_arkivmappe");
-                  if (!valgt) return;
-                  setArkivmappe(valgt);
-                  setArkivMelding(null);
-                }}
-              >
-                {arkivmappe ? "Bytt mappe" : "Velg mappe"}
-              </Knapp>
-              <Knapp
-                variant="primar"
-                disabled={!arkivmappe || arkiverer}
-                onClick={async () => {
-                  setArkiverer(true);
-                  setArkivMelding(null);
-                  try {
-                    const r = await skrivArkiv(skolear);
-                    setArkivMelding(
-                      r === null
-                        ? "Ingen mappe valgt."
-                        : `${r.skrevet} filer skrevet.` +
-                            (r.feil.length > 0
-                              ? ` ${r.feil.length} feilet.`
-                              : ""),
-                    );
-                  } catch (e) {
-                    setArkivMelding(String(e));
-                  } finally {
-                    setArkiverer(false);
-                  }
-                }}
-              >
-                {arkiverer ? "Skriver …" : "Skriv arkivet nå"}
-              </Knapp>
-              {arkivmappe && (
-                <code className="truncate text-liten text-blekk-dempet">
-                  {arkivmappe}
-                </code>
-              )}
-            </div>
-            {arkivMelding && (
-              <p className="mt-2 text-brod text-blekk-dempet">{arkivMelding}</p>
-            )}
-          </Bolk>
-
-          <Bolk id="kalenderserver" tittel="Publiser til kalenderserver">
-            <p className="mb-3 text-brod text-blekk-dempet">
-              Skriver timeplanen til din egen CalDAV-server, ett fag per
-              kalender, så elevene kan abonnere på sitt eget fag. Dette er det
-              eneste stedet appen sender noe ut (§8.1), og det som går ut er
-              <strong className="font-medium">
-                {" "}
-                fag, tittel, dato, klokkeslett og sted
-              </strong>
-              . Aldri elevnavn, skåringer eller notater.
-            </p>
-
-            <div className="grid max-w-xl gap-3">
-              <Felt
-                etikett="Adresse til kalendermappa"
-                verdi={dav.base}
-                settVerdi={(v) => setDav((d) => ({ ...d, base: v }))}
-                plassholder="https://framagenda.org/remote.php/dav/calendars/brukernavn"
-              />
-              <Felt
-                etikett="Brukernavn"
-                verdi={dav.bruker}
-                settVerdi={(v) => setDav((d) => ({ ...d, bruker: v }))}
-              />
-              <label className="block">
-                <span className="mb-1 block text-etikett uppercase tracking-etikett text-blekk-dempet">
-                  {davHarPassord
-                    ? `Passord (lagret i ${nokkelringen()})`
-                    : "Passord"}
-                </span>
-                <input
-                  type="password"
-                  value={davPassord}
-                  placeholder={
-                    davHarPassord ? "••••••••" : "App-passord fra serveren"
-                  }
-                  onChange={(e) => setDavPassord(e.target.value)}
-                  className="w-full rounded border border-linje bg-ark px-2 py-1.5 text-brod outline-none focus:border-aksent"
-                />
-              </label>
-              <p className="text-liten text-blekk-dempet">
-                Bruk et app-passord, ikke hovedpassordet ditt. Da kan du trekke
-                det tilbake uten å bytte alt annet. Passordet lagres i{" "}
-                {nokkelringen()}, aldri i databasen.
-              </p>
-            </div>
-
-            <label className="mt-4 flex items-center gap-2 text-brod">
-              <input
-                type="checkbox"
-                checked={dav.pa}
-                onChange={async (e) => {
-                  const pa = e.target.checked;
-                  setDav((d) => ({ ...d, pa }));
-                  await caldav.lagreOppsett({ pa });
-                }}
-              />
-              Publiser automatisk når jeg endrer en økt
-            </label>
-            <p className="mb-3 ml-6 text-liten text-blekk-dempet">
-              Skjer noen sekunder etter siste endring, og sender bare øktene som
-              faktisk er endret.
-            </p>
-
-            {/*
-          Mentorsamtalene har sin egen bryter, ikke en del av den over: et
-          hakk man satte i august skal ikke begynne å sende elevfornavn i
-          november (§8.1).
-        */}
-            <p className="mb-1 mt-5 text-etikett uppercase tracking-etikett text-blekk-dempet">
-              Mentorsamtaler
-            </p>
-            <label className="flex items-center gap-2 text-brod">
-              <input
-                type="checkbox"
-                checked={dav.mentorPa}
-                onChange={async (e) => {
-                  const mentorPa = e.target.checked;
-                  setDav((d) => ({ ...d, mentorPa }));
-                  await caldav.lagreOppsett({ mentorPa });
-                }}
-              />
-              Publiser mentorsamtalene, én hendelse per samtale
-            </label>
-            <p className="ml-6 text-liten text-blekk-dempet">
-              Det eneste som går ut er{" "}
-              <strong className="font-medium">fornavn og klokkeslett</strong>:
-              «Mentorsamtale med Vera», på samtalens tidspunkt. Ikke etternavn,
-              ikke klasse, ikke fag, ingen beskrivelse. Denne kalenderen bør
-              ikke deles med andre.
-            </p>
-            {/*
-          Feltet står alltid framme, som fagkalenderne — ikke gjemt bak
-          avkrysningen over. Man må kunne se hvor noe ville gått før man
-          bestemmer seg for å slå det på.
-        */}
-            <label className="ml-6 mt-2 flex items-center gap-2 text-brod">
-              <span className="w-20 shrink-0 font-medium">Kalender</span>
-              <input
-                value={dav.mentorKalender}
-                placeholder="f.eks. mentorsamtaler"
-                onChange={(e) =>
-                  setDav((d) => ({ ...d, mentorKalender: e.target.value }))
-                }
-                onBlur={async (e) =>
-                  await caldav.lagreOppsett({ mentorKalender: e.target.value })
-                }
-                className="w-56 rounded border border-linje bg-ark px-2 py-1 text-brod outline-none focus:border-aksent"
-              />
-            </label>
-            {dav.mentorPa && !dav.mentorKalender.trim() && (
-              <p className="ml-6 mt-1 text-liten text-varsel">
-                Publiseringen er på, men ingen kalender er satt, så ingenting
-                sendes.
-              </p>
-            )}
-            <p className="ml-6 mt-1 text-liten text-blekk-svak">
-              Navnet på samlingen slik den heter på serveren, det som står sist
-              i adressen. Den må finnes fra før. Appen oppretter ikke kalendere,
-              og leser aldri noe tilbake (§8.1).
-            </p>
-
-            <p className="mb-1 mt-5 text-etikett uppercase tracking-etikett text-blekk-dempet">
-              Kalender per fag
-            </p>
-            <div className="grid max-w-xl gap-1.5">
-              {fag.length === 0 ? (
-                <p className="text-brod text-blekk-svak">
-                  Ingen fag i skoleåret.
+      <div className="grid min-h-0 flex-1 grid-cols-[220px_minmax(0,1fr)]">
+        <nav
+          ref={meny}
+          aria-label="Innstillinger"
+          className="relative overflow-y-auto border-r border-linje-svak pr-3.5 pt-1"
+        >
+          {markorY !== null && (
+            <span
+              aria-hidden
+              className="inn-meny-markor"
+              style={{ transform: `translateY(${markorY}px)` }}
+            />
+          )}
+          {MENY.map((g, gi) => (
+            <div key={gi}>
+              {g.gruppe ? (
+                <p className="mx-2.5 mb-1.5 mt-3.5 text-[11px] uppercase tracking-[0.06em] text-blekk-svak">
+                  {g.gruppe}
                 </p>
               ) : (
-                fag.map((f) => (
-                  <label
-                    key={f.id}
-                    className="flex items-center gap-2 text-brod"
-                  >
-                    <span className="w-20 shrink-0 font-medium">{f.kode}</span>
-                    <input
-                      value={dav.kalendere[f.id] ?? ""}
-                      placeholder="tomt = publiseres ikke"
-                      onChange={(e) =>
-                        setDav((d) => ({
-                          ...d,
-                          kalendere: { ...d.kalendere, [f.id]: e.target.value },
-                        }))
-                      }
-                      className="flex-1 rounded border border-linje bg-ark px-2 py-1 text-brod outline-none focus:border-aksent"
-                    />
-                  </label>
-                ))
+                g.gruppe === "" && <div className="h-3.5" />
               )}
-            </div>
-
-            <div className="mt-4 flex flex-wrap items-center gap-2">
-              <Knapp
-                onClick={async () => {
-                  setDavFeil(null);
-                  setDavMelding(null);
-                  await caldav.lagreOppsett(dav);
-                  if (davPassord) {
-                    await caldav.lagrePassord(davPassord);
-                    setDavPassord("");
-                    setDavHarPassord(true);
-                  }
-                  setDavMelding("Lagret.");
-                }}
-              >
-                Lagre
-              </Knapp>
-              <Knapp
-                disabled={!dav.base || !dav.bruker}
-                onClick={async () => {
-                  setDavFeil(null);
-                  setDavMelding(null);
-                  try {
-                    // Testen leser passordet fra nøkkelringen, så det du nettopp
-                    // skrev må lagres først. Ellers testes en gammel verdi, og
-                    // feilmeldingen peker på feil sted.
-                    if (davPassord) {
-                      await caldav.lagrePassord(davPassord);
-                      setDavPassord("");
-                      setDavHarPassord(true);
-                    }
-                    await caldav.lagreOppsett(dav);
-                    setDavMelding(await caldav.test(dav.base, dav.bruker));
-                  } catch (e) {
-                    setDavFeil(String(e));
-                  }
-                }}
-              >
-                Test tilkoblingen
-              </Knapp>
-              <Knapp
-                variant="primar"
-                disabled={davJobber || !dav.base}
-                onClick={async () => {
-                  setDavJobber(true);
-                  setDavFeil(null);
-                  setDavMelding(null);
-                  try {
-                    const r = await caldav.publiser(skolear);
-                    setDavMelding(
-                      `${r.skrevet} skrevet, ${r.slettet} fjernet, ` +
-                        `${r.uendret} uendret.` +
-                        (r.feil.length > 0 ? ` ${r.feil.length} feilet.` : ""),
-                    );
-                    if (r.feil.length > 0)
-                      setDavFeil(r.feil.slice(0, 3).join("\n"));
-                  } catch (e) {
-                    setDavFeil(String(e));
-                  } finally {
-                    setDavJobber(false);
-                  }
-                }}
-              >
-                {davJobber ? "Publiserer …" : "Publiser nå"}
-              </Knapp>
-              {davHarPassord && (
-                <Knapp
-                  variant="stille"
-                  onClick={async () => {
-                    await caldav.glemPassord();
-                    setDavHarPassord(false);
-                    setDavMelding(
-                      `Passordet er slettet fra ${nokkelringen()}.`,
-                    );
-                  }}
-                >
-                  Glem passordet
-                </Knapp>
-              )}
-            </div>
-
-            {davMelding && (
-              <p className="mt-2 text-brod text-lys-gronn">{davMelding}</p>
-            )}
-            {davFeil && (
-              <p className="mt-2 whitespace-pre-wrap text-brod text-feil">
-                {davFeil}
-              </p>
-            )}
-          </Bolk>
-
-          <Bolk id="sikkerhetskopi" tittel="Sikkerhetskopi">
-            <p className="mb-3 text-brod text-blekk-dempet">
-              Det tas en kopi av databasen hver gang appen åpnes, én gang i
-              døgnet. De 30 nyeste beholdes. Kopien skrives med SQLites egen
-              <code className="mx-1 text-liten">VACUUM INTO</code>, som gir en
-              hel database også hvis noe skrives samtidig.
-            </p>
-
-            <div className="mb-3 flex items-center gap-3">
-              <Knapp
-                onClick={async () => {
-                  setTarKopi(true);
-                  setKopimelding(null);
-                  try {
-                    const sti = await taKopiNa();
-                    await lastKopier();
-                    const kl = new Date().toTimeString().slice(0, 5);
-                    setKopimelding({
-                      ok: true,
-                      tekst: sti
-                        ? `Kopien er tatt kl. ${kl}: ${sti.split("/").pop()}`
-                        : `Kopien er tatt kl. ${kl}.`,
-                    });
-                  } catch (e) {
-                    setKopimelding({
-                      ok: false,
-                      tekst: `Kopien ble ikke tatt: ${String(e)}`,
-                    });
-                  } finally {
-                    setTarKopi(false);
-                  }
-                }}
-                disabled={tarKopi}
-              >
-                {tarKopi ? "Tar kopi \u2026" : "Ta kopi n\u00e5"}
-              </Knapp>
-              <Knapp onClick={() => void velgFil()}>
-                Åpne en .sqlite-fil …
-              </Knapp>
-              {kopimappe && (
+              {g.sider.map((id) => (
                 <button
-                  onClick={() => void revealItemInDir(kopimappe)}
-                  className="text-liten text-blekk-dempet underline hover:text-blekk"
+                  key={id}
+                  data-side={id}
+                  onClick={() => setSide(id)}
+                  aria-current={side === id ? "page" : undefined}
+                  className="inn-meny-knapp"
                 >
-                  Vis mappa i {filbehandler()}
+                  <span className="inn-meny-ikon">
+                    <Menyikon navn={id} />
+                  </span>
+                  {SIDENAVN[id]}
                 </button>
-              )}
+              ))}
             </div>
+          ))}
+        </nav>
 
-            {kopimelding && (
-              <p
-                role="status"
-                className={`mb-3 flex items-baseline gap-1.5 text-brod ${
-                  kopimelding.ok ? "text-lys-gronn" : "text-feil"
-                }`}
+        <div className="min-h-0 overflow-auto pb-10 pl-10 pr-2 pt-1.5">
+          <div key={side} className="max-w-[720px]">
+            {side === "deg" && <SideDeg skolear={skolear} />}
+            {side === "generelt" && <SideGenerelt />}
+            {side === "skolear" && (
+              <SideSkolear
+                skolear={skolear}
+                fag={fag}
+                onEndret={onEndret}
+                onApneSkoleruta={onApneSkoleruta}
+              />
+            )}
+            {side === "fag" && (
+              <SideFag fag={fag} onEndret={onEndret} onApneFag={onApneFag} />
+            )}
+            {side === "skalaer" && <SideSkalaer />}
+            {side === "utseende" && <SideUtseende />}
+            {side === "kopi" && <SideKopi skolear={skolear} />}
+            {side === "personvern" && <SidePersonvern />}
+            {side === "kalender" && (
+              <SideKalender skolear={skolear} fag={fag} />
+            )}
+            {side === "del" && (
+              <Side
+                tittel="Del med kollegaer"
+                intro="Gi en kollega oppsettet ditt. Elevene følger aldri med."
               >
-                {kopimelding.ok && <Ikon navn="hake" />}
-                {kopimelding.tekst}
-              </p>
+                <div data-k="deloppsett">
+                  <DelOppsett
+                    harAr={!!skolear}
+                    startTekst={oppsettTekst}
+                    onImportert={() => {
+                      onOppsettLest?.();
+                      onEndret();
+                    }}
+                  />
+                </div>
+              </Side>
             )}
-
-            {kopier.length === 0 ? (
-              <p className="text-brod text-blekk-svak">Ingen kopier ennå.</p>
-            ) : (
-              <table className="w-full max-w-xl text-brod">
-                <tbody>
-                  {kopier.slice(0, 8).map((k) => (
-                    <tr key={k.navn} className="border-b border-linje-svak">
-                      <td className="py-1 font-mono text-liten">
-                        {k.navn}
-                        {!k.daglig && (
-                          <span className="ml-2 font-sans text-etikett text-blekk-svak">
-                            før gjenoppretting
-                          </span>
-                        )}
-                      </td>
-                      <td className="w-20 py-1 text-right tabular-nums text-blekk-dempet">
-                        {(k.bytes / 1024).toFixed(0)} kB
-                      </td>
-                      <td className="w-24 py-1 text-right">
-                        <button
-                          onClick={() =>
-                            void gjenopprett(`${kopimappe}/${k.navn}`, k.navn)
-                          }
-                          className="text-liten text-blekk-dempet hover:text-aksent"
-                        >
-                          Gjenopprett
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-            {kopier.length > 8 && (
-              <p className="mt-1 text-liten text-blekk-dempet">
-                og {kopier.length - 8} eldre. De ligger i mappa
-              </p>
-            )}
-
-            <p className="mt-3 text-liten text-blekk-dempet">
-              {synkadvarsel()}
-            </p>
-          </Bolk>
-
-          <Bolk id="deloppsett" tittel="Del oppsett">
-            <DelOppsett
-              harAr={!!skolear}
-              startTekst={oppsettTekst}
-              onImportert={() => {
-                onOppsettLest?.();
-                onEndret();
-              }}
-            />
-          </Bolk>
-
-          <Bolk id="personvern" tittel="Personvern">
-            <p className="text-brod text-blekk-dempet">
-              Appen gjør ingen nettverkskall. Databasen ligger lokalt i{" "}
-              <code className="text-liten break-words">
-                {datamappe ?? "appens datamappe"}
-              </code>
-              .
-            </p>
-            <p className="mt-2 text-brod text-blekk-dempet">
-              Notatfeltene er lærerens arbeidsmateriale. Helse, hjemmeforhold og
-              andre særlige kategorier hører ikke hjemme der.
-            </p>
-          </Bolk>
-
-          <footer className="mt-10 flex items-center gap-2.5 border-t border-linje pt-4 text-liten text-blekk-dempet">
-            <Merke storrelse={20} />
-            <span>
-              <span className="font-medium text-blekk">Økta</span>
-              {versjon && <span className="tabular-nums"> {versjon}</span>}
-              {": undervisningsplanlegging og elevoppfølging."}
-            </span>
-            <span className="ml-auto">
-              Alle data ligger lokalt på denne maskinen.
-            </span>
-          </footer>
-          <p className="mt-2 text-etikett text-blekk-svak">
-            Kjønn gjettes fra fornavn med navnestatistikk fra Statistisk
-            sentralbyrå (SSB), CC BY 4.0.
-          </p>
-        </Side.Provider>
+            {side === "om" && <SideOm />}
+          </div>
+        </div>
       </div>
     </div>
   );
 }
 
-function Etikett({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="mb-1 block text-etikett uppercase tracking-etikett text-blekk-dempet">
-      {children}
-    </span>
-  );
-}
+// -------------------------------------------------------------------- Deg
 
-/**
- * Navnet ditt. Står som faglærer på årsplanen i alle fag, med mindre et fag
- * har fått en annen faglærer i fagpanelet. Lagres mens du skriver.
- */
-function Laerernavn() {
+/** Mentor-ordene (appen sier mentor; et språkvalg kan komme senere). */
+const MENTOR = "mentor";
+const MENTORKLASSE = "mentor_klasse";
+
+function SideDeg({ skolear }: { skolear: Skolear }) {
   const [navn, setNavn] = useState("");
+  const [mentor, setMentor] = useState(false);
+  const [klasse, setKlasse] = useState("");
+  const [klasser, setKlasser] = useState<Klasse[]>([]);
   useEffect(() => {
     void hentInnstilling(LAERERNAVN).then((v) => setNavn(v ?? ""));
-  }, []);
+    void hentInnstilling(MENTOR).then((v) => setMentor(v === "pa"));
+    void hentInnstilling(MENTORKLASSE).then((v) => setKlasse(v ?? ""));
+    void hentKlasser(skolear.id).then(setKlasser);
+  }, [skolear.id]);
+
+  async function velgKlasse(id: string) {
+    setKlasse(id);
+    await settInnstilling(MENTORKLASSE, id);
+    if (!id) return;
+    // Elevene i klassen blir mentorelever (§3.2). Andre røres ikke.
+    const elever = (await hentElever(skolear.id)).filter(
+      (e) => e.klasseId === id && !e.mentor,
+    );
+    for (const e of elever) await settMentor(e.id, skolear.id, true);
+    const k = klasser.find((x) => x.id === id);
+    if (elever.length > 0)
+      visToast(`${elever.length} elever i ${k?.navn} er mentorelever`);
+  }
+
   return (
-    <div className="mb-4 max-w-sm">
-      <Felt
-        etikett="Ditt navn"
-        verdi={navn}
-        plassholder="Står som faglærer på årsplanen"
-        settVerdi={(v) => {
-          setNavn(v);
-          void settInnstilling(LAERERNAVN, v.trim());
-        }}
-      />
-    </div>
+    <Side tittel="Deg" intro="Det som står på årsplaner og utskrifter.">
+      <Gruppe>
+        <Rad
+          k="navn"
+          tittel="Ditt navn"
+          hjelp="Står som faglærer på årsplanen."
+        >
+          <Feltinput
+            value={navn}
+            onChange={(e) => {
+              setNavn(e.target.value);
+              void settInnstilling(LAERERNAVN, e.target.value.trim());
+            }}
+          />
+        </Rad>
+      </Gruppe>
+      <Gruppe tittel="Mentor">
+        <Rad
+          k="mentor"
+          tittel="Jeg er mentor"
+          hjelp="For mentorsamtaler og mentorelevene dine."
+        >
+          <Vippebryter
+            pa={mentor}
+            etikett="Jeg er mentor"
+            onBytt={(pa) => {
+              setMentor(pa);
+              void settInnstilling(MENTOR, pa ? "pa" : "av");
+            }}
+          />
+        </Rad>
+        {mentor && (
+          <Rad
+            k="mentorklasse"
+            tittel="For klasse"
+            hjelp="Elevene i klassen blir mentorelever i år. Enkeltelever kan endres i elevkortet."
+          >
+            <select
+              value={klasse}
+              onChange={(e) => void velgKlasse(e.target.value)}
+              className="inn-felt"
+            >
+              <option value="">Ingen</option>
+              {klasser.map((k) => (
+                <option key={k.id} value={k.id}>
+                  {k.navn}
+                </option>
+              ))}
+            </select>
+          </Rad>
+        )}
+      </Gruppe>
+    </Side>
   );
 }
 
-/** Sidene i venstremenyen, i grupper (DESIGN.md §10). */
-const SIDER = [
-  {
-    gruppe: "Vanlig",
-    sider: [
-      { id: "generelt", navn: "Generelt" },
-      { id: "skolear", navn: "Skoleår" },
-      { id: "utseende", navn: "Utseende" },
-      { id: "skalaer", navn: "Skalaer" },
-    ],
-  },
-  {
-    gruppe: "Trygghet",
-    sider: [
-      { id: "sikkerhetskopi", navn: "Sikkerhetskopi" },
-      { id: "personvern", navn: "Personvern" },
-    ],
-  },
-  {
-    gruppe: "Kollegaer",
-    sider: [{ id: "deloppsett", navn: "Del oppsett" }],
-  },
-  {
-    gruppe: "Sjelden i bruk",
-    sider: [
-      { id: "kalenderstrom", navn: "Kalenderstrøm" },
-      { id: "kalenderserver", navn: "Kalenderserver" },
-      { id: "arkiv", navn: "Arkiv" },
-    ],
-  },
-] as const;
-
-type Sideid = (typeof SIDER)[number]["sider"][number]["id"];
-
-/** Siden som står framme; en bolk tegnes bare på sin egen side. */
-const Side = createContext<Sideid>("generelt");
+// --------------------------------------------------------------- Generelt
 
 /** Mindre / Vanlig / Større → --tekst-skala. */
 const TEKSTVALG = [
@@ -1206,48 +457,1258 @@ function narmesteTekstvalg(v: string): string {
   ).verdi;
 }
 
-/**
- * Ett valg: etiketten til venstre, kontrollen og hjelpeteksten til høyre.
- * Hjelpeteksten er hverdagsspråk (DESIGN.md §10).
- */
-function Rad({
-  etikett,
-  hjelp,
-  children,
-}: {
-  etikett: string;
-  hjelp?: string;
-  children: React.ReactNode;
-}) {
+function SideGenerelt() {
+  const [tekstskala, setTekstskala] = useState("0.93");
+  const [varighet, setVarighet] = useState("180");
+  const [planvisning, setPlanvisning] = useState<Planvisning>("enkel");
+  const [idag, settIdag] = useLagretInnstilling<"enkel" | "full">(
+    "idag_oppsett",
+    "enkel",
+    (v) => (v === "full" ? "full" : "enkel"),
+    String,
+  );
+  useEffect(() => {
+    void hentInnstilling(TEKSTSKALA).then((v) => setTekstskala(v ?? "0.93"));
+    void hentInnstilling("standard_varighet_min").then((v) =>
+      setVarighet(v ?? "180"),
+    );
+    void hentInnstilling(PLANVISNING).then((v) =>
+      setPlanvisning(lesPlanvisning(v)),
+    );
+  }, []);
+
   return (
-    <div className="grid grid-cols-[9rem_minmax(0,1fr)] gap-x-6 border-b border-linje-svak py-3 last:border-b-0">
-      <span className="pt-1 text-brod font-medium">{etikett}</span>
-      <div>
-        {children}
-        {hjelp && (
-          <p className="mt-1.5 text-liten text-blekk-dempet">{hjelp}</p>
-        )}
-      </div>
-    </div>
+    <Side tittel="Generelt" intro="Hvordan Økta oppfører seg i hverdagen.">
+      <Gruppe tittel="Forsiden">
+        <Rad
+          k="idag"
+          tittel="I dag"
+          hjelp="Enkel: dagens økter og hvem du bør følge opp. Full: også uka, frister og innsats. Du kan bytte når som helst, også fra forsiden."
+        >
+          <Bryter
+            storrelse="liten"
+            verdi={idag}
+            settVerdi={(v) => settIdag(v as "enkel" | "full")}
+            valg={[
+              { id: "enkel", navn: "Enkel" },
+              { id: "full", navn: "Full" },
+            ]}
+          />
+        </Rad>
+      </Gruppe>
+      <Gruppe tittel="Økter">
+        <Rad
+          k="varighet"
+          tittel="Standard lengde på nye økter"
+          hjelp="Gjelder bare nye økter. Fagets egen lengde går foran, og økta kan alltid endres."
+        >
+          <Feltinput
+            type="number"
+            bredde="w-16"
+            className="text-right tabular-nums"
+            value={varighet}
+            onChange={(e) => setVarighet(e.target.value)}
+            onBlur={async () => {
+              const n = Math.round(Number(varighet));
+              if (n > 0) {
+                await settInnstilling("standard_varighet_min", String(n));
+                setVarighet(String(n));
+              }
+            }}
+          />
+          <span className="text-liten text-blekk-dempet">min</span>
+        </Rad>
+        <Rad
+          k="plan"
+          tittel="Øktplan"
+          hjelp="Enkel: en liste med minutter. Full: tidslinje du drar i, med beskrivelser og pauser. Det du skrev i Full, blir liggende om du bytter."
+        >
+          <Bryter
+            storrelse="liten"
+            valg={[
+              { id: "enkel", navn: "Enkel" },
+              { id: "full", navn: "Full" },
+            ]}
+            verdi={planvisning}
+            settVerdi={async (v) => {
+              setPlanvisning(lesPlanvisning(v));
+              await settInnstilling(PLANVISNING, v);
+            }}
+          />
+        </Rad>
+      </Gruppe>
+      <Gruppe tittel="Lesbarhet">
+        {/*
+          Hele typeskalaen ganges med dette tallet, så forholdet mellom
+          gradene holder seg uansett valg.
+        */}
+        <Rad
+          k="tekst"
+          tittel="Tekststørrelse"
+          hjelp="Gjelder med en gang. Med Større får færre enn tretti elever plass i skåringslista uten å rulle."
+        >
+          <Bryter
+            storrelse="liten"
+            valg={TEKSTVALG.map((t) => ({ id: t.verdi, navn: t.navn }))}
+            verdi={narmesteTekstvalg(tekstskala)}
+            settVerdi={async (v) => {
+              setTekstskala(v);
+              settTekstskala(v);
+              await settInnstilling(TEKSTSKALA, v);
+            }}
+          />
+        </Rad>
+      </Gruppe>
+    </Side>
   );
 }
 
-function Bolk({
-  id,
-  tittel,
-  children,
-}: {
-  id: Sideid;
-  tittel: string;
-  children: React.ReactNode;
+// ---------------------------------------------------------------- Skoleår
+
+const datoTekst = (d: string) =>
+  new Date(`${d}T12:00:00`)
+    .toLocaleDateString("nb-NO", { day: "numeric", month: "numeric" })
+    .replace(/\.$/, "");
+
+/** Neste skoleårs navn og datoer: 52 uker senere, så ukedagene står. */
+export function nesteSkolear(a: {
+  navn: string;
+  start: string;
+  slutt: string;
 }) {
-  if (useContext(Side) !== id) return null;
+  const flytt = (d: string) => {
+    const x = new Date(`${d}T12:00:00`);
+    x.setDate(x.getDate() + 364);
+    return x.toLocaleDateString("sv-SE");
+  };
+  const [f, t] = a.navn.split("/").map(Number);
+  const navn =
+    Number.isFinite(f) && Number.isFinite(t)
+      ? `${f + 1}/${String((t + 1) % 100).padStart(2, "0")}`
+      : `${a.navn} (neste)`;
+  return { navn, start: flytt(a.start), slutt: flytt(a.slutt) };
+}
+
+function SideSkolear({
+  skolear,
+  fag,
+  onEndret,
+  onApneSkoleruta,
+}: {
+  skolear: Skolear;
+  fag: FagIAr[];
+  onEndret: () => void;
+  onApneSkoleruta: () => void;
+}) {
+  const [ar, setAr] = useState<Skolear[]>([]);
+  const [fri, setFri] = useState<Fridag[]>([]);
+  const [navn, setNavn] = useState(skolear.navn);
+  useEffect(() => {
+    void hentSkolear().then(setAr);
+    void hentFridager(skolear.id).then(setFri);
+    setNavn(skolear.navn);
+  }, [skolear.id]);
+  const neste = nesteSkolear(skolear);
+  const finnesNeste = ar.some((a) => a.navn === neste.navn);
+  const andre = ar.filter((a) => a.id !== skolear.id);
+
+  async function forbered() {
+    const ok = await bekreft(
+      `Lage skoleåret ${neste.navn}?\n\n` +
+        `${datoTekst(neste.start)} til ${datoTekst(neste.slutt)}, med de samme ` +
+        `${fag.length} fagene som i år. Elevene følger ikke med.\n\n` +
+        `Du blir i ${skolear.navn} til du gjør det nye aktivt. Der kan du ` +
+        "hente perioder fra i år når øktene er lagt inn.",
+    );
+    if (!ok) return;
+    const id = await opprettSkolear(neste.navn, neste.start, neste.slutt);
+    for (const f of fag)
+      await leggFagIAr(
+        id,
+        f.fagkode,
+        f.navn,
+        f.farge,
+        f.grepKode,
+        f.arstimetall,
+      );
+    // Det aktive året står som før; det nye gjøres aktivt når du vil.
+    await settAktivtSkolear(skolear.id);
+    setAr(await hentSkolear());
+    visToast(`${neste.navn} er laget med ${fag.length} fag`);
+  }
+
   return (
-    <section className="mb-7">
-      <h2 className="mb-2 border-b border-linje-medium pb-1 text-brod font-semibold text-blekk">
-        {tittel}
-      </h2>
-      {children}
-    </section>
+    <Side
+      tittel="Skoleår"
+      intro="Datoene styrer kalenderen, årsplanen og hvilke dager øktene havner på."
+    >
+      <Gruppe tittel={`${skolear.navn} · aktivt`}>
+        <Rad k="aret" tittel="Navn">
+          <Feltinput
+            bredde="w-28"
+            value={navn}
+            onChange={(e) => setNavn(e.target.value)}
+            onBlur={async () => {
+              const n = navn.trim();
+              if (n && n !== skolear.navn) {
+                await endreSkolear(skolear.id, { navn: n });
+                onEndret();
+              }
+            }}
+          />
+        </Rad>
+        <Rad k="start" tittel="Første skoledag">
+          <Feltinput
+            type="date"
+            bredde="w-40"
+            value={skolear.start}
+            onChange={async (e) => {
+              if (e.target.value) {
+                await endreSkolear(skolear.id, { start: e.target.value });
+                onEndret();
+              }
+            }}
+          />
+        </Rad>
+        <Rad k="slutt" tittel="Siste skoledag">
+          <Feltinput
+            type="date"
+            bredde="w-40"
+            value={skolear.slutt}
+            onChange={async (e) => {
+              if (e.target.value) {
+                await endreSkolear(skolear.id, { slutt: e.target.value });
+                onEndret();
+              }
+            }}
+          />
+        </Rad>
+      </Gruppe>
+
+      <Gruppe
+        tittel="Ferier og fridager"
+        fot="Fridagene står i kalenderen og i Året. Økter som faller på en fridag, flyttes ikke."
+      >
+        {fri.length === 0 ? (
+          <Rad
+            tittel={
+              <span className="text-blekk-svak">Ingen lagt inn ennå.</span>
+            }
+          />
+        ) : (
+          fri.map((f) => (
+            <div
+              key={f.id}
+              className="inn-rad min-h-[40px] py-2 text-[calc(13.5px*var(--tekst-skala))]"
+            >
+              <span className="flex-1">{f.navn}</span>
+              <span className="tabular-nums text-blekk-dempet">
+                {f.fra === f.til
+                  ? datoTekst(f.fra)
+                  : `${datoTekst(f.fra)} – ${datoTekst(f.til)}`}
+              </span>
+            </div>
+          ))
+        )}
+        <Rad
+          k="fri"
+          tittel="Skoleruta"
+          hjelp="Legg til og endre ferier, fridager og hendelser."
+        >
+          <Knapp onClick={onApneSkoleruta}>
+            Åpne skoleruta <Ikon navn="pil" />
+          </Knapp>
+        </Rad>
+      </Gruppe>
+
+      <Gruppe tittel="Neste skoleår">
+        <Rad
+          k="nytt"
+          tittel={`Start ${neste.navn}`}
+          hjelp={
+            finnesNeste
+              ? `${neste.navn} finnes allerede. Gjør det aktivt under Andre år når du vil bytte.`
+              : "Lager året med de samme fagene. Perioder og tema hentes i Året når øktene er lagt inn. Elevene følger ikke med."
+          }
+        >
+          <Knapp disabled={finnesNeste} onClick={() => void forbered()}>
+            Forbered …
+          </Knapp>
+        </Rad>
+      </Gruppe>
+
+      {andre.length > 0 && (
+        <Gruppe
+          tittel="Andre år"
+          fot="Å bytte aktivt år rører ingen data. Det endrer bare hva appen viser."
+        >
+          {andre.map((a, i) => (
+            <Rad
+              key={a.id}
+              k={i === 0 ? "tidligere" : undefined}
+              tittel={a.navn}
+              hjelp={`${datoTekst(a.start)} ${a.start.slice(0, 4)} – ${datoTekst(a.slutt)} ${a.slutt.slice(0, 4)}`}
+            >
+              <Knapp
+                onClick={async () => {
+                  await settAktivtSkolear(a.id);
+                  // Hele appen henger på det aktive året, men du skal bli
+                  // stående i innstillingene.
+                  setAr(await hentSkolear());
+                  onEndret();
+                }}
+              >
+                Gjør aktivt
+              </Knapp>
+              <button
+                onClick={async () => {
+                  const n = await tellForSkolear(a.id);
+                  const ok = await bekreft(
+                    `Slette skoleåret ${a.navn}?\n\n` +
+                      `${n.fag} fag i året, ${n.okter} økter, ` +
+                      `${n.skaringer} skåringer, ${n.vurderinger} vurderinger, ` +
+                      `${n.klasser} klasser.\n\n` +
+                      "Fagene blir stående i fagbanken, og elevene blir " +
+                      "stående. De lever på tvers av år. Det som " +
+                      "forsvinner er dette årets økter og koblinger.\n\n" +
+                      "Sikkerhetskopien fra i dag er veien tilbake.",
+                  );
+                  if (!ok) return;
+                  await slettSkolear(a.id);
+                  setAr(await hentSkolear());
+                  onEndret();
+                }}
+                className="px-1 text-liten text-blekk-svak hover:text-feil"
+              >
+                Slett
+              </button>
+            </Rad>
+          ))}
+        </Gruppe>
+      )}
+    </Side>
+  );
+}
+
+// -------------------------------------------------------------------- Fag
+
+function SideFag({
+  fag,
+  onEndret,
+  onApneFag,
+}: {
+  fag: FagIAr[];
+  onEndret: () => void;
+  onApneFag?: () => void;
+}) {
+  const ark = useArk();
+  const [apen, setApen] = useState<string | null>(null);
+  return (
+    <Side
+      tittel="Fag"
+      intro="Fagene dine i år. Klikk fargen for å bytte, eller faget for timer, lengde og skala."
+    >
+      <Gruppe tittel="I år">
+        {fag.length === 0 && (
+          <Rad
+            tittel={<span className="text-blekk-svak">Ingen fag ennå.</span>}
+          />
+        )}
+        {fag.map((f, i) => (
+          <div key={f.id} data-k={`fag-${f.id}`}>
+            <div className="inn-rad" data-k={i === 0 ? "fagfarge" : undefined}>
+              <button
+                onClick={() => setApen(apen === f.id ? null : f.id)}
+                title="Bytt farge"
+                aria-expanded={apen === f.id}
+                className="h-[22px] w-[22px] shrink-0 rounded-[7px] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.08)] transition-[background] duration-300"
+                style={{ background: f.farge ?? "var(--color-linje-sterk)" }}
+              />
+              <button
+                onClick={() => ark.apneFag(f.id)}
+                className="min-w-[220px] flex-1 text-left"
+              >
+                <span className="text-[calc(13.5px*var(--tekst-skala))]">
+                  <b className="font-semibold">{f.kode}</b>{" "}
+                  <span className="text-blekk-dempet">{f.navn}</span>
+                </span>
+                <span className="mt-[3px] block text-etikett text-blekk-svak">
+                  {[
+                    f.arstimetall ? `${f.arstimetall} årstimer` : null,
+                    f.grepKode ? `Udir ${f.grepKode}` : "uten Udir-kode",
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </span>
+              </button>
+              <span className="text-[16px] text-blekk-svakest">›</span>
+            </div>
+            {apen === f.id && (
+              <div className="flex flex-wrap items-center gap-1.5 pb-3 pl-[50px] pr-4 pt-1">
+                {FAGFARGER.map((c) => {
+                  const brukt = fag.some((x) => x.id !== f.id && x.farge === c);
+                  return (
+                    <button
+                      key={c}
+                      onClick={async () => {
+                        await endreFag(f.fagId, { farge: c });
+                        setApen(null);
+                        onEndret();
+                      }}
+                      title={brukt ? "Brukt av et annet fag" : c}
+                      aria-pressed={f.farge === c}
+                      className={`h-[18px] w-[18px] rounded-md ${brukt ? "opacity-25" : ""} ${
+                        f.farge === c
+                          ? "shadow-[0_0_0_2px_var(--color-ark),0_0_0_3.5px_var(--color-blekk)]"
+                          : ""
+                      }`}
+                      style={{ background: c }}
+                    />
+                  );
+                })}
+                <span className="ml-1.5 text-etikett text-blekk-svak">
+                  Dempet = brukt av et annet fag
+                </span>
+              </div>
+            )}
+          </div>
+        ))}
+        <Rad
+          k="nyfag"
+          tittel="Legg til fag"
+          hjelp="Søk i Udirs fagkoder, eller hent et fag du har hatt før fra fagbanken."
+        >
+          {onApneFag && (
+            <Knapp onClick={onApneFag}>
+              Fag i år <Ikon navn="pil" />
+            </Knapp>
+          )}
+        </Rad>
+      </Gruppe>
+    </Side>
+  );
+}
+
+// ---------------------------------------------------------------- Skalaer
+
+function SideSkalaer() {
+  const [skalaer, setSkalaer] = useState<Skala[]>([]);
+  const [verdier, setVerdier] = useState<Record<string, Skalaverdi[]>>({});
+  useEffect(() => {
+    void (async () => {
+      const s = await hentSkalaer();
+      const v: Record<string, Skalaverdi[]> = {};
+      for (const skala of s) v[skala.id] = await hentVerdier(skala.id);
+      setSkalaer(s);
+      setVerdier(v);
+    })();
+  }, []);
+  return (
+    <Side
+      tittel="Skalaer"
+      intro="Brukes når du fører vurderinger og skårer økter. Tastene følger rekkefølgen; verdien som betyr «ingenting her» får alltid 0."
+    >
+      <Gruppe>
+        {skalaer.map((skala, i) => (
+          <Rad
+            key={skala.id}
+            k={i === 0 ? "skalaer" : undefined}
+            tittel={
+              <>
+                {skala.navn}{" "}
+                <span className="text-blekk-svak">· {skala.bruksomrade}</span>
+              </>
+            }
+            under={
+              <div className="flex flex-wrap gap-1">
+                {(verdier[skala.id] ?? []).map((v) => {
+                  const t = taster(verdier[skala.id] ?? []).get(v.id);
+                  return (
+                    <span
+                      key={v.id}
+                      title={v.etikett ?? undefined}
+                      className="inline-flex h-6 items-center gap-1.5 rounded-xl bg-flate px-2 text-etikett"
+                    >
+                      {t && <span className="text-blekk-svak">{t}</span>}
+                      {v.kode}
+                    </span>
+                  );
+                })}
+              </div>
+            }
+          />
+        ))}
+      </Gruppe>
+    </Side>
+  );
+}
+
+// --------------------------------------------------------------- Utseende
+
+function SideUtseende() {
+  const [tema, setTema] = useState<Tema>("system");
+  const [glass, setGlass] = useState<Glass>("pa");
+  const [bevegelse, setBevegelse] = useState<Bevegelse>("system");
+  const [palett, setPalett] = useState<Palett>("fiolett");
+  useEffect(() => {
+    void hentInnstilling(TEMA).then((v) =>
+      setTema(v === "lys" || v === "mork" ? v : "system"),
+    );
+    void hentInnstilling(GLASS).then((v) => setGlass(v === "av" ? "av" : "pa"));
+    void hentInnstilling(BEVEGELSE).then((v) =>
+      setBevegelse(v === "pa" || v === "dempet" || v === "av" ? v : "system"),
+    );
+    void hentInnstilling(PALETT).then((v) => {
+      const p = PALETTER.find((x) => x.id === v);
+      setPalett(p ? p.id : "fiolett");
+    });
+  }, []);
+
+  return (
+    <Side tittel="Utseende" intro="Hvordan Økta ser ut på din maskin.">
+      <Gruppe>
+        <Rad
+          k="palett"
+          tittel="Fargepalett"
+          hjelp="Bytter knapper, markering og bakgrunn. Trafikklyset og fagfargene er like i alle."
+        >
+          {/*
+            Hexene står her og ikke som tokens med vilje: alle seks skal vises
+            samtidig, uavhengig av hvilken som er på.
+          */}
+          <div className="grid grid-cols-3 gap-1.5">
+            {PALETTER.map((p) => (
+              <button
+                key={p.id}
+                onClick={() => {
+                  setPalett(p.id);
+                  void lagrePalett(p.id);
+                }}
+                aria-pressed={palett === p.id}
+                className={`flex h-[34px] w-24 items-center gap-2 rounded-[9px] px-2 text-etikett ${
+                  palett === p.id
+                    ? "font-medium shadow-[inset_0_0_0_1.5px_var(--color-blekk)]"
+                    : "shadow-[inset_0_0_0_1px_var(--color-linje-medium)]"
+                }`}
+              >
+                <span className="flex overflow-hidden rounded-[5px]">
+                  <i
+                    className="block h-[18px] w-2.5"
+                    style={{ background: p.aksent }}
+                  />
+                  <i
+                    className="block h-[18px] w-2.5"
+                    style={{ background: p.valgt }}
+                  />
+                </span>
+                {p.navn}
+              </button>
+            ))}
+          </div>
+        </Rad>
+        <Rad k="glass" tittel="Glass" hjelp={glasshjelp()}>
+          <Vippebryter
+            pa={glass === "pa"}
+            etikett="Glass"
+            onBytt={(pa) => {
+              const v = pa ? "pa" : "av";
+              setGlass(v);
+              void lagreGlass(v);
+            }}
+          />
+        </Rad>
+        <Rad k="bev" tittel="Bevegelse" hjelp={bevegelseshjelp()}>
+          <Bryter
+            storrelse="liten"
+            valg={[
+              { id: "system", navn: `Som ${systemnavn()}` },
+              { id: "pa", navn: "På" },
+              { id: "dempet", navn: "Dempet" },
+              { id: "av", navn: "Av" },
+            ]}
+            verdi={bevegelse}
+            settVerdi={(v) => {
+              setBevegelse(v as Bevegelse);
+              void lagreBevegelse(v as Bevegelse);
+            }}
+          />
+        </Rad>
+      </Gruppe>
+      <Gruppe>
+        <Rad
+          k="lysmork"
+          tittel="Lys eller mørk"
+          hjelp={`Mørk er ikke ferdig ennå, og kan se rar ut enkelte steder. «Som ${systemnavn()}» skifter av seg selv. Utskriften av årsplanen er alltid lys.`}
+        >
+          <Bryter
+            storrelse="liten"
+            valg={[
+              { id: "system", navn: `Som ${systemnavn()}` },
+              { id: "lys", navn: "Lys" },
+              { id: "mork", navn: "Mørk" },
+            ]}
+            verdi={tema}
+            settVerdi={(v) => {
+              setTema(v as Tema);
+              void lagreTema(v as Tema);
+            }}
+          />
+        </Rad>
+      </Gruppe>
+    </Side>
+  );
+}
+
+// --------------------------------------------------------- Sikkerhetskopi
+
+function SideKopi({ skolear }: { skolear: Skolear }) {
+  const [kopier, setKopier] = useState<Kopi[]>([]);
+  const [kopimappe, setKopimappe] = useState("");
+  const [tarKopi, setTarKopi] = useState(false);
+  const [alle, setAlle] = useState(false);
+  const [kopimelding, setKopimelding] = useState<{
+    ok: boolean;
+    tekst: string;
+  } | null>(null);
+  const [arkivmappe, setArkivmappe] = useState("");
+  const [arkivMelding, setArkivMelding] = useState<string | null>(null);
+  const [arkiverer, setArkiverer] = useState(false);
+
+  async function lastKopier() {
+    setKopier((await hentKopier()) ?? []);
+    setKopimappe((await hentKopimappe()) ?? "");
+  }
+  useEffect(() => {
+    void lastKopier();
+    void invoke<string | null>("hent_arkivmappe").then((v) =>
+      setArkivmappe(v ?? ""),
+    );
+  }, []);
+
+  /**
+   * Bytter arbeidsfila. Stor nok til en tydelig bekreftelse, men ikke
+   * uopprettelig: den nåværende basen sikres i backup-mappa først.
+   */
+  async function gjenopprett(sti: string, navn: string) {
+    const svar = await bekreft(
+      `Gjenopprett fra ${navn}?\n\n` +
+        `Alt du har lagt inn etter at denne kopien ble tatt, forsvinner fra ` +
+        `arbeidsfila. Den nåværende basen legges i backup-mappa først, så du ` +
+        `kan gå tilbake.\n\nAppen starter på nytt.`,
+    );
+    if (!svar) return;
+    try {
+      await gjenopprettFra(sti);
+    } catch (e) {
+      alert(`Gjenopprettingen stoppet: ${e}`);
+    }
+  }
+
+  async function velgFil() {
+    const valgt = await open({
+      multiple: false,
+      directory: false,
+      filters: [{ name: "SQLite-database", extensions: ["sqlite", "db"] }],
+    });
+    if (typeof valgt === "string")
+      await gjenopprett(valgt, valgt.split("/").pop() ?? valgt);
+  }
+
+  const synlige = alle ? kopier : kopier.slice(0, 5);
+
+  return (
+    <Side
+      tittel="Sikkerhetskopi"
+      intro="Økta tar en kopi av alt én gang i døgnet når den åpnes, og beholder de 30 nyeste. Kopiene blir liggende på maskinen."
+    >
+      <div
+        data-k="kopinaa"
+        className="mb-1 flex items-center gap-3 rounded-[14px] bg-[color-mix(in_srgb,var(--color-god)_8%,var(--color-ark))] px-4 py-3.5 text-[calc(13.5px*var(--tekst-skala))] shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--color-god)_20%,transparent)]"
+      >
+        {kopier.length > 0 && <Hake />}
+        <div className="min-w-0 flex-1">
+          <b className="font-semibold">
+            {kopier.length > 0
+              ? `Siste kopi: ${kopier[0].navn}`
+              : "Ingen kopier ennå"}
+          </b>
+          <div className="mt-0.5 text-etikett text-blekk-svak">
+            {kopier.length} kopier · kopien skrives med SQLites egen VACUUM
+            INTO, som gir en hel database også hvis noe skrives samtidig
+          </div>
+          {kopimelding && (
+            <div
+              role="status"
+              className={`mt-1 text-etikett ${kopimelding.ok ? "text-god" : "text-feil"}`}
+            >
+              {kopimelding.tekst}
+            </div>
+          )}
+        </div>
+        <Knapp
+          disabled={tarKopi}
+          onClick={async () => {
+            setTarKopi(true);
+            setKopimelding(null);
+            try {
+              const sti = await taKopiNa();
+              await lastKopier();
+              const kl = new Date().toTimeString().slice(0, 5);
+              setKopimelding({
+                ok: true,
+                tekst: sti
+                  ? `Kopien er tatt kl. ${kl}: ${sti.split("/").pop()}`
+                  : `Kopien er tatt kl. ${kl}.`,
+              });
+            } catch (e) {
+              setKopimelding({
+                ok: false,
+                tekst: `Kopien ble ikke tatt: ${String(e)}`,
+              });
+            } finally {
+              setTarKopi(false);
+            }
+          }}
+        >
+          {tarKopi ? "Tar kopi …" : "Ta kopi nå"}
+        </Knapp>
+      </div>
+
+      <Gruppe tittel="Kopier">
+        {synlige.map((k) => (
+          <div
+            key={k.navn}
+            className="inn-rad min-h-[40px] py-2 text-[calc(13px*var(--tekst-skala))]"
+          >
+            <span className="flex-1 font-mono text-etikett">
+              {k.navn}
+              {!k.daglig && (
+                <span className="ml-2 font-sans text-blekk-svak">
+                  før gjenoppretting
+                </span>
+              )}
+            </span>
+            <span className="tabular-nums text-blekk-dempet">
+              {(k.bytes / 1024).toFixed(0)} kB
+            </span>
+            <button
+              onClick={() => void gjenopprett(`${kopimappe}/${k.navn}`, k.navn)}
+              className="text-etikett text-aksent hover:underline"
+            >
+              Gjenopprett …
+            </button>
+          </div>
+        ))}
+        <div className="inn-rad min-h-[40px] py-2">
+          {kopier.length > 5 && (
+            <button
+              onClick={() => setAlle(!alle)}
+              className="text-liten text-aksent"
+            >
+              {alle ? "Vis færre" : `Vis alle ${kopier.length}`}
+            </button>
+          )}
+          <button
+            onClick={() => void velgFil()}
+            className="ml-auto text-liten text-blekk-dempet hover:text-blekk"
+          >
+            Åpne en .sqlite-fil …
+          </button>
+        </div>
+      </Gruppe>
+
+      <Gruppe tittel="Hvor" fot={synkadvarsel()}>
+        <Rad
+          k="kopimappe"
+          tittel="Mappe"
+          hjelp="Legg den gjerne på en ekstern disk. Ikke i en skytjeneste: kopiene har elevdata."
+        >
+          {kopimappe && <Sti>{kopimappe}</Sti>}
+          {kopimappe && (
+            <Knapp onClick={() => void revealItemInDir(kopimappe)}>
+              Vis i {filbehandler()}
+            </Knapp>
+          )}
+        </Rad>
+      </Gruppe>
+
+      <Gruppe tittel="Arkiv">
+        <Rad
+          k="arkiv"
+          tittel="Lesbart arkiv"
+          hjelp="Hele basen som markdown og CSV, én fil per elev og per fag, skrevet ved hver oppstart. Kan åpnes i Obsidian eller hva som helst, også uten Økta. Denne mappa kan ligge i en skytjeneste; databasen selv skal aldri det. Kjønn og bilde er aldri med."
+          under={
+            arkivMelding && (
+              <p className="text-liten text-blekk-dempet">{arkivMelding}</p>
+            )
+          }
+        >
+          {arkivmappe && <Sti>{arkivmappe}</Sti>}
+          <Knapp
+            onClick={async () => {
+              const valgt = await invoke<string | null>("velg_arkivmappe");
+              if (!valgt) return;
+              setArkivmappe(valgt);
+              setArkivMelding(null);
+            }}
+          >
+            {arkivmappe ? "Bytt …" : "Velg mappe …"}
+          </Knapp>
+          {arkivmappe && (
+            <Knapp
+              disabled={arkiverer}
+              onClick={async () => {
+                setArkiverer(true);
+                setArkivMelding(null);
+                try {
+                  const r = await skrivArkiv(skolear);
+                  setArkivMelding(
+                    r === null
+                      ? "Ingen mappe valgt."
+                      : `${r.skrevet} filer skrevet.` +
+                          (r.feil.length > 0
+                            ? ` ${r.feil.length} feilet.`
+                            : ""),
+                  );
+                } catch (e) {
+                  setArkivMelding(String(e));
+                } finally {
+                  setArkiverer(false);
+                }
+              }}
+            >
+              {arkiverer ? "Skriver …" : "Skriv nå"}
+            </Knapp>
+          )}
+        </Rad>
+      </Gruppe>
+    </Side>
+  );
+}
+
+// ------------------------------------------------------------- Personvern
+
+function SidePersonvern() {
+  const [datamappe, setDatamappe] = useState<string | null>(null);
+  useEffect(() => {
+    void appDataDir()
+      .then(setDatamappe)
+      .catch(() => {});
+  }, []);
+  const linjer = [
+    "Alt ligger på denne maskinen. Ingen konto, ingen sky.",
+    "Økta går bare på nett hvis du slår på publisering til en kalenderserver. Søket i Udirs fag er lokalt.",
+    "Kjønn og bilde blir aldri med i eksport, utskrift eller arkiv.",
+    "Kalenderen får aldri notater eller skår. Mentorsamtaler bare med fornavn og klokkeslett, og bare hvis du slår det på.",
+  ];
+  return (
+    <Side tittel="Personvern" intro="Hva Økta lagrer, og hvor det går.">
+      <div data-k="lagres" className="inn-grp px-4 py-1.5">
+        {linjer.map((l) => (
+          <div
+            key={l}
+            className="flex items-start gap-2.5 border-t border-linje-svak py-2 text-[calc(13.5px*var(--tekst-skala))] leading-normal first:border-t-0"
+          >
+            <Hake />
+            <span>{l}</span>
+          </div>
+        ))}
+      </div>
+      <Gruppe tittel="Elevdata">
+        <Rad
+          tittel="Innsyn for en elev"
+          hjelp="Åpne eleven og velg Innsyn i ⋯-menyen. Det gir én fil med alt Økta har om eleven."
+        />
+        <Rad
+          tittel="Notatene"
+          hjelp="Notatfeltene er ditt arbeidsmateriale. Helse, hjemmeforhold og andre særlige kategorier hører ikke hjemme der."
+        />
+        <Rad
+          tittel="Databasen"
+          hjelp={
+            <>
+              Ligger i{" "}
+              <code className="break-words text-etikett">
+                {datamappe ?? "appens datamappe"}
+              </code>
+              .
+            </>
+          }
+        />
+      </Gruppe>
+    </Side>
+  );
+}
+
+// --------------------------------------------------------------- Kalender
+
+function SideKalender({ skolear, fag }: { skolear: Skolear; fag: FagIAr[] }) {
+  const [feedPa, setFeedPa] = useState(false);
+  const [feedUrl, setFeedUrl] = useState("");
+  const [feedFeil, setFeedFeil] = useState<string | null>(null);
+  const [kopiert, setKopiert] = useState(false);
+  const [dav, setDav] = useState<caldav.Oppsett>({
+    base: "",
+    bruker: "",
+    pa: false,
+    kalendere: {},
+    mentorPa: false,
+    mentorKalender: "",
+  });
+  const [davPassord, setDavPassord] = useState("");
+  const [davHarPassord, setDavHarPassord] = useState(false);
+  const [davMelding, setDavMelding] = useState<string | null>(null);
+  const [davFeil, setDavFeil] = useState<string | null>(null);
+  const [davJobber, setDavJobber] = useState(false);
+
+  useEffect(() => {
+    void (async () => {
+      const pa = await kalender.erPa();
+      setFeedPa(pa);
+      if (pa) setFeedUrl(await kalender.hentUrl());
+      setDav(await caldav.hentOppsett());
+      setDavHarPassord(await caldav.harPassord());
+    })();
+  }, []);
+
+  async function lagre() {
+    setDavFeil(null);
+    setDavMelding(null);
+    await caldav.lagreOppsett(dav);
+    if (davPassord) {
+      await caldav.lagrePassord(davPassord);
+      setDavPassord("");
+      setDavHarPassord(true);
+    }
+    setDavMelding("Lagret.");
+  }
+
+  return (
+    <Side
+      tittel="Kalender"
+      intro="Få øktene inn i kalenderen du bruker fra før. Velg én av måtene."
+    >
+      <Gruppe
+        tittel={erMac ? "Abonner på denne Macen" : "Abonner på denne maskinen"}
+      >
+        <Rad
+          k="strom"
+          tittel="Kalenderstrøm"
+          hjelp="Kalenderen din abonnerer på årsplanen og oppdaterer seg selv. Bare denne maskinen får tak i den, og den inneholder fagkode, tema, dato og varighet, aldri elevnavn, skåringer eller notater."
+          under={
+            <>
+              {feedFeil && <p className="text-liten text-feil">{feedFeil}</p>}
+              {feedPa && feedUrl && (
+                <div>
+                  <div className="flex items-center gap-2">
+                    <Sti>{feedUrl}</Sti>
+                    <Knapp
+                      onClick={async () => {
+                        await navigator.clipboard.writeText(feedUrl);
+                        setKopiert(true);
+                        setTimeout(() => setKopiert(false), 1500);
+                      }}
+                    >
+                      {kopiert ? "Kopiert" : "Kopier"}
+                    </Knapp>
+                  </div>
+                  <p className="mt-2 text-etikett leading-normal text-blekk-svak">
+                    {erMac
+                      ? "I Kalender: Arkiv → Nytt kalenderabonnement, lim inn adressen, og velg oppdatering hvert femte minutt. Velger du iCloud som plassering, lastes timeplanen opp til Apple og følger med til telefonen; På min Mac blir den her. Strømmen oppdaterer seg bare mens appen kjører."
+                      : "Lim inn adressen som et kalenderabonnement i kalenderprogrammet på denne maskinen. Adressen virker bare her, og strømmen oppdaterer seg bare mens appen kjører."}
+                  </p>
+                </div>
+              )}
+            </>
+          }
+        >
+          <Vippebryter
+            pa={feedPa}
+            etikett="Kalenderstrøm"
+            onBytt={async (pa) => {
+              setFeedPa(pa);
+              setFeedFeil(null);
+              await kalender.settPa(pa);
+              if (!pa) return;
+              try {
+                setFeedUrl(await kalender.start(skolear));
+              } catch (err) {
+                setFeedFeil(String(err));
+                setFeedPa(false);
+                await kalender.settPa(false);
+              }
+            }}
+          />
+        </Rad>
+      </Gruppe>
+
+      <Gruppe
+        tittel="Publiser til en kalenderserver (CalDAV)"
+        fot="Det eneste stedet Økta sender noe ut (§8.1): fag, tittel, dato, klokkeslett, sted og agenda. Aldri elevnavn, skåringer eller notater."
+      >
+        <Rad
+          k="dav"
+          tittel="Publiser automatisk"
+          hjelp="Når du endrer en økt, sendes den noen sekunder etter. Bare øktene som faktisk er endret. Ett fag per kalender, så elevene kan abonnere på sitt."
+        >
+          <Vippebryter
+            pa={dav.pa}
+            etikett="Publiser automatisk"
+            onBytt={async (pa) => {
+              setDav((d) => ({ ...d, pa }));
+              await caldav.lagreOppsett({ pa });
+            }}
+          />
+        </Rad>
+        <Rad k="davadr" tittel="Adresse til kalendermappa">
+          <Feltinput
+            bredde="w-72"
+            value={dav.base}
+            onChange={(e) => setDav((d) => ({ ...d, base: e.target.value }))}
+            placeholder="https://…/remote.php/dav/calendars/brukernavn"
+          />
+        </Rad>
+        <Rad k="davbr" tittel="Brukernavn">
+          <Feltinput
+            bredde="w-52"
+            value={dav.bruker}
+            onChange={(e) => setDav((d) => ({ ...d, bruker: e.target.value }))}
+          />
+        </Rad>
+        <Rad
+          k="davpw"
+          tittel="Passord"
+          hjelp={`Bruk et app-passord, ikke hovedpassordet ditt. Det lagres i ${nokkelringen()}, aldri i databasen.`}
+        >
+          <Feltinput
+            type="password"
+            bredde="w-52"
+            value={davPassord}
+            placeholder={davHarPassord ? "••••••••  lagret" : "App-passord"}
+            onChange={(e) => setDavPassord(e.target.value)}
+          />
+        </Rad>
+        <Rad
+          tittel="Kalender per fag"
+          hjelp="Navnet på kalenderen på serveren. Tomt = faget publiseres ikke."
+          under={
+            <div className="grid gap-1.5">
+              {fag.length === 0 ? (
+                <p className="text-liten text-blekk-svak">
+                  Ingen fag i skoleåret.
+                </p>
+              ) : (
+                fag.map((f) => (
+                  <label
+                    key={f.id}
+                    className="flex items-center gap-2 text-liten"
+                  >
+                    <span className="flex w-20 shrink-0 items-center gap-1.5 font-medium">
+                      <Fagfirkant farge={f.farge} />
+                      {f.kode}
+                    </span>
+                    <Feltinput
+                      bredde="flex-1"
+                      value={dav.kalendere[f.id] ?? ""}
+                      placeholder="tomt = publiseres ikke"
+                      onChange={(e) =>
+                        setDav((d) => ({
+                          ...d,
+                          kalendere: { ...d.kalendere, [f.id]: e.target.value },
+                        }))
+                      }
+                    />
+                  </label>
+                ))
+              )}
+            </div>
+          }
+        />
+        {/*
+          Mentorsamtalene har sin egen bryter: et hakk satt i august skal ikke
+          begynne å sende elevfornavn i november (§8.1).
+        */}
+        <Rad
+          k="davmentor"
+          tittel="Publiser mentorsamtalene"
+          hjelp="Én hendelse per samtale: «Mentorsamtale med Vera», på samtalens tidspunkt. Bare fornavn og klokkeslett. Denne kalenderen bør ikke deles med andre."
+          under={
+            <div>
+              <label className="flex items-center gap-2 text-liten">
+                <span className="w-20 shrink-0 font-medium">Kalender</span>
+                <Feltinput
+                  bredde="w-56"
+                  value={dav.mentorKalender}
+                  placeholder="f.eks. mentorsamtaler"
+                  onChange={(e) =>
+                    setDav((d) => ({ ...d, mentorKalender: e.target.value }))
+                  }
+                  onBlur={async (e) =>
+                    await caldav.lagreOppsett({
+                      mentorKalender: e.target.value,
+                    })
+                  }
+                />
+              </label>
+              {dav.mentorPa && !dav.mentorKalender.trim() && (
+                <p className="mt-1 text-etikett text-varsel">
+                  Publiseringen er på, men ingen kalender er satt, så ingenting
+                  sendes.
+                </p>
+              )}
+              <p className="mt-1 text-etikett text-blekk-svak">
+                Navnet på samlingen slik den heter på serveren. Den må finnes
+                fra før; Økta oppretter ikke kalendere og leser aldri noe
+                tilbake.
+              </p>
+            </div>
+          }
+        >
+          <Vippebryter
+            pa={dav.mentorPa}
+            etikett="Publiser mentorsamtalene"
+            onBytt={async (mentorPa) => {
+              setDav((d) => ({ ...d, mentorPa }));
+              await caldav.lagreOppsett({ mentorPa });
+            }}
+          />
+        </Rad>
+        <div className="inn-rad">
+          <Knapp onClick={() => void lagre()}>Lagre</Knapp>
+          <Knapp
+            disabled={!dav.base || !dav.bruker}
+            onClick={async () => {
+              setDavFeil(null);
+              setDavMelding(null);
+              try {
+                // Testen leser passordet fra nøkkelringen, så det du nettopp
+                // skrev må lagres først.
+                if (davPassord) {
+                  await caldav.lagrePassord(davPassord);
+                  setDavPassord("");
+                  setDavHarPassord(true);
+                }
+                await caldav.lagreOppsett(dav);
+                setDavMelding(await caldav.test(dav.base, dav.bruker));
+              } catch (e) {
+                setDavFeil(String(e));
+              }
+            }}
+          >
+            Test tilkoblingen
+          </Knapp>
+          <Knapp
+            variant="primar"
+            disabled={davJobber || !dav.base}
+            onClick={async () => {
+              setDavJobber(true);
+              setDavFeil(null);
+              setDavMelding(null);
+              try {
+                const r = await caldav.publiser(skolear);
+                setDavMelding(
+                  `${r.skrevet} skrevet, ${r.slettet} fjernet, ` +
+                    `${r.uendret} uendret.` +
+                    (r.feil.length > 0 ? ` ${r.feil.length} feilet.` : ""),
+                );
+                if (r.feil.length > 0)
+                  setDavFeil(r.feil.slice(0, 3).join("\n"));
+              } catch (e) {
+                setDavFeil(String(e));
+              } finally {
+                setDavJobber(false);
+              }
+            }}
+          >
+            {davJobber ? "Publiserer …" : "Publiser nå"}
+          </Knapp>
+          {davHarPassord && (
+            <Knapp
+              variant="stille"
+              onClick={async () => {
+                await caldav.glemPassord();
+                setDavHarPassord(false);
+                setDavMelding(`Passordet er slettet fra ${nokkelringen()}.`);
+              }}
+            >
+              Glem passordet
+            </Knapp>
+          )}
+          {(davMelding || davFeil) && (
+            <div className="w-full">
+              {davMelding && (
+                <p className="text-liten text-god">{davMelding}</p>
+              )}
+              {davFeil && (
+                <p className="whitespace-pre-wrap text-liten text-feil">
+                  {davFeil}
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+      </Gruppe>
+    </Side>
+  );
+}
+
+// ---------------------------------------------------------------- Om Økta
+
+function SideOm() {
+  const [versjon, setVersjon] = useState("");
+  const [datamappe, setDatamappe] = useState<string | null>(null);
+  const [kopiert, setKopiert] = useState(false);
+  useEffect(() => {
+    void getVersion()
+      .then(setVersjon)
+      .catch(() => {});
+    void appDataDir()
+      .then(setDatamappe)
+      .catch(() => {});
+  }, []);
+  return (
+    <Side
+      tittel="Om Økta"
+      intro="Undervisningsplanlegging og elevoppfølging. Laget av lektor Fredrik Geving Bedsvaag."
+    >
+      <Gruppe fot="Kjønn gjettes fra fornavn med navnestatistikk fra Statistisk sentralbyrå (SSB), CC BY 4.0.">
+        <Rad k="versjon" tittel="Versjon">
+          <span className="flex items-center gap-2 tabular-nums text-blekk-dempet">
+            <Merke storrelse={18} />
+            {versjon || "–"}
+          </span>
+        </Rad>
+        {SKJEMA_URL && (
+          <Rad
+            k="tilbake"
+            tittel="Gi tilbakemelding"
+            hjelp={
+              kopiert
+                ? "Kopiert. Lim inn under «Versjon og skjerm» i skjemaet."
+                : "Åpner et skjema i nettleseren. Versjon og system kopieres, aldri elever eller innhold."
+            }
+          >
+            <Knapp
+              onClick={() =>
+                void giTilbakemelding("innstillinger", () => {
+                  setKopiert(true);
+                  setTimeout(() => setKopiert(false), 6000);
+                })
+              }
+            >
+              Skriv …
+            </Knapp>
+          </Rad>
+        )}
+        <Rad k="datamappe" tittel="Datamappe">
+          {datamappe && <Sti>{datamappe}</Sti>}
+          {datamappe && (
+            <Knapp onClick={() => void revealItemInDir(datamappe)}>
+              Vis i {filbehandler()}
+            </Knapp>
+          )}
+        </Rad>
+      </Gruppe>
+    </Side>
   );
 }

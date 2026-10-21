@@ -2489,3 +2489,155 @@ textarea,
     opacity: 0;
   }
 }
+
+/* ------------------------------------------- Innstillinger (23, lerretet Innstillinger2) */
+.inn-meny-knapp {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  height: 32px;
+  margin-bottom: 2px;
+  padding: 0 10px;
+  border-radius: 9px;
+  font-size: calc(13.5px * var(--tekst-skala));
+  color: var(--color-blekk-dempet);
+  text-align: left;
+  transition: color 200ms;
+}
+.inn-meny-knapp:hover,
+.inn-meny-knapp[aria-current="page"] {
+  color: var(--color-blekk);
+}
+.inn-meny-knapp[aria-current="page"] {
+  font-weight: 500;
+}
+.inn-meny-ikon {
+  --inn-ikonbunn: var(--color-flate);
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  background: var(--color-flate);
+  color: var(--color-blekk-dempet);
+  transition:
+    background 260ms,
+    color 260ms;
+}
+.inn-meny-knapp[aria-current="page"] .inn-meny-ikon {
+  --inn-ikonbunn: var(--color-aksent);
+  background: var(--color-aksent);
+  color: var(--color-ark);
+}
+/* Markøren glir rolig fra punkt til punkt: 360 ms, ingen sprett. */
+.inn-meny-markor {
+  position: absolute;
+  left: 0;
+  right: 14px;
+  top: 0;
+  height: 32px;
+  border-radius: 9px;
+  background: var(--color-flate);
+  transition: transform 360ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.inn-side {
+  animation: inn-side 260ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes inn-side {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+.inn-grp {
+  margin-bottom: 4px;
+  overflow: hidden;
+  border-radius: 14px;
+  background: var(--color-ark);
+  box-shadow:
+    inset 0 0 0 1px var(--color-linje-medium),
+    0 1px 2px rgba(36, 31, 51, 0.04);
+}
+.inn-rad {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  min-height: 52px;
+  padding: 10px 16px;
+  border-top: 1px solid var(--color-linje-svak);
+}
+.inn-grp > .inn-rad:first-child,
+.inn-grp > :first-child {
+  border-top: none;
+}
+.inn-felt {
+  height: 30px;
+  padding: 0 10px;
+  border-radius: 8px;
+  background: var(--color-flate-svak);
+  box-shadow: inset 0 0 0 1px var(--color-linje-medium);
+  font-size: calc(13px * var(--tekst-skala));
+  outline: none;
+  transition: box-shadow 160ms;
+}
+.inn-felt:focus {
+  background: var(--color-ark);
+  box-shadow: inset 0 0 0 1.5px var(--color-aksent);
+}
+.inn-felt::placeholder {
+  color: var(--color-blekk-svakest);
+}
+.vippebryter {
+  position: relative;
+  flex: none;
+  width: 38px;
+  height: 22px;
+  border-radius: 11px;
+  background: var(--color-linje);
+  transition: background 220ms;
+}
+.vippebryter > span {
+  position: absolute;
+  left: 2px;
+  top: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(36, 31, 51, 0.25);
+  transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.vippebryter[aria-checked="true"] {
+  background: var(--color-aksent);
+}
+.vippebryter[aria-checked="true"] > span {
+  transform: translateX(16px);
+}
+.vippebryter:disabled {
+  opacity: 0.45;
+}
+/* Treff i søket: raden blinker kort. */
+.inn-blink {
+  animation: inn-blink 1400ms ease-out;
+}
+@keyframes inn-blink {
+  0%,
+  30% {
+    background: color-mix(in srgb, var(--color-aksent) 12%, transparent);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .inn-side,
+  .inn-blink {
+    animation: none;
+  }
+  .inn-meny-markor,
+  .vippebryter,
+  .vippebryter > span {
+    transition: none;
+  }
+}
