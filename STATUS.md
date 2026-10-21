@@ -27,6 +27,11 @@ Lerretet (`docs/lerret/`) er fasit for det som er tegnet.
 - 25.10: Kopier til Teams som tabell (`gruppeTeams`, text/html + text/plain),
   med feltet «Kopiert som tabell» og navnevalget under knappen. Den gamle
   tekstlista `gruppeListe` er borte.
+- §26: «Samarbeid» på elevkortet (bryter Oversikt · Samarbeid), per fag:
+  ringdiagram, Begge · Grupper · Sidemann, «Har aldri vært sammen med» og
+  «Sett sammen neste gang» (myk regel `sammen` i `fordelGrupper`, tømmes når
+  et sett lagres), detaljer per par og «Oftest sammen». `data/samarbeid.ts`
+  regner fra historikken; testet at ingen eksportmodul bruker det.
 - Retning: fra kateteret står tavla nederst, fra elevene øverst.
 
 ## Klassekart fra øktkortet (21.10)

@@ -1,4 +1,5 @@
 import { Plassholder, visesElevbilder } from "../ui/Elevfoto";
+import { ElevSamarbeid } from "./ElevSamarbeid";
 import { useEffect, useRef, useState } from "react";
 import { useArk } from "../ui/Arkstabel";
 import { Elevbilde } from "../ui/Elevbilde";
@@ -138,6 +139,8 @@ export function ElevPanel({
   const [skolearene, setSkolearene] = useState<Skolear[]>([]);
   // I år | Alle år (§4.5): inneværende år når kortet åpnes.
   const [alleAr, setAlleAr] = useState(false);
+  // Oversikt eller Samarbeid (§26). Samarbeid er bare for læreren.
+  const [fane, setFane] = useState<"oversikt" | "samarbeid">("oversikt");
   const [data, setData] = useState<
     {
       skolearId: string;
@@ -331,6 +334,15 @@ export function ElevPanel({
             </Ikonknapp>
           </span>
         )}
+        <Bryter
+          storrelse="liten"
+          verdi={fane}
+          settVerdi={(v) => setFane(v as "oversikt" | "samarbeid")}
+          valg={[
+            { id: "oversikt", navn: "Oversikt" },
+            { id: "samarbeid", navn: "Samarbeid" },
+          ]}
+        />
         {melding && (
           <span className="truncate text-aksent">
             <Ikon navn="hake" /> {melding}
@@ -463,365 +475,377 @@ export function ElevPanel({
         }}
       />
 
-      <div className="min-h-0 flex-1 overflow-auto px-[30px] pb-[30px] pt-[22px]">
-        {/* Identitet */}
-        <div className="flex items-start gap-5">
-          {bilde && visesElevbilder() ? (
-            <Elevbilde src={bilde} storrelse={76} hjorne={38} alt="" />
-          ) : (
-            <Plassholder storrelse={76} kjonn={elev.kjonn} />
-          )}
-          <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-3">
-              {rediger ? (
-                <span className="flex flex-wrap items-baseline gap-2">
-                  <Navnefelt
-                    verdi={elev.fornavn}
-                    plassholder="Fornavn"
-                    onLagre={async (v) => {
-                      await endreElev(elevId, { fornavn: v });
-                      setElev(await hentElevGrunnlag(elevId));
-                    }}
-                  />
-                  <Navnefelt
-                    verdi={elev.etternavn}
-                    plassholder="Etternavn"
-                    manglerTekst="Mangler etternavn"
-                    onLagre={async (v) => {
-                      await endreElev(elevId, { etternavn: v });
-                      setElev(await hentElevGrunnlag(elevId));
-                    }}
-                  />
-                </span>
-              ) : (
-                <h1 className="text-[calc(32px*var(--tekst-skala))] font-light leading-[1.15] tracking-overskrift">
-                  {elev.fornavn} {elev.etternavn}
-                </h1>
-              )}
-              {detteAret?.mentor && (
-                <span className="inline-flex h-6 items-center rounded-full bg-flate px-[9px] text-etikett font-medium text-aksent">
-                  Mentorelev
-                </span>
-              )}
-            </div>
+      {fane === "samarbeid" ? (
+        <div className="min-h-0 flex-1 overflow-auto px-[30px] pb-[20px] pt-[18px]">
+          <ElevSamarbeid
+            elevId={elevId}
+            fornavn={elev.fornavn}
+            skolearId={aktivtSkolearId}
+          />
+        </div>
+      ) : (
+        <div className="min-h-0 flex-1 overflow-auto px-[30px] pb-[30px] pt-[22px]">
+          {/* Identitet */}
+          <div className="flex items-start gap-5">
+            {bilde && visesElevbilder() ? (
+              <Elevbilde src={bilde} storrelse={76} hjorne={38} alt="" />
+            ) : (
+              <Plassholder storrelse={76} kjonn={elev.kjonn} />
+            )}
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-3">
+                {rediger ? (
+                  <span className="flex flex-wrap items-baseline gap-2">
+                    <Navnefelt
+                      verdi={elev.fornavn}
+                      plassholder="Fornavn"
+                      onLagre={async (v) => {
+                        await endreElev(elevId, { fornavn: v });
+                        setElev(await hentElevGrunnlag(elevId));
+                      }}
+                    />
+                    <Navnefelt
+                      verdi={elev.etternavn}
+                      plassholder="Etternavn"
+                      manglerTekst="Mangler etternavn"
+                      onLagre={async (v) => {
+                        await endreElev(elevId, { etternavn: v });
+                        setElev(await hentElevGrunnlag(elevId));
+                      }}
+                    />
+                  </span>
+                ) : (
+                  <h1 className="text-[calc(32px*var(--tekst-skala))] font-light leading-[1.15] tracking-overskrift">
+                    {elev.fornavn} {elev.etternavn}
+                  </h1>
+                )}
+                {detteAret?.mentor && (
+                  <span className="inline-flex h-6 items-center rounded-full bg-flate px-[9px] text-etikett font-medium text-aksent">
+                    Mentorelev
+                  </span>
+                )}
+              </div>
 
-            {/* År, klasse og fag — inneværende år først, fjorårene i grått. */}
-            <p className="mt-1.5 flex flex-wrap items-center gap-x-1.5 text-[calc(13.5px*var(--tekst-skala))] text-blekk">
-              <b className="font-semibold">
-                {skolearene.find((s) => s.id === aktivtSkolearId)?.navn}
-              </b>
-              {detteAret?.klasse && <> · {detteAret.klasse}</>}
-              {fagIAr.map((f) => (
-                <span key={f.id} className="inline-flex items-center gap-1">
-                  · <Fagfirkant farge={f.farge} /> {f.kode}
-                </span>
-              ))}
-            </p>
-            {ar
-              .filter((a) => a.skolearId !== aktivtSkolearId)
-              .map((a) => (
-                <p
-                  key={a.skolearId}
-                  className="mt-0.5 text-[calc(12.5px*var(--tekst-skala))] text-blekk-svak"
-                >
-                  {a.navn}
-                  {a.klasse && ` · ${a.klasse}`}
-                </p>
-              ))}
+              {/* År, klasse og fag — inneværende år først, fjorårene i grått. */}
+              <p className="mt-1.5 flex flex-wrap items-center gap-x-1.5 text-[calc(13.5px*var(--tekst-skala))] text-blekk">
+                <b className="font-semibold">
+                  {skolearene.find((s) => s.id === aktivtSkolearId)?.navn}
+                </b>
+                {detteAret?.klasse && <> · {detteAret.klasse}</>}
+                {fagIAr.map((f) => (
+                  <span key={f.id} className="inline-flex items-center gap-1">
+                    · <Fagfirkant farge={f.farge} /> {f.kode}
+                  </span>
+                ))}
+              </p>
+              {ar
+                .filter((a) => a.skolearId !== aktivtSkolearId)
+                .map((a) => (
+                  <p
+                    key={a.skolearId}
+                    className="mt-0.5 text-[calc(12.5px*var(--tekst-skala))] text-blekk-svak"
+                  >
+                    {a.navn}
+                    {a.klasse && ` · ${a.klasse}`}
+                  </p>
+                ))}
 
-            {/*
+              {/*
               Kjønn (SPEC §4.11) står alltid (10.5): også når det er tomt,
               ellers fikk elever fra før migrasjon 024 aldri valget.
               Gjettet vises stiplet, så det kan bekreftes med ett klikk.
             */}
-            <div className="mt-3 flex flex-wrap items-center gap-2.5">
-              <span className="text-[calc(12.5px*var(--tekst-skala))] text-blekk-dempet">
-                Kjønn
-              </span>
-              <Bryter
-                storrelse="liten"
-                usikker={elev.kjonnKilde === "gjettet"}
-                verdi={elev.kjonn ?? "ingen"}
-                settVerdi={async (v) => {
-                  await settKjonn(elevId, v === "j" || v === "g" ? v : null);
-                  setElev(await hentElevGrunnlag(elevId));
-                }}
-                valg={[
-                  { id: "j", navn: "Jente" },
-                  { id: "g", navn: "Gutt" },
-                  { id: "ingen", navn: "Ikke satt" },
-                ]}
-              />
-              <span
-                className={`text-[calc(12px*var(--tekst-skala))] ${
-                  elev.kjonnKilde === "gjettet"
-                    ? "text-varsel"
-                    : "text-blekk-svak"
-                }`}
-              >
-                {elev.kjonnKilde === "gjettet"
-                  ? "Gjettet fra fornavnet ved import. Klikk for å bekrefte."
-                  : elev.kjonn
-                    ? "Brukes bare til klassekartet"
-                    : "Ikke satt: velg for at klassekartet kan blande"}
-              </span>
-            </div>
-
-            {rediger && (
-              <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-stor bg-flate-svak px-3 py-2.5 text-liten">
-                <span className="flex items-center gap-2">
-                  <span className="text-blekk-dempet">Klasse</span>
-                  <Klassevelger
-                    klasser={klasser}
-                    valgt={detteAret?.klasse ?? null}
-                    onVelg={async (klasseId) => {
-                      await settKlasse(elevId, aktivtSkolearId, klasseId);
-                      setAr(await hentElevAr(elevId));
-                    }}
-                    onNy={async (navn) => {
-                      const id = await finnEllerOpprettKlasse(
-                        aktivtSkolearId,
-                        navn,
-                      );
-                      await settKlasse(elevId, aktivtSkolearId, id);
-                      setKlasser(await hentKlasser(aktivtSkolearId));
-                      setAr(await hentElevAr(elevId));
-                    }}
-                  />
+              <div className="mt-3 flex flex-wrap items-center gap-2.5">
+                <span className="text-[calc(12.5px*var(--tekst-skala))] text-blekk-dempet">
+                  Kjønn
                 </span>
-                {/*
+                <Bryter
+                  storrelse="liten"
+                  usikker={elev.kjonnKilde === "gjettet"}
+                  verdi={elev.kjonn ?? "ingen"}
+                  settVerdi={async (v) => {
+                    await settKjonn(elevId, v === "j" || v === "g" ? v : null);
+                    setElev(await hentElevGrunnlag(elevId));
+                  }}
+                  valg={[
+                    { id: "j", navn: "Jente" },
+                    { id: "g", navn: "Gutt" },
+                    { id: "ingen", navn: "Ikke satt" },
+                  ]}
+                />
+                <span
+                  className={`text-[calc(12px*var(--tekst-skala))] ${
+                    elev.kjonnKilde === "gjettet"
+                      ? "text-varsel"
+                      : "text-blekk-svak"
+                  }`}
+                >
+                  {elev.kjonnKilde === "gjettet"
+                    ? "Gjettet fra fornavnet ved import. Klikk for å bekrefte."
+                    : elev.kjonn
+                      ? "Brukes bare til klassekartet"
+                      : "Ikke satt: velg for at klassekartet kan blande"}
+                </span>
+              </div>
+
+              {rediger && (
+                <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-stor bg-flate-svak px-3 py-2.5 text-liten">
+                  <span className="flex items-center gap-2">
+                    <span className="text-blekk-dempet">Klasse</span>
+                    <Klassevelger
+                      klasser={klasser}
+                      valgt={detteAret?.klasse ?? null}
+                      onVelg={async (klasseId) => {
+                        await settKlasse(elevId, aktivtSkolearId, klasseId);
+                        setAr(await hentElevAr(elevId));
+                      }}
+                      onNy={async (navn) => {
+                        const id = await finnEllerOpprettKlasse(
+                          aktivtSkolearId,
+                          navn,
+                        );
+                        await settKlasse(elevId, aktivtSkolearId, id);
+                        setKlasser(await hentKlasser(aktivtSkolearId));
+                        setAr(await hentElevAr(elevId));
+                      }}
+                    />
+                  </span>
+                  {/*
                   Mentormerket henger på klassen (§3.2). Uten klasse er det
                   ingen rad å merke, og da er boksen av.
                 */}
-                <label
-                  className={`flex select-none items-center gap-1.5 ${
-                    detteAret?.klasse ? "" : "text-blekk-svakest"
-                  }`}
-                >
-                  <input
-                    type="checkbox"
-                    checked={detteAret?.mentor ?? false}
-                    disabled={!detteAret?.klasse}
-                    onChange={async (e) => {
-                      const ok = await settMentor(
-                        elevId,
-                        aktivtSkolearId,
-                        e.target.checked,
-                      );
-                      if (ok) setAr(await hentElevAr(elevId));
-                    }}
-                  />
-                  Mentorelev
-                </label>
-                {/*
-                  Frakobling rører aldri skåringene — de blir liggende, og
-                  kobler du til igjen kommer de tilbake.
-                */}
-                <span className="flex flex-wrap items-center gap-1.5">
-                  <span className="text-blekk-dempet">Fag</span>
-                  {arsFag.map((f) => {
-                    const har = elevensFagIder.has(f.id);
-                    return (
-                      <label
-                        key={f.id}
-                        title={
-                          har ? `Koble fra ${f.kode}` : `Koble til ${f.kode}`
-                        }
-                        className="flex cursor-pointer select-none items-center gap-1"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={har}
-                          onChange={async (e) => {
-                            if (e.target.checked) {
-                              if (
-                                !(await bekreft(
-                                  `Legge ${elev.fornavn} ${elev.etternavn} til i ${f.kode}? Hen kommer med i fagets elevliste og i øktene.`,
-                                ))
-                              ) {
-                                e.target.checked = false;
-                                return;
-                              }
-                              await koblePaFag(elevId, f.id);
-                            } else {
-                              const n = await tellSkaringerIFag(elevId, f.id);
-                              if (
-                                n > 0 &&
-                                !(await bekreft(
-                                  frakobletekst(elev.fornavn, f.kode, n),
-                                ))
-                              ) {
-                                e.target.checked = true;
-                                return;
-                              }
-                              await frakobleFag(elevId, f.id);
-                            }
-                            await lastFag();
-                          }}
-                        />
-                        <Fagmerke kode={f.kode} farge={f.farge} liten />
-                      </label>
-                    );
-                  })}
-                </span>
-                {elev.kode && (
-                  <span className="font-mono text-etikett text-blekk-svak">
-                    {elev.kode}
-                  </span>
-                )}
-              </div>
-            )}
-          </div>
-          {ar.length > 1 && (
-            <Bryter
-              storrelse="liten"
-              verdi={alleAr ? "alle" : "iar"}
-              settVerdi={(v) => setAlleAr(v === "alle")}
-              valg={[
-                { id: "iar", navn: "I år" },
-                { id: "alle", navn: "Alle år" },
-              ]}
-            />
-          )}
-        </div>
-
-        {/* Innsats gjennom året, i full bredde. */}
-        <section className="mt-[26px]">
-          <div className="flex flex-wrap items-center gap-3 border-b border-linje-medium pb-2">
-            <h2 className="text-[calc(13px*var(--tekst-skala))] font-semibold">
-              Innsats gjennom året
-            </h2>
-            <span className="flex-1" />
-            <Tegnforklaring />
-          </div>
-          {data.map((d) => {
-            const s = skolearene.find((x) => x.id === d.skolearId);
-            if (!s) return null;
-            return (
-              <div key={d.skolearId}>
-                {alleAr && (
-                  <p className="pt-3 text-etikett font-semibold text-blekk-dempet">
-                    {s.navn}
-                  </p>
-                )}
-                {d.fagRader.length === 0 && d.tommeFag.length === 0 ? (
-                  <Stille>Eleven har ingen fag dette skoleåret.</Stille>
-                ) : (
-                  d.fagRader.map((rad) => (
-                    <Innsatslinje
-                      key={rad.skolearFagId}
-                      rad={rad}
-                      skolear={s}
-                      onApneOkt={onApneOkt}
-                    />
-                  ))
-                )}
-              </div>
-            );
-          })}
-        </section>
-
-        <div className="mt-6 grid gap-8 lg:grid-cols-[minmax(0,1fr)_250px]">
-          <div className="min-w-0">
-            <div className="flex items-center gap-3 border-b border-linje-medium pb-2">
-              <h2 className="text-[calc(13px*var(--tekst-skala))] font-semibold">
-                Vurderinger
-              </h2>
-            </div>
-            {data.every((d) => d.vurderinger.length === 0) && (
-              <Stille>Ingen vurderinger i fagene hens ennå.</Stille>
-            )}
-            {data.flatMap((d) =>
-              [...new Set(d.vurderinger.map((v) => v.skolearFagId))].map(
-                (fagId) => {
-                  const vs = d.vurderinger.filter(
-                    (v) => v.skolearFagId === fagId,
-                  );
-                  const f =
-                    d.fagRader.find((r) => r.skolearFagId === fagId) ??
-                    d.tommeFag.find((r) => r.skolearFagId === fagId);
-                  return (
-                    <div
-                      key={`${d.skolearId}-${fagId}`}
-                      className="grid grid-cols-[64px_minmax(0,1fr)] gap-x-3.5 pb-1.5 pt-3.5"
-                    >
-                      <span className="flex h-5 items-center gap-[7px] text-[calc(13.5px*var(--tekst-skala))] font-semibold">
-                        <Fagfirkant farge={f?.farge ?? null} />
-                        {vs[0].fagKode}
-                      </span>
-                      <div className="mt-2">
-                        {vs.map((v) => (
-                          <Vurderingsrad
-                            key={v.vurderingId}
-                            v={v}
-                            onApne={() => ark.apneVurdering(v.vurderingId)}
-                            onSamtaler={() =>
-                              ark.gaTil("samtaler", v.skolearFagId)
-                            }
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  );
-                },
-              ),
-            )}
-
-            <div className="mt-4">
-              <Motelogg
-                elevId={elev.id}
-                skolearId={aktivtSkolearId}
-                nyttNotat={nyttNotat}
-              />
-            </div>
-          </div>
-
-          <aside className="flex flex-col gap-[22px]">
-            {apne.length > 0 && (
-              <div className="rounded-xl bg-flate px-3.5 py-3.5">
-                <h2 className="mb-2 text-[calc(13px*var(--tekst-skala))] font-semibold">
-                  Åpent for {elev.fornavn}
-                </h2>
-                {apne.map((n) => (
                   <label
-                    key={n.id}
-                    className="flex items-baseline gap-2 py-[3px] text-liten"
+                    className={`flex select-none items-center gap-1.5 ${
+                      detteAret?.klasse ? "" : "text-blekk-svakest"
+                    }`}
                   >
                     <input
                       type="checkbox"
-                      onChange={async () => {
-                        await settLukket(n.id, true);
-                        await lastFag();
+                      checked={detteAret?.mentor ?? false}
+                      disabled={!detteAret?.klasse}
+                      onChange={async (e) => {
+                        const ok = await settMentor(
+                          elevId,
+                          aktivtSkolearId,
+                          e.target.checked,
+                        );
+                        if (ok) setAr(await hentElevAr(elevId));
                       }}
-                      className="translate-y-0.5 accent-[var(--color-aksent)]"
                     />
-                    <span>
-                      {forsteLinje(n.tekst)}{" "}
-                      {n.frist && (
-                        <span
-                          className={`text-etikett ${
-                            n.frist <= idagIso()
-                              ? "text-feil"
-                              : "text-blekk-dempet"
-                          }`}
-                        >
-                          {n.frist === idagIso() ? "i dag" : kortDato(n.frist)}
-                        </span>
-                      )}
-                    </span>
+                    Mentorelev
                   </label>
-                ))}
-              </div>
+                  {/*
+                  Frakobling rører aldri skåringene — de blir liggende, og
+                  kobler du til igjen kommer de tilbake.
+                */}
+                  <span className="flex flex-wrap items-center gap-1.5">
+                    <span className="text-blekk-dempet">Fag</span>
+                    {arsFag.map((f) => {
+                      const har = elevensFagIder.has(f.id);
+                      return (
+                        <label
+                          key={f.id}
+                          title={
+                            har ? `Koble fra ${f.kode}` : `Koble til ${f.kode}`
+                          }
+                          className="flex cursor-pointer select-none items-center gap-1"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={har}
+                            onChange={async (e) => {
+                              if (e.target.checked) {
+                                if (
+                                  !(await bekreft(
+                                    `Legge ${elev.fornavn} ${elev.etternavn} til i ${f.kode}? Hen kommer med i fagets elevliste og i øktene.`,
+                                  ))
+                                ) {
+                                  e.target.checked = false;
+                                  return;
+                                }
+                                await koblePaFag(elevId, f.id);
+                              } else {
+                                const n = await tellSkaringerIFag(elevId, f.id);
+                                if (
+                                  n > 0 &&
+                                  !(await bekreft(
+                                    frakobletekst(elev.fornavn, f.kode, n),
+                                  ))
+                                ) {
+                                  e.target.checked = true;
+                                  return;
+                                }
+                                await frakobleFag(elevId, f.id);
+                              }
+                              await lastFag();
+                            }}
+                          />
+                          <Fagmerke kode={f.kode} farge={f.farge} liten />
+                        </label>
+                      );
+                    })}
+                  </span>
+                  {elev.kode && (
+                    <span className="font-mono text-etikett text-blekk-svak">
+                      {elev.kode}
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+            {ar.length > 1 && (
+              <Bryter
+                storrelse="liten"
+                verdi={alleAr ? "alle" : "iar"}
+                settVerdi={(v) => setAlleAr(v === "alle")}
+                valg={[
+                  { id: "iar", navn: "I år" },
+                  { id: "alle", navn: "Alle år" },
+                ]}
+              />
             )}
-            <Klassekartboks elevId={elevId} skolearId={aktivtSkolearId} />
-            <Fravaersboks
-              elevId={elevId}
-              skolearId={aktivtSkolearId}
-              fag={fagIAr}
-            />
-          </aside>
+          </div>
+
+          {/* Innsats gjennom året, i full bredde. */}
+          <section className="mt-[26px]">
+            <div className="flex flex-wrap items-center gap-3 border-b border-linje-medium pb-2">
+              <h2 className="text-[calc(13px*var(--tekst-skala))] font-semibold">
+                Innsats gjennom året
+              </h2>
+              <span className="flex-1" />
+              <Tegnforklaring />
+            </div>
+            {data.map((d) => {
+              const s = skolearene.find((x) => x.id === d.skolearId);
+              if (!s) return null;
+              return (
+                <div key={d.skolearId}>
+                  {alleAr && (
+                    <p className="pt-3 text-etikett font-semibold text-blekk-dempet">
+                      {s.navn}
+                    </p>
+                  )}
+                  {d.fagRader.length === 0 && d.tommeFag.length === 0 ? (
+                    <Stille>Eleven har ingen fag dette skoleåret.</Stille>
+                  ) : (
+                    d.fagRader.map((rad) => (
+                      <Innsatslinje
+                        key={rad.skolearFagId}
+                        rad={rad}
+                        skolear={s}
+                        onApneOkt={onApneOkt}
+                      />
+                    ))
+                  )}
+                </div>
+              );
+            })}
+          </section>
+
+          <div className="mt-6 grid gap-8 lg:grid-cols-[minmax(0,1fr)_250px]">
+            <div className="min-w-0">
+              <div className="flex items-center gap-3 border-b border-linje-medium pb-2">
+                <h2 className="text-[calc(13px*var(--tekst-skala))] font-semibold">
+                  Vurderinger
+                </h2>
+              </div>
+              {data.every((d) => d.vurderinger.length === 0) && (
+                <Stille>Ingen vurderinger i fagene hens ennå.</Stille>
+              )}
+              {data.flatMap((d) =>
+                [...new Set(d.vurderinger.map((v) => v.skolearFagId))].map(
+                  (fagId) => {
+                    const vs = d.vurderinger.filter(
+                      (v) => v.skolearFagId === fagId,
+                    );
+                    const f =
+                      d.fagRader.find((r) => r.skolearFagId === fagId) ??
+                      d.tommeFag.find((r) => r.skolearFagId === fagId);
+                    return (
+                      <div
+                        key={`${d.skolearId}-${fagId}`}
+                        className="grid grid-cols-[64px_minmax(0,1fr)] gap-x-3.5 pb-1.5 pt-3.5"
+                      >
+                        <span className="flex h-5 items-center gap-[7px] text-[calc(13.5px*var(--tekst-skala))] font-semibold">
+                          <Fagfirkant farge={f?.farge ?? null} />
+                          {vs[0].fagKode}
+                        </span>
+                        <div className="mt-2">
+                          {vs.map((v) => (
+                            <Vurderingsrad
+                              key={v.vurderingId}
+                              v={v}
+                              onApne={() => ark.apneVurdering(v.vurderingId)}
+                              onSamtaler={() =>
+                                ark.gaTil("samtaler", v.skolearFagId)
+                              }
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  },
+                ),
+              )}
+
+              <div className="mt-4">
+                <Motelogg
+                  elevId={elev.id}
+                  skolearId={aktivtSkolearId}
+                  nyttNotat={nyttNotat}
+                />
+              </div>
+            </div>
+
+            <aside className="flex flex-col gap-[22px]">
+              {apne.length > 0 && (
+                <div className="rounded-xl bg-flate px-3.5 py-3.5">
+                  <h2 className="mb-2 text-[calc(13px*var(--tekst-skala))] font-semibold">
+                    Åpent for {elev.fornavn}
+                  </h2>
+                  {apne.map((n) => (
+                    <label
+                      key={n.id}
+                      className="flex items-baseline gap-2 py-[3px] text-liten"
+                    >
+                      <input
+                        type="checkbox"
+                        onChange={async () => {
+                          await settLukket(n.id, true);
+                          await lastFag();
+                        }}
+                        className="translate-y-0.5 accent-[var(--color-aksent)]"
+                      />
+                      <span>
+                        {forsteLinje(n.tekst)}{" "}
+                        {n.frist && (
+                          <span
+                            className={`text-etikett ${
+                              n.frist <= idagIso()
+                                ? "text-feil"
+                                : "text-blekk-dempet"
+                            }`}
+                          >
+                            {n.frist === idagIso()
+                              ? "i dag"
+                              : kortDato(n.frist)}
+                          </span>
+                        )}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              )}
+              <Klassekartboks elevId={elevId} skolearId={aktivtSkolearId} />
+              <Fravaersboks
+                elevId={elevId}
+                skolearId={aktivtSkolearId}
+                fag={fagIAr}
+              />
+            </aside>
+          </div>
         </div>
-      </div>
+      )}
 
       <footer className="shrink-0 whitespace-nowrap border-t border-linje-medium px-[30px] py-[9px] text-right text-[calc(11.5px*var(--tekst-skala))] text-blekk-svak">
         Kjønn og bilde vises bare her og går aldri ut av appen.

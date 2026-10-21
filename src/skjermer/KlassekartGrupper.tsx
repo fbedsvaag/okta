@@ -222,6 +222,13 @@ export function KlassekartGrupper({
       bland: innst.bland,
       unnga: innst.unnga,
       frø: Math.floor(Math.random() * 2 ** 31),
+      // «Sett sammen neste gang» fra elevkortet (26.3), som myk regel.
+      sammen: new Map(
+        Object.entries(innst.settSammen ?? {}).map(([id, med]) => [
+          id,
+          new Set(med),
+        ]),
+      ),
     });
     setGrupper(r.grupper);
     setNavn((nv) => r.grupper.map((_, i) => nv[i] ?? null));
@@ -264,6 +271,9 @@ export function KlassekartGrupper({
     setHistorikk(await hentOppsett(kart.id, "gruppe"));
     setAktivt(id);
     setLagret(true);
+    // Ønskene fra elevkortet gjaldt «neste gang»; nå er den brukt.
+    if (Object.keys(innst.settSammen ?? {}).length > 0)
+      onEndreInnst({ settSammen: {} });
     setMelding(
       hvorfor ??
         (settNavn.trim()

@@ -42,6 +42,11 @@ type Felles = {
   frø: number;
   /** antall tilfeldige forsøk; 400 som standard */
   forsok?: number;
+  /**
+   * «Sett sammen neste gang» (26.3): elev → noen eleven gjerne skal være i
+   * gruppe med. Myk regel: én av dem holder, og den kan vike.
+   */
+  sammen?: Map<string, Set<string>>;
 };
 
 export type Brudd = {
@@ -79,6 +84,8 @@ const V_HOLD = 1000;
 const V_BLAND = 2;
 const V_UNNGA = 1.5;
 const V_MODUS = 3;
+// «Sett sammen neste gang»: tydelig, men lettere enn «hold fra hverandre».
+const V_SAMMEN = 4;
 
 // ------------------------------------------------------------------ plasser
 
@@ -304,6 +311,12 @@ export function fordelGrupper(
     let p = 0;
     for (const gruppe of gr) {
       const es = gruppe.map((id) => elev.get(id)!);
+      if (inn.sammen)
+        for (const id of gruppe) {
+          const onsker = inn.sammen.get(id);
+          if (onsker && onsker.size > 0 && !gruppe.some((x) => onsker.has(x)))
+            p += V_SAMMEN;
+        }
       for (let a = 0; a < gruppe.length; a++)
         for (let b = a + 1; b < gruppe.length; b++) {
           const k = nokkel(gruppe[a], gruppe[b]);

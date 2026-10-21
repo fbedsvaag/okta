@@ -1001,12 +1001,12 @@ Tegning: `docs/lerret/PlasserGrupper.dc.html`. Grupper skal ikke ligge gjemt inn
 
 Tegning: `docs/lerret/ElevSamarbeid.dc.html`. Ny fane «Samarbeid» på elevkortet, per fag.
 
-- [ ] **26.1 Diagram.** Eleven i midten, klassekameratene i ring rundt. Avstand = hvor ofte de har vært sammen (ofte · av og til · aldri ytterst, stiplet). Tykkere strek = flere ganger. Hover/klikk løfter eleven fram.
-- [ ] **26.2 Kilde.** Lagrede gruppesett og sidemann i klassekartene (`oppsett` type gruppe/plass, `sammenFor`). Valg: Begge · Grupper · Sidemann. Sidemann = samme bord.
-- [ ] **26.3 «Har aldri vært sammen med …»** som chips, og «Sett sammen neste gang»: gruppelageren prøver å få eleven i gruppe med noen av disse ved neste Stokk i faget (myk regel, ikke tvang).
-- [ ] **26.4 Detaljer** for ett par: hver gang de var sammen (gruppe/sidemann, navnet på settet, dato).
-- [ ] **26.5 «Oftest sammen»**: topp 6 med stolpe.
-- [ ] **26.6 Bare for læreren.** Aldri i eksport, utskrift, Teams eller samtaler. Ingen ny lagring: alt regnes ut fra historikken.
+- [x] **26.1 Diagram.** Eleven i midten, klassekameratene i ring rundt. Avstand = hvor ofte de har vært sammen (ofte · av og til · aldri ytterst, stiplet). Tykkere strek = flere ganger. Hover/klikk løfter eleven fram.
+- [x] **26.2 Kilde.** Lagrede gruppesett og sidemann i klassekartene (`oppsett` type gruppe/plass, `sammenFor`). Valg: Begge · Grupper · Sidemann. Sidemann = samme bord.
+- [x] **26.3 «Har aldri vært sammen med …»** som chips, og «Sett sammen neste gang»: gruppelageren prøver å få eleven i gruppe med noen av disse ved neste Stokk i faget (myk regel, ikke tvang).
+- [x] **26.4 Detaljer** for ett par: hver gang de var sammen (gruppe/sidemann, navnet på settet, dato).
+- [x] **26.5 «Oftest sammen»**: topp 6 med stolpe.
+- [x] **26.6 Bare for læreren.** Aldri i eksport, utskrift, Teams eller samtaler. Ingen ny lagring: alt regnes ut fra historikken.
 - [ ] **26.7 Senere:** hele klassen som matrise eller nettverk på fagsiden («hvem har ingen jobbet med?»).
 
 ## Ikke nå

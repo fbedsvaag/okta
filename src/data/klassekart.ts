@@ -289,6 +289,11 @@ export type Innstillinger = {
   perGruppe?: number | null;
   /** «Bare de som er her» (25.5) */
   bareHer?: boolean;
+  /**
+   * «Sett sammen neste gang» (26.3): elev → elever hen aldri har vært
+   * sammen med. Brukes ved neste Stokk, og tømmes når et sett lagres.
+   */
+  settSammen?: Record<string, string[]>;
 };
 
 export const STANDARD: Innstillinger = {
