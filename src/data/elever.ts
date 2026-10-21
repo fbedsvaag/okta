@@ -239,6 +239,40 @@ export async function opprettElev(
   return settInn("elev", { fornavn, etternavn, kode });
 }
 
+/**
+ * Ny elev med klasse, fag og mentorflagg i én transaksjon (Ny elev, 19.1).
+ * Feiler noe underveis, er ingenting lagret: aldri en elev uten den klassen
+ * eller de fagene du valgte. Mentorflagget krever klasse (§3.2).
+ */
+export async function opprettElevMed(n: {
+  fornavn: string;
+  etternavn: string;
+  skolearId: string;
+  klasseId: string | null;
+  fagIder: string[];
+  mentor: boolean;
+}): Promise<string> {
+  const kode = lagElevkode(n.fornavn, n.etternavn, await opptatteKoder());
+  const t = new Transaksjon();
+  const id = t.settInn("elev", {
+    fornavn: n.fornavn,
+    etternavn: n.etternavn,
+    kode,
+  });
+  if (n.klasseId)
+    t.settInn("elev_klasse", {
+      elev_id: id,
+      klasse_id: n.klasseId,
+      skolear_id: n.skolearId,
+      mentor: n.mentor ? 1 : 0,
+    });
+  for (const f of new Set(n.fagIder))
+    t.settInn("elev_fag", { elev_id: id, skolear_fag_id: f });
+  await t.kjor();
+  varsleElever();
+  return id;
+}
+
 export async function endreElev(
   id: string,
   felter: { fornavn?: string; etternavn?: string },

@@ -3,10 +3,7 @@ import { createPortal } from "react-dom";
 import {
   finnEllerOpprettKlasse,
   hentForDuplikatsjekk,
-  koblePaFag,
-  opprettElev,
-  settKlasse,
-  settMentor,
+  opprettElevMed,
   type Klasse,
 } from "../data/elever";
 import type { FagIAr } from "../data/fag";
@@ -125,10 +122,15 @@ export function NyElev({
     if (stengt || lagrer.current) return;
     lagrer.current = true;
     try {
-      const id = await opprettElev(fornavn, etternavn);
-      if (klasse) await settKlasse(id, skolearId, klasse);
-      for (const f of valgteFag) await koblePaFag(id, f);
-      if (kontakt && klasse) await settMentor(id, skolearId, true);
+      // Alt i én transaksjon: feiler noe, er ingenting lagret.
+      const id = await opprettElevMed({
+        fornavn,
+        etternavn,
+        skolearId,
+        klasseId: klasse,
+        fagIder: [...valgteFag],
+        mentor: kontakt && !!klasse,
+      });
       sistKlasse = klasse;
       const hvor = [
         klasser.find((k) => k.id === klasse)?.navn,

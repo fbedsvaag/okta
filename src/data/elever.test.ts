@@ -10,6 +10,7 @@ const {
   finnEllerOpprettKlasse,
   hentElever,
   opprettElev,
+  opprettElevMed,
   passerFagfilter,
   frakobleFag,
   koblePaFag,
@@ -189,5 +190,44 @@ describe("passerFagfilter", () => {
   it("holder en elev uten fag utenfor når noe er valgt", () => {
     expect(passerFagfilter([], new Set(["mfl1"]), "alle")).toBe(false);
     expect(passerFagfilter([], new Set(["mfl1"]), "minstEtt")).toBe(false);
+  });
+});
+
+describe("ny elev i én transaksjon (19.1)", () => {
+  it("lagrer elev, klasse, fag og mentorflagg samlet", async () => {
+    const klasse = await finnEllerOpprettKlasse(skolearId, "3STB");
+    const his = await leggFagIAr(skolearId, "HIS3", "Historie", null);
+    const nor = await leggFagIAr(skolearId, "NOR3", "Norsk", null);
+    const id = await opprettElevMed({
+      fornavn: "Anne Marie",
+      etternavn: "van der Berg",
+      skolearId,
+      klasseId: klasse,
+      fagIder: [his, nor, his],
+      mentor: true,
+    });
+    const [e] = (await hentElever(skolearId)).filter((x) => x.id === id);
+    expect(e).toMatchObject({
+      fornavn: "Anne Marie",
+      etternavn: "van der Berg",
+      klasseNavn: "3STB",
+      mentor: true,
+    });
+    expect([...e.fagIder].sort()).toEqual([his, nor].sort());
+  });
+
+  it("lagrer ingenting når et steg feiler", async () => {
+    const for_ = (await hentElever(skolearId)).length;
+    await expect(
+      opprettElevMed({
+        fornavn: "Ada",
+        etternavn: "Berg",
+        skolearId,
+        klasseId: "finnes-ikke",
+        fagIder: [],
+        mentor: false,
+      }),
+    ).rejects.toThrow();
+    expect(await hentElever(skolearId)).toHaveLength(for_);
   });
 });
