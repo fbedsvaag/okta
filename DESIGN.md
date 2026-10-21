@@ -552,7 +552,7 @@ lang tekst kuttes), så sidene deles i `data/arsplansider.ts`.
 
 **Innstillinger.** Venstremeny i grupper: Vanlig (Generelt, Skoleår,
 Utseende, Skalaer), Trygghet (Sikkerhetskopi, Personvern), Kollegaer (Del
-oppsett), Sjelden i bruk (Kalenderstrøm, Kalenderserver, Arkiv). Hvert valg
+oppsett), Sjelden i bruk (Kalenderserver, Arkiv). Hvert valg
 er en rad med etikett til venstre og kontroll + hjelpetekst til høyre.
 Hjelpeteksten er hverdagsspråk.
 

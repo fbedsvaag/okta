@@ -179,15 +179,9 @@ export const INDEKS: Oppslag[] = [
   },
   {
     side: "kalender",
-    k: "strom",
-    tittel: "Kalenderstrøm",
-    ord: ["icloud", "kalender-appen", "abonnement", "webcal"],
-  },
-  {
-    side: "kalender",
     k: "dav",
     tittel: "Publiser til kalenderserver",
-    ord: ["caldav", "telefon"],
+    ord: ["caldav", "telefon", "icloud", "kalender-appen", "abonnement"],
   },
   { side: "kalender", k: "davadr", tittel: "Adresse til kalendermappa" },
   { side: "kalender", k: "davbr", tittel: "Brukernavn" },

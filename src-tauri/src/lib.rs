@@ -12,7 +12,6 @@
 mod arkiv;
 mod caldav;
 mod filer;
-mod kalenderfeed;
 mod sikkerhetskopi;
 mod system;
 mod transaksjon;
@@ -318,10 +317,6 @@ pub fn run() {
             sikkerhetskopi::rydd_sikkerhetskopier,
             sikkerhetskopi::sikkerhetskopimappe,
             sikkerhetskopi::gjenopprett_fra,
-            kalenderfeed::sett_kalenderfeed,
-            kalenderfeed::kalenderfeed_url,
-            kalenderfeed::kalenderfeed_kjorer,
-            kalenderfeed::start_kalenderfeed,
             caldav::caldav_lagre_passord,
             caldav::caldav_har_passord,
             caldav::caldav_glem_passord,

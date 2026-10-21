@@ -30,10 +30,8 @@ import {
 } from "../data/sikkerhetskopi";
 import { revealItemInDir } from "@tauri-apps/plugin-opener";
 import { appDataDir } from "@tauri-apps/api/path";
-import { erMac } from "../ui/taster";
 import type { Skolear } from "../data/skolear";
 import type { Fridag } from "../data/kalender";
-import * as kalender from "../data/kalenderfeed";
 import * as caldav from "../data/caldav";
 import { skrivArkiv } from "../data/arkiv";
 import { LAERERNAVN, SKOLENAVN } from "../data/arsplanark";
@@ -1520,10 +1518,6 @@ function SidePersonvern({
 // --------------------------------------------------------------- Kalender
 
 function SideKalender({ skolear, fag }: { skolear: Skolear; fag: FagIAr[] }) {
-  const [feedPa, setFeedPa] = useState(false);
-  const [feedUrl, setFeedUrl] = useState("");
-  const [feedFeil, setFeedFeil] = useState<string | null>(null);
-  const [kopiert, setKopiert] = useState(false);
   const [dav, setDav] = useState<caldav.Oppsett>({
     base: "",
     bruker: "",
@@ -1540,9 +1534,6 @@ function SideKalender({ skolear, fag }: { skolear: Skolear; fag: FagIAr[] }) {
 
   useEffect(() => {
     void (async () => {
-      const pa = await kalender.erPa();
-      setFeedPa(pa);
-      if (pa) setFeedUrl(await kalender.hentUrl());
       setDav(await caldav.hentOppsett());
       setDavHarPassord(await caldav.harPassord());
     })();
@@ -1563,62 +1554,8 @@ function SideKalender({ skolear, fag }: { skolear: Skolear; fag: FagIAr[] }) {
   return (
     <Side
       tittel="Kalender"
-      intro="Få øktene inn i kalenderen du bruker fra før. Velg én av måtene."
+      intro="Få øktene inn i kalenderen du bruker fra før, også på telefonen."
     >
-      <Gruppe
-        tittel={erMac ? "Abonner på denne Macen" : "Abonner på denne maskinen"}
-      >
-        <Rad
-          k="strom"
-          tittel="Kalenderstrøm"
-          hjelp="Kalenderen din abonnerer på årsplanen og oppdaterer seg selv. Bare denne maskinen får tak i den, og den inneholder fagkode, tema, dato og varighet, aldri elevnavn, skåringer eller notater."
-          under={
-            <>
-              {feedFeil && <p className="text-liten text-feil">{feedFeil}</p>}
-              {feedPa && feedUrl && (
-                <div>
-                  <div className="flex items-center gap-2">
-                    <Sti>{feedUrl}</Sti>
-                    <Knapp
-                      onClick={async () => {
-                        await navigator.clipboard.writeText(feedUrl);
-                        setKopiert(true);
-                        setTimeout(() => setKopiert(false), 1500);
-                      }}
-                    >
-                      {kopiert ? "Kopiert" : "Kopier"}
-                    </Knapp>
-                  </div>
-                  <p className="mt-2 text-etikett leading-normal text-blekk-svak">
-                    {erMac
-                      ? "I Kalender: Arkiv → Nytt kalenderabonnement, lim inn adressen, og velg oppdatering hvert femte minutt. Velger du iCloud som plassering, lastes timeplanen opp til Apple og følger med til telefonen; På min Mac blir den her. Strømmen oppdaterer seg bare mens appen kjører."
-                      : "Lim inn adressen som et kalenderabonnement i kalenderprogrammet på denne maskinen. Adressen virker bare her, og strømmen oppdaterer seg bare mens appen kjører."}
-                  </p>
-                </div>
-              )}
-            </>
-          }
-        >
-          <Vippebryter
-            pa={feedPa}
-            etikett="Kalenderstrøm"
-            onBytt={async (pa) => {
-              setFeedPa(pa);
-              setFeedFeil(null);
-              await kalender.settPa(pa);
-              if (!pa) return;
-              try {
-                setFeedUrl(await kalender.start(skolear));
-              } catch (err) {
-                setFeedFeil(String(err));
-                setFeedPa(false);
-                await kalender.settPa(false);
-              }
-            }}
-          />
-        </Rad>
-      </Gruppe>
-
       <Gruppe
         tittel="Publiser til en kalenderserver (CalDAV)"
         fot="Det eneste stedet Økta sender noe ut (§8.1): fag, tittel, dato, klokkeslett, sted og agenda. Aldri elevnavn, skåringer eller notater."

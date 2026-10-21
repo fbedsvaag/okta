@@ -89,7 +89,6 @@ describe("kjønn på eleven", () => {
       "arsplandocx.ts",
       "ical.ts",
       "caldav.ts",
-      "kalenderfeed.ts",
     ]) {
       const kode = readFileSync(join(import.meta.dirname, fil), "utf8");
       expect(kode, fil).not.toMatch(/kjonn/);

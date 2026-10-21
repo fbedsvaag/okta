@@ -21,10 +21,6 @@ import {
   type Skolear,
 } from "./data/skolear";
 import { daglingKopi } from "./data/sikkerhetskopi";
-import {
-  erPa as kalenderPa,
-  start as startKalender,
-} from "./data/kalenderfeed";
 import { startAuto as startCaldav } from "./data/caldav";
 import { skrivArkiv, skrivArkivTilBackup } from "./data/arkiv";
 import { hentFagIAr, type FagIAr } from "./data/fag";
@@ -301,12 +297,6 @@ export default function App() {
         await lastTrekninger(ar.id).catch((e) =>
           console.error("trekninger:", e),
         );
-
-      // Kalenderstrømmen holdes fersk ved hver innlasting, men bare hvis
-      // brukeren har slått den på. Er den av, lytter ingenting.
-      if (ar && (await kalenderPa())) {
-        await startKalender(ar).catch((e) => console.error("kalenderfeed:", e));
-      }
 
       // Arkivet (§8) skrives ved oppstart, sammen med sikkerhetskopien.
       // En eksport man må huske på er ikke backup. Feiler den, skal ikke

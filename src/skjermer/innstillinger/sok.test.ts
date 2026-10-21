@@ -17,7 +17,7 @@ describe("søk i innstillingene (23.3)", () => {
 
   it("treffer andre ord folk bruker", () => {
     expect(sok("backup")[0]).toMatchObject({ side: "kopi", k: "kopinaa" });
-    expect(sok("icloud")[0]).toMatchObject({ side: "kalender", k: "strom" });
+    expect(sok("icloud")[0]).toMatchObject({ side: "kalender", k: "dav" });
     expect(sok("kontaktlærer")[0]).toMatchObject({ side: "deg", k: "mentor" });
     expect(sok("projektor")[0]).toMatchObject({ k: "visbilder" });
     expect(sok("gamle elever")[0]).toMatchObject({ k: "slettar" });

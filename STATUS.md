@@ -9,6 +9,13 @@ den skal bli. Fila eies fritt, i motsetning til SPEC.md.
 Utseendet står i `DESIGN.md`, som beskriver appen slik den er bygget.
 Lerretet (`docs/lerret/`) er fasit for det som er tegnet.
 
+## Kalender og fagvalg (21.10)
+
+- Kalenderstrømmen (lokal iCal-adresse på 127.0.0.1) er fjernet, med den
+  lille webserveren i Rust. Kalender betyr nå bare CalDAV (§8.1). Et gammelt
+  abonnement i Apple Kalender slutter å oppdatere seg og kan slettes der.
+- Et fag i sidemenyen (og ⌘1–9) åpner alltid fagets Oversikt.
+
 ## Utkast for vurderinger (21.10, ARBEIDSLISTE §24)
 
 - Vurderinger fra «Hent fra i fjor» er utkast til de er bekreftet: dempet i
