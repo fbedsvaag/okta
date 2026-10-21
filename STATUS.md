@@ -3,7 +3,7 @@
 Pr. 2026-10-20, versjon 0.4.0 (utgitt 20.10). Beskriver hvor appen faktisk står, ikke hva
 den skal bli. Fila eies fritt, i motsetning til SPEC.md.
 
-**730 tester i `npm test` og 25 i `cargo test`, alle grønne på Mac.
+**740 tester i `npm test` og 25 i `cargo test`, alle grønne på Mac.
 `tsc --noEmit` er ren. `npm run build` går gjennom. 28 migrasjoner.** Testene kjører på GitHub ved hver push (`tester.yml`, Mac).
 
 Utseendet står i `DESIGN.md`, som beskriver appen slik den er bygget.
