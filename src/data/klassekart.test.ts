@@ -157,6 +157,40 @@ describe("kart og elever", () => {
 });
 
 describe("oppsett og historikk", () => {
+  it("har navn, kan få nytt navn og slettes, og viser hvem som var i gruppe sammen", async () => {
+    const kart = await k.opprettKart({
+      skolearId: ar,
+      kildeType: "fag",
+      kildeId: fag,
+      romId: null,
+    });
+    const id = await k.lagreOppsett(
+      kart,
+      "gruppe",
+      [
+        { elevId: tony, gruppe: 0 },
+        { elevId: meadow, gruppe: 0 },
+      ],
+      " Kildeoppgave ",
+    );
+    await k.lagreOppsett(kart, "gruppe", [
+      { elevId: tony, gruppe: 0 },
+      { elevId: meadow, gruppe: 1 },
+    ]);
+    let o = await k.hentOppsett(kart, "gruppe");
+    expect(o.map((x) => x.navn).sort()).toEqual(["Kildeoppgave", null].sort());
+    expect(k.gruppekamerater(o, tony).get(meadow)).toBe(1);
+
+    await k.navngiOppsett(id, "Prosjekt");
+    o = await k.hentOppsett(kart, "gruppe");
+    expect(o.find((x) => x.id === id)?.navn).toBe("Prosjekt");
+
+    await k.slettOppsett(id);
+    o = await k.hentOppsett(kart, "gruppe");
+    expect(o).toHaveLength(1);
+    expect(k.gruppekamerater(o, tony).get(meadow)).toBeUndefined();
+  });
+
   it("lagres og hentes nyeste først, og teller hvem som har sittet sammen", async () => {
     const kart = await k.opprettKart({
       skolearId: ar,
@@ -188,6 +222,7 @@ describe("oppsett og historikk", () => {
     const o = (a: string, b: string) => ({
       id: a + b,
       tid: "",
+      navn: null,
       rader: [
         { elevId: a, plass: null, gruppe: 1, gruppenavn: null, last: false },
         { elevId: b, plass: null, gruppe: 1, gruppenavn: null, last: false },

@@ -9,6 +9,15 @@ den skal bli. Fila eies fritt, i motsetning til SPEC.md.
 Utseendet står i `DESIGN.md`, som beskriver appen slik den er bygget.
 Lerretet (`docs/lerret/`) er fasit for det som er tegnet.
 
+## Lagrede gruppesett og gruppelogg (21.10)
+
+- Navn på gruppesettet i verktøylinja; «Bruk» lagrer det med navnet.
+  «Tidligere (N)» åpner, og × sletter. Ny tabell `oppsett` (migrering 031);
+  gamle oppsett er flyttet over uten navn.
+- Elevkortet: «I gruppe med» under Klassekart, oftest først, med antall.
+- Navnet glir rolig ned på plassen sin når eleven slippes (280 ms).
+- Elevkortet viser vurderingene i grått, ikke gull.
+
 ## Grupper: se flyttingen før du slipper (21.10)
 
 - Mens en elev dras, vokser gruppa pekeren er over (plass nederst, kant i

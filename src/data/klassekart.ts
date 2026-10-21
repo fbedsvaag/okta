@@ -503,18 +503,31 @@ export type Oppsett = {
   id: string;
   /** når det ble lagret, lokal ISO */
   tid: string;
+  /** navnet læreren ga det, f.eks. «Kildeoppgave»; null = bare dato */
+  navn: string | null;
   rader: Required<Oppsettrad>[];
 };
 
-/** Lagrer et oppsett — «Bruk», utskrift eller kopiering. Gir id-en tilbake. */
+/**
+ * Lagrer et oppsett — «Bruk», utskrift eller kopiering — med et navn om
+ * læreren har gitt det. Én transaksjon (#2). Gir id-en tilbake.
+ */
 export async function lagreOppsett(
   kartId: string,
   type: "plass" | "gruppe",
   rader: Oppsettrad[],
+  navn: string | null = null,
 ): Promise<string> {
   const oppsettId = nyId();
+  const t = new Transaksjon();
+  t.settInn("oppsett", {
+    id: oppsettId,
+    klassekart_id: kartId,
+    type,
+    navn: navn?.trim() || null,
+  });
   for (const r of rader)
-    await settInn("plassering", {
+    t.settInn("plassering", {
       klassekart_id: kartId,
       oppsett_id: oppsettId,
       type,
@@ -524,8 +537,31 @@ export async function lagreOppsett(
       gruppenavn: r.gruppenavn ?? null,
       last: r.last ? 1 : 0,
     });
+  await t.kjor();
   varsleKlassekart();
   return oppsettId;
+}
+
+/** Gir et lagret oppsett et nytt navn. Tomt = bare dato. */
+export async function navngiOppsett(id: string, navn: string): Promise<void> {
+  await oppdater("oppsett", id, { navn: navn.trim() || null });
+  varsleKlassekart();
+}
+
+/**
+ * Sletter et lagret oppsett, med radene. Det teller da heller ikke lenger
+ * i «Unngå samme grupper som sist» eller i hvem som har vært sammen.
+ */
+export async function slettOppsett(id: string): Promise<void> {
+  const rader = await hent<{ id: string }>(
+    "SELECT id FROM plassering WHERE oppsett_id = $1 AND slettet IS NULL",
+    [id],
+  );
+  const t = new Transaksjon();
+  t.slett("oppsett", id);
+  for (const r of rader) t.slett("plassering", r.id);
+  await t.kjor();
+  varsleKlassekart();
 }
 
 /** De lagrede oppsettene i kartet, nyeste først. */
@@ -541,12 +577,15 @@ export async function hentOppsett(
     gruppe: number | null;
     gruppenavn: string | null;
     last: number;
+    navn: string | null;
   }>(
     `SELECT p.oppsett_id AS oppsettId, p.opprettet AS tid, p.elev_id AS elevId,
-            p.plass, p.gruppe, p.gruppenavn, p.last
+            p.plass, p.gruppe, p.gruppenavn, p.last, o.navn AS navn
        FROM plassering p
        JOIN elev e ON e.id = p.elev_id AND e.slettet IS NULL
+       LEFT JOIN oppsett o ON o.id = p.oppsett_id
       WHERE p.klassekart_id = $1 AND p.type = $2 AND p.slettet IS NULL
+        AND (o.id IS NULL OR o.slettet IS NULL)
       ORDER BY p.opprettet DESC, p.oppsett_id`,
     [kartId, type],
   );
@@ -554,7 +593,7 @@ export async function hentOppsett(
   for (const r of rader) {
     let o = ut.get(r.oppsettId);
     if (!o) {
-      o = { id: r.oppsettId, tid: r.tid, rader: [] };
+      o = { id: r.oppsettId, tid: r.tid, navn: r.navn, rader: [] };
       ut.set(r.oppsettId, o);
     }
     o.rader.push({
@@ -691,7 +730,25 @@ export type ElevIKart = {
   regler: { id: string; andre: Navn }[];
   /** de andre i kilden — til «+ Legg til» */
   medelever: Navn[];
+  /** hvem eleven har vært i gruppe med i kartets lagrede grupper, oftest først */
+  iGruppeMed: (Navn & { ganger: number })[];
 };
+
+/** Hvem eleven har vært i samme gruppe med, og hvor mange ganger. */
+export function gruppekamerater(
+  oppsett: Oppsett[],
+  elevId: string,
+): Map<string, number> {
+  const ganger = new Map<string, number>();
+  for (const o of oppsett) {
+    const min = o.rader.find((r) => r.elevId === elevId);
+    if (min?.gruppe == null) continue;
+    for (const r of o.rader)
+      if (r.elevId !== elevId && r.gruppe === min.gruppe)
+        ganger.set(r.elevId, (ganger.get(r.elevId) ?? 0) + 1);
+  }
+  return ganger;
+}
 
 /**
  * Hvor eleven sitter i kartene i året, til elevkortet (lerretet «ElevArk»):
@@ -752,6 +809,17 @@ export async function hentElevIKart(
       sitterVed,
       regler,
       medelever: [...navn.values()].filter((e) => e.id !== elevId),
+      iGruppeMed: [
+        ...gruppekamerater(await hentOppsett(k.id, "gruppe"), elevId),
+      ]
+        .map(([id, ganger]) => {
+          const n = navn.get(id);
+          return n ? { ...n, ganger } : null;
+        })
+        .filter((x): x is Navn & { ganger: number } => !!x)
+        .sort(
+          (a, b) => b.ganger - a.ganger || a.fornavn.localeCompare(b.fornavn),
+        ),
     });
   }
   return ut;

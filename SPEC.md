@@ -1463,6 +1463,10 @@ testene er deterministiske.
 - Elever dras mellom gruppene. **Unngå samme grupper som sist** bruker
   gruppehistorikken.
 - Kopier til Teams (én liste per gruppe) og skriv ut.
+- Et brukt gruppesett kan få et **navn** («Kildeoppgave») og finnes igjen
+  under **Tidligere**, der det kan åpnes, få nytt navn eller slettes
+  (tabellen `oppsett`, migrering 031). Elevkortet viser hvem eleven oftest
+  har vært i gruppe med.
 
 #### Sidemenyen og navigasjon
 

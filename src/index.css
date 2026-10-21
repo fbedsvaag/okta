@@ -2501,6 +2501,16 @@ textarea,
     opacity: 0;
   }
 }
+/* Når eleven slippes, glir navnet ned på plassen sin og tones ut. */
+.gruppe-lander {
+  opacity: 0.4;
+  transition:
+    left 280ms cubic-bezier(0.22, 1, 0.36, 1),
+    top 280ms cubic-bezier(0.22, 1, 0.36, 1),
+    rotate 280ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 280ms ease-out,
+    opacity 280ms ease-in;
+}
 .gruppe-forlater {
   height: 0 !important;
   margin-top: -4px;

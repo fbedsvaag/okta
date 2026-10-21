@@ -202,6 +202,12 @@ fn migrations() -> Vec<Migration> {
             sql: include_str!("../migrations/030_vurdering_utkast.sql"),
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 31,
+            description: "lagrede oppsett med navn",
+            sql: include_str!("../migrations/031_oppsett.sql"),
+            kind: MigrationKind::Up,
+        },
     ]
 }
 

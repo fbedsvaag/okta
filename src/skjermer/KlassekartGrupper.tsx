@@ -1,9 +1,12 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { invoke } from "@tauri-apps/api/core";
 import {
   hentOppsett,
   lagreOppsett,
+  navngiOppsett,
   sammenFor,
+  slettOppsett,
   type Elevregel,
   type Innstillinger,
   type Kart,
@@ -32,6 +35,9 @@ import { hovedtast, tast as visTast } from "../ui/taster";
  * Skriv ut lagrer gruppesettet, som blir historikken «Unngå samme grupper
  * som sist» regner på.
  */
+/** Hvor lenge navnet bruker på å lande når det slippes (ms). */
+const LANDING = 280;
+
 export function KlassekartGrupper({
   kart,
   innst,
@@ -51,6 +57,20 @@ export function KlassekartGrupper({
   const [brudd, setBrudd] = useState<Brudd[]>([]);
   const [lagret, setLagret] = useState(true);
   const [melding, setMelding] = useState<string | null>(null);
+  // Navnet på gruppesettet, og hvilket lagret sett som vises (null = nytt).
+  const [settNavn, setSettNavn] = useState("");
+  const [aktivt, setAktivt] = useState<string | null>(null);
+  const [visTidligere, setVisTidligere] = useState(false);
+  const tidligereKnapp = useRef<HTMLButtonElement>(null);
+  const [tidligerePos, setTidligerePos] = useState({ top: 0, right: 0 });
+  useLayoutEffect(() => {
+    const r = tidligereKnapp.current?.getBoundingClientRect();
+    if (visTidligere && r)
+      setTidligerePos({
+        top: r.bottom + 6,
+        right: window.innerWidth - r.right,
+      });
+  }, [visTidligere]);
 
   const elevAv = new Map(elever.map((e) => [e.id, e]));
   const antall = innst.antallGrupper;
@@ -58,30 +78,37 @@ export function KlassekartGrupper({
   const minst = Math.min(...storrelser);
   const storst = Math.max(...storrelser);
 
+  /** Viser et lagret gruppesett, med de elevene som fortsatt er med. */
+  function visOppsett(o: Oppsett) {
+    const iKilden = new Set(elever.map((e) => e.id));
+    const n = Math.max(...o.rader.map((r) => r.gruppe ?? 0)) + 1;
+    const gr: string[][] = Array.from({ length: n }, () => []);
+    const nv: (string | null)[] = Array(n).fill(null);
+    for (const r of o.rader)
+      if (r.gruppe !== null && iKilden.has(r.elevId)) {
+        gr[r.gruppe].push(r.elevId);
+        nv[r.gruppe] = r.gruppenavn;
+      }
+    // Nye elever i den minste gruppa.
+    const med = new Set(gr.flat());
+    for (const e of elever)
+      if (!med.has(e.id))
+        gr.reduce((a, b) => (b.length < a.length ? b : a)).push(e.id);
+    setGrupper(gr);
+    setNavn(nv);
+    setBrudd([]);
+    setAktivt(o.id);
+    setSettNavn(o.navn ?? "");
+    setLagret(true);
+  }
+
   useEffect(() => {
     void (async () => {
       const h = await hentOppsett(kart.id, "gruppe");
       setHistorikk(h);
-      // Start fra sist brukte gruppesett, med de elevene som fortsatt er med.
-      const sist = h[0];
-      if (sist) {
-        const iKilden = new Set(elever.map((e) => e.id));
-        const n = Math.max(...sist.rader.map((r) => r.gruppe ?? 0)) + 1;
-        const gr: string[][] = Array.from({ length: n }, () => []);
-        const nv: (string | null)[] = Array(n).fill(null);
-        for (const r of sist.rader)
-          if (r.gruppe !== null && iKilden.has(r.elevId)) {
-            gr[r.gruppe].push(r.elevId);
-            nv[r.gruppe] = r.gruppenavn;
-          }
-        // Nye elever i den minste gruppa.
-        const med = new Set(gr.flat());
-        for (const e of elever)
-          if (!med.has(e.id))
-            gr.reduce((a, b) => (b.length < a.length ? b : a)).push(e.id);
-        setGrupper(gr);
-        setNavn(nv);
-      } else stokk(h);
+      // Start fra sist brukte gruppesett.
+      if (h[0]) visOppsett(h[0]);
+      else stokk(h);
     })();
   }, [kart.id, elever]);
 
@@ -105,6 +132,8 @@ export function KlassekartGrupper({
     setNavn((nv) => r.grupper.map((_, i) => nv[i] ?? null));
     setBrudd(r.brudd);
     setLagret(false);
+    setAktivt(null);
+    setSettNavn("");
   }
 
   function settAntall(n: number) {
@@ -116,16 +145,43 @@ export function KlassekartGrupper({
   }
 
   async function bruk(hvorfor?: string) {
-    await lagreOppsett(
+    const id = await lagreOppsett(
       kart.id,
       "gruppe",
       grupper.flatMap((g, i) =>
         g.map((elevId) => ({ elevId, gruppe: i, gruppenavn: navn[i] ?? null })),
       ),
+      settNavn,
     );
     setHistorikk(await hentOppsett(kart.id, "gruppe"));
+    setAktivt(id);
     setLagret(true);
-    setMelding(hvorfor ?? "Gruppene er lagret");
+    setMelding(
+      hvorfor ??
+        (settNavn.trim()
+          ? `«${settNavn.trim()}» er lagret`
+          : "Gruppene er lagret"),
+    );
+  }
+
+  /** Nytt navn på settet som vises, når det alt er lagret. */
+  async function navngi() {
+    if (!lagret || !aktivt) return;
+    const o = historikk.find((x) => x.id === aktivt);
+    if ((o?.navn ?? "") === settNavn.trim()) return;
+    await navngiOppsett(aktivt, settNavn);
+    setHistorikk(await hentOppsett(kart.id, "gruppe"));
+  }
+
+  async function slettSett(o: Oppsett) {
+    await slettOppsett(o.id);
+    const h = await hentOppsett(kart.id, "gruppe");
+    setHistorikk(h);
+    if (o.id === aktivt) {
+      setAktivt(null);
+      setLagret(false);
+    }
+    setMelding(`${o.navn ? `«${o.navn}»` : "Gruppesettet"} er slettet`);
   }
 
   const tekst = () =>
@@ -173,6 +229,8 @@ export function KlassekartGrupper({
     flyttet: boolean;
     /** gruppa pekeren er over nå; null = ingen */
     mal: number | null;
+    /** sluppet: navnet glir til plassen sin før gruppene oppdateres */
+    lander?: boolean;
   } | null>(null);
   const draRef = useRef(dra);
   draRef.current = dra;
@@ -196,21 +254,40 @@ export function KlassekartGrupper({
           },
       );
     };
-    const slipp = (e: PointerEvent) => {
+    const slipp = () => {
+      window.removeEventListener("pointermove", flytter);
+      window.removeEventListener("pointerup", slipp);
       const d = draRef.current;
-      setDra(null);
-      if (!d?.flyttet) return;
-      const mal = document
-        .elementFromPoint(e.clientX, e.clientY)
-        ?.closest<HTMLElement>("[data-gruppe]");
-      if (!mal) return;
-      const til = Number(mal.dataset.gruppe);
-      setGrupper((gr) => {
-        const ny = gr.map((g) => g.filter((x) => x !== d.elevId));
-        ny[til].push(d.elevId);
-        return ny;
+      if (!d?.flyttet) {
+        setDra(null);
+        return;
+      }
+      // Navnet glir rolig ned på plassen sin — den nye i gruppa, eller
+      // tilbake der det kom fra — og først da oppdateres gruppene.
+      const plass =
+        document.querySelector<HTMLElement>("[data-gruppe-plass]") ??
+        document.querySelector<HTMLElement>(`[data-elev-rad="${d.elevId}"]`);
+      const r = plass?.getBoundingClientRect();
+      const flytt =
+        d.mal !== null && !!document.querySelector("[data-gruppe-plass]");
+      setDra({
+        ...d,
+        lander: true,
+        x: r ? r.left + 64 : d.x,
+        y: r ? r.top + r.height / 2 : d.y,
       });
-      setLagret(false);
+      window.setTimeout(() => {
+        if (flytt && d.mal !== null) {
+          const til = d.mal;
+          setGrupper((gr) => {
+            const ny = gr.map((g) => g.filter((x) => x !== d.elevId));
+            ny[til].push(d.elevId);
+            return ny;
+          });
+          setLagret(false);
+        }
+        setDra(null);
+      }, LANDING);
     };
     window.addEventListener("pointermove", flytter);
     window.addEventListener("pointerup", slipp);
@@ -254,6 +331,29 @@ export function KlassekartGrupper({
           </span>
         )}
         <span className="ml-auto flex shrink-0 items-center gap-1.5">
+          <input
+            value={settNavn}
+            onChange={(e) => setSettNavn(e.target.value)}
+            onBlur={() => void navngi()}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                if (lagret) void navngi();
+                else void bruk();
+              }
+            }}
+            placeholder="Navn på gruppene"
+            aria-label="Navn på gruppene"
+            className="h-8 w-44 min-w-0 rounded-full border border-linje bg-ark px-3 text-brod outline-none placeholder:text-blekk-svakest focus:border-aksent"
+          />
+          <button
+            ref={tidligereKnapp}
+            onClick={() => setVisTidligere((v) => !v)}
+            disabled={historikk.length === 0}
+            className="flex h-8 items-center rounded-full border border-linje-sterk bg-ark/70 px-3.5 text-brod hover:bg-ark disabled:border-transparent disabled:bg-transparent disabled:text-blekk-svak"
+          >
+            Tidligere{historikk.length > 0 ? ` (${historikk.length})` : ""}
+          </button>
           <button
             onClick={() => void teams()}
             className="flex h-8 items-center rounded-full border border-linje-sterk bg-ark/70 px-3.5 text-brod hover:bg-ark"
@@ -419,6 +519,7 @@ export function KlassekartGrupper({
                   return (
                     <div
                       key={id}
+                      data-elev-rad={id}
                       onPointerDown={(ev) => {
                         ev.preventDefault();
                         setDra({
@@ -456,6 +557,7 @@ export function KlassekartGrupper({
                 })}
                 {mottar && (
                   <div
+                    data-gruppe-plass
                     className="gruppe-plass flex h-9 items-center gap-[9px] overflow-hidden rounded-lg bg-ark px-2"
                     style={{ boxShadow: `inset 0 0 0 1.5px ${farge}` }}
                   >
@@ -472,9 +574,72 @@ export function KlassekartGrupper({
         })}
       </div>
 
+      {/* Lista over lagrede gruppesett, utenfor verktøylinja så den ikke klippes. */}
+      {createPortal(
+        <>
+          {visTidligere && (
+            <>
+              <div
+                className="fixed inset-0 z-30"
+                onClick={() => setVisTidligere(false)}
+              />
+              <div
+                style={{ top: tidligerePos.top, right: tidligerePos.right }}
+                className="fixed z-40 max-h-[360px] w-80 overflow-auto rounded-xl bg-ark p-1.5 shadow-[0_12px_32px_rgba(36,31,51,.18),0_0_0_1px_var(--color-linje)]"
+              >
+                {historikk.map((o) => {
+                  const n = new Set(o.rader.map((r) => r.gruppe)).size;
+                  return (
+                    <div
+                      key={o.id}
+                      className={`group flex items-center gap-2 rounded-lg px-2.5 py-2 text-[13px] hover:bg-flate ${
+                        o.id === aktivt ? "bg-valgt" : ""
+                      }`}
+                    >
+                      <button
+                        onClick={() => {
+                          visOppsett(o);
+                          setVisTidligere(false);
+                        }}
+                        className="flex min-w-0 flex-1 items-baseline gap-2 text-left"
+                      >
+                        <span
+                          className={`truncate ${o.navn ? "font-medium" : "text-blekk-dempet"}`}
+                        >
+                          {o.navn ?? "Uten navn"}
+                        </span>
+                        <span className="ml-auto shrink-0 text-etikett tabular-nums text-blekk-svak">
+                          {new Date(o.tid).toLocaleDateString("nb-NO", {
+                            day: "numeric",
+                            month: "short",
+                          })}{" "}
+                          · {n} grupper
+                        </span>
+                      </button>
+                      <button
+                        onClick={() => void slettSett(o)}
+                        title="Slett gruppesettet"
+                        aria-label={`Slett ${o.navn ?? "gruppesettet"}`}
+                        className="shrink-0 px-1 text-blekk-svak opacity-0 hover:text-feil group-hover:opacity-100"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
+        </>,
+        document.body,
+      )}
       {dra?.flyttet && (
         <div
-          className="pointer-events-none fixed z-50 flex -translate-x-1/2 -translate-y-1/2 rotate-[-1.5deg] items-center gap-2 rounded-lg bg-ark px-3 py-1.5 text-brod shadow-[0_10px_24px_rgba(36,31,51,.22)]"
+          className={`pointer-events-none fixed z-50 flex -translate-x-1/2 -translate-y-1/2 items-center gap-2 rounded-lg bg-ark px-3 py-1.5 text-brod ${
+            dra.lander
+              ? "gruppe-lander rotate-0 shadow-[0_1px_3px_rgba(36,31,51,.12)]"
+              : "rotate-[-1.5deg] shadow-[0_10px_24px_rgba(36,31,51,.22)]"
+          }`}
           style={{ left: dra.x, top: dra.y }}
         >
           <Elevfoto elevId={dra.elevId} storrelse={22} />

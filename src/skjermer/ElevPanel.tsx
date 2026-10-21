@@ -883,6 +883,25 @@ function Klassekartboks({
                 )}
               </>
             )}
+            {/* Loggen over grupper: hvem eleven oftest har jobbet med. */}
+            {k.iGruppeMed.length > 0 && (
+              <>
+                <br />
+                <span className="text-blekk-dempet">I gruppe med</span>{" "}
+                {k.iGruppeMed
+                  .slice(0, 6)
+                  .map((x) =>
+                    x.ganger > 1 ? `${kort(x)} (${x.ganger})` : kort(x),
+                  )
+                  .join(", ")}
+                {k.iGruppeMed.length > 6 && (
+                  <span className="text-blekk-svak">
+                    {" "}
+                    og {k.iGruppeMed.length - 6} til
+                  </span>
+                )}
+              </>
+            )}
           </p>
           <p className="mt-2 text-etikett text-blekk-dempet">
             Kan ikke sitte med:
