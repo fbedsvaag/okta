@@ -12,6 +12,10 @@ import { useEffect, useState, type RefObject } from "react";
  * ligge over flaten: `relative z-[1]` eller lignende. `beholder` må ha
  * `position: relative`. Flyttes musa over noe som ikke er et punkt — en
  * skillelinje, en overskrift — blir flaten stående der den er.
+ *
+ * Forsvinner punktet flaten står på — en undermeny som legges sammen mens
+ * musa står i ro, eller utenfor vinduet — tones flaten bort (21.10). Før
+ * ble den hengende igjen som en tom boks.
  */
 export function Hovermarkor({
   beholder,
@@ -36,12 +40,42 @@ export function Hovermarkor({
     if (!b) return;
     let inne = false;
     let ramme = 0;
+    let sist: HTMLElement | null = null;
+    let sjekkRamme = 0;
+    // Står punktet fortsatt synlig der flaten er? Ellers skjules flaten.
+    const sjekk = () => {
+      sjekkRamme = 0;
+      if (!sist) return;
+      const r = sist.getBoundingClientRect();
+      const midt = document.elementFromPoint(
+        r.left + r.width / 2,
+        r.top + r.height / 2,
+      );
+      const synligNa =
+        sist.isConnected && r.height > 1 && !!midt && sist.contains(midt);
+      if (!synligNa) {
+        sist = null;
+        inne = false;
+        setSynlig(false);
+      }
+    };
+    const sjekkSnart = () => {
+      if (sist && !sjekkRamme) sjekkRamme = window.setTimeout(sjekk, 16);
+    };
+    const vakt = new MutationObserver(sjekkSnart);
+    vakt.observe(b, {
+      subtree: true,
+      childList: true,
+      attributes: true,
+      attributeFilter: ["style", "class", "data-apen", "hidden"],
+    });
     const over = (e: PointerEvent) => {
       const el = (e.target as HTMLElement).closest<HTMLElement>(
         "[data-hover], [role='menuitem']",
       );
-      if (!el || !b.contains(el)) return;
+      if (!el || !b.contains(el)) return sjekkSnart();
       if ((el as HTMLButtonElement).disabled) return;
+      sist = el;
       const rb = b.getBoundingClientRect();
       const r = el.getBoundingClientRect();
       setMaal({
@@ -62,6 +96,7 @@ export function Hovermarkor({
     };
     const ut = () => {
       inne = false;
+      sist = null;
       setSynlig(false);
     };
     // Et ark eller en meny som legger seg over lista mens musa står i ro,
@@ -72,10 +107,14 @@ export function Hovermarkor({
     };
     b.addEventListener("pointerover", over);
     b.addEventListener("pointerleave", ut);
+    b.addEventListener("transitionend", sjekkSnart);
     document.addEventListener("pointerover", annet);
     return () => {
       b.removeEventListener("pointerover", over);
       b.removeEventListener("pointerleave", ut);
+      b.removeEventListener("transitionend", sjekkSnart);
+      vakt.disconnect();
+      window.clearTimeout(sjekkRamme);
       document.removeEventListener("pointerover", annet);
       cancelAnimationFrame(ramme);
     };
