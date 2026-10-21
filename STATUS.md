@@ -35,6 +35,10 @@ Lerretet (`docs/lerret/`) er fasit for det som er tegnet.
   Ellers er temaet vanlig tekst som raden kan dras i uten at noe markeres.
   Enter lagrer og går til neste rads tema (⇧↵ forrige), Esc avbryter.
   Dobbeltklikk ellers på raden og Enter åpner økta som før.
+- **Ingen tekstmarkering i appen (21.10)**, som en vanlig Mac-app: bare
+  felter du skriver i og notater/logger vist som tekst (`.kan-markeres`)
+  kan markeres. Før kunne en markering som startet utenfor Økter-lista
+  dra med seg månedsoverskriftene.
 - **19.3 Smidigere markering i Økter**: ⌘-klikk på en rad tar én, ⇧-klikk
   et spenn fra forrige klikk (eller fra markøren), og når noe alt er valgt,
   velger et vanlig klikk på raden. Uten noe valgt åpner klikket titten som

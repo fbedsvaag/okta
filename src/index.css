@@ -2028,11 +2028,20 @@ html {
 }
 
 /*
- * Økter-lista markerer ikke tekst (månedene, hodet, radene), men temafeltet
- * må kunne skrives og markeres i. Safari arver ellers «ingen markering».
+ * Appen markerer ikke tekst, som en vanlig Mac-app (21.10): overskrifter,
+ * lister, knapper og merkelapper lar seg ikke markere, og et drag drar ikke
+ * med seg tekst. Unntakene er der du skriver, og notater og logger vist som
+ * tekst (Markdown), som det kan være nyttig å kopiere fra.
  */
-.okter-liste input,
-.okter-liste textarea {
+body {
+  -webkit-user-select: none;
+  user-select: none;
+}
+input,
+textarea,
+[contenteditable]:not([contenteditable="false"]),
+.kan-markeres,
+.kan-markeres * {
   -webkit-user-select: text;
   user-select: text;
 }

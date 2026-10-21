@@ -31,7 +31,7 @@ export function Markdown({
   onVekslBoks?: (linje: number) => void;
 }) {
   return (
-    <div className="space-y-1.5 text-brod leading-relaxed">
+    <div className="kan-markeres space-y-1.5 text-brod leading-relaxed">
       {tolkMarkdown(tekst).map((b, i) => {
         if (b.type === "overskrift") {
           const stor = ["text-medium", "text-brod", "text-brod"][b.niva - 1];
