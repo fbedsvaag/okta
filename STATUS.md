@@ -4,7 +4,7 @@ Pr. 2026-10-20, versjon 0.4.0 (utgitt 20.10). Beskriver hvor appen faktisk står
 den skal bli. Fila eies fritt, i motsetning til SPEC.md.
 
 **730 tester i `npm test` og 25 i `cargo test`, alle grønne på Mac.
-`tsc --noEmit` er ren. `npm run build` går gjennom. 27 migrasjoner.**
+`tsc --noEmit` er ren. `npm run build` går gjennom. 28 migrasjoner.** Testene kjører på GitHub ved hver push (`tester.yml`, Mac).
 
 Utseendet står i `DESIGN.md`, som beskriver appen slik den er bygget.
 Lerretet (`docs/lerret/`) er fasit for det som er tegnet.
@@ -315,7 +315,6 @@ om sikkerhet i §8.
   appen er ikke berørt.
 - **Skjermkomponentene har ingen tester.** Datalaget er godt dekket.
 - **`caldav.ts` sin nettverksdel er utestet**; feltgrensen er testet.
-- **Tabellen `oppfolging` står igjen tom**, erstattet av `elevnotat`.
 
 ## Tester
 

@@ -185,6 +185,12 @@ fn migrations() -> Vec<Migration> {
             sql: include_str!("../migrations/027_tellende_minutter.sql"),
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 28,
+            description: "fjern den gamle tabellen oppfolging",
+            sql: include_str!("../migrations/028_fjern_oppfolging.sql"),
+            kind: MigrationKind::Up,
+        },
     ]
 }
 

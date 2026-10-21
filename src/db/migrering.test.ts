@@ -449,3 +449,18 @@ describe("migrasjon 022 — øktnotatet flyttes ut av skåringen", () => {
     );
   });
 });
+
+describe("migrasjon 028: den gamle tabellen oppfolging", () => {
+  const finnes = (d: DatabaseSync, navn: string) =>
+    d.prepare("SELECT 1 FROM sqlite_master WHERE name = ?").all(navn).length >
+    0;
+
+  it("er borte, med indeksen, og elevnotat står", () => {
+    const d = basenFram("027_tellende_minutter.sql");
+    expect(finnes(d, "oppfolging")).toBe(true);
+    kjor(d, "028_fjern_oppfolging.sql");
+    expect(finnes(d, "oppfolging")).toBe(false);
+    expect(finnes(d, "idx_oppf_apen")).toBe(false);
+    expect(finnes(d, "elevnotat")).toBe(true);
+  });
+});
