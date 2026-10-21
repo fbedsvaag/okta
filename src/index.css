@@ -2026,3 +2026,13 @@ html {
   );
   mask-image: linear-gradient(transparent, #000 30%, #000 70%, transparent);
 }
+
+/*
+ * Økter-lista markerer ikke tekst (månedene, hodet, radene), men temafeltet
+ * må kunne skrives og markeres i. Safari arver ellers «ingen markering».
+ */
+.okter-liste input,
+.okter-liste textarea {
+  -webkit-user-select: text;
+  user-select: text;
+}

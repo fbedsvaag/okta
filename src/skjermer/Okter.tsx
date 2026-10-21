@@ -1068,7 +1068,7 @@ function Liste({
       ref={liste}
       tabIndex={0}
       onKeyDown={tast}
-      className="uten-fokusring relative outline-none"
+      className="okter-liste uten-fokusring relative select-none outline-none"
     >
       {/* Markøren glir med piltastene (DESIGN.md §8). */}
       <Glideflate
@@ -1140,7 +1140,16 @@ function Liste({
                       begynn(e, p);
                   }}
                   onPointerEnter={() => malOver(o.id)}
-                  onMouseDown={(e) => e.shiftKey && e.preventDefault()}
+                  onMouseDown={(e) => {
+                    // Ingen tekstmarkering når et drag eller ⇧-klikk begynner.
+                    if (
+                      e.shiftKey ||
+                      (e.target as HTMLElement).closest(
+                        "[data-tema-tekst], [data-grep]",
+                      )
+                    )
+                      e.preventDefault();
+                  }}
                   onClick={(e) => {
                     if (dradd.current || malt.current) return;
                     if ((e.target as HTMLElement).closest("input")) return;
