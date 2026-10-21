@@ -12,8 +12,9 @@ Lerretet (`docs/lerret/`) er fasit for det som er tegnet.
 ## Skoleåret som tavle (21.10, ARBEIDSLISTE 21.1)
 
 - Bryteren Tidslinje · Tavle i Året (huskes). Én kolonne per periode, kort
-  per økt, tema skrives rett inn. Dra et kort: datoene står, temaene imellom
-  rykker ett hakk, mål og vurdering følger (fristen også). − økt / + økt
+  per økt, tema skrives rett inn. Kort på kort bytter (som Økter-lista),
+  mål og vurdering følger (fristen også). Kort i nabokolonnen får perioden,
+  med de grå øktene imellom. − økt / + økt
   flytter grensen. Testet i `tavle.test.ts`.
 
 ## Kalender og fagvalg (21.10)

@@ -1,5 +1,5 @@
 import { hent, Transaksjon } from "../db";
-import type { Plass } from "./aret";
+import type { Endring, Plass } from "./aret";
 import { varsle } from "./endringer";
 import { BYTTEFELT, type Okt } from "./okter";
 import type { Periode } from "./perioder";
@@ -51,35 +51,30 @@ const FELT = BYTTEFELT.filter((f) => f !== "periode_id");
 
 /**
  * Hvor innholdet i hver plass kommer fra når kortet på `fra` slippes på
- * `til`: datoene står, og innholdet imellom rykker ett hakk.
+ * `til`: de to bytter, økt for økt, som i Økter-lista (16.4).
  */
 export function kilder(fra: number, til: number): Map<number, number> {
-  const m = new Map<number, number>();
-  if (fra < til) {
-    for (let i = fra; i < til; i++) m.set(i, i + 1);
-  } else {
-    for (let i = til + 1; i <= fra; i++) m.set(i, i - 1);
-  }
-  m.set(til, fra);
-  return m;
+  return new Map([
+    [til, fra],
+    [fra, til],
+  ]);
 }
 
 /**
- * Flytter innholdet i økta på plass `fra` til plass `til` i rekka (øktene
- * i faget, i rekkefølge). Tema, agenda, plan, lekse, kladd,
- * kompetansemål og vurderinger følger; en frist som sto på den gamle
- * dagen, følger med til den nye. Skårede økter ligger fast: står én i
- * spennet, skjer ingenting, og svaret er false. Angres med `til`, `fra`.
+ * Bytter innholdet i øktene på plass `fra` og `til` i rekka (øktene i
+ * faget, i rekkefølge). Tema, agenda, plan, lekse, kladd, kompetansemål
+ * og vurderinger bytter; en frist som sto på den gamle dagen, følger med
+ * til den nye. Perioden står: på tavla er den kolonnen. Skårede økter
+ * ligger fast: da skjer ingenting, og svaret er false. Et bytte er sitt
+ * eget motsatte.
  */
-export async function flyttInnhold(
+export async function byttInnhold(
   rekke: Okt[],
   fra: number,
   til: number,
 ): Promise<boolean> {
   if (fra === til) return false;
-  const lo = Math.min(fra, til);
-  const hi = Math.max(fra, til);
-  const spenn = rekke.slice(lo, hi + 1);
+  const spenn = [rekke[fra], rekke[til]];
   if (spenn.some((o) => o.skaret > 0)) return false;
   const ider = spenn.map((o) => o.id);
   const plass = ider.map((_, i) => `$${i + 1}`).join(", ");
@@ -151,4 +146,24 @@ export async function flyttInnhold(
   for (const e of vurdEndr.filter((e) => e.pa)) await knyttOkt(e.v, e.okt);
   varsle();
   return true;
+}
+
+/**
+ * Kortet (økta) slippes på kolonnen `mal`, som må være naboen til kolonnen
+ * det står i — ellers ville periodene overlappe. Kortet og øktene mellom
+ * det og målkolonnen får målkolonnens periode, eller ingen når målet er
+ * grått. Gir endringene til `tildel`, eller null når det ikke går.
+ */
+export function tilKolonne(
+  kol: Kolonne[],
+  oktId: string,
+  mal: number,
+): Endring[] | null {
+  const fra = kol.findIndex((k) => k.okter.some((o) => o.id === oktId));
+  if (fra < 0 || Math.abs(mal - fra) !== 1) return null;
+  const okter = kol[fra].okter;
+  const i = okter.findIndex((o) => o.id === oktId);
+  const flyttes = mal < fra ? okter.slice(0, i + 1) : okter.slice(i);
+  const til = kol[mal].periode?.id ?? null;
+  return flyttes.map((o) => ({ oktId: o.id, fra: o.periodeId, til }));
 }

@@ -732,9 +732,11 @@ Med et fag valgt er bryteren Oversikt | Året | Økter | Kalender (ARBEIDSLISTE
   og Vurderinger, og ikke blant fristene i I dag før de er bekreftet. «Bekreft»
   i vurderingen eller «Bekreft alle» over lista gjør dem vanlige.
 - **Tavle** (bryteren Tidslinje · Tavle i Året): én kolonne per periode og et
-  kort per økt. Et kort dras til en ny plass: datoene står, temaene imellom
-  rykker ett hakk, og mål og vurdering følger temaet. Skårede økter ligger
-  fast.
+  kort per økt. Et kort sluppet på et annet bytter de to, økt for økt, som i
+  Økter-lista; perioden står (den er kolonnen), mål og vurdering følger
+  temaet. Et kort sluppet i nabokolonnen får den perioden, sammen med
+  øktene imellom. Økter uten periode legges aldri inn av seg selv. Skårede
+  økter ligger fast.
 
 #### Listevisning (standard)
 

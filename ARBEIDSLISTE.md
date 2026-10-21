@@ -881,7 +881,9 @@ stund og etterspør dette.
       over i en annen periode: datoene står, temaene etter rykker ett hakk,
       og vurderingen følger temaet. «− økt / + økt» flytter grensen mot neste
       periode. Ferier står som egne linjer.
-  - Bygget: `data/tavle.ts` (kolonner, `flyttInnhold`), `skjermer/ArsTavle.tsx`.
+  - Bygget: `data/tavle.ts` (kolonner, `byttInnhold`, `tilKolonne`),
+    `skjermer/ArsTavle.tsx`. Endret 21.10 etter ønske: kort på kort *bytter*
+    (som Økter-lista), ikke rykk ett hakk. Kort i nabokolonnen får perioden.
     Økter uten periode blir en egen grå kolonne. Skårede økter ligger fast.
     «+ Ny periode» legger en uplassert eller ny periode på de første 8
     øktene uten periode. Flytting og grenser angres med ⌘Z.

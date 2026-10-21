@@ -14,7 +14,7 @@ const { settOktmal, opprettPeriode, hentPerioder, fargelegg } =
   await import("./perioder");
 const { opprettVurdering, knyttOkt } = await import("./vurderinger");
 const { lagStripe } = await import("./aret");
-const { flyttInnhold, kilder, kolonner } = await import("./tavle");
+const { byttInnhold, kilder, kolonner, tilKolonne } = await import("./tavle");
 const { hent } = await import("../db");
 
 const KARAKTER = "5ca1a000-0000-4000-8000-000000000004";
@@ -49,26 +49,20 @@ async function fire(): Promise<string[]> {
 }
 
 describe("kildene (21.1)", () => {
-  it("rykker ett hakk mot der kortet kom fra", () => {
+  it("bytter de to, økt for økt", () => {
     expect([...kilder(0, 2)].sort()).toEqual([
-      [0, 1],
-      [1, 2],
+      [0, 2],
       [2, 0],
-    ]);
-    expect([...kilder(3, 1)].sort()).toEqual([
-      [1, 3],
-      [2, 1],
-      [3, 2],
     ]);
   });
 });
 
-describe("flytt innhold på tavla (21.1)", () => {
-  it("datoene står, temaene etter rykker, og det kan angres", async () => {
+describe("bytt innhold på tavla (21.1)", () => {
+  it("datoene står, de to bytter, resten står, og samme bytte angrer", async () => {
     await fire();
-    expect(await flyttInnhold(await rekke(), 0, 2)).toBe(true);
-    expect((await rekke()).map((o) => o.tema)).toEqual(["B", "C", "A", "D"]);
-    await flyttInnhold(await rekke(), 2, 0);
+    expect(await byttInnhold(await rekke(), 0, 2)).toBe(true);
+    expect((await rekke()).map((o) => o.tema)).toEqual(["C", "B", "A", "D"]);
+    await byttInnhold(await rekke(), 0, 2);
     expect((await rekke()).map((o) => o.tema)).toEqual(["A", "B", "C", "D"]);
   });
 
@@ -80,9 +74,9 @@ describe("flytt innhold på tavla (21.1)", () => {
     const v = await opprettVurdering(fag, KARAKTER, "Prøve", "skriftlig", null);
     await knyttOkt(v, c); // frist blir 3.9
 
-    await flyttInnhold(await rekke(), 2, 0);
+    await byttInnhold(await rekke(), 2, 0);
     const etter = await rekke();
-    expect(etter.map((o) => o.tema)).toEqual(["C", "A", "B", "D"]);
+    expect(etter.map((o) => o.tema)).toEqual(["C", "B", "A", "D"]);
     expect(etter.map((o) => o.periodeId)).toEqual([p, p, p, null]);
     const mal = await hent<{ okt: string }>(
       "SELECT okt_id AS okt FROM okt_kompetansemal WHERE slettet IS NULL",
@@ -99,14 +93,35 @@ describe("flytt innhold på tavla (21.1)", () => {
     expect(frist).toBe("2026-09-01");
   });
 
-  it("en skåret økt i spennet stopper flyttingen", async () => {
+  it("en skåret økt ligger fast", async () => {
     const [, b] = await fire();
     const { opprettElev, koblePaFag } = await import("./elever");
     const tony = await opprettElev("Tony", "Soprano");
     await koblePaFag(tony, fag);
     await settSkaring(tony, b, "5ca1ade1-0001-4000-8000-000000000004");
-    expect(await flyttInnhold(await rekke(), 0, 2)).toBe(false);
-    expect((await rekke()).map((o) => o.tema)).toEqual(["A", "B", "C", "D"]);
+    expect(await byttInnhold(await rekke(), 1, 3)).toBe(false);
+    expect(await byttInnhold(await rekke(), 0, 2)).toBe(true);
+  });
+});
+
+describe("plassering i nabokolonnen (21.1)", () => {
+  it("tar med de grå øktene imellom, og bare til naboen", async () => {
+    const [a, b, c, d] = await fire();
+    const p = await opprettPeriode(fag, "P1", null, null, 1);
+    const q = await opprettPeriode(fag, "P2", null, null, 2);
+    await fargelegg([a], p);
+    await fargelegg([d], q);
+    const k = kolonner(lagStripe(await rekke(), []), await hentPerioder(fag));
+    // [P1: a] [grå: b, c] [P2: d]
+    expect(tilKolonne(k, c, 0)?.map((e) => [e.oktId, e.til])).toEqual([
+      [b, p],
+      [c, p],
+    ]);
+    expect(tilKolonne(k, b, 2)?.map((e) => [e.oktId, e.til])).toEqual([
+      [b, q],
+      [c, q],
+    ]);
+    expect(tilKolonne(k, a, 2)).toBeNull();
   });
 });
 

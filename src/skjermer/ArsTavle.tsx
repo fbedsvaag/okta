@@ -2,8 +2,14 @@ import { useMemo, useRef, useState } from "react";
 import type { FagIAr } from "../data/fag";
 import { endreOkt, type Okt, type OktVurdering } from "../data/okter";
 import type { Periode } from "../data/perioder";
-import { nyPeriode, tildel, type Endring, type Plass } from "../data/aret";
-import { flyttInnhold, kilder, kolonner } from "../data/tavle";
+import {
+  baklengs,
+  nyPeriode,
+  tildel,
+  type Endring,
+  type Plass,
+} from "../data/aret";
+import { byttInnhold, kilder, kolonner, tilKolonne } from "../data/tavle";
 import { visToast } from "../ui/Toast";
 import { leggTilAngring } from "../ui/angre";
 import { Vurderingsikon } from "../ui/Vurderingsikon";
@@ -50,15 +56,32 @@ export function ArsTavle({
   );
   const fylt = rekke.filter((o) => o.tema).length;
 
-  const [dra, setDra] = useState<{ fra: number; mal: number } | null>(null);
+  /** Kortet som dras, og målet: et annet kort (bytt) eller en nabokolonne. */
+  const [dra, setDra] = useState<{
+    fra: number;
+    mal: number;
+    kol: number | null;
+  } | null>(null);
   const [nyNavn, setNyNavn] = useState("");
   const tavle = useRef<HTMLDivElement>(null);
 
   /** Hvor innholdet på hver plass kommer fra mens et kort dras. */
   const vis = useMemo(
-    () => (dra && dra.fra !== dra.mal ? kilder(dra.fra, dra.mal) : null),
+    () =>
+      dra && dra.kol === null && dra.fra !== dra.mal
+        ? kilder(dra.fra, dra.mal)
+        : null,
     [dra],
   );
+  /** Øktene som får målkolonnens periode når kortet slippes der. */
+  const plassering = useMemo(
+    () =>
+      dra && dra.kol !== null
+        ? tilKolonne(kol, rekke[dra.fra].id, dra.kol)
+        : null,
+    [dra, kol, rekke],
+  );
+  const skalFlyttes = new Set(plassering?.map((e) => e.oktId));
   const innhold = (nr: number): Okt => rekke[vis?.get(nr) ?? nr];
 
   function fokus(nr: number) {
@@ -67,21 +90,40 @@ export function ArsTavle({
       ?.focus();
   }
 
-  async function flytt(fra: number, til: number) {
-    const ok = await flyttInnhold(rekke, fra, til);
-    if (!ok) {
-      visToast("En skåret økt ligger i veien. Skårede økter ligger fast.");
+  async function bytt(fra: number, til: number) {
+    const a = rekke[fra];
+    const b = rekke[til];
+    if (!(await byttInnhold(rekke, fra, til))) {
+      visToast("Skårede økter ligger fast og kan ikke byttes.");
       return;
     }
-    const tekst = `Flyttet til ${kort(rekke[til].dato)}. Temaene imellom har rykket ett hakk.`;
-    // Etter flyttingen er rekka den samme (datoene står), så det motsatte
-    // draget angrer.
+    const tekst = `Byttet ${kort(a.dato)} og ${kort(b.dato)}: «${
+      a.tema || "tom økt"
+    }» ligger nå ${kort(b.dato)}`;
+    // Datoene står, så det samme byttet angrer.
     const angring = {
       tekst,
       angre: async () => {
-        await flyttInnhold(rekke, til, fra);
+        await byttInnhold(rekke, fra, til);
       },
     };
+    leggTilAngring(angring);
+    visToast(tekst, { angring });
+  }
+
+  async function plasserKort(nr: number, i: number) {
+    const endringer = tilKolonne(kol, rekke[nr].id, i);
+    if (!endringer) {
+      visToast("Bare kolonnene ved siden av, så periodene ikke overlapper.");
+      return;
+    }
+    await tildel(endringer, stripe);
+    const navn = kol[i].periode?.navn ?? "Uten periode";
+    const tekst =
+      endringer.length === 1
+        ? `${kort(rekke[nr].dato)} er lagt i «${navn}»`
+        : `${endringer.length} økter er lagt i «${navn}»`;
+    const angring = { tekst, angre: () => tildel(baklengs(endringer), stripe) };
     leggTilAngring(angring);
     visToast(tekst, { angring });
   }
@@ -93,6 +135,7 @@ export function ArsTavle({
     const y0 = e.clientY;
     let flyttet = false;
     let mal = nr;
+    let kolMal: number | null = null;
     const flytt_ = (ev: PointerEvent) => {
       if (!flyttet && Math.abs(ev.clientX - x0) + Math.abs(ev.clientY - y0) < 4)
         return;
@@ -104,17 +147,28 @@ export function ArsTavle({
         if (ev.clientX > r.right - 60) t.scrollLeft += 14;
         else if (ev.clientX < r.left + 60) t.scrollLeft -= 14;
       }
-      const under = document
-        .elementFromPoint(ev.clientX, ev.clientY)
-        ?.closest<HTMLElement>("[data-tavle-kort]");
-      if (under) mal = Number(under.dataset.tavleKort);
-      setDra({ fra: nr, mal });
+      // Over et kort: bytt. Over en annen kolonne, utenom kortene: plasser.
+      const el = document.elementFromPoint(ev.clientX, ev.clientY);
+      const under = el?.closest<HTMLElement>("[data-tavle-kort]");
+      const kolEl = el?.closest<HTMLElement>("[data-tavle-kol]");
+      if (under) {
+        mal = Number(under.dataset.tavleKort);
+        kolMal = null;
+      } else if (kolEl) {
+        const i = Number(kolEl.dataset.tavleKol);
+        const egen = kol.findIndex((k) => k.okter.includes(rekke[nr]));
+        kolMal = i === egen ? null : i;
+        mal = nr;
+      }
+      setDra({ fra: nr, mal, kol: kolMal });
     };
     const slipp = () => {
       window.removeEventListener("pointermove", flytt_);
       window.removeEventListener("pointerup", slipp);
       setDra(null);
-      if (flyttet && mal !== nr) void flytt(nr, mal);
+      if (!flyttet) return;
+      if (kolMal !== null) void plasserKort(nr, kolMal);
+      else if (mal !== nr) void bytt(nr, mal);
     };
     window.addEventListener("pointermove", flytt_);
     window.addEventListener("pointerup", slipp);
@@ -165,8 +219,9 @@ export function ArsTavle({
             Skoleåret i {fag.kode} · tavle
           </h1>
           <p className="mt-0.5 text-liten text-blekk-dempet">
-            Hver periode er en kolonne, hver økt et kort. Skriv tema rett inn,
-            dra kort for å flytte innhold. Datoene står, temaene flytter seg.
+            Hver periode er en kolonne, hver økt et kort. Skriv tema rett inn.
+            Dra et kort på et annet for å bytte dem, eller inn i kolonnen ved
+            siden av for å gi det den perioden.
           </p>
         </div>
         <span className="grow" />
@@ -187,7 +242,14 @@ export function ArsTavle({
           return (
             <section
               key={`${k.periode?.id ?? "uten"}-${forste.id}`}
-              className="flex min-h-0 w-[262px] shrink-0 flex-col rounded-2xl bg-flate-svak shadow-[inset_0_0_0_1px_var(--color-linje-svak)]"
+              data-tavle-kol={i}
+              className="flex min-h-0 w-[262px] shrink-0 flex-col rounded-2xl bg-flate-svak"
+              style={{
+                boxShadow:
+                  dra?.kol === i
+                    ? `inset 0 0 0 2px ${farge}`
+                    : "inset 0 0 0 1px var(--color-linje-svak)",
+              }}
             >
               <header className="border-b border-linje-svak px-3 pb-2 pt-3">
                 <div
@@ -230,7 +292,14 @@ export function ArsTavle({
                   const { okt, nr } = p;
                   const o = innhold(nr);
                   const v = (vurderinger.get(o.id) ?? [])[0];
-                  const loftet = dra && dra.mal === nr && dra.fra !== dra.mal;
+                  const loftet =
+                    dra?.kol === null && dra.mal === nr && dra.fra !== dra.mal;
+                  // Skal over i nabokolonnen: kanten i den periodens farge.
+                  const malFarge =
+                    skalFlyttes.has(okt.id) && dra?.kol != null
+                      ? (kol[dra.kol].periode?.farge ??
+                        "var(--color-linje-sterk)")
+                      : null;
                   const fast = okt.skaret > 0;
                   return (
                     <div
@@ -246,7 +315,9 @@ export function ArsTavle({
                           ? {
                               boxShadow: `0 12px 28px rgba(36,31,51,.22), inset 0 0 0 1.5px ${farge}`,
                             }
-                          : undefined
+                          : malFarge
+                            ? { boxShadow: `inset 0 0 0 2px ${malFarge}` }
+                            : undefined
                       }
                     >
                       <span
