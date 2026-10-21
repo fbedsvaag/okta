@@ -786,6 +786,7 @@ function Liste({
     reg,
     begynn,
     startPos,
+    startRom,
     draget: dradd,
   } = useDra({
     full: () => true,
@@ -815,6 +816,33 @@ function Liste({
   const malNr =
     dra?.mal?.bytt && dra.mal.gruppe !== fraNr ? dra.mal.gruppe : null;
   const malOkt = malNr !== null ? okter[malNr] : undefined;
+
+  /*
+   * Båndet på plassen du drar fra (21.10): et vindu inn i en rulletekst med
+   * alle øktene, som ruller i takt med draget. `bandPos` er hvor i lista
+   * midten av kortet står, som et desimaltall: 4,5 er midt mellom økt 4 og 5.
+   */
+  let bandPos: number | null = null;
+  let radH = 30;
+  if (dra && fraNr !== null) {
+    const rom = okter.map((_, k) => startRom({ gruppe: k, nr: 0 }));
+    const egen = rom[fraNr];
+    if (egen) {
+      radH = egen.b - egen.a;
+      const midt = (egen.a + egen.b) / 2 + dra.d;
+      const midter = rom.map((r) => (r ? (r.a + r.b) / 2 : NaN));
+      bandPos = fraNr;
+      for (let k = 0; k < midter.length - 1; k++) {
+        const [m0, m1] = [midter[k], midter[k + 1]];
+        if (midt >= m0 && midt < m1) {
+          bandPos = k + (midt - m0) / (m1 - m0);
+          break;
+        }
+      }
+      if (midt < midter[0]) bandPos = 0;
+      if (midt >= midter[midter.length - 1]) bandPos = midter.length - 1;
+    }
+  }
   const lastMal = !!malOkt && malOkt.skaret > 0;
   const [landing, setLanding] = useState<{
     id: string;
@@ -1169,39 +1197,55 @@ function Liste({
                       }}
                     />
                   )}
-                  {/* Plassen du drar fra: hva som havner her, tonet inn. */}
-                  {fraNr === i && malOkt && !lastMal && (
+                  {/* Plassen du drar fra: båndet som ruller med draget. */}
+                  {fraNr === i && bandPos !== null && (
                     <span
-                      key={malOkt.id}
                       aria-hidden
-                      className="dra-forhand pointer-events-none absolute inset-y-0 grid min-w-0 items-center gap-x-3 text-blekk-dempet"
+                      className="dra-band pointer-events-none absolute inset-y-0 overflow-hidden border-l-2 border-aksent/50"
                       style={{
                         gridRow: 1,
                         gridColumn: `${visFag ? 6 : 5} / -1`,
-                        // Samme kolonner som raden, så perioden står under Periode.
-                        gridTemplateColumns: spor
-                          .split(" ")
-                          .slice(visFag ? 5 : 4)
-                          .join(" "),
-                        left: 0,
+                        left: -8,
                         right: 0,
                       }}
                     >
-                      <span className="-ml-2 min-w-0 truncate border-l-2 border-aksent/50 pl-2">
-                        {malOkt.tema || "tom økt"}
-                      </span>
-                      {perioder.get(malOkt.id) && (
-                        <span className="flex min-w-0 items-center gap-1.5 pl-2.5 text-[calc(12.5px*var(--tekst-skala))]">
+                      {okter.map((b, k) => {
+                        const avstand = k - bandPos!;
+                        if (k === fraNr || Math.abs(avstand) > 1.5) return null;
+                        const per = perioder.get(b.id);
+                        return (
                           <span
-                            className="h-[7px] w-[7px] rounded-full"
+                            key={b.id}
+                            className="absolute inset-x-0 grid items-center gap-x-3 pl-2 text-blekk-dempet"
                             style={{
-                              background:
-                                perioder.get(malOkt.id)!.farge ?? undefined,
+                              top: avstand * radH,
+                              height: radH,
+                              gridTemplateColumns: spor
+                                .split(" ")
+                                .slice(visFag ? 5 : 4)
+                                .join(" "),
+                              opacity: Math.max(0, 1 - Math.abs(avstand) * 0.9),
                             }}
-                          />
-                          {perioder.get(malOkt.id)!.navn}
-                        </span>
-                      )}
+                          >
+                            <span
+                              className={`min-w-0 truncate ${b.skaret ? "text-feil" : ""}`}
+                            >
+                              {b.skaret
+                                ? "Skåret, ligger fast"
+                                : b.tema || "tom økt"}
+                            </span>
+                            {per && !b.skaret && (
+                              <span className="flex min-w-0 items-center gap-1.5 pl-2.5 text-[calc(12.5px*var(--tekst-skala))]">
+                                <span
+                                  className="h-[7px] w-[7px] shrink-0 rounded-full"
+                                  style={{ background: per.farge ?? undefined }}
+                                />
+                                <span className="truncate">{per.navn}</span>
+                              </span>
+                            )}
+                          </span>
+                        );
+                      })}
                     </span>
                   )}
                   {/* ⋮⋮: dra til en annen økt for å bytte innhold (16.4). */}

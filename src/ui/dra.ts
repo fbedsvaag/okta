@@ -364,6 +364,9 @@ export function useDra({
     /** toppen (eller venstre kant) plassen hadde da draget begynte */
     startPos: (p: Plass) =>
       malt.current.find((m) => m.gruppe === p.gruppe && m.nr === p.nr)?.a,
+    /** hele plassen (a til b) da draget begynte */
+    startRom: (p: Plass) =>
+      malt.current.find((m) => m.gruppe === p.gruppe && m.nr === p.nr),
     byttesMed: (p: Plass) =>
       !!dra?.mal?.bytt && dra.mal.gruppe === p.gruppe && dra.mal.nr === p.nr,
     /** plassen det dratte havner på, mens det dras */

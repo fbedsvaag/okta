@@ -2016,17 +2016,13 @@ html {
   background: var(--color-ark);
 }
 
-/* Dra og bytt i Økter: forhåndsvisningen på plassen du drar fra. */
-.dra-forhand {
-  animation: dra-forhand 150ms ease-out;
-}
-@keyframes dra-forhand {
-  from {
-    opacity: 0;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .dra-forhand {
-    animation: none;
-  }
+/* Dra og bytt i Økter: båndet på plassen du drar fra, med myke kanter. */
+.dra-band {
+  -webkit-mask-image: linear-gradient(
+    transparent,
+    #000 30%,
+    #000 70%,
+    transparent
+  );
+  mask-image: linear-gradient(transparent, #000 30%, #000 70%, transparent);
 }
