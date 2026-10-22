@@ -1402,7 +1402,8 @@ sammen før. Ingen lister limes inn.
 
 - Kjønn er valgfritt (`elev.kjonn`: `j`, `g` eller tomt; `elev.kjonn_kilde`:
   `gjettet` eller `satt`). Det gjettes ved import (§7), brukes bare til
-  blanding og plassholderbildet, velges i elevkortet, og går aldri ut: ikke i eksport,
+  blanding og plassholderbildet, og velges i elevkortet: fremme når det mangler
+  eller er gjettet, ellers under Rediger (⌘E). Går aldri ut: ikke i eksport,
   utskrift, Teams, CalDAV, arkiv eller oppsettfil.
 - Innsatsfarge på pultene vises bare på skjermen, aldri i utskrift eller Teams.
 - Elevbilder vises i appen, men er ikke med i utskrift eller Teams.

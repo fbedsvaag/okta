@@ -551,42 +551,48 @@ export function ElevPanel({
                 ))}
 
               {/*
-              Kjønn (SPEC §4.11) står alltid (10.5): også når det er tomt,
-              ellers fikk elever fra før migrasjon 024 aldri valget.
-              Gjettet vises stiplet, så det kan bekreftes med ett klikk.
+              Kjønn (SPEC §4.11) står fremme bare når det trengs: ikke satt,
+              eller gjettet ved import (stiplet, bekreftes med ett klikk).
+              Er det bekreftet, ligger det i Rediger (⌘E) — ellers blir det
+              støy hver gang kortet åpnes (22.10).
             */}
-              <div className="mt-3 flex flex-wrap items-center gap-2.5">
-                <span className="text-[calc(12.5px*var(--tekst-skala))] text-blekk-dempet">
-                  Kjønn
-                </span>
-                <Bryter
-                  storrelse="liten"
-                  usikker={elev.kjonnKilde === "gjettet"}
-                  verdi={elev.kjonn ?? "ingen"}
-                  settVerdi={async (v) => {
-                    await settKjonn(elevId, v === "j" || v === "g" ? v : null);
-                    setElev(await hentElevGrunnlag(elevId));
-                  }}
-                  valg={[
-                    { id: "j", navn: "Jente" },
-                    { id: "g", navn: "Gutt" },
-                    { id: "ingen", navn: "Ikke satt" },
-                  ]}
-                />
-                <span
-                  className={`text-[calc(12px*var(--tekst-skala))] ${
-                    elev.kjonnKilde === "gjettet"
-                      ? "text-varsel"
-                      : "text-blekk-svak"
-                  }`}
-                >
-                  {elev.kjonnKilde === "gjettet"
-                    ? "Gjettet fra fornavnet ved import. Klikk for å bekrefte."
-                    : elev.kjonn
-                      ? "Brukes bare til klassekartet"
-                      : "Ikke satt: velg for at klassekartet kan blande"}
-                </span>
-              </div>
+              {(!elev.kjonn || elev.kjonnKilde === "gjettet" || rediger) && (
+                <div className="mt-3 flex flex-wrap items-center gap-2.5">
+                  <span className="text-[calc(12.5px*var(--tekst-skala))] text-blekk-dempet">
+                    Kjønn
+                  </span>
+                  <Bryter
+                    storrelse="liten"
+                    usikker={elev.kjonnKilde === "gjettet"}
+                    verdi={elev.kjonn ?? "ingen"}
+                    settVerdi={async (v) => {
+                      await settKjonn(
+                        elevId,
+                        v === "j" || v === "g" ? v : null,
+                      );
+                      setElev(await hentElevGrunnlag(elevId));
+                    }}
+                    valg={[
+                      { id: "j", navn: "Jente" },
+                      { id: "g", navn: "Gutt" },
+                      { id: "ingen", navn: "Ikke satt" },
+                    ]}
+                  />
+                  <span
+                    className={`text-[calc(12px*var(--tekst-skala))] ${
+                      elev.kjonnKilde === "gjettet"
+                        ? "text-varsel"
+                        : "text-blekk-svak"
+                    }`}
+                  >
+                    {elev.kjonnKilde === "gjettet"
+                      ? "Gjettet fra fornavnet ved import. Klikk for å bekrefte."
+                      : elev.kjonn
+                        ? "Brukes bare til klassekartet"
+                        : "Ikke satt: velg for at klassekartet kan blande"}
+                  </span>
+                </div>
+              )}
 
               {rediger && (
                 <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-stor bg-flate-svak px-3 py-2.5 text-liten">
