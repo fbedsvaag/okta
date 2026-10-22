@@ -22,6 +22,7 @@ import { Fagfirkant } from "../ui/felles";
 import { Elevfoto } from "../ui/Elevfoto";
 import { IVerktoylinja } from "../ui/Verktoylinje";
 import { Tomside } from "../ui/Tomside";
+import { MENTORORD } from "../data/mentorord";
 
 const GRUNNFARGE: Record<Grunnslag, string> = {
   rod: "#c04a3d",
@@ -182,7 +183,7 @@ export function FolgOpp({
                       {f.kode}
                     </>
                   ) : (
-                    "Mentor"
+                    MENTORORD.rolle
                   )}
                 </div>
               </div>
@@ -220,7 +221,7 @@ export function FolgOpp({
               <div className="flex gap-1.5">
                 <Knapp onKlikk={() => ark.apneElev(r.elevId)}>Notat</Knapp>
                 <Knapp
-                  tittel="Legges som punkt på neste mentorsamtale"
+                  tittel={`Legges som punkt på neste ${MENTORORD.samtale}`}
                   onKlikk={async () => {
                     await leggTilMal(
                       r.elevId,
@@ -242,8 +243,8 @@ export function FolgOpp({
       )}
       <p className="mx-1 my-[18px] max-w-[640px] text-liten leading-relaxed text-blekk-svak">
         «Fulgt opp» fjerner eleven fra lista til noe nytt skjer. «Til samtale»
-        legger punktet på neste mentorsamtale. Klikk navnet for elevkortet, som
-        åpnes over lista, så du blir værende her.
+        legger punktet på neste {MENTORORD.samtale}. Klikk navnet for
+        elevkortet, som åpnes over lista, så du blir værende her.
       </p>
     </div>
   );

@@ -423,8 +423,8 @@ function Planlegg({
         standardDato={iDag()}
         tom={
           elever.length === 0
-            ? "Du har ingen mentorelever ennå. Kryss dem av under Elever."
-            : `Legg til en dag, så legges de ${elever.length} mentorelevene ut med tider.`
+            ? `Du har ingen ${MENTORORD.elever} ennå. Kryss dem av under Elever.`
+            : `Legg til en dag, så legges de ${elever.length} ${MENTORORD.elevene} ut med tider.`
         }
       />
       <section className="mb-5 rounded-[14px] bg-flate-svak p-4">

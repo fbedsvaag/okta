@@ -553,7 +553,7 @@ function Rad({
           {r.fagKode && <Fagfirkant farge={r.farge} />}
           <span className="truncate">
             {(mentor
-              ? ["Mentorgruppa", "ingen karakter"]
+              ? [MENTORORD.gruppe, "ingen karakter"]
               : [r.fagKode, TYPENAVN[r.type], r.skalaNavn]
             )
               .filter(Boolean)

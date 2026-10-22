@@ -24,11 +24,8 @@ export const GRUPPENAVN: Record<Statusgruppe, string> = {
   ferdig: "Ferdig",
 };
 
-/** Ordene for mentorsamtalene samlet, så de kan byttes senere. */
-export const MENTORORD = {
-  samtaler: "Mentorsamtaler",
-  hjelp: "Tidsplan for mentorgruppa. Ikke en vurdering, gir ingen karakter.",
-};
+export { MENTORORD } from "./mentorord";
+import { MENTORORD } from "./mentorord";
 
 export type Oversiktsrad = {
   /** vurderings-id, eller «fag-id»/«mentor» for en trekning uten vurdering */

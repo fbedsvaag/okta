@@ -1,3 +1,5 @@
+import { MENTORORD } from "./mentorord";
+
 /**
  * ⌘K som kommandolinje og hjelp (ARBEIDSLISTE 29.3, lerretet
  * Kommandolinje). Kommandoene og hjelpetekstene ligger her, i appen: ingen
@@ -110,8 +112,8 @@ export const HJELP: Hjelp[] = [
     ord: "muntlig samtale tidsplan trekk rekkefølge rubrikk oppgave",
   },
   {
-    sporsmal: "Hvordan lager jeg mentorsamtaler?",
-    svar: "Vurderinger og samtaler → + Ny → Mentorsamtaler. Legg til dager under Planlegg; notatene er bare dine og går aldri ut av appen.",
+    sporsmal: `Hvordan lager jeg ${MENTORORD.samtalerSmaa}?`,
+    svar: `Vurderinger og samtaler → + Ny → ${MENTORORD.samtaler}. Legg til dager under Planlegg; notatene er bare dine og går aldri ut av appen.`,
     knapp: "Åpne vurderinger og samtaler",
     kommando: "ga:vurderinger",
     ord: "mentor mentorsamtale kontaktsamtale samtale foresatt",
