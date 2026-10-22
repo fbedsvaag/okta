@@ -5,6 +5,9 @@ import {
   hentVurderinger,
   hentVurderingsskalaer,
   opprettVurdering,
+  hentOktvalg,
+  knyttOkt,
+  type Oktvalg,
   type Vurdering,
   type Vurderingstype,
 } from "../data/vurderinger";
@@ -28,6 +31,7 @@ import {
   type Samtalerunde,
 } from "../data/samtalerunde";
 import { iDag } from "./tidsplan/Generator";
+import { oktetikett } from "./Vurderingsfelter";
 import type { FagIAr } from "../data/fag";
 import type { Skala } from "../skala";
 import { Fagfirkant, Felt, Kappet, Knapp } from "../ui/felles";
@@ -608,6 +612,14 @@ function NyVurdering({
   const [type, setType] = useState<Vurderingstype | "">(startType);
   const [frist, setFrist] = useState("");
   const [skalaId, setSkalaId] = useState("");
+  // Økta prøven holdes i (skriftlig og innlevering). Muntlig velger øktene
+  // i tidsplanen, så der står ikke feltet.
+  const [oktId, setOktId] = useState("");
+  const [okter, setOkter] = useState<Oktvalg[]>([]);
+  useEffect(() => {
+    setOktId("");
+    if (fagId) void hentOktvalg(fagId).then(setOkter);
+  }, [fagId]);
 
   // Fagets standard for nye vurderinger (29.2), ellers den første.
   const fagSkala = fag.find((f) => f.id === fagId)?.vurderingsskalaId;
@@ -615,15 +627,16 @@ function NyVurdering({
 
   async function lagre() {
     if (!fagId || tittel.trim() === "" || !valgtSkala) return;
-    onLagret(
-      await opprettVurdering(
-        fagId,
-        valgtSkala,
-        tittel.trim(),
-        type || null,
-        frist || null,
-      ),
+    const okt = okter.find((o) => o.id === oktId);
+    const id = await opprettVurdering(
+      fagId,
+      valgtSkala,
+      tittel.trim(),
+      type || null,
+      frist || okt?.dato || null,
     );
+    if (okt && type !== "muntlig") await knyttOkt(id, okt.id);
+    onLagret(id);
   }
 
   return (
@@ -669,6 +682,23 @@ function NyVurdering({
           ]}
         />
       </label>
+
+      {type !== "muntlig" && (
+        <label className="block">
+          <Etikett>Økt</Etikett>
+          <Velger
+            verdi={oktId}
+            settVerdi={setOktId}
+            bredde="w-56"
+            valg={[
+              { verdi: "", tekst: "Ingen økt", dempet: true },
+              ...okter
+                .filter((o) => o.dato >= iDag())
+                .map((o) => ({ verdi: o.id, tekst: oktetikett(o) })),
+            ]}
+          />
+        </label>
+      )}
 
       <Felt
         etikett="Frist"

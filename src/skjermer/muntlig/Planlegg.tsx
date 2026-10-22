@@ -1,5 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { opprettSamtaledag, slettTrekning } from "../../data/samtale";
+import {
+  fjernDagFraOkt,
+  hentSamtaledager,
+  leggDagIOkt,
+  opprettSamtaledag,
+  slettTrekning,
+} from "../../data/samtale";
 import {
   endreOppgavekort,
   hentRubrikkmaler,
@@ -46,6 +52,11 @@ export function Planlegg({
   onLukk: () => void;
   onEndret: () => void;
 }) {
+  // Øktene i faget: samtalene kan legges i dem (én plass å velge økt).
+  const [okter, setOkter] = useState<Oktvalg[]>([]);
+  useEffect(() => {
+    void hentOktvalg(data.vurdering.skolearFagId).then(setOkter);
+  }, [data.vurdering.skolearFagId, data.dager.length]);
   return (
     <div>
       <Generator
@@ -74,6 +85,33 @@ export function Planlegg({
         }
         standardDato={data.vurdering.oktDato ?? data.vurdering.frist ?? iDag()}
         tom={`Legg til en dag, så legges de ${data.elever.length} elevene i ${data.vurdering.fagKode} ut med tider.`}
+        okter={{
+          valg: okter,
+          knyttet: data.vurdering.oktIder,
+          leggI: async (oktId) => {
+            const id = await leggDagIOkt(
+              data.skolearId,
+              oktId,
+              data.vurdering.id,
+            );
+            if (!id) return null;
+            const d = (await hentSamtaledager(data.skolearId)).find(
+              (x) => x.id === id,
+            );
+            return d
+              ? {
+                  id: d.id,
+                  dato: d.dato,
+                  fra: d.fra,
+                  til: d.til,
+                  oktId: d.oktId,
+                  lunsjFra: null,
+                  lunsjMin: null,
+                }
+              : null;
+          },
+          fjern: fjernDagFraOkt,
+        }}
         trekk={{
           na: data.oppsett.trekkNa,
           titler: data.kort.map((k) => k.tittel).filter((t) => t.trim()),
@@ -113,6 +151,7 @@ function OmVurderingen({
           skalaer={skalaer}
           okter={okter}
           onEndret={onEndret}
+          utenOkt
         />
       </div>
       <button

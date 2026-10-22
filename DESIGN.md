@@ -199,7 +199,46 @@ høyre. Muntlig: overskrift med fag, dato og skala, bryter Planlegg ·
 Gjennomfør · Resultater, «N av M ferdig» og «Kopier tidsplan til Teams».
 Tidsplanen står i en kolonne på 340 px til venstre (rader på 44 px: tid,
 navn med oppgave under, karakterrute), gjeldende elev med aksentring.
-I Planlegg dras rader i ⋮⋮ med den felles dra-mekanikken.
+I Planlegg dras rader i ⋮⋮ med den felles dra-mekanikken. Klokkeslettene
+hører til plassene og står fast; raden som dras viser tida på plassen den
+er over, og den ruller som et telleverk (`Ticker`), som i samtaletimeplanen.
+
+**Øktene i muntlig** velges ett sted: «Dager» i tidsplanen. «+ økt …» legger
+samtalene i en økt (brikke «Økt tor 5.11 08:30–10:00», øktas start og slutt
+er rammen, vurderingen knyttes til økta). «+ egen dag» er for dager utenfor
+en økt. Går flere over øktas slutt, står det i rødt under. «🎲 Trekk
+oppgaver» deler ut oppgavene på nytt uten å røre rekkefølgen.
+
+**Føringsarket** (29.5, lerretet Foring) har samme skall: Én og én · Tabell
+· Oppsett, elevlista på 300 px til venstre. Brikken «I økta tor 5.11 ⌄» i
+overskriften viser og endrer øktene prøven holdes i.
+
+**Mentorsamtalene** (29.6, lerretet Kontaktsamtaler): samme skall og
+tidsplan; aksentfirkant i stedet for fagfarge, «ikke en vurdering» i
+overskriften. Til høyre fire kort (Fra forrige samtale, Til neste gang,
+Trives med, Oversikt) på 290 px.
+
+**Karakterer** (29.4, lerretet Karakterer): tabell i en ramme med radius
+12, kolonneoverskrift med tittel, dato og vekt (− ×1 +), halvår som en
+34 px knapp (aksent når satt, ring på valgt rad), hover gir et lite kort.
+
+**Faginnstillinger** (29.2): glassark på 400 px fra høyre, grupper med
+små versaler (Farge, Økter, Skåring og vurdering, Læreplan), rader på
+46 px med hårstrek, «Arkiver faget» i rødt nederst.
+
+**⌘K** (29.3) har grupper i små versaler: Gjør (＋), Gå til (→), Elever,
+Økter, Innstillinger (⚙), Hjelp (svar med aksentknapp), Hurtigtaster.
+
+**Følg opp** (29.7): kort per elev med foto, fag, grunnbrikker (prikk i
+grunnens farge), forklaring, fire innsatsprikker, tid siden og tre
+knapper. «Fulgt opp ✓» glir ut til høyre på 380 ms uten sprett.
+
+**Tomme sider** (29.8, `ui/Tomside`): strektegning 120 × 84 i
+`linje-sterk`, tittel i Light 20 px, én setning, hovedknapp og sekundær,
+hint i `blekk-svak`.
+
+**I dag** (29.9) har ingen fliser: delene står med overskrift og en tynn
+strek, rett på flaten, med høyde etter innholdet.
 
 Nederst i sidemenyen, over Innstillinger: **Gi tilbakemelding**, i samme
 stil som Innstillinger-raden. Et klikk kopierer versjon, system og skjerm,

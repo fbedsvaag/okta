@@ -125,6 +125,8 @@ export function MuntligArk({
         fra: d.fra,
         lunsjFra: d.lunsjFra,
         lunsjMin: d.lunsjMin,
+        oktId: d.oktId,
+        til: d.til,
       })),
     [data?.dager],
   );

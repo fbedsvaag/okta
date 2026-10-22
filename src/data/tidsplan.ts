@@ -1,6 +1,7 @@
 import {
   endreSamtaledag,
   hentSamtaler,
+  kapasitet,
   lagreTrekning,
   leggUtDagen,
   tiderITrekning,
@@ -16,8 +17,11 @@ import {
  * vurdering og mentorsamtalene (29.6). Selve utleggingen av en dag er
  * samtaletrekkerens `leggUtDagen` — samme kode, ikke en kopi.
  *
- * Dagene har ingen sluttid her: elevene fordeles jevnt, og dagen slutter
- * når den siste er ferdig. Det er det «ferdig 12:58» i oppsummeringen sier.
+ * En egen dag har ingen sluttid: elevene fordeles jevnt, og dagen slutter
+ * når den siste er ferdig («ferdig 12:58» i oppsummeringen). En dag i en
+ * økt har øktas start og slutt som ramme: den tar ikke flere enn det er
+ * plass til, og resten går til de andre dagene. Får ikke alle plass, står
+ * de på den siste dagen, og `forMange` sier fra.
  */
 
 export type Tidsplandag = {
@@ -26,6 +30,9 @@ export type Tidsplandag = {
   fra: string;
   lunsjFra: string | null;
   lunsjMin: number | null;
+  /** økta dagen ligger i; da er `til` øktas slutt og en grense */
+  oktId?: string | null;
+  til?: string;
 };
 
 export type Tidsplanrad = { elevId: string; fra: string; til: string };
@@ -36,6 +43,8 @@ export type Utlagtdag = {
   lunsj: { fra: string; til: string } | null;
   /** når den siste er ferdig; null når dagen er tom */
   slutt: string | null;
+  /** hvor mange som går over øktas slutt (bare dager i en økt) */
+  forMange: number;
 };
 
 /** Så jevnt som mulig: de første dagene får én ekstra når det ikke går opp. */
@@ -46,13 +55,61 @@ export function fordelJevnt(antall: number, dager: number): number[] {
   return Array.from({ length: dager }, (_, i) => grunn + (i < rest ? 1 : 0));
 }
 
+/**
+ * Hvor mange hver dag får. Dagene i en økt tar høyst det det er plass til;
+ * de andre deler resten jevnt. Er alle dagene økter og det ikke er plass,
+ * får den siste resten.
+ */
+export function fordelPaTidsplan(
+  antall: number,
+  dager: Tidsplandag[],
+  perElev: number,
+  pause: number,
+): number[] {
+  if (dager.length === 0) return [];
+  const kap = dager.map((d) =>
+    d.oktId && d.til
+      ? kapasitet(
+          { fra: d.fra, til: d.til, lunsjFra: null, lunsjMin: null },
+          perElev,
+          pause,
+        )
+      : Infinity,
+  );
+  const ut = fordelJevnt(antall, dager.length);
+  // Det økta ikke har plass til, flyttes til de egne dagene.
+  let rest = 0;
+  for (let i = 0; i < ut.length; i++)
+    if (ut[i] > kap[i]) {
+      rest += ut[i] - kap[i];
+      ut[i] = kap[i];
+    }
+  const egne = kap
+    .map((k, i) => (k === Infinity ? i : -1))
+    .filter((i) => i >= 0);
+  if (egne.length > 0) {
+    const pluss = fordelJevnt(rest, egne.length);
+    egne.forEach((i, j) => (ut[i] += pluss[j]));
+  } else {
+    // Bare økter: fyll ledig plass i rekkefølge, resten på den siste.
+    for (let i = 0; i < ut.length && rest > 0; i++) {
+      const ledig = Math.max(0, kap[i] - ut[i]);
+      const n = Math.min(ledig, rest);
+      ut[i] += n;
+      rest -= n;
+    }
+    ut[ut.length - 1] += rest;
+  }
+  return ut;
+}
+
 export function leggUtTidsplan(
   rekkefolge: string[],
   dager: Tidsplandag[],
   perElev: number,
   pause: number,
 ): Utlagtdag[] {
-  const antall = fordelJevnt(rekkefolge.length, dager.length);
+  const antall = fordelPaTidsplan(rekkefolge.length, dager, perElev, pause);
   let i = 0;
   return dager.map((dag, d) => {
     const elever = rekkefolge.slice(i, i + antall[d]);
@@ -61,9 +118,10 @@ export function leggUtTidsplan(
       {
         fra: dag.fra,
         til: "23:59",
-        // En dag som begynner etter lunsj, har ingen lunsj i seg.
+        // En dag som begynner etter lunsj, eller ligger i en økt, har ingen
+        // lunsj i seg.
         lunsjFra:
-          dag.lunsjFra && tilMin(dag.lunsjFra) > tilMin(dag.fra)
+          !dag.oktId && dag.lunsjFra && tilMin(dag.lunsjFra) > tilMin(dag.fra)
             ? dag.lunsjFra
             : null,
         lunsjMin: dag.lunsjMin,
@@ -84,11 +142,16 @@ export function leggUtTidsplan(
           til: tilKlokke(s.til),
         });
     }
+    const forMange =
+      dag.oktId && dag.til
+        ? rader.filter((r) => tilMin(r.til) > tilMin(dag.til!)).length
+        : 0;
     return {
       dag,
       rader,
       lunsj,
       slutt: rader.length ? rader[rader.length - 1].til : null,
+      forMange,
     };
   });
 }
@@ -193,6 +256,8 @@ export async function skrivTidsplan(
         tema: tema(r.elevId),
       })),
     );
-    await endreSamtaledag(d.dag.id, { til: d.slutt ?? d.dag.fra });
+    // En dag i en økt beholder øktas slutt.
+    if (!d.dag.oktId)
+      await endreSamtaledag(d.dag.id, { til: d.slutt ?? d.dag.fra });
   }
 }

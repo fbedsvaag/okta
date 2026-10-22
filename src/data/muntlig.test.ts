@@ -196,3 +196,42 @@ describe("mål fra samtale til samtale (29.6)", () => {
     expect(fraForrige.map((x) => x.id)).toEqual(["gammelt", "uten"]);
   });
 });
+
+describe("tidsplan i økter", () => {
+  const okt = (id: string, fra: string, til: string) => ({
+    id,
+    dato: "2026-11-05",
+    fra,
+    til,
+    oktId: `o-${id}`,
+    lunsjFra: null,
+    lunsjMin: null,
+  });
+  const egen = (id: string) => ({
+    id,
+    dato: "2026-11-06",
+    fra: "08:30",
+    lunsjFra: null,
+    lunsjMin: null,
+  });
+
+  it("en økt tar ikke flere enn det er plass til; resten går til egne dager", () => {
+    // 08:30–09:30 med 12 + 3 min har plass til 4.
+    expect(
+      t.fordelPaTidsplan(10, [okt("a", "08:30", "09:30"), egen("b")], 12, 3),
+    ).toEqual([4, 6]);
+  });
+
+  it("bare økter: fyller i rekkefølge, og sier fra om de som går over", () => {
+    const dager = [okt("a", "08:30", "09:30"), okt("b", "10:00", "11:00")];
+    expect(t.fordelPaTidsplan(9, dager, 12, 3)).toEqual([4, 5]);
+    const ut = t.leggUtTidsplan(
+      ["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+      dager,
+      12,
+      3,
+    );
+    expect(ut[1].forMange).toBe(1);
+    expect(ut[0].forMange).toBe(0);
+  });
+});

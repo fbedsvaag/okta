@@ -9,6 +9,22 @@ den skal bli. Fila eies fritt, i motsetning til SPEC.md.
 Utseendet står i `DESIGN.md`, som beskriver appen slik den er bygget.
 Lerretet (`docs/lerret/`) er fasit for det som er tegnet.
 
+## Vurderinger i økter, trekk oppgaver og ticker (22.10, etter testing)
+
+- Muntlig: øktene velges ett sted, «Dager» i tidsplanen. «+ økt …» legger
+  samtalene i en økt (leggDagIOkt: øktas start og slutt, vurderingen knyttes
+  til økta). En økt tar ikke flere enn det er plass til; resten går til egne
+  dager, og elever som går over, står i rødt. Øktfeltet under «Om
+  vurderingen» er borte for muntlig.
+- Skriftlig og innlevering: brikken «I økta … ⌄» øverst i føringsarket, og
+  et «Økt»-felt når vurderingen lages.
+- «🎲 Trekk oppgaver» i Planlegg deler ut oppgavene på nytt; rekkefølgen
+  står.
+- Når en rad dras i tidsplanen, står tidene på plassene, og raden som dras
+  viser tida der den havner, rullende (Ticker), som i samtaletimeplanen.
+- DESIGN.md beskriver nå alt fra §28–29. Mentorordene står i
+  `data/mentorord.ts`.
+
 ## Fliser ut (22.10, ARBEIDSLISTE 29.9)
 
 - I dag har ikke lenger fliser: delene står som overskrift og en tynn

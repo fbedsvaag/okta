@@ -2,6 +2,7 @@ import { flytt, type Utlagtdag } from "../../data/tidsplan";
 import { nyPlass, useDra, type Mal } from "../../ui/dra";
 import { langDato } from "../samtaler/deler";
 import type { ReactNode } from "react";
+import { Ticker } from "../../ui/Ticker";
 
 /** Det som står på raden for en elev, utenom tida og navnet. */
 export type Radinfo = {
@@ -46,7 +47,7 @@ export function Tidsplanliste({
   const start = (dag: number) =>
     utlagt.slice(0, dag).reduce((n, d) => n + d.rader.length, 0);
 
-  const { reg, begynn, draget, stil } = useDra({
+  const { dra, reg, begynn, draget, stil, erDratt, malPlass } = useDra({
     nokkel: (p) => utlagt[p.gruppe]?.rader[p.nr]?.elevId,
     onSlipp: (fra, mal: Mal) => {
       const til = nyPlass(fra, mal);
@@ -56,6 +57,14 @@ export function Tidsplanliste({
       if (a !== b) onFlytt(flytt(flat, a, Math.max(0, b)));
     },
   });
+
+  // Klokkeslettene hører til plassene og står fast mens du drar. Plassen
+  // raden havner på, skjuler sitt; raden du drar viser det i stedet, og det
+  // ruller som et telleverk (samtaletimeplanen, 7.x).
+  const malTid = malPlass
+    ? (utlagt[malPlass.gruppe]?.rader[malPlass.nr] ??
+      utlagt[malPlass.gruppe]?.rader[malPlass.nr - 1])
+    : undefined;
 
   if (utlagt.length === 0)
     return (
@@ -100,35 +109,59 @@ export function Tidsplanliste({
                       ? (e) => begynn(e, { gruppe: di, nr: ri })
                       : undefined
                   }
+                  onClick={() => {
+                    if (draget.current) return;
+                    onVelg(r.elevId);
+                  }}
+                  className={`relative grid h-11 cursor-pointer select-none items-center gap-2.5 rounded-[10px] px-2.5 text-[calc(13.5px*var(--tekst-skala))] transition-[background-color,box-shadow] duration-200 ${
+                    kanDra
+                      ? "touch-none grid-cols-[14px_96px_minmax(0,1fr)]"
+                      : "grid-cols-[96px_minmax(0,1fr)]"
+                  } ${
+                    erValgt
+                      ? "bg-ark shadow-[inset_0_0_0_1.5px_var(--color-aksent),0_4px_14px_rgba(74,61,125,.12)]"
+                      : dra
+                        ? ""
+                        : "hover:bg-flate-svak"
+                  }`}
                 >
+                  {kanDra && (
+                    <span
+                      aria-hidden
+                      className="cursor-grab text-[12px] leading-none tracking-[-2px] text-blekk-svakest"
+                    >
+                      ⋮⋮
+                    </span>
+                  )}
+                  {/* Tida står på plassen, ikke på eleven. */}
+                  <span className="relative text-[12.5px] tabular-nums text-blekk-dempet">
+                    <span
+                      className={
+                        dra && malPlass?.gruppe === di && malPlass.nr === ri
+                          ? "opacity-0"
+                          : ""
+                      }
+                    >
+                      {r.fra}–{r.til}
+                    </span>
+                    {erDratt({ gruppe: di, nr: ri }) && malTid && (
+                      <span
+                        className="absolute left-0 top-0 z-30 font-medium text-aksent"
+                        style={{ transform: `translateY(${dra!.d}px)` }}
+                      >
+                        <Ticker tekst={`${malTid.fra}–${malTid.til}`} />
+                      </span>
+                    )}
+                  </span>
                   <div
                     data-dra-innhold={r.elevId}
                     style={kanDra ? stil({ gruppe: di, nr: ri }) : undefined}
-                    onClick={() => {
-                      if (draget.current) return;
-                      onVelg(r.elevId);
-                    }}
-                    className={`grid h-11 cursor-pointer items-center gap-2.5 rounded-[10px] px-2.5 text-[calc(13.5px*var(--tekst-skala))] transition-[background-color,box-shadow] duration-200 ${
-                      kanDra
-                        ? "grid-cols-[14px_96px_minmax(0,1fr)_34px]"
-                        : "grid-cols-[96px_minmax(0,1fr)_34px]"
-                    } ${
-                      erValgt
-                        ? "bg-ark shadow-[inset_0_0_0_1.5px_var(--color-aksent),0_4px_14px_rgba(74,61,125,.12)]"
-                        : "hover:bg-flate-svak"
+                    className={`grid min-w-0 grid-cols-[minmax(0,1fr)_34px] items-center gap-2.5 ${
+                      erDratt({ gruppe: di, nr: ri })
+                        ? "relative z-20 -my-1.5 -ml-2 rounded-[10px] bg-ark py-1.5 pl-2 shadow-[var(--shadow-ark)]"
+                        : ""
                     }`}
                   >
-                    {kanDra && (
-                      <span
-                        aria-hidden
-                        className="cursor-grab text-[12px] leading-none tracking-[-2px] text-blekk-svakest"
-                      >
-                        ⋮⋮
-                      </span>
-                    )}
-                    <span className="text-[12.5px] tabular-nums text-blekk-dempet">
-                      {r.fra}–{r.til}
-                    </span>
                     <span
                       className={`min-w-0 truncate ${
                         borte
@@ -161,7 +194,7 @@ export function Tidsplanliste({
       ))}
       {kanDra && (
         <p className="mx-1.5 my-3 text-liten text-blekk-svak">
-          Dra i ⋮⋮ for å endre rekkefølgen. Tidene følger med.
+          Dra i ⋮⋮ for å endre rekkefølgen. Tidene står på plassene.
         </p>
       )}
     </div>

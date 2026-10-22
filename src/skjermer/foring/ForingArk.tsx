@@ -35,7 +35,7 @@ import { Bryter, Fagfirkant } from "../../ui/felles";
 import { Elevfoto } from "../../ui/Elevfoto";
 import { tast as visTast } from "../../ui/taster";
 import { kortDag } from "../../data/vurderingsoversikt";
-import { Felter } from "../Vurderingsfelter";
+import { Felter, Oktbrikke } from "../Vurderingsfelter";
 import { SlikVurdererDu } from "../muntlig/Planlegg";
 import { Rubrikkvelger } from "../muntlig/Rubrikkvelger";
 import { kopierKarakterliste } from "../muntlig/eksport";
@@ -237,6 +237,7 @@ export function ForingArk({
             .filter(Boolean)
             .join(" · ")}
         </span>
+        <Oktbrikke vurdering={v} onEndret={onEndret} />
         <span className="ml-2.5">
           <Bryter
             storrelse="liten"
