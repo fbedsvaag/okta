@@ -122,8 +122,10 @@ export function Innstillinger({
       ville sendt deg tilbake til startskjermen */
   onEndret: () => void;
 }) {
+  // «side~nøkkel» fra ⌘K (29.3): siden, og raden som skal blinke.
+  const [startNavn, startRad] = (startSide ?? "").split("~");
   const [side, setSide] = useState<Sideid>(() => {
-    const s = GAMLE[startSide ?? ""] ?? startSide;
+    const s = GAMLE[startNavn ?? ""] ?? startNavn;
     return s && s in SIDENAVN ? (s as Sideid) : "generelt";
   });
   useEffect(() => {
@@ -167,6 +169,10 @@ export function Innstillinger({
       rad.classList.add("inn-blink");
     }, 80);
   }
+
+  useEffect(() => {
+    if (startRad) hopp({ side, k: startRad, tittel: "" });
+  }, []);
 
   const MENY: { gruppe: string | null; sider: Sideid[] }[] = [
     { gruppe: null, sider: ["deg"] },

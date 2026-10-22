@@ -26,6 +26,7 @@ import {
   useLayoutEffect,
   useRef,
   useState,
+  useMemo,
 } from "react";
 import {
   brukTekstskala,
@@ -57,6 +58,12 @@ import { Karakterer } from "./skjermer/Karakterer";
 import { Klassen } from "./skjermer/Klassen";
 import { useApnetOppsettfil } from "./ui/apnetOppsettfil";
 import { G_SNARVEIER, Sidemeny, type Menypunkt } from "./ui/Sidemeny";
+import type { Kommando } from "./data/kommandoer";
+import {
+  INDEKS as INNSTILLINGSINDEKS,
+  SIDENAVN,
+} from "./skjermer/innstillinger/sok";
+import { taKopiNa } from "./data/sikkerhetskopi";
 import { Sokevindu } from "./ui/Sokevindu";
 import { ArkKobling, Arkstabel, useArk, type ArkApi } from "./ui/Arkstabel";
 import { brukZoom, zoomInn, zoomNull, zoomUt } from "./ui/zoom";
@@ -170,6 +177,154 @@ export default function App() {
     });
   }, []);
 
+  // ⌘K: det som kan gjøres og gås til (29.3). Elever, økter og
+  // vurderinger søkes i vinduet selv.
+  const kommandoer = useMemo<Kommando[]>(() => {
+    const ut: Kommando[] = [
+      {
+        id: "ny-vurdering",
+        gruppe: "Gjør",
+        navn: "Ny vurdering",
+        hint: "prøve, muntlig eller innlevering",
+        ord: "prøve muntlig innlevering",
+        gjor: () => ga("vurderinger"),
+      },
+      {
+        id: "ny-okt",
+        gruppe: "Gjør",
+        navn: "Ny økt",
+        hint: "i Økter",
+        ord: "time",
+        gjor: () => ga("okter"),
+      },
+      {
+        id: "ny-elev",
+        gruppe: "Gjør",
+        navn: "Ny elev",
+        hint: "lim inn en klasseliste",
+        ord: "legg til elever klasseliste",
+        gjor: () => ga("liminn"),
+      },
+      {
+        id: "grupper",
+        gruppe: "Gjør",
+        navn: "Lag grupper",
+        hint: "Plasser og grupper",
+        ord: "gruppe stokk klassekart",
+        gjor: () => ga("klassekart"),
+      },
+      {
+        id: "kopi",
+        gruppe: "Gjør",
+        navn: "Ta sikkerhetskopi nå",
+        ord: "backup kopi",
+        gjor: () =>
+          void taKopiNa().then(() => visToast("Sikkerhetskopien er tatt")),
+      },
+      {
+        id: "ga:idag",
+        gruppe: "Gå til",
+        navn: "I dag",
+        tast: "G D",
+        ord: "forside",
+        gjor: () => ga("idag"),
+      },
+      {
+        id: "ga:okter",
+        gruppe: "Gå til",
+        navn: "Økter",
+        tast: "G Ø",
+        ord: "liste kalender",
+        gjor: () => ga("okter"),
+      },
+      {
+        id: "ga:elever",
+        gruppe: "Gå til",
+        navn: "Elever",
+        tast: "G E",
+        gjor: () => ga("elever"),
+      },
+      {
+        id: "ga:vurderinger",
+        gruppe: "Gå til",
+        navn: "Vurderinger og samtaler",
+        tast: "G V",
+        ord: "prøver mentorsamtaler",
+        gjor: () => ga("vurderinger"),
+      },
+      {
+        id: "ga:klassekart",
+        gruppe: "Gå til",
+        navn: "Plasser og grupper",
+        tast: "G P",
+        ord: "klassekart grupper",
+        gjor: () => ga("klassekart"),
+      },
+      {
+        id: "ga:liminn",
+        gruppe: "Gå til",
+        navn: "Lim inn elever",
+        hint: "Elever",
+        ord: "klasseliste import",
+        gjor: () => ga("liminn"),
+      },
+      {
+        id: "ga:innstillinger",
+        gruppe: "Gå til",
+        navn: "Innstillinger",
+        tast: "⌘,",
+        gjor: () => ga("innstillinger"),
+      },
+    ];
+    const faner: [Visning, string][] = [
+      ["oversikt", "Oversikt"],
+      ["aret", "Året"],
+      ["okter", "Økter"],
+      ["kalender", "Kalender"],
+      ["karakterer", "Karakterer"],
+      ["klassen", "Klassen"],
+    ];
+    for (const f of fag)
+      for (const [v, navn] of faner)
+        ut.push({
+          id: `fag:${f.id}:${v}`,
+          gruppe: "Gå til",
+          navn: `${f.kode} · ${navn}`,
+          hint: "fagsiden",
+          ord: `${f.navn} ${f.fagkode}`,
+          gjor: () => {
+            setOktFag(f.id);
+            ga(v);
+          },
+        });
+    for (const f of fag)
+      ut.push({
+        id: `fagfarge:${f.id}`,
+        gruppe: "Innstillinger",
+        navn: `Innstillinger for ${f.kode}`,
+        hint: "farge, dager, rom, skalaer",
+        ord: "fagfarge farge rom dager skala arkiver",
+        gjor: () => ark.current?.apneFagInnstillinger(f.id),
+      });
+    for (const x of INNSTILLINGSINDEKS)
+      ut.push({
+        id: `innst:${x.side}:${x.k}`,
+        gruppe: "Innstillinger",
+        navn: x.tittel,
+        hint: `Innstillinger → ${SIDENAVN[x.side]}`,
+        ord: (x.ord ?? []).join(" "),
+        gjor: () => ga("innstillinger", `${x.side}~${x.k}`),
+      });
+    ut.push({
+      id: "innst:fag",
+      gruppe: "Innstillinger",
+      navn: "Fag",
+      hint: "Innstillinger → Fag",
+      gjor: () => ga("innstillinger", "fag"),
+    });
+    return ut;
+  }, [fag, ga]);
+
   const tilbake = useCallback(
     () => setHistorikk((h) => ({ ...h, peker: Math.max(0, h.peker - 1) })),
     [],
@@ -191,6 +346,8 @@ export default function App() {
 
   // ⌘K: søk på elev eller økt, hvor som helst i appen (§4.4).
   const [sokApent, setSokApent] = useState(false);
+  // Teksten ⌘K åpnes med: «?» gir hurtigtastene.
+  const [sokStart, setSokStart] = useState("");
 
   // En oppsettfil åpnet med dobbeltklikk (5.13): i veiviseren uten
   // skoleår, ellers i Innstillinger › Del oppsett.
@@ -208,6 +365,19 @@ export default function App() {
 
   useEffect(() => {
     const taster = (e: KeyboardEvent) => {
+      // «?» utenfor et felt: hurtigtastene, i ⌘K (29.3).
+      if (
+        e.key === "?" &&
+        !hovedtast(e) &&
+        !(e.target as HTMLElement).closest?.(
+          "input, textarea, select, [contenteditable]",
+        )
+      ) {
+        e.preventDefault();
+        setSokStart("?");
+        setSokApent(true);
+        return;
+      }
       if (!hovedtast(e)) {
         if (harModifikator(e) || e.altKey || e.repeat) return;
         const mal = e.target as HTMLElement;
@@ -263,6 +433,7 @@ export default function App() {
       }
       if (e.key === "k" || e.key === "K") {
         e.preventDefault();
+        setSokStart("");
         setSokApent(true);
       }
       if (e.key === "[") {
@@ -404,6 +575,9 @@ export default function App() {
             fag={fag}
             onApneElev={(id) => ga("elev", id)}
             onApneOkt={apneOktSomArk}
+            onApneVurdering={(id) => ark.current?.apneVurdering(id)}
+            kommandoer={kommandoer}
+            startTekst={sokStart}
             onLukk={() => setSokApent(false)}
           />
         )}

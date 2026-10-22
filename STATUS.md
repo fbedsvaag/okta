@@ -9,6 +9,16 @@ den skal bli. Fila eies fritt, i motsetning til SPEC.md.
 Utseendet står i `DESIGN.md`, som beskriver appen slik den er bygget.
 Lerretet (`docs/lerret/`) er fasit for det som er tegnet.
 
+## ⌘K: kommandolinje og hjelp (22.10, ARBEIDSLISTE 29.3)
+
+- ⌘K har grupper: Gjør (ny vurdering, ny økt, ny elev, lag grupper, ta
+  sikkerhetskopi), Gå til (sidene, hver fagfane, vurderingene), Elever,
+  Økter og Innstillinger (raden i innstillingene blinker når du kommer dit,
+  og faginnstillingene åpnes som ark).
+- «hvordan …», «hjelp» eller et spørsmål gir hjelp: korte svar med en knapp
+  som gjør det (`data/kommandoer.ts`, alt lokalt).
+- «?» viser alle hurtigtastene, også som tast utenfor et felt.
+
 ## Faginnstillinger på stedet (22.10, ARBEIDSLISTE 29.2)
 
 - ⚙ ytterst til høyre i verktøylinja på fagsiden åpner et smalt ark fra
