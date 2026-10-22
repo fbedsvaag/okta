@@ -1031,6 +1031,18 @@ Tegning: `docs/lerret/ElevSamarbeid.dc.html`. Ny fane «Samarbeid» på elevkort
 - [x] **26.13 «Neste gang skal … sitte med».** Boks på elevkortet (Samarbeid), og knapp «Sitt sammen neste gang» i detaljene for et par. Konkret avtale: én eller flere elever, Gjelder: Klassekart · Grupper · Begge, Kilde: Eleven · Samtale · Jeg, med dato. **Hard regel** (ulikt 26.3/26.7, som er myke): neste Stokk i faget låser paret sammen (samme bord / samme gruppe), og avtalen fjernes når kartet eller settet lagres. Vises med 📌 i ringdiagrammet, og i Plasser og grupper som «📌 2 avtaler for neste gang» over Stokk, med mulighet til å hoppe over én gang. Går det ikke (f.eks. eleven er borte), blir avtalen stående og læreren får beskjed. Tabell: `neste_sammen(id, elev_id, med_elev_id, skolear_fag_id, gjelder, kilde, dato, brukt NULL)`.
 - [ ] **26.12 Senere:** matrise som alternativ visning.
 
+## 27. Klassekartet på et blikk i økta (22.10) — godkjent
+
+Tegning: `docs/lerret/OktKlassekart.dc.html`. I dag tar «Klassekart →» i økta deg til fanen Plasser og grupper. Det er for mye når du bare vil se kartet.
+
+- [ ] **27.1** «Klassekart» i metalinja i økta (ikon + tast **K**) åpner et kort over økta i stedet for å bytte fane. Økta blir liggende under. K, esc eller klikk utenfor lukker. Kortet glir inn på 220 ms, uten sprett.
+- [ ] **27.2** Kartet vises **fra kateteret** som standard (tavla nederst, «du står her»), med «Fra elevene» som valg. Valget huskes. Kompakt: fornavn + E. per pult.
+- [ ] **27.3** Elever som er borte i dag (skåret 0) er overstreket og bleke. Øverst: «24 til stede · 2 borte · 10 skåret».
+- [ ] **27.4** «Farge»: Ingen · Dagens skår (liten trafikklysprikk) · Grupper (pultfargene fra 25.11). Huskes.
+- [ ] **27.5** Klikk en elev i kartet: lista under ruller til eleven og blinker raden, og kortet blir stående. Kortet er bare for å se, ikke for å endre plasser.
+- [ ] **27.6** «Åpne i Plasser og grupper ↗» nederst for å redigere kartet.
+- [ ] **27.7** Har faget ikke noe kart, står det «Ingen klassekart for MFL2 ennå» med en lenke til å lage et.
+
 ## Ikke nå
 
 Ting som er vurdert og lagt bort med vilje. Står her så de ikke dukker opp
