@@ -3,6 +3,7 @@ import {
   endreSamtaledag,
   opprettSamtaledag,
   slettSamtaledag,
+  slettTrekning,
   stokk,
   tildelTema,
   tilKlokke,
@@ -26,6 +27,15 @@ import {
   type Utlagtdag,
 } from "../../data/tidsplan";
 import { nyId } from "../../db";
+import { confirm as bekreft } from "@tauri-apps/plugin-dialog";
+import {
+  hentOktvalg,
+  hentVurderingsskalaer,
+  slettVurdering,
+  type Oktvalg,
+} from "../../data/vurderinger";
+import type { Skala } from "../../skala";
+import { Felter } from "../Vurderingsfelter";
 import { Bryter } from "../../ui/felles";
 import type { Muntligdata } from "./MuntligArk";
 
@@ -46,11 +56,15 @@ export function Planlegg({
   utlagt,
   lagrePlan,
   last,
+  onLukk,
+  onEndret,
 }: {
   data: Muntligdata;
   utlagt: Utlagtdag[];
   lagrePlan: LagrePlan;
   last: () => Promise<void>;
+  onLukk: () => void;
+  onEndret: () => void;
 }) {
   return (
     <div>
@@ -60,9 +74,54 @@ export function Planlegg({
         lagrePlan={lagrePlan}
         last={last}
       />
-      <SlikVurdererDu data={data} />
+      <SlikVurdererDu vurdering={data.vurdering} oppsett={data.oppsett} />
       <Oppgaver data={data} />
+      <OmVurderingen data={data} onLukk={onLukk} onEndret={onEndret} />
     </div>
+  );
+}
+
+/** Tittel, frist, skala og økter, og sletting — nederst i Planlegg. */
+function OmVurderingen({
+  data,
+  onLukk,
+  onEndret,
+}: {
+  data: Muntligdata;
+  onLukk: () => void;
+  onEndret: () => void;
+}) {
+  const v = data.vurdering;
+  const [skalaer, setSkalaer] = useState<Skala[]>([]);
+  const [okter, setOkter] = useState<Oktvalg[]>([]);
+  useEffect(() => {
+    void hentVurderingsskalaer().then(setSkalaer);
+    void hentOktvalg(v.skolearFagId).then(setOkter);
+  }, [v.skolearFagId]);
+  return (
+    <section className="mt-6 border-t border-linje-svak pt-3">
+      <h3 className="mb-1 text-[13px] font-semibold">Om vurderingen</h3>
+      <div className="-mx-5">
+        <Felter
+          vurdering={v}
+          skalaer={skalaer}
+          okter={okter}
+          onEndret={onEndret}
+        />
+      </div>
+      <button
+        onClick={async () => {
+          if (!(await bekreft(`Slette vurderingen «${v.tittel}»?`))) return;
+          await slettTrekning(data.dager);
+          await slettVurdering(v.id);
+          onLukk();
+          onEndret();
+        }}
+        className="mt-2 text-liten text-blekk-svak hover:text-feil"
+      >
+        Slett vurderingen og tidsplanen
+      </button>
+    </section>
   );
 }
 
@@ -369,10 +428,15 @@ function Steg({
 
 // ------------------------------------------------------ slik vurderer du
 
-function SlikVurdererDu({ data }: { data: Muntligdata }) {
-  const v = data.vurdering;
-  const [r, setR] = useState<Rubrikk>(data.oppsett.rubrikk);
-  const [form, setForm] = useState(data.oppsett.form);
+export function SlikVurdererDu({
+  vurdering: v,
+  oppsett,
+}: {
+  vurdering: { id: string; tittel: string };
+  oppsett: { rubrikk: Rubrikk; form: "kriterier" | "rubrikk" };
+}) {
+  const [r, setR] = useState<Rubrikk>(oppsett.rubrikk);
+  const [form, setForm] = useState(oppsett.form);
   const [maler, setMaler] = useState<Rubrikkmal[]>([]);
   const [malApen, setMalApen] = useState(false);
   const [malNavn, setMalNavn] = useState<string | null>(null);
@@ -636,7 +700,7 @@ function SlikVurdererDu({ data }: { data: Muntligdata }) {
             + Kriterium
           </button>
           <p className="ml-[22px] mt-1.5 text-liten text-blekk-svak">
-            Krysses av under samtalen. Bytt til Rubrikk for å beskrive nivåer.
+            Krysses av for hver elev. Bytt til Rubrikk for å beskrive nivåer.
           </p>
         </div>
       )}

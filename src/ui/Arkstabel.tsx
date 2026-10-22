@@ -11,7 +11,7 @@ import { lytt, varsleOktvisning, varsleVurderinger } from "../data/endringer";
 import { hentOkter, type Okt } from "../data/okter";
 import { OktPanel } from "../skjermer/OktPanel";
 import { ElevPanel } from "../skjermer/ElevPanel";
-import { VurderingPanel } from "../skjermer/VurderingPanel";
+import { ForingArk } from "../skjermer/foring/ForingArk";
 import { MuntligArk } from "../skjermer/muntlig/MuntligArk";
 import { hentVurderinger, type Vurdering } from "../data/vurderinger";
 import { FagPanel } from "../skjermer/FagPanel";
@@ -514,10 +514,15 @@ function VurderingArk({
             vurdering={vurdering}
             skolearId={skolearId}
             onApneElev={onApneElev}
+            onLukk={onLukk}
+            onEndret={() => {
+              last();
+              varsleVurderinger();
+            }}
           />
         )}
         {vurdering && vurdering.type !== "muntlig" && (
-          <VurderingPanel
+          <ForingArk
             key={vurdering.id}
             vurdering={vurdering}
             onLukk={onLukk}

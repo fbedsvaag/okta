@@ -1058,6 +1058,12 @@ elevene fordeles jevnt på dagene. Rubrikker kan lagres som maler
 (Innstillinger → Skalaer) og følger med i «Hent fra i fjor» og oppsettfila.
 Karakterforslaget er snittet av nivåene lagt på 2–6, bare et forslag.
 
+**Skriftlig prøve og innlevering** (29.5) føres i samme slags ark: «Én og
+én» (levert / ikke levert / borte, rubrikk eller kriterier, kort kommentar
+med faste fraser per vurdering, karakter med tast, ⌘↵ neste) eller «Tabell»
+(rask føring, lim inn en kolonne fra Excel). Borte hentes fra fraværet i
+økta. «Kopier til Teams» gir karakter og kommentar per elev.
+
 ### 4.7 Notater og møtelogg
 
 Ikke en egen skjerm — en bolk nederst på elevsiden (§4.5), under heatmap og

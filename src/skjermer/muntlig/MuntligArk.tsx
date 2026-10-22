@@ -64,10 +64,14 @@ export function MuntligArk({
   vurdering,
   skolearId,
   onApneElev,
+  onLukk,
+  onEndret,
 }: {
   vurdering: Vurdering;
   skolearId: string;
   onApneElev: (elevId: string) => void;
+  onLukk: () => void;
+  onEndret: () => void;
 }) {
   const [data, setData] = useState<Muntligdata | null>(null);
   const [modus, setModus] = useState<Modus | null>(null);
@@ -312,6 +316,8 @@ export function MuntligArk({
               utlagt={utlagt}
               lagrePlan={lagrePlan}
               last={last}
+              onLukk={onLukk}
+              onEndret={onEndret}
             />
           )}
           {modus === "gj" && valgtElev && (

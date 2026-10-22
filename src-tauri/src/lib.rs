@@ -226,6 +226,12 @@ fn migrations() -> Vec<Migration> {
             sql: include_str!("../migrations/034_muntlig.sql"),
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 35,
+            description: "føring: faste fraser og levert, ikke levert, borte",
+            sql: include_str!("../migrations/035_foring.sql"),
+            kind: MigrationKind::Up,
+        },
     ]
 }
 

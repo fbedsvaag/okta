@@ -9,6 +9,22 @@ den skal bli. Fila eies fritt, i motsetning til SPEC.md.
 Utseendet står i `DESIGN.md`, som beskriver appen slik den er bygget.
 Lerretet (`docs/lerret/`) er fasit for det som er tegnet.
 
+## Føring av skriftlig prøve og innlevering (22.10, ARBEIDSLISTE 29.5)
+
+- Alle vurderinger som ikke er muntlige, åpnes i føringsarket
+  (`skjermer/foring/ForingArk.tsx`): Én og én · Tabell · Oppsett.
+- Én og én: elevlista alfabetisk til venstre (↑↓), Levert · Ikke levert ·
+  Borte, kriterier eller rubrikk (samme `Rubrikkvelger` som muntlig), kort
+  kommentar med faste fraser per vurdering, karakter med tast, ⌘↵ neste.
+  En karakter setter «levert» når ingenting annet er satt.
+- Borte hentes fra fraværet («ikke i økta») i øktene vurderingen ligger i.
+- Tabell: skriv karakteren, Enter til neste; en kolonne limt inn fra Excel
+  fylles nedover. «Kopier til Teams» gir karakter og kommentar per elev.
+- Oppsett: vurderingens felter (tidligere vurderingspanelet, nå
+  `Vurderingsfelter.tsx`), «Slik vurderer du» og sletting.
+- Migrasjon 035: `vurdering.fraser`, `vurderingsresultat.leveranse` (med
+  `levert` i takt).
+
 ## Muntlig vurdering (22.10, ARBEIDSLISTE 28.1–28.5)
 
 - En muntlig vurdering åpnes i et bredt ark: Planlegg · Gjennomfør ·

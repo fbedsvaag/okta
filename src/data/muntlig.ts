@@ -266,10 +266,13 @@ export async function slettRubrikkmal(id: string): Promise<void> {
 
 // -------------------------------------------------------------- per elev
 
+export type Leveranse = "levert" | "ikke" | "borte";
+
 export type Muntligresultat = {
   elevId: string;
   skalaverdiId: string | null;
   kommentar: string | null;
+  leveranse: Leveranse | null;
   rubrikkvalg: Rubrikkvalg;
   stilte: number[];
 };
@@ -283,9 +286,10 @@ export async function hentMuntligResultater(
     kommentar: string | null;
     rubrikkvalg: string | null;
     stilte: string | null;
+    leveranse: Leveranse | null;
   }>(
     `SELECT elev_id AS elevId, skalaverdi_id AS skalaverdiId, kommentar,
-            rubrikkvalg, stilte
+            rubrikkvalg, stilte, leveranse
        FROM vurderingsresultat
       WHERE vurdering_id = $1 AND slettet IS NULL`,
     [vurderingId],
@@ -314,9 +318,14 @@ export async function oppdaterResultat(
     kommentar?: string | null;
     rubrikkvalg?: Rubrikkvalg;
     stilte?: number[];
+    leveranse?: Leveranse | null;
   },
 ): Promise<void> {
   const ut: Record<string, unknown> = {};
+  if (felter.leveranse !== undefined) {
+    ut.leveranse = felter.leveranse;
+    ut.levert = felter.leveranse === "levert" ? 1 : 0;
+  }
   if (felter.skalaverdiId !== undefined) ut.skalaverdi_id = felter.skalaverdiId;
   if (felter.kommentar !== undefined) ut.kommentar = felter.kommentar;
   if (felter.rubrikkvalg !== undefined)
@@ -339,7 +348,8 @@ export async function oppdaterResultat(
       ...ut,
     });
   }
-  if (felter.skalaverdiId !== undefined) varsleVurderinger();
+  if (felter.skalaverdiId !== undefined || felter.leveranse !== undefined)
+    varsleVurderinger();
 }
 
 // ----------------------------------------------------- tidligere i faget
