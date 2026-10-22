@@ -107,7 +107,9 @@ describe("bare for læreren (26.11)", () => {
     expect(ut.length).toBeGreaterThan(6);
     for (const f of ut) {
       const kode = readFileSync(join(mappe, f), "utf8");
-      expect(kode, f).not.toMatch(/elevonske|neste_sammen|onsker|relasjon/i);
+      expect(kode, f).not.toMatch(
+        /elevonske|neste_sammen|onsker|relasjon|klassen_/i,
+      );
     }
   });
 });

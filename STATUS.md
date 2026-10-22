@@ -9,6 +9,17 @@ den skal bli. Fila eies fritt, i motsetning til SPEC.md.
 Utseendet står i `DESIGN.md`, som beskriver appen slik den er bygget.
 Lerretet (`docs/lerret/`) er fasit for det som er tegnet.
 
+## Ønsker, avtaler og Klassen (22.10, ARBEIDSLISTE 26.7–26.13)
+
+- Migrering 033: `elevonske` og `neste_sammen` (`data/onsker.ts`).
+- Elevkortet › Samarbeid: «Trives med», «Nevnt av andre», «Ta hensyn når jeg
+  stokker» (myk regel), «Neste gang skal … sitte med» (hard regel, brukt ved
+  lagring), ★ og 📌 i ringen.
+- Plasser og grupper: «📌 N avtaler for neste gang» med «hopp over én gang».
+- Fagsiden › Klassen: relasjonskart med kraftsimulering (`data/relasjoner.ts`),
+  filtre, krefter, zoom rundt pekeren, hover med elevbildet, panelet.
+- Testet at ingen eksportmodul leser ønsker, avtaler eller relasjonskartet.
+
 ## Etter testing 21.10 kveld
 
 - Klassekart: færre elever enn plasser gir pultene nærmest tavla og ingen

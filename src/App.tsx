@@ -56,6 +56,7 @@ import { ElevPanel } from "./skjermer/ElevPanel";
 import { FagPanel } from "./skjermer/FagPanel";
 import { Bryter, Fagfirkant, Knapp, Ikon } from "./ui/felles";
 import { Fagoversikt } from "./skjermer/Fagoversikt";
+import { Klassen } from "./skjermer/Klassen";
 import { useApnetOppsettfil } from "./ui/apnetOppsettfil";
 import { G_SNARVEIER, Sidemeny, type Menypunkt } from "./ui/Sidemeny";
 import { Sokevindu } from "./ui/Sokevindu";
@@ -88,6 +89,8 @@ type Visning =
   | "oversikt"
   /** skoleåret i faget (20.6) */
   | "aret"
+  /** relasjonskartet i faget (26.9) */
+  | "klassen"
   | "vurderinger"
   | "samtaler"
   | "innstillinger"
@@ -165,7 +168,13 @@ export default function App() {
     setOktFag(id);
     setHistorikk((h) => {
       const na = h.steder[h.peker];
-      if (id && (na.visning === "oversikt" || na.visning === "aret")) return h;
+      if (
+        id &&
+        (na.visning === "oversikt" ||
+          na.visning === "aret" ||
+          na.visning === "klassen")
+      )
+        return h;
       if (!id && (na.visning === "okter" || na.visning === "kalender"))
         return h;
       const steder = [
@@ -454,7 +463,10 @@ export default function App() {
               erOktvisning(visning) ? (
                 <Visningsbryter
                   visning={
-                    (visning === "oversikt" || visning === "aret") && !valgtFag
+                    (visning === "oversikt" ||
+                      visning === "aret" ||
+                      visning === "klassen") &&
+                    !valgtFag
                       ? "okter"
                       : visning
                   }
@@ -507,6 +519,14 @@ export default function App() {
                     skolear={skolear}
                     fag={valgtFag}
                     onRedigerFag={() => ga("fagside", valgtFag.id)}
+                  />
+                )}
+
+                {visning === "klassen" && valgtFag && (
+                  <Klassen
+                    key={`${versjon}-${valgtFag.id}`}
+                    skolear={skolear}
+                    fag={valgtFag}
                   />
                 )}
 
@@ -665,7 +685,9 @@ export default function App() {
                 )}
 
                 {(visning === "okter" ||
-                  ((visning === "oversikt" || visning === "aret") &&
+                  ((visning === "oversikt" ||
+                    visning === "aret" ||
+                    visning === "klassen") &&
                     !valgtFag)) && (
                   <Okter
                     key={versjon}
@@ -696,6 +718,7 @@ const SKJERMNAVN: Record<Visning, string> = {
   okter: "Økter",
   oversikt: "Økter",
   aret: "Økter",
+  klassen: "Økter",
   kalender: "Økter",
   elever: "Elever",
   elev: "Elever",
@@ -883,7 +906,13 @@ function aktivtPunkt(v: Visning): Menypunkt | "innstillinger" | null {
 
 /** Visningene som hører under Økter-fanen. */
 function erOktvisning(v: Visning): boolean {
-  return v === "okter" || v === "kalender" || v === "oversikt" || v === "aret";
+  return (
+    v === "okter" ||
+    v === "kalender" ||
+    v === "oversikt" ||
+    v === "aret" ||
+    v === "klassen"
+  );
 }
 
 /**
@@ -908,6 +937,7 @@ function Visningsbryter({
         { id: "aret", navn: "Året" },
         { id: "okter", navn: "Økter" },
         { id: "kalender", navn: "Kalender" },
+        { id: "klassen", navn: "Klassen" },
       ]
     : [
         { id: "okter", navn: "Liste" },
