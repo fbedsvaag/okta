@@ -121,6 +121,12 @@ export const INDEKS: Oppslag[] = [
     ord: ["karakter", "trafikklys", "vurderingsskala"],
   },
   {
+    side: "skalaer",
+    k: "rubrikker",
+    tittel: "Rubrikker",
+    ord: ["rubrikk", "mal", "kriterier", "nivåer"],
+  },
+  {
     side: "utseende",
     k: "palett",
     tittel: "Fargepalett",

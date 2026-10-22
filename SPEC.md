@@ -1046,6 +1046,18 @@ findelte karakterskalaen og bygges sammen med den — se §10.
 
 Som i §4.4 er tastene en snarvei. Verdien kan alltid også velges med musa.
 
+**Muntlig vurdering** (ARBEIDSLISTE 28.1–28.5) åpnes i et bredt ark med tre
+faner over samme tidsplan: *Planlegg* (dager, minutter per elev, pause og
+lunsj; trukket eller alfabetisk rekkefølge som kan dras; «Slik vurderer du»
+med kriterier eller rubrikk; oppgavekort med spørsmål), *Gjennomfør* (eleven
+som er inne: trukket oppgave og spørsmål, avkrysning eller rubrikk med
+karakterforslag, notat, karakter med tast, «Neste elev ⌘↵») og *Resultater*
+(tabell, utskrift av tilbakemeldinger, karakterlista til Teams). Tidsplanen
+er samtaledager med vurderingens id, lagt ut med samtaletrekkerens kode;
+elevene fordeles jevnt på dagene. Rubrikker kan lagres som maler
+(Innstillinger → Skalaer) og følger med i «Hent fra i fjor» og oppsettfila.
+Karakterforslaget er snittet av nivåene lagt på 2–6, bare et forslag.
+
 ### 4.7 Notater og møtelogg
 
 Ikke en egen skjerm — en bolk nederst på elevsiden (§4.5), under heatmap og

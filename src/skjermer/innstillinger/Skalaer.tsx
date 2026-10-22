@@ -15,6 +15,12 @@ import {
 import { Bryter, Knapp } from "../../ui/felles";
 import { skalafarge } from "../../ui/farger";
 import { visToast } from "../../ui/Toast";
+import {
+  endreRubrikkmal,
+  hentRubrikkmaler,
+  slettRubrikkmal,
+  type Rubrikkmal,
+} from "../../data/muntlig";
 
 const FARGER: { f: Redigerbar["farge"]; navn: string }[] = [
   { f: null, navn: "Ingen farge" },
@@ -231,6 +237,7 @@ export function Skalaer() {
         >
           + Ny skala
         </button>
+        <Rubrikkmaler />
       </div>
 
       {utkast && (
@@ -671,6 +678,61 @@ function NySkala({
           <Knapp onClick={onLukk}>Avbryt</Knapp>
         </div>
       </div>
+    </div>
+  );
+}
+
+/**
+ * Rubrikkene som er lagret som maler (28.3b), ved siden av skalaene. De
+ * lages i en vurdering («Lagre som mal»); her kan de få nytt navn eller
+ * slettes. En vurdering som har brukt en mal, har sin egen kopi.
+ */
+function Rubrikkmaler() {
+  const [maler, setMaler] = useState<Rubrikkmal[]>([]);
+  const last = () => void hentRubrikkmaler().then(setMaler);
+  useEffect(last, []);
+  return (
+    <div data-k="rubrikker">
+      <p className="mx-3 mb-1 mt-5 text-[11px] uppercase tracking-[0.06em] text-blekk-svak">
+        Rubrikker
+      </p>
+      {maler.length === 0 && (
+        <p className="mx-3 text-liten leading-normal text-blekk-svak">
+          Ingen ennå. Lag en rubrikk i en vurdering og velg «Lagre som mal».
+        </p>
+      )}
+      {maler.map((m) => (
+        <div
+          key={m.id}
+          className="group flex h-[38px] items-center gap-1 rounded-[10px] px-3 hover:bg-flate-svak"
+        >
+          <input
+            defaultValue={m.navn}
+            aria-label="Navn på rubrikken"
+            onBlur={async (e) => {
+              const navn = e.target.value.trim();
+              if (navn && navn !== m.navn) await endreRubrikkmal(m.id, navn);
+              last();
+            }}
+            onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
+            className="min-w-0 flex-1 bg-transparent text-[calc(13.5px*var(--tekst-skala))] outline-none"
+          />
+          <small className="shrink-0 text-etikett text-blekk-svak">
+            {m.rubrikk.kriterier.length} × {m.rubrikk.nivaer.length}
+          </small>
+          <button
+            onClick={async () => {
+              await slettRubrikkmal(m.id);
+              visToast(`Rubrikken «${m.navn}» er slettet`);
+              last();
+            }}
+            title="Slett malen. Vurderinger som har brukt den, beholder sin kopi."
+            className="px-1 text-[15px] text-blekk-svakest opacity-0 hover:text-feil group-hover:opacity-100"
+          >
+            ×
+          </button>
+        </div>
+      ))}
     </div>
   );
 }

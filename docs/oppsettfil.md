@@ -39,6 +39,7 @@ noen gang leses under eksport.
 | | `arstimetall`, `standard_varighet_min` | `skolear_fag` for samme år |
 | Innstillinger | `standard_varighet_min` | `innstilling` |
 | Skalaer (valgfritt) | `navn`, `bruksomrade`, `verdier[]` | `skala` + `skalaverdi`, bare ikke-innebygde |
+| Rubrikker (med skalaene) | `navn`, `nivaer[]`, `kriterier[]` (`tekst`, `celler[]`) | `rubrikkmal`; bare tekstene, ingen id-er |
 
 Fargen på fagene er med vilje **ikke** med: den velges automatisk hos
 mottakeren og er personlig. Rom er heller ikke med: rom er fritekst per fag
@@ -67,9 +68,16 @@ Fridager tar med `helligdag` når den typen finnes (ARBEIDSLISTE §5.9).
       "grep_kode": "MFL1Z03", "arstimetall": 140, "standard_varighet_min": 180 }
   ],
   "innstillinger": { "standard_varighet_min": 180 },
-  "skalaer": []
+  "skalaer": [],
+  "rubrikker": [
+    { "navn": "Muntlig drøfting", "nivaer": ["Lav", "Middels", "Høy"],
+      "kriterier": [{ "tekst": "Drøfter", "celler": ["Nevner én side", "Fordeler og ulemper", "Veier sidene opp"] }] }
+  ]
 }
 ```
+
+`rubrikker` kom i 0.6 og mangler i eldre filer; da leses den som tom. En
+rubrikk med samme navn som en mal mottakeren har, hoppes over.
 
 - Ingen `id`-er i fila. Mottakeren lager nye UUID-er og stempler (§3.1).
 - `laget_av` og `skole` er bare til visning («Fra Fredrik Bedsvaag»).

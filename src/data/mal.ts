@@ -25,6 +25,19 @@ export type Fjorvurdering = {
   beskrivelse: string | null;
   /** datoen den lå på i fjor: første økt, ellers fristen */
   dato: string | null;
+  /** muntlig (28.2): rubrikk, tider og oppgavekort følger med */
+  vurderingsform: string | null;
+  rubrikk: string | null;
+  samtaleMin: number | null;
+  pauseMin: number | null;
+  trekkFlere: number;
+  trekkNa: number;
+  oppgavekort: {
+    nr: number;
+    tittel: string;
+    beskrivelse: string | null;
+    sporsmal: string | null;
+  }[];
 };
 
 export type Fjorar = {
@@ -60,8 +73,11 @@ export async function finnFjoraret(
     hentOkter(f.skolearId),
     hentPerioder(f.skolearFagId),
     hentPeriodemal(f.skolearFagId),
-    hent<Fjorvurdering>(
+    hent<Omit<Fjorvurdering, "oppgavekort">>(
       `SELECT v.id, v.skala_id AS skalaId, v.tittel, v.type, v.beskrivelse,
+              v.vurderingsform, v.rubrikk, v.samtale_min AS samtaleMin,
+              v.pause_min AS pauseMin, v.trekk_flere AS trekkFlere,
+              v.trekk_na AS trekkNa,
               COALESCE(
                 (SELECT MIN(o.dato) FROM vurdering_okt vo
                    JOIN okt o ON o.id = vo.okt_id AND o.slettet IS NULL
@@ -73,6 +89,17 @@ export async function finnFjoraret(
       [f.skolearFagId],
     ),
   ]);
+  const kort = await hent<
+    Fjorvurdering["oppgavekort"][number] & { vurderingId: string }
+  >(
+    `SELECT k.vurdering_id AS vurderingId, k.nr, k.tittel, k.beskrivelse,
+            k.sporsmal
+       FROM oppgavekort k
+       JOIN vurdering v ON v.id = k.vurdering_id
+      WHERE v.skolear_fag_id = $1 AND k.slettet IS NULL
+      ORDER BY k.nr`,
+    [f.skolearFagId],
+  );
   return {
     skolearFagId: f.skolearFagId,
     navn: f.navn,
@@ -80,7 +107,12 @@ export async function finnFjoraret(
     okter: sorter(okter.filter((o) => o.skolearFagId === f.skolearFagId)),
     perioder,
     mal,
-    vurderinger,
+    vurderinger: vurderinger.map((v) => ({
+      ...v,
+      oppgavekort: kort
+        .filter((k) => k.vurderingId === v.id)
+        .map(({ vurderingId: _, ...k }) => k),
+    })),
   };
 }
 
@@ -238,8 +270,19 @@ export async function brukMal(
         frist: okt.dato,
         // Et forslag til det er bekreftet (§24).
         utkast: 1,
+        vurderingsform: v.vurderingsform,
+        rubrikk: v.rubrikk,
+        samtale_min: v.samtaleMin,
+        pause_min: v.pauseMin,
+        trekk_flere: v.trekkFlere,
+        trekk_na: v.trekkNa,
       });
       nye.push({ tabell: "vurdering", id });
+      for (const k of v.oppgavekort)
+        nye.push({
+          tabell: "oppgavekort",
+          id: t.settInn("oppgavekort", { vurdering_id: id, ...k }),
+        });
       nye.push({
         tabell: "vurdering_okt",
         id: t.settInn("vurdering_okt", { vurdering_id: id, okt_id: okt.id }),

@@ -1,4 +1,4 @@
-import { hent, Transaksjon } from "../db";
+import { hent, nyId, Transaksjon } from "../db";
 import { hentFagIAr } from "./fag";
 import {
   hentAktivtSkolear,
@@ -9,6 +9,7 @@ import {
 } from "./skolear";
 import { LAERERNAVN } from "./arsplanark";
 import { ALLE_FAGFARGER } from "../ui/farger";
+import { lesRubrikk } from "./muntlig";
 
 /**
  * Oppsettfila, SPEC §8.2 og docs/oppsettfil.md.
@@ -18,7 +19,7 @@ import { ALLE_FAGFARGER } from "../ui/farger";
  *
  * **Personvern.** Fila bygges felt for felt fra en fast liste (hviteliste),
  * og leser bare fra `skolear`, `fridag`, `fag`, `skolear_fag`, `innstilling`
- * og `skala`/`skalaverdi`. Ingen elevtabell leses. Importen avviser en fil
+ * `skala`/`skalaverdi` og `rubrikkmal`. Ingen elevtabell leses. Importen avviser en fil
  * med nøkler som ikke står på lista.
  */
 
@@ -47,6 +48,13 @@ export type Oppsettskala = {
   }[];
 };
 
+/** En rubrikkmal (28.3b), uten id-er: nivåene og cellene står i rekkefølge. */
+export type Oppsettrubrikk = {
+  navn: string;
+  nivaer: string[];
+  kriterier: { tekst: string; celler: string[] }[];
+};
+
 export type Oppsett = {
   format: typeof FORMAT;
   versjon: number;
@@ -58,6 +66,8 @@ export type Oppsett = {
   fag: Oppsettfag[];
   innstillinger: { standard_varighet_min?: number };
   skalaer: Oppsettskala[];
+  /** med skalaene; mangler i filer fra før 0.6 */
+  rubrikker: Oppsettrubrikk[];
 };
 
 /** Delene som kan krysses av i eksporten. */
@@ -100,6 +110,26 @@ export async function lagOppsett(valg: {
       skalaer.push({ navn: s.navn, bruksomrade: s.bruksomrade, verdier });
     }
   }
+  // Rubrikkmalene følger skalaene (de står ved siden av dem i
+  // Innstillinger). Bare tekstene: ingen id-er, ingen vurderinger.
+  const rubrikker: Oppsettrubrikk[] = [];
+  if (valg.deler.skalaer) {
+    const maler = await hent<{ navn: string; innhold: string }>(
+      "SELECT navn, innhold FROM rubrikkmal WHERE slettet IS NULL ORDER BY navn",
+    );
+    for (const m of maler) {
+      const r = lesRubrikk(m.innhold);
+      if (!r) continue;
+      rubrikker.push({
+        navn: m.navn,
+        nivaer: r.nivaer.map((n) => n.navn),
+        kriterier: r.kriterier.map((k) => ({
+          tekst: k.tekst,
+          celler: r.nivaer.map((n) => k.celler[n.id] ?? ""),
+        })),
+      });
+    }
+  }
 
   return {
     format: FORMAT,
@@ -130,6 +160,7 @@ export async function lagOppsett(valg: {
         ? { standard_varighet_min: Number(varighet) }
         : {},
     skalaer,
+    rubrikker,
   };
 }
 
@@ -156,6 +187,7 @@ const TOPPNOKLER = [
   "fag",
   "innstillinger",
   "skalaer",
+  "rubrikker",
 ];
 const FAGNOKLER = [
   "kode",
@@ -337,6 +369,33 @@ export function lesOppsett(
       }
   }
 
+  const rubrikker = Array.isArray(data.rubrikker) ? data.rubrikker : [];
+  if (data.rubrikker !== undefined && !Array.isArray(data.rubrikker))
+    feil.push("Rubrikkene er ikke en liste.");
+  const tekster = (x: unknown) =>
+    Array.isArray(x) && x.every((t) => typeof t === "string");
+  for (const [i, r] of rubrikker.entries()) {
+    if (!objekt(r)) {
+      feil.push(`Rubrikk nr. ${i + 1} er ikke lesbar.`);
+      continue;
+    }
+    ukjente(r, ["navn", "nivaer", "kriterier"], `i rubrikk nr. ${i + 1}`);
+    if (typeof r.navn !== "string" || !r.navn.trim())
+      feil.push(`Rubrikk nr. ${i + 1} mangler navn.`);
+    if (!tekster(r.nivaer) || (r.nivaer as string[]).length < 2)
+      feil.push(`Rubrikken ${String(r.navn)} har ikke lesbare nivåer.`);
+    if (!Array.isArray(r.kriterier))
+      feil.push(`Rubrikken ${String(r.navn)} har ikke lesbare kriterier.`);
+    else
+      for (const k of r.kriterier) {
+        if (!objekt(k) || typeof k.tekst !== "string" || !tekster(k.celler))
+          feil.push(
+            `Rubrikken ${String(r.navn)} har et kriterium som ikke er lesbart.`,
+          );
+        else ukjente(k, ["tekst", "celler"], `i rubrikken ${String(r.navn)}`);
+      }
+  }
+
   if (feil.length > 0) return { ok: false, feil };
 
   return {
@@ -370,6 +429,10 @@ export function lesOppsett(
       })),
       innstillinger: objekt(inn) ? (inn as Oppsett["innstillinger"]) : {},
       skalaer: skalaer as Oppsettskala[],
+      rubrikker: (rubrikker as Oppsettrubrikk[]).map((r) => ({
+        ...r,
+        navn: r.navn.trim(),
+      })),
     },
   };
 }
@@ -389,6 +452,7 @@ export type Importplan = {
   settOktlengde: boolean;
   skalaerNye: Oppsettskala[];
   skalaerFinnes: string[];
+  rubrikkerNye: Oppsettrubrikk[];
 };
 
 /** Hva importen vil gjøre, uten å skrive noe. */
@@ -446,6 +510,14 @@ export async function planleggImport(oppsett: Oppsett): Promise<Importplan> {
     ).map((s) => s.navn.toLowerCase()),
   );
 
+  const malnavn = new Set(
+    (
+      await hent<{ navn: string }>(
+        "SELECT navn FROM rubrikkmal WHERE slettet IS NULL",
+      )
+    ).map((m) => m.navn.toLowerCase()),
+  );
+
   return {
     oppsett,
     skolear,
@@ -463,6 +535,9 @@ export async function planleggImport(oppsett: Oppsett): Promise<Importplan> {
     skalaerFinnes: oppsett.skalaer
       .filter((s) => skalanavn.has(s.navn.toLowerCase()))
       .map((s) => s.navn),
+    rubrikkerNye: oppsett.rubrikker.filter(
+      (r) => !malnavn.has(r.navn.toLowerCase()),
+    ),
   };
 }
 
@@ -503,6 +578,10 @@ export function plantekst(p: Importplan): string[] {
     );
   if (p.skalaerFinnes.length > 0)
     ut.push(`Skalaene ${p.skalaerFinnes.join(", ")} finnes fra før.`);
+  if (p.rubrikkerNye.length > 0)
+    ut.push(
+      `${flertall(p.rubrikkerNye.length, "rubrikk", "rubrikker")} legges til: ${p.rubrikkerNye.map((r) => r.navn).join(", ")}.`,
+    );
   if (ut.length === 0)
     ut.push("Alt i fila finnes fra før. Ingenting legges til.");
   return ut;
@@ -577,6 +656,23 @@ export async function importerOppsett(
         bestatt: v.bestatt ?? null,
         teller_ikke: v.teller_ikke ?? 0,
       });
+  }
+
+  for (const r of p.rubrikkerNye) {
+    const nivaer = r.nivaer.map((navn) => ({ id: nyId(), navn }));
+    t.settInn("rubrikkmal", {
+      navn: r.navn,
+      innhold: JSON.stringify({
+        nivaer,
+        kriterier: r.kriterier.map((k) => ({
+          id: nyId(),
+          tekst: k.tekst,
+          celler: Object.fromEntries(
+            nivaer.map((n, i) => [n.id, k.celler[i] ?? ""]),
+          ),
+        })),
+      }),
+    });
   }
 
   await t.kjor();

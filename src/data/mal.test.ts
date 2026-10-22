@@ -63,6 +63,15 @@ describe("fjoråret som mal", () => {
       null,
     );
     await knyttOkt(v, b);
+    // Oppgavekort og rubrikk (28.2) følger med til i år.
+    const m = await import("./muntlig");
+    await m.nyttOppgavekort(v, 1, {
+      tittel: "Kildekritikk",
+      sporsmal: ["Hvem?"],
+    });
+    const r = m.tomRubrikk();
+    r.kriterier[0].tekst = "Bruker kilder";
+    await m.settMuntlig(v, { form: "rubrikk", rubrikk: r, samtaleMin: 15 });
 
     // I år: tre mandager, én med tema fra før.
     const x = await opprettOkt(sfIar, "HIS3", "2026-08-17", null, 90);
@@ -100,6 +109,12 @@ describe("fjoråret som mal", () => {
     // bekreftet.
     const [kopi] = await hentVurderinger(iar);
     expect(kopi.utkast).toBe(1);
+    const [kort] = await m.hentOppgavekort(kopi.id);
+    expect(kort).toMatchObject({ tittel: "Kildekritikk", sporsmal: ["Hvem?"] });
+    const oppsett = await m.hentMuntlig(kopi.id);
+    expect(oppsett.form).toBe("rubrikk");
+    expect(oppsett.rubrikk.kriterier[0].tekst).toBe("Bruker kilder");
+    expect(oppsett.samtaleMin).toBe(15);
     expect(await hentKommendeVurderinger(iar, 10)).toEqual([]);
     await bekreftUtkast([kopi.id]);
     expect((await hentVurderinger(iar))[0].utkast).toBe(0);

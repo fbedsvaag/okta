@@ -1198,6 +1198,12 @@ html {
     display: block;
   }
 
+  /* Et ark som skriver ut sitt eget (tilbakemeldinger, 28.5): resten av
+     appen er ikke med på papiret. */
+  body.skriver-eget > #root {
+    display: none !important;
+  }
+
   /* Ett fag per side. Siste side får ikke et tomt ark etter seg. */
   .fagside {
     break-after: page;

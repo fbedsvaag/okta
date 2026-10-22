@@ -194,6 +194,13 @@ føring · Ferdig. Filterbrikker for type og fag over. En samtale som pågår,
 har aksentring og grønn puls. Mentorsamtaler har litt mørkere flate og
 vises bare for den som har mentorelever. «+ Ny ⌄» i verktøylinja.
 
+**Vurderingsarket** (28.1, lerretet MuntligVurdering) er bredt, 1180 px fra
+høyre. Muntlig: overskrift med fag, dato og skala, bryter Planlegg ·
+Gjennomfør · Resultater, «N av M ferdig» og «Kopier tidsplan til Teams».
+Tidsplanen står i en kolonne på 340 px til venstre (rader på 44 px: tid,
+navn med oppgave under, karakterrute), gjeldende elev med aksentring.
+I Planlegg dras rader i ⋮⋮ med den felles dra-mekanikken.
+
 Nederst i sidemenyen, over Innstillinger: **Gi tilbakemelding**, i samme
 stil som Innstillinger-raden. Et klikk kopierer versjon, system og skjerm,
 viser «Kopiert. Lim inn under «Versjon og skjerm».» i raden (12,5 px, grå,

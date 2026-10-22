@@ -278,6 +278,38 @@ describe("import", () => {
     expect(n).toBe(0);
   });
 
+  it("tar med rubrikkmalene, uten id-er, og legger dem inn hos mottakeren", async () => {
+    await kilde();
+    const m = await import("./muntlig");
+    const r = m.tomRubrikk();
+    r.kriterier[0].tekst = "Drøfter";
+    r.kriterier[0].celler[r.nivaer[2].id] = "Veier sidene opp";
+    await m.lagreRubrikkmal("Muntlig drøfting", r);
+    const ut = await lagOppsett({ skole: null, deler: ALT });
+    expect(ut.rubrikker).toEqual([
+      {
+        navn: "Muntlig drøfting",
+        nivaer: ["Lav", "Middels", "Høy"],
+        kriterier: [{ tekst: "Drøfter", celler: ["", "", "Veier sidene opp"] }],
+      },
+    ]);
+    expect(JSON.stringify(ut.rubrikker)).not.toContain(r.nivaer[0].id);
+    base.nullstill();
+    const lest = lesOppsett(JSON.stringify(ut));
+    if (!lest.ok) throw new Error(lest.feil.join("\n"));
+    const plan = await planleggImport(lest.oppsett);
+    expect(plantekst(plan)).toContain(
+      "1 rubrikk legges til: Muntlig drøfting.",
+    );
+    await importerOppsett(plan);
+    const [mal] = await m.hentRubrikkmaler();
+    expect(mal.rubrikk.kriterier[0].celler[mal.rubrikk.nivaer[2].id]).toBe(
+      "Veier sidene opp",
+    );
+    // Andre gang finnes den fra før.
+    expect((await planleggImport(lest.oppsett)).rubrikkerNye).toEqual([]);
+  });
+
   it("gjør ingenting andre gang", async () => {
     const o = await fil();
     await importerOppsett(await planleggImport(o));

@@ -12,6 +12,7 @@ import { hentOkter, type Okt } from "../data/okter";
 import { OktPanel } from "../skjermer/OktPanel";
 import { ElevPanel } from "../skjermer/ElevPanel";
 import { VurderingPanel } from "../skjermer/VurderingPanel";
+import { MuntligArk } from "../skjermer/muntlig/MuntligArk";
 import { hentVurderinger, type Vurdering } from "../data/vurderinger";
 import { FagPanel } from "../skjermer/FagPanel";
 import { hentFagIAr, type FagIAr } from "../data/fag";
@@ -344,8 +345,12 @@ function Arkramme({
             // (lerretet «ElevArk»).
             type === "elev"
             ? "glass-matt inset-y-4 right-4 w-[min(880px,calc(100%-32px))] overflow-hidden rounded-[24px]"
-            : // Vurdering og fag: samme glassark fra høyre (10.4).
-              "glass-matt inset-y-4 right-4 w-[min(672px,calc(100%-32px))] overflow-hidden rounded-[24px]"
+            : type === "vurdering"
+              ? // Vurderingen er et arbeidsark med tidsplan til venstre
+                // (28.1): bredt, fra høyre.
+                "glass-matt inset-y-4 right-4 w-[min(1180px,calc(100%-32px))] overflow-hidden rounded-[24px]"
+              : // Fag: samme glassark fra høyre (10.4).
+                "glass-matt inset-y-4 right-4 w-[min(672px,calc(100%-32px))] overflow-hidden rounded-[24px]"
       } ${paVeiUt || dybde > 0 ? "pointer-events-none" : ""}`}
       style={
         dybde > 0
@@ -503,7 +508,15 @@ function VurderingArk({
     <>
       <Arkhode underst={underst} onLukk={onLukk} />
       <div className="flex min-h-0 flex-1 flex-col overflow-auto">
-        {vurdering && (
+        {vurdering?.type === "muntlig" && (
+          <MuntligArk
+            key={vurdering.id}
+            vurdering={vurdering}
+            skolearId={skolearId}
+            onApneElev={onApneElev}
+          />
+        )}
+        {vurdering && vurdering.type !== "muntlig" && (
           <VurderingPanel
             key={vurdering.id}
             vurdering={vurdering}

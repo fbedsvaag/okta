@@ -9,6 +9,24 @@ den skal bli. Fila eies fritt, i motsetning til SPEC.md.
 Utseendet står i `DESIGN.md`, som beskriver appen slik den er bygget.
 Lerretet (`docs/lerret/`) er fasit for det som er tegnet.
 
+## Muntlig vurdering (22.10, ARBEIDSLISTE 28.1–28.5)
+
+- En muntlig vurdering åpnes i et bredt ark: Planlegg · Gjennomfør ·
+  Resultater, med tidsplanen til venstre (`skjermer/muntlig/`).
+- Tidsplanen er samtaledager med vurderingens id. Utleggingen er
+  samtaletrekkerens `leggUtDagen`; elevene fordeles jevnt på dagene
+  (`data/tidsplan.ts`). Dra i ⋮⋮ bruker `ui/dra.ts`. En trekning som er
+  laget i samtaletrekkeren før, vises her med sine egne minutter og pause.
+- Migrasjon 034: rubrikk, vurderingsform, minutter, pause og trekkvalg på
+  vurderingen; rubrikkvalg og stilte spørsmål på resultatet; tabellene
+  `oppgavekort` og `rubrikkmal`. Testet på en base med data, og med
+  `VACUUM INTO` som sikkerhetskopien bruker.
+- Rubrikkmaler i Innstillinger → Skalaer, i oppsettfila (`rubrikker`) og i
+  «Hent fra i fjor» (sammen med oppgavekortene).
+- Notatet under samtalen er resultatets kommentar (Markdown, §29.1).
+- Ikke gjort: økt-kobling for dagene (den gamle trekkeren har den), og
+  gruppesamtaler i muntlig.
+
 ## Vurderinger og samtaler som én fane (22.10, ARBEIDSLISTE 28.0)
 
 - Sidemenyen har «Vurderinger og samtaler» (G V; G S går samme sted).
