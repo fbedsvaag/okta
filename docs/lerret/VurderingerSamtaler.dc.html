@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<title>Vurderinger og samtaler</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#d4cee2}
+:root{--pal:#4a3d7d;--pal-lys:#e3ddf0;--pal-mid:#b2a8d2;--pal-svak:#f4f2f9;--ease-sprett:cubic-bezier(.34,1.32,.5,1)}
+.pt{position:relative;z-index:1;display:flex;align-items:center;gap:9px;height:32px;padding:0 10px;border-radius:10px;color:#2e2840;font-size:14px}
+.pt.on{font-weight:500;color:#241f33}
+.under{position:relative;z-index:1;display:flex;align-items:center;gap:8px;min-height:28px;margin-left:22px;padding:3px 10px;border-radius:8px;color:#2e2840;font-size:13px}
+.under.on{font-weight:500}
+.under::before{content:"";position:absolute;left:-11px;top:-1px;bottom:-1px;width:1.5px;border-radius:1px;background:rgba(36,31,51,.16)}
+.kbd{margin-left:auto;font-size:11px;color:#6b6482;letter-spacing:.04em;font-weight:400}
+.navmark{position:absolute;left:8px;right:8px;border-radius:10px;background:rgba(255,255,255,.88);box-shadow:0 1px 3px rgba(36,31,51,.14),inset 0 1px 0 #fff;pointer-events:none}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;height:30px;padding:0 13px;border-radius:999px;border:1px solid #d9d4e8;background:#fff;color:#241f33;font:inherit;font-size:13px;cursor:pointer;white-space:nowrap}
+.btn.pri{background:var(--pal);border-color:var(--pal);color:#fff;font-weight:500}
+.btn.stille{border-color:transparent;background:transparent;color:#645d7a}
+.seg{position:relative;display:inline-flex;padding:2px;border-radius:999px;background:rgba(36,31,51,.06)}
+.seg button{all:unset;position:relative;z-index:1;cursor:pointer;height:26px;display:inline-flex;align-items:center;justify-content:center;font-size:12.5px;color:#645d7a;transition:color 200ms}
+.seg button.on{color:#241f33;font-weight:500}
+.tommel{position:absolute;top:2px;left:2px;height:26px;border-radius:999px;background:#fff;box-shadow:0 1px 3px rgba(36,31,51,.16);transition:transform 340ms var(--ease-sprett),width 340ms var(--ease-sprett)}
+.chip{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 9px;border-radius:12px;background:var(--pal-svak);font-size:12px;white-space:nowrap}
+.fk{width:8px;height:8px;border-radius:2px;flex:none;display:inline-block}
+.av{border-radius:50%;overflow:hidden;flex:none;display:inline-block;background:var(--pal-lys)}
+.ell{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.num{font-variant-numeric:tabular-nums}
+.h{font-size:13px;font-weight:600;margin:0}
+.kort{border-radius:14px;background:#fff;box-shadow:inset 0 0 0 1px #ece9f3;padding:16px 18px}
+.hm{border-radius:2px;display:inline-block}
+.g{background:#3f9d49}.y{background:#d9a92f}.r{background:#c04a3d}.o{background:#d5d8dd}
+.glide{transition:transform 260ms var(--ease-sprett),height 260ms var(--ease-sprett)}
+@media (prefers-reduced-motion: reduce){.glide,.tommel{transition:none!important}}
+
+.fil{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 12px;border-radius:999px;font-size:13px;color:#645d7a;box-shadow:inset 0 0 0 1px #e3ddf0;background:#fff;transition:background 200ms,color 200ms}
+.fil.on{background:#241f33;color:#fff;box-shadow:none}
+.fil small{font-size:11.5px;opacity:.6}
+.gh{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:#645d7a;margin:22px 4px 8px}
+.gh small{font-weight:400;color:#9a90b8}
+.vr{display:grid;grid-template-columns:30px minmax(0,1fr) 170px 150px 24px;align-items:center;gap:14px;padding:12px 14px;border-radius:14px;background:#fff;box-shadow:inset 0 0 0 1px #ece9f3;margin-bottom:8px;cursor:pointer;transition:box-shadow 200ms,transform 200ms}
+.vr:hover{box-shadow:inset 0 0 0 1.5px #b2a8d2}
+.vr.na{box-shadow:inset 0 0 0 1.5px var(--pal),0 6px 18px rgba(74,61,125,.1)}
+.vr.k{background:#faf9fc}
+.ik{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:#f4f2f9;color:#645d7a}
+.vr.k .ik{background:#4a3d7d14;color:#4a3d7d}
+.tt{font-size:14px;font-weight:500}
+.mt{display:flex;align-items:center;gap:7px;margin-top:3px;font-size:12px;color:#8a82a3}
+.bar{height:5px;border-radius:3px;background:#ece9f3;overflow:hidden}.bar span{display:block;height:100%;border-radius:3px;background:#7d6bb0}
+.vr.k .bar span{background:#4a3d7d}
+.puls{width:7px;height:7px;border-radius:50%;background:#3f9d49;box-shadow:0 0 0 3px #3f9d4926}
+.nymeny{position:absolute;right:0;top:40px;width:330px;padding:6px;border-radius:16px;background:rgba(255,255,255,.98);box-shadow:0 18px 50px rgba(36,31,51,.22),0 0 0 1px rgba(36,31,51,.08);z-index:40;animation:nyinn 200ms cubic-bezier(.22,1,.36,1)}
+@keyframes nyinn{from{opacity:0;transform:translateY(-4px)}}
+.nyv{display:flex;gap:12px;align-items:flex-start;padding:10px 10px;border-radius:11px;cursor:pointer}.nyv:hover{background:#f4f2f9}
+.nyv b{display:block;font-weight:500;font-size:13.5px}.nyv small{display:block;color:#9a90b8;font-size:12px;margin-top:2px;line-height:1.4}
+.skille{height:1px;background:#ece9f3;margin:4px 8px}
+.tips{font-size:12px;color:#9a90b8}
+
+</style>
+</helmet>
+<div style="position:relative;height:1060px;padding:24px;box-sizing:border-box;overflow:hidden;font-family:'Geist',-apple-system,sans-serif;color:#241f33;font-size:14px">
+<div aria-hidden="true" style="position:absolute;left:-120px;top:-80px;width:620px;height:620px;border-radius:50%;background:#8a7bc2;filter:blur(70px);opacity:.75"></div>
+<div aria-hidden="true" style="position:absolute;left:-60px;top:560px;width:520px;height:520px;border-radius:50%;background:#5f9e98;filter:blur(80px);opacity:.7"></div>
+<div aria-hidden="true" style="position:absolute;right:-100px;top:-60px;width:700px;height:500px;border-radius:50%;background:#b8aee0;filter:blur(90px);opacity:.6"></div>
+<div style="position:relative;display:flex;height:1012px;border-radius:16px;overflow:hidden;background:rgba(236,234,241,.42);backdrop-filter:blur(40px) saturate(160%);box-shadow:0 24px 70px rgba(36,31,51,.28),0 0 0 1px rgba(36,31,51,.14)">
+<nav aria-label="Hovedmeny" style="position:relative;width:236px;flex:none;margin:10px;padding:12px 8px;box-sizing:border-box;display:flex;flex-direction:column;gap:2px;border-radius:22px;background:rgba(255,255,255,.5);backdrop-filter:blur(28px) saturate(170%);border:1px solid rgba(255,255,255,.75);box-shadow:inset 0 1px 0 rgba(255,255,255,.95),0 10px 30px rgba(36,31,51,.14)">
+<div style="display:flex;align-items:center;gap:8px;padding:2px 8px 10px"><svg width="20" height="20" viewBox="0 0 1024 1024" aria-hidden="true"><rect x="40" y="40" width="944" height="944" rx="215" fill="#241F33"></rect><rect x="290" y="330" width="200" height="364" rx="44" fill="#EEEDFE"></rect><rect x="516" y="330" width="100" height="364" rx="40" fill="#C9C2DD"></rect><rect x="642" y="330" width="100" height="364" rx="40" fill="#9A90B8"></rect></svg><span style="font-weight:600;font-size:14px">Økta</span><span class="num" style="margin-left:auto;font-size:11px;color:#4b4560">2026/27</span></div>
+<div style="display:flex;align-items:center;gap:8px;height:30px;padding:0 12px;margin-bottom:10px;border-radius:999px;background:rgba(255,255,255,.55);border:1px solid rgba(255,255,255,.75);font-size:13px;color:#4b4560">Søk<span class="kbd">⌘K</span></div>
+<div class="navmark" style="top:193px;height:32px;"></div><div class="pt ">I dag<span class="kbd">G D</span></div><div class="pt ">Økter<span class="kbd">G Ø</span></div><div class="pt ">Elever<span class="kbd">G E</span></div><div class="pt on">Vurderinger og samtaler<span class="kbd">G V</span></div><div class="pt ">Plasser og grupper<span class="kbd">G P</span></div>
+<div style="flex:1"></div><div class="pt">Innstillinger<span class="kbd">⌘,</span></div></nav>
+<main style="position:relative;flex:1;min-width:0;margin:10px 10px 10px 0;background:#fff;border-radius:16px;box-shadow:0 1px 3px rgba(36,31,51,.10);display:flex;flex-direction:column;overflow:hidden">
+<header style="display:flex;align-items:center;gap:10px;margin:10px 12px 0;padding:0 8px 0 18px;height:48px;border-radius:999px;background:rgba(255,255,255,.7);backdrop-filter:blur(28px) saturate(170%);border:1px solid rgba(255,255,255,.8);box-shadow:inset 0 1px 0 rgba(255,255,255,.95),0 6px 20px rgba(36,31,51,.10),0 0 0 .5px rgba(36,31,51,.08);flex:none"><span style="font-weight:600;font-size:15px">Vurderinger og samtaler</span><span style="font-size:13px;color:#9a90b8">2026/27</span>
+<span style="flex:1"></span>
+<div style="position:relative"><button class="btn pri" onClick="{{nyT}}">+ Ny<span style="opacity:.7;font-size:11px">⌄</span></button>
+<sc-if value="{{nyApen}}" hint-placeholder-val="{{ true }}"><div class="nymeny">
+<div class="nyv"><span class="ik"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2.5h6l2.5 2.5v8.5h-8.5z"/><path d="M6 7h4.5M6 9.5h4.5"/></svg></span><span><b>Skriftlig prøve</b><small>I en økt. Føres etterpå.</small></span></div>
+<div class="nyv"><span class="ik"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4.5a2 2 0 012-2h6a2 2 0 012 2v4a2 2 0 01-2 2H8l-3 2.5v-2.5a2 2 0 01-2-2z"/></svg></span><span><b>Muntlig vurdering</b><small>Med tidsplan, oppgaver som trekkes og rubrikk.</small></span></div>
+<div class="nyv"><span class="ik"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2.5v7M5 6.5l3 3 3-3"/><path d="M3 11v2h10v-2"/></svg></span><span><b>Innlevering</b><small>Med frist. Kryss av hvem som har levert.</small></span></div>
+<div class="skille"></div>
+<div class="nyv"><span class="ik" style="background:#4a3d7d14;color:#4a3d7d"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2.2"/><circle cx="11" cy="6.5" r="1.8"/><path d="M2.5 13c.6-2.2 2-3.2 3.5-3.2s2.9 1 3.5 3.2M10 10c1.5 0 2.8.8 3.4 2.6"/></svg></span><span><b>Kontaktsamtaler</b><small>Tidsplan for kontaktklassen. Ikke en vurdering, gir ingen karakter.</small></span></div>
+</div></sc-if></div></header>
+<div style="flex:1;min-height:0;overflow:hidden;padding:16px 28px 0"><div style="height:100%;overflow:auto;padding-bottom:30px">
+<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><sc-for list="{{filtre}}" as="f" hint-placeholder-count="5"><button class="{{f.kl}}" onClick="{{f.klikk}}">{{f.n}}<small>{{f.ant}}</small></button></sc-for>
+<span style="width:12px"></span><sc-for list="{{fag}}" as="f" hint-placeholder-count="4"><button class="{{f.kl}}" onClick="{{f.klikk}}"><span class="fk" style="background:{{f.c}}"></span>{{f.n}}</button></sc-for></div>
+<sc-for list="{{grupper}}" as="g" hint-placeholder-count="4"><div class="gh">{{g.n}}<small>{{g.ant}}</small></div>
+<sc-for list="{{g.rader}}" as="r" hint-placeholder-count="3"><div class="{{r.kl}}"><span class="ik"><sc-if value="{{r.t_s}}" hint-placeholder-val="{{ false }}"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2.5h6l2.5 2.5v8.5h-8.5z"/><path d="M6 7h4.5M6 9.5h4.5"/></svg></sc-if><sc-if value="{{r.t_m}}" hint-placeholder-val="{{ true }}"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4.5a2 2 0 012-2h6a2 2 0 012 2v4a2 2 0 01-2 2H8l-3 2.5v-2.5a2 2 0 01-2-2z"/></svg></sc-if><sc-if value="{{r.t_i}}" hint-placeholder-val="{{ false }}"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2.5v7M5 6.5l3 3 3-3"/><path d="M3 11v2h10v-2"/></svg></sc-if><sc-if value="{{r.t_k}}" hint-placeholder-val="{{ false }}"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2.2"/><circle cx="11" cy="6.5" r="1.8"/><path d="M2.5 13c.6-2.2 2-3.2 3.5-3.2s2.9 1 3.5 3.2M10 10c1.5 0 2.8.8 3.4 2.6"/></svg></sc-if></span>
+<div style="min-width:0"><div class="tt ell">{{r.n}}</div><div class="mt"><span class="fk" style="background:{{r.c}}"></span>{{r.f}} · {{r.type}}<sc-if value="{{r.harSkala}}" hint-placeholder-val="{{ true }}"> · {{r.skala}}</sc-if><sc-if value="{{r.rub}}" hint-placeholder-val="{{ false }}"> · rubrikk</sc-if></div></div>
+<div><div style="font-size:13px" class="num">{{r.d}}</div><div class="mt"><sc-if value="{{r.pagar}}" hint-placeholder-val="{{ false }}"><span class="puls"></span></sc-if>{{r.info}}</div></div>
+<div><div class="bar"><span style="width:{{r.pst}}"></span></div><div class="mt num"><span>{{r.antTekst}}</span></div></div>
+<span style="color:#c9c2dd;font-size:16px">›</span></div></sc-for></sc-for>
+<div class="tips" style="margin:18px 4px;max-width:640px;line-height:1.5">Kontaktsamtaler ligger her for å samle alle tidsplanene, men er ikke vurderinger: de gir ingen karakter, og notatene vises aldri i faget. Du ser dem bare om du er kontaktlærer.</div>
+</div></div>
+</main>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1060}}'>
+var RADER = [{"g": "na", "f": "MFL2", "c": "#9a5a2c", "t": "m", "n": "Muntlig: prisstrategi", "d": "I dag 08:30–12:58", "info": "Pågår · Filip Solberg er inne", "ant": 5, "av": 14, "skala": "Karakter 1–6", "rub": true}, {"g": "na", "f": "2STA", "c": "#4a3d7d", "t": "k", "n": "Kontaktsamtaler høst", "d": "tir 27.10 – fre 6.11", "info": "3 dager · 6 av 16 holdt", "ant": 6, "av": 16}, {"g": "komm", "f": "ENG1", "c": "#3d7a5a", "t": "m", "n": "Book talk", "d": "man 2.11 og tir 3.11", "info": "Tidsplan trukket · delt i Teams", "ant": 0, "av": 28, "skala": "Karakter 1–6"}, {"g": "komm", "f": "MFL1", "c": "#2e6a8e", "t": "s", "n": "Skriftlig prøve: markedsføringsprosessen", "d": "tor 5.11", "info": "I økta tor 5.11", "ant": 0, "av": 24, "skala": "Karakter 1–6"}, {"g": "komm", "f": "MFL2", "c": "#9a5a2c", "t": "i", "n": "Kampanjeplan", "d": "frist fre 13.11", "info": "4 av 26 levert", "ant": 4, "av": 26, "skala": "Godkjent"}, {"g": "rett", "f": "MFL1", "c": "#2e6a8e", "t": "s", "n": "Skriftlig prøve: markedsanalyse", "d": "tor 24.9", "info": "18 av 24 ført", "ant": 18, "av": 24, "skala": "Karakter 1–6"}, {"g": "ferdig", "f": "MFL2", "c": "#9a5a2c", "t": "m", "n": "Muntlig: SWOT", "d": "tor 17.9", "info": "Snitt 4,2", "ant": 26, "av": 26, "skala": "Karakter 1–6"}, {"g": "ferdig", "f": "2STA", "c": "#4a3d7d", "t": "k", "n": "Oppstartssamtaler", "d": "aug–sep", "info": "16 av 16 holdt", "ant": 16, "av": 16}, {"g": "ferdig", "f": "ENG1", "c": "#3d7a5a", "t": "i", "n": "Personal essay", "d": "fre 2.10", "info": "Snitt 4,0", "ant": 28, "av": 28, "skala": "Karakter 1–6"}], GRUPPER = [["na", "Nå"], ["komm", "Kommende"], ["rett", "Til føring"], ["ferdig", "Ferdig"]], TYPER = {"s": "Skriftlig", "m": "Muntlig", "i": "Innlevering", "k": "Kontaktsamtaler"};
+var IK = {"s": "<svg width=\"15\" height=\"15\" viewBox=\"0 0 16 16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 2.5h6l2.5 2.5v8.5h-8.5z\"/><path d=\"M6 7h4.5M6 9.5h4.5\"/></svg>", "m": "<svg width=\"15\" height=\"15\" viewBox=\"0 0 16 16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 4.5a2 2 0 012-2h6a2 2 0 012 2v4a2 2 0 01-2 2H8l-3 2.5v-2.5a2 2 0 01-2-2z\"/></svg>", "i": "<svg width=\"15\" height=\"15\" viewBox=\"0 0 16 16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M8 2.5v7M5 6.5l3 3 3-3\"/><path d=\"M3 11v2h10v-2\"/></svg>", "k": "<svg width=\"15\" height=\"15\" viewBox=\"0 0 16 16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"6\" cy=\"6\" r=\"2.2\"/><circle cx=\"11\" cy=\"6.5\" r=\"1.8\"/><path d=\"M2.5 13c.6-2.2 2-3.2 3.5-3.2s2.9 1 3.5 3.2M10 10c1.5 0 2.8.8 3.4 2.6\"/></svg>"};
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { type: 'alle', fag: null, ny: false }; }
+  renderVals() {
+    var self = this, st = this.state, o = {};
+    var F = [['alle', 'Alle'], ['s', 'Skriftlig'], ['m', 'Muntlig'], ['i', 'Innlevering'], ['k', 'Kontaktsamtaler']];
+    o.filtre = F.map(function (f) { return { n: f[1], ant: f[0] === 'alle' ? RADER.length : RADER.filter(function (r) { return r.t === f[0]; }).length, kl: 'fil' + (st.type === f[0] ? ' on' : ''), klikk: function () { self.setState({ type: f[0] }); } }; });
+    var FAG = [['MFL1', '#2e6a8e'], ['MFL2', '#9a5a2c'], ['ENG1', '#3d7a5a'], ['2STA', '#4a3d7d']];
+    o.fag = FAG.map(function (f) { return { n: f[0], c: f[1], kl: 'fil' + (st.fag === f[0] ? ' on' : ''), klikk: function () { self.setState({ fag: st.fag === f[0] ? null : f[0] }); } }; });
+    var synlig = RADER.filter(function (r) { return (st.type === 'alle' || r.t === st.type) && (!st.fag || r.f === st.fag); });
+    o.grupper = GRUPPER.map(function (g) { var rr = synlig.filter(function (r) { return r.g === g[0]; });
+      return { n: g[1], ant: rr.length ? rr.length : '', rader: rr.map(function (r) { return { n: r.n, f: r.f, c: r.c, type: TYPER[r.t], ik: '', d: r.d, info: r.info, ant: r.ant, av: r.av, pst: Math.round(r.ant / r.av * 100) + '%', antTekst: r.ant + ' av ' + r.av, t_s: r.t === 's', t_m: r.t === 'm', t_i: r.t === 'i', t_k: r.t === 'k',
+        skala: r.skala || '', harSkala: !!r.skala, rub: !!r.rub, pagar: r.g === 'na' && r.t === 'm', kl: 'vr' + (r.g === 'na' && r.t === 'm' ? ' na' : '') + (r.t === 'k' ? ' k' : ''), t: r.t }; }) }; }).filter(function (g) { return g.rader.length; });
+    o.nyApen = st.ny; o.nyT = function () { self.setState({ ny: !st.ny }); };
+    return o;
+  }
+}
+</script>
+</body>
+</html>

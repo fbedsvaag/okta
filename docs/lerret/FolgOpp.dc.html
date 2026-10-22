@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<title>Følg opp</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#d4cee2}
+:root{--pal:#4a3d7d;--pal-lys:#e3ddf0;--pal-mid:#b2a8d2;--pal-svak:#f4f2f9;--ease-sprett:cubic-bezier(.34,1.32,.5,1)}
+.pt{position:relative;z-index:1;display:flex;align-items:center;gap:9px;height:32px;padding:0 10px;border-radius:10px;color:#2e2840;font-size:14px}
+.pt.on{font-weight:500;color:#241f33}
+.under{position:relative;z-index:1;display:flex;align-items:center;gap:8px;min-height:28px;margin-left:22px;padding:3px 10px;border-radius:8px;color:#2e2840;font-size:13px}
+.under.on{font-weight:500}
+.under::before{content:"";position:absolute;left:-11px;top:-1px;bottom:-1px;width:1.5px;border-radius:1px;background:rgba(36,31,51,.16)}
+.kbd{margin-left:auto;font-size:11px;color:#6b6482;letter-spacing:.04em;font-weight:400}
+.navmark{position:absolute;left:8px;right:8px;border-radius:10px;background:rgba(255,255,255,.88);box-shadow:0 1px 3px rgba(36,31,51,.14),inset 0 1px 0 #fff;pointer-events:none}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;height:30px;padding:0 13px;border-radius:999px;border:1px solid #d9d4e8;background:#fff;color:#241f33;font:inherit;font-size:13px;cursor:pointer;white-space:nowrap}
+.btn.pri{background:var(--pal);border-color:var(--pal);color:#fff;font-weight:500}
+.btn.stille{border-color:transparent;background:transparent;color:#645d7a}
+.seg{position:relative;display:inline-flex;padding:2px;border-radius:999px;background:rgba(36,31,51,.06)}
+.seg button{all:unset;position:relative;z-index:1;cursor:pointer;height:26px;display:inline-flex;align-items:center;justify-content:center;font-size:12.5px;color:#645d7a;transition:color 200ms}
+.seg button.on{color:#241f33;font-weight:500}
+.tommel{position:absolute;top:2px;left:2px;height:26px;border-radius:999px;background:#fff;box-shadow:0 1px 3px rgba(36,31,51,.16);transition:transform 340ms var(--ease-sprett),width 340ms var(--ease-sprett)}
+.chip{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 9px;border-radius:12px;background:var(--pal-svak);font-size:12px;white-space:nowrap}
+.fk{width:8px;height:8px;border-radius:2px;flex:none;display:inline-block}
+.av{border-radius:50%;overflow:hidden;flex:none;display:inline-block;background:var(--pal-lys)}
+.ell{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.num{font-variant-numeric:tabular-nums}
+.h{font-size:13px;font-weight:600;margin:0}
+.kort{border-radius:14px;background:#fff;box-shadow:inset 0 0 0 1px #ece9f3;padding:16px 18px}
+.hm{border-radius:2px;display:inline-block}
+.g{background:#3f9d49}.y{background:#d9a92f}.r{background:#c04a3d}.o{background:#d5d8dd}
+.glide{transition:transform 260ms var(--ease-sprett),height 260ms var(--ease-sprett)}
+@media (prefers-reduced-motion: reduce){.glide,.tommel{transition:none!important}}
+
+.fil{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 12px;border-radius:999px;font-size:13px;color:#645d7a;box-shadow:inset 0 0 0 1px #e3ddf0;background:#fff}
+.fil.on{background:#241f33;color:#fff;box-shadow:none}.fil small{opacity:.6;font-size:11.5px}
+.fr{display:grid;grid-template-columns:34px 190px minmax(0,1fr) 90px 80px auto;align-items:center;gap:14px;padding:12px 14px;border-radius:14px;background:#fff;box-shadow:inset 0 0 0 1px #ece9f3;margin-bottom:8px;transition:opacity 320ms,transform 320ms cubic-bezier(.22,1,.36,1)}
+.fr.borte{opacity:0;transform:translateX(30px)}
+.av{width:34px;height:34px;border-radius:50%;background:#e3ddf0;display:grid;place-items:center;font-size:11px;font-weight:600;color:#4a3d7d}
+.gr{display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 8px;border-radius:11px;font-size:11.5px;background:#f7f6fb;margin-right:5px}
+.gr i{width:6px;height:6px;border-radius:50%}
+.dots{display:flex;gap:4px}.dots span{width:8px;height:8px;border-radius:50%}
+.tips{font-size:12px;color:#9a90b8;line-height:1.45}
+.lk{all:unset;cursor:pointer;color:#241f33;font-weight:500;font-size:14px}.lk:hover{text-decoration:underline;text-underline-offset:2px}
+.knapp{all:unset;cursor:pointer;height:28px;padding:0 10px;border-radius:999px;font-size:12.5px;color:#645d7a;box-shadow:inset 0 0 0 1px #e3ddf0}.knapp:hover{color:#241f33}
+.knapp.pri{background:#4a3d7d;color:#fff;box-shadow:none}
+
+</style>
+</helmet>
+<div style="position:relative;height:1060px;padding:24px;box-sizing:border-box;overflow:hidden;font-family:'Geist',-apple-system,sans-serif;color:#241f33;font-size:14px">
+<div aria-hidden="true" style="position:absolute;left:-120px;top:-80px;width:620px;height:620px;border-radius:50%;background:#8a7bc2;filter:blur(70px);opacity:.75"></div>
+<div aria-hidden="true" style="position:absolute;left:-60px;top:560px;width:520px;height:520px;border-radius:50%;background:#5f9e98;filter:blur(80px);opacity:.7"></div>
+<div aria-hidden="true" style="position:absolute;right:-100px;top:-60px;width:700px;height:500px;border-radius:50%;background:#b8aee0;filter:blur(90px);opacity:.6"></div>
+<div style="position:relative;display:flex;height:1012px;border-radius:16px;overflow:hidden;background:rgba(236,234,241,.42);backdrop-filter:blur(40px) saturate(160%);box-shadow:0 24px 70px rgba(36,31,51,.28),0 0 0 1px rgba(36,31,51,.14)">
+<nav aria-label="Hovedmeny" style="position:relative;width:236px;flex:none;margin:10px;padding:12px 8px;box-sizing:border-box;display:flex;flex-direction:column;gap:2px;border-radius:22px;background:rgba(255,255,255,.5);backdrop-filter:blur(28px) saturate(170%);border:1px solid rgba(255,255,255,.75);box-shadow:inset 0 1px 0 rgba(255,255,255,.95),0 10px 30px rgba(36,31,51,.14)">
+<div style="display:flex;align-items:center;gap:8px;padding:2px 8px 10px"><svg width="20" height="20" viewBox="0 0 1024 1024" aria-hidden="true"><rect x="40" y="40" width="944" height="944" rx="215" fill="#241F33"></rect><rect x="290" y="330" width="200" height="364" rx="44" fill="#EEEDFE"></rect><rect x="516" y="330" width="100" height="364" rx="40" fill="#C9C2DD"></rect><rect x="642" y="330" width="100" height="364" rx="40" fill="#9A90B8"></rect></svg><span style="font-weight:600;font-size:14px">Økta</span><span class="num" style="margin-left:auto;font-size:11px;color:#4b4560">2026/27</span></div>
+<div style="display:flex;align-items:center;gap:8px;height:30px;padding:0 12px;margin-bottom:10px;border-radius:999px;background:rgba(255,255,255,.55);border:1px solid rgba(255,255,255,.75);font-size:13px;color:#4b4560">Søk<span class="kbd">⌘K</span></div>
+<div class="navmark" style="top:91px;height:32px;"></div><div class="pt on">I dag<span class="kbd">G D</span></div><div class="pt ">Økter<span class="kbd">G Ø</span></div><div class="pt ">Elever<span class="kbd">G E</span></div><div class="pt ">Vurderinger og samtaler<span class="kbd">G V</span></div><div class="pt ">Plasser og grupper<span class="kbd">G P</span></div>
+<div style="flex:1"></div><div class="pt">Innstillinger<span class="kbd">⌘,</span></div></nav>
+<main style="position:relative;flex:1;min-width:0;margin:10px 10px 10px 0;background:#fff;border-radius:16px;box-shadow:0 1px 3px rgba(36,31,51,.10);display:flex;flex-direction:column;overflow:hidden">
+<header style="display:flex;align-items:center;gap:10px;margin:10px 12px 0;padding:0 8px 0 18px;height:48px;border-radius:999px;background:rgba(255,255,255,.7);backdrop-filter:blur(28px) saturate(170%);border:1px solid rgba(255,255,255,.8);box-shadow:inset 0 1px 0 rgba(255,255,255,.95),0 6px 20px rgba(36,31,51,.10),0 0 0 .5px rgba(36,31,51,.08);flex:none"><span style="font-weight:600;font-size:15px">I dag</span><span style="color:#c9c2dd">›</span><span style="font-weight:600;font-size:15px">Følg opp</span><span class="tips">{{oppsum}}</span><span style="flex:1"></span><button class="btn">‹ Tilbake til I dag</button></header>
+<div style="flex:1;min-height:0;overflow:hidden;padding:16px 28px 0"><div style="height:100%;overflow:auto;padding-bottom:30px">
+<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px"><sc-for list="{{filtre}}" as="f" hint-placeholder-count="6"><button class="{{f.kl}}" onClick="{{f.klikk}}">{{f.n}}<small>{{f.a}}</small></button></sc-for><span style="flex:1"></span><span class="tips">Alle fag · sortert etter hvor lenge siden</span></div>
+<sc-for list="{{rader}}" as="r" hint-placeholder-count="7"><div class="{{r.kl}}"><span class="av">{{r.ini}}</span>
+<div><button class="lk" onClick="{{r.apne}}">{{r.n}}</button><div class="tips" style="margin-top:2px"><span class="fk" style="background:{{r.c}}"></span> {{r.f}}</div></div>
+<div><div><sc-for list="{{r.g}}" as="g" hint-placeholder-count="2"><span class="gr"><i style="background:{{g.c}}"></i>{{g.n}}</span></sc-for></div><div style="font-size:13px;color:#645d7a;margin-top:5px">{{r.tekst}}</div></div>
+<div class="dots"><sc-for list="{{r.inn}}" as="d" hint-placeholder-count="4"><span style="background:{{d}}"></span></sc-for></div>
+<span class="tips">{{r.siden}}</span>
+<div style="display:flex;gap:6px"><button class="knapp">Notat</button><button class="knapp">Til samtale</button><button class="knapp pri" onClick="{{r.ferdig}}">Fulgt opp ✓</button></div></div></sc-for>
+<sc-if value="{{tom}}" hint-placeholder-val="{{ false }}"><div style="text-align:center;padding:60px 0;color:#645d7a"><div style="font-size:20px;font-weight:300">Ingen å følge opp her</div><div class="tips" style="margin-top:6px">Godt jobbet. Lista fylles av seg selv når noe dukker opp.</div></div></sc-if>
+<div class="tips" style="margin:18px 4px;max-width:640px">«Fulgt opp» fjerner eleven fra lista til noe nytt skjer. «Til samtale» legger punktet på neste kontaktsamtale eller elevsamtale. Klikk navnet for elevkortet, som åpnes over lista, så du blir værende her.</div>
+</div></div>
+</main>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1060}}'>
+var RADER = [{"n": "Oskar Aas", "f": "MFL2", "c": "#9a5a2c", "g": ["r", "b"], "tekst": "Rød de to siste øktene · borte tor 15.10", "siden": "6 dager", "inn": "rryr"}, {"n": "Maja Lie", "f": "MFL2", "c": "#9a5a2c", "g": ["f"], "tekst": "Kampanjeplan ikke levert, frist fre 13.11", "siden": "i dag", "inn": "gygg"}, {"n": "Tobias Dahl", "f": "ENG1", "c": "#3d7a5a", "g": ["s"], "tekst": "Ikke sett på 4 økter (til stede, men ikke skåret)", "siden": "2 uker", "inn": "····"}, {"n": "Nora Haugen", "f": "MFL2", "c": "#9a5a2c", "g": ["b", "f"], "tekst": "Møtte ikke til muntlig 15.10 · ny tid må avtales", "siden": "7 dager", "inn": "gy·g"}, {"n": "David Lie", "f": "2STA", "c": "#4a3d7d", "g": ["a"], "tekst": "Avtale fra kontaktsamtalen: «Spørre om hjelp i matte»", "siden": "27.10", "inn": ""}, {"n": "Hedda Sæther", "f": "MFL1", "c": "#2e6a8e", "g": ["r"], "tekst": "Rød i siste økt", "siden": "2 dager", "inn": "ggyr"}, {"n": "Aksel Strand", "f": "ENG1", "c": "#3d7a5a", "g": ["s"], "tekst": "Ikke sett på 3 økter", "siden": "9 dager", "inn": "g···"}], G = {"r": "Rød sist", "s": "Ikke sett", "b": "Borte", "f": "Frist", "a": "Avtale"}, GC = {"r": "#c04a3d", "s": "#9a90b8", "b": "#645d7a", "f": "#c9922e", "a": "#4a3d7d"}, IC = {"g": "#3f9d49", "y": "#d9a92f", "r": "#c04a3d", "\u00b7": "#e3ddf0"};
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { f: 'alle', ferdig: {}, fjern: {} }; }
+  renderVals() { var self = this, st = this.state, o = {};
+    var aktive = RADER.filter(function (r) { return !st.ferdig[r.n]; });
+    var F = [['alle', 'Alle']].concat(Object.keys(G).map(function (k) { return [k, G[k]]; }));
+    o.filtre = F.map(function (f) { return { n: f[1], a: f[0] === 'alle' ? aktive.length : aktive.filter(function (r) { return r.g.indexOf(f[0]) >= 0; }).length, kl: 'fil' + (st.f === f[0] ? ' on' : ''), klikk: function () { self.setState({ f: f[0] }); } }; });
+    var vis = aktive.filter(function (r) { return st.f === 'alle' || r.g.indexOf(st.f) >= 0; });
+    o.rader = vis.map(function (r) { return { n: r.n, f: r.f, c: r.c, tekst: r.tekst, siden: r.siden, ini: r.n.split(' ').map(function (w) { return w[0]; }).join(''), kl: 'fr' + (st.fjern[r.n] ? ' borte' : ''),
+      g: r.g.map(function (k) { return { n: G[k], c: GC[k] }; }), inn: r.inn.split('').map(function (c) { return IC[c]; }), apne: function () {},
+      ferdig: function () { var fj = Object.assign({}, st.fjern); fj[r.n] = 1; self.setState({ fjern: fj }); setTimeout(function () { var fe = Object.assign({}, self.state.ferdig); fe[r.n] = 1; self.setState({ ferdig: fe }); }, 330); } }; });
+    o.tom = vis.length === 0; o.oppsum = aktive.length + ' elever';
+    return o; } }
+</script>
+</body>
+</html>

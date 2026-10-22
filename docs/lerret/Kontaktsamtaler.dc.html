@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<title>Kontaktsamtaler</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#d4cee2}
+:root{--pal:#4a3d7d;--pal-lys:#e3ddf0;--pal-mid:#b2a8d2;--pal-svak:#f4f2f9;--ease-sprett:cubic-bezier(.34,1.32,.5,1)}
+.pt{position:relative;z-index:1;display:flex;align-items:center;gap:9px;height:32px;padding:0 10px;border-radius:10px;color:#2e2840;font-size:14px}
+.pt.on{font-weight:500;color:#241f33}
+.under{position:relative;z-index:1;display:flex;align-items:center;gap:8px;min-height:28px;margin-left:22px;padding:3px 10px;border-radius:8px;color:#2e2840;font-size:13px}
+.under.on{font-weight:500}
+.under::before{content:"";position:absolute;left:-11px;top:-1px;bottom:-1px;width:1.5px;border-radius:1px;background:rgba(36,31,51,.16)}
+.kbd{margin-left:auto;font-size:11px;color:#6b6482;letter-spacing:.04em;font-weight:400}
+.navmark{position:absolute;left:8px;right:8px;border-radius:10px;background:rgba(255,255,255,.88);box-shadow:0 1px 3px rgba(36,31,51,.14),inset 0 1px 0 #fff;pointer-events:none}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;height:30px;padding:0 13px;border-radius:999px;border:1px solid #d9d4e8;background:#fff;color:#241f33;font:inherit;font-size:13px;cursor:pointer;white-space:nowrap}
+.btn.pri{background:var(--pal);border-color:var(--pal);color:#fff;font-weight:500}
+.btn.stille{border-color:transparent;background:transparent;color:#645d7a}
+.seg{position:relative;display:inline-flex;padding:2px;border-radius:999px;background:rgba(36,31,51,.06)}
+.seg button{all:unset;position:relative;z-index:1;cursor:pointer;height:26px;display:inline-flex;align-items:center;justify-content:center;font-size:12.5px;color:#645d7a;transition:color 200ms}
+.seg button.on{color:#241f33;font-weight:500}
+.tommel{position:absolute;top:2px;left:2px;height:26px;border-radius:999px;background:#fff;box-shadow:0 1px 3px rgba(36,31,51,.16);transition:transform 340ms var(--ease-sprett),width 340ms var(--ease-sprett)}
+.chip{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 9px;border-radius:12px;background:var(--pal-svak);font-size:12px;white-space:nowrap}
+.fk{width:8px;height:8px;border-radius:2px;flex:none;display:inline-block}
+.av{border-radius:50%;overflow:hidden;flex:none;display:inline-block;background:var(--pal-lys)}
+.ell{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.num{font-variant-numeric:tabular-nums}
+.h{font-size:13px;font-weight:600;margin:0}
+.kort{border-radius:14px;background:#fff;box-shadow:inset 0 0 0 1px #ece9f3;padding:16px 18px}
+.hm{border-radius:2px;display:inline-block}
+.g{background:#3f9d49}.y{background:#d9a92f}.r{background:#c04a3d}.o{background:#d5d8dd}
+.glide{transition:transform 260ms var(--ease-sprett),height 260ms var(--ease-sprett)}
+@media (prefers-reduced-motion: reduce){.glide,.tommel{transition:none!important}}
+
+.slot{display:grid;grid-template-columns:96px minmax(0,1fr) 26px;align-items:center;gap:10px;height:46px;padding:0 10px;border-radius:10px;font-size:13.5px;cursor:pointer;transition:background 220ms,box-shadow 220ms}
+.slot:hover{background:#f7f6fb}.slot.na{background:#fff;box-shadow:inset 0 0 0 1.5px #4a3d7d,0 4px 14px rgba(74,61,125,.12)}
+.slot small{display:block;font-size:11.5px;color:#9a90b8;margin-top:1px}
+.slot.ferdig .nv{color:#645d7a}.slot.ikke .nv{color:#b8b0cc;text-decoration:line-through}
+.ok{width:18px;height:18px;border-radius:50%;display:grid;place-items:center;background:#4a3d7d;color:#fff;font-size:10px}
+.ph{font-size:12px;font-weight:600;color:#645d7a;margin:0 0 8px}
+.tips{font-size:12px;color:#9a90b8;line-height:1.45}
+.sg{display:flex;gap:9px;align-items:flex-start;padding:6px 0;font-size:13.5px;line-height:1.4;cursor:pointer}
+.sg i{width:16px;height:16px;border-radius:50%;box-shadow:inset 0 0 0 1.5px #c9c2dd;flex:none;margin-top:1px}
+.sg.on{color:#9a90b8}.sg.on i{background:#b2a8d2;box-shadow:none}
+.ed{min-height:150px;font-size:14px;line-height:1.6;outline:none}
+.ed h4{font-size:14.5px;font-weight:600;margin:6px 0 2px}.ed ul{margin:0 0 6px;padding-left:22px}.ed li::marker{color:#9a90b8}.ed p{margin:0 0 4px}
+.kort{border-radius:14px;padding:12px 14px;background:#faf9fc;box-shadow:inset 0 0 0 1px #ece9f3}
+.chipo{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px;border-radius:13px;font-size:12.5px;background:#fff;box-shadow:inset 0 0 0 1px #2f9a8a55}
+.chipo b{color:#2f9a8a;font-weight:400}
+.mal{display:flex;gap:8px;align-items:center;padding:5px 0;font-size:13px}
+.mal i{width:15px;height:15px;border-radius:5px;box-shadow:inset 0 0 0 1.5px #c9c2dd;flex:none}
+.lenke{all:unset;cursor:pointer;color:var(--pal);font-size:12.5px}
+.tid{height:6px;border-radius:3px;background:#ece9f3;overflow:hidden}.tid span{display:block;height:100%;width:38%;background:#4a3d7d;border-radius:3px}
+.dott{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:2px}
+
+</style>
+</helmet>
+<div style="position:relative;height:1060px;padding:24px;box-sizing:border-box;overflow:hidden;font-family:'Geist',-apple-system,sans-serif;color:#241f33;font-size:14px">
+<div aria-hidden="true" style="position:absolute;left:-120px;top:-80px;width:620px;height:620px;border-radius:50%;background:#8a7bc2;filter:blur(70px);opacity:.75"></div>
+<div aria-hidden="true" style="position:absolute;left:-60px;top:560px;width:520px;height:520px;border-radius:50%;background:#5f9e98;filter:blur(80px);opacity:.7"></div>
+<div aria-hidden="true" style="position:absolute;right:-100px;top:-60px;width:700px;height:500px;border-radius:50%;background:#b8aee0;filter:blur(90px);opacity:.6"></div>
+<div style="position:relative;display:flex;height:1012px;border-radius:16px;overflow:hidden;background:rgba(236,234,241,.42);backdrop-filter:blur(40px) saturate(160%);box-shadow:0 24px 70px rgba(36,31,51,.28),0 0 0 1px rgba(36,31,51,.14)">
+<nav aria-label="Hovedmeny" style="position:relative;width:236px;flex:none;margin:10px;padding:12px 8px;box-sizing:border-box;display:flex;flex-direction:column;gap:2px;border-radius:22px;background:rgba(255,255,255,.5);backdrop-filter:blur(28px) saturate(170%);border:1px solid rgba(255,255,255,.75);box-shadow:inset 0 1px 0 rgba(255,255,255,.95),0 10px 30px rgba(36,31,51,.14)">
+<div style="display:flex;align-items:center;gap:8px;padding:2px 8px 10px"><svg width="20" height="20" viewBox="0 0 1024 1024" aria-hidden="true"><rect x="40" y="40" width="944" height="944" rx="215" fill="#241F33"></rect><rect x="290" y="330" width="200" height="364" rx="44" fill="#EEEDFE"></rect><rect x="516" y="330" width="100" height="364" rx="40" fill="#C9C2DD"></rect><rect x="642" y="330" width="100" height="364" rx="40" fill="#9A90B8"></rect></svg><span style="font-weight:600;font-size:14px">Økta</span><span class="num" style="margin-left:auto;font-size:11px;color:#4b4560">2026/27</span></div>
+<div style="display:flex;align-items:center;gap:8px;height:30px;padding:0 12px;margin-bottom:10px;border-radius:999px;background:rgba(255,255,255,.55);border:1px solid rgba(255,255,255,.75);font-size:13px;color:#4b4560">Søk<span class="kbd">⌘K</span></div>
+<div class="navmark" style="top:193px;height:32px;"></div><div class="pt ">I dag<span class="kbd">G D</span></div><div class="pt ">Økter<span class="kbd">G Ø</span></div><div class="pt ">Elever<span class="kbd">G E</span></div><div class="pt on">Vurderinger og samtaler<span class="kbd">G V</span></div><div class="pt ">Plasser og grupper<span class="kbd">G P</span></div>
+<div style="flex:1"></div><div class="pt">Innstillinger<span class="kbd">⌘,</span></div></nav>
+<main style="position:relative;flex:1;min-width:0;margin:10px 10px 10px 0;background:#fff;border-radius:16px;box-shadow:0 1px 3px rgba(36,31,51,.10);display:flex;flex-direction:column;overflow:hidden">
+<header style="display:flex;align-items:center;gap:10px;margin:10px 12px 0;padding:0 8px 0 18px;height:48px;border-radius:999px;background:rgba(255,255,255,.7);backdrop-filter:blur(28px) saturate(170%);border:1px solid rgba(255,255,255,.8);box-shadow:inset 0 1px 0 rgba(255,255,255,.95),0 6px 20px rgba(36,31,51,.10),0 0 0 .5px rgba(36,31,51,.08);flex:none"><span style="font-size:18px;color:#645d7a">‹</span><span class="fk" style="width:11px;height:11px;border-radius:3px;background:#4a3d7d"></span><span style="font-weight:600;font-size:15px">Kontaktsamtaler høst</span><span style="font-size:13px;color:#645d7a">2STA · tir 27.10 – fre 6.11 · ikke en vurdering</span>
+<div class="seg" style="margin-left:10px"><span class="tommel" style="left:84px;width:98px"></span><button style="width:82px">Planlegg</button><button class="on" style="width:98px">Gjennomfør</button><button style="width:112px">Oppsummering</button></div>
+<span style="flex:1"></span><span class="chip">6 av 16 holdt</span><button class="btn">Kopier tidsplan til Teams</button></header>
+<div style="flex:1;min-height:0;overflow:hidden;padding:16px 28px 0"><div style="display:grid;grid-template-columns:320px minmax(0,1fr);gap:26px;height:100%">
+<div style="overflow:auto;min-height:0;padding-bottom:20px">
+<div style="display:flex;align-items:center;gap:8px;margin:2px 4px 10px"><b style="font-size:13px;white-space:nowrap">Tirsdag 27. oktober</b><span class="tips" style="white-space:nowrap">12:15–15:30 · 20 + 5 min</span></div>
+<div class="slot ferdig"><span class="num" style="font-size:12.5px;color:#645d7a">12:15–12:35</span><span class="nv ell">Amalie Berg<small>eleven alene</small></span><span class="ok">✓</span></div><div class="slot ferdig ikke"><span class="num" style="font-size:12.5px;color:#645d7a">12:40–13:00</span><span class="nv ell">Benjamin Dahl<small>møtte ikke</small></span></div><div class="slot ferdig"><span class="num" style="font-size:12.5px;color:#645d7a">13:05–13:25</span><span class="nv ell">Celine Haugen<small>eleven alene</small></span><span class="ok">✓</span></div><div class="slot na"><span class="num" style="font-size:12.5px;color:#645d7a">13:30–13:50</span><span class="nv ell">David Lie<small>eleven alene</small></span></div><div class="slot"><span class="num" style="font-size:12.5px;color:#645d7a">13:55–14:15</span><span class="nv ell">Emma Lund<small>med foresatt</small></span></div><div style="height:28px;display:flex;align-items:center;gap:10px;padding:0 10px;font-size:12px;color:#9a90b8">14:15–14:30 pause<span style="flex:1;height:1px;background:#ece9f3"></span></div><div class="slot"><span class="num" style="font-size:12.5px;color:#645d7a">14:20–14:40</span><span class="nv ell">Fredrik Moen<small>eleven alene</small></span></div><div class="slot"><span class="num" style="font-size:12.5px;color:#645d7a">14:45–15:05</span><span class="nv ell">Hanna Solberg<small>med foresatt</small></span></div><div class="slot"><span class="num" style="font-size:12.5px;color:#645d7a">15:10–15:30</span><span class="nv ell">Isak Strand<small>eleven alene</small></span></div>
+<div class="tips" style="margin:12px 6px">Dagene, tidene og rekkefølgen lages i Planlegg, med samme generator som muntlig vurdering.</div></div>
+<div style="min-height:0;overflow:auto;padding-bottom:20px">
+<div style="display:flex;align-items:center;gap:14px"><span style="width:52px;height:52px;border-radius:50%;background:linear-gradient(150deg,#8a7bc2,#6a9e98);display:grid;place-items:center;color:#fff;font-weight:600">DL</span>
+<div><div style="font-size:24px;font-weight:300;letter-spacing:-.01em">David Lie</div><div class="tips" style="font-size:13px">13:30–13:50 · pågår · 7:40 av 20:00 · eleven alene</div></div><span style="flex:1"></span>
+<button class="btn">Møtte ikke</button><button class="btn pri">Neste elev <span style="opacity:.6;font-size:11px">⌘↵</span></button></div>
+<div class="tid" style="margin:14px 0 18px"><span></span></div>
+<div style="display:grid;grid-template-columns:minmax(0,1fr) 290px;gap:24px">
+<div>
+<div class="ph">Samtaleguide</div><div class="sg on"><i></i>Hvordan har du det på skolen nå?</div><div class="sg on"><i></i>Hvordan er det i klassen? Hvem jobber du godt med?</div><div class="sg"><i></i>Hvilke fag går bra, og hvilke er tunge?</div><div class="sg"><i></i>Fravær og frister: noe vi må se på?</div><div class="sg"><i></i>Hva vil du jobbe med fram til neste samtale?</div>
+<div class="ph" style="margin-top:20px">Notat</div>
+<div class="ed" contenteditable="true" spellcheck="true"><h4>Trivsel</h4><ul><li>Trives bedre etter klassebyttet</li><li>Syns det er tungt å jobbe i store grupper</li></ul><h4>Fag</h4><p>Engelsk går bra. Synes MFL er mye å lese.</p></div>
+<div class="tips">Samme editor som ellers: # overskrift, - punkt, [] sjekk, / meny.</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:14px">
+<div class="kort"><div class="ph">Fra forrige samtale · 2.9</div><div class="mal"><i style="background:#4a3d7d;box-shadow:none"></i><span style="color:#9a90b8;text-decoration:line-through">Levere innleveringer i tide</span></div><div class="mal"><i></i>Spørre om hjelp i matte</div></div>
+<div class="kort"><div class="ph">Til neste gang</div><div class="mal"><i></i>Prøve å jobbe i par i MFL</div><button class="lenke">+ Mål eller avtale</button></div>
+<div class="kort"><div style="display:flex;align-items:center"><div class="ph" style="margin:0">Trives med · vil sitte med</div><span style="flex:1"></span><button class="lenke">+ Legg til</button></div>
+<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"><span class="chipo"><b>★</b>Isak Strand</span><span class="chipo"><b>★</b>Julie Vik</span></div>
+<div class="tips" style="margin-top:6px">Lagres på elevkortet og vises i Plasser og grupper.</div></div>
+<div class="kort"><div class="ph">Oversikt</div><div class="tips" style="color:#645d7a;line-height:1.8">Fravær i dine fag: 3 økter<br>Innsats MFL2: <span class="dott" style="background:#3f9d49"></span><span class="dott" style="background:#d9a92f"></span><span class="dott" style="background:#3f9d49"></span><span class="dott" style="background:#d9a92f"></span><br>Frister: 1 ikke levert</div></div>
+</div></div>
+<div class="tips" style="margin-top:22px;max-width:620px">Kontaktsamtaler er ikke vurderinger. Notatene er bare dine og vises aldri i fagene, i eksport eller i kalenderen. Kalenderen får bare fornavn og klokkeslett.</div>
+</div></div></div>
+</main>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1060}}'>
+class Component extends DCLogic { renderVals() { return {}; } }
+</script>
+</body>
+</html>

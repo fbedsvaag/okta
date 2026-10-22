@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<title>Muntlig vurdering med samtaler</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#d4cee2}
+:root{--pal:#4a3d7d;--pal-lys:#e3ddf0;--pal-mid:#b2a8d2;--pal-svak:#f4f2f9;--ease-sprett:cubic-bezier(.34,1.32,.5,1)}
+.pt{position:relative;z-index:1;display:flex;align-items:center;gap:9px;height:32px;padding:0 10px;border-radius:10px;color:#2e2840;font-size:14px}
+.pt.on{font-weight:500;color:#241f33}
+.under{position:relative;z-index:1;display:flex;align-items:center;gap:8px;min-height:28px;margin-left:22px;padding:3px 10px;border-radius:8px;color:#2e2840;font-size:13px}
+.under.on{font-weight:500}
+.under::before{content:"";position:absolute;left:-11px;top:-1px;bottom:-1px;width:1.5px;border-radius:1px;background:rgba(36,31,51,.16)}
+.kbd{margin-left:auto;font-size:11px;color:#6b6482;letter-spacing:.04em;font-weight:400}
+.navmark{position:absolute;left:8px;right:8px;border-radius:10px;background:rgba(255,255,255,.88);box-shadow:0 1px 3px rgba(36,31,51,.14),inset 0 1px 0 #fff;pointer-events:none}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;height:30px;padding:0 13px;border-radius:999px;border:1px solid #d9d4e8;background:#fff;color:#241f33;font:inherit;font-size:13px;cursor:pointer;white-space:nowrap}
+.btn.pri{background:var(--pal);border-color:var(--pal);color:#fff;font-weight:500}
+.btn.stille{border-color:transparent;background:transparent;color:#645d7a}
+.seg{position:relative;display:inline-flex;padding:2px;border-radius:999px;background:rgba(36,31,51,.06)}
+.seg button{all:unset;position:relative;z-index:1;cursor:pointer;height:26px;display:inline-flex;align-items:center;justify-content:center;font-size:12.5px;color:#645d7a;transition:color 200ms}
+.seg button.on{color:#241f33;font-weight:500}
+.tommel{position:absolute;top:2px;left:2px;height:26px;border-radius:999px;background:#fff;box-shadow:0 1px 3px rgba(36,31,51,.16);transition:transform 340ms var(--ease-sprett),width 340ms var(--ease-sprett)}
+.chip{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 9px;border-radius:12px;background:var(--pal-svak);font-size:12px;white-space:nowrap}
+.fk{width:8px;height:8px;border-radius:2px;flex:none;display:inline-block}
+.av{border-radius:50%;overflow:hidden;flex:none;display:inline-block;background:var(--pal-lys)}
+.ell{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.num{font-variant-numeric:tabular-nums}
+.h{font-size:13px;font-weight:600;margin:0}
+.kort{border-radius:14px;background:#fff;box-shadow:inset 0 0 0 1px #ece9f3;padding:16px 18px}
+.hm{border-radius:2px;display:inline-block}
+.g{background:#3f9d49}.y{background:#d9a92f}.r{background:#c04a3d}.o{background:#d5d8dd}
+.glide{transition:transform 260ms var(--ease-sprett),height 260ms var(--ease-sprett)}
+@media (prefers-reduced-motion: reduce){.glide,.tommel{transition:none!important}}
+
+.slot{display:grid;grid-template-columns:96px minmax(0,1fr) 34px;align-items:center;gap:10px;height:44px;padding:0 10px;border-radius:10px;font-size:13.5px;cursor:pointer;transition:background 220ms,box-shadow 220ms}
+.slot:hover{background:#f7f6fb}
+.slot.na{background:#fff;box-shadow:inset 0 0 0 1.5px var(--pal),0 4px 14px rgba(74,61,125,.12)}
+.slot.ferdig .nv{color:#645d7a}
+.slot.ikke .nv{color:#b8b0cc;text-decoration:line-through}
+.slot small{display:block;font-size:11.5px;color:#9a90b8;margin-top:1px}
+.lunsj{height:30px;display:flex;align-items:center;gap:10px;padding:0 10px;font-size:12px;color:#9a90b8}
+.lunsj:after{content:"";flex:1;height:1px;background:#ece9f3}
+.kar{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:8px;font-weight:600;font-size:13px;background:#f4f2f9;color:#241f33}
+.kar.tom{background:transparent;box-shadow:inset 0 0 0 1.5px dashed #e3ddf0}
+.kc{all:unset;cursor:pointer;display:inline-grid;place-items:center;width:46px;height:46px;border-radius:12px;font-size:17px;font-weight:600;background:#f4f2f9;position:relative;transition:background 200ms,color 200ms,transform 200ms}
+.kc kbd{position:absolute;top:3px;right:5px;font:inherit;font-size:9.5px;font-weight:400;color:#9a90b8}
+.kc.on{background:var(--pal);color:#fff}.kc.on kbd{color:#d9d4e8}
+.krit{display:flex;align-items:center;gap:10px;height:34px;font-size:13.5px;cursor:pointer;border-bottom:1px solid #f3f1f8}
+.krit i{width:18px;height:18px;border-radius:6px;box-shadow:inset 0 0 0 1.5px #c9c2dd;display:grid;place-items:center;flex:none}
+.krit.on i{background:#4a3d7d;box-shadow:none}.krit i svg{opacity:0}.krit.on i svg{opacity:1}
+.ed{outline:none;min-height:150px;padding:4px 2px 10px;font-size:14px;line-height:1.6;color:#241f33;cursor:text}
+.ed>*{margin:0 0 4px}.ed h3{font-size:17px;font-weight:600;margin:10px 0 4px;letter-spacing:-.005em}.ed h4{font-size:14.5px;font-weight:600;margin:8px 0 2px}
+.ed ul,.ed ol{padding-left:22px}.ed li{margin:2px 0}.ed li::marker{color:#9a90b8}
+.ed ul.sjekk{list-style:none;padding-left:4px}.ed ul.sjekk li{position:relative;padding-left:26px}
+.ed ul.sjekk li:before{content:"";position:absolute;left:0;top:4px;width:15px;height:15px;border-radius:5px;box-shadow:inset 0 0 0 1.5px #c9c2dd;background:#fff;cursor:pointer}
+.ed ul.sjekk li.ok{color:#9a90b8;text-decoration:line-through;text-decoration-color:#c9c2dd}.ed ul.sjekk li.ok:before{background:#4a3d7d;box-shadow:none}
+.ed b,.ed strong{font-weight:600}
+.ed.tom:before{content:"Skriv mens eleven snakker …  # overskrift, - punkt, / for meny";color:#b8b0cc;position:absolute;pointer-events:none}
+.ed:focus-within{}
+.k{font:inherit;font-size:10.5px;padding:0 4px;border-radius:4px;box-shadow:inset 0 0 0 1px #d9d4e8;color:#645d7a}
+.slash{display:none;position:absolute;z-index:30;width:200px;padding:6px;border-radius:12px;background:rgba(255,255,255,.98);box-shadow:0 14px 40px rgba(36,31,51,.2),0 0 0 1px rgba(36,31,51,.07)}
+.slash.vis{display:block;animation:slinn 160ms cubic-bezier(.22,1,.36,1)}@keyframes slinn{from{opacity:0;transform:translateY(-3px)}}
+.slash button{all:unset;cursor:pointer;display:flex;align-items:center;gap:10px;width:100%;box-sizing:border-box;padding:6px 8px;border-radius:8px;font-size:13px}
+.slash button b{width:22px;height:22px;border-radius:6px;background:#f4f2f9;display:grid;place-items:center;font-size:13px;color:#645d7a}
+.slash button:hover,.slash button.on{background:#f4f2f9}
+.ta{all:unset;box-sizing:border-box;width:100%;min-height:76px;padding:10px 12px;border-radius:10px;background:#f7f6fb;box-shadow:inset 0 0 0 1px #ece9f3;font-size:13.5px;line-height:1.5;white-space:pre-wrap}
+.ta:focus{background:#fff;box-shadow:inset 0 0 0 1.5px var(--pal)}
+.tid{height:6px;border-radius:3px;background:#ece9f3;overflow:hidden}.tid span{display:block;height:100%;background:#7d6bb0;border-radius:3px;transition:width 1s linear}
+.okort{border-radius:14px;padding:12px 14px;background:#fff;box-shadow:inset 0 0 0 1px #ece9f3}
+.okort.ny{all:unset;cursor:pointer;display:grid;place-items:center;min-height:120px;border-radius:14px;box-shadow:inset 0 0 0 1.5px #e3ddf0;color:var(--pal);font-size:13.5px}
+.onr{width:22px;height:22px;border-radius:7px;background:#f4f2f9;display:grid;place-items:center;font-size:11.5px;font-weight:600;color:#645d7a;flex:none}
+.oin{all:unset;box-sizing:border-box;flex:1;min-width:0;padding:3px 6px;border-radius:6px;font-size:13px}
+.oin:hover{background:#f7f6fb}.oin:focus{background:#fff;box-shadow:inset 0 0 0 1.5px var(--pal)}.oin::placeholder{color:#c9c2dd}
+.oin.tit{font-weight:600;font-size:14px}
+.qrad{display:flex;align-items:center;gap:6px;margin-left:24px}.qrad span{width:16px;text-align:center;color:#b8b0cc;font-size:12px}
+.slettx{all:unset;cursor:pointer;color:#c9c2dd;padding:0 4px;font-size:15px}.slettx:hover{color:#c04a3d}
+.cb{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;cursor:pointer;user-select:none;color:#645d7a}
+.cb i{width:16px;height:16px;border-radius:5px;box-shadow:inset 0 0 0 1.5px #c9c2dd;display:grid;place-items:center;background:#fff}
+.cb.on i{background:var(--pal);box-shadow:none}.cb i svg{opacity:0}.cb.on i svg{opacity:1}
+.sp{display:flex;align-items:flex-start;gap:9px;padding:5px 0;font-size:13.5px;cursor:pointer;line-height:1.4;transition:color 200ms}
+.sp i{width:16px;height:16px;border-radius:50%;box-shadow:inset 0 0 0 1.5px #c9c2dd;flex:none;margin-top:1px;display:grid;place-items:center}
+.sp.on{color:#9a90b8}.sp.on i{background:#b2a8d2;box-shadow:none}.sp i svg{opacity:0}.sp.on i svg{opacity:1}
+.rub{margin-top:10px;border-radius:12px;box-shadow:inset 0 0 0 1px #ece9f3;padding:6px}
+.rub .rh,.rrad{display:grid;grid-template-columns:118px repeat(var(--n,3),minmax(0,1fr));gap:5px}
+.rub .rh span{font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:#9a90b8;padding:4px 8px}
+.rrad{padding:4px;border-radius:9px;margin-top:2px;transition:background 220ms}
+.rrad.fokus{background:#f4f2f9}
+.rrad .rk{font-size:12.5px;font-weight:500;padding:6px 6px;line-height:1.3;align-self:center}
+.rrad button{all:unset;cursor:pointer;box-sizing:border-box;padding:7px 9px;border-radius:8px;font-size:12px;line-height:1.35;color:#645d7a;background:#fff;box-shadow:inset 0 0 0 1px #ece9f3;transition:background 200ms,color 200ms,box-shadow 200ms}
+.rrad button:hover{box-shadow:inset 0 0 0 1.5px #b2a8d2}
+.rrad button.on{background:#4a3d7d;color:#fff;box-shadow:none}
+.rrad.ferdig:not(.fokus) button:not(.on){opacity:.55}
+.vbok{padding:14px 16px;border-radius:14px;background:#faf9fc;box-shadow:inset 0 0 0 1px #ece9f3;margin-bottom:18px}
+.redit{display:flex;flex-direction:column;gap:6px}
+.rerad{display:grid;grid-template-columns:150px repeat(var(--n,3),minmax(0,1fr)) 22px;gap:6px;align-items:stretch}
+.rerad.hd .nv{font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:#9a90b8;font-weight:500}
+.rerad .tit{align-self:center;white-space:normal}
+.celle{all:unset;box-sizing:border-box;min-height:52px;padding:7px 9px;border-radius:8px;background:#fff;box-shadow:inset 0 0 0 1px #ece9f3;font-size:12px;line-height:1.35;color:#645d7a;white-space:pre-wrap}
+.celle.kn{background:transparent;box-shadow:none;font-size:13px;font-weight:600;color:#241f33;padding:7px 4px}.celle.kn:hover{background:#fff}
+.celle:focus{box-shadow:inset 0 0 0 1.5px var(--pal);color:#241f33}.celle::placeholder{color:#c9c2dd}
+.malpop{position:absolute;right:0;top:36px;width:280px;padding:6px;border-radius:14px;background:rgba(255,255,255,.98);box-shadow:0 18px 50px rgba(36,31,51,.22),0 0 0 1px rgba(36,31,51,.08);z-index:40}
+.mrad{display:flex;flex-direction:column;gap:1px;padding:8px 10px;border-radius:9px;cursor:pointer;font-size:13px}.mrad:hover{background:#f4f2f9}.mrad b{font-weight:500}.mrad small{color:#9a90b8;font-size:11.5px}
+.lenke{all:unset;cursor:pointer;color:var(--pal);font-size:12.5px}
+.ph{font-size:12px;font-weight:600;color:#645d7a;margin:0 0 8px}
+.tips{font-size:12px;color:#9a90b8;line-height:1.45}
+.oppg{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:10px;background:#f7f6fb;font-size:13.5px}
+.res td{padding:7px 10px;border-bottom:1px solid #f3f1f8;font-size:13px}.res th{text-align:left;font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:#9a90b8;font-weight:500;padding:6px 10px}
+
+</style>
+</helmet>
+<div style="position:relative;height:1060px;padding:24px;box-sizing:border-box;overflow:hidden;font-family:'Geist',-apple-system,sans-serif;color:#241f33;font-size:14px">
+<div aria-hidden="true" style="position:absolute;left:-120px;top:-80px;width:620px;height:620px;border-radius:50%;background:#8a7bc2;filter:blur(70px);opacity:.75"></div>
+<div aria-hidden="true" style="position:absolute;left:-60px;top:560px;width:520px;height:520px;border-radius:50%;background:#5f9e98;filter:blur(80px);opacity:.7"></div>
+<div aria-hidden="true" style="position:absolute;right:-100px;top:-60px;width:700px;height:500px;border-radius:50%;background:#b8aee0;filter:blur(90px);opacity:.6"></div>
+<div style="position:relative;display:flex;height:1012px;border-radius:16px;overflow:hidden;background:rgba(236,234,241,.42);backdrop-filter:blur(40px) saturate(160%);box-shadow:0 24px 70px rgba(36,31,51,.28),0 0 0 1px rgba(36,31,51,.14)">
+<nav aria-label="Hovedmeny" style="position:relative;width:236px;flex:none;margin:10px;padding:12px 8px;box-sizing:border-box;display:flex;flex-direction:column;gap:2px;border-radius:22px;background:rgba(255,255,255,.5);backdrop-filter:blur(28px) saturate(170%);border:1px solid rgba(255,255,255,.75);box-shadow:inset 0 1px 0 rgba(255,255,255,.95),0 10px 30px rgba(36,31,51,.14)">
+<div style="display:flex;align-items:center;gap:8px;padding:2px 8px 10px"><svg width="20" height="20" viewBox="0 0 1024 1024" aria-hidden="true"><rect x="40" y="40" width="944" height="944" rx="215" fill="#241F33"></rect><rect x="290" y="330" width="200" height="364" rx="44" fill="#EEEDFE"></rect><rect x="516" y="330" width="100" height="364" rx="40" fill="#C9C2DD"></rect><rect x="642" y="330" width="100" height="364" rx="40" fill="#9A90B8"></rect></svg><span style="font-weight:600;font-size:14px">Økta</span><span class="num" style="margin-left:auto;font-size:11px;color:#4b4560">2026/27</span></div>
+<div style="display:flex;align-items:center;gap:8px;height:30px;padding:0 12px;margin-bottom:10px;border-radius:999px;background:rgba(255,255,255,.55);border:1px solid rgba(255,255,255,.75);font-size:13px;color:#4b4560">Søk<span class="kbd">⌘K</span></div>
+<div class="navmark" style="top:193px;height:32px;"></div><div class="pt ">I dag<span class="kbd">G D</span></div><div class="pt ">Økter<span class="kbd">G Ø</span></div><div class="pt ">Elever<span class="kbd">G E</span></div><div class="pt on">Vurderinger<span class="kbd">G V</span></div><div class="pt ">Samtaler<span class="kbd">G S</span></div><div class="pt ">Plasser og grupper<span class="kbd">G P</span></div>
+<div style="flex:1"></div><div class="pt">Innstillinger<span class="kbd">⌘,</span></div></nav>
+<main style="position:relative;flex:1;min-width:0;margin:10px 10px 10px 0;background:#fff;border-radius:16px;box-shadow:0 1px 3px rgba(36,31,51,.10);display:flex;flex-direction:column;overflow:hidden">
+<header style="display:flex;align-items:center;gap:10px;margin:10px 12px 0;padding:0 8px 0 18px;height:48px;border-radius:999px;background:rgba(255,255,255,.7);backdrop-filter:blur(28px) saturate(170%);border:1px solid rgba(255,255,255,.8);box-shadow:inset 0 1px 0 rgba(255,255,255,.95),0 6px 20px rgba(36,31,51,.10),0 0 0 .5px rgba(36,31,51,.08);flex:none"><span style="font-size:18px;color:#645d7a">‹</span><span class="fk" style="width:11px;height:11px;border-radius:3px;background:#9a5a2c"></span><span style="font-weight:600;font-size:15px">Muntlig: prisstrategi</span><span style="font-size:13px;color:#645d7a">MFL2 · tor 15.10 · Karakter 1–6</span>
+<div class="seg" style="margin-left:10px"><span class="tommel" style="left:{{mx}};width:{{mw}}"></span><sc-for list="{{moduser}}" as="m" hint-placeholder-count="3"><button class="{{m.kl}}" style="width:{{m.w}}" onClick="{{m.klikk}}">{{m.n}}</button></sc-for></div>
+<span style="flex:1"></span><span class="chip">{{framdrift}}</span><button class="btn">Kopier tidsplan til Teams</button></header>
+<div style="flex:1;min-height:0;overflow:hidden;padding:16px 28px 0"><div style="display:grid;grid-template-columns:340px minmax(0,1fr);gap:26px;height:100%">
+<div style="overflow:auto;min-height:0;padding-bottom:20px">
+<div style="display:flex;align-items:center;gap:8px;margin:2px 4px 10px"><b style="font-size:13px">Torsdag 15. oktober</b><span class="tips">08:30–11:45 · 12 min + 3 min pause</span></div>
+<sc-for list="{{slots}}" as="s" hint-placeholder-count="14"><sc-if value="{{s.erLunsj}}" hint-placeholder-val="{{ false }}"><div class="lunsj">{{s.tid}} lunsj</div></sc-if><sc-if value="{{s.erElev}}" hint-placeholder-val="{{ true }}"><div class="{{s.kl}}" onClick="{{s.velg}}"><span class="num" style="font-size:12.5px;color:#645d7a">{{s.tid}}</span><span class="nv ell">{{s.n}}<small>{{s.o}}</small></span><span class="{{s.kk}}">{{s.k}}</span></div></sc-if></sc-for>
+<div class="tips" style="margin:12px 6px">Tidsplanen trekkes og deles som før i samtaletrekkeren. Rekkefølgen kan dras.</div>
+</div>
+<div style="min-height:0;overflow:auto;padding-bottom:20px">
+<sc-if value="{{erGj}}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;align-items:center;gap:14px"><span style="width:52px;height:52px;border-radius:50%;background:linear-gradient(150deg,#8a7bc2,#6a9e98);display:grid;place-items:center;color:#fff;font-weight:600">{{ini}}</span>
+<div><div style="font-size:24px;font-weight:300;letter-spacing:-.01em">{{navn}}</div><div class="tips" style="font-size:13px">{{tidTekst}}</div></div><span style="flex:1"></span>
+<button class="btn" onClick="{{ikkeMott}}">Møtte ikke</button><button class="btn pri" onClick="{{neste}}">Neste elev <span style="opacity:.6;font-size:11px">⌘↵</span></button></div>
+<div class="tid" style="margin:14px 0 18px"><span style="width:{{tidPst}}"></span></div>
+<div style="display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:22px">
+<div>
+<div class="ph">Trukket oppgave</div><div class="oppg">🎲 {{oppg}}<button class="lenke" onClick="{{trekk}}" style="margin-left:6px">Trekk ny</button></div>
+<div class="tips" style="margin:6px 2px 4px;color:#645d7a">{{oppgB}}</div>
+<sc-for list="{{sporsmal}}" as="q" hint-placeholder-count="3"><div class="{{q.kl}}" onClick="{{q.t}}"><i><svg width="10" height="10" viewBox="0 0 10 10"><path d="M1.5 5.2l2.2 2.2L8.5 2.6" stroke="#fff" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></i>{{q.n}}</div></sc-for>
+<div style="display:flex;align-items:center;gap:10px;margin-top:18px"><div class="ph" style="margin:0">Kriterier</div><span style="flex:1"></span><div class="seg"><span class="tommel" style="left:{{kvx}};width:{{kvw}}"></span><button class="{{kvA}}" style="width:84px" onClick="{{tilListe}}">Avkrysning</button><button class="{{kvR}}" style="width:76px" onClick="{{tilRub}}">Rubrikk</button></div></div>
+<sc-if value="{{erListe}}" hint-placeholder-val="{{ false }}"><div style="margin-top:8px"><sc-for list="{{krit}}" as="c" hint-placeholder-count="4"><div class="{{c.kl}}" onClick="{{c.t}}"><i><svg width="10" height="10" viewBox="0 0 10 10"><path d="M1.5 5.2l2.2 2.2L8.5 2.6" stroke="#fff" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></i>{{c.n}}</div></sc-for></div></sc-if>
+<sc-if value="{{erRub}}" hint-placeholder-val="{{ true }}"><div class="rub" style="--n:{{nAnt}}"><div class="rh"><span></span><sc-for list="{{nivaa}}" as="n" hint-placeholder-count="3"><span>{{n}}</span></sc-for></div>
+<sc-for list="{{rubrikk}}" as="r" hint-placeholder-count="4"><div class="{{r.kl}}" onClick="{{r.fokus}}"><span class="rk">{{r.n}}</span><sc-for list="{{r.c}}" as="c" hint-placeholder-count="3"><button class="{{c.kl}}" onClick="{{c.velg}}">{{c.t}}</button></sc-for></div></sc-for>
+<div style="display:flex;align-items:center;gap:10px;margin-top:8px"><span class="tips">{{rubStatus}}</span><span style="flex:1"></span><span class="chip" style="cursor:pointer;{{forslagStil}}" onClick="{{brukForslag}}" title="Sett som karakter">{{forslag}}</span></div></div></sc-if>
+<div class="ph" style="margin-top:18px">Notat under samtalen</div><div style="position:relative"><div class="ed" data-ed="1" contenteditable="true" spellcheck="true"></div>
+<div class="slash" data-slash="1"><div class="tips" style="padding:4px 8px 6px">Gjør om til</div><button data-cmd="h3"><b>H</b>Overskrift</button><button data-cmd="h4"><b style="font-size:12px">H</b>Mindre overskrift</button><button data-cmd="ul"><b>•</b>Punktliste</button><button data-cmd="ol"><b>1.</b>Nummerert liste</button><button data-cmd="sjekk"><b>☐</b>Sjekkliste</button><button data-cmd="p"><b>¶</b>Tekst</button></div></div>
+<div class="tips" style="margin-top:6px"><kbd class="k">#</kbd> overskrift · <kbd class="k">-</kbd> punkt · <kbd class="k">1.</kbd> liste · <kbd class="k">[]</kbd> sjekk · <kbd class="k">/</kbd> meny · <kbd class="k">⌘B</kbd> <kbd class="k">⌘I</kbd></div>
+</div>
+<div>
+<div class="ph">Karakter</div><div style="display:grid;grid-template-columns:repeat(3,46px);gap:8px"><sc-for list="{{karakter}}" as="k" hint-placeholder-count="6"><button class="{{k.kl}}" onClick="{{k.klikk}}">{{k.n}}<kbd>{{k.n}}</kbd></button></sc-for></div>
+<div class="tips" style="margin-top:8px">Trykk 1–6. Du kan endre den senere.</div>
+<div class="ph" style="margin-top:22px">Tidligere i faget</div>
+<div class="tips" style="color:#645d7a;line-height:1.7">Skriftlig prøve 24.9 · <b>4</b><br>Innsats siste 4 økter · <span style="color:#3f9d49">●●</span><span style="color:#d9a92f">●</span><span style="color:#3f9d49">●</span></div>
+</div></div>
+</sc-if>
+<sc-if value="{{erRes}}" hint-placeholder-val="{{ false }}">
+<div class="ph">Resultater</div><table class="res" style="width:100%;border-collapse:collapse"><thead><tr><th>Elev</th><th>Oppgave</th><th>Karakter</th><th>Notat</th></tr></thead><tbody><sc-for list="{{res}}" as="r" hint-placeholder-count="8"><tr><td>{{r.n}}</td><td style="color:#645d7a">{{r.o}}</td><td><b>{{r.k}}</b></td><td style="color:#645d7a">{{r.notat}}</td></tr></sc-for></tbody></table>
+<div style="display:flex;gap:8px;margin-top:14px"><button class="btn">Skriv ut tilbakemeldinger</button><button class="btn">Kopier karakterlista</button></div>
+</sc-if>
+<sc-if value="{{erPlan}}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;align-items:center;gap:8px;margin-bottom:16px"><span class="chip">12 min per elev</span><span class="chip">3 min pause</span><span class="chip">Lunsj 10:15–10:45</span><span class="tips" style="margin-left:4px">Tidsplanen lages som i samtaletrekkeren.</span></div>
+<div class="vbok">
+<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><div class="ph" style="margin:0">Slik vurderer du</div>
+<div class="seg"><span class="tommel" style="left:{{kvx}};width:{{kvw}}"></span><button class="{{kvA}}" style="width:84px" onClick="{{tilListe}}">Kriterier</button><button class="{{kvR}}" style="width:76px" onClick="{{tilRub}}">Rubrikk</button></div>
+<span style="flex:1"></span>
+<div style="position:relative"><button class="btn" onClick="{{malT}}">Lagrede rubrikker<span style="color:#9a90b8;font-size:11px">⌄</span></button>
+<sc-if value="{{malApen}}" hint-placeholder-val="{{ false }}"><div class="malpop"><sc-for list="{{maler}}" as="m" hint-placeholder-count="3"><div class="mrad" onClick="{{m.bruk}}"><b>{{m.n}}</b><small>{{m.info}}</small></div></sc-for><div class="tips" style="padding:6px 8px 2px">Velg for å bruke en kopi her. Malen endres ikke.</div></div></sc-if></div>
+<button class="btn" onClick="{{lagreMal}}">{{lagreTekst}}</button></div>
+<sc-if value="{{erRub}}" hint-placeholder-val="{{ true }}"><div class="redit" style="--n:{{nAnt}}">
+<div class="rerad hd"><span></span><sc-for list="{{nivRed}}" as="n" hint-placeholder-count="3"><input class="oin nv" value="{{n.t}}" onInput="{{n.skriv}}"></sc-for><span></span></div>
+<sc-for list="{{rubRed}}" as="r" hint-placeholder-count="4"><div class="rerad"><textarea class="celle kn" placeholder="Kriterium" onInput="{{r.skriv}}" value="{{r.n}}"></textarea><sc-for list="{{r.c}}" as="c" hint-placeholder-count="3"><textarea class="celle" placeholder="Beskriv nivået" onInput="{{c.skriv}}" value="{{c.t}}"></textarea></sc-for><button class="slettx" onClick="{{r.fjern}}">×</button></div></sc-for>
+<div style="display:flex;gap:14px;margin-top:6px"><button class="lenke" onClick="{{nyKrit}}">+ Kriterium</button><button class="lenke" onClick="{{nyNiv}}">+ Nivå</button><span class="tips">Nivåene står fra lavest til høyest.</span></div></div></sc-if>
+<sc-if value="{{erListe}}" hint-placeholder-val="{{ false }}"><div><sc-for list="{{rubRed}}" as="r" hint-placeholder-count="4"><div class="qrad" style="margin-left:0"><span>☐</span><input class="oin" value="{{r.n}}" placeholder="Kriterium" onInput="{{r.skriv}}"><button class="slettx" onClick="{{r.fjern}}">×</button></div></sc-for>
+<button class="lenke" style="margin:6px 0 0 22px;font-size:12.5px" onClick="{{nyKrit}}">+ Kriterium</button><div class="tips" style="margin:6px 0 0 22px">Krysses av under samtalen. Bytt til Rubrikk for å beskrive nivåer.</div></div></sc-if>
+</div>
+<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:10px"><div class="ph" style="margin:0;white-space:nowrap">Oppgaver ({{antO}})</div><span class="tips">Hver elev trekker én, og spørsmålene dukker opp under samtalen.</span><span style="flex:1"></span><span class="{{trekkKl}}" onClick="{{trekkT}}"><i><svg width="10" height="10" viewBox="0 0 10 10"><path d="M1.5 5.2l2.2 2.2L8.5 2.6" stroke="#fff" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></i>Kan trekkes flere ganger</span></div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px"><sc-for list="{{oppgPlan}}" as="op" hint-placeholder-count="6"><div class="okort">
+<div style="display:flex;align-items:center;gap:8px"><span class="onr">{{op.nr}}</span><input class="oin tit" value="{{op.t}}" placeholder="Tittel på oppgaven" onInput="{{op.skrivT}}"><button class="slettx" onClick="{{op.fjern}}" title="Fjern oppgaven">×</button></div>
+<input class="oin" value="{{op.b}}" placeholder="Kort om caset (valgfritt)" onInput="{{op.skrivB}}" style="color:#645d7a;margin:2px 0 8px 30px;width:calc(100% - 30px)">
+<div class="tips" style="margin:0 0 4px 30px">Spørsmål du kan stille</div>
+<sc-for list="{{op.q}}" as="q" hint-placeholder-count="3"><div class="qrad"><span>?</span><input class="oin" value="{{q.t}}" placeholder="Nytt spørsmål" onInput="{{q.skriv}}" onKeyDown="{{q.tast}}" data-q="{{q.id}}"><button class="slettx" onClick="{{q.fjern}}">×</button></div></sc-for>
+<button class="lenke" style="margin:4px 0 0 30px;font-size:12.5px" onClick="{{op.nyQ}}">+ Spørsmål</button></div></sc-for>
+<button class="okort ny" onClick="{{nyOppg}}">+ Ny oppgave</button></div>
+</sc-if>
+</div></div></div>
+</main>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1060}}'>
+var NIV = ["Lav", "Middels", "Høy"], RUB = [["Bruker få fagbegreper, eller bruker dem feil", "Bruker sentrale begreper, stort sett riktig", "Bruker begrepene presist og selvstendig"], ["Gjengir teori uten å knytte den til caset", "Knytter teori til caset med noe hjelp", "Bruker teorien til å forklare caset"], ["Nevner én side", "Nevner fordeler og ulemper", "Veier fordeler og ulemper opp mot hverandre"], ["Velger uten begrunnelse", "Begrunner valget delvis", "Begrunner valget godt og ser alternativer"]], SLOTS = [{"n": "Ada Lie", "fra": 510, "til": 522, "o": "Kiwi mot Meny", "k": "3", "m": true, "notat": "Godt resonnement, litt usikker på begreper"}, {"n": "Emil Berg", "fra": 525, "til": 537, "o": "Prisdifferensiering i fly", "k": "5", "m": true, "notat": "Selvstendig, brukte egne eksempler"}, {"n": "Nora Haugen", "fra": 540, "til": 552, "o": "Penetrasjonspris: Oda", "k": "", "m": false, "notat": ""}, {"n": "Jonas Dahl", "fra": 555, "til": 567, "o": "Skumming: ny iPhone", "k": "6", "m": true, "notat": "Svært god drøfting"}, {"n": "Ingrid Moen", "fra": 570, "til": 582, "o": "Psykologisk pris", "k": "4", "m": true, "notat": "Trengte støtte på slutten"}, {"n": "Filip Solberg", "fra": 585, "til": 597, "o": "Prisstrategi for Freia", "k": "", "m": true, "notat": ""}, {"n": "Sara Lund", "fra": 600, "til": 612, "o": "Kiwi mot Meny", "k": "", "m": true, "notat": ""}, {"lunsj": true, "fra": 615, "til": 645}, {"n": "Aksel Strand", "fra": 645, "til": 657, "o": "Prisdifferensiering i fly", "k": "", "m": true, "notat": ""}, {"n": "Maja Vik", "fra": 660, "til": 672, "o": "Penetrasjonspris: Oda", "k": "", "m": true, "notat": ""}, {"n": "Henrik Aas", "fra": 675, "til": 687, "o": "Skumming: ny iPhone", "k": "", "m": true, "notat": ""}, {"n": "Thea Nygård", "fra": 690, "til": 702, "o": "Psykologisk pris", "k": "", "m": true, "notat": ""}, {"n": "Oskar Bakke", "fra": 705, "til": 717, "o": "Prisstrategi for Freia", "k": "", "m": true, "notat": ""}, {"n": "Live Eide", "fra": 720, "til": 732, "o": "Kiwi mot Meny", "k": "", "m": true, "notat": ""}, {"n": "Mathias Hovland", "fra": 735, "til": 747, "o": "Prisdifferensiering i fly", "k": "", "m": true, "notat": ""}], OPPGD = [{"t": "Kiwi mot Meny", "b": "To kjeder, samme eier. Hvorfor ulik prisstrategi?", "q": ["Hvem er målgruppen til hver kjede?", "Hvilken prisstrategi bruker de, og hvorfor?", "Hva skjer hvis Meny senker prisene?"]}, {"t": "Prisdifferensiering i fly", "b": "Samme sete, ulik pris.", "q": ["Hva er prisdifferensiering?", "Hvilke kunder betaler mest, og hvorfor?", "Er det rettferdig?"]}, {"t": "Penetrasjonspris: Oda", "b": "Lav pris for å komme inn i markedet.", "q": ["Hva er penetrasjonspris?", "Hvilken risiko tar Oda?", "Når bør de heve prisen?"]}, {"t": "Skumming: ny iPhone", "b": "Høy pris ved lansering.", "q": ["Forklar skumming med eget eksempel.", "Hvorfor fungerer det for Apple?", "Hvem taper på strategien?"]}, {"t": "Psykologisk pris", "b": "199 i stedet for 200.", "q": ["Hvorfor virker 199 billigere?", "Finn et eksempel fra egen hverdag.", "Er det manipulasjon?"]}, {"t": "Prisstrategi for Freia", "b": "Ny sjokolade i et mettet marked.", "q": ["Hvilken strategi ville du valgt?", "Hvordan reagerer konkurrentene?", "Hvordan måler du om det virket?"]}], OPPG = ["Kiwi mot Meny", "Prisdifferensiering i fly", "Penetrasjonspris: Oda", "Skumming: ny iPhone", "Psykologisk pris", "Prisstrategi for Freia"], KRIT = ["Bruker fagbegreper presist", "Knytter teori til caset", "Drøfter fordeler og ulemper", "Begrunner valg av strategi"];
+function hm(m) { return Math.floor(m / 60) + ':' + ('0' + m % 60).slice(-2); }
+class Component extends DCLogic {
+  constructor(p) { super(p); var s = SLOTS.map(function (x) { return Object.assign({ krit: [] }, x); });
+    var na = s.findIndex(function (x) { return !x.lunsj && !x.k && x.m !== false; }); this.state = { s: s, na: na, valgt: na, modus: 'gj', sek: 290, op: OPPGD.map(function (o) { return { t: o.t, b: o.b, q: o.q.slice() }; }), flere: true, kv: 'rub', rfokus: 0, niv: NIV.slice(), rk: KRIT.map(function (n, i) { return { n: n, c: RUB[i].slice() }; }), maler: [['Muntlig drøfting', 4, 3], ['Presentasjon i gruppe', 5, 3], ['Skriftlig case', 3, 4]], malApen: false, lagret: false }; }
+  componentDidMount() { var self = this; this._i = setInterval(function () { self.setState({ sek: Math.min(720, self.state.sek + 1) }); }, 1000);
+    setTimeout(function () { self.oppsett(); self.lastNotat(); }, 30);
+    this._t = function (e) { if (e.target && (/TEXTAREA|INPUT/.test(e.target.tagName) || e.target.isContentEditable)) { if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); self.neste(); } return; }
+      if (/^[1-6]$/.test(e.key)) self.sett(e.key); if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); self.neste(); } };
+    window.addEventListener('keydown', this._t); }
+  lastNotat() { var ed = document.querySelector('[data-ed]'); if (!ed) return; var v = this.state.valgt; this.nh = this.nh || {};
+    if (!(v in this.nh)) { var t = this.state.s[v].notat; this.nh[v] = t ? '<p>' + t.replace(/</g, '&lt;') + '</p>' : '<p><br></p>'; }
+    ed.innerHTML = this.nh[v]; this.tom(ed); this._lastet = v; }
+  tom(ed) { var t = ed.textContent.trim(), b = ed.querySelector('li,h3,h4'); ed.classList.toggle('tom', !t && !b); }
+  oppsett() { var self = this, ed = document.querySelector('[data-ed]'), sl = document.querySelector('[data-slash]'); if (!ed || ed._ok) return; ed._ok = true; setTimeout(function () { self.lastNotat(); }, 0);
+    var sett = function (el, slutt) { var r = document.createRange(); r.selectNodeContents(el); r.collapse(!slutt); var s = getSelection(); s.removeAllRanges(); s.addRange(r); };
+    var blokk = function () { var sel = getSelection(); if (!sel.rangeCount) return null; var n = sel.anchorNode; if (n === ed) n = ed.childNodes[sel.anchorOffset] || ed.lastChild;
+      var li = n; while (li && li !== ed && li.nodeName !== 'LI') li = li.parentNode; if (li && li !== ed) return li;
+      while (n && n.parentNode !== ed) n = n.parentNode; return n; };
+    var nyBlokk = function (tag) { var e = document.createElement(tag); e.innerHTML = '<br>'; return e; };
+    var lagre = function () { self.nh = self.nh || {}; self.nh[self.state.valgt] = ed.innerHTML; self.tom(ed); };
+    var gjor = function (cmd, b) { b = b || blokk(); if (!b) return; var innhold = b.innerHTML.replace(/^(#{1,3}|-|\*|1\.|\[ ?\]|\/)(&nbsp;|\s)?/, '');
+      if (!innhold.replace(/<br>/g, '').trim()) innhold = '<br>';
+      if (b.nodeName === 'LI') { var liste = b.parentNode, p0 = document.createElement('p'); p0.innerHTML = b.innerHTML; liste.parentNode.insertBefore(p0, liste.nextSibling); b.remove(); if (!liste.children.length) liste.remove(); b = p0; }
+      var ny;
+      if (cmd === 'h3' || cmd === 'h4' || cmd === 'p') { ny = document.createElement(cmd); ny.innerHTML = innhold; b.replaceWith(ny); sett(ny, true); }
+      else { var tag = cmd === 'ol' ? 'OL' : 'UL', forr = b.previousElementSibling, li = document.createElement('li'); li.innerHTML = innhold;
+        if (forr && forr.nodeName === tag && forr.classList.contains('sjekk') === (cmd === 'sjekk')) { forr.appendChild(li); b.remove(); }
+        else { var l = document.createElement(tag); if (cmd === 'sjekk') l.className = 'sjekk'; l.appendChild(li); b.replaceWith(l); }
+        sett(li, true); }
+      lagre(); };
+    var skjul = function () { sl.classList.remove('vis'); };
+    ed.addEventListener('keydown', function (e) {
+      e.stopPropagation();
+      if (sl.classList.contains('vis')) { var kn = [].slice.call(sl.querySelectorAll('button')), i = kn.findIndex(function (k) { return k.classList.contains('on'); });
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); kn.forEach(function (k) { k.classList.remove('on'); }); i = (i + (e.key === 'ArrowDown' ? 1 : -1) + kn.length) % kn.length; kn[i].classList.add('on'); return; }
+        if (e.key === 'Enter') { e.preventDefault(); gjor(kn[Math.max(0, i)].getAttribute('data-cmd')); skjul(); return; }
+        if (e.key === 'Escape') { e.preventDefault(); skjul(); return; } skjul(); }
+      var b = blokk();
+      if (e.key === ' ' && b && b.nodeName !== 'LI') { var m = { '#': 'h3', '##': 'h4', '###': 'h4', '-': 'ul', '*': 'ul', '1.': 'ol', '[]': 'sjekk', '[ ]': 'sjekk' }[b.textContent];
+        if (m) { e.preventDefault(); gjor(m, b); return; } }
+      if (e.key === 'Enter' && !e.shiftKey && !e.metaKey && !e.ctrlKey && b) {
+        if (/^H[34]$/.test(b.nodeName)) { e.preventDefault(); var p = nyBlokk('p'); b.after(p); sett(p); lagre(); return; }
+        if (b.nodeName === 'LI' && !b.textContent.trim()) { e.preventDefault(); var liste = b.parentNode, p2 = nyBlokk('p'); liste.after(p2); b.remove(); if (!liste.children.length) liste.remove(); sett(p2); lagre(); return; } }
+      if (e.key === 'Backspace' && b) { var sel = getSelection(), start = sel.isCollapsed && (function () { var r = sel.getRangeAt(0).cloneRange(); r.selectNodeContents(b); r.setEnd(sel.anchorNode, sel.anchorOffset); return r.toString().length === 0; })();
+        if (start && (/^H[34]$/.test(b.nodeName) || b.nodeName === 'LI')) { e.preventDefault(); gjor('p', b); return; } }
+      if (e.key === '/' && b && b.nodeName !== 'LI' && !b.textContent.trim()) { setTimeout(function () { var r = getSelection().getRangeAt(0).getBoundingClientRect(), o = ed.parentNode.getBoundingClientRect();
+          sl.style.left = Math.max(0, r.left - o.left - 6) + 'px'; sl.style.top = (r.bottom - o.top + 6) + 'px'; sl.querySelectorAll('button').forEach(function (k, j) { k.classList.toggle('on', j === 0); }); sl.classList.add('vis'); }, 0); }
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); self.neste(); }
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'b' || e.key === 'i')) { e.preventDefault(); document.execCommand(e.key === 'b' ? 'bold' : 'italic'); lagre(); } });
+    ed.addEventListener('input', function () { if (!ed.firstElementChild) { ed.innerHTML = '<p><br></p>'; sett(ed.firstChild); } lagre(); });
+    ed.addEventListener('click', function (e) { var li = e.target.closest && e.target.closest('ul.sjekk li'); if (li && e.offsetX < 20) { li.classList.toggle('ok'); lagre(); } skjul(); });
+    sl.addEventListener('mousedown', function (e) { var k = e.target.closest('button'); if (!k) return; e.preventDefault(); gjor(k.getAttribute('data-cmd')); skjul(); });
+  }
+  componentWillUnmount() { clearInterval(this._i); window.removeEventListener('keydown', this._t); }
+  endre(fn) { var s = this.state.s.map(function (x) { return Object.assign({}, x, { krit: x.krit.slice() }); }); fn(s[this.state.valgt]); this.setState({ s: s }); }
+  sett(k) { this.endre(function (x) { x.k = k; x.m = true; }); }
+  neste() { var s = this.state.s, v = this.state.valgt, j = v + 1; while (j < s.length && (s[j].lunsj || s[j].k)) j++; if (j < s.length) this.setState({ valgt: j, na: j, sek: 0 }); }
+  renderVals() {
+    var self = this, st = this.state, o = {}, x = st.s[st.valgt], KRIT = st.rk.map(function (r) { return r.n || 'Kriterium'; }), RUB = st.rk.map(function (r) { return r.c; }), NIV = st.niv;
+    var M = [['plan', 'Planlegg', 82], ['gj', 'Gjennomfør', 98], ['res', 'Resultater', 92]], mx = 2;
+    o.moduser = M.map(function (m) { if (m[0] === st.modus) { o.mx = mx + 'px'; o.mw = m[2] + 'px'; } mx += m[2]; return { n: m[1], w: m[2] + 'px', kl: m[0] === st.modus ? 'on' : '', klikk: function () { self.setState({ modus: m[0] }); } }; });
+    o.erGj = st.modus === 'gj'; o.erRes = st.modus === 'res'; o.erPlan = st.modus === 'plan';
+    var el = st.s.filter(function (q) { return !q.lunsj; }), ferdig = el.filter(function (q) { return q.k || q.m === false; }).length;
+    o.framdrift = ferdig + ' av ' + el.length + ' ferdig';
+    o.slots = st.s.map(function (q, i) { if (q.lunsj) return { erLunsj: true, erElev: false, tid: hm(q.fra) + '–' + hm(q.til) };
+      return { erLunsj: false, erElev: true, tid: hm(q.fra) + '–' + hm(q.til), n: q.n, o: q.m === false ? 'møtte ikke' : q.o, k: q.k || (q.m === false ? '–' : ''), kk: 'kar' + (q.k ? '' : ' tom'),
+        kl: 'slot' + (i === st.valgt ? ' na' : '') + (q.k ? ' ferdig' : '') + (q.m === false ? ' ikke' : ''), velg: function () { self.setState({ valgt: i }); } }; });
+    o.navn = x.n; o.ini = x.n.split(' ').map(function (w) { return w[0]; }).join('');
+    var gar = st.valgt === st.na; o.tidTekst = hm(x.fra) + '–' + hm(x.til) + (gar ? ' · pågår · ' + Math.floor(st.sek / 60) + ':' + ('0' + st.sek % 60).slice(-2) + ' av 12:00' : x.k ? ' · ferdig' : '');
+    o.tidPst = (gar ? Math.round(st.sek / 720 * 100) : x.k ? 100 : 0) + '%';
+    var titler = st.op.map(function (z) { return z.t; }).filter(Boolean);
+    o.oppg = x.o; o.trekk = function () { self.endre(function (q) { var a = titler.filter(function (z) { return z !== q.o; }); if (a.length) q.o = a[Math.floor(Math.random() * a.length)]; q.spurt = []; }); };
+    var denne = st.op.filter(function (z) { return z.t === x.o; })[0] || { b: '', q: [] };
+    o.oppgB = denne.b;
+    o.sporsmal = denne.q.filter(Boolean).map(function (n, i) { var on = (x.spurt || []).indexOf(i) >= 0;
+      return { n: n, kl: 'sp' + (on ? ' on' : ''), t: function () { self.endre(function (q) { q.spurt = q.spurt || []; var j = q.spurt.indexOf(i); if (j >= 0) q.spurt.splice(j, 1); else q.spurt.push(i); }); } }; });
+    var settOp = function (fn) { var op = st.op.map(function (z) { return { t: z.t, b: z.b, q: z.q.slice() }; }); fn(op); self.setState({ op: op }); };
+    o.antO = st.op.length; o.trekkKl = 'cb' + (st.flere ? ' on' : ''); o.trekkT = function () { self.setState({ flere: !st.flere }); };
+    o.oppgPlan = st.op.map(function (z, oi) { return { nr: oi + 1, t: z.t, b: z.b,
+      skrivT: function (e) { var v = e.target.value; settOp(function (op) { op[oi].t = v; }); }, skrivB: function (e) { var v = e.target.value; settOp(function (op) { op[oi].b = v; }); },
+      fjern: function () { settOp(function (op) { op.splice(oi, 1); }); },
+      nyQ: function () { settOp(function (op) { op[oi].q.push(''); }); setTimeout(function () { var n = document.querySelector('[data-q="' + oi + '-' + z.q.length + '"]'); if (n) n.focus(); }, 30); },
+      q: z.q.map(function (t, qi) { return { t: t, id: oi + '-' + qi, skriv: function (e) { var v = e.target.value; settOp(function (op) { op[oi].q[qi] = v; }); },
+        fjern: function () { settOp(function (op) { op[oi].q.splice(qi, 1); }); },
+        tast: function (e) { if (e.key === 'Enter') { e.preventDefault(); settOp(function (op) { op[oi].q.splice(qi + 1, 0, ''); }); setTimeout(function () { var n = document.querySelector('[data-q="' + oi + '-' + (qi + 1) + '"]'); if (n) n.focus(); }, 30); } } }; }) }; });
+    o.nyOppg = function () { settOp(function (op) { op.push({ t: '', b: '', q: [''] }); }); };
+    o.erListe = st.kv === 'liste'; o.erRub = st.kv === 'rub'; o.kvA = st.kv === 'liste' ? 'on' : ''; o.kvR = st.kv === 'rub' ? 'on' : '';
+    o.kvx = st.kv === 'liste' ? '2px' : '86px'; o.kvw = st.kv === 'liste' ? '84px' : '76px';
+    o.tilListe = function () { self.setState({ kv: 'liste' }); }; o.tilRub = function () { self.setState({ kv: 'rub' }); };
+    o.nivaa = NIV; var rv = x.rub || [];
+    o.rubrikk = KRIT.map(function (n, i) { return { n: n, kl: 'rrad' + (st.rfokus === i ? ' fokus' : '') + (rv[i] != null ? ' ferdig' : ''), fokus: function () { self.setState({ rfokus: i }); },
+      c: RUB[i].map(function (t, j) { return { t: t, kl: rv[i] === j ? 'on' : '', velg: function (e) { e.stopPropagation(); self.endre(function (q) { q.rub = (q.rub || []).slice(); q.rub[i] = q.rub[i] === j ? null : j; });
+        var neste = KRIT.findIndex(function (_, k) { return k > i && (rv[k] == null); }); self.setState({ rfokus: neste >= 0 ? neste : i }); } }; }) }; });
+    var satt = rv.filter(function (v) { return v != null; });
+    o.rubStatus = satt.length + ' av ' + KRIT.length + ' vurdert · klikk et nivå, så går den videre til neste';
+    if (satt.length === KRIT.length) { var snitt = satt.reduce(function (a, b) { return a + b; }, 0) / satt.length, f = snitt < 0.5 ? '2' : snitt < 1 ? '3' : snitt < 1.5 ? '4' : snitt < 1.9 ? '5' : '6';
+      o.forslag = 'Rubrikken peker mot ' + f + ' · bruk'; o.forslagStil = ''; o.brukForslag = function () { self.sett(f); }; } else { o.forslag = 'Forslag når alle er vurdert'; o.forslagStil = 'opacity:.5'; o.brukForslag = function () {}; }
+    var settR = function (fn) { var rk = st.rk.map(function (r) { return { n: r.n, c: r.c.slice() }; }), niv = st.niv.slice(); fn(rk, niv); self.setState({ rk: rk, niv: niv, lagret: false }); };
+    o.nAnt = st.niv.length;
+    o.nivRed = st.niv.map(function (t, j) { return { t: t, skriv: function (e) { var v = e.target.value; settR(function (rk, niv) { niv[j] = v; }); } }; });
+    o.rubRed = st.rk.map(function (r, i) { return { n: r.n, skriv: function (e) { var v = e.target.value; settR(function (rk) { rk[i].n = v; }); }, fjern: function () { settR(function (rk) { rk.splice(i, 1); }); },
+      c: r.c.map(function (t, j) { return { t: t, skriv: function (e) { var v = e.target.value; settR(function (rk) { rk[i].c[j] = v; }); } }; }) }; });
+    o.nyKrit = function () { settR(function (rk, niv) { rk.push({ n: '', c: niv.map(function () { return ''; }) }); }); };
+    o.nyNiv = function () { settR(function (rk, niv) { niv.push('Nytt nivå'); rk.forEach(function (r) { r.c.push(''); }); }); };
+    o.malApen = st.malApen; o.malT = function () { self.setState({ malApen: !st.malApen }); };
+    o.maler = st.maler.map(function (m) { return { n: m[0], info: m[1] + ' kriterier × ' + m[2] + ' nivåer', bruk: function () { self.setState({ malApen: false, kv: 'rub' }); } }; });
+    o.lagreTekst = st.lagret ? 'Lagret som mal ✓' : 'Lagre som mal';
+    o.lagreMal = function () { if (st.lagret) return; self.setState({ lagret: true, maler: [['Muntlig: prisstrategi', st.rk.length, st.niv.length]].concat(st.maler) }); };
+    o.krit = KRIT.map(function (n, i) { var on = x.krit.indexOf(i) >= 0; return { n: n, kl: 'krit' + (on ? ' on' : ''), t: function () { self.endre(function (q) { var j = q.krit.indexOf(i); if (j >= 0) q.krit.splice(j, 1); else q.krit.push(i); }); } }; });
+    if (this._lastet !== undefined && this._lastet !== st.valgt) setTimeout(function () { self.oppsett(); self.lastNotat(); }, 0);
+    if (o.erGj === true && !document.querySelector('[data-ed]')) {} else setTimeout(function () { self.oppsett(); if (self._lastet === undefined) self.lastNotat(); }, 0);
+    o.karakter = ['1', '2', '3', '4', '5', '6'].map(function (k) { return { n: k, kl: 'kc' + (x.k === k ? ' on' : ''), klikk: function () { self.sett(k); } }; });
+    o.neste = function () { self.neste(); }; o.ikkeMott = function () { self.endre(function (q) { q.m = false; q.k = ''; }); self.neste(); };
+    o.res = el.map(function (q) { return { n: q.n, o: q.m === false ? '–' : q.o, k: q.m === false ? 'møtte ikke' : (q.k || '…'), notat: (self.nh && self.nh[st.s.indexOf(q)] !== undefined) ? self.nh[st.s.indexOf(q)].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim() : (q.notat || '') }; });
+    return o;
+  }
+}
+</script>
+</body>
+</html>

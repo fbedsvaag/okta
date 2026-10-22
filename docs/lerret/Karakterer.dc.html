@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<title>Karakterer i faget</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#d4cee2}
+:root{--pal:#4a3d7d;--pal-lys:#e3ddf0;--pal-mid:#b2a8d2;--pal-svak:#f4f2f9;--ease-sprett:cubic-bezier(.34,1.32,.5,1)}
+.pt{position:relative;z-index:1;display:flex;align-items:center;gap:9px;height:32px;padding:0 10px;border-radius:10px;color:#2e2840;font-size:14px}
+.pt.on{font-weight:500;color:#241f33}
+.under{position:relative;z-index:1;display:flex;align-items:center;gap:8px;min-height:28px;margin-left:22px;padding:3px 10px;border-radius:8px;color:#2e2840;font-size:13px}
+.under.on{font-weight:500}
+.under::before{content:"";position:absolute;left:-11px;top:-1px;bottom:-1px;width:1.5px;border-radius:1px;background:rgba(36,31,51,.16)}
+.kbd{margin-left:auto;font-size:11px;color:#6b6482;letter-spacing:.04em;font-weight:400}
+.navmark{position:absolute;left:8px;right:8px;border-radius:10px;background:rgba(255,255,255,.88);box-shadow:0 1px 3px rgba(36,31,51,.14),inset 0 1px 0 #fff;pointer-events:none}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;height:30px;padding:0 13px;border-radius:999px;border:1px solid #d9d4e8;background:#fff;color:#241f33;font:inherit;font-size:13px;cursor:pointer;white-space:nowrap}
+.btn.pri{background:var(--pal);border-color:var(--pal);color:#fff;font-weight:500}
+.btn.stille{border-color:transparent;background:transparent;color:#645d7a}
+.seg{position:relative;display:inline-flex;padding:2px;border-radius:999px;background:rgba(36,31,51,.06)}
+.seg button{all:unset;position:relative;z-index:1;cursor:pointer;height:26px;display:inline-flex;align-items:center;justify-content:center;font-size:12.5px;color:#645d7a;transition:color 200ms}
+.seg button.on{color:#241f33;font-weight:500}
+.tommel{position:absolute;top:2px;left:2px;height:26px;border-radius:999px;background:#fff;box-shadow:0 1px 3px rgba(36,31,51,.16);transition:transform 340ms var(--ease-sprett),width 340ms var(--ease-sprett)}
+.chip{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 9px;border-radius:12px;background:var(--pal-svak);font-size:12px;white-space:nowrap}
+.fk{width:8px;height:8px;border-radius:2px;flex:none;display:inline-block}
+.av{border-radius:50%;overflow:hidden;flex:none;display:inline-block;background:var(--pal-lys)}
+.ell{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.num{font-variant-numeric:tabular-nums}
+.h{font-size:13px;font-weight:600;margin:0}
+.kort{border-radius:14px;background:#fff;box-shadow:inset 0 0 0 1px #ece9f3;padding:16px 18px}
+.hm{border-radius:2px;display:inline-block}
+.g{background:#3f9d49}.y{background:#d9a92f}.r{background:#c04a3d}.o{background:#d5d8dd}
+.glide{transition:transform 260ms var(--ease-sprett),height 260ms var(--ease-sprett)}
+@media (prefers-reduced-motion: reduce){.glide,.tommel{transition:none!important}}
+
+.tab{width:100%;border-collapse:separate;border-spacing:0;font-size:13px}
+.tab th{position:sticky;top:0;background:#fff;z-index:2;text-align:center;font-weight:500;color:#645d7a;padding:8px 6px;border-bottom:1.5px solid #ece9f3;vertical-align:bottom}
+.tab th.v{min-width:86px}.tab th small{display:block;font-weight:400;font-size:11px;color:#9a90b8;margin-top:1px}
+.tab th.l{text-align:left}
+.tab td{padding:0 6px;height:36px;border-bottom:1px solid #f3f1f8;text-align:center}
+.tab td.l{text-align:left}
+.tab tr:hover td{background:#faf9fc}
+.tab tr.v td{background:#f4f2f9}
+.kk{display:inline-grid;place-items:center;min-width:28px;height:24px;border-radius:7px;font-weight:600;font-variant-numeric:tabular-nums;cursor:pointer}
+.kk.tom{color:#c9c2dd;font-weight:400}
+.kk.g{font-size:11.5px;font-weight:500;padding:0 7px;background:#f4f2f9;color:#645d7a}
+.kk.ikke{font-size:11.5px;font-weight:500;padding:0 7px;color:#9a90b8;box-shadow:inset 0 0 0 1px #e3ddf0}
+.fs{color:#645d7a;font-variant-numeric:tabular-nums}
+.halv{all:unset;cursor:pointer;display:inline-grid;place-items:center;width:30px;height:26px;border-radius:8px;font-weight:600;box-shadow:inset 0 0 0 1.5px #e3ddf0;color:#c9c2dd;transition:background 200ms,color 200ms}
+.halv.satt{background:#4a3d7d;color:#fff;box-shadow:none}
+.halv.fokus{box-shadow:inset 0 0 0 2px #4a3d7d;color:#4a3d7d}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin:0 1px}
+.kom{all:unset;width:100%;box-sizing:border-box;font-size:12.5px;color:#645d7a;padding:4px 6px;border-radius:6px}
+.kom:hover{background:#f7f6fb}.kom:focus{background:#fff;box-shadow:inset 0 0 0 1.5px var(--pal);color:#241f33}.kom::placeholder{color:#d9d4e8}
+.vekt{display:inline-flex;align-items:center;gap:2px;font-size:11px;color:#9a90b8;margin-top:4px}
+.vekt button{all:unset;cursor:pointer;padding:0 4px;border-radius:4px}.vekt button:hover{background:#f4f2f9;color:#241f33}
+.tips{font-size:12px;color:#9a90b8}
+.pop{position:absolute;z-index:30;width:260px;padding:12px 14px;border-radius:14px;background:rgba(255,255,255,.98);box-shadow:0 18px 50px rgba(36,31,51,.22),0 0 0 1px rgba(36,31,51,.08);font-size:12.5px;line-height:1.5;pointer-events:none;animation:pinn 160ms cubic-bezier(.22,1,.36,1)}
+@keyframes pinn{from{opacity:0;transform:translateY(-3px)}}
+
+</style>
+</helmet>
+<div style="position:relative;height:1060px;padding:24px;box-sizing:border-box;overflow:hidden;font-family:'Geist',-apple-system,sans-serif;color:#241f33;font-size:14px">
+<div aria-hidden="true" style="position:absolute;left:-120px;top:-80px;width:620px;height:620px;border-radius:50%;background:#8a7bc2;filter:blur(70px);opacity:.75"></div>
+<div aria-hidden="true" style="position:absolute;left:-60px;top:560px;width:520px;height:520px;border-radius:50%;background:#5f9e98;filter:blur(80px);opacity:.7"></div>
+<div aria-hidden="true" style="position:absolute;right:-100px;top:-60px;width:700px;height:500px;border-radius:50%;background:#b8aee0;filter:blur(90px);opacity:.6"></div>
+<div style="position:relative;display:flex;height:1012px;border-radius:16px;overflow:hidden;background:rgba(236,234,241,.42);backdrop-filter:blur(40px) saturate(160%);box-shadow:0 24px 70px rgba(36,31,51,.28),0 0 0 1px rgba(36,31,51,.14)">
+<nav aria-label="Hovedmeny" style="position:relative;width:236px;flex:none;margin:10px;padding:12px 8px;box-sizing:border-box;display:flex;flex-direction:column;gap:2px;border-radius:22px;background:rgba(255,255,255,.5);backdrop-filter:blur(28px) saturate(170%);border:1px solid rgba(255,255,255,.75);box-shadow:inset 0 1px 0 rgba(255,255,255,.95),0 10px 30px rgba(36,31,51,.14)">
+<div style="display:flex;align-items:center;gap:8px;padding:2px 8px 10px"><svg width="20" height="20" viewBox="0 0 1024 1024" aria-hidden="true"><rect x="40" y="40" width="944" height="944" rx="215" fill="#241F33"></rect><rect x="290" y="330" width="200" height="364" rx="44" fill="#EEEDFE"></rect><rect x="516" y="330" width="100" height="364" rx="40" fill="#C9C2DD"></rect><rect x="642" y="330" width="100" height="364" rx="40" fill="#9A90B8"></rect></svg><span style="font-weight:600;font-size:14px">Økta</span><span class="num" style="margin-left:auto;font-size:11px;color:#4b4560">2026/27</span></div>
+<div style="display:flex;align-items:center;gap:8px;height:30px;padding:0 12px;margin-bottom:10px;border-radius:999px;background:rgba(255,255,255,.55);border:1px solid rgba(255,255,255,.75);font-size:13px;color:#4b4560">Søk<span class="kbd">⌘K</span></div>
+<div class="navmark" style="top:231px;height:34px;left:30px"></div><div class="pt ">I dag<span class="kbd">G D</span></div><div class="pt on">Økter<span class="kbd">G Ø</span></div><div class="under "><span class="fk" style="background:#c9c2dd"></span>Alle fag<span class="kbd"></span></div><div class="under "><span class="fk" style="background:#2e6a8e"></span>MFL1<span class="kbd"></span></div><div class="under on"><span class="fk" style="background:#9a5a2c"></span>MFL2<span class="kbd"></span></div><div class="under "><span class="fk" style="background:#3d7a5a"></span>ENG1<span class="kbd"></span></div><div class="pt ">Elever<span class="kbd">G E</span></div><div class="pt ">Vurderinger og samtaler<span class="kbd">G V</span></div><div class="pt ">Plasser og grupper<span class="kbd">G P</span></div>
+<div style="flex:1"></div><div class="pt">Innstillinger<span class="kbd">⌘,</span></div></nav>
+<main style="position:relative;flex:1;min-width:0;margin:10px 10px 10px 0;background:#fff;border-radius:16px;box-shadow:0 1px 3px rgba(36,31,51,.10);display:flex;flex-direction:column;overflow:hidden">
+<header style="display:flex;align-items:center;gap:10px;margin:10px 12px 0;padding:0 8px 0 18px;height:48px;border-radius:999px;background:rgba(255,255,255,.7);backdrop-filter:blur(28px) saturate(170%);border:1px solid rgba(255,255,255,.8);box-shadow:inset 0 1px 0 rgba(255,255,255,.95),0 6px 20px rgba(36,31,51,.10),0 0 0 .5px rgba(36,31,51,.08);flex:none"><span style="font-size:18px;color:#241f33">‹</span><span style="font-size:18px;color:#c9c2dd;margin-right:6px">›</span><span class="fk" style="width:11px;height:11px;border-radius:3px;background:#9a5a2c"></span><span style="font-weight:600;font-size:15px">MFL2</span>
+<div class="seg" style="margin-left:6px"><span class="tommel" style="left:298px;width:96px"></span><button style="width:76px">Oversikt</button><button style="width:62px">Året</button><button style="width:64px">Økter</button><button style="width:94px">Kalender</button><button class="on" style="width:96px">Karakterer</button><button style="width:72px">Klassen</button></div>
+<span style="flex:1"></span><div class="seg"><span class="tommel" style="left:{{px}};width:{{pw}}"></span><button class="{{pH}}" style="width:68px" onClick="{{tilH}}">Høst</button><button class="{{pV}}" style="width:62px" onClick="{{tilV}}">Vår</button><button class="{{pA}}" style="width:76px" onClick="{{tilA}}">Hele året</button></div><button class="btn">Kopier karakterlista</button></header>
+<div style="flex:1;min-height:0;overflow:hidden;padding:14px 24px 16px"><div data-kar="1" style="position:relative;height:100%;display:flex;flex-direction:column;min-height:0">
+<div style="display:flex;align-items:center;gap:12px;margin-bottom:10px"><span class="tips" style="color:#645d7a">{{oppsum}}</span><span style="flex:1"></span><span class="tips">Trykk 1–6 for halvårskarakter, ↓ for neste elev · klikk en elev for elevkortet</span></div>
+<div style="flex:1;min-height:0;overflow:auto;border-radius:12px;box-shadow:inset 0 0 0 1px #ece9f3;padding:0 8px">
+<table class="tab"><thead><tr><th class="l" style="min-width:150px">Elev</th>
+<sc-for list="{{kol}}" as="c" hint-placeholder-count="4"><th class="v">{{c.n}}<small>{{c.u}} · {{c.d}}</small><span class="vekt"><button onClick="{{c.ned}}">−</button>{{c.vt}}<button onClick="{{c.opp}}">+</button></span></th></sc-for>
+<th>Innsats<small>siste 10 økter</small></th><th>Beregnet<small>vektet snitt</small></th><th>Halvår</th><th class="l" style="min-width:220px">Kommentar</th></tr></thead>
+<tbody><sc-for list="{{rader}}" as="e" hint-placeholder-count="12"><tr class="{{e.kl}}" onClick="{{e.velg}}"><td class="l"><a style="cursor:pointer;color:#241f33">{{e.n}}</a></td>
+<sc-for list="{{e.c}}" as="c" hint-placeholder-count="4"><td onPointerEnter="{{c.inn}}" onPointerLeave="{{c.ut}}"><span class="{{c.kl}}">{{c.v}}</span></td></sc-for>
+<td><sc-for list="{{e.inn}}" as="d" hint-placeholder-count="4"><span class="dot" style="background:{{d}}"></span></sc-for></td>
+<td class="fs">{{e.ber}}</td><td><button class="{{e.hk}}" onClick="{{e.hv}}">{{e.h}}</button></td><td class="l"><input class="kom" value="{{e.kom}}" placeholder="Kort kommentar …" onInput="{{e.skriv}}"></td></tr></sc-for></tbody>
+<tfoot><tr><td class="l tips" style="height:40px">Snitt</td><sc-for list="{{snitt}}" as="s" hint-placeholder-count="4"><td class="fs">{{s}}</td></sc-for><td></td><td class="fs">{{snittBer}}</td><td class="fs">{{snittH}}</td><td></td></tr></tfoot></table></div>
+<sc-if value="{{harPop}}" hint-placeholder-val="{{ false }}"><div class="pop" style="left:{{popX}};top:{{popY}}"><b>{{popT}}</b><div style="color:#645d7a;margin-top:4px">{{popB}}</div></div></sc-if>
+</div></div>
+</main>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1060}}'>
+var EL = [{"n": "Ada Berg", "k": [4, 5, null], "lev": true, "inn": "g", "kom": "God forståelse av begrepene"}, {"n": "Aksel Hovland", "k": [6, 5, 5], "lev": false, "inn": "g", "kom": ""}, {"n": "Elias Hovland", "k": [1, 2, 2], "lev": false, "inn": "y", "kom": ""}, {"n": "Ella Rønning", "k": [4, 3, 3], "lev": false, "inn": "y", "kom": ""}, {"n": "Emil Rønning", "k": [3, 3, 4], "lev": false, "inn": "y", "kom": "Må jobbe med drøfting"}, {"n": "Filip Lund", "k": [2, 2, 1], "lev": false, "inn": "y", "kom": "God forståelse av begrepene"}, {"n": "Frida Haugen", "k": [3, 3, null], "lev": false, "inn": "g", "kom": "Må jobbe med drøfting"}, {"n": "Hedda Sæther", "k": [2, 3, null], "lev": false, "inn": "g", "kom": "God forståelse av begrepene"}, {"n": "Henrik Haugen", "k": [4, 4, 4], "lev": false, "inn": "y", "kom": ""}, {"n": "Ingrid Eide", "k": [3, 2, null], "lev": false, "inn": "g", "kom": ""}, {"n": "Jonas Sæther", "k": [5, 4, 5], "lev": false, "inn": "y", "kom": "Sterk muntlig"}, {"n": "Kasper Rønning", "k": [4, 4, 6], "lev": false, "inn": "y", "kom": "Må jobbe med drøfting"}, {"n": "Live Lie", "k": [5, 6, null], "lev": true, "inn": "g", "kom": ""}, {"n": "Maja Sæther", "k": [2, 3, null], "lev": false, "inn": "y", "kom": "Sterk muntlig"}, {"n": "Mathias Eide", "k": [3, 2, 2], "lev": false, "inn": "g", "kom": "Sterk muntlig"}, {"n": "Nora Eide", "k": [6, 6, null], "lev": false, "inn": "g", "kom": ""}, {"n": "Oskar Aas", "k": [4, 3, 5], "lev": false, "inn": "r", "kom": "Må jobbe med drøfting"}, {"n": "Sander Berg", "k": [4, 4, 5], "lev": false, "inn": "g", "kom": "God forståelse av begrepene"}, {"n": "Sara Moen", "k": [2, 2, 4], "lev": false, "inn": "y", "kom": "Må jobbe med drøfting"}, {"n": "Selma Sæther", "k": [4, 4, 4], "lev": true, "inn": "g", "kom": "Sterk muntlig"}, {"n": "Thea Aas", "k": [6, 6, 6], "lev": false, "inn": "g", "kom": "God forståelse av begrepene"}, {"n": "Tobias Dahl", "k": [2, 2, 3], "lev": false, "inn": "r", "kom": ""}], VURD = [{"n": "Skriftlig prøve", "u": "markedsanalyse", "d": "24.9", "t": "s", "v": 2}, {"n": "Muntlig", "u": "SWOT", "d": "17.9", "t": "m", "v": 1}, {"n": "Muntlig", "u": "prisstrategi", "d": "15.10", "t": "m", "v": 1}, {"n": "Kampanjeplan", "u": "innlevering", "d": "13.11", "t": "i", "v": 0, "god": true}];
+var IC = { g: '#3f9d49', y: '#d9a92f', r: '#c04a3d' };
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { v: VURD.map(function (x) { return x.v; }), h: {}, kom: EL.map(function (e) { return e.kom; }), valgt: 0, per: 'H', pop: null }; }
+  componentDidMount() { var self = this; this._t = function (e) { if (e.target && /INPUT|TEXTAREA/.test(e.target.tagName)) return; var st = self.state;
+      if (/^[1-6]$/.test(e.key)) { var h = Object.assign({}, st.h); h[st.valgt] = e.key; self.setState({ h: h, valgt: Math.min(EL.length - 1, st.valgt + 1) }); }
+      if (e.key === 'ArrowDown') { e.preventDefault(); self.setState({ valgt: Math.min(EL.length - 1, st.valgt + 1) }); }
+      if (e.key === 'ArrowUp') { e.preventDefault(); self.setState({ valgt: Math.max(0, st.valgt - 1) }); }
+      if (e.key === 'Backspace') { var h2 = Object.assign({}, st.h); delete h2[st.valgt]; self.setState({ h: h2 }); } };
+    window.addEventListener('keydown', this._t); }
+  componentWillUnmount() { window.removeEventListener('keydown', this._t); }
+  ber(e) { var st = this.state, s = 0, w = 0; e.k.forEach(function (k, i) { if (k != null && st.v[i]) { s += k * st.v[i]; w += st.v[i]; } }); return w ? s / w : null; }
+  renderVals() {
+    var self = this, st = this.state, o = {};
+    var P = [['H', 2, 68], ['V', 70, 62], ['A', 132, 76]]; P.forEach(function (p) { if (p[0] === st.per) { o.px = p[1] + 'px'; o.pw = p[2] + 'px'; } });
+    o.pH = st.per === 'H' ? 'on' : ''; o.pV = st.per === 'V' ? 'on' : ''; o.pA = st.per === 'A' ? 'on' : '';
+    o.tilH = function () { self.setState({ per: 'H' }); }; o.tilV = function () { self.setState({ per: 'V' }); }; o.tilA = function () { self.setState({ per: 'A' }); };
+    o.kol = VURD.map(function (v, i) { return { n: v.n, u: v.u, d: v.d, vt: v.god ? 'teller ikke' : '×' + st.v[i],
+      ned: function (e) { e.stopPropagation(); var a = st.v.slice(); a[i] = Math.max(0, a[i] - 1); self.setState({ v: a }); }, opp: function (e) { e.stopPropagation(); var a = st.v.slice(); a[i] = Math.min(5, a[i] + 1); self.setState({ v: a }); } }; });
+    var f = function (x) { return x == null ? '–' : x.toFixed(1).replace('.', ','); };
+    o.rader = EL.map(function (e, i) { var b = self.ber(e);
+      var c = e.k.map(function (k, j) { var mangler = k == null; return { v: mangler ? (j === 2 ? 'ikke ført' : '–') : k, kl: 'kk' + (mangler ? (j === 2 ? ' ikke' : ' tom') : ''),
+        inn: function (ev) { var r = ev.currentTarget.getBoundingClientRect(), o2 = document.querySelector('[data-kar]').getBoundingClientRect();
+          self.setState({ pop: { x: r.left - o2.left - 80, y: r.bottom - o2.top + 6, t: e.n + ' · ' + VURD[j].n + ' ' + VURD[j].u, b: mangler ? 'Ikke ført ennå.' : 'Karakter ' + k + '. ' + (j === 1 ? 'Rubrikk: fagbegreper Høy, drøfting Middels.' : 'Kommentar: ' + (e.kom || 'ingen')) } }); },
+        ut: function () { self.setState({ pop: null }); } }; });
+      c.push({ v: e.lev ? 'Levert' : 'Ikke levert', kl: 'kk ' + (e.lev ? 'g' : 'ikke'), inn: function () {}, ut: function () {} });
+      var inn = []; for (var q = 0; q < 4; q++) inn.push(IC[e.inn === 'r' && q % 2 ? 'y' : e.inn]);
+      var h = st.h[i];
+      return { n: e.n, c: c, inn: inn, ber: f(b), h: h || (b ? Math.round(b) : '·'), hk: 'halv' + (h ? ' satt' : '') + (i === st.valgt && !h ? ' fokus' : ''), kl: i === st.valgt ? 'v' : '',
+        hv: function (ev) { ev.stopPropagation(); var hh = Object.assign({}, st.h); if (hh[i]) delete hh[i]; else if (b) hh[i] = String(Math.round(b)); self.setState({ h: hh, valgt: i }); },
+        velg: function () { self.setState({ valgt: i }); }, kom: st.kom[i], skriv: function (ev) { var k = st.kom.slice(); k[i] = ev.target.value; self.setState({ kom: k }); } }; });
+    o.snitt = VURD.map(function (v, j) { if (v.god) return EL.filter(function (e) { return e.lev; }).length + ' levert'; var a = EL.map(function (e) { return e.k[j]; }).filter(function (k) { return k != null; }); return f(a.reduce(function (x, y) { return x + y; }, 0) / a.length); });
+    var bs = EL.map(function (e) { return self.ber(e); }).filter(function (x) { return x != null; }); o.snittBer = f(bs.reduce(function (a, b) { return a + b; }, 0) / bs.length);
+    var hs = Object.keys(st.h).map(function (k) { return +st.h[k]; }); o.snittH = hs.length ? f(hs.reduce(function (a, b) { return a + b; }, 0) / hs.length) : '';
+    o.oppsum = EL.length + ' elever · ' + Object.keys(st.h).length + ' halvårskarakterer satt · 3 vurderinger teller';
+    o.harPop = !!st.pop; if (st.pop) { o.popX = st.pop.x + 'px'; o.popY = st.pop.y + 'px'; o.popT = st.pop.t; o.popB = st.pop.b; } else { o.popX = o.popY = '0px'; o.popT = o.popB = ''; }
+    return o;
+  }
+}
+</script>
+</body>
+</html>

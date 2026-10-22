@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<title>Føring av vurdering</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#d4cee2}
+:root{--pal:#4a3d7d;--pal-lys:#e3ddf0;--pal-mid:#b2a8d2;--pal-svak:#f4f2f9;--ease-sprett:cubic-bezier(.34,1.32,.5,1)}
+.pt{position:relative;z-index:1;display:flex;align-items:center;gap:9px;height:32px;padding:0 10px;border-radius:10px;color:#2e2840;font-size:14px}
+.pt.on{font-weight:500;color:#241f33}
+.under{position:relative;z-index:1;display:flex;align-items:center;gap:8px;min-height:28px;margin-left:22px;padding:3px 10px;border-radius:8px;color:#2e2840;font-size:13px}
+.under.on{font-weight:500}
+.under::before{content:"";position:absolute;left:-11px;top:-1px;bottom:-1px;width:1.5px;border-radius:1px;background:rgba(36,31,51,.16)}
+.kbd{margin-left:auto;font-size:11px;color:#6b6482;letter-spacing:.04em;font-weight:400}
+.navmark{position:absolute;left:8px;right:8px;border-radius:10px;background:rgba(255,255,255,.88);box-shadow:0 1px 3px rgba(36,31,51,.14),inset 0 1px 0 #fff;pointer-events:none}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;height:30px;padding:0 13px;border-radius:999px;border:1px solid #d9d4e8;background:#fff;color:#241f33;font:inherit;font-size:13px;cursor:pointer;white-space:nowrap}
+.btn.pri{background:var(--pal);border-color:var(--pal);color:#fff;font-weight:500}
+.btn.stille{border-color:transparent;background:transparent;color:#645d7a}
+.seg{position:relative;display:inline-flex;padding:2px;border-radius:999px;background:rgba(36,31,51,.06)}
+.seg button{all:unset;position:relative;z-index:1;cursor:pointer;height:26px;display:inline-flex;align-items:center;justify-content:center;font-size:12.5px;color:#645d7a;transition:color 200ms}
+.seg button.on{color:#241f33;font-weight:500}
+.tommel{position:absolute;top:2px;left:2px;height:26px;border-radius:999px;background:#fff;box-shadow:0 1px 3px rgba(36,31,51,.16);transition:transform 340ms var(--ease-sprett),width 340ms var(--ease-sprett)}
+.chip{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 9px;border-radius:12px;background:var(--pal-svak);font-size:12px;white-space:nowrap}
+.fk{width:8px;height:8px;border-radius:2px;flex:none;display:inline-block}
+.av{border-radius:50%;overflow:hidden;flex:none;display:inline-block;background:var(--pal-lys)}
+.ell{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.num{font-variant-numeric:tabular-nums}
+.h{font-size:13px;font-weight:600;margin:0}
+.kort{border-radius:14px;background:#fff;box-shadow:inset 0 0 0 1px #ece9f3;padding:16px 18px}
+.hm{border-radius:2px;display:inline-block}
+.g{background:#3f9d49}.y{background:#d9a92f}.r{background:#c04a3d}.o{background:#d5d8dd}
+.glide{transition:transform 260ms var(--ease-sprett),height 260ms var(--ease-sprett)}
+@media (prefers-reduced-motion: reduce){.glide,.tommel{transition:none!important}}
+
+.erad{display:grid;grid-template-columns:minmax(0,1fr) 70px 34px;align-items:center;gap:8px;height:38px;padding:0 10px;border-radius:9px;font-size:13.5px;cursor:pointer;transition:background 200ms,box-shadow 200ms}
+.erad:hover{background:#f7f6fb}.erad.na{background:#fff;box-shadow:inset 0 0 0 1.5px var(--pal),0 4px 14px rgba(74,61,125,.12)}
+.erad small{font-size:11.5px;color:#9a90b8}
+.erad.borte .nv{color:#b8b0cc;text-decoration:line-through}
+.kar{display:inline-grid;place-items:center;width:28px;height:26px;border-radius:7px;font-weight:600;font-size:13px;background:#f4f2f9}
+.kar.tom{background:transparent;box-shadow:inset 0 0 0 1.5px #ece9f3}
+.lev{font-size:11.5px;color:#645d7a}.lev.ikke{color:#c04a3d}
+.kc{all:unset;cursor:pointer;display:inline-grid;place-items:center;width:42px;height:42px;border-radius:11px;font-size:16px;font-weight:600;background:#f4f2f9;position:relative;transition:background 200ms,color 200ms}
+.kc kbd{position:absolute;top:2px;right:5px;font:inherit;font-size:9.5px;font-weight:400;color:#9a90b8}.kc.on{background:var(--pal);color:#fff}.kc.on kbd{color:#d9d4e8}
+.levseg{display:inline-flex;gap:6px}
+.levseg button{all:unset;cursor:pointer;height:30px;padding:0 12px;border-radius:999px;font-size:13px;box-shadow:inset 0 0 0 1px #e3ddf0;color:#645d7a;transition:background 200ms,color 200ms}
+.levseg button.on{background:#241f33;color:#fff;box-shadow:none}
+.rub{border-radius:12px;box-shadow:inset 0 0 0 1px #ece9f3;padding:6px}
+.rh,.rrad{display:grid;grid-template-columns:130px repeat(3,minmax(0,1fr));gap:5px}
+.rh span{font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:#9a90b8;padding:4px 8px}
+.rrad{padding:4px;border-radius:9px;margin-top:2px}.rrad .rk{font-size:12.5px;font-weight:500;padding:6px;align-self:center}
+.rrad button{all:unset;cursor:pointer;box-sizing:border-box;padding:7px 9px;border-radius:8px;font-size:12px;line-height:1.35;color:#645d7a;background:#fff;box-shadow:inset 0 0 0 1px #ece9f3;transition:background 200ms,color 200ms}
+.rrad button.on{background:#4a3d7d;color:#fff;box-shadow:none}
+.kom{all:unset;box-sizing:border-box;width:100%;padding:10px 12px;border-radius:10px;background:#f7f6fb;box-shadow:inset 0 0 0 1px #ece9f3;font-size:13.5px}
+.kom:focus{background:#fff;box-shadow:inset 0 0 0 1.5px var(--pal)}
+.mal{all:unset;cursor:pointer;height:26px;padding:0 10px;border-radius:13px;font-size:12px;background:#f4f2f9;color:#645d7a}.mal:hover{background:#e3ddf0;color:#241f33}
+.ph{font-size:12px;font-weight:600;color:#645d7a;margin:0 0 8px}
+.tips{font-size:12px;color:#9a90b8;line-height:1.45}
+.tt{width:100%;border-collapse:collapse;font-size:13px}.tt th{text-align:left;font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:#9a90b8;font-weight:500;padding:6px 8px;border-bottom:1.5px solid #ece9f3}
+.tt td{padding:0 8px;height:36px;border-bottom:1px solid #f3f1f8}.tt tr.na td{background:#f4f2f9}
+.tin{all:unset;width:100%;font-size:13px;color:#645d7a}
+
+</style>
+</helmet>
+<div style="position:relative;height:1060px;padding:24px;box-sizing:border-box;overflow:hidden;font-family:'Geist',-apple-system,sans-serif;color:#241f33;font-size:14px">
+<div aria-hidden="true" style="position:absolute;left:-120px;top:-80px;width:620px;height:620px;border-radius:50%;background:#8a7bc2;filter:blur(70px);opacity:.75"></div>
+<div aria-hidden="true" style="position:absolute;left:-60px;top:560px;width:520px;height:520px;border-radius:50%;background:#5f9e98;filter:blur(80px);opacity:.7"></div>
+<div aria-hidden="true" style="position:absolute;right:-100px;top:-60px;width:700px;height:500px;border-radius:50%;background:#b8aee0;filter:blur(90px);opacity:.6"></div>
+<div style="position:relative;display:flex;height:1012px;border-radius:16px;overflow:hidden;background:rgba(236,234,241,.42);backdrop-filter:blur(40px) saturate(160%);box-shadow:0 24px 70px rgba(36,31,51,.28),0 0 0 1px rgba(36,31,51,.14)">
+<nav aria-label="Hovedmeny" style="position:relative;width:236px;flex:none;margin:10px;padding:12px 8px;box-sizing:border-box;display:flex;flex-direction:column;gap:2px;border-radius:22px;background:rgba(255,255,255,.5);backdrop-filter:blur(28px) saturate(170%);border:1px solid rgba(255,255,255,.75);box-shadow:inset 0 1px 0 rgba(255,255,255,.95),0 10px 30px rgba(36,31,51,.14)">
+<div style="display:flex;align-items:center;gap:8px;padding:2px 8px 10px"><svg width="20" height="20" viewBox="0 0 1024 1024" aria-hidden="true"><rect x="40" y="40" width="944" height="944" rx="215" fill="#241F33"></rect><rect x="290" y="330" width="200" height="364" rx="44" fill="#EEEDFE"></rect><rect x="516" y="330" width="100" height="364" rx="40" fill="#C9C2DD"></rect><rect x="642" y="330" width="100" height="364" rx="40" fill="#9A90B8"></rect></svg><span style="font-weight:600;font-size:14px">Økta</span><span class="num" style="margin-left:auto;font-size:11px;color:#4b4560">2026/27</span></div>
+<div style="display:flex;align-items:center;gap:8px;height:30px;padding:0 12px;margin-bottom:10px;border-radius:999px;background:rgba(255,255,255,.55);border:1px solid rgba(255,255,255,.75);font-size:13px;color:#4b4560">Søk<span class="kbd">⌘K</span></div>
+<div class="navmark" style="top:193px;height:32px;"></div><div class="pt ">I dag<span class="kbd">G D</span></div><div class="pt ">Økter<span class="kbd">G Ø</span></div><div class="pt ">Elever<span class="kbd">G E</span></div><div class="pt on">Vurderinger og samtaler<span class="kbd">G V</span></div><div class="pt ">Plasser og grupper<span class="kbd">G P</span></div>
+<div style="flex:1"></div><div class="pt">Innstillinger<span class="kbd">⌘,</span></div></nav>
+<main style="position:relative;flex:1;min-width:0;margin:10px 10px 10px 0;background:#fff;border-radius:16px;box-shadow:0 1px 3px rgba(36,31,51,.10);display:flex;flex-direction:column;overflow:hidden">
+<header style="display:flex;align-items:center;gap:10px;margin:10px 12px 0;padding:0 8px 0 18px;height:48px;border-radius:999px;background:rgba(255,255,255,.7);backdrop-filter:blur(28px) saturate(170%);border:1px solid rgba(255,255,255,.8);box-shadow:inset 0 1px 0 rgba(255,255,255,.95),0 6px 20px rgba(36,31,51,.10),0 0 0 .5px rgba(36,31,51,.08);flex:none"><span style="font-size:18px;color:#645d7a">‹</span><span class="fk" style="width:11px;height:11px;border-radius:3px;background:#2e6a8e"></span><span style="font-weight:600;font-size:15px">Skriftlig prøve: markedsanalyse</span><span style="font-size:13px;color:#645d7a">MFL1 · tor 24.9 · Karakter 1–6 · rubrikk</span>
+<div class="seg" style="margin-left:10px"><span class="tommel" style="left:{{mx}};width:{{mw}}"></span><button class="{{m1}}" style="width:88px" onClick="{{tilEn}}">Én og én</button><button class="{{m2}}" style="width:70px" onClick="{{tilTab}}">Tabell</button></div>
+<span style="flex:1"></span><span class="chip">{{framdrift}}</span><button class="btn">Kopier til Teams</button></header>
+<div style="flex:1;min-height:0;overflow:hidden;padding:16px 28px 0"><div style="display:grid;grid-template-columns:300px minmax(0,1fr);gap:26px;height:100%">
+<div style="overflow:auto;min-height:0;padding-bottom:20px"><div class="tips" style="margin:2px 6px 10px">Alfabetisk · ↑↓ bytter elev</div>
+<sc-for list="{{liste}}" as="e" hint-placeholder-count="20"><div class="{{e.kl}}" onClick="{{e.velg}}"><span class="nv ell">{{e.n}}</span><span class="{{e.lk}}">{{e.lt}}</span><span class="{{e.kk}}">{{e.k}}</span></div></sc-for></div>
+<div style="min-height:0;overflow:auto;padding-bottom:20px">
+<sc-if value="{{erEn}}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;align-items:center;gap:14px"><span style="width:48px;height:48px;border-radius:50%;background:linear-gradient(150deg,#8a7bc2,#6a9e98);display:grid;place-items:center;color:#fff;font-weight:600">{{ini}}</span>
+<div style="font-size:24px;font-weight:300;letter-spacing:-.01em">{{navn}}</div><span style="flex:1"></span><button class="btn pri" onClick="{{neste}}">Neste elev <span style="opacity:.6;font-size:11px">⌘↵</span></button></div>
+<div style="display:flex;align-items:center;gap:12px;margin:18px 0 20px"><span class="ph" style="margin:0">Levert</span><div class="levseg"><sc-for list="{{levv}}" as="l" hint-placeholder-count="3"><button class="{{l.kl}}" onClick="{{l.klikk}}">{{l.n}}</button></sc-for></div><span class="tips">Borte hentes fra fraværet i økta.</span></div>
+<div style="display:grid;grid-template-columns:minmax(0,1fr) 150px;gap:24px">
+<div><div class="ph">Rubrikk</div><div class="rub"><div class="rh"><span></span><span>Lav</span><span>Middels</span><span>Høy</span></div>
+<sc-for list="{{rubrikk}}" as="r" hint-placeholder-count="3"><div class="rrad"><span class="rk">{{r.n}}</span><sc-for list="{{r.c}}" as="c" hint-placeholder-count="3"><button class="{{c.kl}}" onClick="{{c.velg}}">{{c.t}}</button></sc-for></div></sc-for></div>
+<div class="ph" style="margin-top:20px">Kommentar til eleven</div><input class="kom" value="{{kom}}" placeholder="Én eller to setninger. Eleven kan få den kopiert til Teams." onInput="{{skriv}}">
+<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"><sc-for list="{{maler}}" as="m" hint-placeholder-count="4"><button class="mal" onClick="{{m.klikk}}">+ {{m.t}}</button></sc-for></div>
+<div class="tips" style="margin-top:8px">Faste fraser lagres per vurdering. Klikk for å legge til.</div></div>
+<div><div class="ph">Karakter</div><div style="display:grid;grid-template-columns:repeat(3,42px);gap:7px"><sc-for list="{{karakter}}" as="k" hint-placeholder-count="6"><button class="{{k.kl}}" onClick="{{k.klikk}}">{{k.n}}<kbd>{{k.n}}</kbd></button></sc-for></div>
+<div class="tips" style="margin-top:8px">{{forslag}}</div></div></div>
+</sc-if>
+<sc-if value="{{erTab}}" hint-placeholder-val="{{ false }}"><div class="tips" style="margin-bottom:8px">Rask føring: skriv karakteren (1–6), Tab til kommentar, Enter til neste elev. Lim gjerne inn en kolonne fra Excel.</div>
+<table class="tt"><thead><tr><th>Elev</th><th style="width:90px">Levert</th><th style="width:80px">Karakter</th><th>Kommentar</th></tr></thead><tbody>
+<sc-for list="{{tab}}" as="e" hint-placeholder-count="12"><tr class="{{e.kl}}"><td>{{e.n}}</td><td><span class="{{e.lk}}">{{e.lt}}</span></td><td><span class="{{e.kk}}">{{e.k}}</span></td><td><input class="tin" value="{{e.kom}}" placeholder="…"></td></tr></sc-for></tbody></table></sc-if>
+</div></div></div>
+</main>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1060}}'>
+var EL = [{"n": "Ada Strand", "lev": "levert", "k": "3", "kom": "Godt strukturert analyse. Bruk flere kilder.", "rub": [2, 2, 0]}, {"n": "Aksel Lund", "lev": "levert", "k": "5", "kom": "Presis bruk av begreper.", "rub": [1, 0, 1]}, {"n": "Elias Vik", "lev": "levert", "k": "4", "kom": "", "rub": [0, 2, 0]}, {"n": "Ella Strand", "lev": "borte", "k": "", "kom": "", "rub": [null, null, null]}, {"n": "Emil Moen", "lev": "levert", "k": "3", "kom": "", "rub": [2, 2, 1]}, {"n": "Filip Solberg", "lev": "levert", "k": "6", "kom": "Svært god SWOT.", "rub": [1, 0, 0]}, {"n": "Frida Hovland", "lev": "levert", "k": "3", "kom": "Ryddig, men overflatisk.", "rub": [2, 2, 0]}, {"n": "Henrik Solberg", "lev": "levert", "k": "", "kom": "", "rub": [null, null, null]}, {"n": "Ingrid Nygård", "lev": "levert", "k": "", "kom": "", "rub": [null, null, null]}, {"n": "Jonas Vik", "lev": "levert", "k": "", "kom": "", "rub": [null, null, null]}, {"n": "Live Nygård", "lev": "levert", "k": "", "kom": "", "rub": [null, null, null]}, {"n": "Maja Lie", "lev": "ikke", "k": "", "kom": "", "rub": [null, null, null]}, {"n": "Mathias Eide", "lev": "levert", "k": "", "kom": "", "rub": [null, null, null]}, {"n": "Nora Nygård", "lev": "levert", "k": "", "kom": "", "rub": [null, null, null]}, {"n": "Oskar Moen", "lev": "levert", "k": "", "kom": "", "rub": [null, null, null]}, {"n": "Sander Bakke", "lev": "levert", "k": "", "kom": "", "rub": [null, null, null]}, {"n": "Sara Haugen", "lev": "levert", "k": "", "kom": "", "rub": [null, null, null]}, {"n": "Selma Dahl", "lev": "levert", "k": "", "kom": "", "rub": [null, null, null]}, {"n": "Thea Strand", "lev": "levert", "k": "", "kom": "", "rub": [null, null, null]}, {"n": "Tobias Aas", "lev": "levert", "k": "", "kom": "", "rub": [null, null, null]}], KRIT = ["Bruker fagbegreper", "Analyserer markedet", "Drøfter og konkluderer"], RUB = [["Få eller feil", "Sentrale, stort sett riktig", "Presist og selvstendig"], ["Beskriver", "Analyserer delvis", "Analyserer grundig"], ["Konkluderer uten drøfting", "Drøfter noe", "Drøfter og begrunner"]], MALER = ["Godt jobbet!", "Bruk flere kilder.", "Drøft mer: hva taler mot?", "Husk å konkludere."];
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { e: EL.map(function (x) { return Object.assign({}, x, { rub: x.rub.slice() }); }), v: 7, modus: 'en' }; }
+  componentDidMount() { var self = this; this._t = function (e) { if (e.target && /INPUT|TEXTAREA/.test(e.target.tagName)) { if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') self.neste(); return; }
+      if (/^[1-6]$/.test(e.key)) self.sett(function (x) { x.k = e.key; x.lev = 'levert'; });
+      if (e.key === 'ArrowDown') { e.preventDefault(); self.setState({ v: Math.min(EL.length - 1, self.state.v + 1) }); }
+      if (e.key === 'ArrowUp') { e.preventDefault(); self.setState({ v: Math.max(0, self.state.v - 1) }); }
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') self.neste(); };
+    window.addEventListener('keydown', this._t); }
+  componentWillUnmount() { window.removeEventListener('keydown', this._t); }
+  sett(fn) { var e = this.state.e.map(function (x) { return Object.assign({}, x, { rub: x.rub.slice() }); }); fn(e[this.state.v]); this.setState({ e: e }); }
+  neste() { var e = this.state.e, j = this.state.v + 1; while (j < e.length && (e[j].k || e[j].lev !== 'levert')) j++; if (j < e.length) this.setState({ v: j }); }
+  renderVals() {
+    var self = this, st = this.state, o = {}, x = st.e[st.v];
+    o.erEn = st.modus === 'en'; o.erTab = st.modus === 'tab'; o.m1 = o.erEn ? 'on' : ''; o.m2 = o.erTab ? 'on' : ''; o.mx = o.erEn ? '2px' : '90px'; o.mw = o.erEn ? '88px' : '70px';
+    o.tilEn = function () { self.setState({ modus: 'en' }); }; o.tilTab = function () { self.setState({ modus: 'tab' }); };
+    var fert = st.e.filter(function (q) { return q.k; }).length; o.framdrift = fert + ' av ' + st.e.length + ' ført';
+    var lt = function (q) { return q.lev === 'levert' ? '' : q.lev === 'borte' ? 'borte' : 'ikke levert'; };
+    o.liste = st.e.map(function (q, i) { return { n: q.n, k: q.k, kk: 'kar' + (q.k ? '' : ' tom'), lt: lt(q), lk: 'lev' + (q.lev === 'ikke' ? ' ikke' : ''), kl: 'erad' + (i === st.v ? ' na' : '') + (q.lev === 'borte' ? ' borte' : ''), velg: function () { self.setState({ v: i }); } }; });
+    o.tab = st.e.map(function (q, i) { return { n: q.n, k: q.k || '·', kk: 'kar' + (q.k ? '' : ' tom'), lt: q.lev === 'levert' ? 'Levert' : lt(q), lk: 'lev' + (q.lev === 'ikke' ? ' ikke' : ''), kom: q.kom, kl: i === st.v ? 'na' : '' }; });
+    o.navn = x.n; o.ini = x.n.split(' ').map(function (w) { return w[0]; }).join('');
+    o.levv = [['levert', 'Levert'], ['ikke', 'Ikke levert'], ['borte', 'Borte']].map(function (l) { return { n: l[1], kl: x.lev === l[0] ? 'on' : '', klikk: function () { self.sett(function (q) { q.lev = l[0]; }); } }; });
+    o.rubrikk = KRIT.map(function (n, i) { return { n: n, c: RUB[i].map(function (t, j) { return { t: t, kl: x.rub[i] === j ? 'on' : '', velg: function () { self.sett(function (q) { q.rub[i] = q.rub[i] === j ? null : j; }); } }; }) }; });
+    o.kom = x.kom; o.skriv = function (e) { var v = e.target.value; self.sett(function (q) { q.kom = v; }); };
+    o.maler = MALER.map(function (t) { return { t: t, klikk: function () { self.sett(function (q) { q.kom = (q.kom ? q.kom.replace(/\s*$/, ' ') : '') + t; }); } }; });
+    o.karakter = ['1', '2', '3', '4', '5', '6'].map(function (k) { return { n: k, kl: 'kc' + (x.k === k ? ' on' : ''), klikk: function () { self.sett(function (q) { q.k = k; q.lev = 'levert'; }); } }; });
+    var sv = x.rub.filter(function (v) { return v != null; });
+    o.forslag = sv.length === KRIT.length ? 'Rubrikken peker mot ' + ['2', '3', '4', '5', '6'][Math.min(4, Math.round(sv.reduce(function (a, b) { return a + b; }, 0) / sv.length * 2))] : 'Trykk 1–6. Rubrikken gir et forslag når alle rader er valgt.';
+    o.neste = function () { self.neste(); };
+    return o;
+  }
+}
+</script>
+</body>
+</html>

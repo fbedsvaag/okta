@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<title>Kommandolinje</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#d4cee2}
+:root{--pal:#4a3d7d;--pal-lys:#e3ddf0;--pal-mid:#b2a8d2;--pal-svak:#f4f2f9;--ease-sprett:cubic-bezier(.34,1.32,.5,1)}
+.pt{position:relative;z-index:1;display:flex;align-items:center;gap:9px;height:32px;padding:0 10px;border-radius:10px;color:#2e2840;font-size:14px}
+.pt.on{font-weight:500;color:#241f33}
+.under{position:relative;z-index:1;display:flex;align-items:center;gap:8px;min-height:28px;margin-left:22px;padding:3px 10px;border-radius:8px;color:#2e2840;font-size:13px}
+.under.on{font-weight:500}
+.under::before{content:"";position:absolute;left:-11px;top:-1px;bottom:-1px;width:1.5px;border-radius:1px;background:rgba(36,31,51,.16)}
+.kbd{margin-left:auto;font-size:11px;color:#6b6482;letter-spacing:.04em;font-weight:400}
+.navmark{position:absolute;left:8px;right:8px;border-radius:10px;background:rgba(255,255,255,.88);box-shadow:0 1px 3px rgba(36,31,51,.14),inset 0 1px 0 #fff;pointer-events:none}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;height:30px;padding:0 13px;border-radius:999px;border:1px solid #d9d4e8;background:#fff;color:#241f33;font:inherit;font-size:13px;cursor:pointer;white-space:nowrap}
+.btn.pri{background:var(--pal);border-color:var(--pal);color:#fff;font-weight:500}
+.btn.stille{border-color:transparent;background:transparent;color:#645d7a}
+.seg{position:relative;display:inline-flex;padding:2px;border-radius:999px;background:rgba(36,31,51,.06)}
+.seg button{all:unset;position:relative;z-index:1;cursor:pointer;height:26px;display:inline-flex;align-items:center;justify-content:center;font-size:12.5px;color:#645d7a;transition:color 200ms}
+.seg button.on{color:#241f33;font-weight:500}
+.tommel{position:absolute;top:2px;left:2px;height:26px;border-radius:999px;background:#fff;box-shadow:0 1px 3px rgba(36,31,51,.16);transition:transform 340ms var(--ease-sprett),width 340ms var(--ease-sprett)}
+.chip{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 9px;border-radius:12px;background:var(--pal-svak);font-size:12px;white-space:nowrap}
+.fk{width:8px;height:8px;border-radius:2px;flex:none;display:inline-block}
+.av{border-radius:50%;overflow:hidden;flex:none;display:inline-block;background:var(--pal-lys)}
+.ell{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.num{font-variant-numeric:tabular-nums}
+.h{font-size:13px;font-weight:600;margin:0}
+.kort{border-radius:14px;background:#fff;box-shadow:inset 0 0 0 1px #ece9f3;padding:16px 18px}
+.hm{border-radius:2px;display:inline-block}
+.g{background:#3f9d49}.y{background:#d9a92f}.r{background:#c04a3d}.o{background:#d5d8dd}
+.glide{transition:transform 260ms var(--ease-sprett),height 260ms var(--ease-sprett)}
+@media (prefers-reduced-motion: reduce){.glide,.tommel{transition:none!important}}
+
+.slor{position:absolute;inset:0;background:rgba(36,31,51,.18);z-index:40;display:flex;justify-content:center;align-items:flex-start;padding-top:90px}
+.pal{width:640px;border-radius:20px;background:rgba(255,255,255,.97);box-shadow:0 30px 90px rgba(36,31,51,.32),0 0 0 1px rgba(36,31,51,.08);overflow:hidden;animation:pinn 200ms cubic-bezier(.22,1,.36,1)}
+@keyframes pinn{from{opacity:0;transform:translateY(-6px) scale(.99)}}
+.inn{display:flex;align-items:center;gap:10px;padding:16px 18px;border-bottom:1px solid #f1eff6}
+.inn input{all:unset;flex:1;font-size:17px}.inn input::placeholder{color:#b8b0cc}
+.liste{max-height:470px;overflow:auto;padding:6px}
+.gr{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#9a90b8;padding:10px 12px 4px}
+.cr{display:flex;align-items:center;gap:12px;height:40px;padding:0 12px;border-radius:10px;font-size:14px;cursor:pointer}
+.cr.on{background:#f4f2f9}
+.cr .ic{width:26px;height:26px;border-radius:8px;background:#f4f2f9;display:grid;place-items:center;font-size:12px;color:#645d7a}
+.cr.on .ic{background:#4a3d7d;color:#fff}
+.cr small{color:#9a90b8;font-size:12px}.cr kbd{margin-left:auto;font:inherit;font-size:11px;color:#9a90b8;letter-spacing:.04em}
+.svar{margin:6px;padding:14px 16px;border-radius:14px;background:#faf9fc;box-shadow:inset 0 0 0 1px #ece9f3;font-size:13.5px;line-height:1.55}
+.svar b{font-weight:600}
+.fot{display:flex;align-items:center;gap:16px;padding:10px 18px;border-top:1px solid #f1eff6;font-size:11.5px;color:#9a90b8;background:#faf9fc}
+.fot kbd{font:inherit;padding:0 5px;border-radius:4px;box-shadow:inset 0 0 0 1px #d9d4e8;color:#645d7a;margin-right:4px}
+.tg{display:grid;grid-template-columns:150px 1fr;gap:8px 14px;padding:8px 12px 14px;font-size:13px}
+.tg kbd{font:inherit;font-size:12px;color:#4b4560}
+
+</style>
+</helmet>
+<div style="position:relative;height:1060px;padding:24px;box-sizing:border-box;overflow:hidden;font-family:'Geist',-apple-system,sans-serif;color:#241f33;font-size:14px">
+<div aria-hidden="true" style="position:absolute;left:-120px;top:-80px;width:620px;height:620px;border-radius:50%;background:#8a7bc2;filter:blur(70px);opacity:.75"></div>
+<div aria-hidden="true" style="position:absolute;left:-60px;top:560px;width:520px;height:520px;border-radius:50%;background:#5f9e98;filter:blur(80px);opacity:.7"></div>
+<div aria-hidden="true" style="position:absolute;right:-100px;top:-60px;width:700px;height:500px;border-radius:50%;background:#b8aee0;filter:blur(90px);opacity:.6"></div>
+<div style="position:relative;display:flex;height:1012px;border-radius:16px;overflow:hidden;background:rgba(236,234,241,.42);backdrop-filter:blur(40px) saturate(160%);box-shadow:0 24px 70px rgba(36,31,51,.28),0 0 0 1px rgba(36,31,51,.14)">
+<nav aria-label="Hovedmeny" style="position:relative;width:236px;flex:none;margin:10px;padding:12px 8px;box-sizing:border-box;display:flex;flex-direction:column;gap:2px;border-radius:22px;background:rgba(255,255,255,.5);backdrop-filter:blur(28px) saturate(170%);border:1px solid rgba(255,255,255,.75);box-shadow:inset 0 1px 0 rgba(255,255,255,.95),0 10px 30px rgba(36,31,51,.14)">
+<div style="display:flex;align-items:center;gap:8px;padding:2px 8px 10px"><svg width="20" height="20" viewBox="0 0 1024 1024" aria-hidden="true"><rect x="40" y="40" width="944" height="944" rx="215" fill="#241F33"></rect><rect x="290" y="330" width="200" height="364" rx="44" fill="#EEEDFE"></rect><rect x="516" y="330" width="100" height="364" rx="40" fill="#C9C2DD"></rect><rect x="642" y="330" width="100" height="364" rx="40" fill="#9A90B8"></rect></svg><span style="font-weight:600;font-size:14px">Økta</span><span class="num" style="margin-left:auto;font-size:11px;color:#4b4560">2026/27</span></div>
+<div style="display:flex;align-items:center;gap:8px;height:30px;padding:0 12px;margin-bottom:10px;border-radius:999px;background:rgba(255,255,255,.55);border:1px solid rgba(255,255,255,.75);font-size:13px;color:#4b4560">Søk<span class="kbd">⌘K</span></div>
+<div class="navmark" style="top:91px;height:32px;"></div><div class="pt on">I dag<span class="kbd">G D</span></div><div class="pt ">Økter<span class="kbd">G Ø</span></div><div class="pt ">Elever<span class="kbd">G E</span></div><div class="pt ">Vurderinger og samtaler<span class="kbd">G V</span></div><div class="pt ">Plasser og grupper<span class="kbd">G P</span></div>
+<div style="flex:1"></div><div class="pt">Innstillinger<span class="kbd">⌘,</span></div></nav>
+<main style="position:relative;flex:1;margin:10px 10px 10px 0;border-radius:16px;background:#fff"><div style="position:relative;height:100%"><div style="padding:20px 28px;color:#c9c2dd;font-size:30px;font-weight:300">I dag</div>
+<div class="slor" onClick="{{lukk}}"><div class="pal" onClick="{{stopp}}">
+<div class="inn"><span style="color:#9a90b8;font-size:16px">⌕</span><input value="{{q}}" onInput="{{skriv}}" onKeyDown="{{tast}}" placeholder="Søk, gjør noe, eller spør «hvordan …»" autofocus><span class="chip">{{modus}}</span></div>
+<div class="liste">
+<sc-if value="{{erHjelp}}" hint-placeholder-val="{{ false }}"><div class="gr">Hjelp</div><sc-for list="{{hjelp}}" as="h" hint-placeholder-count="3"><div class="{{h.kl}}" onClick="{{h.velg}}"><span class="ic">?</span>{{h.q}}</div></sc-for>
+<sc-if value="{{harSvar}}" hint-placeholder-val="{{ false }}"><div class="svar"><b>{{svarQ}}</b><div style="color:#645d7a;margin-top:4px">{{svarA}}</div><button class="btn" style="margin-top:10px">{{svarK}} →</button></div></sc-if></sc-if>
+<sc-if value="{{erTaster}}" hint-placeholder-val="{{ false }}"><div class="gr">Hurtigtaster</div><div class="tg"><sc-for list="{{taster}}" as="t" hint-placeholder-count="7"><kbd>{{t.k}}</kbd><span>{{t.n}}</span></sc-for></div></sc-if>
+<sc-if value="{{erVanlig}}" hint-placeholder-val="{{ true }}"><sc-for list="{{grupper}}" as="g" hint-placeholder-count="4"><div class="gr">{{g.n}}</div><sc-for list="{{g.r}}" as="c" hint-placeholder-count="3"><div class="{{c.kl}}" onPointerEnter="{{c.inn}}"><span class="ic">{{c.ic}}</span><span>{{c.t}} <small>{{c.u}}</small></span><kbd>{{c.k}}</kbd></div></sc-for></sc-for>
+<sc-if value="{{ingen}}" hint-placeholder-val="{{ false }}"><div class="svar">Ingen treff. Skriv <b>?</b> for hjelp, eller start med «hvordan».</div></sc-if></sc-if>
+</div>
+<div class="fot"><span><kbd>↑↓</kbd>velg</span><span><kbd>↵</kbd>åpne</span><span><kbd>?</kbd>hjelp</span><span><kbd>esc</kbd>lukk</span><span style="flex:1"></span><span>Prøv: «ny vurdering», «ada», «hvordan grupper»</span></div>
+</div></div></div></main>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1060}}'>
+var CMD = [["Gjør", "Ny vurdering", "velg fag og type", "", "＋", "ny vurdering prøve muntlig innlevering"], ["Gjør", "Ny økt", "i faget du står i", "", "＋", "ny økt time"], ["Gjør", "Ny elev", "", "", "＋", "ny elev legg til"], ["Gjør", "Lag grupper", "Plasser og grupper", "", "◇", "grupper gruppe stokk"], ["Gjør", "Ta sikkerhetskopi nå", "", "", "↺", "sikkerhetskopi backup kopi"], ["Gå til", "I dag", "", "G D", "→", "i dag forside"], ["Gå til", "MFL2 · Karakterer", "fagsiden", "", "→", "mfl2 karakterer halvår"], ["Gå til", "Klassekart 2STA", "Plasser og grupper", "G P", "→", "klassekart plasser 2sta"], ["Gå til", "Muntlig: prisstrategi", "MFL2 · pågår", "", "→", "muntlig prisstrategi vurdering"], ["Elever", "Ada Lie", "2STA · MFL2, ENG1", "", "●", "ada lie"], ["Elever", "Aksel Strand", "2STB · MFL2", "", "●", "aksel strand"], ["Innstillinger", "Fagfarge for MFL2", "Innstillinger → Fag", "", "⚙", "farge fagfarge mfl2"], ["Innstillinger", "Tekststørrelse", "Generelt", "", "⚙", "tekst størrelse større"]], HJ = [["Hvordan lager jeg grupper uten klassekart?", "Gå til Plasser og grupper → Grupper. Velg klassen, antall grupper, og trykk Stokk (⌘R). Du trenger ikke rom eller kart.", "Lag grupper nå"], ["Hvordan flytter jeg en økt?", "I Økter-lista: dra ⋮⋮ til en annen økt. Innholdet bytter plass, datoene står.", "Åpne Økter"], ["Hvordan fører jeg en skriftlig prøve?", "Åpne vurderingen i Vurderinger og samtaler og velg «Én og én» eller «Tabell». Trykk 1–6 for karakter.", "Åpne vurderinger"]], TASTER = [["⌘K", "Kommandolinje og hjelp"], ["G D · G Ø · G E", "Gå til I dag, Økter, Elever"], ["1 2 3 · 0", "Skår rød, gul, grønn · ikke i økta"], ["K", "Klassekartet i økta"], ["⌘R", "Stokk grupper"], ["⌘↵", "Ferdig / neste elev"], ["?", "Vis alle hurtigtaster"]];
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { q: '', v: 0, svar: -1 }; }
+  treff() { var q = this.state.q.trim().toLowerCase(); if (!q) return CMD.filter(function (c) { return c[0] !== 'Innstillinger'; }).slice(0, 9);
+    return CMD.filter(function (c) { return q.split(/\s+/).every(function (w) { return (c[1] + ' ' + c[5]).toLowerCase().indexOf(w) >= 0; }); }); }
+  renderVals() {
+    var self = this, st = this.state, o = {}, q = st.q.trim().toLowerCase();
+    o.q = st.q; o.skriv = function (e) { self.setState({ q: e.target.value, v: 0, svar: -1 }); };
+    o.erTaster = q === '?'; o.erHjelp = !o.erTaster && (q.indexOf('hvordan') === 0 || q.indexOf('hjelp') === 0); o.erVanlig = !o.erTaster && !o.erHjelp;
+    o.modus = o.erTaster ? 'Hurtigtaster' : o.erHjelp ? 'Hjelp' : 'Kommando';
+    var t = this.treff();
+    var grp = []; t.forEach(function (c, i) { var g = grp.filter(function (x) { return x.n === c[0]; })[0]; if (!g) { g = { n: c[0], r: [] }; grp.push(g); }
+      g.r.push({ t: c[1], u: c[2], k: c[3], ic: c[4], kl: 'cr' + (i === st.v ? ' on' : ''), inn: function () { self.setState({ v: i }); } }); });
+    o.grupper = grp; o.ingen = t.length === 0;
+    var rest = q.replace(/^(hvordan|hjelp)\s*/, '');
+    var hj = HJ.filter(function (h) { return !rest || rest.split(/\s+/).every(function (w) { return (h[0] + ' ' + h[1]).toLowerCase().indexOf(w) >= 0; }); });
+    o.hjelp = hj.map(function (h, i) { return { q: h[0], kl: 'cr' + (i === st.v ? ' on' : ''), velg: function () { self.setState({ svar: i, v: i }); } }; });
+    var sv = st.svar >= 0 ? hj[st.svar] : (o.erHjelp && hj.length === 1 ? hj[0] : null);
+    o.harSvar = !!sv; o.svarQ = sv ? sv[0] : ''; o.svarA = sv ? sv[1] : ''; o.svarK = sv ? sv[2] : '';
+    o.taster = TASTER.map(function (x) { return { k: x[0], n: x[1] }; });
+    var n = o.erHjelp ? hj.length : t.length;
+    o.tast = function (e) { if (e.key === 'ArrowDown') { e.preventDefault(); self.setState({ v: Math.min(n - 1, st.v + 1) }); } else if (e.key === 'ArrowUp') { e.preventDefault(); self.setState({ v: Math.max(0, st.v - 1) }); }
+      else if (e.key === 'Enter' && o.erHjelp) self.setState({ svar: st.v }); };
+    o.lukk = function () {}; o.stopp = function (e) { e.stopPropagation(); };
+    return o;
+  }
+}
+</script>
+</body>
+</html>

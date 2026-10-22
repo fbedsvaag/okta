@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<title>Faget — innstillinger på stedet</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#d4cee2}
+:root{--pal:#4a3d7d;--pal-lys:#e3ddf0;--pal-mid:#b2a8d2;--pal-svak:#f4f2f9;--ease-sprett:cubic-bezier(.34,1.32,.5,1)}
+.pt{position:relative;z-index:1;display:flex;align-items:center;gap:9px;height:32px;padding:0 10px;border-radius:10px;color:#2e2840;font-size:14px}
+.pt.on{font-weight:500;color:#241f33}
+.under{position:relative;z-index:1;display:flex;align-items:center;gap:8px;min-height:28px;margin-left:22px;padding:3px 10px;border-radius:8px;color:#2e2840;font-size:13px}
+.under.on{font-weight:500}
+.under::before{content:"";position:absolute;left:-11px;top:-1px;bottom:-1px;width:1.5px;border-radius:1px;background:rgba(36,31,51,.16)}
+.kbd{margin-left:auto;font-size:11px;color:#6b6482;letter-spacing:.04em;font-weight:400}
+.navmark{position:absolute;left:8px;right:8px;border-radius:10px;background:rgba(255,255,255,.88);box-shadow:0 1px 3px rgba(36,31,51,.14),inset 0 1px 0 #fff;pointer-events:none}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;height:30px;padding:0 13px;border-radius:999px;border:1px solid #d9d4e8;background:#fff;color:#241f33;font:inherit;font-size:13px;cursor:pointer;white-space:nowrap}
+.btn.pri{background:var(--pal);border-color:var(--pal);color:#fff;font-weight:500}
+.btn.stille{border-color:transparent;background:transparent;color:#645d7a}
+.seg{position:relative;display:inline-flex;padding:2px;border-radius:999px;background:rgba(36,31,51,.06)}
+.seg button{all:unset;position:relative;z-index:1;cursor:pointer;height:26px;display:inline-flex;align-items:center;justify-content:center;font-size:12.5px;color:#645d7a;transition:color 200ms}
+.seg button.on{color:#241f33;font-weight:500}
+.tommel{position:absolute;top:2px;left:2px;height:26px;border-radius:999px;background:#fff;box-shadow:0 1px 3px rgba(36,31,51,.16);transition:transform 340ms var(--ease-sprett),width 340ms var(--ease-sprett)}
+.chip{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 9px;border-radius:12px;background:var(--pal-svak);font-size:12px;white-space:nowrap}
+.fk{width:8px;height:8px;border-radius:2px;flex:none;display:inline-block}
+.av{border-radius:50%;overflow:hidden;flex:none;display:inline-block;background:var(--pal-lys)}
+.ell{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.num{font-variant-numeric:tabular-nums}
+.h{font-size:13px;font-weight:600;margin:0}
+.kort{border-radius:14px;background:#fff;box-shadow:inset 0 0 0 1px #ece9f3;padding:16px 18px}
+.hm{border-radius:2px;display:inline-block}
+.g{background:#3f9d49}.y{background:#d9a92f}.r{background:#c04a3d}.o{background:#d5d8dd}
+.glide{transition:transform 260ms var(--ease-sprett),height 260ms var(--ease-sprett)}
+@media (prefers-reduced-motion: reduce){.glide,.tommel{transition:none!important}}
+
+.ark{position:absolute;top:10px;right:10px;bottom:10px;width:400px;border-radius:20px;background:rgba(255,255,255,.98);box-shadow:-20px 0 60px rgba(36,31,51,.18),0 0 0 1px rgba(36,31,51,.07);padding:20px 22px;overflow:auto;animation:arkinn 260ms cubic-bezier(.22,1,.36,1);z-index:30}
+@keyframes arkinn{from{transform:translateX(24px);opacity:0}}
+.rad{display:flex;align-items:center;gap:12px;min-height:46px;border-top:1px solid #f3f1f8;font-size:13.5px}
+.rad:first-of-type{border-top:none}.rad .l{flex:1}.rad small{display:block;color:#9a90b8;font-size:11.5px;margin-top:2px}
+.sw{display:grid;grid-template-columns:repeat(6,26px);gap:7px;margin:6px 0 4px}
+.sw button{all:unset;cursor:pointer;width:26px;height:26px;border-radius:8px;transition:box-shadow 200ms}.sw button.on{box-shadow:0 0 0 2px #fff,0 0 0 4px #241f33}.sw button.brukt{opacity:.25}
+.dag{all:unset;cursor:pointer;width:34px;height:30px;border-radius:8px;text-align:center;font-size:12.5px;box-shadow:inset 0 0 0 1px #e3ddf0;color:#645d7a}.dag.on{background:#241f33;color:#fff;box-shadow:none}
+.velg{display:inline-flex;align-items:center;gap:8px;height:30px;padding:0 10px;border-radius:8px;background:#f7f6fb;box-shadow:inset 0 0 0 1px #ece9f3;font-size:13px}
+.velg span{color:#9a90b8;font-size:11px}
+.gt{font-size:12px;font-weight:600;color:#645d7a;margin:18px 0 4px}
+.tips{font-size:12px;color:#9a90b8;line-height:1.45}
+.bak{position:absolute;inset:0;padding:22px 30px;filter:saturate(.9)}
+.kt{border-radius:14px;background:#fff;box-shadow:inset 0 0 0 1px #ece9f3;padding:14px 16px;font-size:13px;color:#645d7a}
+
+</style>
+</helmet>
+<div style="position:relative;height:1060px;padding:24px;box-sizing:border-box;overflow:hidden;font-family:'Geist',-apple-system,sans-serif;color:#241f33;font-size:14px">
+<div aria-hidden="true" style="position:absolute;left:-120px;top:-80px;width:620px;height:620px;border-radius:50%;background:#8a7bc2;filter:blur(70px);opacity:.75"></div>
+<div aria-hidden="true" style="position:absolute;left:-60px;top:560px;width:520px;height:520px;border-radius:50%;background:#5f9e98;filter:blur(80px);opacity:.7"></div>
+<div aria-hidden="true" style="position:absolute;right:-100px;top:-60px;width:700px;height:500px;border-radius:50%;background:#b8aee0;filter:blur(90px);opacity:.6"></div>
+<div style="position:relative;display:flex;height:1012px;border-radius:16px;overflow:hidden;background:rgba(236,234,241,.42);backdrop-filter:blur(40px) saturate(160%);box-shadow:0 24px 70px rgba(36,31,51,.28),0 0 0 1px rgba(36,31,51,.14)">
+<nav aria-label="Hovedmeny" style="position:relative;width:236px;flex:none;margin:10px;padding:12px 8px;box-sizing:border-box;display:flex;flex-direction:column;gap:2px;border-radius:22px;background:rgba(255,255,255,.5);backdrop-filter:blur(28px) saturate(170%);border:1px solid rgba(255,255,255,.75);box-shadow:inset 0 1px 0 rgba(255,255,255,.95),0 10px 30px rgba(36,31,51,.14)">
+<div style="display:flex;align-items:center;gap:8px;padding:2px 8px 10px"><svg width="20" height="20" viewBox="0 0 1024 1024" aria-hidden="true"><rect x="40" y="40" width="944" height="944" rx="215" fill="#241F33"></rect><rect x="290" y="330" width="200" height="364" rx="44" fill="#EEEDFE"></rect><rect x="516" y="330" width="100" height="364" rx="40" fill="#C9C2DD"></rect><rect x="642" y="330" width="100" height="364" rx="40" fill="#9A90B8"></rect></svg><span style="font-weight:600;font-size:14px">Økta</span><span class="num" style="margin-left:auto;font-size:11px;color:#4b4560">2026/27</span></div>
+<div style="display:flex;align-items:center;gap:8px;height:30px;padding:0 12px;margin-bottom:10px;border-radius:999px;background:rgba(255,255,255,.55);border:1px solid rgba(255,255,255,.75);font-size:13px;color:#4b4560">Søk<span class="kbd">⌘K</span></div>
+<div class="navmark" style="top:231px;height:34px;left:30px"></div><div class="pt ">I dag<span class="kbd">G D</span></div><div class="pt on">Økter<span class="kbd">G Ø</span></div><div class="under "><span class="fk" style="background:#c9c2dd"></span>Alle fag<span class="kbd"></span></div><div class="under "><span class="fk" style="background:#2e6a8e"></span>MFL1<span class="kbd"></span></div><div class="under on"><span class="fk" style="background:#9a5a2c"></span>MFL2<span class="kbd"></span></div><div class="under "><span class="fk" style="background:#3d7a5a"></span>ENG1<span class="kbd"></span></div><div class="pt ">Elever<span class="kbd">G E</span></div><div class="pt ">Vurderinger og samtaler<span class="kbd">G V</span></div><div class="pt ">Plasser og grupper<span class="kbd">G P</span></div>
+<div style="flex:1"></div><div class="pt">Innstillinger<span class="kbd">⌘,</span></div></nav>
+<main style="position:relative;flex:1;min-width:0;margin:10px 10px 10px 0;background:#fff;border-radius:16px;box-shadow:0 1px 3px rgba(36,31,51,.10);display:flex;flex-direction:column;overflow:hidden">
+<header style="display:flex;align-items:center;gap:10px;margin:10px 12px 0;padding:0 8px 0 18px;height:48px;border-radius:999px;background:rgba(255,255,255,.7);backdrop-filter:blur(28px) saturate(170%);border:1px solid rgba(255,255,255,.8);box-shadow:inset 0 1px 0 rgba(255,255,255,.95),0 6px 20px rgba(36,31,51,.10),0 0 0 .5px rgba(36,31,51,.08);flex:none"><span style="font-size:18px;color:#241f33">‹</span><span style="font-size:18px;color:#c9c2dd;margin-right:6px">›</span><span class="fk" style="width:11px;height:11px;border-radius:3px;background:{{farge}}"></span><span style="font-weight:600;font-size:15px">MFL2</span>
+<div class="seg" style="margin-left:6px"><span class="tommel" style="left:2px;width:76px"></span><button class="on" style="width:76px">Oversikt</button><button style="width:62px">Året</button><button style="width:64px">Økter</button><button style="width:94px">Kalender</button><button style="width:96px">Karakterer</button></div>
+<span style="flex:1"></span><button class="btn" onClick="{{tT}}" style="{{tStil}}">⚙ MFL2</button></header>
+<div style="flex:1;min-height:0;overflow:hidden;padding:0"><div style="position:relative;height:100%">
+<div class="bak"><div style="font-size:12.5px;color:#9a5a2c;font-weight:600"><span style="color:{{farge}}">MFL2</span></div><div style="font-size:34px;font-weight:300;letter-spacing:-.015em;margin:2px 0 18px">Markedsføring og ledelse 2</div>
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;max-width:820px"><div class="kt"><b style="color:#241f33">Neste økt</b><br>tor 22.10 · Pris</div><div class="kt"><b style="color:#241f33">Vurderinger</b><br>1 pågår · 1 kommende</div><div class="kt"><b style="color:#241f33">Innsats</b><br>siste 4 uker</div></div></div>
+<sc-if value="{{apen}}" hint-placeholder-val="{{ true }}"><div class="ark">
+<div style="display:flex;align-items:center;gap:10px"><span class="fk" style="width:14px;height:14px;border-radius:4px;background:{{farge}}"></span><b style="font-size:16px">MFL2</b><span class="tips">innstillinger for faget</span><span style="flex:1"></span><button class="btn stille" onClick="{{tT}}">Ferdig</button></div>
+<div class="gt">Farge</div><div class="sw"><sc-for list="{{sw}}" as="s" hint-placeholder-count="12"><button class="{{s.kl}}" style="background:{{s.c}}" onClick="{{s.klikk}}"></button></sc-for></div><div class="tips">Dempet = brukt av et annet fag. Flere farger i Innstillinger → Fag.</div>
+<div class="gt">Økter</div>
+<div class="rad"><span class="l">Dager</span><sc-for list="{{dager}}" as="d" hint-placeholder-count="5"><button class="{{d.kl}}" onClick="{{d.klikk}}">{{d.n}}</button></sc-for></div>
+<div class="rad"><span class="l">Lengde</span><span class="velg">90 min<span>⌄</span></span></div>
+<div class="rad"><span class="l">Rom<small>brukes av klassekartet</small></span><span class="velg">Rom 214<span>⌄</span></span></div>
+<div class="gt">Skåring og vurdering</div>
+<div class="rad"><span class="l">Skåringsskala</span><span class="velg">Trafikklys<span>⌄</span></span></div>
+<div class="rad"><span class="l">Standard for nye vurderinger</span><span class="velg">Karakter 1–6<span>⌄</span></span></div>
+<div class="gt">Læreplan</div>
+<div class="rad"><span class="l">MFL1002 · kompetansemål<small>hentet fra Udir 14.8</small></span><button class="btn">Vis</button></div>
+<div class="rad" style="margin-top:14px"><span class="l" style="color:#c04a3d">Arkiver faget</span><span class="tips">Elever og økter blir liggende</span></div>
+<div class="tips" style="margin-top:18px">Endringer lagres med en gang. Du blir værende i faget.</div>
+</div></sc-if>
+</div></div>
+</main>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1060}}'>
+var FARGER = ["#9a5a2c", "#b5703a", "#c9922e", "#c0607a", "#a83f5f", "#3d7a5a", "#2f9a8a", "#2e6a8e", "#4f7ac0", "#7d6bb0", "#4a3d7d", "#58507a"], BRUKT = ["#2e6a8e", "#3d7a5a"];
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { apen: true, farge: '#9a5a2c', d: [true, false, false, true, false] }; }
+  renderVals() { var self = this, st = this.state, o = {};
+    o.apen = st.apen; o.tT = function () { self.setState({ apen: !st.apen }); }; o.tStil = st.apen ? 'background:#f4f2f9' : ''; o.farge = st.farge;
+    o.sw = FARGER.map(function (c) { return { c: c, kl: (c === st.farge ? 'on' : '') + (BRUKT.indexOf(c) >= 0 ? ' brukt' : ''), klikk: function () { self.setState({ farge: c }); } }; });
+    o.dager = ['ma', 'ti', 'on', 'to', 'fr'].map(function (n, i) { return { n: n, kl: 'dag' + (st.d[i] ? ' on' : ''), klikk: function () { var d = st.d.slice(); d[i] = !d[i]; self.setState({ d: d }); } }; });
+    return o; } }
+</script>
+</body>
+</html>
