@@ -32,6 +32,7 @@ import { Elevfoto } from "../ui/Elevfoto";
 import { Avkrysning, innsatsfarge } from "./KlassekartKart";
 import { hovedtast, tast as visTast } from "../ui/taster";
 import { PULTFARGER } from "../data/pultfarger";
+import { Avtalelinje, useAvtaler } from "./Avtaler";
 import {
   Gruppebilde,
   somSett,
@@ -101,6 +102,8 @@ export function KlassekartGrupper({
   const [aktivt, setAktivt] = useState<string | null>(null);
   const [visTidligere, setVisTidligere] = useState(false);
   const [visBilde, setVisBilde] = useState(false);
+  // Avtaler (hard regel) og ønsker (myk), 26.7 og 26.13.
+  const avt = useAvtaler(kart, "grupper");
   const [valg, setValg] = useNavnevalg();
   // Det som ble kopiert til Teams, vist under knappen (25.10).
   const [kopiert, setKopiert] = useState(false);
@@ -222,13 +225,15 @@ export function KlassekartGrupper({
       bland: innst.bland,
       unnga: innst.unnga,
       frø: Math.floor(Math.random() * 2 ** 31),
-      // «Sett sammen neste gang» fra elevkortet (26.3), som myk regel.
-      sammen: new Map(
-        Object.entries(innst.settSammen ?? {}).map(([id, med]) => [
-          id,
-          new Set(med),
-        ]),
-      ),
+      // «Prøv å sette sammen» (26.3) og ønskene (26.7), som myk regel;
+      // avtalene (26.13) som hard.
+      sammen: (() => {
+        const r = avt.regler(med);
+        for (const [id, m] of Object.entries(innst.settSammen ?? {}))
+          r.sammen.set(id, new Set([...(r.sammen.get(id) ?? []), ...m]));
+        return r.sammen;
+      })(),
+      maa: avt.regler(med).maa,
     });
     setGrupper(r.grupper);
     setNavn((nv) => r.grupper.map((_, i) => nv[i] ?? null));
@@ -270,6 +275,10 @@ export function KlassekartGrupper({
     );
     setHistorikk(await hentOppsett(kart.id, "gruppe"));
     setAktivt(id);
+    // Avtalene som ble holdt, er brukt (26.13).
+    await avt.lagret((a, b) =>
+      grupper.some((g) => g.includes(a) && g.includes(b)),
+    );
     setLagret(true);
     // Ønskene fra elevkortet gjaldt «neste gang»; nå er den brukt.
     if (Object.keys(innst.settSammen ?? {}).length > 0)
@@ -517,6 +526,7 @@ export function KlassekartGrupper({
       <div className="ikkeutskrift flex flex-wrap items-center gap-2 pb-3">
         {kildevelger}
         <span className="flex-1" />
+
         <button
           onClick={() => void bruk()}
           disabled={lagret}
@@ -606,6 +616,17 @@ export function KlassekartGrupper({
           Bland jenter og gutter
         </Avkrysning>
       </div>
+      <div className="ikkeutskrift mx-0.5 mt-2">
+        <Avtalelinje
+          antall={avt.avtaler.length}
+          ikkeMed={avt
+            .ikkeMed(elever)
+            .map((a) => [a.elevId, a.medElevId] as [string, string])}
+          hopp={avt.hopp}
+          onHopp={avt.setHopp}
+          navnPa={navnPa}
+        />
+      </div>
       {borteNa.length > 0 && (
         <p className="ikkeutskrift mx-0.5 mt-2.5 flex flex-wrap items-center gap-1.5 text-[calc(12.5px*var(--tekst-skala))] text-blekk-dempet">
           Borte i dag, ikke med:
@@ -626,7 +647,9 @@ export function KlassekartGrupper({
             .map((b) =>
               b.regel === "hold"
                 ? `${b.tekst.split("|").map(navnPa).join(" og ")} er i samme gruppe.`
-                : b.tekst,
+                : b.regel === "maa"
+                  ? `📌 ${b.tekst.split("|").map(navnPa).join(" og ")} fikk ikke plass i samme gruppe.`
+                  : b.tekst,
             )
             .join(" ")}
         </p>

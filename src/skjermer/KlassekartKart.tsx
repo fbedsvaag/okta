@@ -53,6 +53,7 @@ import { filnavnAv, lagreFil } from "../data/filer";
 import { Velger } from "../ui/Velger";
 import { fyllPulter, gruppeorden, PULTFARGER } from "../data/pultfarger";
 import { Gruppebilde } from "./Gruppebilde";
+import { Avtalelinje, useAvtaler } from "./Avtaler";
 
 /**
  * Klassekartet — Plasser (SPEC §4.11, lerretet «Klassekart»).
@@ -120,6 +121,8 @@ export function KlassekartKart({
   const [visk, setVisk] = useState(false);
   const maling = useRef<{ modus: string | null } | null>(null);
   const [visBilde, setVisBilde] = useState(false);
+  // Avtaler (hard regel) og ønsker (myk), 26.7 og 26.13.
+  const avt = useAvtaler(kart, "klassekart");
   // Et par som er klikket i lista over brudd: lyser opp i kartet en stund.
   const [uthev, setUthev] = useState<Set<string>>(new Set());
   useEffect(() => {
@@ -343,6 +346,7 @@ export function KlassekartKart({
       bland: i.bland,
       unnga: i.unnga,
       frø: Math.floor(Math.random() * 2 ** 31),
+      ...avt.regler(tilstede),
     });
     setPlass(r.plass);
     setBrudd(r.brudd);
@@ -372,6 +376,10 @@ export function KlassekartKart({
     setHistorikk(await hentOppsett(kartId, "plass"));
     setLagret(true);
     setMelding(hvorfor ?? "Plasseringen er lagret");
+    // Avtalene som ble holdt (samme bord), er brukt (26.13).
+    const pult = (id: string) =>
+      plasser.find((p) => p.nr === plass.get(id))?.pult;
+    await avt.lagret((a, b) => !!pult(a) && pult(a) === pult(b));
   }
 
   // ------------------------------------------------------------ dele
@@ -1399,9 +1407,23 @@ export function KlassekartKart({
                           .split("|")
                           .map(navnPa)
                           .join(" og ")} sitter sammen, og begge er låst.`
-                      : b.tekst}
+                      : b.regel === "maa"
+                        ? `📌 ${b.tekst
+                            .split("|")
+                            .map(navnPa)
+                            .join(" og ")} fikk ikke samme bord.`
+                        : b.tekst}
                   </p>
                 ))}
+              <Avtalelinje
+                antall={avt.avtaler.length}
+                ikkeMed={avt
+                  .ikkeMed(elever.filter((e) => !borte.has(e.id)))
+                  .map((a) => [a.elevId, a.medElevId] as [string, string])}
+                hopp={avt.hopp}
+                onHopp={avt.setHopp}
+                navnPa={navnPa}
+              />
               <button
                 onClick={() => stokk()}
                 disabled={!!historisk}

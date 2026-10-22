@@ -6,8 +6,37 @@ import {
   type Kilde,
   type Samarbeid,
 } from "../data/samarbeid";
-import { lyttKlassekart } from "../data/endringer";
+import { lyttElever, lyttKlassekart } from "../data/endringer";
 import { Bryter } from "../ui/felles";
+import { hentAlleElever } from "../data/elever";
+import {
+  fjernAvtale,
+  fjernOnske,
+  gjensidig,
+  hentAvtaler,
+  hentOnsker,
+  leggTilAvtale,
+  leggTilOnske,
+  type Avtale,
+  type Avtalekilde,
+  type Gjelder,
+  type Kilde as Onskekilde,
+  type Onske,
+} from "../data/onsker";
+import { ONSKER_VED_STOKK } from "./Avtaler";
+import { useLagretInnstilling } from "../ui/useLagretInnstilling";
+
+/** Ønsker i ringen og på chipene: grønnblå, som i lerretet. */
+const ONSKEFARGE = "#2f9a8a";
+type Navn = { id: string; fornavn: string; etternavn: string };
+const kort = (k: Navn) =>
+  `${k.fornavn} ${k.etternavn ? `${k.etternavn[0]}.` : ""}`.trim();
+const KILDENAVN: Record<string, string> = {
+  samtale: "Samtale",
+  eleven: "Eleven",
+  selv: "Sett selv",
+  jeg: "Jeg",
+};
 
 const kortDato = (tid: string) =>
   new Date(tid.replace(" ", "T"))
@@ -34,21 +63,45 @@ export function ElevSamarbeid({
   const [kilde, setKilde] = useState<Kilde>("begge");
   const [valgt, setValgt] = useState<string | null>(null);
   const [over, setOver] = useState<string | null>(null);
+  const [onsker, setOnsker] = useState<Onske[]>([]);
+  const [avtaler, setAvtaler] = useState<Avtale[]>([]);
+  const [alle, setAlle] = useState<Navn[]>([]);
 
   useEffect(() => {
-    const last = () =>
+    const last = () => {
       void hentSamarbeid(elevId, skolearId).then((d) => setData(d));
+      void hentOnsker().then(setOnsker);
+      void hentAvtaler().then(setAvtaler);
+      void hentAlleElever().then(setAlle);
+    };
     last();
-    return lyttKlassekart(last);
+    const a = lyttKlassekart(last);
+    const b = lyttElever(last);
+    return () => {
+      a();
+      b();
+    };
   }, [elevId, skolearId]);
 
   if (!data) return null;
+  const onskebokser = (
+    <Onskebokser
+      elevId={elevId}
+      fornavn={fornavn}
+      onsker={onsker}
+      alle={alle}
+    />
+  );
   if (data.length === 0)
     return (
-      <p className="py-10 text-center text-brod text-blekk-dempet">
-        Ingen grupper eller klassekart i fagene til {fornavn} ennå. Samarbeidet
-        regnes fra lagrede gruppesett og hvem som har sittet sammen.
-      </p>
+      <div className="grid grid-cols-[minmax(0,1fr)_300px] gap-6">
+        <p className="py-10 text-center text-brod text-blekk-dempet">
+          Ingen grupper eller klassekart i fagene til {fornavn} ennå.
+          Samarbeidet regnes fra lagrede gruppesett og hvem som har sittet
+          sammen.
+        </p>
+        <div className="flex flex-col gap-5">{onskebokser}</div>
+      </div>
     );
 
   const s = data[Math.min(fagNr, data.length - 1)];
@@ -62,6 +115,21 @@ export function ElevSamarbeid({
   const sammen = s.kamerater.filter((k) => (ganger.get(k.id) ?? 0) > 0);
   const aldri = s.kamerater.filter((k) => (ganger.get(k.id) ?? 0) === 0);
   const onsket = s.kart.innstillinger.settSammen?.[elevId] ?? [];
+  // Hvem eleven vil sitte med (★), og avtalene i dette faget (📌).
+  const vil = new Set(
+    onsker.filter((o) => o.elevId === elevId).map((o) => o.onskerElevId),
+  );
+  const fagId = s.kart.kildeType === "fag" ? s.kart.kildeId : null;
+  const mineAvtaler = fagId
+    ? avtaler.filter(
+        (a) =>
+          a.skolearFagId === fagId &&
+          (a.elevId === elevId || a.medElevId === elevId),
+      )
+    : [];
+  const avtaleMed = new Set(
+    mineAvtaler.map((a) => (a.elevId === elevId ? a.medElevId : a.elevId)),
+  );
 
   // Ringen: alle rundt i alfabetisk rekkefølge, så de som har vært sammen,
   // spres; avstanden fra midten viser hvor ofte.
@@ -185,17 +253,33 @@ export function ElevSamarbeid({
                   strokeDasharray={n.c > 0 ? undefined : "2 2"}
                   style={{ transition: "r 260ms cubic-bezier(.22,1,.36,1)" }}
                 />
+                {vil.has(n.id) && (
+                  <circle
+                    cx={n.x}
+                    cy={n.y}
+                    r={pa ? 13 : 10.5}
+                    fill="none"
+                    stroke={ONSKEFARGE}
+                    strokeWidth={2}
+                  />
+                )}
                 <text
-                  x={n.x + (ute === "start" ? 13 : ute === "end" ? -13 : 0)}
-                  y={n.y + (ute === "middle" ? (n.y < 0 ? -14 : 22) : 4)}
+                  x={n.x + (ute === "start" ? 15 : ute === "end" ? -15 : 0)}
+                  y={n.y + (ute === "middle" ? (n.y < 0 ? -15 : 24) : 4)}
                   textAnchor={ute}
                   fontSize={12.5}
-                  fontWeight={pa ? 600 : 400}
+                  fontWeight={pa || vil.has(n.id) ? 600 : 400}
                   fill={
-                    n.c > 0 ? "var(--color-blekk)" : "var(--color-blekk-svak)"
+                    vil.has(n.id)
+                      ? ONSKEFARGE
+                      : n.c > 0
+                        ? "var(--color-blekk)"
+                        : "var(--color-blekk-svak)"
                   }
                 >
+                  {vil.has(n.id) ? "★ " : ""}
                   {n.fornavn}
+                  {avtaleMed.has(n.id) ? " 📌" : ""}
                 </text>
               </g>
             );
@@ -218,6 +302,17 @@ export function ElevSamarbeid({
       </div>
 
       <div className="flex min-h-0 flex-col gap-5 overflow-auto pb-4">
+        {onskebokser}
+        {fagId && (
+          <Avtaleboks
+            elevId={elevId}
+            fornavn={fornavn}
+            fagId={fagId}
+            fagNavn={s.kart.kildeNavn}
+            avtaler={mineAvtaler}
+            kamerater={s.kamerater}
+          />
+        )}
         <div>
           <h3 className="mb-2 text-[calc(13px*var(--tekst-skala))] font-semibold">
             Har aldri vært sammen med {fornavn} ({aldri.length})
@@ -238,29 +333,24 @@ export function ElevSamarbeid({
             ))}
           </div>
           {aldri.length > 0 && (
-            <div className="mt-2.5 flex items-center gap-2">
-              <button
-                onClick={() =>
+            <label className="mt-2.5 flex cursor-pointer items-center gap-2 text-[13px]">
+              <input
+                type="checkbox"
+                checked={onsket.length > 0}
+                onChange={(e) =>
                   void settSammenNeste(
                     s.kart,
                     elevId,
-                    onsket.length > 0 ? [] : aldri.map((k) => k.id),
+                    e.target.checked ? aldri.map((k) => k.id) : [],
                   )
                 }
-                className="h-[30px] rounded-full border border-linje-sterk bg-ark px-3 text-[13px] hover:bg-flate"
-              >
-                {onsket.length > 0 ? "Ikke likevel" : "Sett sammen neste gang"}
-              </button>
-              {onsket.length > 0 && (
-                <span className="text-etikett text-god">
-                  Brukes neste gang du stokker
-                </span>
-              )}
-            </div>
+                className="h-[15px] w-[15px] accent-[var(--color-aksent)]"
+              />
+              Prøv å sette sammen med en av disse
+            </label>
           )}
           <p className="mt-1.5 text-etikett leading-normal text-blekk-svak">
-            Gruppelageren prøver å sette {fornavn} sammen med noen av disse
-            neste gang, i {s.kart.kildeNavn}.
+            Neste gang du stokker i {s.kart.kildeNavn}. Et ønske, ikke en regel.
           </p>
         </div>
 
@@ -274,6 +364,22 @@ export function ElevSamarbeid({
                 ? "Har ikke vært sammen ennå."
                 : `${vH.length} ${vH.length === 1 ? "gang" : "ganger"} sammen`}
             </p>
+            {fagId && !avtaleMed.has(vK.id) && (
+              <button
+                onClick={() =>
+                  void leggTilAvtale({
+                    elevId,
+                    medElevId: vK.id,
+                    skolearFagId: fagId,
+                    gjelder: "begge",
+                    kilde: "jeg",
+                  })
+                }
+                className="mb-2 h-[28px] rounded-full border border-linje-sterk bg-ark px-3 text-[12.5px] hover:bg-flate"
+              >
+                📌 Sitt sammen neste gang
+              </button>
+            )}
             {vH.map((h, i) => (
               <div key={i} className="flex gap-2 text-blekk-dempet">
                 <span className="w-[70px] shrink-0">
@@ -323,6 +429,286 @@ export function ElevSamarbeid({
           eller samtaler.
         </p>
       </div>
+    </div>
+  );
+}
+
+/** Navnesøk: skriv, velg i lista (26.7). */
+function Navnesok({
+  kandidater,
+  onVelg,
+  tekst,
+}: {
+  kandidater: Navn[];
+  onVelg: (id: string) => void;
+  tekst: string;
+}) {
+  const [sok, setSok] = useState<string | null>(null);
+  if (sok === null)
+    return (
+      <button
+        onClick={() => setSok("")}
+        className="rounded-full px-2.5 py-0.5 text-[12.5px] text-aksent shadow-[inset_0_0_0_1px_var(--color-linje)] hover:bg-flate-svak"
+      >
+        {tekst}
+      </button>
+    );
+  const q = sok.trim().toLocaleLowerCase("nb-NO");
+  const treff = kandidater
+    .filter((k) =>
+      `${k.fornavn} ${k.etternavn}`.toLocaleLowerCase("nb-NO").includes(q),
+    )
+    .slice(0, 6);
+  return (
+    <div className="w-full">
+      <input
+        autoFocus
+        value={sok}
+        onChange={(e) => setSok(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") setSok(null);
+          if (e.key === "Enter" && treff[0]) {
+            onVelg(treff[0].id);
+            setSok(null);
+          }
+        }}
+        onBlur={() => window.setTimeout(() => setSok(null), 150)}
+        placeholder="Skriv et navn …"
+        className="h-[28px] w-full rounded-lg border border-linje bg-ark px-2 text-[13px] outline-none focus:border-aksent"
+      />
+      {q && (
+        <div className="mt-1 flex flex-col rounded-lg bg-ark p-1 shadow-[0_0_0_1px_var(--color-linje)]">
+          {treff.length === 0 && (
+            <span className="px-2 py-1 text-etikett text-blekk-svak">
+              Ingen treff
+            </span>
+          )}
+          {treff.map((k) => (
+            <button
+              key={k.id}
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => {
+                onVelg(k.id);
+                setSok(null);
+              }}
+              className="rounded px-2 py-1 text-left text-[13px] hover:bg-flate"
+            >
+              {k.fornavn} {k.etternavn}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** «Trives med · vil gjerne sitte med» og «Nevnt av andre» (26.7). */
+function Onskebokser({
+  elevId,
+  fornavn,
+  onsker,
+  alle,
+}: {
+  elevId: string;
+  fornavn: string;
+  onsker: Onske[];
+  alle: Navn[];
+}) {
+  const [kilde, setKilde] = useState<Onskekilde>("eleven");
+  const [hensyn, setHensyn] = useLagretInnstilling(
+    ONSKER_VED_STOKK,
+    false,
+    (v) => v === "pa",
+    (v) => (v ? "pa" : "av"),
+  );
+  const navn = new Map(alle.map((k) => [k.id, k]));
+  const mine = onsker.filter((o) => o.elevId === elevId);
+  const andre = onsker.filter((o) => o.onskerElevId === elevId);
+  return (
+    <>
+      <div>
+        <h3 className="mb-2 text-[calc(13px*var(--tekst-skala))] font-semibold">
+          Trives med · vil gjerne sitte med
+        </h3>
+        <div className="flex flex-wrap items-center gap-1.5">
+          {mine.map((o) => {
+            const k = navn.get(o.onskerElevId);
+            if (!k) return null;
+            const begge = gjensidig(onsker, elevId, o.onskerElevId);
+            return (
+              <span
+                key={o.id}
+                title={`${KILDENAVN[o.kilde]} · ${o.dato.slice(8, 10)}.${o.dato.slice(5, 7)}`}
+                className="inline-flex items-center gap-1 rounded-full py-0.5 pl-2.5 pr-1 text-[12.5px]"
+                style={{
+                  background: `color-mix(in srgb, ${ONSKEFARGE} 12%, var(--color-ark))`,
+                  boxShadow: begge
+                    ? `inset 0 0 0 1.5px ${ONSKEFARGE}`
+                    : undefined,
+                }}
+              >
+                <span style={{ color: ONSKEFARGE }}>★</span>
+                {kort(k)}
+                <small className="text-blekk-svak">
+                  {begge ? "gjensidig" : KILDENAVN[o.kilde]}
+                </small>
+                <button
+                  onClick={() => void fjernOnske(o.id)}
+                  aria-label={`Fjern ${k.fornavn}`}
+                  className="px-1 text-blekk-svak hover:text-feil"
+                >
+                  ×
+                </button>
+              </span>
+            );
+          })}
+          <Navnesok
+            tekst="+ Legg til"
+            kandidater={alle.filter(
+              (k) =>
+                k.id !== elevId && !mine.some((o) => o.onskerElevId === k.id),
+            )}
+            onVelg={(id) => void leggTilOnske(elevId, id, kilde)}
+          />
+        </div>
+        <div className="mt-2 flex items-center gap-2">
+          <span className="text-etikett text-blekk-svak">Kilde</span>
+          <Bryter
+            storrelse="liten"
+            verdi={kilde}
+            settVerdi={(v) => setKilde(v as Onskekilde)}
+            valg={[
+              { id: "samtale", navn: "Samtale" },
+              { id: "eleven", navn: "Eleven" },
+              { id: "selv", navn: "Sett selv" },
+            ]}
+          />
+        </div>
+        {andre.length > 0 && (
+          <p className="mt-2 text-[12.5px] text-blekk-dempet">
+            Nevnt av andre:{" "}
+            {andre
+              .map((o) => navn.get(o.elevId))
+              .filter((k): k is Navn => !!k)
+              .map(kort)
+              .join(", ")}
+          </p>
+        )}
+        <label className="mt-2.5 flex cursor-pointer items-center gap-2 text-[13px]">
+          <input
+            type="checkbox"
+            checked={hensyn}
+            onChange={(e) => setHensyn(e.target.checked)}
+            className="h-[15px] w-[15px] accent-[var(--color-aksent)]"
+          />
+          Ta hensyn når jeg stokker grupper og plasser
+        </label>
+        <p className="mt-1 text-etikett leading-normal text-blekk-svak">
+          Gjelder alle elevene og alle fag. Et ønske, aldri tvang. Bare for deg:{" "}
+          {fornavn} ser det aldri.
+        </p>
+      </div>
+    </>
+  );
+}
+
+/** «Neste gang skal … sitte med» (26.13): avtaler i faget, hard regel. */
+function Avtaleboks({
+  elevId,
+  fornavn,
+  fagId,
+  fagNavn,
+  avtaler,
+  kamerater,
+}: {
+  elevId: string;
+  fornavn: string;
+  fagId: string;
+  fagNavn: string;
+  avtaler: Avtale[];
+  kamerater: Navn[];
+}) {
+  const [gjelder, setGjelder] = useState<Gjelder>("begge");
+  const [kilde, setKilde] = useState<Avtalekilde>("eleven");
+  const navn = new Map(kamerater.map((k) => [k.id, k]));
+  const med = (a: Avtale) => (a.elevId === elevId ? a.medElevId : a.elevId);
+  return (
+    <div>
+      <h3 className="mb-2 text-[calc(13px*var(--tekst-skala))] font-semibold">
+        Neste gang skal {fornavn} sitte med
+      </h3>
+      <div className="flex flex-wrap items-center gap-1.5">
+        {avtaler.map((a) => {
+          const k = navn.get(med(a));
+          if (!k) return null;
+          return (
+            <span
+              key={a.id}
+              title={`${KILDENAVN[a.kilde]} · ${a.dato.slice(8, 10)}.${a.dato.slice(5, 7)}`}
+              className="inline-flex items-center gap-1 rounded-full bg-flate-svak py-0.5 pl-2.5 pr-1 text-[12.5px]"
+            >
+              📌 {kort(k)}
+              <small className="text-blekk-svak">
+                {a.gjelder === "begge"
+                  ? "kart og grupper"
+                  : a.gjelder === "klassekart"
+                    ? "klassekart"
+                    : "grupper"}
+              </small>
+              <button
+                onClick={() => void fjernAvtale(a.id)}
+                aria-label={`Fjern avtalen med ${k.fornavn}`}
+                className="px-1 text-blekk-svak hover:text-feil"
+              >
+                ×
+              </button>
+            </span>
+          );
+        })}
+        <Navnesok
+          tekst="+ Legg til"
+          kandidater={kamerater.filter(
+            (k) => !avtaler.some((a) => med(a) === k.id),
+          )}
+          onVelg={(id) =>
+            void leggTilAvtale({
+              elevId,
+              medElevId: id,
+              skolearFagId: fagId,
+              gjelder,
+              kilde,
+            })
+          }
+        />
+      </div>
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        <span className="text-etikett text-blekk-svak">Gjelder</span>
+        <Bryter
+          storrelse="liten"
+          verdi={gjelder}
+          settVerdi={(v) => setGjelder(v as Gjelder)}
+          valg={[
+            { id: "klassekart", navn: "Klassekart" },
+            { id: "grupper", navn: "Grupper" },
+            { id: "begge", navn: "Begge" },
+          ]}
+        />
+        <span className="text-etikett text-blekk-svak">Kilde</span>
+        <Bryter
+          storrelse="liten"
+          verdi={kilde}
+          settVerdi={(v) => setKilde(v as Avtalekilde)}
+          valg={[
+            { id: "eleven", navn: "Eleven" },
+            { id: "samtale", navn: "Samtale" },
+            { id: "jeg", navn: "Jeg" },
+          ]}
+        />
+      </div>
+      <p className="mt-1.5 text-etikett leading-normal text-blekk-svak">
+        Neste gang du stokker i {fagNavn}, sitter de sammen (samme bord eller
+        gruppe). Avtalen er brukt når du lagrer.
+      </p>
     </div>
   );
 }

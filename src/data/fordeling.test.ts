@@ -468,3 +468,33 @@ describe("makkerpar (21.10)", () => {
     expect(naboer(bord).length).toBeGreaterThan(2);
   });
 });
+
+describe("avtaler (26.13)", () => {
+  it("en avtale holder, i grupper og ved samme bord", () => {
+    const el = elever(12);
+    for (let fro = 1; fro <= 6; fro++) {
+      const g = fordelGrupper({
+        ...felles,
+        elever: el,
+        antall: 4,
+        laste: new Map(),
+        frø: fro,
+        maa: [["e0", "e11"]],
+      });
+      expect(g.grupper.find((x) => x.includes("e0"))).toContain("e11");
+      expect(g.brudd.some((b) => b.regel === "maa")).toBe(false);
+      const r = rom();
+      const p = fordelPlasser({
+        ...felles,
+        elever: el,
+        plasser: r,
+        laste: new Map(),
+        frø: fro,
+        maa: [["e0", "e11"]],
+      });
+      const pult = (id: string) =>
+        r.find((q) => q.nr === p.plass.get(id))!.pult;
+      expect(pult("e0")).toBe(pult("e11"));
+    }
+  });
+});

@@ -47,10 +47,15 @@ type Felles = {
    * gruppe med. Myk regel: én av dem holder, og den kan vike.
    */
   sammen?: Map<string, Set<string>>;
+  /**
+   * Avtaler (26.13): par som skal sitte ved samme bord eller i samme
+   * gruppe. Så tungt at det i praksis alltid holder når det er mulig.
+   */
+  maa?: [string, string][];
 };
 
 export type Brudd = {
-  regel: "hold" | "bland" | "unnga" | "plass";
+  regel: "hold" | "bland" | "unnga" | "plass" | "maa";
   tekst: string;
 };
 
@@ -86,6 +91,8 @@ const V_UNNGA = 1.5;
 const V_MODUS = 3;
 // «Sett sammen neste gang»: tydelig, men lettere enn «hold fra hverandre».
 const V_SAMMEN = 4;
+// Avtaler: like tungt som «hold fra hverandre», motsatt vei.
+const V_MAA = 1000;
 
 // ------------------------------------------------------------------ plasser
 
@@ -237,6 +244,12 @@ export function fordelPlasser(
   const makker = new Set(
     makkere(plasser).map(([a, b]) => `${indeks.get(a)}|${indeks.get(b)}`),
   );
+  const makkerAv = new Map<number, number[]>();
+  for (const k of makker) {
+    const [a, b] = k.split("|").map(Number);
+    makkerAv.set(a, [...(makkerAv.get(a) ?? []), b]);
+    makkerAv.set(b, [...(makkerAv.get(b) ?? []), a]);
+  }
   const hold = new Set(inn.holdFra.map(([a, b]) => nokkel(a, b)));
 
   function poeng(sete: (string | null)[]): number {
@@ -261,6 +274,26 @@ export function fordelPlasser(
         p += V_UNNGA * (inn.historikk.get(k) ?? 0);
       if (inn.modus === "spre")
         p += V_MODUS * (1 - Math.abs(ex.innsats - ey.innsats));
+    }
+    if (inn.maa?.length || inn.sammen?.size) {
+      const her = new Map<string, number>();
+      sete.forEach((id, i) => id && her.set(id, i));
+      for (const [x, y] of inn.maa ?? []) {
+        const a = her.get(x);
+        const b = her.get(y);
+        if (
+          a !== undefined &&
+          b !== undefined &&
+          plasser[a].pult !== plasser[b].pult
+        )
+          p += V_MAA;
+      }
+      for (const [x, onsker] of inn.sammen ?? []) {
+        const a = her.get(x);
+        if (a === undefined || onsker.size === 0) continue;
+        const ved = makkerAv.get(a) ?? [];
+        if (!ved.some((b) => sete[b] && onsker.has(sete[b]!))) p += V_SAMMEN;
+      }
     }
     if (inn.modus === "samle" && n > 1) {
       // Lav innsats foran: straff lav innsats langt bak.
@@ -358,6 +391,13 @@ export function fordelPlasser(
         tekst: `${n} par har sittet sammen før.`,
       });
   }
+  for (const [x, y] of inn.maa ?? []) {
+    const a = plass.get(x);
+    const b = plass.get(y);
+    const pult = (nr: number) => plasser.find((q) => q.nr === nr)?.pult;
+    if (a !== undefined && b !== undefined && pult(a) !== pult(b))
+      brudd.push({ regel: "maa", tekst: `${x}|${y}` });
+  }
   return { plass, utenPlass, brudd, poeng: bestP };
 }
 
@@ -411,6 +451,8 @@ export function fordelGrupper(
     let p = 0;
     for (const gruppe of gr) {
       const es = gruppe.map((id) => elev.get(id)!);
+      for (const [x, y] of inn.maa ?? [])
+        if (gruppe.includes(x) !== gruppe.includes(y)) p += V_MAA / 2;
       if (inn.sammen)
         for (const id of gruppe) {
           const onsker = inn.sammen.get(id);
@@ -515,6 +557,11 @@ export function fordelGrupper(
         regel: "unnga",
         tekst: `${n} par har vært i gruppe sammen før.`,
       });
+  }
+  for (const [x, y] of inn.maa ?? []) {
+    const g = best.find((gr) => gr.includes(x));
+    if (g && best.some((gr) => gr.includes(y)) && !g.includes(y))
+      brudd.push({ regel: "maa", tekst: `${x}|${y}` });
   }
   return { grupper: best, brudd, poeng: bestP };
 }
