@@ -149,15 +149,29 @@ export function Klassen({ skolear, fag }: { skolear: Skolear; fag: FagIAr }) {
   const fjaer = useMemo(() => (data ? fjaerFor(data) : []), [data]);
 
   /** Varmer opp simuleringen; den går til den er i ro, og stopper. */
+  // Det ferske, så en løkke som går, bruker kreftene som gjelder nå.
+  const fersk = useRef({ fjaer, krefter });
+  fersk.current = { fjaer, krefter };
+
   function varm(a = 0.3) {
-    if (rolig()) return;
+    if (rolig()) {
+      // Uten bevegelse: regn ferdig med en gang, og vis resultatet.
+      if (fast.current >= 0) return;
+      let al = Math.max(alfa.current, a);
+      for (let i = 0; i < 500 && al > 0.004; i++)
+        al = steg(pos.current, fersk.current.fjaer, fersk.current.krefter, al);
+      alfa.current = 0;
+      setTikk((t) => t + 1);
+      lagrePos();
+      return;
+    }
     alfa.current = Math.max(alfa.current, a);
     if (raf.current) return;
     const tikk = () => {
       alfa.current = steg(
         pos.current,
-        fjaer,
-        krefter,
+        fersk.current.fjaer,
+        fersk.current.krefter,
         alfa.current,
         fast.current,
       );
@@ -173,7 +187,8 @@ export function Klassen({ skolear, fag }: { skolear: Skolear; fag: FagIAr }) {
   }
   useEffect(() => () => cancelAnimationFrame(raf.current), []);
   useEffect(() => {
-    if (data) varm(0.3);
+    // En endring i kreftene skal synes: kartet varmes godt opp.
+    if (data) varm(0.9);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [krefter]);
 
@@ -363,7 +378,7 @@ export function Klassen({ skolear, fag }: { skolear: Skolear; fag: FagIAr }) {
         }}
       >
         <div className="flex min-h-0 min-w-0 flex-col">
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2">
             <span className="text-etikett text-blekk-dempet">Vis</span>
             <Filter
               pa={vis.g}
@@ -541,7 +556,7 @@ export function Klassen({ skolear, fag }: { skolear: Skolear; fag: FagIAr }) {
           <div
             ref={flate}
             onPointerDown={begynnPanorer}
-            className="relative mt-2 min-h-0 flex-1 cursor-grab overflow-hidden rounded-[14px] bg-flate-svak active:cursor-grabbing"
+            className="relative mt-2 min-h-0 flex-1 cursor-grab overflow-hidden rounded-[14px] bg-ark shadow-[inset_0_0_0_1px_var(--color-linje-svak)] active:cursor-grabbing"
           >
             <svg width={str.b} height={str.h} className="absolute inset-0">
               <defs>
@@ -570,8 +585,10 @@ export function Klassen({ skolear, fag }: { skolear: Skolear; fag: FagIAr }) {
                         x2={sx(p[j])}
                         y2={sy(p[j])}
                         stroke={LILLA}
-                        strokeWidth={1 + Math.min(b.grupper, 5) * 1.1}
-                        strokeOpacity={d ? 0.07 : 0.45}
+                        strokeWidth={0.8 + Math.min(b.grupper, 5) * 0.9}
+                        strokeOpacity={
+                          d ? 0.05 : 0.22 + Math.min(b.grupper, 5) * 0.06
+                        }
                         strokeLinecap="round"
                         style={{ transition: "stroke-opacity 220ms" }}
                       />
@@ -583,8 +600,10 @@ export function Klassen({ skolear, fag }: { skolear: Skolear; fag: FagIAr }) {
                         x2={sx(p[j])}
                         y2={sy(p[j])}
                         stroke={BLA}
-                        strokeWidth={1 + Math.min(b.sidemann, 5) * 0.9}
-                        strokeOpacity={d ? 0.07 : 0.6}
+                        strokeWidth={0.8 + Math.min(b.sidemann, 5) * 0.8}
+                        strokeOpacity={
+                          d ? 0.05 : 0.3 + Math.min(b.sidemann, 5) * 0.06
+                        }
                         strokeDasharray="5 4"
                         strokeLinecap="round"
                         style={{ transition: "stroke-opacity 220ms" }}
@@ -671,10 +690,13 @@ export function Klassen({ skolear, fag }: { skolear: Skolear; fag: FagIAr }) {
                     <Elevfoto elevId={e.id} storrelse={44} />
                   </span>
                   <span
-                    className="pointer-events-none absolute -translate-x-1/2 whitespace-nowrap text-[12px]"
+                    className="pointer-events-none absolute -translate-x-1/2 whitespace-nowrap text-[12.5px] text-blekk"
                     style={{
                       top: h ? 26 : 10,
-                      fontWeight: pa ? 600 : 400,
+                      fontWeight: pa ? 600 : 500,
+                      // En lys glorie, så navnet leses over strekene.
+                      textShadow:
+                        "0 0 2px var(--color-ark), 0 0 3px var(--color-ark), 0 0 5px var(--color-ark), 0 0 8px var(--color-ark)",
                       transition: "top 200ms cubic-bezier(.22,1,.36,1)",
                     }}
                   >
@@ -684,7 +706,7 @@ export function Klassen({ skolear, fag }: { skolear: Skolear; fag: FagIAr }) {
               );
             })}
           </div>
-          <p className="mt-2 text-center text-etikett text-blekk-svak">
+          <p className="mt-2 text-etikett leading-normal text-blekk-svak">
             Elever som ofte har vært sammen, havner nær hverandre. Dra i en
             elev, så følger båndene med. Klyp eller ⌘ og rull for å zoome, dra i
             bakgrunnen for å flytte.
@@ -826,7 +848,7 @@ function Filter({
     <button
       onClick={onBytt}
       aria-pressed={pa}
-      className={`flex h-[30px] items-center gap-2 rounded-full px-3 text-[13px] ${
+      className={`flex h-[30px] items-center gap-1.5 rounded-full px-2.5 text-[13px] ${
         pa
           ? "text-blekk shadow-[inset_0_0_0_1.5px_var(--color-linje-sterk)]"
           : "text-blekk-dempet shadow-[inset_0_0_0_1px_var(--color-linje)]"
