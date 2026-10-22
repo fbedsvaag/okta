@@ -50,20 +50,53 @@ export function skalafarge(navn: string | null): string {
  * firkant (`Fagfirkant`), ikke som strek eller flate (DESIGN.md §4). Trafikklyset skal fortsatt
  * være det eneste stedet i appen med mettet farge.
  */
-export const FAGFARGER = [
-  "#2f5d8a",
-  "#7a4b2a",
-  "#3f6b4a",
-  "#6b3f5e",
-  "#8a6a2f",
-  "#4a4a6b",
-  "#1f6f74",
-  "#8a3f3f",
-  "#55618a",
-  "#5f7a3a",
-  "#7a5a8a",
-  "#3f5a3f",
-] as const;
+/**
+ * Fagfargene (ARBEIDSLISTE 17.3): 36 farger i seks familier à seks, vist
+ * som rader med familienavn. Ingen av dem er trafikklysfargene.
+ */
+export const FAGFARGER: Record<string, readonly string[]> = {
+  Jord: ["#9a5a2c", "#b5703a", "#c9922e", "#a98b5d", "#7a4f2e", "#5e4632"],
+  Bær: ["#c0607a", "#a83f5f", "#d4708c", "#8e3b6b", "#b85c9e", "#e08a9a"],
+  Skog: ["#3d7a5a", "#2f9a8a", "#5b8c3a", "#7a9a3e", "#2e6b4f", "#4fa37a"],
+  Hav: ["#2e6a8e", "#3f6a95", "#4f7ac0", "#2b8fb8", "#5aa3c9", "#1f4f7a"],
+  Skumring: ["#7d6bb0", "#4a3d7d", "#9584c8", "#6a4fa0", "#b07cc6", "#58507a"],
+  Klar: ["#e0563b", "#f08a24", "#e8b400", "#1aa37a", "#1f8ae0", "#d43d8c"],
+};
+
+/** Alle 36, i rekkefølge: til nye fag, som får den første ledige. */
+export const ALLE_FAGFARGER: readonly string[] =
+  Object.values(FAGFARGER).flat();
+
+/** Den første fagfargen ingen andre fag bruker (ellers neste i rekka). */
+export function ledigFagfarge(
+  brukt: (string | null)[],
+  n = brukt.length,
+): string {
+  const sett = new Set(brukt.map((f) => f?.toLowerCase()));
+  return (
+    ALLE_FAGFARGER.find((f) => !sett.has(f)) ??
+    ALLE_FAGFARGER[n % ALLE_FAGFARGER.length]
+  );
+}
+
+/** Trafikklysfargene: fagfarger skal aldri ligne dem. */
+const TRAFIKKLYSHEX = ["#3f9d49", "#d9a92f", "#c04a3d"];
+
+/**
+ * Om en egen farge er for lik et trafikklys (avstand i RGB), og ville
+ * kunne leses som innsats. Gir trafikklyset den ligner, eller null.
+ */
+export function lignerTrafikklys(hex: string): string | null {
+  const rgb = (h: string) =>
+    [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+  if (!/^#[0-9a-f]{6}$/i.test(hex)) return null;
+  const a = rgb(hex);
+  for (const t of TRAFIKKLYSHEX) {
+    const b = rgb(t);
+    if (Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]) < 20) return t;
+  }
+  return null;
+}
 
 /**
  * Skåringen som tegn, til tekst uten farge.

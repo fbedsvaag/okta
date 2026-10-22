@@ -50,7 +50,7 @@ import {
 } from "../ui/plattformord";
 import { invoke } from "@tauri-apps/api/core";
 import { PLANVISNING, lesPlanvisning, type Planvisning } from "../data/oktplan";
-import { FAGFARGER } from "../ui/farger";
+import { bruktAv, Fargepalett } from "../ui/Fargevelger";
 import { useArk } from "../ui/Arkstabel";
 import { IVerktoylinja } from "../ui/Verktoylinje";
 import { useLagretInnstilling } from "../ui/useLagretInnstilling";
@@ -924,30 +924,15 @@ function SideFag({
             </div>
             {apen === f.id && (
               <div className="flex flex-wrap items-center gap-1.5 pb-3 pl-[50px] pr-4 pt-1">
-                {FAGFARGER.map((c) => {
-                  const brukt = fag.some((x) => x.id !== f.id && x.farge === c);
-                  return (
-                    <button
-                      key={c}
-                      onClick={async () => {
-                        await endreFag(f.fagId, { farge: c });
-                        setApen(null);
-                        onEndret();
-                      }}
-                      title={brukt ? "Brukt av et annet fag" : c}
-                      aria-pressed={f.farge === c}
-                      className={`h-[18px] w-[18px] rounded-md ${brukt ? "opacity-25" : ""} ${
-                        f.farge === c
-                          ? "shadow-[0_0_0_2px_var(--color-ark),0_0_0_3.5px_var(--color-blekk)]"
-                          : ""
-                      }`}
-                      style={{ background: c }}
-                    />
-                  );
-                })}
-                <span className="ml-1.5 text-etikett text-blekk-svak">
-                  Dempet = brukt av et annet fag
-                </span>
+                <Fargepalett
+                  farge={f.farge}
+                  brukt={bruktAv(fag, f.id)}
+                  onVelg={async (c) => {
+                    await endreFag(f.fagId, { farge: c });
+                    setApen(null);
+                    onEndret();
+                  }}
+                />
               </div>
             )}
           </div>

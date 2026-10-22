@@ -19,6 +19,9 @@ Lerretet (`docs/lerret/`) er fasit for det som er tegnet.
 - Fagsiden › Klassen: relasjonskart med kraftsimulering (`data/relasjoner.ts`),
   filtre, krefter, zoom rundt pekeren, hover med elevbildet, panelet.
 - Testet at ingen eksportmodul leser ønsker, avtaler eller relasjonskartet.
+- 17.3: 36 fagfarger i seks familier (`FAGFARGER` i `ui/farger.ts`), velger
+  med brukte farger dempet, «Egen farge» som avviser trafikklysfargene, i
+  fagoppsettet, Innstillinger › Fag og ved nytt fag (første ledige farge).
 
 ## Etter testing 21.10 kveld
 

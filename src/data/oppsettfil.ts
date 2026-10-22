@@ -8,7 +8,7 @@ import {
   settInnstillingI,
 } from "./skolear";
 import { LAERERNAVN } from "./arsplanark";
-import { FAGFARGER } from "../ui/farger";
+import { ALLE_FAGFARGER } from "../ui/farger";
 
 /**
  * Oppsettfila, SPEC §8.2 og docs/oppsettfil.md.
@@ -550,7 +550,7 @@ export async function importerOppsett(
       navn: f.navn,
       alias: f.alias,
       grep_kode: f.grep_kode,
-      farge: FAGFARGER[(n + i) % FAGFARGER.length],
+      farge: ALLE_FAGFARGER[(n + i) % ALLE_FAGFARGER.length],
     });
 
   if (p.settOktlengde)

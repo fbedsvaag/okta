@@ -16,7 +16,7 @@ import {
 } from "../data/fag";
 import { fagFraOppsett, type Oppsett } from "../data/oppsettfil";
 import { Oppsettimport } from "./Oppsettfil";
-import { FAGFARGER } from "../ui/farger";
+import { ledigFagfarge } from "../ui/farger";
 import { Felt, Knapp, Fagfirkant, Ikon } from "../ui/felles";
 import { LimInn } from "./LimInn";
 import { Fagvelger } from "./Fagvelger";
@@ -433,7 +433,7 @@ function StegFag({
 
   async function leggTil() {
     if (kode.trim() === "") return;
-    const farge = FAGFARGER[fag.length % FAGFARGER.length];
+    const farge = ledigFagfarge(fag.map((f) => f.farge));
     await leggFagIAr(skolearId, kode.trim(), navn.trim() || kode.trim(), farge);
     setFag(await hentFagIAr(skolearId));
     setKode("");
@@ -448,7 +448,7 @@ function StegFag({
   async function leggTilFraUdir(f: GrepFag) {
     const kode = f.fagkode ?? f.opplaeringsfag;
     if (fag.some((x) => x.fagkode === kode)) return;
-    const farge = FAGFARGER[fag.length % FAGFARGER.length];
+    const farge = ledigFagfarge(fag.map((f) => f.farge));
     await leggFagIAr(skolearId, kode, f.navn, farge, kode, f.timer);
     setFag(await hentFagIAr(skolearId));
   }

@@ -1,3 +1,4 @@
+import { hentFagIAr } from "../data/fag";
 import { Sammenleggknapp, useApen } from "../ui/Sammenleggbar";
 import { Elevfoto } from "../ui/Elevfoto";
 import { Utfold } from "../ui/Utfold";
@@ -41,7 +42,7 @@ import { finnFag, type GrepFag } from "../data/grep";
 import { hentDekkedeMal } from "../data/perioder";
 import type { FagIAr } from "../data/fag";
 import { TRAFIKKLYS } from "../ui/farger";
-import { Fargevelger } from "../ui/Fargevelger";
+import { bruktAv, Fargevelger } from "../ui/Fargevelger";
 import { hentInnstilling } from "../data/skolear";
 import { LAERERNAVN } from "../data/arsplanark";
 import { Velger } from "../ui/Velger";
@@ -75,6 +76,11 @@ export function FagPanel({
   /** lim inn en ny klasseliste for faget */
   onLimInn: () => void;
 }) {
+  // De andre fagene i året, så fargene de bruker vises dempet (17.3).
+  const [andreFag, setAndreFag] = useState<FagIAr[]>([]);
+  useEffect(() => {
+    void hentFagIAr(skolearId).then(setAndreFag);
+  }, [skolearId]);
   const [tall, setTall] = useState<FagNokkeltall | null>(null);
   const [elever, setElever] = useState<FagElev[]>([]);
   const [vurderinger, setVurderinger] = useState<FagVurdering[]>([]);
@@ -124,6 +130,7 @@ export function FagPanel({
         {/* Klikk på firkanten bytter fargen på faget (17.3). */}
         <Fargevelger
           farge={fag.farge}
+          brukt={bruktAv(andreFag, fag.id)}
           onVelg={async (farge) => {
             await endreFag(fag.fagId, { farge });
             onEndret();

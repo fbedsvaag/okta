@@ -9,8 +9,8 @@ import {
   type FagIAr,
 } from "../data/fag";
 import { hentInnstilling } from "../data/skolear";
-import { FAGFARGER } from "../ui/farger";
-import { Fargevelger } from "../ui/Fargevelger";
+import { ledigFagfarge } from "../ui/farger";
+import { bruktAv, Fargevelger } from "../ui/Fargevelger";
 import { Fagfirkant, Felt, Knapp, Tomtilstand } from "../ui/felles";
 import { Fagvelger } from "./Fagvelger";
 
@@ -114,6 +114,7 @@ export function Fag({
                     <FagRad
                       key={f.id}
                       fag={f}
+                      brukt={bruktAv(fag, f.id)}
                       globalVarighet={globalVarighet}
                       rediger={rediger}
                       valgt={valgtFag === f.id}
@@ -126,11 +127,7 @@ export function Fag({
             </div>
           )}
 
-          <NyttFag
-            skolearId={skolearId}
-            antall={fag.length}
-            onLagt={onEndret}
-          />
+          <NyttFag skolearId={skolearId} fag={fag} onLagt={onEndret} />
         </div>
       </div>
     </div>
@@ -139,6 +136,7 @@ export function Fag({
 
 function FagRad({
   fag,
+  brukt,
   globalVarighet,
   rediger,
   valgt,
@@ -146,6 +144,7 @@ function FagRad({
   onEndret,
 }: {
   fag: FagIAr;
+  brukt: Map<string, string>;
   globalVarighet: string;
   rediger: boolean;
   valgt: boolean;
@@ -183,6 +182,7 @@ function FagRad({
       <td className="py-1.5">
         <Fargevelger
           farge={fag.farge}
+          brukt={brukt}
           storrelse={10}
           onVelg={async (farge) => {
             await endreFag(fag.fagId, { farge });
@@ -309,11 +309,11 @@ function Innfelt({
 
 function NyttFag({
   skolearId,
-  antall,
+  fag,
   onLagt,
 }: {
   skolearId: string;
-  antall: number;
+  fag: FagIAr[];
   onLagt: () => void;
 }) {
   const [kode, setKode] = useState("");
@@ -322,6 +322,9 @@ function NyttFag({
   const [timer, setTimer] = useState<number | null>(null);
   // Søket i Udirs fagliste er standardvalget (17.7).
   const [soker, setSoker] = useState(true);
+  // Fargen: den første ingen andre fag bruker, som kan byttes før det lagres.
+  const [farge, setFarge] = useState<string | null>(null);
+  const valgtFarge = farge ?? ledigFagfarge(fag.map((f) => f.farge));
 
   async function leggTil() {
     if (kode.trim() === "") return;
@@ -329,11 +332,12 @@ function NyttFag({
       skolearId,
       kode.trim(),
       navn.trim() || kode.trim(),
-      FAGFARGER[antall % FAGFARGER.length],
+      valgtFarge,
       grepKode,
       timer,
     );
     setKode("");
+    setFarge(null);
     setNavn("");
     setGrepKode(null);
     setTimer(null);
@@ -362,6 +366,13 @@ function NyttFag({
       )}
 
       <div className="flex items-end gap-3">
+        <span className="pb-1.5">
+          <Fargevelger
+            farge={valgtFarge}
+            brukt={bruktAv(fag)}
+            onVelg={setFarge}
+          />
+        </span>
         <Felt
           etikett="Kode"
           verdi={kode}

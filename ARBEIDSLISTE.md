@@ -735,7 +735,7 @@ Tegningene ligger i `docs/lerret/`. Fila står i parentes.
   huskes per visning.
 - [ ] **17.2 Ikoner i nedtrekkslista** der de mangler, i samme stil som
   «Lang liste» (Nedtrekk).
-- [ ] **17.3 Endre fargen på et fag** i fagoppsettet: fargevelger med
+- [x] **17.3 Endre fargen på et fag** i fagoppsettet: fargevelger med
   palettens fagfarger pluss egendefinert. Fargen følger med overalt.
   Tegning: `docs/lerret/Fagfarger.dc.html`. Bruk **nøyaktig disse 36 fargene**,
   i seks familier à seks (vises som rader med familienavn):
