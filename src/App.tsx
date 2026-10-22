@@ -53,6 +53,7 @@ import { ElevPanel } from "./skjermer/ElevPanel";
 import { FagPanel } from "./skjermer/FagPanel";
 import { Bryter, Fagfirkant, Knapp, Ikon } from "./ui/felles";
 import { Fagoversikt } from "./skjermer/Fagoversikt";
+import { Karakterer } from "./skjermer/Karakterer";
 import { Klassen } from "./skjermer/Klassen";
 import { useApnetOppsettfil } from "./ui/apnetOppsettfil";
 import { G_SNARVEIER, Sidemeny, type Menypunkt } from "./ui/Sidemeny";
@@ -88,6 +89,7 @@ type Visning =
   | "aret"
   /** relasjonskartet i faget (26.9) */
   | "klassen"
+  | "karakterer"
   | "vurderinger"
   | "samtaler"
   | "innstillinger"
@@ -154,7 +156,8 @@ export default function App() {
         id &&
         (na.visning === "oversikt" ||
           na.visning === "aret" ||
-          na.visning === "klassen")
+          na.visning === "klassen" ||
+          na.visning === "karakterer")
       )
         return h;
       if (!id && (na.visning === "okter" || na.visning === "kalender"))
@@ -439,7 +442,8 @@ export default function App() {
                   visning={
                     (visning === "oversikt" ||
                       visning === "aret" ||
-                      visning === "klassen") &&
+                      visning === "klassen" ||
+                      visning === "karakterer") &&
                     !valgtFag
                       ? "okter"
                       : visning
@@ -498,6 +502,14 @@ export default function App() {
 
                 {visning === "klassen" && valgtFag && (
                   <Klassen
+                    key={`${versjon}-${valgtFag.id}`}
+                    skolear={skolear}
+                    fag={valgtFag}
+                  />
+                )}
+
+                {visning === "karakterer" && valgtFag && (
+                  <Karakterer
                     key={`${versjon}-${valgtFag.id}`}
                     skolear={skolear}
                     fag={valgtFag}
@@ -652,7 +664,8 @@ export default function App() {
                 {(visning === "okter" ||
                   ((visning === "oversikt" ||
                     visning === "aret" ||
-                    visning === "klassen") &&
+                    visning === "klassen" ||
+                    visning === "karakterer") &&
                     !valgtFag)) && (
                   <Okter
                     key={versjon}
@@ -690,6 +703,7 @@ const SKJERMNAVN: Record<Visning, string> = {
   oversikt: "Økter",
   aret: "Økter",
   klassen: "Økter",
+  karakterer: "Økter",
   kalender: "Økter",
   elever: "Elever",
   elev: "Elever",
@@ -878,7 +892,8 @@ function erOktvisning(v: Visning): boolean {
     v === "kalender" ||
     v === "oversikt" ||
     v === "aret" ||
-    v === "klassen"
+    v === "klassen" ||
+    v === "karakterer"
   );
 }
 
@@ -904,6 +919,7 @@ function Visningsbryter({
         { id: "aret", navn: "Året" },
         { id: "okter", navn: "Økter" },
         { id: "kalender", navn: "Kalender" },
+        { id: "karakterer", navn: "Karakterer" },
         { id: "klassen", navn: "Klassen" },
       ]
     : [

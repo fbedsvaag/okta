@@ -11,6 +11,7 @@ import {
 import { elevfilFor } from "../data/arkiv";
 import { hentSkolear, type Skolear } from "../data/skolear";
 import { Vurderingsikon } from "../ui/Vurderingsikon";
+import { Karakterlinje } from "./elevkort/Karakterlinje";
 import { lyttElever, lyttKlassekart, lyttVurderinger } from "../data/endringer";
 import {
   hentElevIKart,
@@ -787,6 +788,14 @@ export function ElevPanel({
                               }
                             />
                           ))}
+                          <Karakterlinje
+                            elevId={elev.id}
+                            skolearFagId={fagId}
+                            skolearSlutt={
+                              skolearene.find((x) => x.id === d.skolearId)
+                                ?.slutt ?? ""
+                            }
+                          />
                         </div>
                       </div>
                     );

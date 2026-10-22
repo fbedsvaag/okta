@@ -9,6 +9,24 @@ den skal bli. Fila eies fritt, i motsetning til SPEC.md.
 Utseendet står i `DESIGN.md`, som beskriver appen slik den er bygget.
 Lerretet (`docs/lerret/`) er fasit for det som er tegnet.
 
+## Karakterer i faget (22.10, ARBEIDSLISTE 29.4)
+
+- Ny fane på fagsiden: Oversikt · Året · Økter · Kalender · Karakterer ·
+  Klassen (`skjermer/Karakterer.tsx`). Elevene × vurderingene, innsats
+  siste 10 økter, beregnet vektet snitt, halvårskarakter og kommentar.
+  Høst · Vår · Hele året (skillet er nyttår).
+- Vekt per vurdering med − / + i kolonneoverskriften; standard er 1 for
+  tallkarakterer og «teller ikke» for godkjent/ikke godkjent. IV teller
+  aldri. «4+» regnes som 4,3 og «4−» som 3,7.
+- Tast 1–6 setter halvårskarakteren og går videre, ↑↓, Backspace fjerner,
+  klikk setter forslaget (avrundet snitt). Hover på en karakter viser
+  rubrikkvalg og kommentar. Klikk på eleven åpner elevkortet over.
+- «Kopier karakterlista»: halvårskarakter og kommentar, Teams-tabell og
+  ren tekst.
+- Elevkortet viser samme tall per fag under vurderingene.
+- Migrasjon 037: `vurdering.vekt` og tabellen `halvarskarakter`. Vekt og
+  fraser følger med i «Hent fra i fjor».
+
 ## Mentorsamtaler i ny stil (22.10, ARBEIDSLISTE 29.6)
 
 - Mentorsamtalene er **runder** («Mentorsamtaler høst», «Oppstartssamtaler»)

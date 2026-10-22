@@ -1064,6 +1064,10 @@ med faste fraser per vurdering, karakter med tast, ⌘↵ neste) eller «Tabell�
 (rask føring, lim inn en kolonne fra Excel). Borte hentes fra fraværet i
 økta. «Kopier til Teams» gir karakter og kommentar per elev.
 
+**Karakterer** (29.4) er en fane på fagsiden: elevene × vurderingene,
+vekt per vurdering, beregnet vektet snitt (uten verdier som ikke teller),
+halvårskarakter og kommentar per termin (høst, vår, hele året).
+
 **Mentorsamtaler** (29.6) er runder med dager, samtaleguide og tider, i et
 ark med Planlegg · Gjennomfør · Oppsummering. Under samtalen: guiden,
 notat, mål fra forrige gang og til neste, «trives med» (elevønske), med

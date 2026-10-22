@@ -32,6 +32,10 @@ export type Fjorvurdering = {
   pauseMin: number | null;
   trekkFlere: number;
   trekkNa: number;
+  /** vekten i karakterene (29.4) */
+  vekt: number | null;
+  /** faste fraser til kommentarene (29.5) */
+  fraser: string | null;
   oppgavekort: {
     nr: number;
     tittel: string;
@@ -77,7 +81,7 @@ export async function finnFjoraret(
       `SELECT v.id, v.skala_id AS skalaId, v.tittel, v.type, v.beskrivelse,
               v.vurderingsform, v.rubrikk, v.samtale_min AS samtaleMin,
               v.pause_min AS pauseMin, v.trekk_flere AS trekkFlere,
-              v.trekk_na AS trekkNa,
+              v.trekk_na AS trekkNa, v.vekt, v.fraser,
               COALESCE(
                 (SELECT MIN(o.dato) FROM vurdering_okt vo
                    JOIN okt o ON o.id = vo.okt_id AND o.slettet IS NULL
@@ -276,6 +280,8 @@ export async function brukMal(
         pause_min: v.pauseMin,
         trekk_flere: v.trekkFlere,
         trekk_na: v.trekkNa,
+        vekt: v.vekt,
+        fraser: v.fraser,
       });
       nye.push({ tabell: "vurdering", id });
       for (const k of v.oppgavekort)
