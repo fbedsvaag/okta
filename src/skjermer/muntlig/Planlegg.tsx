@@ -60,6 +60,7 @@ export function Planlegg({
   return (
     <div>
       <Generator
+        tittel="Planlegg samtalene"
         kilde={{
           dager: data.dager,
           elever: data.elever,

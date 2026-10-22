@@ -8,8 +8,8 @@ import { Ticker } from "../../ui/Ticker";
 export type Radinfo = {
   /** liten linje under navnet: oppgaven, «med foresatt», «møtte ikke» */
   under: string;
-  /** ruta til høyre: karakteren, ✓, eller tom */
-  merke: ReactNode;
+  /** ruta til høyre: karakteren, ✓, tom rute; null = ingen rute */
+  merke: ReactNode | null;
   /** merket er fylt (en karakter, en hake) */
   fylt: boolean;
   /** eleven møtte ikke: navnet streket over */
@@ -113,7 +113,7 @@ export function Tidsplanliste({
                     if (draget.current) return;
                     onVelg(r.elevId);
                   }}
-                  className={`relative grid h-11 cursor-pointer select-none items-center gap-2.5 rounded-[10px] px-2.5 text-[calc(13.5px*var(--tekst-skala))] transition-[background-color,box-shadow] duration-200 ${
+                  className={`group relative grid h-11 cursor-pointer select-none items-center gap-2.5 rounded-[10px] px-2.5 text-[calc(13.5px*var(--tekst-skala))] transition-[background-color,box-shadow] duration-200 ${
                     kanDra
                       ? "touch-none grid-cols-[14px_96px_minmax(0,1fr)]"
                       : "grid-cols-[96px_minmax(0,1fr)]"
@@ -128,7 +128,7 @@ export function Tidsplanliste({
                   {kanDra && (
                     <span
                       aria-hidden
-                      className="cursor-grab text-[12px] leading-none tracking-[-2px] text-blekk-svakest"
+                      className="cursor-grab text-[12px] leading-none tracking-[-2px] text-blekk-svakest opacity-0 transition-opacity duration-200 group-hover:opacity-100"
                     >
                       ⋮⋮
                     </span>
@@ -176,15 +176,23 @@ export function Tidsplanliste({
                         {info.under}
                       </small>
                     </span>
-                    <span
-                      className={`inline-grid h-7 w-7 place-items-center rounded-lg text-[13px] font-semibold ${
-                        info.fylt
-                          ? "bg-flate"
-                          : "shadow-[inset_0_0_0_1.5px_var(--color-linje)] [border-style:dashed]"
-                      }`}
-                    >
-                      {info.merke}
-                    </span>
+                    {info.merke === null ? (
+                      <span />
+                    ) : info.fylt && info.merke === "✓" ? (
+                      <span className="inline-grid h-[22px] w-[22px] place-items-center justify-self-center rounded-full bg-aksent text-[11px] text-ark">
+                        ✓
+                      </span>
+                    ) : (
+                      <span
+                        className={`inline-grid h-7 w-7 place-items-center rounded-lg text-[13px] font-semibold ${
+                          info.fylt
+                            ? "bg-flate"
+                            : "shadow-[inset_0_0_0_1.5px_var(--color-linje)] [border-style:dashed]"
+                        }`}
+                      >
+                        {info.merke}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>

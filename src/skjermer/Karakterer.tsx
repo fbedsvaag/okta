@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import type { Skolear } from "../data/skolear";
 import type { FagIAr } from "../data/fag";
 import {
@@ -117,6 +118,7 @@ export function Karakterer({
   }, []);
 
   if (!data) return null;
+  const iDag = new Date().toLocaleDateString("sv-SE");
   if (data.vurderinger.length === 0)
     return (
       <Tomside
@@ -290,7 +292,6 @@ export function Karakterer({
                     </td>
                     {vurderinger.map((v) => {
                       const r = data.resultater.get(`${v.id}:${e.elevId}`);
-                      const ikke = r?.leveranse === "ikke";
                       return (
                         <td
                           key={v.id}
@@ -298,17 +299,12 @@ export function Karakterer({
                           onPointerEnter={(ev) => visPop(ev, v, e)}
                           onPointerLeave={() => setPop(null)}
                         >
-                          <span
-                            className={`inline-grid h-[26px] min-w-[26px] place-items-center rounded-[7px] px-1 text-[12.5px] ${
-                              r?.kode
-                                ? "bg-flate font-semibold"
-                                : ikke
-                                  ? "text-liten text-feil"
-                                  : "text-blekk-svakest"
-                            } ${vektFor(v) === 0 ? "opacity-60" : ""}`}
-                          >
-                            {r?.kode ?? (ikke ? "ikke levert" : "–")}
-                          </span>
+                          <Resultatcelle
+                            kode={r?.kode ?? null}
+                            leveranse={r?.leveranse ?? null}
+                            innlevering={!v.tall}
+                            passert={!!v.dato && v.dato < iDag}
+                          />
                         </td>
                       );
                     })}
@@ -321,38 +317,17 @@ export function Karakterer({
                         />
                       ))}
                     </td>
-                    <td className="py-1.5 text-center font-semibold tabular-nums">
+                    <td className="py-1.5 text-center tabular-nums">
                       {somDesimal(b)}
                     </td>
                     <td className="py-1.5 text-center">
-                      <button
-                        onClick={(ev) => {
-                          ev.stopPropagation();
-                          setValgt(i);
-                          void sett(
-                            e.elevId,
-                            h?.karakter
-                              ? null
-                              : b
-                                ? String(Math.round(b))
-                                : null,
-                          );
-                        }}
-                        title={
-                          h?.karakter
-                            ? "Klikk for å fjerne"
-                            : "Klikk for å sette forslaget"
-                        }
-                        className={`h-[30px] w-[34px] rounded-lg text-[14px] font-semibold tabular-nums transition-colors duration-200 ${
-                          h?.karakter
-                            ? "bg-aksent text-ark"
-                            : i === valgt
-                              ? "text-blekk-svak shadow-[inset_0_0_0_1.5px_var(--color-aksent)]"
-                              : "text-blekk-svakest shadow-[inset_0_0_0_1px_var(--color-linje)]"
-                        }`}
-                      >
-                        {h?.karakter ?? (b ? Math.round(b) : "·")}
-                      </button>
+                      <Halvarvelger
+                        verdi={h?.karakter ?? null}
+                        forslag={b ? String(Math.round(b)) : null}
+                        valgt={i === valgt}
+                        onApne={() => setValgt(i)}
+                        onSett={(k) => void sett(e.elevId, k)}
+                      />
                     </td>
                     <td className="py-1.5">
                       <input
@@ -473,9 +448,9 @@ function Vekt({
 }) {
   const w = vektFor(v);
   const k =
-    "grid h-5 w-5 place-items-center rounded-full text-blekk-dempet hover:bg-flate hover:text-blekk";
+    "grid h-5 w-5 place-items-center rounded-full text-blekk-svak hover:bg-flate hover:text-blekk";
   return (
-    <span className="mt-1 inline-flex items-center gap-0.5 rounded-full px-0.5 text-[11px] font-normal text-blekk-dempet shadow-[inset_0_0_0_1px_var(--color-linje-svak)]">
+    <span className="mt-0.5 inline-flex items-center gap-0.5 text-[11.5px] font-normal text-blekk-dempet">
       <button
         onClick={() => onSett(Math.max(0, w - 1))}
         className={k}
@@ -483,7 +458,7 @@ function Vekt({
       >
         −
       </button>
-      <span className="min-w-[44px] text-center tabular-nums">
+      <span className="min-w-[36px] text-center tabular-nums">
         {w === 0 ? "teller ikke" : `×${w}`}
       </span>
       <button
@@ -500,4 +475,168 @@ function Vekt({
 function dag(iso: string): string {
   const d = new Date(`${iso}T12:00:00`);
   return `${d.getDate()}.${d.getMonth() + 1}`;
+}
+
+/**
+ * En karakter i tabellen (lerretet Karakterer): tallet, «ikke ført» som en
+ * liten brikke når fristen er passert, og Levert / Ikke levert for det som
+ * bare krysses av.
+ */
+function Resultatcelle({
+  kode,
+  leveranse,
+  innlevering,
+  passert,
+}: {
+  kode: string | null;
+  leveranse: string | null;
+  innlevering: boolean;
+  passert: boolean;
+}) {
+  const brikke =
+    "inline-flex h-[24px] items-center rounded-[7px] px-2 text-[12px] shadow-[inset_0_0_0_1px_var(--color-linje)]";
+  if (innlevering && !kode)
+    return leveranse === "levert" ? (
+      <span className={`${brikke} bg-flate font-medium shadow-none`}>
+        Levert
+      </span>
+    ) : leveranse === "ikke" || passert ? (
+      <span className={`${brikke} text-blekk-dempet`}>Ikke levert</span>
+    ) : (
+      <span className="text-blekk-svakest">–</span>
+    );
+  if (kode)
+    return (
+      <span className="text-[14px] font-semibold tabular-nums">{kode}</span>
+    );
+  if (leveranse === "ikke")
+    return <span className={`${brikke} text-feil`}>ikke levert</span>;
+  return passert ? (
+    <span className={`${brikke} text-blekk-svak`}>ikke ført</span>
+  ) : (
+    <span className="text-blekk-svakest">–</span>
+  );
+}
+
+/**
+ * Halvårskarakteren (29.4): en rute som viser karakteren, eller forslaget
+ * svakt. Et klikk åpner en liten meny: 1–6, «Bruk forslaget» og «Fjern».
+ * Tastene 1–6 virker som før på raden som er valgt.
+ */
+function Halvarvelger({
+  verdi,
+  forslag,
+  valgt,
+  onApne,
+  onSett,
+}: {
+  verdi: string | null;
+  forslag: string | null;
+  valgt: boolean;
+  onApne: () => void;
+  onSett: (k: string | null) => void;
+}) {
+  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
+  const meny = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!pos) return;
+    const ut = (e: MouseEvent) => {
+      if (!meny.current?.contains(e.target as Node)) setPos(null);
+    };
+    const tast = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        setPos(null);
+      }
+      if (/^[1-6]$/.test(e.key)) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        onSett(e.key);
+        setPos(null);
+      }
+    };
+    window.addEventListener("mousedown", ut);
+    window.addEventListener("keydown", tast, true);
+    return () => {
+      window.removeEventListener("mousedown", ut);
+      window.removeEventListener("keydown", tast, true);
+    };
+  }, [pos, onSett]);
+  const velg = (k: string | null) => {
+    onSett(k);
+    setPos(null);
+  };
+  return (
+    <>
+      <button
+        onClick={(ev) => {
+          ev.stopPropagation();
+          onApne();
+          const r = ev.currentTarget.getBoundingClientRect();
+          setPos((p) =>
+            p ? null : { top: r.bottom + 6, left: r.left + r.width / 2 - 110 },
+          );
+        }}
+        aria-expanded={!!pos}
+        title="Sett halvårskarakteren"
+        className={`h-[30px] w-[34px] rounded-lg text-[14px] font-semibold tabular-nums transition-colors duration-200 ${
+          verdi
+            ? valgt
+              ? "bg-ark text-blekk shadow-[inset_0_0_0_2px_var(--color-aksent)]"
+              : "bg-ark text-blekk shadow-[inset_0_0_0_1.5px_var(--color-linje-sterk)]"
+            : valgt
+              ? "text-blekk-svak shadow-[inset_0_0_0_1.5px_var(--color-aksent)]"
+              : "text-blekk-svakest shadow-[inset_0_0_0_1px_var(--color-linje)]"
+        }`}
+      >
+        {verdi ?? forslag ?? "·"}
+      </button>
+      {pos &&
+        createPortal(
+          <div
+            ref={meny}
+            className="glass-meny ny-meny-inn fixed z-[70] w-[220px] rounded-[14px] p-2.5"
+            style={{ top: pos.top, left: pos.left }}
+          >
+            <div className="grid grid-cols-6 gap-1">
+              {["1", "2", "3", "4", "5", "6"].map((k) => (
+                <button
+                  key={k}
+                  onClick={() => velg(k)}
+                  className={`h-[30px] rounded-lg text-[14px] font-semibold tabular-nums ${
+                    verdi === k
+                      ? "bg-aksent text-ark"
+                      : "bg-flate hover:bg-valgt"
+                  }`}
+                >
+                  {k}
+                </button>
+              ))}
+            </div>
+            <div className="mt-2 flex items-center justify-between gap-2 text-liten">
+              {forslag && verdi !== forslag ? (
+                <button
+                  onClick={() => velg(forslag)}
+                  className="text-aksent hover:underline"
+                >
+                  Bruk forslaget ({forslag})
+                </button>
+              ) : (
+                <span className="text-blekk-svak">Tast 1–6</span>
+              )}
+              {verdi && (
+                <button
+                  onClick={() => velg(null)}
+                  className="text-blekk-svak hover:text-feil"
+                >
+                  Fjern
+                </button>
+              )}
+            </div>
+          </div>,
+          document.body,
+        )}
+    </>
+  );
 }

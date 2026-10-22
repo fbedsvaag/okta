@@ -9,6 +9,20 @@ den skal bli. Fila eies fritt, i motsetning til SPEC.md.
 Utseendet står i `DESIGN.md`, som beskriver appen slik den er bygget.
 Lerretet (`docs/lerret/`) er fasit for det som er tegnet.
 
+## Planlegg etter tegningen, og halvår i cella (22.10)
+
+- Planlegg (mentorsamtaler og muntlig) følger tegningen: stor overskrift
+  «Planlegg …» med Trekk rekkefølge og Lag tidsplan / Alfabetisk, ett rolig
+  kort med Dager · Tid per samtale · Start og slutt (store tall; klikk
+  åpner − / + i en liten meny), og Hvem deltar og Samtaleguide som egne
+  kort. Tidsplanlista viser ✓ bare der samtalen er holdt; ⋮⋮ og × kommer
+  fram når musa er over.
+- Ikke bygget: «Elever som ønsker foresatt med, får lenger plass
+  automatisk» og «+ Egen tid» fra tegningen.
+- Karakterer: halvår-cella åpner en meny med 1–6, «Bruk forslaget» og
+  «Fjern». Cellene viser «ikke ført» og Levert / Ikke levert som brikker,
+  som i tegningen.
+
 ## Vurderinger i økter, trekk oppgaver og ticker (22.10, etter testing)
 
 - Muntlig: øktene velges ett sted, «Dager» i tidsplanen. «+ økt …» legger

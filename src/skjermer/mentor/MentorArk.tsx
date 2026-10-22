@@ -270,7 +270,7 @@ export function MentorArk({
                   : s && detaljer.get(s.id)?.medForesatt
                     ? "med foresatt"
                     : "eleven alene",
-                merke: h ? "✓" : "",
+                merke: h ? "✓" : null,
                 fylt: h,
                 borte,
               };
@@ -302,6 +302,7 @@ export function MentorArk({
               last={last}
               skolearId={skolearId}
               onSlettet={onLukk}
+              detaljer={detaljer}
             />
           )}
           {modus === "gj" && valgt && valgtSamtale && (
@@ -360,7 +361,9 @@ function Planlegg({
   last,
   skolearId,
   onSlettet,
+  detaljer,
 }: {
+  detaljer: Map<string, Samtaledetaljer>;
   runde: Samtalerunde;
   dager: Samtaledag[];
   elever: Mentorelev[];
@@ -374,6 +377,10 @@ function Planlegg({
   onSlettet: () => void;
 }) {
   const [guide, setGuide] = useState(runde.guide);
+  const foresatt = [...plan.samtale.values()].filter(
+    (x) => detaljer.get(x.id)?.medForesatt,
+  ).length;
+  const alene = elever.length - foresatt;
   const venter = useRef<number | null>(null);
   function endreGuide(ny: string[]) {
     setGuide(ny);
@@ -385,18 +392,8 @@ function Planlegg({
   }
   return (
     <div>
-      <label className="mb-4 flex items-center gap-2.5">
-        <span className="text-liten text-blekk-dempet">Navn</span>
-        <input
-          defaultValue={runde.navn}
-          onBlur={(e) => {
-            const n = e.target.value.trim();
-            if (n && n !== runde.navn) void endreRunde(runde.id, { navn: n });
-          }}
-          className="min-w-0 flex-1 rounded-md bg-transparent px-1.5 py-1 text-[15px] font-medium outline-none hover:bg-flate-svak focus:bg-ark focus:shadow-[inset_0_0_0_1.5px_var(--color-aksent)]"
-        />
-      </label>
       <Generator
+        tittel={`Planlegg ${MENTORORD.samtalerSmaa}`}
         kilde={{
           dager,
           elever,
@@ -427,11 +424,31 @@ function Planlegg({
             : `Legg til en dag, så legges de ${elever.length} ${MENTORORD.elevene} ut med tider.`
         }
       />
-      <section className="mb-5 rounded-[14px] bg-flate-svak p-4">
+      <section className="mb-4 rounded-[14px] bg-flate-svak px-[18px] py-4 shadow-[inset_0_0_0_1px_var(--color-linje-svak)]">
+        <h3 className="mb-2.5 text-[13px] font-semibold">Hvem deltar</h3>
+        <div className="flex flex-wrap gap-1.5">
+          {[
+            [`Eleven alene · ${alene}`, true],
+            [`Med foresatt · ${foresatt}`, foresatt > 0],
+          ].map(([t, pa]) => (
+            <span
+              key={String(t)}
+              className="inline-flex h-[26px] items-center gap-1.5 rounded-full bg-ark px-2.5 text-[12.5px] shadow-[inset_0_0_0_1px_var(--color-linje-svak)]"
+            >
+              {pa && <span className="text-[#3f9d49]">✓</span>}
+              {t}
+            </span>
+          ))}
+        </div>
+        <p className="mt-2.5 text-liten text-blekk-svak">
+          Merk «med foresatt» på eleven under Gjennomfør.
+        </p>
+      </section>
+      <section className="mb-4 rounded-[14px] bg-flate-svak px-[18px] py-4 shadow-[inset_0_0_0_1px_var(--color-linje-svak)]">
         <h3 className="mb-2 text-[13px] font-semibold">Samtaleguide</h3>
         {guide.map((q, i) => (
-          <div key={i} className="flex items-center gap-1.5">
-            <span className="w-4 text-center text-blekk-svakest">○</span>
+          <div key={i} className="group flex items-center gap-1.5">
+            <span className="h-4 w-4 shrink-0 rounded-full shadow-[inset_0_0_0_1.5px_var(--color-linje-sterk)]" />
             <input
               value={q}
               data-guide={i}
@@ -460,7 +477,7 @@ function Planlegg({
             <button
               onClick={() => endreGuide(guide.filter((_, j) => j !== i))}
               title="Fjern"
-              className="px-1 text-[15px] text-blekk-svakest hover:text-feil"
+              className="px-1 text-[15px] text-blekk-svakest opacity-0 hover:text-feil group-hover:opacity-100"
             >
               ×
             </button>
@@ -476,6 +493,21 @@ function Planlegg({
           Krysses av under samtalen. Gjelder alle samtalene i runden.
         </p>
       </section>
+      <p className="mx-0.5 mb-5 text-liten text-blekk-svak">
+        Tidsplanen vises til venstre og kan kopieres til Teams. Bytt til
+        Gjennomfør når samtalene starter.
+      </p>
+      <label className="mb-3 flex items-center gap-2.5">
+        <span className="text-liten text-blekk-dempet">Navn</span>
+        <input
+          defaultValue={runde.navn}
+          onBlur={(e) => {
+            const n = e.target.value.trim();
+            if (n && n !== runde.navn) void endreRunde(runde.id, { navn: n });
+          }}
+          className="min-w-0 flex-1 rounded-md bg-transparent px-1.5 py-1 text-[15px] font-medium outline-none hover:bg-flate-svak focus:bg-ark focus:shadow-[inset_0_0_0_1.5px_var(--color-aksent)]"
+        />
+      </label>
       <button
         onClick={async () => {
           if (
