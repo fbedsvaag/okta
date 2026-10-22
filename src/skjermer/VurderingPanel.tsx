@@ -433,6 +433,7 @@ function ElevRad({
 const TYPER: { verdi: Vurderingstype; navn: string }[] = [
   { verdi: "skriftlig", navn: "Skriftlig" },
   { verdi: "muntlig", navn: "Muntlig" },
+  { verdi: "innlevering", navn: "Innlevering" },
   { verdi: "praktisk", navn: "Praktisk" },
 ];
 

@@ -7,7 +7,6 @@ import {
   type ReactNode,
 } from "react";
 import type { FagIAr } from "../data/fag";
-import type { Trekning } from "../data/samtale";
 import { fagfarge } from "./farger";
 import { Ordmerke } from "./logo";
 import { Utfold } from "./Utfold";
@@ -23,13 +22,13 @@ import { tast as visTast } from "./taster";
  *
  * Bare skjermene står fast. Lister hører til en skjerm og står som en
  * innrykket undermeny under den, med en tynn strek foran: fagene under
- * Økter (⌘1–9), trekningene under Samtaler. Undermenyen er åpen under
+ * Økter (⌘1–9), kartene under Plasser og grupper. Undermenyen er åpen under
  * skjermen du står i; under de andre rulles den ut når musa holdes over
  * punktet en liten stund, på en felles glassflate. Innstillinger nederst.
  */
 
 export type Menypunkt =
-  "idag" | "okter" | "elever" | "vurderinger" | "samtaler" | "klassekart";
+  "idag" | "okter" | "elever" | "vurderinger" | "klassekart";
 
 /** G og en bokstav. Ø har O som reserve, for tastatur uten ø. */
 export const G_SNARVEIER: Record<string, Menypunkt> = {
@@ -38,7 +37,8 @@ export const G_SNARVEIER: Record<string, Menypunkt> = {
   o: "okter",
   e: "elever",
   v: "vurderinger",
-  s: "samtaler",
+  // Samtaler er en del av «Vurderinger og samtaler» (28.0); G S virker fortsatt.
+  s: "vurderinger",
   p: "klassekart",
   // G K var snarveien før «Plasser og grupper» (25.1); den virker fortsatt.
   k: "klassekart",
@@ -48,8 +48,7 @@ const PUNKTER: { id: Menypunkt; navn: string; tast: string }[] = [
   { id: "idag", navn: "I dag", tast: "G D" },
   { id: "okter", navn: "Økter", tast: "G Ø" },
   { id: "elever", navn: "Elever", tast: "G E" },
-  { id: "vurderinger", navn: "Vurderinger", tast: "G V" },
-  { id: "samtaler", navn: "Samtaler", tast: "G S" },
+  { id: "vurderinger", navn: "Vurderinger og samtaler", tast: "G V" },
   { id: "klassekart", navn: "Plasser og grupper", tast: "G P" },
 ];
 
@@ -63,10 +62,6 @@ export function Sidemeny({
   valgtFag,
   onGa,
   onVelgFag,
-  trekninger,
-  vurderingsnavn,
-  apenTrekning,
-  onApneTrekning,
   klassekart,
   apentKart,
   onApneKart,
@@ -84,13 +79,6 @@ export function Sidemeny({
   onGa: (p: Menypunkt) => void;
   /** et fag i undermenyen under Økter; "" = Alle fag */
   onVelgFag: (id: string) => void;
-  /** de planlagte samtaletrekningene, under Samtaler */
-  trekninger: Trekning[];
-  /** vurderings-id → tittel; en trekning heter det vurderingen heter */
-  vurderingsnavn: Map<string, string>;
-  /** trekningen som er åpen: fag-id, «mentor», null = ingen valgt; undefined = ikke i Samtaler */
-  apenTrekning: string | null | undefined;
-  onApneTrekning: (id: string) => void;
   /** kartene i skoleåret, under Klassekart */
   klassekart: Kart[];
   /** kartet som er åpent; undefined = ikke i Klassekart */
@@ -173,48 +161,6 @@ export function Sidemeny({
             {f.kode}
           </Underpunkt>
         ))}
-      </>
-    ),
-    samtaler: (
-      <>
-        {trekninger.map((t) => {
-          const id = t.skolearFagId ?? "mentor";
-          const f = fag.find((x) => x.id === t.skolearFagId);
-          const vurdering = t.dager.find((d) => d.vurderingId)?.vurderingId;
-          const navn =
-            t.skolearFagId === null
-              ? "Mentorsamtaler"
-              : ((vurdering && vurderingsnavn.get(vurdering)) ??
-                t.fagKode ??
-                "");
-          const meta = [
-            t.skolearFagId !== null && navn !== t.fagKode ? t.fagKode : null,
-            spenn(t),
-          ]
-            .filter(Boolean)
-            .join(" · ");
-          return (
-            <Underpunkt
-              key={id}
-              aktiv={apenTrekning === id}
-              merke={
-                t.skolearFagId === null ? (
-                  <span className="h-2 w-2 shrink-0 rounded-full bg-aksent" />
-                ) : (
-                  <Firkant farge={f?.farge ? fagfarge(f.farge) : null} />
-                )
-              }
-              meta={meta}
-              tittel={`${navn} · ${meta}`}
-              onKlikk={() => onApneTrekning(id)}
-            >
-              {navn}
-            </Underpunkt>
-          );
-        })}
-        <Underpunkt dempet onKlikk={() => onApneTrekning("ny")}>
-          + Ny trekning
-        </Underpunkt>
       </>
     ),
     klassekart: (
@@ -477,28 +423,6 @@ function Tast({ children }: { children: ReactNode }) {
       {children}
     </kbd>
   );
-}
-
-/** «24. nov» for én dag, «15. og 19. okt» for to, «2.–9. des» for flere. */
-function spenn(t: Trekning): string {
-  if (!t.forste) return "uten dato";
-  const datoer = [
-    ...new Set(t.dager.map((d) => d.dato).filter(Boolean)),
-  ].sort();
-  if (datoer.length === 2 && datoer[0].slice(0, 7) === datoer[1].slice(0, 7)) {
-    const [a, b] = datoer.map((d) => new Date(`${d}T00:00:00`));
-    const mnd = b
-      .toLocaleDateString("nb-NO", { month: "short" })
-      .replace(/\.$/, "");
-    return `${a.getDate()}. og ${b.getDate()}. ${mnd}`;
-  }
-  const kort = (d: string) =>
-    new Date(`${d}T00:00:00`)
-      .toLocaleDateString("nb-NO", { day: "numeric", month: "short" })
-      .replace(/\.$/, "");
-  return t.forste === t.siste
-    ? kort(t.forste)
-    : `${kort(t.forste)}–${kort(t.siste)}`;
 }
 
 function IkonSok() {

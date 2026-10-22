@@ -2787,7 +2787,8 @@ textarea,
 }
 
 /* Kartkortet i økta (27.1): glir inn 6 px på 220 ms, uten sprett. */
-.okt-kart-inn {
+.okt-kart-inn,
+.ny-meny-inn {
   animation: okt-kart-inn 220ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 @keyframes okt-kart-inn {
@@ -2796,11 +2797,13 @@ textarea,
     transform: translateY(-6px);
   }
 }
-:root[data-bevegelse="av"] .okt-kart-inn {
+:root[data-bevegelse="av"] .okt-kart-inn,
+:root[data-bevegelse="av"] .ny-meny-inn {
   animation: none;
 }
 @media (prefers-reduced-motion: reduce) {
-  .okt-kart-inn {
+  .okt-kart-inn,
+  .ny-meny-inn {
     animation: none;
   }
 }

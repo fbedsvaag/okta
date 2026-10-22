@@ -9,7 +9,8 @@ import { varsleVurderinger } from "./endringer";
  * Resultatene henger under, ett per elev.
  */
 
-export type Vurderingstype = "skriftlig" | "muntlig" | "praktisk";
+export type Vurderingstype =
+  "skriftlig" | "muntlig" | "praktisk" | "innlevering";
 
 export type Vurdering = {
   id: string;
@@ -30,6 +31,12 @@ export type Vurdering = {
   fort: number;
   /** antall elever koblet til faget */
   elever: number;
+  /** antall resultater merket levert (innlevering) */
+  levert: number;
+  /** datoen til den første økta vurderingen holdes i, eller null */
+  oktDato: string | null;
+  /** snittet av tallkarakterene som er ført, uten «teller ikke»; ellers null */
+  snitt: number | null;
 };
 
 export type VurderingElev = {
@@ -71,6 +78,18 @@ export async function hentVurderinger(skolearId: string): Promise<Vurdering[]> {
             (SELECT COUNT(*) FROM vurderingsresultat r
               WHERE r.vurdering_id = v.id AND r.slettet IS NULL
                 AND r.skalaverdi_id IS NOT NULL) AS fort,
+            (SELECT COUNT(*) FROM vurderingsresultat r
+              WHERE r.vurdering_id = v.id AND r.slettet IS NULL
+                AND r.levert = 1) AS levert,
+            (SELECT MIN(o.dato) FROM vurdering_okt vo
+               JOIN okt o ON o.id = vo.okt_id AND o.slettet IS NULL
+              WHERE vo.vurdering_id = v.id AND vo.slettet IS NULL) AS oktDato,
+            -- Bare tallkarakterer («4», «5-»); verdier som ikke teller, er
+            -- utelatt (CLAUDE.md regel 5).
+            (SELECT AVG(CAST(sv.kode AS REAL)) FROM vurderingsresultat r
+               JOIN skalaverdi sv ON sv.id = r.skalaverdi_id
+              WHERE r.vurdering_id = v.id AND r.slettet IS NULL
+                AND sv.teller_ikke = 0 AND sv.kode GLOB '[0-9]*') AS snitt,
             (SELECT COUNT(*) FROM elev_fag ef
                JOIN elev e ON e.id = ef.elev_id AND e.slettet IS NULL
               WHERE ef.skolear_fag_id = v.skolear_fag_id

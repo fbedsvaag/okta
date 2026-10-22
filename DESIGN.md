@@ -167,9 +167,9 @@ i verktøylinja kapselform. ⌘K-vinduet har 26 px.
 
 - Logo, «Økta» og skoleåret øverst
 - Søk (⌘K) som felt
-- I dag · Økter · Elever · Vurderinger · Samtaler, hver med snarvei til
-  høyre: G D, G Ø, G E, G V, G S, G P (Plasser og grupper, med kartene som
-  undermeny — SPEC §4.11)
+- I dag · Økter · Elever · Vurderinger og samtaler · Plasser og grupper,
+  hver med snarvei til høyre: G D, G Ø, G E, G V (G S virker også), G P
+  (med kartene som undermeny — SPEC §4.11)
 - Innstillinger (⌘,) nederst
 
 **Undermeny som følger skjermen** (valgt 06.10, «A» i lerretet). Sidemenyen
@@ -177,7 +177,7 @@ viser bare skjermene. Lister hører til en skjerm og står som innrykket
 undermeny under den, med en tynn loddrett strek foran:
 
 - under **Økter**: Alle fag og fagene i år (fagfirkant + kode), ⌘1–9 (⌘0 er zoom, 10.6)
-- under **Samtaler**: trekningene (navn, fag og datoer) og «+ Ny trekning»
+- under **Plasser og grupper**: kartene og «+ Nytt kart»
 
 Undermenyen er alltid åpen under skjermen du står i. Under de andre
 rulles den ut når musa holdes over punktet, etter 140 ms (så den ikke
@@ -185,8 +185,14 @@ blafrer når musa bare passerer). Punktet og undermenyen får da en felles
 glassflate som vokser nedover: høyde, uskarphet (5 px → 0) og en liten
 forskyvning går samtidig, 260 ms med `--ease-inn`. Ingen sprett. Med
 redusert bevegelse åpnes den uten animasjon. Et klikk på selve
-skjermpunktet gir skjermens oversikt (Samtaler: Planlagt · Utkast ·
-Gjennomført).
+skjermpunktet gir skjermens oversikt.
+
+**Vurderinger og samtaler** (28.0, lerretet VurderingerSamtaler): én fane.
+Radene er kort (radius 14, 30 px typeikon, tittel, «fag · type · skala»,
+dato og status, framdriftsstrek, «N av M»), gruppert Nå · Kommende · Til
+føring · Ferdig. Filterbrikker for type og fag over. En samtale som pågår,
+har aksentring og grønn puls. Mentorsamtaler har litt mørkere flate og
+vises bare for den som har mentorelever. «+ Ny ⌄» i verktøylinja.
 
 Nederst i sidemenyen, over Innstillinger: **Gi tilbakemelding**, i samme
 stil som Innstillinger-raden. Et klikk kopierer versjon, system og skjerm,

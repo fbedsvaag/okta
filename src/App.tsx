@@ -38,7 +38,6 @@ import {
   type Trekning,
 } from "./data/samtale";
 import { Verktoylinjespor } from "./ui/Verktoylinje";
-import { hentVurderinger } from "./data/vurderinger";
 import { Veiviser } from "./skjermer/Veiviser";
 import { IDag } from "./skjermer/IDag";
 import { Fag } from "./skjermer/Fag";
@@ -51,7 +50,6 @@ import { Skolekalender } from "./skjermer/Skolekalender";
 import { Innstillinger } from "./skjermer/Innstillinger";
 import { Vurderinger } from "./skjermer/Vurderinger";
 import { Samtaler } from "./skjermer/Samtaler";
-import { Samtaleoversikt } from "./skjermer/Samtaleoversikt";
 import { ElevPanel } from "./skjermer/ElevPanel";
 import { FagPanel } from "./skjermer/FagPanel";
 import { Bryter, Fagfirkant, Knapp, Ikon } from "./ui/felles";
@@ -113,24 +111,15 @@ export default function App() {
   // Faget Økter står filtrert på ("" = alle). Bor her, ikke i Økter, fordi
   // undermenyen i sidemenyen og ⌘1–9 velger det (DESIGN.md §6).
   const [oktFag, setOktFag] = useState("");
-  // De planlagte trekningene, til sidemenyen under Samtaler (DESIGN.md §10).
+  // Samtaletrekningene, til «Vurderinger og samtaler» (28.0).
   const [trekninger, setTrekninger] = useState<Trekning[]>([]);
-  // Navnet på vurderingen hver trekning hører til — det er trekningens navn.
-  const [vurderingsnavn, setVurderingsnavn] = useState<Map<string, string>>(
-    new Map(),
-  );
   // Klassekartene i året, til undermenyen under Klassekart (SPEC §4.11).
   const [kartene, setKartene] = useState<Kart[]>([]);
   // Plassen i verktøylinja som skjermene kan fylle (ui/Verktoylinje).
   const [spor, setSpor] = useState<HTMLElement | null>(null);
 
   const lastTrekninger = useCallback(async (skolearId: string) => {
-    const [dager, vurderinger] = await Promise.all([
-      hentSamtaledager(skolearId),
-      hentVurderinger(skolearId),
-    ]);
-    setTrekninger(grupperTrekninger(dager));
-    setVurderingsnavn(new Map(vurderinger.map((v) => [v.id, v.tittel])));
+    setTrekninger(grupperTrekninger(await hentSamtaledager(skolearId)));
   }, []);
 
   // Navigasjonshistorikk, som i Obsidian: hvert sted du har vært ligger i en
@@ -433,10 +422,6 @@ export default function App() {
           valgtFag={oktFag}
           onVelgFag={velgFag}
           onGa={(p) => ga(p)}
-          trekninger={trekninger}
-          vurderingsnavn={vurderingsnavn}
-          apenTrekning={visning === "samtaler" ? (apneId ?? null) : undefined}
-          onApneTrekning={(id) => ga("samtaler", id)}
           klassekart={kartene}
           apentKart={visning === "klassekart" ? (apneId ?? null) : undefined}
           onApneKart={(id) => ga("klassekart", id)}
@@ -551,15 +536,6 @@ export default function App() {
                   <Skoleruta key={versjon} skolear={skolear} onEndret={last} />
                 )}
 
-                {visning === "samtaler" && !apneId && (
-                  <Samtaleoversikt
-                    skolearNavn={skolear.navn}
-                    trekninger={trekninger}
-                    vurderingsnavn={vurderingsnavn}
-                    fag={fag}
-                    onApne={(id) => ga("samtaler", id)}
-                  />
-                )}
                 {visning === "samtaler" && apneId && (
                   <Samtaler
                     key={`${versjon}-${apneId ?? ""}`}
@@ -701,8 +677,15 @@ export default function App() {
                   />
                 )}
 
-                {visning === "vurderinger" && (
-                  <Vurderinger key={versjon} skolearId={skolear.id} fag={fag} />
+                {(visning === "vurderinger" ||
+                  (visning === "samtaler" && !apneId)) && (
+                  <Vurderinger
+                    key={versjon}
+                    skolearId={skolear.id}
+                    fag={fag}
+                    trekninger={trekninger}
+                    onApneTrekning={(id) => ga("samtaler", id)}
+                  />
                 )}
               </div>
             </main>
@@ -723,8 +706,8 @@ const SKJERMNAVN: Record<Visning, string> = {
   elever: "Elever",
   elev: "Elever",
   liminn: "Elever",
-  vurderinger: "Vurderinger",
-  samtaler: "Samtaler",
+  vurderinger: "Vurderinger og samtaler",
+  samtaler: "Vurderinger og samtaler",
   fag: "Fag",
   fagside: "Fag",
   innstillinger: "Innstillinger",
@@ -890,13 +873,9 @@ function Verktoylinje({
 
 /** Hvilket punkt i sidemenyen som står markert for en visning. */
 function aktivtPunkt(v: Visning): Menypunkt | "innstillinger" | null {
-  if (
-    v === "idag" ||
-    v === "vurderinger" ||
-    v === "samtaler" ||
-    v === "klassekart"
-  )
-    return v;
+  if (v === "idag" || v === "vurderinger" || v === "klassekart") return v;
+  // Samtaletrekkeren hører til «Vurderinger og samtaler» (28.0).
+  if (v === "samtaler") return "vurderinger";
   // Fagene er undermeny under Økter, så fagsiden hører til der.
   if (erOktvisning(v) || v === "fag" || v === "fagside") return "okter";
   if (v === "elever" || v === "elev" || v === "liminn") return "elever";

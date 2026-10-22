@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   bekreftUtkast,
   hentVurderinger,
@@ -7,22 +8,27 @@ import {
   type Vurdering,
   type Vurderingstype,
 } from "../data/vurderinger";
+import {
+  byggOversikt,
+  filtrer,
+  GRUPPENAVN,
+  harMentorelever,
+  hentSamtalelinjer,
+  MENTORORD,
+  type Oversiktsrad,
+  type Oversiktstype,
+  type Samtalelinje,
+  type Statusgruppe,
+} from "../data/vurderingsoversikt";
+import type { Trekning } from "../data/samtale";
 import type { FagIAr } from "../data/fag";
 import type { Skala } from "../skala";
-import {
-  Bryter,
-  Fagfirkant,
-  Felt,
-  Ikon,
-  Kappet,
-  Knapp,
-  Tomtilstand,
-} from "../ui/felles";
+import { Fagfirkant, Felt, Kappet, Knapp, Tomtilstand } from "../ui/felles";
 import { useArk } from "../ui/Arkstabel";
 import { lyttVurderinger } from "../data/endringer";
 import { Velger } from "../ui/Velger";
-import { Fagbrytere, useSkjulteFag } from "./Fagbrytere";
 import { useLagretInnstilling } from "../ui/useLagretInnstilling";
+import { IVerktoylinja } from "../ui/Verktoylinje";
 import {
   Utkastmerke,
   Vurderingsikon,
@@ -30,317 +36,514 @@ import {
 } from "../ui/Vurderingsikon";
 
 /**
- * Vurderinger, SPEC §4.6.
+ * Vurderinger og samtaler (SPEC §4.6, ARBEIDSLISTE 28.0, lerretet
+ * VurderingerSamtaler): én fane for alt som har en tidsplan eller skal
+ * føres. Gruppert etter status — Nå · Kommende · Til føring · Ferdig —
+ * filtrert på type og fag. Mentorsamtaler står her for å samle
+ * tidsplanene, men er ikke vurderinger, og vises bare for den som har
+ * mentorelever.
  *
- * Egen skjerm, ikke en bolk inne i fagportalen. Grunnen er at de samme
- * vurderingene skal vises både under faget og under eleven — da må de bo
- * ett sted og lånes ut derfra.
+ * Egen skjerm, ikke en bolk inne i fagportalen: de samme vurderingene vises
+ * både under faget og under eleven, så de bor ett sted og lånes ut derfra.
  */
 export function Vurderinger({
   skolearId,
   fag,
+  trekninger,
+  onApneTrekning,
 }: {
   skolearId: string;
   fag: FagIAr[];
+  trekninger: Trekning[];
+  /** fag-id eller «mentor» */
+  onApneTrekning: (id: string) => void;
 }) {
   const [vurderinger, setVurderinger] = useState<Vurdering[]>([]);
+  const [lastet, setLastet] = useState(false);
+  const [linjer, setLinjer] = useState<Samtalelinje[]>([]);
+  const [harMentor, setHarMentor] = useState(false);
   const [skalaer, setSkalaer] = useState<Skala[]>([]);
   const [valgt, setValgt] = useState<string | null>(null);
-  const [filterFag, setFilterFag] = useState("");
-  // «Alle fag»: fagene som brikker, flervalg, som i Økter. Huskes.
-  const [skjultFag, vekslFag] = useSkjulteFag("vurderinger_skjulte_fag");
-  // Lista gruppert etter måned (frist) eller fag.
-  const [gruppering, setGruppering] = useLagretInnstilling<"maned" | "fag">(
-    "vurderinger_gruppering",
-    "maned",
-    (v) => (v === "fag" ? "fag" : "maned"),
+  const [typeFilter, setTypeFilter] = useLagretInnstilling<
+    Oversiktstype | "alle"
+  >(
+    "vurderinger_type",
+    "alle",
+    (v) =>
+      v === "skriftlig" ||
+      v === "muntlig" ||
+      v === "innlevering" ||
+      v === "mentor"
+        ? v
+        : "alle",
     String,
   );
-  const [sok, setSok] = useState("");
-  const [lagerNy, setLagerNy] = useState(false);
+  // Fagbrikkene: flervalg, ingen valgt = alle fag. Huskes.
+  const [fagValg, setFagValg] = useLagretInnstilling<string[]>(
+    "vurderinger_fag",
+    [],
+    (v) => (v ? v.split(",").filter(Boolean) : []),
+    (v) => v.join(","),
+  );
+  const [ny, setNy] = useState<Vurderingstype | null>(null);
   const ark = useArk();
 
   async function last() {
     setVurderinger(await hentVurderinger(skolearId));
+    setLastet(true);
   }
 
   useEffect(() => {
     void last();
     void hentVurderingsskalaer().then(setSkalaer);
+    void harMentorelever(skolearId).then(setHarMentor);
   }, [skolearId]);
+  useEffect(() => {
+    void hentSamtalelinjer(skolearId).then(setLinjer);
+  }, [skolearId, trekninger]);
   // Vurderingen åpnes som et ark over lista; endres den der, skal lista
   // vise det med en gang.
   useEffect(() => lyttVurderinger(() => void last()), [skolearId]);
+  // «Pågår · … er inne» skal følge klokka.
+  const [naa, setNaa] = useState(() => new Date());
+  useEffect(() => {
+    const t = window.setInterval(() => setNaa(new Date()), 60_000);
+    return () => window.clearInterval(t);
+  }, []);
 
-  function apne(id: string) {
-    setValgt(id);
-    ark.apneVurdering(id);
+  const rader = useMemo(
+    () =>
+      byggOversikt({
+        vurderinger,
+        dager: trekninger.flatMap((t) => t.dager),
+        linjer,
+        harMentor,
+        naa,
+      }),
+    [vurderinger, trekninger, linjer, harMentor, naa],
+  );
+  const fagSett = useMemo(
+    () => new Set(fagValg.filter((id) => fag.some((f) => f.id === id))),
+    [fagValg, fag],
+  );
+  const synlige = filtrer(rader, typeFilter, fagSett);
+
+  function apne(r: Oversiktsrad) {
+    setValgt(r.id);
+    if ("vurdering" in r.apner) ark.apneVurdering(r.apner.vurdering);
+    else onApneTrekning(r.apner.trekning);
   }
 
-  const synlige = useMemo(() => {
-    const s = sok.trim().toLocaleLowerCase("nb-NO");
-    return vurderinger.filter((v) => {
-      if (filterFag && v.skolearFagId !== filterFag) return false;
-      if (!filterFag && skjultFag.has(v.skolearFagId)) return false;
-      if (s && !v.tittel.toLocaleLowerCase("nb-NO").includes(s)) return false;
-      return true;
-    });
-  }, [vurderinger, filterFag, sok, skjultFag]);
-
-  // Hvor mange vurderinger hvert fag har. Står i fagfilteret, så man ser
-  // hvilke fag som mangler vurderinger uten å måtte klikke seg gjennom dem.
-  const antallPerFag = useMemo(() => {
-    const kart = new Map<string, number>();
-    for (const v of vurderinger) {
-      kart.set(v.skolearFagId, (kart.get(v.skolearFagId) ?? 0) + 1);
-    }
-    return kart;
-  }, [vurderinger]);
+  const typer: [Oversiktstype | "alle", string][] = [
+    ["alle", "Alle"],
+    ["skriftlig", "Skriftlig"],
+    ["muntlig", "Muntlig"],
+    ["innlevering", "Innlevering"],
+    ...(harMentor
+      ? [["mentor", MENTORORD.samtaler] as [Oversiktstype, string]]
+      : []),
+  ];
+  const utkast = synlige.filter((r) => r.utkast);
 
   return (
-    <div className="mx-auto flex min-h-0 w-full max-w-6xl flex-1 overflow-clip">
-      <div className="liste-bredde flex w-full min-w-0 flex-col">
-        <div className="shrink-0">
-          <div className="mb-3 flex flex-wrap items-center gap-2">
-            <Felt
-              verdi={sok}
-              settVerdi={setSok}
-              plassholder="Søk i tittel"
-              bredde="w-56"
-            />
-            <Velger
-              verdi={filterFag}
-              settVerdi={setFilterFag}
-              etikett="Fag"
-              valg={[
-                {
-                  verdi: "",
-                  tekst: "Alle fag",
-                  hint: String(vurderinger.length),
-                },
-                ...fag.map((f) => ({
-                  verdi: f.id,
-                  tekst: f.kode,
-                  hint: String(antallPerFag.get(f.id) ?? 0),
-                  farge: f.farge,
-                  firkant: true,
-                })),
-              ]}
-            />
-            {!filterFag && (
-              <Fagbrytere
-                klasse=""
+    <div className="mx-auto flex min-h-0 w-full max-w-5xl flex-1 flex-col overflow-auto">
+      <IVerktoylinja>
+        <span className="ml-auto" />
+        <NyMeny
+          harMentor={harMentor}
+          kanVurdere={fag.length > 0}
+          onVelg={(t) => (t === "mentor" ? onApneTrekning("mentor") : setNy(t))}
+        />
+      </IVerktoylinja>
+
+      {lastet && rader.length === 0 && !ny ? (
+        <Tomtilstand
+          tekst={
+            fag.length === 0
+              ? "Legg inn fagene dine først."
+              : "Ingen vurderinger ennå. Prøver, muntlige vurderinger og innleveringer legges inn her."
+          }
+          handling={
+            fag.length > 0 ? (
+              <Knapp variant="primar" onClick={() => setNy("skriftlig")}>
+                Ny vurdering
+              </Knapp>
+            ) : undefined
+          }
+        />
+      ) : (
+        <>
+          <div className="flex flex-wrap items-center gap-2">
+            {typer.map(([id, navn]) => (
+              <Filterbrikke
+                key={id}
+                pa={typeFilter === id}
+                onKlikk={() => setTypeFilter(id)}
+              >
+                {navn}
+                <small className="text-[11.5px] tabular-nums opacity-60">
+                  {id === "alle"
+                    ? filtrer(rader, "alle", fagSett).length
+                    : filtrer(rader, id, fagSett).length}
+                </small>
+              </Filterbrikke>
+            ))}
+            {fag.length > 1 && <span className="w-3" />}
+            {fag.length > 1 &&
+              fag.map((f) => (
+                <Filterbrikke
+                  key={f.id}
+                  pa={fagSett.has(f.id)}
+                  onKlikk={() =>
+                    setFagValg(
+                      fagSett.has(f.id)
+                        ? [...fagSett].filter((x) => x !== f.id)
+                        : [...fagSett, f.id],
+                    )
+                  }
+                >
+                  <Fagfirkant farge={f.farge} />
+                  {f.kode}
+                </Filterbrikke>
+              ))}
+          </div>
+
+          {ny && (
+            <div className="mt-4">
+              <NyVurdering
                 fag={fag}
-                samtaler={false}
-                skjult={skjultFag}
-                onVeksle={vekslFag}
+                skalaer={skalaer}
+                startType={ny}
+                startFagId={fagSett.size === 1 ? [...fagSett][0] : fag[0]?.id}
+                onLagret={async (id) => {
+                  setNy(null);
+                  await last();
+                  setValgt(id);
+                  ark.apneVurdering(id);
+                }}
+                onAvbryt={() => setNy(null)}
               />
-            )}
-            <div className="ml-auto flex items-center gap-2">
-              <Bryter
-                storrelse="liten"
-                verdi={gruppering}
-                settVerdi={(v) => setGruppering(v === "fag" ? "fag" : "maned")}
-                valg={[
-                  { id: "maned", navn: "Måned" },
-                  { id: "fag", navn: "Fag" },
-                ]}
-              />
-              <Knapp variant="primar" onClick={() => setLagerNy(true)}>
-                + Ny vurdering
+            </div>
+          )}
+
+          {utkast.length > 0 && (
+            <div className="mt-4 flex items-center gap-3 rounded-[14px] bg-flate-svak px-3.5 py-2 text-liten text-blekk-dempet">
+              <Utkastmerke />
+              <span className="flex-1">
+                {utkast.length} hentet fra i fjor. De står ikke blant fristene
+                før du bekrefter dem.
+              </span>
+              <Knapp
+                onClick={async () => {
+                  await bekreftUtkast(utkast.map((r) => r.id));
+                  await last();
+                }}
+              >
+                Bekreft alle
               </Knapp>
             </div>
-          </div>
-        </div>
-
-        <div className="min-h-0 flex-1 overflow-auto">
-          {lagerNy && (
-            <NyVurdering
-              fag={fag}
-              skalaer={skalaer}
-              startFagId={filterFag || fag[0]?.id}
-              onLagret={async (id) => {
-                setLagerNy(false);
-                await last();
-                apne(id);
-              }}
-              onAvbryt={() => setLagerNy(false)}
-            />
           )}
 
-          {vurderinger.length === 0 && !lagerNy ? (
-            <Tomtilstand
-              tekst={
-                fag.length === 0
-                  ? "Legg inn fagene dine først."
-                  : "Ingen vurderinger ennå. Prøver, innleveringer og framlegg legges inn her."
-              }
-              handling={
-                fag.length > 0 ? (
-                  <Knapp variant="primar" onClick={() => setLagerNy(true)}>
-                    Ny vurdering
-                  </Knapp>
-                ) : undefined
-              }
-            />
-          ) : (
-            <div>
-              {synlige.some((v) => v.utkast === 1) && (
-                <div className="flex items-center gap-3 border-b border-linje-svak px-2 py-2 text-liten text-blekk-dempet">
-                  <Utkastmerke />
-                  <span className="flex-1">
-                    {synlige.filter((v) => v.utkast === 1).length} hentet fra i
-                    fjor. De står ikke blant fristene før du bekrefter dem.
-                  </span>
-                  <Knapp
-                    onClick={async () => {
-                      await bekreftUtkast(
-                        synlige.filter((v) => v.utkast === 1).map((v) => v.id),
-                      );
-                      await last();
-                    }}
-                  >
-                    Bekreft alle
-                  </Knapp>
-                </div>
-              )}
-              {(gruppering === "fag"
-                ? perFag(synlige, fag)
-                : perManed(synlige)
-              ).map(([nokkel, gruppe]) => (
-                <div key={nokkel}>
-                  {/* Overskrift som i Økter: tekst, ingen grå blokk. */}
-                  <div className="sticky top-0 z-10 flex items-center gap-2 border-b border-linje-medium bg-ark px-2 pb-1 pt-3 text-liten font-semibold first-letter:uppercase">
-                    {gruppering === "fag" ? (
-                      <>
-                        <Fagfirkant
-                          farge={
-                            fag.find((f) => f.id === nokkel)?.farge ?? null
-                          }
-                        />
-                        {fag.find((f) => f.id === nokkel)?.kode ?? "Fag"}
-                        <span className="font-normal text-blekk-svak">
-                          {fag.find((f) => f.id === nokkel)?.navn}
-                        </span>
-                      </>
-                    ) : nokkel === "uten" ? (
-                      "Uten frist"
-                    ) : (
-                      manedsnavn(nokkel)
-                    )}
-                  </div>
-                  {gruppe.map((v) => (
-                    <Rad
-                      key={v.id}
-                      vurdering={v}
-                      valgt={valgt === v.id}
-                      kompakt={false}
-                      onVelg={() => apne(v.id)}
-                    />
-                  ))}
-                </div>
-              ))}
-            </div>
-          )}
-
-          {vurderinger.length > 0 && (
-            <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-liten text-blekk-dempet">
-              <span className="tabular-nums">
-                {synlige.length} av {vurderinger.length} vurderinger
-              </span>
-              {/*
-              Fordelingen per fag, med fagets egen farge. Da ser man hvilke
-              fag som ligger tynt an uten å bytte filter for å telle.
-            */}
-              {fag.map((f) => (
-                <span key={f.id} className="flex items-center gap-1.5">
-                  <span
-                    aria-hidden
-                    className="h-2.5 w-2.5 shrink-0 rounded-full"
-                    style={{
-                      background: f.farge ?? "var(--color-linje-sterk)",
-                    }}
+          {(Object.keys(GRUPPENAVN) as Statusgruppe[]).map((g) => {
+            const gruppe = synlige.filter((r) => r.gruppe === g);
+            if (gruppe.length === 0) return null;
+            return (
+              <section key={g}>
+                <h2 className="mx-1 mb-2 mt-[22px] flex items-center gap-2 text-[calc(12px*var(--tekst-skala))] font-semibold text-blekk-dempet">
+                  {GRUPPENAVN[g]}
+                  <small className="font-normal text-blekk-svak">
+                    {gruppe.length}
+                  </small>
+                </h2>
+                {gruppe.map((r) => (
+                  <Rad
+                    key={`${r.type}-${r.id}`}
+                    rad={r}
+                    valgt={valgt === r.id}
+                    onVelg={() => apne(r)}
                   />
-                  {f.kode}
-                  <span className="tabular-nums text-blekk-svak">
-                    {antallPerFag.get(f.id) ?? 0}
-                  </span>
-                </span>
-              ))}
-            </div>
+                ))}
+              </section>
+            );
+          })}
+          {synlige.length === 0 && (
+            <p className="mt-8 text-center text-brod text-blekk-dempet">
+              Ingenting med dette filteret.
+            </p>
           )}
-        </div>
-      </div>
+
+          {harMentor && (
+            <p className="mx-1 my-[18px] max-w-[640px] text-liten leading-relaxed text-blekk-svak">
+              {MENTORORD.samtaler} ligger her for å samle alle tidsplanene, men
+              er ikke vurderinger: de gir ingen karakter, og notatene vises
+              aldri i faget.
+            </p>
+          )}
+        </>
+      )}
     </div>
   );
 }
 
-const TYPENAVN: Record<Vurderingstype, string> = {
+function Filterbrikke({
+  pa,
+  onKlikk,
+  children,
+}: {
+  pa: boolean;
+  onKlikk: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      onClick={onKlikk}
+      aria-pressed={pa}
+      className={`inline-flex h-[30px] items-center gap-[7px] whitespace-nowrap rounded-full px-3 text-[calc(13px*var(--tekst-skala))] transition-colors duration-200 ${
+        pa
+          ? "bg-blekk text-ark"
+          : "bg-ark text-blekk-dempet shadow-[inset_0_0_0_1px_var(--color-linje)] hover:text-blekk"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+/** «+ Ny ⌄»: de tre vurderingsformene, og under en strek mentorsamtaler. */
+function NyMeny({
+  harMentor,
+  kanVurdere,
+  onVelg,
+}: {
+  harMentor: boolean;
+  kanVurdere: boolean;
+  onVelg: (t: Vurderingstype | "mentor") => void;
+}) {
+  // Menyen legges i body: verktøylinja kapper alt som stikker ut av den.
+  const [apen, setApen] = useState<{ right: number; top: number } | null>(null);
+  const boks = useRef<HTMLDivElement>(null);
+  const menyRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!apen) return;
+    const ut = (e: MouseEvent) => {
+      const m = e.target as Node;
+      if (!boks.current?.contains(m) && !menyRef.current?.contains(m))
+        setApen(null);
+    };
+    const tast = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      setApen(null);
+    };
+    window.addEventListener("mousedown", ut);
+    window.addEventListener("keydown", tast, true);
+    return () => {
+      window.removeEventListener("mousedown", ut);
+      window.removeEventListener("keydown", tast, true);
+    };
+  }, [apen]);
+
+  const valg: [Exclude<Oversiktstype, "mentor">, string, string][] = [
+    ["skriftlig", "Skriftlig prøve", "I en økt. Føres etterpå."],
+    [
+      "muntlig",
+      "Muntlig vurdering",
+      "Med tidsplan, oppgaver som trekkes og rubrikk.",
+    ],
+    ["innlevering", "Innlevering", "Med frist. Kryss av hvem som har levert."],
+  ];
+  const velg = (t: Vurderingstype | "mentor") => {
+    setApen(null);
+    onVelg(t);
+  };
+  return (
+    <div ref={boks} className="relative">
+      <button
+        onClick={(e) => {
+          const r = e.currentTarget.getBoundingClientRect();
+          setApen((a) =>
+            a
+              ? null
+              : { right: window.innerWidth - r.right, top: r.bottom + 8 },
+          );
+        }}
+        aria-expanded={!!apen}
+        className="flex h-8 items-center gap-1.5 rounded-full bg-aksent px-3.5 text-brod font-medium text-ark hover:bg-aksent-mork"
+      >
+        + Ny<span className="text-[11px] opacity-70">⌄</span>
+      </button>
+      {apen &&
+        createPortal(
+          <div
+            ref={menyRef}
+            className="glass-meny ny-meny-inn fixed z-[60] w-[330px] rounded-[16px] p-1.5"
+            style={{ right: apen.right, top: apen.top }}
+          >
+            {kanVurdere &&
+              valg.map(([t, navn, hint]) => (
+                <button
+                  key={t}
+                  onClick={() => velg(t)}
+                  className="flex w-full items-start gap-3 rounded-[11px] p-2.5 text-left hover:bg-flate"
+                >
+                  <Typeikon type={t} />
+                  <span>
+                    <b className="block text-[13.5px] font-medium">{navn}</b>
+                    <small className="mt-0.5 block text-liten leading-snug text-blekk-svak">
+                      {hint}
+                    </small>
+                  </span>
+                </button>
+              ))}
+            {harMentor && (
+              <>
+                {kanVurdere && <div className="mx-2 my-1 h-px bg-linje-svak" />}
+                <button
+                  onClick={() => velg("mentor")}
+                  className="flex w-full items-start gap-3 rounded-[11px] p-2.5 text-left hover:bg-flate"
+                >
+                  <Typeikon type="mentor" />
+                  <span>
+                    <b className="block text-[13.5px] font-medium">
+                      {MENTORORD.samtaler}
+                    </b>
+                    <small className="mt-0.5 block text-liten leading-snug text-blekk-svak">
+                      {MENTORORD.hjelp}
+                    </small>
+                  </span>
+                </button>
+              </>
+            )}
+          </div>,
+          document.body,
+        )}
+    </div>
+  );
+}
+
+/** Ikonet for formen, 30 × 30 som i lerretet. Egne tegninger. */
+function Typeikon({ type }: { type: Oversiktstype }) {
+  return (
+    <span
+      aria-hidden
+      className={`grid h-[30px] w-[30px] shrink-0 place-items-center rounded-[9px] ${
+        type === "mentor"
+          ? "bg-aksent/10 text-aksent"
+          : "bg-flate text-blekk-dempet"
+      }`}
+    >
+      <svg
+        viewBox="0 0 16 16"
+        className="h-4 w-4"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={1.4}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        {type === "skriftlig" && (
+          <>
+            <path d="M4 2.5h6l2.5 2.5v8.5h-8.5z" />
+            <path d="M6 7h4.5M6 9.5h4.5" />
+          </>
+        )}
+        {type === "muntlig" && (
+          <path d="M3 4.5a2 2 0 012-2h6a2 2 0 012 2v4a2 2 0 01-2 2H8l-3 2.5v-2.5a2 2 0 01-2-2z" />
+        )}
+        {type === "innlevering" && (
+          <>
+            <path d="M8 2.5v7M5 6.5l3 3 3-3" />
+            <path d="M3 11v2h10v-2" />
+          </>
+        )}
+        {type === "mentor" && (
+          <>
+            <circle cx="6" cy="6" r="2.2" />
+            <circle cx="11" cy="6.5" r="1.8" />
+            <path d="M2.5 13c.6-2.2 2-3.2 3.5-3.2s2.9 1 3.5 3.2M10 10c1.5 0 2.8.8 3.4 2.6" />
+          </>
+        )}
+      </svg>
+    </span>
+  );
+}
+
+const TYPENAVN: Record<Oversiktstype, string> = {
   skriftlig: "Skriftlig",
   muntlig: "Muntlig",
-  praktisk: "Praktisk",
+  innlevering: "Innlevering",
+  mentor: MENTORORD.samtaler,
 };
 
 function Rad({
-  vurdering,
+  rad: r,
   valgt,
-  kompakt,
   onVelg,
 }: {
-  vurdering: Vurdering;
+  rad: Oversiktsrad;
   valgt: boolean;
-  kompakt: boolean;
   onVelg: () => void;
 }) {
-  const passert =
-    vurdering.frist !== null &&
-    vurdering.frist < iDag() &&
-    vurdering.fort === 0;
-
+  const mentor = r.type === "mentor";
+  const pst = r.av > 0 ? Math.min(100, Math.round((r.ant / r.av) * 100)) : 0;
   return (
     <button
       onClick={onVelg}
-      className={`flex w-full items-center gap-3 border-b border-linje-svak px-2 py-1.5 text-left text-brod ${
-        valgt ? "bg-valgt" : "hover:bg-flate"
-      }`}
+      className={`mb-2 grid w-full grid-cols-[30px_minmax(0,1fr)_170px_150px_24px] items-center gap-3.5 rounded-[14px] px-3.5 py-3 text-left transition-shadow duration-200 ${
+        mentor ? "bg-flate-svak" : "bg-ark"
+      } ${
+        r.pagar
+          ? "shadow-[inset_0_0_0_1.5px_var(--color-aksent),0_6px_18px_rgba(74,61,125,.1)]"
+          : valgt
+            ? "shadow-[inset_0_0_0_1.5px_var(--color-linje-sterk)]"
+            : "shadow-[inset_0_0_0_1px_var(--color-linje-svak)] hover:shadow-[inset_0_0_0_1.5px_var(--color-linje-sterk)]"
+      } ${r.utkast ? "opacity-60" : ""}`}
     >
-      <Fagfirkant farge={vurdering.farge} />
-      <Kappet verdi={vurdering.fagKode} klasse="w-20 shrink-0 font-medium" />
-      <span
-        className={`w-24 shrink-0 tabular-nums ${
-          passert ? "font-medium text-feil" : "text-blekk-dempet"
-        }`}
-      >
-        {vurdering.frist ? kortDato(vurdering.frist) : "ingen frist"}
-      </span>
-      <span
-        className={`flex min-w-0 flex-1 items-center gap-2 ${
-          vurdering.utkast === 1 ? "opacity-60" : ""
-        }`}
-      >
-        <Kappet verdi={vurdering.tittel} klasse="min-w-0" />
-        {vurdering.utkast === 1 && <Utkastmerke />}
-      </span>
-      {!kompakt && (
-        <>
-          <span className="w-20 shrink-0 text-blekk-dempet">
-            {vurdering.type ? TYPENAVN[vurdering.type] : ""}
-          </span>
+      <Typeikon type={r.type} />
+      <div className="min-w-0">
+        <div className="flex min-w-0 items-center gap-2">
           <Kappet
-            verdi={vurdering.skalaNavn}
-            klasse="w-32 shrink-0 text-blekk-svak"
+            verdi={r.tittel}
+            klasse="min-w-0 text-[calc(14px*var(--tekst-skala))] font-medium"
           />
-        </>
-      )}
-      <span className="w-14 shrink-0 text-right tabular-nums text-blekk-dempet">
-        {vurdering.fort === 0 ? (
-          "·"
-        ) : vurdering.fort >= vurdering.elever ? (
-          <Ikon navn="hake" />
-        ) : (
-          `${vurdering.fort}/${vurdering.elever}`
-        )}
-      </span>
+          {r.utkast && <Utkastmerke />}
+        </div>
+        <div className="mt-[3px] flex items-center gap-[7px] text-liten text-blekk-svak">
+          {r.fagKode && <Fagfirkant farge={r.farge} />}
+          <span className="truncate">
+            {(mentor
+              ? ["Mentorgruppa", "ingen karakter"]
+              : [r.fagKode, TYPENAVN[r.type], r.skalaNavn]
+            )
+              .filter(Boolean)
+              .join(" · ")}
+          </span>
+        </div>
+      </div>
+      <div className="min-w-0">
+        <div className="truncate text-[calc(13px*var(--tekst-skala))] tabular-nums">
+          {r.dato}
+        </div>
+        <div className="mt-[3px] flex items-center gap-[7px] text-liten text-blekk-svak">
+          {r.pagar && (
+            <span className="h-[7px] w-[7px] shrink-0 rounded-full bg-[#3f9d49] shadow-[0_0_0_3px_#3f9d4926]" />
+          )}
+          <span className="truncate">{r.info}</span>
+        </div>
+      </div>
+      <div>
+        <div className="h-[5px] overflow-hidden rounded-[3px] bg-flate">
+          <span
+            className={`block h-full rounded-[3px] ${mentor ? "bg-aksent" : "bg-aksent/70"}`}
+            style={{ width: `${pst}%` }}
+          />
+        </div>
+        <div className="mt-[3px] text-liten tabular-nums text-blekk-svak">
+          {r.av > 0 ? `${r.ant} av ${r.av}` : ""}
+        </div>
+      </div>
+      <span className="text-[16px] text-blekk-svakest">›</span>
     </button>
   );
 }
@@ -348,19 +551,21 @@ function Rad({
 function NyVurdering({
   fag,
   skalaer,
+  startType,
   startFagId,
   onLagret,
   onAvbryt,
 }: {
   fag: FagIAr[];
   skalaer: Skala[];
+  startType: Vurderingstype;
   startFagId?: string;
   onLagret: (id: string) => void;
   onAvbryt: () => void;
 }) {
   const [fagId, setFagId] = useState(startFagId ?? fag[0]?.id ?? "");
   const [tittel, setTittel] = useState("");
-  const [type, setType] = useState<Vurderingstype | "">("");
+  const [type, setType] = useState<Vurderingstype | "">(startType);
   const [frist, setFrist] = useState("");
   const [skalaId, setSkalaId] = useState("");
 
@@ -412,7 +617,9 @@ function NyVurdering({
           settVerdi={(v) => setType(v as Vurderingstype | "")}
           valg={[
             { verdi: "", tekst: "Ingen type", dempet: true },
-            ...(["skriftlig", "muntlig", "praktisk"] as const).map((t) => ({
+            ...(
+              ["skriftlig", "muntlig", "innlevering", "praktisk"] as const
+            ).map((t) => ({
               verdi: t,
               tekst: vurderingstype(t),
               ikon: <Vurderingsikon type={t} />,
@@ -458,56 +665,4 @@ function Etikett({ children }: { children: React.ReactNode }) {
       {children}
     </span>
   );
-}
-
-/**
- * Vurderingene gruppert per måned etter frist.
- *
- * De uten frist havner i en egen bolk til slutt — de finnes, men hører ikke
- * hjemme i noen måned, og skal ikke gjemmes bort.
- */
-function perManed(rader: Vurdering[]): [string, Vurdering[]][] {
-  const kart = new Map<string, Vurdering[]>();
-  for (const v of rader) {
-    const m = v.frist ? v.frist.slice(0, 7) : "uten";
-    kart.set(m, [...(kart.get(m) ?? []), v]);
-  }
-  const navn = [...kart.keys()].filter((k) => k !== "uten").sort();
-  if (kart.has("uten")) navn.push("uten");
-  return navn.map((n) => [n, kart.get(n)!]);
-}
-
-/** Vurderingene gruppert per fag, i fagenes rekkefølge; innen fag etter frist. */
-function perFag(rader: Vurdering[], fag: FagIAr[]): [string, Vurdering[]][] {
-  return fag
-    .map(
-      (f) =>
-        [f.id, rader.filter((v) => v.skolearFagId === f.id)] as [
-          string,
-          Vurdering[],
-        ],
-    )
-    .filter(([, l]) => l.length > 0);
-}
-
-function manedsnavn(maned: string): string {
-  const t = new Date(`${maned}-01T00:00:00`).toLocaleDateString("nb-NO", {
-    month: "long",
-    year: "numeric",
-  });
-  return t.charAt(0).toUpperCase() + t.slice(1);
-}
-
-function iDag(): string {
-  const d = new Date();
-  const p = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
-}
-
-function kortDato(dato: string): string {
-  return new Date(`${dato}T00:00:00`).toLocaleDateString("nb-NO", {
-    weekday: "short",
-    day: "2-digit",
-    month: "2-digit",
-  });
 }

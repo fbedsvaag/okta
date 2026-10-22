@@ -9,6 +9,24 @@ den skal bli. Fila eies fritt, i motsetning til SPEC.md.
 Utseendet står i `DESIGN.md`, som beskriver appen slik den er bygget.
 Lerretet (`docs/lerret/`) er fasit for det som er tegnet.
 
+## Vurderinger og samtaler som én fane (22.10, ARBEIDSLISTE 28.0)
+
+- Sidemenyen har «Vurderinger og samtaler» (G V; G S går samme sted).
+  Samtaler er borte som eget punkt, og trekningene står ikke lenger som
+  undermeny. Den gamle samtaleoversikten er fjernet.
+- Oversikten grupperer vurderinger og trekninger etter status: Nå ·
+  Kommende · Til føring · Ferdig (`data/vurderingsoversikt.ts`, testet).
+  En muntlig vurdering med tidsplan er én rad. «Pågår · navn er inne»
+  følger klokka.
+- Filtre for type (Alle · Skriftlig · Muntlig · Innlevering ·
+  Mentorsamtaler) og fagbrikker (flervalg), begge huskes.
+- «+ Ny ⌄»: Skriftlig prøve, Muntlig vurdering, Innlevering, og under en
+  strek Mentorsamtaler (åpner samtaletrekkeren). Innlevering er en ny
+  vurderingstype (ingen migrering, typen er fri tekst).
+- Mentorsamtaler vises bare når du har mentorelever.
+- Klikk åpner vurderingsarket eller samtaletrekkeren, til §28.1 gir
+  muntlig sine egne faner.
+
 ## Klassekartet på et blikk i økta (22.10, ARBEIDSLISTE §27)
 
 - «Klassekart K» i økta åpner et kort over økta (`OktKlassekart.tsx`,
