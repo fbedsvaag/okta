@@ -14,6 +14,7 @@ import { ElevPanel } from "../skjermer/ElevPanel";
 import { ForingArk } from "../skjermer/foring/ForingArk";
 import { MuntligArk } from "../skjermer/muntlig/MuntligArk";
 import { MentorArk } from "../skjermer/mentor/MentorArk";
+import { FagInnstillinger } from "../skjermer/FagInnstillinger";
 import { hentVurderinger, type Vurdering } from "../data/vurderinger";
 import { FagPanel } from "../skjermer/FagPanel";
 import { hentFagIAr, type FagIAr } from "../data/fag";
@@ -46,6 +47,8 @@ type Ark =
   /** mentorsamtalenes runde (29.6) */
   | { type: "runde"; id: string; n: number }
   | { type: "fag"; id: string; n: number }
+  /** faginnstillingene, smalt fra høyre (29.2) */
+  | { type: "faginnstillinger"; id: string; n: number }
   | {
       type: "elev";
       id: string;
@@ -65,6 +68,7 @@ type Api = {
   apneVurdering: (id: string) => void;
   apneRunde: (id: string) => void;
   apneFag: (id: string) => void;
+  apneFagInnstillinger: (id: string) => void;
   apneElev: (
     id: string,
     valg?: { liste?: string[]; startFag?: string },
@@ -182,6 +186,7 @@ export function Arkstabel({
     apneVurdering: (id) => legg({ type: "vurdering", id }),
     apneRunde: (id) => legg({ type: "runde", id }),
     apneFag: (id) => legg({ type: "fag", id }),
+    apneFagInnstillinger: (id) => legg({ type: "faginnstillinger", id }),
     apneElev: (id, valg) => legg({ type: "elev", id, ...valg }),
     gaTil,
     lukk,
@@ -265,6 +270,14 @@ export function Arkstabel({
                       onApneElev={(id) => api.apneElev(id)}
                     />
                   </>
+                ) : ark.type === "faginnstillinger" ? (
+                  <FagInnstillinger
+                    fagId={ark.id}
+                    skolearId={skolearId}
+                    onLukk={lukk}
+                    onEndret={onFagEndret}
+                    onAltOmFaget={() => api.apneFag(ark.id)}
+                  />
                 ) : ark.type === "fag" ? (
                   <FagArk
                     fagId={ark.id}
@@ -360,12 +373,14 @@ function Arkramme({
             // (lerretet «ElevArk»).
             type === "elev"
             ? "glass-matt inset-y-4 right-4 w-[min(880px,calc(100%-32px))] overflow-hidden rounded-[24px]"
-            : type === "vurdering" || type === "runde"
-              ? // Vurderingen er et arbeidsark med tidsplan til venstre
-                // (28.1): bredt, fra høyre.
-                "glass-matt inset-y-4 right-4 w-[min(1180px,calc(100%-32px))] overflow-hidden rounded-[24px]"
-              : // Fag: samme glassark fra høyre (10.4).
-                "glass-matt inset-y-4 right-4 w-[min(672px,calc(100%-32px))] overflow-hidden rounded-[24px]"
+            : type === "faginnstillinger"
+              ? "glass-matt inset-y-4 right-4 w-[min(400px,calc(100%-32px))] overflow-hidden rounded-[22px]"
+              : type === "vurdering" || type === "runde"
+                ? // Vurderingen er et arbeidsark med tidsplan til venstre
+                  // (28.1): bredt, fra høyre.
+                  "glass-matt inset-y-4 right-4 w-[min(1180px,calc(100%-32px))] overflow-hidden rounded-[24px]"
+                : // Fag: samme glassark fra høyre (10.4).
+                  "glass-matt inset-y-4 right-4 w-[min(672px,calc(100%-32px))] overflow-hidden rounded-[24px]"
       } ${paVeiUt || dybde > 0 ? "pointer-events-none" : ""}`}
       style={
         dybde > 0

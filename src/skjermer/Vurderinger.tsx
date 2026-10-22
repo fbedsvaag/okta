@@ -591,7 +591,9 @@ function NyVurdering({
   const [frist, setFrist] = useState("");
   const [skalaId, setSkalaId] = useState("");
 
-  const valgtSkala = skalaId || skalaer[0]?.id || "";
+  // Fagets standard for nye vurderinger (29.2), ellers den første.
+  const fagSkala = fag.find((f) => f.id === fagId)?.vurderingsskalaId;
+  const valgtSkala = skalaId || fagSkala || skalaer[0]?.id || "";
 
   async function lagre() {
     if (!fagId || tittel.trim() === "" || !valgtSkala) return;

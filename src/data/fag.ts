@@ -39,6 +39,12 @@ export type FagIAr = {
   kompetansemal: string | null;
   /** fritekst øverst på årsplanarket */
   arknotat: string | null;
+  /** ukedagene faget har økter, 1 = mandag; null = regnet ut fra øktene */
+  ukedager?: number[] | null;
+  /** skalaen nye vurderinger får; null = den første (29.2) */
+  vurderingsskalaId?: string | null;
+  /** datoen faget ble arkivert, eller null */
+  arkivert?: string | null;
 };
 
 export type Fag = {
@@ -57,8 +63,17 @@ export async function hentFagbank(): Promise<Fag[]> {
   );
 }
 
-export async function hentFagIAr(skolearId: string): Promise<FagIAr[]> {
-  return hent<FagIAr>(
+/**
+ * Fagene i skoleåret. Arkiverte fag (29.2) er ikke med, med mindre de bes
+ * om: de skal ikke stå i menyen, men elevene og øktene deres finnes.
+ */
+export async function hentFagIAr(
+  skolearId: string,
+  medArkiverte = false,
+): Promise<FagIAr[]> {
+  const rader = await hent<
+    Omit<FagIAr, "ukedager"> & { ukedager: string | null }
+  >(
     `SELECT sf.id            AS id,
             f.id             AS fagId,
             -- Det læreren kaller faget: aliaset, ellers koden. Den offisielle
@@ -74,13 +89,25 @@ export async function hentFagIAr(skolearId: string): Promise<FagIAr[]> {
             sf.rom, sf.laerer, sf.kompetansemal, sf.arknotat,
             sf.pause_etter_min AS pauseEtterMin, sf.pause_min AS pauseMin,
             sf.tellende_min AS tellendeMin,
-            sf.skaringsskala_id AS skaringsskalaId
+            sf.skaringsskala_id AS skaringsskalaId,
+            sf.ukedager, sf.vurderingsskala_id AS vurderingsskalaId,
+            sf.arkivert
        FROM skolear_fag sf
        JOIN fag f ON f.id = sf.fag_id AND f.slettet IS NULL
       WHERE sf.skolear_id = $1 AND sf.slettet IS NULL
+        AND ($2 = 1 OR sf.arkivert IS NULL)
       ORDER BY f.kode`,
-    [skolearId],
+    [skolearId, medArkiverte ? 1 : 0],
   );
+  return rader.map((r) => ({
+    ...r,
+    ukedager: r.ukedager
+      ? r.ukedager
+          .split(",")
+          .map(Number)
+          .filter((n) => n >= 1 && n <= 7)
+      : null,
+  }));
 }
 
 /**
@@ -167,6 +194,9 @@ export async function endreFagIAr(
     pause_min?: number | null;
     tellende_min?: number | null;
     skaringsskala_id?: string | null;
+    ukedager?: number[] | null;
+    vurderingsskala_id?: string | null;
+    arkivert?: string | null;
   },
 ): Promise<void> {
   // Nytt standard rom gjelder også øktene som finnes: de uten rom, og de som
@@ -180,7 +210,14 @@ export async function endreFagIAr(
     gammeltRom = f?.rom ?? null;
   }
 
-  await oppdater("skolear_fag", skolearFagId, felter);
+  await oppdater("skolear_fag", skolearFagId, {
+    ...felter,
+    ...(felter.ukedager !== undefined && {
+      ukedager: felter.ukedager?.length
+        ? [...felter.ukedager].sort().join(",")
+        : null,
+    }),
+  });
 
   if (felter.rom !== undefined && felter.rom !== gammeltRom) {
     const okter = await hent<{ id: string }>(

@@ -58,7 +58,7 @@ import { Klassen } from "./skjermer/Klassen";
 import { useApnetOppsettfil } from "./ui/apnetOppsettfil";
 import { G_SNARVEIER, Sidemeny, type Menypunkt } from "./ui/Sidemeny";
 import { Sokevindu } from "./ui/Sokevindu";
-import { ArkKobling, Arkstabel, type ArkApi } from "./ui/Arkstabel";
+import { ArkKobling, Arkstabel, useArk, type ArkApi } from "./ui/Arkstabel";
 import { brukZoom, zoomInn, zoomNull, zoomUt } from "./ui/zoom";
 import { hovedtast, harModifikator, tast as visTast } from "./ui/taster";
 import { useIdag } from "./ui/useIdag";
@@ -453,6 +453,11 @@ export default function App() {
                 />
               ) : undefined
             }
+            hoyre={
+              erOktvisning(visning) && valgtFag ? (
+                <Faginnstillingsknapp fag={valgtFag} />
+              ) : undefined
+            }
             onSpor={setSpor}
             kanTilbake={peker > 0}
             kanFram={peker < steder.length - 1}
@@ -726,12 +731,15 @@ function Verktoylinje({
   visning,
   fagTittel,
   bryter,
+  hoyre,
   onSpor,
   kanTilbake,
   kanFram,
   onTilbake,
   onFram,
 }: {
+  /** ytterst til høyre: ⚙ for faget (29.2) */
+  hoyre?: React.ReactNode;
   visning: Visning;
   /** Økter med et fag valgt: fagfirkant og kode i stedet for «Økter» (11.2) */
   fagTittel?: { kode: string; farge: string | null } | null;
@@ -856,6 +864,7 @@ function Verktoylinje({
               : "overflow-hidden"
         }`}
       />
+      {hoyre && <span className="shrink-0">{hoyre}</span>}
       {(flyter || utvidet) && (
         <button
           onClick={() => setUtvidet((u) => !u)}
@@ -883,6 +892,21 @@ function aktivtPunkt(v: Visning): Menypunkt | "innstillinger" | null {
   if (v === "elever" || v === "elev" || v === "liminn") return "elever";
   if (v === "innstillinger" || v === "skoleruta") return "innstillinger";
   return null;
+}
+
+/** ⚙ på fagsiden: faginnstillingene som ark over der du står (29.2). */
+function Faginnstillingsknapp({ fag }: { fag: FagIAr }) {
+  const ark = useArk();
+  return (
+    <button
+      onClick={() => ark.apneFagInnstillinger(fag.id)}
+      title="Innstillinger for faget"
+      className="flex h-8 items-center gap-1.5 rounded-full border border-linje-sterk bg-ark px-3 text-[13px] hover:bg-flate"
+    >
+      <span aria-hidden>⚙</span>
+      {fag.kode}
+    </button>
+  );
 }
 
 /** Visningene som hører under Økter-fanen. */

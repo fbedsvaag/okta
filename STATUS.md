@@ -9,6 +9,20 @@ den skal bli. Fila eies fritt, i motsetning til SPEC.md.
 Utseendet står i `DESIGN.md`, som beskriver appen slik den er bygget.
 Lerretet (`docs/lerret/`) er fasit for det som er tegnet.
 
+## Faginnstillinger på stedet (22.10, ARBEIDSLISTE 29.2)
+
+- ⚙ ytterst til høyre i verktøylinja på fagsiden åpner et smalt ark fra
+  høyre (`skjermer/FagInnstillinger.tsx`): farge, dager, lengde, rom,
+  skåringsskala, standard for nye vurderinger, læreplan, «Alt om faget»
+  (fagkortet) og «Arkiver faget». Alt lagres med en gang.
+- Innstillinger → Fag åpner det samme arket; fargepaletten der er borte.
+  Arkiverte fag står i en egen gruppe og kan hentes tilbake.
+- Dagene brukes av Året (ferieplassene); er de ikke satt, regnes de ut
+  fra øktene som før. Standardskalaen brukes når en ny vurdering lages.
+- Migrasjon 038: `skolear_fag.ukedager`, `vurderingsskala_id`, `arkivert`.
+  Et arkivert fag er borte fra `hentFagIAr` (menyen, fagvalgene), men
+  elever, økter og vurderinger blir liggende.
+
 ## Karakterer i faget (22.10, ARBEIDSLISTE 29.4)
 
 - Ny fane på fagsiden: Oversikt · Året · Økter · Kalender · Karakterer ·

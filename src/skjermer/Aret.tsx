@@ -149,7 +149,10 @@ export function Aret({ skolear, fag }: { skolear: Skolear; fag: FagIAr }) {
     return () => window.removeEventListener("keydown", tast);
   }, []);
 
-  const stripe = useMemo(() => lagStripe(okter, fridager), [okter, fridager]);
+  const stripe = useMemo(
+    () => lagStripe(okter, fridager, fag.ukedager),
+    [okter, fridager, fag.ukedager],
+  );
   // Tidslinje eller tavle (21.1). Valget huskes, for alle fag.
   const [visning, settVisning] = useLagretInnstilling<"tidslinje" | "tavle">(
     "aret_visning",
@@ -210,6 +213,7 @@ export function Aret({ skolear, fag }: { skolear: Skolear; fag: FagIAr }) {
             (o) => o.skolearFagId === fag.id,
           ),
           fridager,
+          fag.ukedager,
         );
         await tildel(baklengs(endringer), naa);
       },
@@ -363,6 +367,7 @@ export function Aret({ skolear, fag }: { skolear: Skolear; fag: FagIAr }) {
     const naa = lagStripe(
       (await hentOkter(skolear.id)).filter((o) => o.skolearFagId === fag.id),
       fridager,
+      fag.ukedager,
     );
     await bruk(
       nyFordeling(naa, id, spenn.fra, spenn.til),

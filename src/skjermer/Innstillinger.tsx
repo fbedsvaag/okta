@@ -38,7 +38,7 @@ import { LAERERNAVN, SKOLENAVN } from "../data/arsplanark";
 import { Merke } from "../ui/logo";
 import { getVersion } from "@tauri-apps/api/app";
 import { open, confirm as bekreft } from "@tauri-apps/plugin-dialog";
-import { endreFag, leggFagIAr, type FagIAr } from "../data/fag";
+import { hentFagIAr, leggFagIAr, type FagIAr } from "../data/fag";
 import { Bryter, Fagfirkant, Knapp, Ikon } from "../ui/felles";
 import {
   bevegelseshjelp,
@@ -50,7 +50,6 @@ import {
 } from "../ui/plattformord";
 import { invoke } from "@tauri-apps/api/core";
 import { PLANVISNING, lesPlanvisning, type Planvisning } from "../data/oktplan";
-import { bruktAv, Fargepalett } from "../ui/Fargevelger";
 import { useArk } from "../ui/Arkstabel";
 import { IVerktoylinja } from "../ui/Verktoylinje";
 import { useLagretInnstilling } from "../ui/useLagretInnstilling";
@@ -321,7 +320,7 @@ export function Innstillinger({
               />
             )}
             {side === "fag" && (
-              <SideFag fag={fag} onEndret={onEndret} onApneFag={onApneFag} />
+              <SideFag skolearId={skolear.id} fag={fag} onApneFag={onApneFag} />
             )}
             {side === "skalaer" && <Skalaer />}
             {side === "utseende" && <SideUtseende />}
@@ -872,20 +871,56 @@ function SideSkolear({
 // -------------------------------------------------------------------- Fag
 
 function SideFag({
+  skolearId,
   fag,
-  onEndret,
   onApneFag,
 }: {
+  skolearId: string;
   fag: FagIAr[];
-  onEndret: () => void;
   onApneFag?: () => void;
 }) {
   const ark = useArk();
-  const [apen, setApen] = useState<string | null>(null);
+  // Arkiverte fag står for seg, så de kan hentes tilbake (29.2).
+  const [arkiverte, setArkiverte] = useState<FagIAr[]>([]);
+  useEffect(() => {
+    void hentFagIAr(skolearId, true).then((f) =>
+      setArkiverte(f.filter((x) => x.arkivert)),
+    );
+  }, [skolearId, fag]);
+  const rad = (f: FagIAr, i: number) => (
+    <div key={f.id} data-k={`fag-${f.id}`}>
+      <button
+        onClick={() => ark.apneFagInnstillinger(f.id)}
+        className="inn-rad w-full text-left"
+        data-k={i === 0 ? "fagfarge" : undefined}
+      >
+        <span
+          className="h-[22px] w-[22px] shrink-0 rounded-[7px] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.08)]"
+          style={{ background: f.farge ?? "var(--color-linje-sterk)" }}
+        />
+        <span className="min-w-[220px] flex-1">
+          <span className="text-[calc(13.5px*var(--tekst-skala))]">
+            <b className="font-semibold">{f.kode}</b>{" "}
+            <span className="text-blekk-dempet">{f.navn}</span>
+          </span>
+          <span className="mt-[3px] block text-etikett text-blekk-svak">
+            {[
+              f.arstimetall ? `${f.arstimetall} årstimer` : null,
+              f.grepKode ? `Udir ${f.grepKode}` : "uten Udir-kode",
+              f.arkivert ? "arkivert" : null,
+            ]
+              .filter(Boolean)
+              .join(" · ")}
+          </span>
+        </span>
+        <span className="text-[16px] text-blekk-svakest">›</span>
+      </button>
+    </div>
+  );
   return (
     <Side
       tittel="Fag"
-      intro="Fagene dine i år. Klikk fargen for å bytte, eller faget for timer, lengde og skala."
+      intro="Fagene dine i år. Klikk et fag for farge, dager, lengde, rom og skalaer. Det samme arket åpnes med ⚙ på fagsiden."
     >
       <Gruppe tittel="I år">
         {fag.length === 0 && (
@@ -893,50 +928,7 @@ function SideFag({
             tittel={<span className="text-blekk-svak">Ingen fag ennå.</span>}
           />
         )}
-        {fag.map((f, i) => (
-          <div key={f.id} data-k={`fag-${f.id}`}>
-            <div className="inn-rad" data-k={i === 0 ? "fagfarge" : undefined}>
-              <button
-                onClick={() => setApen(apen === f.id ? null : f.id)}
-                title="Bytt farge"
-                aria-expanded={apen === f.id}
-                className="h-[22px] w-[22px] shrink-0 rounded-[7px] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.08)] transition-[background] duration-300"
-                style={{ background: f.farge ?? "var(--color-linje-sterk)" }}
-              />
-              <button
-                onClick={() => ark.apneFag(f.id)}
-                className="min-w-[220px] flex-1 text-left"
-              >
-                <span className="text-[calc(13.5px*var(--tekst-skala))]">
-                  <b className="font-semibold">{f.kode}</b>{" "}
-                  <span className="text-blekk-dempet">{f.navn}</span>
-                </span>
-                <span className="mt-[3px] block text-etikett text-blekk-svak">
-                  {[
-                    f.arstimetall ? `${f.arstimetall} årstimer` : null,
-                    f.grepKode ? `Udir ${f.grepKode}` : "uten Udir-kode",
-                  ]
-                    .filter(Boolean)
-                    .join(" · ")}
-                </span>
-              </button>
-              <span className="text-[16px] text-blekk-svakest">›</span>
-            </div>
-            {apen === f.id && (
-              <div className="flex flex-wrap items-center gap-1.5 pb-3 pl-[50px] pr-4 pt-1">
-                <Fargepalett
-                  farge={f.farge}
-                  brukt={bruktAv(fag, f.id)}
-                  onVelg={async (c) => {
-                    await endreFag(f.fagId, { farge: c });
-                    setApen(null);
-                    onEndret();
-                  }}
-                />
-              </div>
-            )}
-          </div>
-        ))}
+        {fag.map(rad)}
         <Rad
           k="nyfag"
           tittel="Legg til fag"
@@ -949,6 +941,9 @@ function SideFag({
           )}
         </Rad>
       </Gruppe>
+      {arkiverte.length > 0 && (
+        <Gruppe tittel="Arkivert">{arkiverte.map(rad)}</Gruppe>
+      )}
     </Side>
   );
 }

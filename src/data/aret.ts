@@ -37,14 +37,23 @@ function* datoer(fra: string, til: string): Generator<string> {
  * der faget pleier å ha økt (ukedagene faget har økter på), innenfor årets
  * første og siste økt.
  */
-export function lagStripe(okter: Okt[], fridager: Fridag[]): Plass[] {
+export function lagStripe(
+  okter: Okt[],
+  fridager: Fridag[],
+  /** ukedagene satt i faginnstillingene (1 = mandag, 29.2); ellers fra øktene */
+  fagetsDager?: number[] | null,
+): Plass[] {
   const sortert = [...okter].sort(
     (a, b) =>
       a.dato.localeCompare(b.dato) ||
       (a.klokkeslett ?? "").localeCompare(b.klokkeslett ?? ""),
   );
   if (sortert.length === 0) return [];
-  const ukedager = new Set(sortert.map((o) => dag(o.dato)));
+  const ukedager = new Set(
+    fagetsDager?.length
+      ? fagetsDager.map((d) => d % 7)
+      : sortert.map((o) => dag(o.dato)),
+  );
   const medOkt = new Set(sortert.map((o) => o.dato));
   const forste = sortert[0].dato;
   const siste = sortert[sortert.length - 1].dato;
