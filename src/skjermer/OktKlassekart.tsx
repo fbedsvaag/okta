@@ -280,14 +280,15 @@ function Rommet({
               top: py(q.y) - h / 2,
               width: w,
               height: h,
+              // Grupper: hele pulten i gruppens farge, så gruppene står ut.
+              ...(pf && {
+                background: pf,
+                color: lys(pf) ? "#241f33" : "#fff",
+                boxShadow: "none",
+                opacity: b ? 0.45 : 1,
+              }),
             }}
           >
-            {pf && (
-              <span
-                className="absolute bottom-[5px] left-0 top-[5px] w-[3px] rounded-r-sm"
-                style={{ background: pf }}
-              />
-            )}
             <span className="min-w-0 truncate">
               {e
                 ? `${e.fornavn} ${e.etternavn ? `${e.etternavn[0]}.` : ""}`
@@ -301,4 +302,10 @@ function Rommet({
       })}
     </div>
   );
+}
+
+/** Om en farge er så lys at teksten på den må være mørk. */
+function lys(hex: string): boolean {
+  const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+  return 0.299 * r + 0.587 * g + 0.114 * b > 165;
 }
