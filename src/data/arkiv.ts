@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { hent } from "../db";
+import { IKKE_MENTORNOTAT } from "./elevnotat";
 import { skalategn } from "../ui/farger";
 import type { Skolear } from "./skolear";
 
@@ -195,7 +196,8 @@ async function samle(skolearId: string) {
     [skolearId],
   );
 
-  // Møteloggen for året, med samtalenotatene (de bor i elevnotat, §4.10).
+  // Møteloggen for året, med de faglige samtalenotatene (de bor i
+  // elevnotat, §4.10). Notatene fra mentorsamtalene er holdt utenfor.
   const notater = await hent<NotatRad>(
     `SELECT n.elev_id AS elevId, e.fornavn, e.etternavn, n.dato,
             COALESCE(NULLIF(f.alias, ''), f.kode) AS fagKode,
@@ -206,6 +208,8 @@ async function samle(skolearId: string) {
        LEFT JOIN skolear_fag sf ON sf.id = n.skolear_fag_id
        LEFT JOIN fag f ON f.id = sf.fag_id
       WHERE n.slettet IS NULL AND n.skolear_id = $1
+        -- Mentorsamtalenes notater er bare lærerens: aldri i arkivet (29.6).
+        AND ${IKKE_MENTORNOTAT("n")}
       ORDER BY n.dato, n.opprettet`,
     [skolearId],
   );

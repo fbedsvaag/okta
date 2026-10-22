@@ -13,6 +13,7 @@ import { OktPanel } from "../skjermer/OktPanel";
 import { ElevPanel } from "../skjermer/ElevPanel";
 import { ForingArk } from "../skjermer/foring/ForingArk";
 import { MuntligArk } from "../skjermer/muntlig/MuntligArk";
+import { MentorArk } from "../skjermer/mentor/MentorArk";
 import { hentVurderinger, type Vurdering } from "../data/vurderinger";
 import { FagPanel } from "../skjermer/FagPanel";
 import { hentFagIAr, type FagIAr } from "../data/fag";
@@ -42,6 +43,8 @@ type Ark =
       modus?: Oktmodus;
     }
   | { type: "vurdering"; id: string; n: number }
+  /** mentorsamtalenes runde (29.6) */
+  | { type: "runde"; id: string; n: number }
   | { type: "fag"; id: string; n: number }
   | {
       type: "elev";
@@ -60,6 +63,7 @@ type Api = {
   /** «skaring» fra I dag; ellers åpner økta etter tidspunktet (11.3) */
   apneOkt: (id: string, modus?: Oktmodus) => void;
   apneVurdering: (id: string) => void;
+  apneRunde: (id: string) => void;
   apneFag: (id: string) => void;
   apneElev: (
     id: string,
@@ -176,6 +180,7 @@ export function Arkstabel({
   const api: Api = {
     apneOkt: (id, modus) => legg({ type: "okt", id, modus }),
     apneVurdering: (id) => legg({ type: "vurdering", id }),
+    apneRunde: (id) => legg({ type: "runde", id }),
     apneFag: (id) => legg({ type: "fag", id }),
     apneElev: (id, valg) => legg({ type: "elev", id, ...valg }),
     gaTil,
@@ -250,6 +255,16 @@ export function Arkstabel({
                     onApneElev={(id) => api.apneElev(id)}
                     onApneSamtaler={(fagId) => gaTil("samtaler", fagId)}
                   />
+                ) : ark.type === "runde" ? (
+                  <>
+                    <Arkhode underst={i === 0} onLukk={lukk} />
+                    <MentorArk
+                      rundeId={ark.id}
+                      skolearId={skolearId}
+                      onLukk={lukk}
+                      onApneElev={(id) => api.apneElev(id)}
+                    />
+                  </>
                 ) : ark.type === "fag" ? (
                   <FagArk
                     fagId={ark.id}
@@ -345,7 +360,7 @@ function Arkramme({
             // (lerretet «ElevArk»).
             type === "elev"
             ? "glass-matt inset-y-4 right-4 w-[min(880px,calc(100%-32px))] overflow-hidden rounded-[24px]"
-            : type === "vurdering"
+            : type === "vurdering" || type === "runde"
               ? // Vurderingen er et arbeidsark med tidsplan til venstre
                 // (28.1): bredt, fra høyre.
                 "glass-matt inset-y-4 right-4 w-[min(1180px,calc(100%-32px))] overflow-hidden rounded-[24px]"

@@ -9,6 +9,30 @@ den skal bli. Fila eies fritt, i motsetning til SPEC.md.
 Utseendet står i `DESIGN.md`, som beskriver appen slik den er bygget.
 Lerretet (`docs/lerret/`) er fasit for det som er tegnet.
 
+## Mentorsamtaler i ny stil (22.10, ARBEIDSLISTE 29.6)
+
+- Mentorsamtalene er **runder** («Mentorsamtaler høst», «Oppstartssamtaler»)
+  og åpnes i et ark: Planlegg · Gjennomfør · Oppsummering
+  (`skjermer/mentor/MentorArk.tsx`). «+ Ny → Mentorsamtaler» lager en ny
+  runde. Ingen karakter.
+- Planlegg bruker samme generator og tidsplanliste som muntlig
+  (`skjermer/tidsplan/`), og har samtaleguiden for runden.
+- Gjennomfør: guiden krysses av, notat (samme editor; elevnotat med
+  samtalens id, så det står i møteloggen), «Fra forrige samtale» og «Til
+  neste gang» (mål som krysses av), «Trives med · vil sitte med» (lagres som
+  elevønske), «med foresatt / eleven alene», og en liten oversikt (fravær,
+  innsats, ikke levert).
+- Migrasjon 036: `samtalerunde`, `samtalemal`, `samtale.med_foresatt` og
+  `guide_stilt`. Mentordager som fantes, er samlet i én runde per skoleår.
+- **Personvern:** notatene fra mentorsamtalene er tatt ut av arkivet og
+  «Eksporter elevens data» (de var med før). Møteloggnotater skrevet på
+  elevkortet er fortsatt med. `personvern.test.ts` sjekker arkivet,
+  elevfila og oppsettfila med hemmelige merker, og at ingen utgang leser
+  ønsker, mål, relasjoner eller samtalenotater. Kalenderen har bare fornavn
+  og klokkeslett, som før.
+- Den gamle samtaletrekkeren brukes fortsatt for faglige trekninger uten
+  vurdering. Sidemenyen har den ikke lenger.
+
 ## Føring av skriftlig prøve og innlevering (22.10, ARBEIDSLISTE 29.5)
 
 - Alle vurderinger som ikke er muntlige, åpnes i føringsarket

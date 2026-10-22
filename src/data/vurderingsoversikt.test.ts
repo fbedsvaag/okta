@@ -27,6 +27,7 @@ const v = (o: Partial<Vurdering>): Vurdering => ({
 const dag = (o: Partial<Samtaledag>): Samtaledag => ({
   id: "d",
   skolearId: "a",
+  samtalerundeId: null,
   skolearFagId: "f1",
   fagKode: "MFL1",
   vurderingId: null,

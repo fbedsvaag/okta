@@ -20,7 +20,14 @@ import {
   type Samtalelinje,
   type Statusgruppe,
 } from "../data/vurderingsoversikt";
-import type { Trekning } from "../data/samtale";
+import { hentSamtaledager, type Samtaledag } from "../data/samtale";
+import {
+  hentRunder,
+  opprettRunde,
+  rundenavn,
+  type Samtalerunde,
+} from "../data/samtalerunde";
+import { iDag } from "./tidsplan/Generator";
 import type { FagIAr } from "../data/fag";
 import type { Skala } from "../skala";
 import { Fagfirkant, Felt, Kappet, Knapp, Tomtilstand } from "../ui/felles";
@@ -49,18 +56,18 @@ import {
 export function Vurderinger({
   skolearId,
   fag,
-  trekninger,
   onApneTrekning,
 }: {
   skolearId: string;
   fag: FagIAr[];
-  trekninger: Trekning[];
-  /** fag-id eller «mentor» */
+  /** fag-id eller «mentor»: samtaletrekkeren for det som ikke har eget ark */
   onApneTrekning: (id: string) => void;
 }) {
   const [vurderinger, setVurderinger] = useState<Vurdering[]>([]);
   const [lastet, setLastet] = useState(false);
   const [linjer, setLinjer] = useState<Samtalelinje[]>([]);
+  const [dager, setDager] = useState<Samtaledag[]>([]);
+  const [runder, setRunder] = useState<Samtalerunde[]>([]);
   const [harMentor, setHarMentor] = useState(false);
   const [skalaer, setSkalaer] = useState<Skala[]>([]);
   const [valgt, setValgt] = useState<string | null>(null);
@@ -89,7 +96,16 @@ export function Vurderinger({
   const ark = useArk();
 
   async function last() {
-    setVurderinger(await hentVurderinger(skolearId));
+    const [v, d, l, r] = await Promise.all([
+      hentVurderinger(skolearId),
+      hentSamtaledager(skolearId),
+      hentSamtalelinjer(skolearId),
+      hentRunder(skolearId),
+    ]);
+    setVurderinger(v);
+    setDager(d);
+    setLinjer(l);
+    setRunder(r);
     setLastet(true);
   }
 
@@ -98,9 +114,6 @@ export function Vurderinger({
     void hentVurderingsskalaer().then(setSkalaer);
     void harMentorelever(skolearId).then(setHarMentor);
   }, [skolearId]);
-  useEffect(() => {
-    void hentSamtalelinjer(skolearId).then(setLinjer);
-  }, [skolearId, trekninger]);
   // Vurderingen åpnes som et ark over lista; endres den der, skal lista
   // vise det med en gang.
   useEffect(() => lyttVurderinger(() => void last()), [skolearId]);
@@ -115,12 +128,13 @@ export function Vurderinger({
     () =>
       byggOversikt({
         vurderinger,
-        dager: trekninger.flatMap((t) => t.dager),
+        dager,
         linjer,
         harMentor,
+        runder,
         naa,
       }),
-    [vurderinger, trekninger, linjer, harMentor, naa],
+    [vurderinger, dager, linjer, harMentor, runder, naa],
   );
   const fagSett = useMemo(
     () => new Set(fagValg.filter((id) => fag.some((f) => f.id === id))),
@@ -131,6 +145,7 @@ export function Vurderinger({
   function apne(r: Oversiktsrad) {
     setValgt(r.id);
     if ("vurdering" in r.apner) ark.apneVurdering(r.apner.vurdering);
+    else if ("runde" in r.apner) ark.apneRunde(r.apner.runde);
     else onApneTrekning(r.apner.trekning);
   }
 
@@ -152,7 +167,14 @@ export function Vurderinger({
         <NyMeny
           harMentor={harMentor}
           kanVurdere={fag.length > 0}
-          onVelg={(t) => (t === "mentor" ? onApneTrekning("mentor") : setNy(t))}
+          onVelg={(t) =>
+            t === "mentor"
+              ? void opprettRunde(
+                  skolearId,
+                  rundenavn(iDag(), MENTORORD.samtaler),
+                ).then((id) => ark.apneRunde(id))
+              : setNy(t)
+          }
         />
       </IVerktoylinja>
 

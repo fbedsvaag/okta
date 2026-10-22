@@ -34,7 +34,7 @@ export type Oversiktsrad = {
   /** vurderings-id, eller «fag-id»/«mentor» for en trekning uten vurdering */
   id: string;
   /** hva et klikk åpner */
-  apner: { vurdering: string } | { trekning: string };
+  apner: { vurdering: string } | { trekning: string } | { runde: string };
   type: Oversiktstype;
   tittel: string;
   skolearFagId: string | null;
@@ -179,12 +179,15 @@ export function byggOversikt({
   dager,
   linjer,
   harMentor,
+  runder = [],
   naa,
 }: {
   vurderinger: Vurdering[];
   dager: Samtaledag[];
   linjer: Samtalelinje[];
   harMentor: boolean;
+  /** mentorsamtalenes runder (29.6), også de uten dager ennå */
+  runder?: { id: string; navn: string }[];
   naa: Date;
 }): Oversiktsrad[] {
   const idag = isoDato(naa);
@@ -315,13 +318,21 @@ export function byggOversikt({
     const gruppe = gruppeFor(fra, til, idag, ferdig && idag > til, true);
     const inne = gruppe === "na" ? inneNa(l, idag, kl) : undefined;
     const antDager = new Set(t.dager.map((d) => d.dato).filter(Boolean)).size;
+    const runde = t.samtalerundeId
+      ? runder.find((r) => r.id === t.samtalerundeId)
+      : undefined;
+    if (t.samtalerundeId && !runde) continue;
     rader.push({
-      id: t.skolearFagId ?? "mentor",
-      apner: { trekning: t.skolearFagId ?? "mentor" },
+      id: runde?.id ?? t.skolearFagId ?? "mentor",
+      apner: runde
+        ? { runde: runde.id }
+        : { trekning: t.skolearFagId ?? "mentor" },
       type: mentor ? "mentor" : "muntlig",
-      tittel: mentor
-        ? MENTORORD.samtaler
-        : `Samtaler i ${t.fagKode ?? "faget"}`,
+      tittel: runde
+        ? runde.navn
+        : mentor
+          ? MENTORORD.samtaler
+          : `Samtaler i ${t.fagKode ?? "faget"}`,
       skolearFagId: t.skolearFagId,
       fagKode: t.fagKode,
       farge: null,
@@ -346,6 +357,30 @@ export function byggOversikt({
       utkast: false,
     });
   }
+
+  // En runde uten dager ennå står blant de kommende.
+  if (harMentor)
+    for (const r of runder) {
+      if (rader.some((x) => x.id === r.id)) continue;
+      rader.push({
+        id: r.id,
+        apner: { runde: r.id },
+        type: "mentor",
+        tittel: r.navn,
+        skolearFagId: null,
+        fagKode: null,
+        farge: null,
+        skalaNavn: null,
+        gruppe: "kommende",
+        dato: "",
+        sortering: "",
+        info: "Ikke satt opp ennå",
+        pagar: false,
+        ant: 0,
+        av: 0,
+        utkast: false,
+      });
+    }
 
   // Gruppene i fast rekkefølge; det ferdige nyeste først, resten etter
   // dato, de uten dato sist.

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   hentSkalaverdier,
   hentVurderingElever,
@@ -6,13 +6,7 @@ import {
   type VurderingElev,
 } from "../../data/vurderinger";
 import {
-  endreSamtaledag,
   hentSamtaledager,
-  hentSamtaler,
-  lagreTrekning,
-  tiderITrekning,
-  tilKlokke,
-  tilMin,
   type Samtale,
   type Samtaledag,
 } from "../../data/samtale";
@@ -24,12 +18,17 @@ import {
   type Muntligresultat,
   type Oppgavekort,
 } from "../../data/muntlig";
-import { leggUtTidsplan, type Tidsplandag } from "../../data/tidsplan";
+import {
+  lesTidsplan,
+  leggUtTidsplan,
+  type Tidsplandag,
+} from "../../data/tidsplan";
 import { lyttVurderinger, varsleVurderinger } from "../../data/endringer";
 import type { Skalaverdi } from "../../skala";
 import { Bryter, Fagfirkant } from "../../ui/felles";
 import { kortDag } from "../../data/vurderingsoversikt";
-import { Tidsplanliste } from "./Tidsplanliste";
+import { Tidsplanliste } from "../tidsplan/Tidsplanliste";
+import { useLagrePlan } from "../tidsplan/bruk";
 import { Planlegg } from "./Planlegg";
 import { Gjennomfor } from "./Gjennomfor";
 import { Resultater } from "./Resultater";
@@ -91,46 +90,13 @@ export function MuntligArk({
     const dager = alleDager
       .filter((d) => d.vurderingId === vurdering.id)
       .sort((a, b) => (a.dato || "9").localeCompare(b.dato || "9"));
-    const alle = (await Promise.all(dager.map((d) => hentSamtaler(d.id))))
-      .map((s, i) => s.map((x) => ({ x, dato: dager[i].dato })))
-      .flat()
-      .sort(
-        (a, b) =>
-          a.dato.localeCompare(b.dato) ||
-          a.x.klokkeslett.localeCompare(b.x.klokkeslett),
-      );
+    const plan = await lesTidsplan(dager, elever);
     // En tidsplan som er trukket i samtaletrekkeren, har sine egne tider.
     // De gjelder til noe settes her.
-    if (!oppsett.egneTider) {
-      const t = tiderITrekning(
-        dager.map((d) =>
-          alle
-            .filter(({ x }) => x.samtaledagId === d.id)
-            .map(({ x }) => ({
-              fra: x.klokkeslett,
-              til: tilKlokke(tilMin(x.klokkeslett) + x.varighetMin),
-            })),
-        ),
-      );
-      if (t) {
-        oppsett.samtaleMin = t.minutter;
-        oppsett.pauseMin = t.pause;
-      }
+    if (!oppsett.egneTider && plan.tider) {
+      oppsett.samtaleMin = plan.tider.minutter;
+      oppsett.pauseMin = plan.tider.pause;
     }
-    const samtale = new Map<string, Samtale>();
-    for (const { x } of alle) {
-      const f = samtale.get(x.elevId);
-      if (!f || (!f.motte && x.motte)) samtale.set(x.elevId, x);
-    }
-    const iFaget = new Set(elever.map((e) => e.elevId));
-    const rekke = [
-      ...new Set(alle.map(({ x }) => x.elevId).filter((id) => iFaget.has(id))),
-    ];
-    // De som ikke står i planen (nye i faget), legges til sist.
-    for (const e of [...elever].sort((a, b) =>
-      a.fornavn.localeCompare(b.fornavn, "nb"),
-    ))
-      if (!rekke.includes(e.elevId)) rekke.push(e.elevId);
     setData({
       vurdering,
       skolearId,
@@ -138,11 +104,11 @@ export function MuntligArk({
       kort,
       elever,
       dager,
-      samtale,
+      samtale: plan.samtale,
       resultater,
       verdier,
-      rekke,
-      harPlan: alle.length > 0,
+      rekke: plan.rekke,
+      harPlan: plan.harPlan,
     });
   }, [vurdering, skolearId]);
 
@@ -213,39 +179,16 @@ export function MuntligArk({
   }, [valgt, gjeldende]);
   const valgtElev = valgt ?? gjeldende;
 
-  // Lagringene etter hverandre, så raske klikk på − / + ikke krysser.
-  const ko = useRef(Promise.resolve());
-  const lagrePlan = useCallback(
-    (
-      rekke: string[],
-      tema: (elevId: string) => string | null,
-      dager: Tidsplandag[] = tpDager,
-      min = data?.oppsett.samtaleMin ?? 12,
-      pause = data?.oppsett.pauseMin ?? 3,
-    ) => {
-      // Vises med en gang; basen følger etter.
-      setData((d) => (d ? { ...d, rekke, harPlan: dager.length > 0 } : d));
-      ko.current = ko.current.then(async () => {
-        const ut = leggUtTidsplan(rekke, dager, min, pause);
-        for (const d of ut) {
-          await lagreTrekning(
-            d.dag.id,
-            d.rader.map((r) => ({
-              elevId: r.elevId,
-              klokkeslett: r.fra,
-              varighetMin: min,
-              tema: tema(r.elevId),
-            })),
-          );
-          await endreSamtaledag(d.dag.id, { til: d.slutt ?? d.dag.fra });
-        }
-        varsleVurderinger();
-        await last();
-      });
-      return ko.current;
+  const lagrePlan = useLagrePlan({
+    dager: tpDager,
+    min: data?.oppsett.samtaleMin ?? 12,
+    pause: data?.oppsett.pauseMin ?? 3,
+    vis: (rekke, harPlan) => setData((d) => (d ? { ...d, rekke, harPlan } : d)),
+    etter: async () => {
+      varsleVurderinger();
+      await last();
     },
-    [tpDager, data?.oppsett.samtaleMin, data?.oppsett.pauseMin, last],
-  );
+  });
 
   if (!data || !modus) return null;
   const v = vurdering;
@@ -296,9 +239,32 @@ export function MuntligArk({
       <div className="grid min-h-0 flex-1 grid-cols-[340px_minmax(0,1fr)] gap-[26px] px-6">
         <div className="min-h-0 overflow-auto pb-5">
           <Tidsplanliste
-            data={data}
             utlagt={utlagt}
-            modus={modus}
+            navn={
+              new Map(
+                data.elever.map((e) => [
+                  e.elevId,
+                  `${e.fornavn} ${e.etternavn}`,
+                ]),
+              )
+            }
+            min={data.oppsett.samtaleMin}
+            pause={data.oppsett.pauseMin}
+            kanDra={modus === "plan" && data.harPlan}
+            rad={(id) => {
+              const s = data.samtale.get(id);
+              const r = data.resultater.get(id);
+              const kar = r?.skalaverdiId
+                ? data.verdier.find((x) => x.id === r.skalaverdiId)
+                : undefined;
+              const borte = s?.motte === false;
+              return {
+                under: borte ? "møtte ikke" : (s?.tema ?? ""),
+                merke: kar?.kode ?? (borte ? "–" : ""),
+                fylt: !!kar,
+                borte,
+              };
+            }}
             valgt={modus === "gj" ? valgtElev : null}
             onVelg={(id) => {
               setValgt(id);

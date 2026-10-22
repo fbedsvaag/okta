@@ -1,4 +1,14 @@
-import { leggUtDagen, tilKlokke, tilMin } from "./samtale";
+import {
+  endreSamtaledag,
+  hentSamtaler,
+  lagreTrekning,
+  leggUtDagen,
+  tiderITrekning,
+  tilKlokke,
+  tilMin,
+  type Samtale,
+  type Samtaledag,
+} from "./samtale";
 
 /**
  * Tidsplangeneratoren (ARBEIDSLISTE 28.2b): elevene i en rekkefølge lagt ut
@@ -112,4 +122,77 @@ export function framdrift(
   const til = tilMin(rad.til);
   if (m < fra || m >= til) return null;
   return (m - fra) / (til - fra);
+}
+
+// ------------------------------------------------------------------ basen
+
+/** Tidsplanen slik den står i basen, for en serie samtaledager. */
+export type Lesttidsplan = {
+  /** elev → samtalen (den der eleven møtte, om det finnes flere) */
+  samtale: Map<string, Samtale>;
+  /** rekkefølgen: planen først, elevene som mangler i den, alfabetisk sist */
+  rekke: string[];
+  harPlan: boolean;
+  /** minutter og pause slik planen er lagt ut, når det finnes en */
+  tider: { minutter: number; pause: number } | null;
+};
+
+export async function lesTidsplan(
+  dager: Samtaledag[],
+  elever: { elevId: string; fornavn: string }[],
+): Promise<Lesttidsplan> {
+  const alle = (await Promise.all(dager.map((d) => hentSamtaler(d.id))))
+    .map((s, i) => s.map((x) => ({ x, dato: dager[i].dato })))
+    .flat()
+    .sort(
+      (a, b) =>
+        a.dato.localeCompare(b.dato) ||
+        a.x.klokkeslett.localeCompare(b.x.klokkeslett),
+    );
+  const tider = tiderITrekning(
+    dager.map((d) =>
+      alle
+        .filter(({ x }) => x.samtaledagId === d.id)
+        .map(({ x }) => ({
+          fra: x.klokkeslett,
+          til: tilKlokke(tilMin(x.klokkeslett) + x.varighetMin),
+        })),
+    ),
+  );
+  const samtale = new Map<string, Samtale>();
+  for (const { x } of alle) {
+    const f = samtale.get(x.elevId);
+    if (!f || (!f.motte && x.motte)) samtale.set(x.elevId, x);
+  }
+  const med = new Set(elever.map((e) => e.elevId));
+  const rekke = [
+    ...new Set(alle.map(({ x }) => x.elevId).filter((id) => med.has(id))),
+  ];
+  for (const e of [...elever].sort((a, b) =>
+    a.fornavn.localeCompare(b.fornavn, "nb"),
+  ))
+    if (!rekke.includes(e.elevId)) rekke.push(e.elevId);
+  return { samtale, rekke, harPlan: alle.length > 0, tider };
+}
+
+/** Skriver rekkefølgen ut på dagene, med samtaletrekkerens lagring. */
+export async function skrivTidsplan(
+  rekke: string[],
+  dager: Tidsplandag[],
+  min: number,
+  pause: number,
+  tema: (elevId: string) => string | null,
+): Promise<void> {
+  for (const d of leggUtTidsplan(rekke, dager, min, pause)) {
+    await lagreTrekning(
+      d.dag.id,
+      d.rader.map((r) => ({
+        elevId: r.elevId,
+        klokkeslett: r.fra,
+        varighetMin: min,
+        tema: tema(r.elevId),
+      })),
+    );
+    await endreSamtaledag(d.dag.id, { til: d.slutt ?? d.dag.fra });
+  }
 }

@@ -9,7 +9,11 @@ import {
 import { visToast } from "./ui/Toast";
 import { useSveip } from "./ui/sveip";
 import { hentKart, type Kart } from "./data/klassekart";
-import { lyttElever, lyttKlassekart } from "./data/endringer";
+import {
+  lyttElever,
+  lyttKlassekart,
+  varsleVurderinger,
+} from "./data/endringer";
 import { Klassekart } from "./skjermer/Klassekart";
 import { brukTema } from "./ui/tema";
 import { brukGlass } from "./ui/glass";
@@ -32,11 +36,6 @@ import { daglingKopi } from "./data/sikkerhetskopi";
 import { startAuto as startCaldav } from "./data/caldav";
 import { skrivArkiv, skrivArkivTilBackup } from "./data/arkiv";
 import { hentFagIAr, type FagIAr } from "./data/fag";
-import {
-  grupperTrekninger,
-  hentSamtaledager,
-  type Trekning,
-} from "./data/samtale";
 import { Verktoylinjespor } from "./ui/Verktoylinje";
 import { Veiviser } from "./skjermer/Veiviser";
 import { IDag } from "./skjermer/IDag";
@@ -111,16 +110,10 @@ export default function App() {
   // Faget Økter står filtrert på ("" = alle). Bor her, ikke i Økter, fordi
   // undermenyen i sidemenyen og ⌘1–9 velger det (DESIGN.md §6).
   const [oktFag, setOktFag] = useState("");
-  // Samtaletrekningene, til «Vurderinger og samtaler» (28.0).
-  const [trekninger, setTrekninger] = useState<Trekning[]>([]);
   // Klassekartene i året, til undermenyen under Klassekart (SPEC §4.11).
   const [kartene, setKartene] = useState<Kart[]>([]);
   // Plassen i verktøylinja som skjermene kan fylle (ui/Verktoylinje).
   const [spor, setSpor] = useState<HTMLElement | null>(null);
-
-  const lastTrekninger = useCallback(async (skolearId: string) => {
-    setTrekninger(grupperTrekninger(await hentSamtaledager(skolearId)));
-  }, []);
 
   // Navigasjonshistorikk, som i Obsidian: hvert sted du har vært ligger i en
   // liste, og pilene flytter markøren i den. Går du et nytt sted midt i
@@ -299,10 +292,6 @@ export default function App() {
       const ar = await hentAktivtSkolear();
       setSkolear(ar);
       setFag(ar ? await hentFagIAr(ar.id) : []);
-      if (ar)
-        await lastTrekninger(ar.id).catch((e) =>
-          console.error("trekninger:", e),
-        );
 
       // Arkivet (§8) skrives ved oppstart, sammen med sikkerhetskopien.
       // En eksport man må huske på er ikke backup. Feiler den, skal ikke
@@ -320,7 +309,7 @@ export default function App() {
     } finally {
       setLaster(false);
     }
-  }, [lastTrekninger]);
+  }, []);
 
   useEffect(() => {
     void last();
@@ -542,7 +531,7 @@ export default function App() {
                     skolear={skolear}
                     fag={fag}
                     startFagId={apneId ?? undefined}
-                    onEndret={() => void lastTrekninger(skolear.id)}
+                    onEndret={varsleVurderinger}
                   />
                 )}
 
@@ -683,7 +672,6 @@ export default function App() {
                     key={versjon}
                     skolearId={skolear.id}
                     fag={fag}
-                    trekninger={trekninger}
                     onApneTrekning={(id) => ga("samtaler", id)}
                   />
                 )}

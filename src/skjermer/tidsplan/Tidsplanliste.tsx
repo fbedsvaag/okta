@@ -1,29 +1,47 @@
 import { flytt, type Utlagtdag } from "../../data/tidsplan";
 import { nyPlass, useDra, type Mal } from "../../ui/dra";
 import { langDato } from "../samtaler/deler";
-import type { Modus, Muntligdata } from "./MuntligArk";
+import type { ReactNode } from "react";
+
+/** Det som står på raden for en elev, utenom tida og navnet. */
+export type Radinfo = {
+  /** liten linje under navnet: oppgaven, «med foresatt», «møtte ikke» */
+  under: string;
+  /** ruta til høyre: karakteren, ✓, eller tom */
+  merke: ReactNode;
+  /** merket er fylt (en karakter, en hake) */
+  fylt: boolean;
+  /** eleven møtte ikke: navnet streket over */
+  borte: boolean;
+};
 
 /**
- * Tidsplanen til venstre i muntlig vurdering (28.2b, 28.3). I Planlegg kan
- * rekkefølgen dras (⋮⋮) med samtaletimeplanens dra-mekanikk, og tidene
- * følger med. I Gjennomfør er dra skrudd av, og et klikk velger eleven.
+ * Tidsplanen til venstre i muntlig vurdering og mentorsamtalene (28.2b,
+ * 28.3, 29.6). I Planlegg kan rekkefølgen dras (⋮⋮) med samtaletimeplanens
+ * dra-mekanikk, og tidene følger med. Ellers er dra skrudd av, og et klikk
+ * velger eleven.
  */
 export function Tidsplanliste({
-  data,
   utlagt,
-  modus,
+  navn,
+  min,
+  pause,
+  kanDra,
   valgt,
+  rad,
   onVelg,
   onFlytt,
 }: {
-  data: Muntligdata;
   utlagt: Utlagtdag[];
-  modus: Modus;
+  navn: Map<string, string>;
+  min: number;
+  pause: number;
+  kanDra: boolean;
   valgt: string | null;
+  rad: (elevId: string) => Radinfo;
   onVelg: (elevId: string) => void;
   onFlytt: (rekke: string[]) => void;
 }) {
-  const kanDra = modus === "plan" && data.harPlan;
   const flat = utlagt.flatMap((d) => d.rader.map((r) => r.elevId));
   const start = (dag: number) =>
     utlagt.slice(0, dag).reduce((n, d) => n + d.rader.length, 0);
@@ -38,11 +56,6 @@ export function Tidsplanliste({
       if (a !== b) onFlytt(flytt(flat, a, Math.max(0, b)));
     },
   });
-
-  const navn = new Map(
-    data.elever.map((e) => [e.elevId, `${e.fornavn} ${e.etternavn}`]),
-  );
-  const verdi = new Map(data.verdier.map((v) => [v.id, v]));
 
   if (utlagt.length === 0)
     return (
@@ -62,17 +75,13 @@ export function Tidsplanliste({
             </b>
             <span className="truncate text-liten text-blekk-svak tabular-nums">
               {d.dag.fra}
-              {d.slutt ? `–${d.slutt}` : ""} · {data.oppsett.samtaleMin} min
-              {data.oppsett.pauseMin
-                ? ` + ${data.oppsett.pauseMin} min pause`
-                : ""}
+              {d.slutt ? `–${d.slutt}` : ""} · {min} min
+              {pause ? ` + ${pause} min pause` : ""}
             </span>
           </div>
           {d.rader.map((r, ri) => {
-            const s = data.samtale.get(r.elevId);
-            const res = data.resultater.get(r.elevId);
-            const kar = res?.skalaverdiId ? verdi.get(res.skalaverdiId) : null;
-            const borte = s?.motte === false;
+            const info = rad(r.elevId);
+            const borte = info.borte;
             const erValgt = valgt === r.elevId;
             // Lunsjen står foran den første samtalen etter den.
             const lunsjHer =
@@ -124,24 +133,24 @@ export function Tidsplanliste({
                       className={`min-w-0 truncate ${
                         borte
                           ? "text-blekk-svakest line-through"
-                          : kar
+                          : info.fylt
                             ? "text-blekk-dempet"
                             : ""
                       }`}
                     >
                       {navn.get(r.elevId) ?? "?"}
                       <small className="mt-px block truncate text-[11.5px] text-blekk-svak no-underline">
-                        {borte ? "møtte ikke" : (s?.tema ?? "")}
+                        {info.under}
                       </small>
                     </span>
                     <span
                       className={`inline-grid h-7 w-7 place-items-center rounded-lg text-[13px] font-semibold ${
-                        kar
+                        info.fylt
                           ? "bg-flate"
                           : "shadow-[inset_0_0_0_1.5px_var(--color-linje)] [border-style:dashed]"
                       }`}
                     >
-                      {kar?.kode ?? (borte ? "–" : "")}
+                      {info.merke}
                     </span>
                   </div>
                 </div>
@@ -150,7 +159,7 @@ export function Tidsplanliste({
           })}
         </div>
       ))}
-      {modus === "plan" && data.harPlan && (
+      {kanDra && (
         <p className="mx-1.5 my-3 text-liten text-blekk-svak">
           Dra i ⋮⋮ for å endre rekkefølgen. Tidene følger med.
         </p>

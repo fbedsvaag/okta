@@ -36,6 +36,16 @@ export type Elevnotat = {
   samtaleId: string | null;
 };
 
+/**
+ * SQL-vilkår: notatet kommer ikke fra en mentorsamtale. Notatene fra
+ * mentorsamtalene er bare lærerens og skal aldri med i eksport, arkiv,
+ * utskrift eller noe som deles (29.6). `n` er aliaset for elevnotat.
+ */
+export const IKKE_MENTORNOTAT = (n = "n") =>
+  `NOT EXISTS (SELECT 1 FROM samtale ms
+                 JOIN samtaledag md ON md.id = ms.samtaledag_id
+                WHERE ms.id = ${n}.samtale_id AND md.skolear_fag_id IS NULL)`;
+
 type Rad = Omit<Elevnotat, "skalFolgesOpp"> & { skalFolgesOpp: number };
 
 /**

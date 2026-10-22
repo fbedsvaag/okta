@@ -176,3 +176,23 @@ describe("i basen (migrasjon 034)", () => {
     });
   });
 });
+
+describe("mål fra samtale til samtale (29.6)", () => {
+  it("deler målene i fra forrige og til neste", async () => {
+    const { delMal } = await import("./samtalerunde");
+    const m = (id: string, samtaleId: string | null) => ({
+      id,
+      elevId: "e",
+      samtaleId,
+      tekst: id,
+      nadd: null,
+      dato: null,
+    });
+    const { fraForrige, tilNeste } = delMal(
+      [m("gammelt", "s1"), m("nytt", "s2"), m("uten", null)],
+      "s2",
+    );
+    expect(tilNeste.map((x) => x.id)).toEqual(["nytt"]);
+    expect(fraForrige.map((x) => x.id)).toEqual(["gammelt", "uten"]);
+  });
+});

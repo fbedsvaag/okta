@@ -546,6 +546,8 @@ export function vektetRekkefolge(
  */
 export type Trekning = {
   skolearFagId: string | null;
+  /** mentorsamtalenes runde, når trekningen er en (29.6) */
+  samtalerundeId: string | null;
   fagKode: string | null;
   dager: Samtaledag[];
   antall: number;
@@ -556,7 +558,13 @@ export type Trekning = {
 export function grupperTrekninger(dager: Samtaledag[]): Trekning[] {
   const kart = new Map<string, Samtaledag[]>();
   for (const d of dager) {
-    const nokkel = d.skolearFagId ?? "";
+    // En vurdering eller en runde er én trekning; ellers faget, og
+    // mentordagene uten runde for seg.
+    const nokkel = d.vurderingId
+      ? `v:${d.vurderingId}`
+      : d.samtalerundeId
+        ? `r:${d.samtalerundeId}`
+        : (d.skolearFagId ?? "");
     kart.set(nokkel, [...(kart.get(nokkel) ?? []), d]);
   }
 
@@ -566,6 +574,7 @@ export function grupperTrekninger(dager: Samtaledag[]): Trekning[] {
       const medDato = sortert.filter((d) => d.dato !== "");
       return {
         skolearFagId: sortert[0].skolearFagId,
+        samtalerundeId: sortert[0].samtalerundeId,
         fagKode: sortert[0].fagKode,
         dager: sortert,
         antall: sortert.reduce((n, d) => n + d.antall, 0),
@@ -758,6 +767,8 @@ export type Samtaledag = {
   skolearFagId: string | null;
   fagKode: string | null;
   vurderingId: string | null;
+  /** mentorsamtalenes runde (29.6); null for faglige samtaler */
+  samtalerundeId: string | null;
   /**
    * Økta dagen ligger i. Da er øktas start og slutt rammen, og timene er
    * allerede talt som økt. null = en egen dag, eller økta er slettet.
@@ -793,6 +804,7 @@ export async function hentSamtaledager(
             d.skolear_fag_id AS skolearFagId,
             COALESCE(NULLIF(f.alias, ''), f.kode) AS fagKode,
             d.vurdering_id   AS vurderingId,
+            d.samtalerunde_id AS samtalerundeId,
             o.id             AS oktId,
             d.dato, d.fra, d.til,
             d.lunsj_fra      AS lunsjFra,
@@ -833,6 +845,7 @@ export async function opprettSamtaledag(
   felter: {
     skolearFagId: string | null;
     vurderingId?: string | null;
+    samtalerundeId?: string | null;
     dato: string;
     fra: string;
     til: string;
@@ -844,6 +857,7 @@ export async function opprettSamtaledag(
     skolear_id: skolearId,
     skolear_fag_id: felter.skolearFagId,
     vurdering_id: felter.vurderingId ?? null,
+    samtalerunde_id: felter.samtalerundeId ?? null,
     okt_id: null,
     dato: felter.dato,
     fra: felter.fra,

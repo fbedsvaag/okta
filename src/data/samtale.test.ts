@@ -613,6 +613,7 @@ describe("grupperTrekninger", () => {
     id: Math.random().toString(36).slice(2),
     skolearId: "ar",
     skolearFagId: null,
+    samtalerundeId: null,
     fagKode: null,
     vurderingId: null,
     oktId: null,

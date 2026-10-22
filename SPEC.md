@@ -1064,6 +1064,13 @@ med faste fraser per vurdering, karakter med tast, ⌘↵ neste) eller «Tabell�
 (rask føring, lim inn en kolonne fra Excel). Borte hentes fra fraværet i
 økta. «Kopier til Teams» gir karakter og kommentar per elev.
 
+**Mentorsamtaler** (29.6) er runder med dager, samtaleguide og tider, i et
+ark med Planlegg · Gjennomfør · Oppsummering. Under samtalen: guiden,
+notat, mål fra forrige gang og til neste, «trives med» (elevønske), med
+foresatt eller ikke. Ingen karakter. Notatene, målene og ønskene er bare
+lærerens: de kommer aldri med i fag, eksport, arkiv, utskrift, Teams,
+kalender eller oppsettfil.
+
 ### 4.7 Notater og møtelogg
 
 Ikke en egen skjerm — en bolk nederst på elevsiden (§4.5), under heatmap og

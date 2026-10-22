@@ -1,14 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import {
-  endreSamtaledag,
-  opprettSamtaledag,
-  slettSamtaledag,
-  slettTrekning,
-  stokk,
-  tildelTema,
-  tilKlokke,
-  tilMin,
-} from "../../data/samtale";
+import { opprettSamtaledag, slettTrekning } from "../../data/samtale";
 import {
   endreOppgavekort,
   hentRubrikkmaler,
@@ -21,11 +12,7 @@ import {
   type Rubrikk,
   type Rubrikkmal,
 } from "../../data/muntlig";
-import {
-  oppsummering,
-  type Tidsplandag,
-  type Utlagtdag,
-} from "../../data/tidsplan";
+import type { Utlagtdag } from "../../data/tidsplan";
 import { nyId } from "../../db";
 import { confirm as bekreft } from "@tauri-apps/plugin-dialog";
 import {
@@ -38,14 +25,7 @@ import type { Skala } from "../../skala";
 import { Felter } from "../Vurderingsfelter";
 import { Bryter } from "../../ui/felles";
 import type { Muntligdata } from "./MuntligArk";
-
-type LagrePlan = (
-  rekke: string[],
-  tema: (elevId: string) => string | null,
-  dager?: Tidsplandag[],
-  min?: number,
-  pause?: number,
-) => Promise<void>;
+import { Generator, iDag, type LagrePlan } from "../tidsplan/Generator";
 
 /**
  * Planlegg (28.2, 28.2b, 28.3b): tidsplanen, hvordan det vurderes, og
@@ -69,10 +49,36 @@ export function Planlegg({
   return (
     <div>
       <Generator
-        data={data}
+        kilde={{
+          dager: data.dager,
+          elever: data.elever,
+          rekke: data.rekke,
+          harPlan: data.harPlan,
+          min: data.oppsett.samtaleMin,
+          pause: data.oppsett.pauseMin,
+          tema: (id) => data.samtale.get(id)?.tema ?? null,
+        }}
         utlagt={utlagt}
         lagrePlan={lagrePlan}
         last={last}
+        opprettDag={(d) =>
+          opprettSamtaledag(data.skolearId, {
+            skolearFagId: data.vurdering.skolearFagId,
+            vurderingId: data.vurdering.id,
+            til: d.fra,
+            ...d,
+          })
+        }
+        settTider={(min, pause) =>
+          settMuntlig(data.vurdering.id, { samtaleMin: min, pauseMin: pause })
+        }
+        standardDato={data.vurdering.oktDato ?? data.vurdering.frist ?? iDag()}
+        tom={`Legg til en dag, så legges de ${data.elever.length} elevene i ${data.vurdering.fagKode} ut med tider.`}
+        trekk={{
+          na: data.oppsett.trekkNa,
+          titler: data.kort.map((k) => k.tittel).filter((t) => t.trim()),
+          settNa: (na) => settMuntlig(data.vurdering.id, { trekkNa: na }),
+        }}
       />
       <SlikVurdererDu vurdering={data.vurdering} oppsett={data.oppsett} />
       <Oppgaver data={data} />
@@ -122,307 +128,6 @@ function OmVurderingen({
         Slett vurderingen og tidsplanen
       </button>
     </section>
-  );
-}
-
-// ------------------------------------------------------------- generator
-
-function Generator({
-  data,
-  utlagt,
-  lagrePlan,
-  last,
-}: {
-  data: Muntligdata;
-  utlagt: Utlagtdag[];
-  lagrePlan: LagrePlan;
-  last: () => Promise<void>;
-}) {
-  const { oppsett: o, vurdering: v } = data;
-  const tp = (): Tidsplandag[] =>
-    data.dager.map((d) => ({
-      id: d.id,
-      dato: d.dato,
-      fra: d.fra,
-      lunsjFra: d.lunsjFra,
-      lunsjMin: d.lunsjMin,
-    }));
-  const titler = data.kort.map((k) => k.tittel).filter((t) => t.trim());
-  const temaNa = (rekke: string[]) => {
-    if (!o.trekkNa) return (id: string) => data.samtale.get(id)?.tema ?? null;
-    const kart = tildelTema(rekke, titler);
-    return (id: string) => kart.get(id) ?? null;
-  };
-  const beholdTema = (id: string) => data.samtale.get(id)?.tema ?? null;
-  const lunsj = data.dager.find((d) => d.lunsjFra) ?? null;
-  const lunsjFra = lunsj?.lunsjFra ?? null;
-  const lunsjMin = lunsj?.lunsjMin ?? 30;
-
-  async function nyDag() {
-    const siste = data.dager[data.dager.length - 1];
-    const dato = siste?.dato
-      ? plussDag(siste.dato)
-      : (v.oktDato ?? v.frist ?? iDag());
-    const fra = siste?.fra ?? "08:30";
-    const id = await opprettSamtaledag(data.skolearId, {
-      skolearFagId: v.skolearFagId,
-      vurderingId: v.id,
-      dato,
-      fra,
-      til: fra,
-      lunsjFra,
-      lunsjMin: lunsjFra ? lunsjMin : null,
-    });
-    const dager = [
-      ...tp(),
-      { id, dato, fra, lunsjFra, lunsjMin: lunsjFra ? lunsjMin : null },
-    ];
-    // Første dag: elevene legges ut i rekkefølgen som står, alfabetisk.
-    await lagrePlan(
-      data.rekke,
-      data.harPlan ? beholdTema : temaNa(data.rekke),
-      dager,
-    );
-  }
-
-  async function endreDag(id: string, felter: Partial<Tidsplandag>) {
-    await endreSamtaledag(id, {
-      ...(felter.dato !== undefined && { dato: felter.dato }),
-      ...(felter.fra !== undefined && { fra: felter.fra }),
-    });
-    const dager = tp().map((d) => (d.id === id ? { ...d, ...felter } : d));
-    if (data.harPlan) await lagrePlan(data.rekke, beholdTema, dager);
-    else await last();
-  }
-
-  async function fjernDag(id: string) {
-    await slettSamtaledag(id);
-    const dager = tp().filter((d) => d.id !== id);
-    if (dager.length > 0) await lagrePlan(data.rekke, beholdTema, dager);
-    else await last();
-  }
-
-  async function settLunsj(fra: string | null, min: number) {
-    for (const d of data.dager)
-      await endreSamtaledag(d.id, {
-        lunsj_fra: fra,
-        lunsj_min: fra ? min : null,
-      });
-    const dager = tp().map((d) => ({
-      ...d,
-      lunsjFra: fra,
-      lunsjMin: fra ? min : null,
-    }));
-    if (data.harPlan) await lagrePlan(data.rekke, beholdTema, dager);
-    else await last();
-  }
-
-  async function settTider(min: number, pause: number) {
-    await settMuntlig(v.id, { samtaleMin: min, pauseMin: pause });
-    if (data.harPlan)
-      await lagrePlan(data.rekke, beholdTema, undefined, min, pause);
-  }
-
-  return (
-    <section className="mb-5 rounded-[14px] p-4 shadow-[inset_0_0_0_1px_var(--color-linje-svak)]">
-      <div className="mb-3 flex items-center gap-2">
-        <h3 className="text-[13px] font-semibold">Tidsplan</h3>
-        <span className="text-liten tabular-nums text-blekk-svak">
-          {data.dager.length > 0 ? oppsummering(utlagt) : ""}
-        </span>
-      </div>
-
-      <div className="mb-3 flex flex-wrap items-center gap-2">
-        <span className="w-[86px] text-liten text-blekk-dempet">Dager</span>
-        {data.dager.map((d) => (
-          <span
-            key={d.id}
-            className="inline-flex items-center gap-1.5 rounded-full bg-flate-svak py-0.5 pl-2.5 pr-1 text-liten"
-          >
-            <input
-              type="date"
-              value={d.dato}
-              onChange={(e) => void endreDag(d.id, { dato: e.target.value })}
-              className="bg-transparent tabular-nums outline-none"
-            />
-            <span className="text-blekk-svak">fra</span>
-            <Steg
-              verdi={d.fra}
-              onMinus={() =>
-                void endreDag(d.id, { fra: tilKlokke(tilMin(d.fra) - 5) })
-              }
-              onPluss={() =>
-                void endreDag(d.id, { fra: tilKlokke(tilMin(d.fra) + 5) })
-              }
-            />
-            <button
-              onClick={() => void fjernDag(d.id)}
-              title="Fjern dagen"
-              className="px-1 text-[15px] text-blekk-svakest hover:text-feil"
-            >
-              ×
-            </button>
-          </span>
-        ))}
-        <button
-          onClick={() => void nyDag()}
-          className="text-[13px] text-aksent hover:underline"
-        >
-          + dag
-        </button>
-      </div>
-
-      <div className="mb-3 flex flex-wrap items-center gap-x-5 gap-y-2">
-        <Felt navn="Per elev">
-          <Steg
-            verdi={`${o.samtaleMin} min`}
-            onMinus={() =>
-              void settTider(Math.max(1, o.samtaleMin - 1), o.pauseMin)
-            }
-            onPluss={() => void settTider(o.samtaleMin + 1, o.pauseMin)}
-          />
-        </Felt>
-        <Felt navn="Pause">
-          <Steg
-            verdi={`${o.pauseMin} min`}
-            onMinus={() =>
-              void settTider(o.samtaleMin, Math.max(0, o.pauseMin - 1))
-            }
-            onPluss={() => void settTider(o.samtaleMin, o.pauseMin + 1)}
-          />
-        </Felt>
-        <Felt navn="Lunsj">
-          {lunsjFra ? (
-            <>
-              <Steg
-                verdi={lunsjFra}
-                onMinus={() =>
-                  void settLunsj(tilKlokke(tilMin(lunsjFra) - 5), lunsjMin)
-                }
-                onPluss={() =>
-                  void settLunsj(tilKlokke(tilMin(lunsjFra) + 5), lunsjMin)
-                }
-              />
-              <button
-                onClick={() => void settLunsj(null, lunsjMin)}
-                title="Ingen lunsj"
-                className="px-1 text-[15px] text-blekk-svakest hover:text-feil"
-              >
-                ×
-              </button>
-            </>
-          ) : (
-            <button
-              disabled={data.dager.length === 0}
-              onClick={() => void settLunsj("11:30", 30)}
-              className="text-[13px] text-aksent hover:underline disabled:opacity-40"
-            >
-              + lunsj
-            </button>
-          )}
-        </Felt>
-        {lunsjFra && (
-          <Felt navn="Lunsjlengde">
-            <Steg
-              verdi={`${lunsjMin} min`}
-              onMinus={() =>
-                void settLunsj(lunsjFra, Math.max(5, lunsjMin - 5))
-              }
-              onPluss={() => void settLunsj(lunsjFra, lunsjMin + 5)}
-            />
-          </Felt>
-        )}
-      </div>
-
-      <div className="flex flex-wrap items-center gap-2">
-        <button
-          disabled={data.dager.length === 0}
-          onClick={() => {
-            const rekke = stokk(data.elever.map((e) => e.elevId));
-            void lagrePlan(rekke, temaNa(rekke));
-          }}
-          className="h-[30px] rounded-full bg-aksent px-3.5 text-[13px] font-medium text-ark hover:bg-aksent-mork disabled:opacity-40"
-        >
-          🎲 Trekk rekkefølge
-        </button>
-        <button
-          disabled={data.dager.length === 0}
-          onClick={() => {
-            const rekke = [...data.elever]
-              .sort((a, b) => a.fornavn.localeCompare(b.fornavn, "nb"))
-              .map((e) => e.elevId);
-            void lagrePlan(rekke, data.harPlan ? beholdTema : temaNa(rekke));
-          }}
-          className="h-[30px] rounded-full border border-linje-sterk bg-ark px-3 text-[13px] hover:bg-flate disabled:opacity-40"
-        >
-          Alfabetisk
-        </button>
-        <span className="flex-1" />
-        <span className="text-liten text-blekk-dempet">Oppgaven trekkes</span>
-        <Bryter
-          storrelse="liten"
-          verdi={o.trekkNa ? "na" : "under"}
-          settVerdi={async (x) => {
-            const na = x === "na";
-            await settMuntlig(v.id, { trekkNa: na });
-            // Trekkes den nå, får de som mangler oppgave en med en gang.
-            if (na && data.harPlan && titler.length > 0) {
-              const kart = tildelTema(data.rekke, titler);
-              await lagrePlan(
-                data.rekke,
-                (id) => data.samtale.get(id)?.tema ?? kart.get(id) ?? null,
-              );
-            }
-          }}
-          valg={[
-            { id: "na", navn: "nå, for alle" },
-            { id: "under", navn: "under samtalen" },
-          ]}
-        />
-      </div>
-      {data.dager.length === 0 && (
-        <p className="mt-3 text-liten text-blekk-svak">
-          Legg til en dag, så legges de {data.elever.length} elevene i{" "}
-          {v.fagKode} ut med tider.
-        </p>
-      )}
-    </section>
-  );
-}
-
-function Felt({ navn, children }: { navn: string; children: React.ReactNode }) {
-  return (
-    <span className="inline-flex items-center gap-1.5">
-      <span className="text-liten text-blekk-dempet">{navn}</span>
-      {children}
-    </span>
-  );
-}
-
-/** − verdi + */
-function Steg({
-  verdi,
-  onMinus,
-  onPluss,
-}: {
-  verdi: string;
-  onMinus: () => void;
-  onPluss: () => void;
-}) {
-  const k =
-    "grid h-6 w-6 place-items-center rounded-full text-blekk-dempet hover:bg-flate hover:text-blekk";
-  return (
-    <span className="inline-flex items-center gap-0.5 rounded-full bg-ark px-0.5 shadow-[inset_0_0_0_1px_var(--color-linje)]">
-      <button onClick={onMinus} className={k} aria-label="Mindre">
-        −
-      </button>
-      <span className="min-w-[46px] text-center text-[13px] tabular-nums">
-        {verdi}
-      </span>
-      <button onClick={onPluss} className={k} aria-label="Mer">
-        +
-      </button>
-    </span>
   );
 }
 
@@ -911,18 +616,4 @@ function Oppgaver({ data }: { data: Muntligdata }) {
       </div>
     </section>
   );
-}
-
-function plussDag(iso: string): string {
-  const d = new Date(`${iso}T12:00:00`);
-  d.setDate(d.getDate() + 1);
-  // Over helga.
-  while (d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate() + 1);
-  return d.toISOString().slice(0, 10);
-}
-
-function iDag(): string {
-  const d = new Date();
-  const p = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
 }
