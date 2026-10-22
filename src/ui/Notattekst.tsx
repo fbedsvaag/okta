@@ -1,10 +1,10 @@
-import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { Notat } from "./Notat";
+import { useEffect, useLayoutEffect, useRef, type ReactNode } from "react";
 import {
   enterIListe,
   pakkInn,
   rykk,
   tolkMarkdown,
-  vekslBoks,
   type Del,
   type Punkt,
   type Redigering,
@@ -226,14 +226,15 @@ export function MarkdownSkriv({
 }
 
 /**
- * Formatert visning som blir til et skrivefelt ved klikk, og lagrer når
- * feltet forlates. Tomt: står som skrivefelt med plassholder med en gang.
+ * Notatfeltet (29.1): den felles editoren (ui/Notat), som skriver rett på
+ * flaten og lagrer Markdown. Lagrer når feltet forlates, og litt etter at
+ * du sluttet å skrive — så en avkrysning i en sjekkliste også lagres.
  */
 export function Markdownfelt({
   verdi,
   onLagre,
   plassholder,
-  minRader,
+  minRader = 3,
 }: {
   verdi: string | null;
   /** tom tekst lagres som null */
@@ -241,50 +242,29 @@ export function Markdownfelt({
   plassholder?: string;
   minRader?: number;
 }) {
-  const [skriver, setSkriver] = useState(false);
-  const [utkast, setUtkast] = useState(verdi ?? "");
-
-  if (skriver || !verdi) {
-    return (
-      <MarkdownSkriv
-        verdi={skriver ? utkast : (verdi ?? "")}
-        autoFocus={skriver}
-        minRader={minRader}
-        plassholder={plassholder}
-        onEndre={(v) => {
-          if (!skriver) setSkriver(true);
-          setUtkast(v);
-        }}
-        onForlat={() => {
-          setSkriver(false);
-          const ny = utkast.trim() || null;
-          if (ny !== verdi) void onLagre(ny);
-        }}
-      />
-    );
-  }
-
+  const lagret = useRef(verdi ?? "");
+  const tid = useRef(0);
+  useEffect(() => {
+    lagret.current = verdi ?? "";
+  }, [verdi]);
+  useEffect(() => () => window.clearTimeout(tid.current), []);
+  const lagre = (md: string) => {
+    window.clearTimeout(tid.current);
+    const ny = md.trim() || null;
+    if ((ny ?? "") === (lagret.current.trim() || "")) return;
+    lagret.current = ny ?? "";
+    void onLagre(ny);
+  };
   return (
-    <div
-      role="button"
-      tabIndex={0}
-      title="Klikk for å skrive"
-      onClick={() => {
-        setUtkast(verdi);
-        setSkriver(true);
+    <Notat
+      verdi={verdi ?? ""}
+      plassholder={plassholder}
+      minHoyde={minRader * 24}
+      onEndre={(md) => {
+        window.clearTimeout(tid.current);
+        tid.current = window.setTimeout(() => lagre(md), 900);
       }}
-      onKeyDown={(e) => {
-        if (e.key === "Enter") {
-          setUtkast(verdi);
-          setSkriver(true);
-        }
-      }}
-      className="cursor-text rounded-vanlig border border-transparent px-2 py-1.5 hover:border-linje"
-    >
-      <Markdown
-        tekst={verdi}
-        onVekslBoks={(linje) => void onLagre(vekslBoks(verdi, linje))}
-      />
-    </div>
+      onForlat={lagre}
+    />
   );
 }

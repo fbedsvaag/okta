@@ -1,3 +1,4 @@
+import { Notat } from "../ui/Notat";
 import { useEffect, useRef, useState } from "react";
 import {
   endreElevnotat,
@@ -358,16 +359,19 @@ export function Samtalenotat({
           </div>
         </div>
 
-        <textarea
-          autoFocus
-          value={tekst}
-          onChange={(e) => {
-            setTekst(e.target.value);
-            planlegg(e.target.value);
-          }}
-          placeholder="Notat fra samtalen …"
-          className="uten-fokusring min-h-0 flex-1 resize-none border-y border-linje-medium/70 bg-transparent px-6 py-4 text-medium leading-relaxed outline-none placeholder:text-blekk-svak"
-        />
+        {/* Den felles editoren (29.1): skriver rett på flaten, Markdown. */}
+        <div className="min-h-0 flex-1 overflow-auto border-y border-linje-medium/70 px-6 py-4 text-medium leading-relaxed">
+          <Notat
+            autoFocus
+            verdi={tekst}
+            plassholder="Notat fra samtalen … ( / for meny )"
+            minHoyde={160}
+            onEndre={(t) => {
+              setTekst(t);
+              planlegg(t);
+            }}
+          />
+        </div>
 
         <div className="flex flex-wrap items-center gap-3 px-6 py-3">
           {vurdering ? (
