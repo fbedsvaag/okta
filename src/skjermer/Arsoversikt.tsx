@@ -44,7 +44,7 @@ import { useMinutt } from "./Oktlive";
  * skjerm legger høyrekolonnen seg under.
  */
 /**
- * Tallene til flisene på I dag (20.5): timeregnskap, elever som glipper og
+ * Tallene til delene på I dag (20.5): timeregnskap, elever som glipper og
  * vurderingsfrister, hentet samlet. Før var det fire kall som hver satte sin
  * egen state, og oversikten flyttet på seg fire ganger ved åpning.
  *
@@ -77,8 +77,8 @@ export function useOversikt(skolearId: string): Oversikt | null {
   return data;
 }
 
-/** Inne i en flis på I dag: panelet viser bare innholdet (flisen har tittelen). */
-export const IFlis = createContext(false);
+/** Inne i en del på I dag: panelet viser bare innholdet (delen har tittelen). */
+export const IDel = createContext(false);
 
 export type Oversikt = {
   timer: Fagtimer[];
@@ -107,8 +107,8 @@ function Panel({
   children: React.ReactNode;
 }) {
   const [apen, setApen] = useApen(nokkel);
-  const iFlis = useContext(IFlis);
-  if (iFlis) return <>{children}</>;
+  const iDel = useContext(IDel);
+  if (iDel) return <>{children}</>;
   return (
     <section>
       <div

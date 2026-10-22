@@ -1,13 +1,22 @@
 # Status
 
-Pr. 2026-10-20, versjon 0.4.0 (utgitt 20.10). Beskriver hvor appen faktisk står, ikke hva
+Pr. 2026-10-22 (§28–29 bygget; siste utgivelse 0.5). Beskriver hvor appen faktisk står, ikke hva
 den skal bli. Fila eies fritt, i motsetning til SPEC.md.
 
-**769 tester i `npm test` og 25 i `cargo test`, alle grønne på Mac.
-`tsc --noEmit` er ren. `npm run build` går gjennom. 29 migrasjoner.** Testene kjører på GitHub ved hver push (`tester.yml`, Mac).
+**876 tester i `npm test` og 22 i `cargo test` (Mac), alle grønne.
+`tsc --noEmit` er ren. `npm run build` går gjennom. 39 migrasjoner.** Testene kjører på GitHub ved hver push (`tester.yml`, Mac).
 
 Utseendet står i `DESIGN.md`, som beskriver appen slik den er bygget.
 Lerretet (`docs/lerret/`) er fasit for det som er tegnet.
+
+## Fliser ut (22.10, ARBEIDSLISTE 29.9)
+
+- I dag har ikke lenger fliser: delene står som overskrift og en tynn
+  strek rett på flaten, med høyde etter innholdet. Enkel og Full er som
+  før. Ordet «flis» er borte fra appen og SPEC.
+- Sikkerhetskopi-testen er tatt på nytt med hele skjemaet (034–039):
+  `sikkerhetskopi.db.test.ts` (VACUUM INTO, integrity_check,
+  foreign_key_check, radene i de nye tabellene).
 
 ## Følg opp og tomme sider (22.10, ARBEIDSLISTE 29.7 og 29.8)
 

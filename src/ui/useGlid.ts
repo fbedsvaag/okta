@@ -6,7 +6,7 @@ const KURVE = "cubic-bezier(0.22, 1, 0.36, 1)";
 
 /**
  * Elementene merket `data-glid="<nøkkel>"` i `beholder` glir fra der de sto
- * til ny plass når `noekkel` endres (FLIP). Brukes når flisene på I dag
+ * til ny plass når `noekkel` endres (FLIP). Brukes når delene på I dag
  * bytter oppsett eller Uka blir kompakt (20.5).
  */
 export function useGlid(
@@ -39,7 +39,7 @@ export function useGlid(
     forrige.current = naa;
   }, [noekkel]);
 
-  // Plassene etter hver tegning, så neste glid starter fra der flisene
+  // Plassene etter hver tegning, så neste glid starter fra der delene
   // faktisk står (data som lastes inn, flytter dem også).
   useLayoutEffect(() => {
     const b = beholder.current;

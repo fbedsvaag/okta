@@ -14,7 +14,7 @@ import { useArk } from "../ui/Arkstabel";
 import {
   Glipper,
   Gjoremalsliste,
-  IFlis,
+  IDel,
   Timeregnskap,
   Vurderingsfrister,
   useOversikt,
@@ -152,8 +152,8 @@ export function IDag({
           handler om (§4.10).
         */}
         {samtaler.length > 0 && (
-          <div className="idag-flis mb-4">
-            <h3 className="idag-flis-tittel">Samtaler</h3>
+          <div className="idag-del mb-4">
+            <h3 className="idag-del-tittel">Samtaler</h3>
             <p className="py-1 text-brod">
               {dagenssetning(
                 samtaler,
@@ -194,10 +194,10 @@ export function IDag({
         {/*
           Rutenettet fra lerretet IDagOppsett: fire kolonner, faste rader,
           ingen hull. Enkel er de tre øverst; Full legger til Uka og raden
-          under. Flisene glir rolig når oppsettet endres.
+          under. Delene glir rolig når oppsettet endres.
         */}
         <div ref={rutenett} className="idag-rutenett">
-          <Flis
+          <Del
             id="okter"
             tittel="Dagens økter"
             kol="1 / span 2"
@@ -209,8 +209,8 @@ export function IDag({
               onApne={apne}
               onSeUka={() => onGaTil("okter")}
             />
-          </Flis>
-          <Flis
+          </Del>
+          <Del
             id="folgopp"
             tittel="Følg opp i dag"
             under="fra forrige økt"
@@ -233,14 +233,14 @@ export function IDag({
               fag={fag}
               onApneElev={(id) => ark.apneElev(id)}
             />
-          </Flis>
-          <Flis id="gjoremal" tittel="Gjøremål" kol="3 / span 2" rad="2">
+          </Del>
+          <Del id="gjoremal" tittel="Gjøremål" kol="3 / span 2" rad="2">
             <Gjoremalsliste skolearId={skolear.id} />
-          </Flis>
+          </Del>
 
           {full && (
             <>
-              <Flis
+              <Del
                 id="uka"
                 tittel="Uka"
                 kol="1 / span 4"
@@ -268,8 +268,8 @@ export function IDag({
                     onApneOkt={apne}
                   />
                 )}
-              </Flis>
-              <Flis
+              </Del>
+              <Del
                 id="frister"
                 tittel="Vurderingsfrister"
                 kol="1"
@@ -279,8 +279,8 @@ export function IDag({
                   rader={data?.kommende ?? []}
                   onApne={(id) => ark.apneVurdering(id)}
                 />
-              </Flis>
-              <Flis
+              </Del>
+              <Del
                 id="glipper"
                 tittel="Elever som glipper"
                 under="siste 10 økter"
@@ -291,15 +291,15 @@ export function IDag({
                   elever={data?.glipp ?? []}
                   onApne={(id) => ark.apneElev(id)}
                 />
-              </Flis>
-              <Flis
+              </Del>
+              <Del
                 id="innsats"
                 tittel="Innsats over tid"
                 kol="4"
                 rad={String(nederst)}
               >
-                <Innsatsflis rader={rader} fag={fag} />
-              </Flis>
+                <Innsatsdel rader={rader} fag={fag} />
+              </Del>
             </>
           )}
         </div>
@@ -329,8 +329,8 @@ export function IDag({
   );
 }
 
-/** En flis i rutenettet på I dag (20.5): tittel, og innholdet som ruller. */
-function Flis({
+/** En del i rutenettet på I dag (20.5, 29.9): tittel, og innholdet som ruller. */
+function Del({
   id,
   tittel,
   under,
@@ -350,16 +350,16 @@ function Flis({
   return (
     <section
       data-glid={id}
-      className="idag-flis"
+      className="idag-del"
       style={{ gridColumn: kol, gridRow: rad }}
     >
-      <h3 className="idag-flis-tittel">
+      <h3 className="idag-del-tittel">
         {tittel}
         {under && <small>{under}</small>}
         {handling && <span className="ml-auto">{handling}</span>}
       </h3>
       <div className="scrollbar-skjult min-h-0 flex-1 overflow-auto">
-        <IFlis.Provider value={true}>{children}</IFlis.Provider>
+        <IDel.Provider value={true}>{children}</IDel.Provider>
       </div>
     </section>
   );
@@ -456,10 +456,10 @@ function FolgOppIDag({
 }
 
 /**
- * Innsats over tid som liten flis (20.5): per fag, andelen grønn, gul, rød
+ * Innsats over tid som liten del (20.5): per fag, andelen grønn, gul, rød
  * og grått (til stede, ikke sett) av dem som var til stede, hele året.
  */
-function Innsatsflis({ rader, fag }: { rader: Oktrad[]; fag: FagIAr[] }) {
+function Innsatsdel({ rader, fag }: { rader: Oktrad[]; fag: FagIAr[] }) {
   const perFag = fag
     .map((f) => {
       const her = rader.filter((r) => r.skolearFagId === f.id && !r.borte);
@@ -850,7 +850,7 @@ function Bolk({
   children: React.ReactNode;
 }) {
   const [apen, setApen] = useApen(nokkel);
-  if (useContext(IFlis)) return <>{children}</>;
+  if (useContext(IDel)) return <>{children}</>;
   return (
     <section>
       <div

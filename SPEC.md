@@ -634,21 +634,22 @@ første» er riktig; et blankt panel er ikke.
 ### 4.1 I dag (startskjerm)
 
 **Enkel og Full** (ARBEIDSLISTE 20.5, lerretet IDagOppsett). Bryteren øverst
-til høyre, valget huskes; Enkel er standard. Innholdet står som fliser i et
-rutenett med fire kolonner og faste rader, uten hull.
+til høyre, valget huskes; Enkel er standard. Innholdet står som deler i et
+rutenett med fire kolonner: en overskrift og en tynn strek, rett på flaten,
+uten bokser rundt (29.9).
 
 - **Enkel:** Dagens økter (stor), Følg opp i dag og Gjøremål.
 - **Full:** i tillegg Uka over hele bredden, og under den Vurderingsfrister,
   Elever som glipper og Innsats over tid. Uka har bryteren Timer · Kompakt;
-  Kompakt er én rad, og flisene under glir rolig opp.
+  Kompakt er én rad, og delene under glir rolig opp.
 - **Følg opp i dag:** per fag du har i dag, gruppert i Rød sist (med «to på
   rad»), Ikke sett sist og Borte sist, fra den siste avholdte økta. Bare
   fornavn og forbokstav.
-- **Innsats over tid** (flisen): per fag, andelen grønn, gul, rød og grått
+- **Innsats over tid**: per fag, andelen grønn, gul, rød og grått
   (til stede, ikke sett), regnet av dem som var til stede.
 - Timeregnskapet og innsatsen uke for uke står under rutenettet i Full.
-- Flisene glir rolig til ny plass (360 ms, myk ut-kurve, ingen sprett).
-  Tilpasning av fliser og størrelser kommer senere (ARBEIDSLISTE 21.2).
+- Delene glir rolig til ny plass (360 ms, myk ut-kurve, ingen sprett).
+  Ingen tilpasning av størrelser: Enkel og Full er valget (29.9).
 
 Øverst datoen, og under den **Dagens økter**. Under hver økt står notatet fra
 forrige økt i faget, og det kan foldes ut. Et klikk åpner økta notatet ble
