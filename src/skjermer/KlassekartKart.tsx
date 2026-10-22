@@ -154,15 +154,16 @@ export function KlassekartKart({
           .map((x) => [x.farge, x.gruppenavn as string]),
       ),
     );
-    if (pf.length > 0) setFarge((f) => (f === "ingen" ? "grupper" : f));
     const rommet = r.find((x) => x.id === k.romId) ?? null;
     setKart(k);
     lagretInnst.current = k.innstillinger;
-    setInnst(
-      fraKateteret.current
-        ? { ...k.innstillinger, visning: "plasser", fraElevene: false }
-        : k.innstillinger,
-    );
+    // Kartet åpner alltid «Fra elevene» (22.10) — fra øktkortet «Fra
+    // kateteret». Det som er valgt sist, lagres ikke som utgangspunkt.
+    setInnst({
+      ...k.innstillinger,
+      visning: "plasser",
+      fraElevene: !fraKateteret.current,
+    });
     setRom(rommet);
     setElever(e);
     setRegler(g);

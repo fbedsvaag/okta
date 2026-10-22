@@ -302,7 +302,7 @@ export const STANDARD: Innstillinger = {
   bland: true,
   unnga: true,
   antallGrupper: 6,
-  fraElevene: false,
+  fraElevene: true,
   visning: "plasser",
 };
 
