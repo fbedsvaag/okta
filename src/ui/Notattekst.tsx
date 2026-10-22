@@ -1,15 +1,6 @@
 import { Notat } from "./Notat";
-import { useEffect, useLayoutEffect, useRef, type ReactNode } from "react";
-import {
-  enterIListe,
-  pakkInn,
-  rykk,
-  tolkMarkdown,
-  type Del,
-  type Punkt,
-  type Redigering,
-} from "./markdown";
-import { hovedtast, harModifikator } from "./taster";
+import { useEffect, useRef, type ReactNode } from "react";
+import { tolkMarkdown, type Del, type Punkt } from "./markdown";
 
 /**
  * Markdown i notater og øktlogg.
@@ -155,75 +146,6 @@ function Deler({ deler }: { deler: Del[] }): ReactNode {
 }
 
 // ---------------------------------------------------------------- skriving
-
-/**
- * Tekstfeltet med listehjelp. Kontrollert: verdien eies av den som bruker
- * det. Vokser med teksten, så man ser hele notatet mens man skriver.
- */
-export function MarkdownSkriv({
-  verdi,
-  onEndre,
-  onForlat,
-  plassholder,
-  autoFocus,
-  minRader = 3,
-}: {
-  verdi: string;
-  onEndre: (v: string) => void;
-  onForlat?: () => void;
-  plassholder?: string;
-  autoFocus?: boolean;
-  minRader?: number;
-}) {
-  const felt = useRef<HTMLTextAreaElement>(null);
-  const markering = useRef<[number, number] | null>(null);
-
-  // Høyden følger teksten.
-  useLayoutEffect(() => {
-    const el = felt.current;
-    if (!el) return;
-    el.style.height = "auto";
-    el.style.height = `${el.scrollHeight + 2}px`;
-    // Markøren settes etter at React har skrevet den nye teksten.
-    if (markering.current) {
-      el.setSelectionRange(...markering.current);
-      markering.current = null;
-    }
-  }, [verdi]);
-
-  function bruk(r: Redigering | null, e: React.KeyboardEvent) {
-    if (!r) return;
-    e.preventDefault();
-    markering.current = [r.start, r.slutt];
-    onEndre(r.tekst);
-  }
-
-  return (
-    <textarea
-      ref={felt}
-      value={verdi}
-      autoFocus={autoFocus}
-      rows={minRader}
-      placeholder={plassholder}
-      onChange={(e) => onEndre(e.target.value)}
-      onBlur={onForlat}
-      onKeyDown={(e) => {
-        const el = e.currentTarget;
-        const [s, t] = [el.selectionStart, el.selectionEnd];
-        if (e.key === "Enter" && !e.shiftKey && !harModifikator(e) && s === t) {
-          bruk(enterIListe(verdi, s), e);
-        } else if (e.key === "Tab") {
-          bruk(rykk(verdi, s, t, !e.shiftKey), e);
-        } else if (hovedtast(e) && e.key.toLowerCase() === "b") {
-          bruk(pakkInn(verdi, s, t, "**"), e);
-        } else if (hovedtast(e) && e.key.toLowerCase() === "i") {
-          bruk(pakkInn(verdi, s, t, "*"), e);
-        }
-      }}
-      className="w-full resize-none overflow-hidden rounded-vanlig border border-linje bg-ark px-2 py-1.5 text-brod leading-relaxed outline-none placeholder:text-blekk-svak focus:border-aksent"
-    />
-  );
-}
 
 /**
  * Notatfeltet (29.1): den felles editoren (ui/Notat), som skriver rett på

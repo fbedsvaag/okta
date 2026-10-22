@@ -22,7 +22,8 @@ import {
 } from "../../data/elevnotat";
 import { settSkaringsnotat } from "../../data/okter";
 import { skalafarge } from "../../ui/farger";
-import { Markdownfelt, MarkdownSkriv } from "../../ui/Notattekst";
+import { Markdownfelt } from "../../ui/Notattekst";
+import { Notat } from "../../ui/Notat";
 import { useSisteSvar } from "../../ui/sisteSvar";
 import { idag as dagensDato } from "../../db";
 import { Stille } from "./deler";
@@ -438,12 +439,15 @@ function NyttNotat({
       </div>
 
       <div className="mt-2">
-        <MarkdownSkriv
-          autoFocus
-          verdi={tekst}
-          onEndre={setTekst}
-          plassholder="Hva skjedde, og hva ble avtalt? «- » gir en punktliste, «- [ ] » en avkrysningsboks."
-        />
+        <div className="rounded-vanlig bg-ark px-2.5 py-1.5">
+          <Notat
+            autoFocus
+            verdi={tekst}
+            onEndre={setTekst}
+            minHoyde={90}
+            plassholder="Hva skjedde, og hva ble avtalt? # overskrift, - punkt, [] sjekk, / meny"
+          />
+        </div>
       </div>
 
       <div className="mt-2 flex gap-2">

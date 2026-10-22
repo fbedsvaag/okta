@@ -1822,7 +1822,7 @@ html {
   background: var(--color-kladd);
   box-shadow: inset 0 0 0 1px var(--color-kladd-kant);
 }
-.kladd:focus {
+.kladd:focus-within {
   box-shadow: inset 0 0 0 1.5px var(--color-aksent);
 }
 

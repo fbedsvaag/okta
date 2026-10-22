@@ -9,6 +9,17 @@ den skal bli. Fila eies fritt, i motsetning til SPEC.md.
 Utseendet står i `DESIGN.md`, som beskriver appen slik den er bygget.
 Lerretet (`docs/lerret/`) er fasit for det som er tegnet.
 
+## Samme notat-editor overalt, og Kilde ut av Samarbeid (22.10)
+
+- Den felles editoren (Markdown, / meny, sjekklister) brukes nå også i
+  «Nytt notat» på elevkortet, kladden og planbeskrivelsen i økta og
+  beskrivelsen på en vurdering. Det gamle tekstfeltet (MarkdownSkriv) er
+  borte. Med vilje vanlige felt: agendaen (går til kalenderen), kommentaren
+  i føringen (til Teams) og den raske én-linjes merknaden under skåring.
+- Samarbeid på elevkortet har ikke lenger «Kilde». Et ønske lagt inn der er
+  elevens, en avtale er din; ønsker fra en mentorsamtale står merket «fra
+  samtale».
+
 ## Planlegg etter tegningen, og halvår i cella (22.10)
 
 - Planlegg (mentorsamtaler og muntlig) følger tegningen: stor overskrift

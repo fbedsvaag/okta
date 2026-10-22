@@ -1,3 +1,4 @@
+import { Notat } from "../ui/Notat";
 import { useLayoutEffect, useRef, useState } from "react";
 import { useLagretInnstilling } from "../ui/useLagretInnstilling";
 
@@ -62,7 +63,7 @@ export function Kladdfelt({
   /** i skåringens høyre kolonne: litt mindre luft */
   kompakt?: boolean;
 }) {
-  const felt = useRef<HTMLTextAreaElement>(null);
+  const felt = useRef<HTMLDivElement>(null);
   const [lagret, lagreHoyde] = useLagretInnstilling<number>(
     "kladd_hoyde",
     120,
@@ -102,29 +103,29 @@ export function Kladdfelt({
   function tilpass() {
     const el = felt.current;
     if (!el) return;
-    const for_ = el.style.height;
-    el.style.height = "auto";
     const n = Math.max(LAV, Math.min(HOY, el.scrollHeight + 4));
-    el.style.height = for_;
     lagreHoyde(n);
   }
 
   return (
     <div className="relative">
-      <textarea
+      <div
         ref={felt}
-        key={verdi ?? ""}
-        defaultValue={verdi ?? ""}
-        placeholder="Det du vil huske i økta. Bare for deg."
-        onBlur={(e) => {
-          const v = e.target.value.replace(/\s+$/, "") || null;
-          if (v !== verdi) onLagre(v);
-        }}
         style={{ height: hoyde }}
-        className={`kladd block w-full resize-none rounded-[8px] ${
+        className={`kladd block w-full overflow-auto rounded-[8px] ${
           kompakt ? "px-2.5 py-2" : "px-3 py-2.5"
-        } text-[calc(13.5px*var(--tekst-skala))] leading-[1.55] outline-none placeholder:text-blekk-svak`}
-      />
+        } text-[calc(13.5px*var(--tekst-skala))] leading-[1.55]`}
+      >
+        <Notat
+          verdi={verdi ?? ""}
+          plassholder="Det du vil huske i økta. Bare for deg."
+          minHoyde={0}
+          onForlat={(t) => {
+            const v = t.replace(/\s+$/, "") || null;
+            if (v !== verdi) onLagre(v);
+          }}
+        />
+      </div>
       <div
         role="separator"
         aria-orientation="horizontal"

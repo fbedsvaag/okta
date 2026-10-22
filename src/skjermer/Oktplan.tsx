@@ -1,3 +1,4 @@
+import { Notat } from "../ui/Notat";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { Okt } from "../data/okter";
 import {
@@ -718,25 +719,14 @@ function Beskrivelse({
   verdi: string;
   onLagre: (v: string) => void;
 }) {
-  const felt = useRef<HTMLTextAreaElement>(null);
-  const hoyde = () => {
-    const el = felt.current;
-    if (!el) return;
-    el.style.height = "auto";
-    el.style.height = `${el.scrollHeight}px`;
-  };
-  useLayoutEffect(hoyde, []);
   return (
     <div className="planbesk">
-      <textarea
-        ref={felt}
-        defaultValue={verdi}
-        rows={1}
+      <Notat
+        verdi={verdi}
         autoFocus={!verdi}
-        onInput={hoyde}
-        onBlur={(e) => onLagre(e.target.value.replace(/\s+$/, ""))}
-        placeholder="Hva skal skje, hva elevene gjør, hva som må være klart"
-        className="block w-full resize-none bg-transparent leading-[1.55] outline-none placeholder:text-blekk-svak"
+        minHoyde={0}
+        plassholder="Hva skal skje, hva elevene gjør, hva som må være klart"
+        onForlat={(t) => onLagre(t.replace(/\s+$/, ""))}
       />
       <div className="mt-1.5 text-[calc(11.5px*var(--tekst-skala))] text-blekk-svak">
         Beskrivelse · bare for deg · går aldri ut av appen

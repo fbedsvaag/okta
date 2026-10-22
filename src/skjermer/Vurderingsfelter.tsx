@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { Notat } from "../ui/Notat";
 import { useArk } from "../ui/Arkstabel";
 import { Ikon } from "../ui/felles";
 import { Velger } from "../ui/Velger";
@@ -148,19 +149,19 @@ export function Felter({
       </div>
 
       <Linje etikett="Beskrivelse">
-        <textarea
-          defaultValue={vurdering.beskrivelse ?? ""}
-          key={vurdering.beskrivelse ?? ""}
-          rows={2}
-          placeholder="Hva går oppgaven ut på?"
-          onBlur={async (e) => {
-            await endreVurdering(vurdering.id, {
-              beskrivelse: e.target.value.trim() || null,
-            });
-            onEndret();
-          }}
-          className={feltStil}
-        />
+        <div className="rounded border border-linje bg-ark px-2 py-1">
+          <Notat
+            verdi={vurdering.beskrivelse ?? ""}
+            minHoyde={48}
+            plassholder="Hva går oppgaven ut på?"
+            onForlat={async (t) => {
+              const v = t.trim() || null;
+              if (v === (vurdering.beskrivelse ?? null)) return;
+              await endreVurdering(vurdering.id, { beskrivelse: v });
+              onEndret();
+            }}
+          />
+        </div>
       </Linje>
     </div>
   );

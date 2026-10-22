@@ -18,9 +18,7 @@ import {
   leggTilAvtale,
   leggTilOnske,
   type Avtale,
-  type Avtalekilde,
   type Gjelder,
-  type Kilde as Onskekilde,
   type Onske,
 } from "../data/onsker";
 import { ONSKER_VED_STOKK } from "./Avtaler";
@@ -514,7 +512,6 @@ function Onskebokser({
   onsker: Onske[];
   alle: Navn[];
 }) {
-  const [kilde, setKilde] = useState<Onskekilde>("eleven");
   const [hensyn, setHensyn] = useLagretInnstilling(
     ONSKER_VED_STOKK,
     false,
@@ -550,7 +547,11 @@ function Onskebokser({
                 <span style={{ color: ONSKEFARGE }}>★</span>
                 {kort(k)}
                 <small className="text-blekk-svak">
-                  {begge ? "gjensidig" : KILDENAVN[o.kilde]}
+                  {begge
+                    ? "gjensidig"
+                    : o.kilde === "samtale"
+                      ? "fra samtale"
+                      : ""}
                 </small>
                 <button
                   onClick={() => void fjernOnske(o.id)}
@@ -568,20 +569,7 @@ function Onskebokser({
               (k) =>
                 k.id !== elevId && !mine.some((o) => o.onskerElevId === k.id),
             )}
-            onVelg={(id) => void leggTilOnske(elevId, id, kilde)}
-          />
-        </div>
-        <div className="mt-2 flex items-center gap-2">
-          <span className="text-etikett text-blekk-svak">Kilde</span>
-          <Bryter
-            storrelse="liten"
-            verdi={kilde}
-            settVerdi={(v) => setKilde(v as Onskekilde)}
-            valg={[
-              { id: "samtale", navn: "Samtale" },
-              { id: "eleven", navn: "Eleven" },
-              { id: "selv", navn: "Sett selv" },
-            ]}
+            onVelg={(id) => void leggTilOnske(elevId, id, "eleven")}
           />
         </div>
         {andre.length > 0 && (
@@ -629,7 +617,6 @@ function Avtaleboks({
   kamerater: Navn[];
 }) {
   const [gjelder, setGjelder] = useState<Gjelder>("begge");
-  const [kilde, setKilde] = useState<Avtalekilde>("eleven");
   const navn = new Map(kamerater.map((k) => [k.id, k]));
   const med = (a: Avtale) => (a.elevId === elevId ? a.medElevId : a.elevId);
   return (
@@ -676,7 +663,7 @@ function Avtaleboks({
               medElevId: id,
               skolearFagId: fagId,
               gjelder,
-              kilde,
+              kilde: "jeg",
             })
           }
         />
@@ -691,17 +678,6 @@ function Avtaleboks({
             { id: "klassekart", navn: "Klassekart" },
             { id: "grupper", navn: "Grupper" },
             { id: "begge", navn: "Begge" },
-          ]}
-        />
-        <span className="text-etikett text-blekk-svak">Kilde</span>
-        <Bryter
-          storrelse="liten"
-          verdi={kilde}
-          settVerdi={(v) => setKilde(v as Avtalekilde)}
-          valg={[
-            { id: "eleven", navn: "Eleven" },
-            { id: "samtale", navn: "Samtale" },
-            { id: "jeg", navn: "Jeg" },
           ]}
         />
       </div>
