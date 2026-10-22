@@ -1,3 +1,4 @@
+import { Tomside } from "../ui/Tomside";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Elevfoto } from "../ui/Elevfoto";
 import { confirm as bekreft } from "@tauri-apps/plugin-dialog";
@@ -442,13 +443,12 @@ export function Elever({
       )}
 
       {elever.length === 0 ? (
-        <Tomtilstand
-          tekst="Ingen elever i dette skoleåret ennå."
-          handling={
-            <Knapp variant="primar" onClick={onLimInn}>
-              Lim inn en klasseliste
-            </Knapp>
-          }
+        <Tomside
+          tegning="elever"
+          tittel="Ingen elever ennå"
+          tekst="Lim inn en klasseliste fra Visma, Excel eller Teams. Navnene kjennes igjen av seg selv."
+          hoved={{ tekst: "Importer klasseliste", onKlikk: onLimInn }}
+          hint="Navnene ligger bare på denne maskinen. Kjønn og bilde er valgfritt og blir aldri eksportert."
         />
       ) : (
         <>

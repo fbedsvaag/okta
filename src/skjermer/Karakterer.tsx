@@ -19,6 +19,7 @@ import { iFelt } from "../data/oktkart";
 import { useArk } from "../ui/Arkstabel";
 import { Bryter } from "../ui/felles";
 import { IVerktoylinja } from "../ui/Verktoylinje";
+import { Tomside } from "../ui/Tomside";
 import { useLagretInnstilling } from "../ui/useLagretInnstilling";
 import { kopierKarakterliste, renTekst } from "./muntlig/eksport";
 
@@ -116,6 +117,18 @@ export function Karakterer({
   }, []);
 
   if (!data) return null;
+  if (data.vurderinger.length === 0)
+    return (
+      <Tomside
+        tegning="karakterer"
+        tittel="Karakterene samles her"
+        tekst={`Når du har ført en vurdering i ${fag.kode}, får du alle elevene og karakterene i én tabell, med forslag til halvårskarakter.`}
+        hoved={{
+          tekst: "Lag første vurdering",
+          onKlikk: () => ark.gaTil("vurderinger"),
+        }}
+      />
+    );
   const teller = vurderinger.filter((v) => vektFor(v) > 0).length;
   const halvar = (id: string) => data.halvar.get(`${termin}:${id}`);
   const antallSatt = data.elever.filter(

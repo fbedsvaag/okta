@@ -19,6 +19,7 @@ import { hentFagIAr, type FagIAr } from "../data/fag";
 import { hentKlasser, type Klasse } from "../data/elever";
 import { Bryter, Fagfirkant } from "../ui/felles";
 import { KlassekartKart } from "./KlassekartKart";
+import { Tomside } from "../ui/Tomside";
 import { IVerktoylinja } from "../ui/Verktoylinje";
 import { KlassekartRom } from "./KlassekartRom";
 import { Velger } from "../ui/Velger";
@@ -153,9 +154,21 @@ function Oversikt({
         </span>
       </IVerktoylinja>
 
-      <p className="mb-3.5 mt-0.5 text-liten text-blekk-dempet">
-        Dine klassekart
-      </p>
+      {kart.length === 0 && (
+        <Tomside
+          tegning="grupper"
+          tittel="Lag grupper på sekunder"
+          tekst="Du trenger ikke et tegnet rom for å lage grupper. Velg klassen eller faget, og trykk Stokk."
+          hoved={{ tekst: "Lag grupper", onKlikk: () => onGa("nytt") }}
+          sekundar={{ tekst: "Tegn et rom", onKlikk: () => onGa("rom:ny") }}
+          hint="Klassekart krever et rom. Rommet tegnes én gang og brukes av alle kartene."
+        />
+      )}
+      {kart.length > 0 && (
+        <p className="mb-3.5 mt-0.5 text-liten text-blekk-dempet">
+          Dine klassekart
+        </p>
+      )}
       <div className="grid max-w-[900px] grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-3">
         {kart.map((k) => {
           const r = rom.find((x) => x.id === k.romId);

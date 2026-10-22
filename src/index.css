@@ -2869,3 +2869,22 @@ textarea,
   height: 0;
   pointer-events: none;
 }
+
+/* Følg opp (29.7): «Fulgt opp ✓» glir rolig ut, ingen sprett. */
+.folg-rad {
+  transition:
+    opacity 380ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 380ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.folg-rad.folg-ut {
+  opacity: 0;
+  transform: translateX(24px);
+}
+:root[data-bevegelse="av"] .folg-rad {
+  transition: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .folg-rad {
+    transition: none;
+  }
+}

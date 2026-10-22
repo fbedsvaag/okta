@@ -55,6 +55,7 @@ import { FagPanel } from "./skjermer/FagPanel";
 import { Bryter, Fagfirkant, Knapp, Ikon } from "./ui/felles";
 import { Fagoversikt } from "./skjermer/Fagoversikt";
 import { Karakterer } from "./skjermer/Karakterer";
+import { FolgOpp } from "./skjermer/FolgOpp";
 import { Klassen } from "./skjermer/Klassen";
 import { useApnetOppsettfil } from "./ui/apnetOppsettfil";
 import { G_SNARVEIER, Sidemeny, type Menypunkt } from "./ui/Sidemeny";
@@ -97,6 +98,7 @@ type Visning =
   /** relasjonskartet i faget (26.9) */
   | "klassen"
   | "karakterer"
+  | "folgopp"
   | "vurderinger"
   | "samtaler"
   | "innstillinger"
@@ -259,6 +261,14 @@ export default function App() {
         tast: "G P",
         ord: "klassekart grupper",
         gjor: () => ga("klassekart"),
+      },
+      {
+        id: "ga:folgopp",
+        gruppe: "Gå til",
+        navn: "Følg opp",
+        hint: "I dag",
+        ord: "rød borte ikke sett frist avtale",
+        gjor: () => ga("folgopp"),
       },
       {
         id: "ga:liminn",
@@ -687,6 +697,15 @@ export default function App() {
                   />
                 )}
 
+                {visning === "folgopp" && (
+                  <FolgOpp
+                    key={versjon}
+                    skolear={skolear}
+                    fag={fag}
+                    onTilbake={() => ga("idag")}
+                  />
+                )}
+
                 {visning === "karakterer" && valgtFag && (
                   <Karakterer
                     key={`${versjon}-${valgtFag.id}`}
@@ -883,6 +902,7 @@ const SKJERMNAVN: Record<Visning, string> = {
   aret: "Økter",
   klassen: "Økter",
   karakterer: "Økter",
+  folgopp: "Følg opp",
   kalender: "Økter",
   elever: "Elever",
   elev: "Elever",
@@ -1059,6 +1079,8 @@ function Verktoylinje({
 /** Hvilket punkt i sidemenyen som står markert for en visning. */
 function aktivtPunkt(v: Visning): Menypunkt | "innstillinger" | null {
   if (v === "idag" || v === "vurderinger" || v === "klassekart") return v;
+  // Følg opp er en liste under I dag (29.7).
+  if (v === "folgopp") return "idag";
   // Samtaletrekkeren hører til «Vurderinger og samtaler» (28.0).
   if (v === "samtaler") return "vurderinger";
   // Fagene er undermeny under Økter, så fagsiden hører til der.

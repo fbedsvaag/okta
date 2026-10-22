@@ -9,6 +9,23 @@ den skal bli. Fila eies fritt, i motsetning til SPEC.md.
 Utseendet står i `DESIGN.md`, som beskriver appen slik den er bygget.
 Lerretet (`docs/lerret/`) er fasit for det som er tegnet.
 
+## Følg opp og tomme sider (22.10, ARBEIDSLISTE 29.7 og 29.8)
+
+- «Se alle ›» på Følg opp-kortet på I dag åpner lista (`skjermer/FolgOpp.tsx`):
+  Alle · Rød sist · Ikke sett · Borte · Frist · Avtale. Rød sist og borte
+  fra den siste avholdte økta i faget; ikke sett når eleven ikke er skåret
+  de to siste øktene eller mer; frist = «ikke levert» etter fristen, eller
+  møtte ikke til muntlig uten karakter; avtale = mål fra mentorsamtalen som
+  ikke er nådd.
+- «Fulgt opp ✓» glir ut (380 ms, uten sprett) og huskes per grunn; en ny
+  økt eller ny hendelse tar eleven inn igjen. «Til samtale» legger punktet
+  som mål på neste mentorsamtale. Navnet og «Notat» åpner elevkortet over.
+- Migrasjon 039: tabellen `fulgt_opp`.
+- Tomme sider med strektegning, én setning, hovedknapp, sekundær og hint
+  (`ui/Tomside.tsx`): I dag (helt nytt år / ingen økter i dag, med neste
+  økt), Elever, Vurderinger og samtaler, Plasser og grupper, Karakterer og
+  Følg opp.
+
 ## ⌘K: kommandolinje og hjelp (22.10, ARBEIDSLISTE 29.3)
 
 - ⌘K har grupper: Gjør (ny vurdering, ny økt, ny elev, lag grupper, ta

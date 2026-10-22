@@ -30,7 +30,8 @@ import {
 import { iDag } from "./tidsplan/Generator";
 import type { FagIAr } from "../data/fag";
 import type { Skala } from "../skala";
-import { Fagfirkant, Felt, Kappet, Knapp, Tomtilstand } from "../ui/felles";
+import { Fagfirkant, Felt, Kappet, Knapp } from "../ui/felles";
+import { Tomside } from "../ui/Tomside";
 import { useArk } from "../ui/Arkstabel";
 import { lyttVurderinger } from "../data/endringer";
 import { Velger } from "../ui/Velger";
@@ -179,19 +180,36 @@ export function Vurderinger({
       </IVerktoylinja>
 
       {lastet && rader.length === 0 && !ny ? (
-        <Tomtilstand
+        <Tomside
+          tegning="vurderinger"
+          tittel={
+            fag.length === 0
+              ? "Legg inn fagene dine først"
+              : "Ingen vurderinger ennå"
+          }
           tekst={
             fag.length === 0
-              ? "Legg inn fagene dine først."
-              : "Ingen vurderinger ennå. Prøver, muntlige vurderinger og innleveringer legges inn her."
+              ? "Vurderingene hører til et fag. Når fagene er lagt inn, kan du lage prøver, muntlige vurderinger og innleveringer her."
+              : "Lag en skriftlig prøve, en muntlig vurdering med tidsplan, eller en innlevering med frist."
           }
-          handling={
-            fag.length > 0 ? (
-              <Knapp variant="primar" onClick={() => setNy("skriftlig")}>
-                Ny vurdering
-              </Knapp>
-            ) : undefined
+          hoved={
+            fag.length > 0
+              ? { tekst: "+ Ny vurdering", onKlikk: () => setNy("skriftlig") }
+              : undefined
           }
+          sekundar={
+            harMentor
+              ? {
+                  tekst: MENTORORD.samtaler,
+                  onKlikk: () =>
+                    void opprettRunde(
+                      skolearId,
+                      rundenavn(iDag(), MENTORORD.samtaler),
+                    ).then((id) => ark.apneRunde(id)),
+                }
+              : undefined
+          }
+          hint="Tips: du kan også lage en vurdering rett fra en økt."
         />
       ) : (
         <>

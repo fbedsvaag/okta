@@ -4,7 +4,8 @@ import { useContext, useEffect, useRef, useState } from "react";
 import type { Skolear } from "../data/skolear";
 import type { FagIAr } from "../data/fag";
 import { hentOkter, type Okt } from "../data/okter";
-import { Bryter, Fagfirkant, Ikon, Knapp, Tomtilstand } from "../ui/felles";
+import { Bryter, Fagfirkant, Ikon } from "../ui/felles";
+import { Tomside } from "../ui/Tomside";
 import { Markdown } from "../ui/Notattekst";
 import { vekslBoks } from "../ui/markdown";
 import { endreOkt } from "../data/okter";
@@ -51,7 +52,8 @@ export function IDag({
   skolear: Skolear;
   fag: FagIAr[];
   onGaTil: (
-    visning: "fag" | "elever" | "okter" | "vurderinger" | "samtaler",
+    visning:
+      "fag" | "elever" | "okter" | "vurderinger" | "samtaler" | "folgopp",
     /** tingen skjermen skal åpne — f.eks. eleven du klikket på */
     id?: string,
   ) => void;
@@ -169,20 +171,23 @@ export function IDag({
         )}
 
         {okter.length === 0 && (
-          <Tomtilstand
+          <Tomside
+            tegning={fag.length === 0 ? "nyttar" : "idag"}
+            tittel={
+              fag.length === 0
+                ? "Klar for første skoledag?"
+                : "Ingen økter ennå"
+            }
             tekst={
               fag.length === 0
-                ? "Ingen fag i skoleåret ennå."
-                : "Ingen økter er lagt inn ennå."
+                ? "Legg inn fagene dine, så kan du planlegge økter for hele året."
+                : "Fagene er på plass. Legg inn øktene, så står dagens her hver morgen."
             }
-            handling={
-              <Knapp
-                variant="primar"
-                onClick={() => onGaTil(fag.length === 0 ? "fag" : "okter")}
-              >
-                {fag.length === 0 ? "Legg inn fagene dine" : "Legg inn økter"}
-              </Knapp>
-            }
+            hoved={{
+              tekst: fag.length === 0 ? "Legg til fag" : "Legg inn økter",
+              onKlikk: () => onGaTil(fag.length === 0 ? "fag" : "okter"),
+            }}
+            hint="⌘K og skriv «hvordan» om du står fast."
           />
         )}
 
@@ -198,12 +203,25 @@ export function IDag({
             kol="1 / span 2"
             rad="1 / span 2"
           >
-            <Dagensokter okter={okter} idag={idag} onApne={apne} />
+            <Dagensokter
+              okter={okter}
+              idag={idag}
+              onApne={apne}
+              onSeUka={() => onGaTil("okter")}
+            />
           </Flis>
           <Flis
             id="folgopp"
             tittel="Følg opp i dag"
             under="fra forrige økt"
+            handling={
+              <button
+                onClick={() => onGaTil("folgopp")}
+                className="text-liten font-normal text-aksent hover:underline"
+              >
+                Se alle ›
+              </button>
+            }
             kol="3 / span 2"
             rad="1"
           >
@@ -562,10 +580,12 @@ function Dagensokter({
   okter,
   idag,
   onApne,
+  onSeUka,
 }: {
   okter: Okt[];
   idag: string;
   onApne: (id: string) => void;
+  onSeUka: () => void;
 }) {
   const d = dagen(okter, idag);
   const [perioder, setPerioder] = useState<Map<string, string>>(new Map());
@@ -618,7 +638,12 @@ function Dagensokter({
   return (
     <Bolk tittel="Dagens økter" nokkel="forside-dagens">
       {d.linjer.length === 0 ? (
-        <p className="py-1 text-brod text-blekk-dempet">Ingen økter i dag.</p>
+        <IngenIDag
+          okter={okter}
+          idag={idag}
+          onApne={onApne}
+          onSeUka={onSeUka}
+        />
       ) : (
         <ul className="divide-y divide-linje-medium">
           {d.linjer.map((l) => {
@@ -853,4 +878,49 @@ function langDato(dato: string): string {
     day: "numeric",
     month: "long",
   });
+}
+
+/** Tom dag (29.8): når den neste økta er, med en knapp dit. */
+function IngenIDag({
+  okter,
+  idag,
+  onApne,
+  onSeUka,
+}: {
+  okter: Okt[];
+  idag: string;
+  onApne: (id: string) => void;
+  onSeUka: () => void;
+}) {
+  const neste = [...okter]
+    .filter((o) => o.dato > idag)
+    .sort(
+      (a, b) =>
+        a.dato.localeCompare(b.dato) ||
+        (a.klokkeslett ?? "").localeCompare(b.klokkeslett ?? ""),
+    )[0];
+  const nar = neste
+    ? new Date(`${neste.dato}T12:00:00`).toLocaleDateString("nb-NO", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+      })
+    : null;
+  return (
+    <Tomside
+      tegning="idag"
+      tittel="Ingen økter i dag"
+      tekst={
+        neste
+          ? `Neste økt er ${nar}${neste.klokkeslett ? ` kl. ${neste.klokkeslett}` : ""}, ${neste.fagKode}${neste.tema ? `: ${neste.tema}` : ""}.`
+          : "Det er ingen flere økter lagt inn dette skoleåret."
+      }
+      hoved={
+        neste
+          ? { tekst: "Åpne neste økt", onKlikk: () => onApne(neste.id) }
+          : undefined
+      }
+      sekundar={{ tekst: "Se uka", onKlikk: onSeUka }}
+    />
+  );
 }
