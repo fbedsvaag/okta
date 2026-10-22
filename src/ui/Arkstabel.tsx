@@ -189,6 +189,8 @@ export function Arkstabel({
     if (stabel.length === 0) return;
     const tast = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
+      // Et kort over arket (kartet i økta, 27) lukker seg selv først.
+      if (document.querySelector("[data-esc-forst]")) return;
       const i = e.target as HTMLElement;
       // En åpen nedtrekksmeny (ui/Velger) lukker seg selv på Esc.
       if (

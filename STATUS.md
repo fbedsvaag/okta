@@ -9,6 +9,15 @@ den skal bli. Fila eies fritt, i motsetning til SPEC.md.
 Utseendet står i `DESIGN.md`, som beskriver appen slik den er bygget.
 Lerretet (`docs/lerret/`) er fasit for det som er tegnet.
 
+## Klassekartet på et blikk i økta (22.10, ARBEIDSLISTE §27)
+
+- «Klassekart K» i økta åpner et kort over økta (`OktKlassekart.tsx`,
+  `data/oktkart.ts`): plasseringen som gjaldt dagen, fra kateteret som
+  standard (huskes per kart), borte overstreket, tallene øverst, Farge:
+  Ingen · Dagens skår · Grupper. Klikk en elev finner raden. Esc lukker
+  kortet før økta (Arkstabel venter på `[data-esc-forst]`). K virker ikke i
+  felt (testet).
+
 ## Ønsker, avtaler og Klassen (22.10, ARBEIDSLISTE 26.7–26.13)
 
 - Migrering 033: `elevonske` og `neste_sammen` (`data/onsker.ts`).

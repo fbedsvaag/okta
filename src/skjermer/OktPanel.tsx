@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Elevfoto } from "../ui/Elevfoto";
 import { Bryter, Fagfirkant } from "../ui/felles";
 import {
@@ -13,8 +13,9 @@ import { OktPlanlegging } from "./OktPlanlegging";
 import { Tastestripe, Tasthint } from "../ui/Tastestripe";
 import { Markdown, Markdownfelt } from "../ui/Notattekst";
 import { useArk } from "../ui/Arkstabel";
-import { hentKart } from "../data/klassekart";
 import { visFraKateteret } from "./KlassekartKart";
+import { OktKlassekart } from "./OktKlassekart";
+import { iFelt, kartTast } from "../data/oktkart";
 import { hentPerioder, type Periode } from "../data/perioder";
 import {
   endreOkt,
@@ -76,16 +77,6 @@ export function OktPanel({
 }) {
   // Eleven som nettopp fikk en verdi: prikken hans «popper» (DESIGN.md §8).
   const [sistSatt, setSistSatt] = useState<string | null>(null);
-  // Klassekartet til faget, til lenken i toppen: se om alle sitter riktig.
-  const [kartId, setKartId] = useState<string | null>(null);
-  useEffect(() => {
-    void hentKart(skolearId).then((k) =>
-      setKartId(
-        k.find((x) => x.kildeType === "fag" && x.kildeId === okt.skolearFagId)
-          ?.id ?? null,
-      ),
-    );
-  }, [skolearId, okt.skolearFagId]);
   // To moduser i samme ark (11.3): skåring og logg, eller planlegging.
   const [modus, setModus] = useState<Oktmodus>(
     () => startModus ?? standardModus(okt, new Date()),
@@ -139,6 +130,32 @@ export function OktPanel({
   const [markert, setMarkert] = useState(0);
   const [notatFor, setNotatFor] = useState<string | null>(null);
   const liste = useRef<HTMLDivElement>(null);
+  // Kartkortet (27) og raden som blinker når en elev klikkes i det.
+  const [kartApen, setKartApen] = useState(false);
+  const [blinkElev, setBlinkElev] = useState<string | null>(null);
+  const lukkKart = useCallback(() => setKartApen(false), []);
+  // K veksler kortet, men ikke mens du skriver (27.1). Esc tar kortet selv.
+  useEffect(() => {
+    const tast = (e: KeyboardEvent) => {
+      if (
+        kartTast(
+          {
+            key: e.key,
+            metaKey: e.metaKey,
+            ctrlKey: e.ctrlKey,
+            altKey: e.altKey,
+            skriver: iFelt(e.target),
+          },
+          kartApen,
+        ) !== "veksle"
+      )
+        return;
+      e.preventDefault();
+      setKartApen((v) => !v);
+    };
+    window.addEventListener("keydown", tast);
+    return () => window.removeEventListener("keydown", tast);
+  }, [kartApen]);
   const markertRad = useRef<HTMLDivElement>(null);
 
   /**
@@ -408,21 +425,62 @@ export function OktPanel({
                 </span>
               </>
             )}
-            {kartId && (
-              <>
-                ·
-                <button
-                  onClick={() => {
+            ·{/* Klassekartet på et blikk (27): et kort over økta, K. */}
+            <span className="relative">
+              <button
+                onClick={() => setKartApen((v) => !v)}
+                aria-expanded={kartApen}
+                title="Klassekartet (K)"
+                className={`inline-flex items-center gap-1.5 rounded-[7px] px-2 py-0.5 ${
+                  kartApen
+                    ? "bg-flate-svak text-blekk"
+                    : "text-blekk-dempet hover:bg-flate-svak hover:text-blekk"
+                }`}
+              >
+                <svg
+                  width="13"
+                  height="13"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.4"
+                  aria-hidden
+                >
+                  <rect x="1.5" y="3" width="5.5" height="4" rx="1" />
+                  <rect x="9" y="3" width="5.5" height="4" rx="1" />
+                  <rect x="1.5" y="9.5" width="5.5" height="4" rx="1" />
+                  <rect x="9" y="9.5" width="5.5" height="4" rx="1" />
+                </svg>
+                Klassekart
+                <kbd className="rounded px-1 text-[10.5px] text-blekk-svak shadow-[inset_0_0_0_1px_var(--color-linje)]">
+                  K
+                </kbd>
+              </button>
+              {kartApen && (
+                <OktKlassekart
+                  skolearId={skolearId}
+                  skolearFagId={okt.skolearFagId}
+                  fagKode={okt.fagKode}
+                  dato={okt.dato}
+                  elever={elever}
+                  verdier={verdier}
+                  onLukk={lukkKart}
+                  onVelgElev={(elevId) => {
+                    const i = elever.findIndex((e) => e.elevId === elevId);
+                    if (i < 0) return;
+                    setFilter("alle");
+                    setMarkert(i);
+                    setBlinkElev(elevId);
+                    window.setTimeout(() => setBlinkElev(null), 1000);
+                  }}
+                  onApneFull={(kartId) => {
                     visFraKateteret(kartId, okt.dato);
                     ark.gaTil("klassekart", kartId);
                   }}
-                  title="Se kartet fra kateteret"
-                  className="text-blekk-dempet underline-offset-2 hover:text-blekk hover:underline"
-                >
-                  Klassekart →
-                </button>
-              </>
-            )}
+                  onLagKart={() => ark.gaTil("klassekart", "nytt")}
+                />
+              )}
+            </span>
           </p>
           <Bryter
             storrelse="liten"
@@ -591,6 +649,7 @@ export function OktPanel({
                         avholdt={avholdt}
                         nullverdi={nullverdi}
                         pop={sistSatt === elev.elevId}
+                        blink={blinkElev === elev.elevId}
                         onKlikk={() => {
                           setMarkert(i);
                           liste.current?.focus();
@@ -737,6 +796,7 @@ function ElevRad({
   avholdt,
   nullverdi,
   pop,
+  blink,
   onKlikk,
   onVelg,
   onNotat,
@@ -754,6 +814,8 @@ function ElevRad({
   nullverdi: Skalaverdi | null;
   /** verdien ble nettopp satt: prikken «popper» */
   pop: boolean;
+  /** klikket i kartkortet (27.5): blinker kort */
+  blink?: boolean;
   onKlikk: () => void;
   onVelg: (v: Skalaverdi) => void;
   onNotat: () => void;
@@ -780,7 +842,9 @@ function ElevRad({
       onClick={onKlikk}
       // 38 px rader med 28 px bilde (DESIGN.md §3, bestemt 06.10). Høyden
       // er låst, så heller ikke notatfeltet i raden kan gjøre den høyere.
-      className="group relative z-[1] grid h-[38px] cursor-default grid-cols-[132px_28px_minmax(150px,220px)_44px_minmax(0,1fr)] items-center gap-x-3 border-b border-linje-svak pl-2.5 text-[calc(13.5px*var(--tekst-skala))] hover:bg-[color-mix(in_srgb,var(--color-aksent)_3.5%,transparent)]"
+      className={`group relative z-[1] grid h-[38px] cursor-default grid-cols-[132px_28px_minmax(150px,220px)_44px_minmax(0,1fr)] items-center gap-x-3 border-b border-linje-svak pl-2.5 text-[calc(13.5px*var(--tekst-skala))] hover:bg-[color-mix(in_srgb,var(--color-aksent)_3.5%,transparent)] ${
+        blink ? "bytteblink" : ""
+      }`}
     >
       {/*
         Trafikklyset først (11.4), så blikket ikke må hoppe fra navnet og
