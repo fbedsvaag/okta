@@ -210,11 +210,13 @@ export function Liveplan({
                     className={`block truncate ${
                       erAktiv ? "font-semibold text-blekk" : ""
                     } ${
-                      l.ferdig || p.type === "pause" || !rekker
-                        ? "text-blekk-svak"
-                        : erAktiv
-                          ? ""
-                          : "text-blekk"
+                      l.ferdig
+                        ? "text-blekk-svak line-through decoration-linje"
+                        : p.type === "pause" || !rekker
+                          ? "text-blekk-svak"
+                          : erAktiv
+                            ? ""
+                            : "text-blekk"
                     }`}
                   >
                     {p.tekst}
