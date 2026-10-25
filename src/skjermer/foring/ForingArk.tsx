@@ -299,16 +299,25 @@ export function ForingArk({
           </div>
         </div>
       ) : modus === "tabell" ? (
-        <div className="min-h-0 flex-1 overflow-auto px-6 pb-6">
-          <Tabell
-            elever={elever}
-            res={res}
-            verdier={verdier}
-            status={status}
-            onKarakter={settKarakter}
-            onKommentar={(id, t) => void skriv(id, { kommentar: t || null })}
-            onLeveranse={(id, l) => void skriv(id, { leveranse: l })}
-          />
+        // Elevlista står også ved tabellen, som i tegningen (29.5).
+        <div className="grid min-h-0 flex-1 grid-cols-[300px_minmax(0,1fr)] gap-[26px] px-6">
+          <div className="min-h-0 overflow-auto pb-5">
+            <p className="mx-1.5 mb-2.5 mt-0.5 text-liten text-blekk-svak">
+              Alfabetisk · ↑↓ bytter elev
+            </p>
+            {elevlisteRader(elever, res, verdi, status, valgt, setValgt)}
+          </div>
+          <div className="min-h-0 overflow-auto pb-6">
+            <Tabell
+              elever={elever}
+              res={res}
+              verdier={verdier}
+              status={status}
+              onKarakter={settKarakter}
+              onKommentar={(id, t) => void skriv(id, { kommentar: t || null })}
+              onLeveranse={(id, l) => void skriv(id, { leveranse: l })}
+            />
+          </div>
         </div>
       ) : (
         <div className="grid min-h-0 flex-1 grid-cols-[300px_minmax(0,1fr)] gap-[26px] px-6">
@@ -381,7 +390,7 @@ function elevlisteRader(
             : "hover:bg-flate-svak"
         } ${s === "borte" ? "text-blekk-svakest" : ""}`}
       >
-        <span className="truncate">
+        <span className={`truncate ${s === "borte" ? "line-through" : ""}`}>
           {e.fornavn} {e.etternavn}
         </span>
         <span
@@ -487,18 +496,19 @@ function EnOgEn({
         <span className="text-[calc(13px*var(--tekst-skala))] font-semibold text-blekk">
           Levert
         </span>
-        <span className="inline-flex gap-0.5 rounded-full bg-flate p-0.5">
+        {/* Tre brikker, den valgte mørk, som i tegningen (29.5). */}
+        <span className="inline-flex gap-1.5">
           {LEVERANSE.map(([l, navn]) => (
             <button
               key={l}
               onClick={() => onLeveranse(l)}
               aria-pressed={status === l}
-              className={`h-[26px] rounded-full px-3 text-[12.5px] transition-colors duration-200 ${
+              className={`h-[30px] rounded-full px-3.5 text-[calc(13px*var(--tekst-skala))] transition-colors duration-200 ${
                 status === l
                   ? l === "ikke"
-                    ? "bg-ark font-medium text-feil shadow-[0_1px_3px_rgba(36,31,51,.16)]"
-                    : "bg-ark font-medium shadow-[0_1px_3px_rgba(36,31,51,.16)]"
-                  : "text-blekk-dempet hover:text-blekk"
+                    ? "bg-feil font-medium text-ark"
+                    : "bg-blekk font-medium text-ark"
+                  : "bg-ark text-blekk shadow-[inset_0_0_0_1px_var(--color-linje)] hover:bg-flate"
               }`}
             >
               {navn}
@@ -702,11 +712,11 @@ function Tabell({
       </p>
       <table className="w-full border-collapse text-[13px]">
         <thead>
-          <tr className="text-left text-liten text-blekk-svak">
-            <th className="py-1.5 pr-3 font-normal">Elev</th>
-            <th className="w-[100px] py-1.5 pr-3 font-normal">Levert</th>
-            <th className="w-[80px] py-1.5 pr-3 font-normal">Karakter</th>
-            <th className="py-1.5 font-normal">Kommentar</th>
+          <tr className="text-left text-[11px] uppercase tracking-[.06em] text-blekk-svak">
+            <th className="py-1.5 pr-3 font-medium">Elev</th>
+            <th className="w-[100px] py-1.5 pr-3 font-medium">Levert</th>
+            <th className="w-[80px] py-1.5 pr-3 font-medium">Karakter</th>
+            <th className="py-1.5 font-medium">Kommentar</th>
           </tr>
         </thead>
         <tbody>
@@ -736,9 +746,9 @@ function Tabell({
                     {s === "levert"
                       ? "Levert"
                       : s === "ikke"
-                        ? "Ikke levert"
+                        ? "ikke levert"
                         : s === "borte"
-                          ? "Borte"
+                          ? "borte"
                           : "–"}
                   </button>
                 </td>
@@ -769,7 +779,7 @@ function Tabell({
                           fokus(i + 1, "k");
                       }
                     }}
-                    className="w-14 rounded-md bg-transparent px-1.5 py-1 text-center font-semibold outline-none hover:bg-flate-svak focus:bg-ark focus:shadow-[inset_0_0_0_1.5px_var(--color-aksent)]"
+                    className="h-8 w-10 rounded-lg bg-ark text-center font-semibold shadow-[inset_0_0_0_1px_var(--color-linje)] outline-none placeholder:text-blekk-svak hover:bg-flate-svak focus:shadow-[inset_0_0_0_1.5px_var(--color-aksent)]"
                   />
                 </td>
                 <td className="py-1">
