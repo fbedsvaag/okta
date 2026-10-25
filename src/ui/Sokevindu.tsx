@@ -255,8 +255,8 @@ export function Sokevindu({
             value={tekst}
             onChange={(e) => setTekst(e.target.value)}
             onKeyDown={tast}
-            placeholder="Gjør, gå til, søk … eller skriv «hvordan»"
-            className="uten-fokusring w-full bg-transparent py-3.5 text-[1.3rem] outline-none placeholder:text-blekk-svak"
+            placeholder="Søk, gjør noe, eller spør «hvordan …»"
+            className="uten-fokusring w-full bg-transparent py-3.5 text-[calc(17px*var(--tekst-skala))] outline-none placeholder:text-blekk-svak"
           />
         </div>
 
@@ -336,13 +336,16 @@ export function Sokevindu({
                     data-nr={i}
                     onMouseMove={() => setMarkor(i)}
                     onClick={() => apne(r)}
-                    className="relative z-[1] mx-2 flex w-[calc(100%-1rem)] items-baseline gap-3 rounded-[10px] px-3 py-1.5 text-left text-brod text-blekk"
+                    className={`relative z-[1] mx-2 flex w-[calc(100%-1rem)] gap-3 rounded-[10px] px-3 py-1.5 text-left text-brod text-blekk ${
+                      r.slag === "kommando" ? "items-center" : "items-baseline"
+                    }`}
                   >
                     {r.slag === "kommando" ? (
                       <>
+                        {/* Ikonet i en liten rute, som i tegningen (29.3). */}
                         <span
                           aria-hidden
-                          className="w-4 shrink-0 text-center text-blekk-svak"
+                          className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-ark text-[13px] text-blekk-dempet shadow-[inset_0_0_0_1px_var(--color-linje)]"
                         >
                           {r.k.gruppe === "Gjør"
                             ? "＋"
@@ -423,10 +426,26 @@ export function Sokevindu({
           )}
         </div>
 
-        <p className="border-t border-linje-medium/70 px-4 py-1.5 text-liten text-blekk-svak">
-          ↑↓ for å velge · Enter · «hvordan …» for hjelp · «?» for hurtigtaster
-          · Esc lukker
-        </p>
+        <div className="flex items-center gap-4 border-t border-linje-medium/70 px-4 py-2 text-liten text-blekk-svak">
+          {(
+            [
+              ["↑↓", "velg"],
+              ["↵", "åpne"],
+              ["?", "hjelp"],
+              ["esc", "lukk"],
+            ] as const
+          ).map(([t, n]) => (
+            <span key={n} className="inline-flex items-center gap-1.5">
+              <kbd className="rounded px-1.5 font-sans text-[11px] text-blekk-dempet shadow-[inset_0_0_0_1px_var(--color-linje)]">
+                {t}
+              </kbd>
+              {n}
+            </span>
+          ))}
+          <span className="ml-auto truncate">
+            Prøv «ny vurdering» eller «hvordan grupper»
+          </span>
+        </div>
       </div>
     </div>
   );

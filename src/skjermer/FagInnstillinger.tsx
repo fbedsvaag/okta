@@ -9,7 +9,7 @@ import { Fagfirkant } from "../ui/felles";
 import { Fargepalett, bruktAv } from "../ui/Fargevelger";
 import { Velger } from "../ui/Velger";
 
-const DAGER = ["Ma", "Ti", "On", "To", "Fr"];
+const DAGER = ["ma", "ti", "on", "to", "fr"];
 const LENGDER = [45, 60, 75, 90, 120, 135, 180, 240];
 
 /**
@@ -249,13 +249,16 @@ export function FagInnstillinger({
           </>
         )}
       </div>
+      <p className="mt-6 text-liten text-blekk-svak">
+        Endringer lagres med en gang. Du blir værende i faget.
+      </p>
     </div>
   );
 }
 
 function Gruppe({ children }: { children: React.ReactNode }) {
   return (
-    <div className="mb-1.5 mt-5 text-[11px] font-semibold uppercase tracking-[.06em] text-blekk-svak">
+    <div className="mb-1.5 mt-5 text-[calc(13px*var(--tekst-skala))] font-semibold text-blekk-dempet">
       {children}
     </div>
   );
