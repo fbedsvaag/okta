@@ -13,6 +13,7 @@ import {
   type Karakterdata,
   type Karaktervurdering,
   type Termin,
+  delTittel,
 } from "../data/karakterer";
 import { lesRubrikk, kriterierMedTekst } from "../data/muntlig";
 import { lyttVurderinger } from "../data/endringer";
@@ -229,26 +230,35 @@ export function Karakterer({
                 <Th venstre bredde="min-w-[150px]">
                   Elev
                 </Th>
-                {vurderinger.map((v) => (
-                  <Th key={v.id}>
-                    <span
-                      className="block max-w-[120px] truncate"
-                      title={v.tittel}
-                    >
-                      {v.tittel}
-                    </span>
-                    <small className="block font-normal text-blekk-svak">
-                      {v.dato ? dag(v.dato) : "uten dato"}
-                    </small>
-                    <Vekt
-                      v={v}
-                      onSett={async (x) => {
-                        await settVekt(v.id, x);
-                        await last();
-                      }}
-                    />
-                  </Th>
-                ))}
+                {vurderinger.map((v) => {
+                  // «Muntlig: SWOT» står som «Muntlig» over «SWOT · 17.9»,
+                  // som i tegningen (29.4). Uten kolon: hele tittelen.
+                  const [hode, resten] = delTittel(v.tittel);
+                  const dato = v.dato ? dag(v.dato) : "uten dato";
+                  return (
+                    <Th key={v.id}>
+                      <span
+                        className="block max-w-[140px] truncate"
+                        title={v.tittel}
+                      >
+                        {hode}
+                      </span>
+                      <small
+                        className="block max-w-[140px] truncate font-normal text-blekk-svak"
+                        title={v.tittel}
+                      >
+                        {resten ? `${resten} · ${dato}` : dato}
+                      </small>
+                      <Vekt
+                        v={v}
+                        onSett={async (x) => {
+                          await settVekt(v.id, x);
+                          await last();
+                        }}
+                      />
+                    </Th>
+                  );
+                })}
                 <Th>
                   Innsats
                   <small className="block font-normal text-blekk-svak">

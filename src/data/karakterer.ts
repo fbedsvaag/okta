@@ -240,3 +240,10 @@ export async function settHalvar(
     },
   );
 }
+
+/** «Muntlig: SWOT» → ["Muntlig", "SWOT"]; uten kolon → [tittel, ""]. */
+export function delTittel(tittel: string): [string, string] {
+  const i = tittel.indexOf(":");
+  if (i <= 0) return [tittel, ""];
+  return [tittel.slice(0, i).trim(), tittel.slice(i + 1).trim()];
+}

@@ -112,3 +112,15 @@ describe("i basen (migrasjon 037)", () => {
     });
   });
 });
+
+describe("kolonneoverskriften (29.4)", () => {
+  it("deler tittelen ved kolon", () => {
+    expect(k.delTittel("Muntlig: SWOT")).toEqual(["Muntlig", "SWOT"]);
+    expect(k.delTittel("Skriftlig prøve: markedsanalyse")).toEqual([
+      "Skriftlig prøve",
+      "markedsanalyse",
+    ]);
+    expect(k.delTittel("Kampanjeplan")).toEqual(["Kampanjeplan", ""]);
+    expect(k.delTittel(":rart")).toEqual([":rart", ""]);
+  });
+});
