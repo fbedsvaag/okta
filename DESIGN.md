@@ -223,11 +223,14 @@ Trives med, Oversikt) på 290 px.
 34 px knapp (aksent når satt, ring på valgt rad), hover gir et lite kort.
 
 **Faginnstillinger** (29.2): glassark på 400 px fra høyre, grupper med
-små versaler (Farge, Økter, Skåring og vurdering, Læreplan), rader på
-46 px med hårstrek, «Arkiver faget» i rødt nederst.
+halvfet vanlig skrift (Farge, Økter, Skåring og vurdering, Læreplan), dagene
+«ma ti on to fr», rader på 46 px med hårstrek, «Arkiver faget» i rødt og
+«Endringer lagres med en gang» nederst.
 
 **⌘K** (29.3) har grupper i små versaler: Gjør (＋), Gå til (→), Elever,
 Økter, Innstillinger (⚙), Hjelp (svar med aksentknapp), Hurtigtaster.
+Ikonene står i små ruter (28 px), og bunnlinja har tastebrikker (↑↓ velg ·
+↵ åpne · ? hjelp · esc lukk) og «Prøv …» til høyre.
 
 **Følg opp** (29.7): kort per elev med foto, fag, grunnbrikker (prikk i
 grunnens farge), forklaring, fire innsatsprikker, tid siden og tre

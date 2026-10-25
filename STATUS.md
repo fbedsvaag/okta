@@ -3,11 +3,28 @@
 Pr. 2026-10-25 (§28–30 bygget; siste utgivelse 0.5). Beskriver hvor appen faktisk står, ikke hva
 den skal bli. Fila eies fritt, i motsetning til SPEC.md.
 
-**879 tester i `npm test` og 22 i `cargo test` (Mac), alle grønne.
+**881 tester i `npm test` og 22 i `cargo test` (Mac), alle grønne.
 `tsc --noEmit` er ren. `npm run build` går gjennom. 39 migrasjoner.** Testene kjører på GitHub ved hver push (`tester.yml`, Mac).
 
 Utseendet står i `DESIGN.md`, som beskriver appen slik den er bygget.
 Lerretet (`docs/lerret/`) er fasit for det som er tegnet.
+
+## §28–29 sammenlignet med tegningene, bilde mot bilde (25.10)
+
+- Hver tegning er tegnet lokalt og lagt ved siden av appen i samme
+  tilstand; forskjellene står under punktene i ARBEIDSLISTE. Rettet blant
+  annet: overskriftene i arkene (muntlig, føring, mentorsamtaler) i vanlig
+  halvfet skrift, karakterknapper for skalaer med ord, tidsplanen uten
+  tomme ruter, Resultater med «…» og «møtte ikke», levert-brikker og
+  elevlista ved Tabell i føringen, ⌘K med ikonruter og tastebrikker,
+  kolonneoverskriftene i Karakterer delt ved kolon, «I dag › Følg opp»,
+  «Ny elev» og hint på tomme sider, rubrikkens bunnlinje.
+- Feil funnet: «Til samtale» i Følg opp pakket avtaler inn på nytt for hvert
+  klikk («Avtale: «Avtale: «…»»»). Rettet, med test.
+- Åpne spørsmål (i ARBEIDSLISTE): klassen på mentorgruppa (28.0, 29.6, 29.7),
+  fargepaletten og arkets plass i faginnstillingene (29.2), «Gå til» med det
+  du står i (29.3), «‹» i arkhodet (28.1), lista under tidslinjen i økt-
+  planleggingen (30).
 
 ## Øktkortet (§30, 25.10)
 
