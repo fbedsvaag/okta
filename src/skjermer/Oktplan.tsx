@@ -142,7 +142,7 @@ export function Oktplan({
   return (
     <section className="mt-6">
       <div className="mb-2.5 flex items-baseline gap-2.5">
-        <h2 className="text-[calc(15px*var(--tekst-skala))] font-semibold">
+        <h2 className="text-[calc(12px*var(--tekst-skala))] font-semibold text-blekk-dempet">
           Plan
         </h2>
         <span className="text-[calc(12px*var(--tekst-skala))] text-blekk-svak">
@@ -787,7 +787,7 @@ function EnkelPlan({
   return (
     <section className="mt-6">
       <div className="mb-2.5 flex items-baseline gap-2.5">
-        <h2 className="text-[calc(15px*var(--tekst-skala))] font-semibold">
+        <h2 className="text-[calc(12px*var(--tekst-skala))] font-semibold text-blekk-dempet">
           Plan
         </h2>
         <span

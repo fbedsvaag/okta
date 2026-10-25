@@ -377,7 +377,7 @@ function Mal({
         className="mt-6 flex items-baseline gap-2 text-left"
       >
         <span className="text-[12px] text-blekk-svak">▸</span>
-        <span className="text-[calc(15px*var(--tekst-skala))] font-semibold">
+        <span className="text-[calc(12px*var(--tekst-skala))] font-semibold text-blekk-dempet">
           Kompetansemål
         </span>
         <span className="text-[calc(12px*var(--tekst-skala))] text-blekk-svak">
@@ -389,7 +389,7 @@ function Mal({
   return (
     <section className="mt-7">
       <div className="mb-1.5 flex items-baseline gap-2.5">
-        <h2 className="text-[calc(15px*var(--tekst-skala))] font-semibold">
+        <h2 className="text-[calc(12px*var(--tekst-skala))] font-semibold text-blekk-dempet">
           Kompetansemål
         </h2>
         <span className="text-[calc(12px*var(--tekst-skala))] text-blekk-svak">
