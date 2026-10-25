@@ -23,6 +23,7 @@ import {
   type Samtalelinje,
   type Statusgruppe,
 } from "../data/vurderingsoversikt";
+import { hentSkolear } from "../data/skolear";
 import { hentSamtaledager, type Samtaledag } from "../data/samtale";
 import {
   hentRunder,
@@ -74,6 +75,13 @@ export function Vurderinger({
   const [dager, setDager] = useState<Samtaledag[]>([]);
   const [runder, setRunder] = useState<Samtalerunde[]>([]);
   const [harMentor, setHarMentor] = useState(false);
+  // Skoleåret etter tittelen, som i tegningen (28.0).
+  const [arNavn, setArNavn] = useState<string | null>(null);
+  useEffect(() => {
+    void hentSkolear().then((a) =>
+      setArNavn(a.find((x) => x.id === skolearId)?.navn ?? null),
+    );
+  }, [skolearId]);
   const [skalaer, setSkalaer] = useState<Skala[]>([]);
   const [valgt, setValgt] = useState<string | null>(null);
   const [typeFilter, setTypeFilter] = useLagretInnstilling<
@@ -168,6 +176,11 @@ export function Vurderinger({
   return (
     <div className="mx-auto flex min-h-0 w-full max-w-5xl flex-1 flex-col overflow-auto">
       <IVerktoylinja>
+        {arNavn && (
+          <span className="text-[calc(14px*var(--tekst-skala))] tabular-nums text-blekk-svak">
+            {arNavn}
+          </span>
+        )}
         <span className="ml-auto" />
         <NyMeny
           harMentor={harMentor}
@@ -320,7 +333,7 @@ export function Vurderinger({
             <p className="mx-1 my-[18px] max-w-[640px] text-liten leading-relaxed text-blekk-svak">
               {MENTORORD.samtaler} ligger her for å samle alle tidsplanene, men
               er ikke vurderinger: de gir ingen karakter, og notatene vises
-              aldri i faget.
+              aldri i faget. Du ser dem bare når du har {MENTORORD.elever}.
             </p>
           )}
         </>
