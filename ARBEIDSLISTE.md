@@ -1062,7 +1062,7 @@ Tegning: `docs/lerret/MuntligVurdering.dc.html`. Faglige samtaler bakes inn i en
 - [x] **28.4 Notatet er en Notion-aktig editor, ikke en tekstboks.** Ingen ramme, skriver rett på flaten. Markdown-snarveier ved mellomrom: `#` overskrift, `##` mindre overskrift, `-`/`*` punkt, `1.` nummerert, `[]` sjekkliste (klikk boksen for å krysse av). `/` på tom linje åpner en meny (piltaster + Enter). Enter i tomt punkt avslutter lista, Backspace først i overskrift/punkt gjør det til tekst. ⌘B / ⌘I. Lagres som Markdown. Bruk et lokalt editorbibliotek (f.eks. TipTap eller Lexical), ingen nettverk. Samme editor bør senere brukes i øktlogg, elevnotater og samtalenotater.
   - Samme editor som 29.1; sjekklistene står på én linje igjen (CSS rettet 25.10).
 - [x] **28.5 Resultater:** tabell med elev, oppgave, karakter og notat (ren tekst), «Skriv ut tilbakemeldinger» og «Kopier karakterlista».
-  - Tabellen og knappene stemmer.
+  - Tabellen: kolonneoverskrifter i små store bokstaver, «…» der karakteren mangler, og «møtte ikke» under karakter med «–» for oppgaven, som i tegningen (rettet 25.10). Teams-kopien er uendret.
 
 ## 29. Bli der du er (22.10) — godkjent
 

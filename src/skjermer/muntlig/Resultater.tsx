@@ -55,22 +55,40 @@ export function Resultater({ data }: { data: Muntligdata }) {
       </div>
       <table className="w-full border-collapse text-[13px]">
         <thead>
-          <tr className="text-left text-liten text-blekk-svak">
-            <th className="py-1.5 pr-3 font-normal">Elev</th>
-            <th className="py-1.5 pr-3 font-normal">Oppgave</th>
-            <th className="py-1.5 pr-3 font-normal">Karakter</th>
-            <th className="py-1.5 font-normal">Notat</th>
+          <tr className="text-left text-[11px] uppercase tracking-[.06em] text-blekk-svak">
+            <th className="py-1.5 pr-3 font-medium">Elev</th>
+            <th className="py-1.5 pr-3 font-medium">Oppgave</th>
+            <th className="py-1.5 pr-3 font-medium">Karakter</th>
+            <th className="py-1.5 font-medium">Notat</th>
           </tr>
         </thead>
         <tbody>
-          {rader.map((x) => (
-            <tr key={x.elevId} className="border-t border-linje-svak align-top">
-              <td className="whitespace-nowrap py-2 pr-3">{x.navn}</td>
-              <td className="py-2 pr-3 text-blekk-dempet">{x.oppgave}</td>
-              <td className="py-2 pr-3 font-semibold">{x.karakter}</td>
-              <td className="py-2 text-blekk-dempet">{x.notat}</td>
-            </tr>
-          ))}
+          {rader.map((x) => {
+            // Som i tegningen: «–» for oppgaven og «møtte ikke» under
+            // karakter; «…» der karakteren ikke er satt ennå.
+            const mott = x.oppgave !== "møtte ikke";
+            return (
+              <tr
+                key={x.elevId}
+                className="border-t border-linje-svak align-top"
+              >
+                <td className="whitespace-nowrap py-2 pr-3">{x.navn}</td>
+                <td className="py-2 pr-3 text-blekk-dempet">
+                  {mott ? x.oppgave || "–" : "–"}
+                </td>
+                <td className="py-2 pr-3 font-semibold">
+                  {!mott ? (
+                    "møtte ikke"
+                  ) : x.karakter ? (
+                    x.karakter
+                  ) : (
+                    <span className="font-normal text-blekk-svak">…</span>
+                  )}
+                </td>
+                <td className="py-2 text-blekk-dempet">{x.notat}</td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
       <div className="mt-3.5 flex gap-2">
