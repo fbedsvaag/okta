@@ -156,7 +156,7 @@ export function Tidsplanliste({
                   <div
                     data-dra-innhold={r.elevId}
                     style={kanDra ? stil({ gruppe: di, nr: ri }) : undefined}
-                    className={`grid min-w-0 grid-cols-[minmax(0,1fr)_34px] items-center gap-2.5 ${
+                    className={`grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(34px,auto)] items-center gap-2.5 ${
                       erDratt({ gruppe: di, nr: ri })
                         ? "relative z-20 -my-1.5 -ml-2 rounded-[10px] bg-ark py-1.5 pl-2 shadow-[var(--shadow-ark)]"
                         : ""
@@ -182,9 +182,14 @@ export function Tidsplanliste({
                       <span className="inline-grid h-[22px] w-[22px] place-items-center justify-self-center rounded-full bg-aksent text-[11px] text-ark">
                         ✓
                       </span>
+                    ) : info.merke === "–" ? (
+                      // Møtte ikke: bare streken, uten rute (tegningen).
+                      <span className="justify-self-center text-[13px] text-blekk-svak">
+                        –
+                      </span>
                     ) : (
                       <span
-                        className={`inline-grid h-7 w-7 place-items-center rounded-lg text-[13px] font-semibold ${
+                        className={`inline-grid h-7 min-w-7 place-items-center justify-self-end rounded-lg px-1.5 text-[13px] font-semibold ${
                           info.fylt
                             ? "bg-flate"
                             : "shadow-[inset_0_0_0_1.5px_var(--color-linje)] [border-style:dashed]"

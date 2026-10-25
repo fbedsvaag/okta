@@ -744,12 +744,14 @@ function Gjennomfor({
           <div className="mt-5">
             <Overskrift>Notat</Overskrift>
             {notat && (
-              <Notat
-                verdi={notat.tekst}
-                onEndre={skrivNotat}
-                minHoyde={150}
-                plassholder="Skriv mens dere snakker …  # overskrift, - punkt, / for meny"
-              />
+              <div className="text-[calc(14px*var(--tekst-skala))]">
+                <Notat
+                  verdi={notat.tekst}
+                  onEndre={skrivNotat}
+                  minHoyde={150}
+                  plassholder="Skriv mens dere snakker …  # overskrift, - punkt, / for meny"
+                />
+              </div>
             )}
           </div>
         </div>
@@ -990,7 +992,7 @@ function Overskrift({
 }) {
   return (
     <div
-      className={`text-[11px] font-semibold uppercase tracking-[.06em] text-blekk-svak ${
+      className={`text-[calc(13px*var(--tekst-skala))] font-semibold text-blekk ${
         ingenMarg ? "" : "mb-2"
       }`}
     >
@@ -1023,7 +1025,7 @@ function Oppsummering({
   }, [utlagt]);
   return (
     <div>
-      <div className="mb-2 text-[11px] font-semibold uppercase tracking-[.06em] text-blekk-svak">
+      <div className="mb-2 text-[calc(13px*var(--tekst-skala))] font-semibold text-blekk">
         Oppsummering
       </div>
       <table className="w-full border-collapse text-[13px]">

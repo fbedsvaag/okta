@@ -50,7 +50,7 @@ export function Resultater({ data }: { data: Muntligdata }) {
 
   return (
     <div>
-      <div className="mb-2 text-[11px] font-semibold uppercase tracking-[.06em] text-blekk-svak">
+      <div className="mb-2 text-[calc(13px*var(--tekst-skala))] font-semibold text-blekk">
         Resultater
       </div>
       <table className="w-full border-collapse text-[13px]">

@@ -262,7 +262,7 @@ export function MuntligArk({
               const borte = s?.motte === false;
               return {
                 under: borte ? "møtte ikke" : (s?.tema ?? ""),
-                merke: kar?.kode ?? (borte ? "–" : ""),
+                merke: kar?.kode ?? (borte ? "–" : null),
                 fylt: !!kar,
                 borte,
               };

@@ -72,6 +72,11 @@ export function Gjennomfor({
   }
 
   // 1–6 setter karakteren når du ikke skriver; ⌘↵ er neste elev overalt.
+  // Skalaer med ord («Ikke godkjent») får én knapp per linje; tall får
+  // rutenettet fra tegningen.
+  const ordskala = data.verdier.some(
+    (x) => x.teller_ikke === 0 && x.kode.length > 2,
+  );
   const fersk = useRef({ settKarakter, fraTast, onNeste });
   fersk.current = { settKarakter, fraTast, onNeste };
   useEffect(() => {
@@ -249,18 +254,28 @@ export function Gjennomfor({
           </div>
           <div className="mt-[18px]">
             <Overskrift>Notat under samtalen</Overskrift>
-            <Markdownfelt
-              verdi={res?.kommentar ?? null}
-              plassholder="Skriv mens eleven snakker …  # overskrift, - punkt, / for meny"
-              minRader={6}
-              onLagre={(t) => oppdaterResultat(v.id, elevId, { kommentar: t })}
-            />
+            <div className="text-[calc(14px*var(--tekst-skala))]">
+              <Markdownfelt
+                verdi={res?.kommentar ?? null}
+                plassholder="Skriv mens eleven snakker …  # overskrift, - punkt, / for meny"
+                minRader={6}
+                onLagre={(t) =>
+                  oppdaterResultat(v.id, elevId, { kommentar: t })
+                }
+              />
+            </div>
           </div>
         </div>
 
         <div>
           <Overskrift>Karakter</Overskrift>
-          <div className="grid grid-cols-[repeat(3,46px)] gap-2">
+          <div
+            className={
+              ordskala
+                ? "flex flex-col gap-1.5"
+                : "grid grid-cols-[repeat(3,46px)] gap-2"
+            }
+          >
             {data.verdier
               .filter((x) => x.teller_ikke === 0)
               .map((x) => {
@@ -271,16 +286,22 @@ export function Gjennomfor({
                     key={x.id}
                     onClick={() => void settKarakter(pa ? null : x.id)}
                     title={x.etikett ?? x.kode}
-                    className={`relative grid h-[46px] w-[46px] place-items-center rounded-xl text-[17px] font-semibold transition-colors duration-200 ${
+                    className={`relative rounded-xl font-semibold transition-colors duration-200 ${
                       pa ? "bg-aksent text-ark" : "bg-flate hover:bg-valgt"
-                    } ${x.kode.length > 2 ? "text-[12px]" : ""}`}
+                    } ${
+                      ordskala
+                        ? "flex h-9 items-center px-3 text-left text-[calc(13.5px*var(--tekst-skala))]"
+                        : "grid h-[46px] w-[46px] place-items-center text-[17px]"
+                    }`}
                   >
                     {x.kode}
                     {t && (
                       <kbd
-                        className={`absolute right-[5px] top-[3px] font-sans text-[9.5px] font-normal ${
-                          pa ? "text-ark/70" : "text-blekk-svak"
-                        }`}
+                        className={`absolute font-sans font-normal ${
+                          ordskala
+                            ? "right-3 top-1/2 -translate-y-1/2 text-[11px]"
+                            : "right-[5px] top-[3px] text-[9.5px]"
+                        } ${pa ? "text-ark/70" : "text-blekk-svak"}`}
                       >
                         {t}
                       </kbd>
@@ -347,7 +368,7 @@ function Overskrift({
 }) {
   return (
     <div
-      className={`text-[11px] font-semibold uppercase tracking-[.06em] text-blekk-svak ${
+      className={`text-[calc(13px*var(--tekst-skala))] font-semibold text-blekk ${
         ingenMarg ? "" : "mb-2"
       }`}
     >

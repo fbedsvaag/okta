@@ -50,7 +50,7 @@ export function Rubrikkvelger({
   return (
     <div>
       <div className="flex items-center gap-2.5">
-        <div className="text-[11px] font-semibold uppercase tracking-[.06em] text-blekk-svak">
+        <div className="text-[calc(13px*var(--tekst-skala))] font-semibold text-blekk">
           {form === "rubrikk" && !onForm ? "Rubrikk" : tittel}
         </div>
         <span className="flex-1" />

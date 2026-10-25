@@ -484,7 +484,7 @@ function EnOgEn({
       </div>
 
       <div className="mb-5 mt-[18px] flex flex-wrap items-center gap-3">
-        <span className="text-[11px] font-semibold uppercase tracking-[.06em] text-blekk-svak">
+        <span className="text-[calc(13px*var(--tekst-skala))] font-semibold text-blekk">
           Levert
         </span>
         <span className="inline-flex gap-0.5 rounded-full bg-flate p-0.5">
@@ -527,7 +527,7 @@ function EnOgEn({
               />
             </div>
           )}
-          <div className="mb-2 text-[11px] font-semibold uppercase tracking-[.06em] text-blekk-svak">
+          <div className="mb-2 text-[calc(13px*var(--tekst-skala))] font-semibold text-blekk">
             Kommentar til eleven
           </div>
           <textarea
@@ -592,7 +592,7 @@ function EnOgEn({
         </div>
 
         <div>
-          <div className="mb-2 text-[11px] font-semibold uppercase tracking-[.06em] text-blekk-svak">
+          <div className="mb-2 text-[calc(13px*var(--tekst-skala))] font-semibold text-blekk">
             Karakter
           </div>
           <div className="grid grid-cols-[repeat(3,42px)] gap-[7px]">
