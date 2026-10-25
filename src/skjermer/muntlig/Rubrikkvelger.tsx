@@ -169,9 +169,14 @@ export function Rubrikkvelger({
             <span className="text-liten text-blekk-svak">
               {forslag !== null
                 ? "Alle kriteriene er vurdert."
-                : `${antallVurdert(r, valg)} av ${krit.length} vurdert`}
+                : `${antallVurdert(r, valg)} av ${krit.length} vurdert · klikk et nivå, så går den videre til neste`}
             </span>
             <span className="flex-1" />
+            {forslag === null && (
+              <span className="shrink-0 rounded-full bg-flate-svak px-2.5 py-0.5 text-liten text-blekk-svak">
+                Forslag når alle er vurdert
+              </span>
+            )}
             {forslag !== null && (
               <button
                 onClick={() => forslagVerdi && onBruk(forslagVerdi.id)}

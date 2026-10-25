@@ -330,7 +330,7 @@ export function SlikVurdererDu({
                 <textarea
                   value={k.tekst}
                   placeholder="Kriterium"
-                  rows={2}
+                  rows={3}
                   onChange={(e) => krit(i, (x) => (x.tekst = e.target.value))}
                   className={`${celle} font-medium`}
                 />
@@ -339,7 +339,7 @@ export function SlikVurdererDu({
                     key={n.id}
                     value={k.celler[n.id] ?? ""}
                     placeholder="Beskriv nivået"
-                    rows={2}
+                    rows={3}
                     onChange={(e) =>
                       krit(i, (x) => (x.celler[n.id] = e.target.value))
                     }
