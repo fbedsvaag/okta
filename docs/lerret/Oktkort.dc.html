@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<title>Øktkortet</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#d4cee2}
+:root{--pal:#4a3d7d;--pal-lys:#e3ddf0;--pal-mid:#b2a8d2;--pal-svak:#f4f2f9;--ease-sprett:cubic-bezier(.34,1.32,.5,1)}
+.pt{position:relative;z-index:1;display:flex;align-items:center;gap:9px;height:32px;padding:0 10px;border-radius:10px;color:#2e2840;font-size:14px}
+.pt.on{font-weight:500;color:#241f33}
+.under{position:relative;z-index:1;display:flex;align-items:center;gap:8px;min-height:28px;margin-left:22px;padding:3px 10px;border-radius:8px;color:#2e2840;font-size:13px}
+.under.on{font-weight:500}
+.under::before{content:"";position:absolute;left:-11px;top:-1px;bottom:-1px;width:1.5px;border-radius:1px;background:rgba(36,31,51,.16)}
+.kbd{margin-left:auto;font-size:11px;color:#6b6482;letter-spacing:.04em;font-weight:400}
+.navmark{position:absolute;left:8px;right:8px;border-radius:10px;background:rgba(255,255,255,.88);box-shadow:0 1px 3px rgba(36,31,51,.14),inset 0 1px 0 #fff;pointer-events:none}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;height:30px;padding:0 13px;border-radius:999px;border:1px solid #d9d4e8;background:#fff;color:#241f33;font:inherit;font-size:13px;cursor:pointer;white-space:nowrap}
+.btn.pri{background:var(--pal);border-color:var(--pal);color:#fff;font-weight:500}
+.btn.stille{border-color:transparent;background:transparent;color:#645d7a}
+.seg{position:relative;display:inline-flex;padding:2px;border-radius:999px;background:rgba(36,31,51,.06)}
+.seg button{all:unset;position:relative;z-index:1;cursor:pointer;height:26px;display:inline-flex;align-items:center;justify-content:center;font-size:12.5px;color:#645d7a;transition:color 200ms}
+.seg button.on{color:#241f33;font-weight:500}
+.tommel{position:absolute;top:2px;left:2px;height:26px;border-radius:999px;background:#fff;box-shadow:0 1px 3px rgba(36,31,51,.16);transition:transform 340ms var(--ease-sprett),width 340ms var(--ease-sprett)}
+.chip{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 9px;border-radius:12px;background:var(--pal-svak);font-size:12px;white-space:nowrap}
+.fk{width:8px;height:8px;border-radius:2px;flex:none;display:inline-block}
+.av{border-radius:50%;overflow:hidden;flex:none;display:inline-block;background:var(--pal-lys)}
+.ell{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.num{font-variant-numeric:tabular-nums}
+.h{font-size:13px;font-weight:600;margin:0}
+.kort{border-radius:14px;background:#fff;box-shadow:inset 0 0 0 1px #ece9f3;padding:16px 18px}
+.hm{border-radius:2px;display:inline-block}
+.g{background:#3f9d49}.y{background:#d9a92f}.r{background:#c04a3d}.o{background:#d5d8dd}
+.glide{transition:transform 260ms var(--ease-sprett),height 260ms var(--ease-sprett)}
+@media (prefers-reduced-motion: reduce){.glide,.tommel{transition:none!important}}
+
+.bak{position:absolute;inset:0;background:rgba(36,31,51,.12)}
+.ark{position:absolute;left:150px;right:150px;top:24px;bottom:16px;border-radius:22px;background:#fff;box-shadow:0 30px 80px rgba(36,31,51,.28),0 0 0 1px rgba(36,31,51,.08);display:flex;flex-direction:column;overflow:hidden}
+.topp{padding:20px 28px 12px;border-bottom:1px solid #f1eff6;position:relative}
+.meta{display:flex;align-items:center;gap:8px;margin:8px 0 0 24px;font-size:13px;color:#645d7a;flex-wrap:wrap}
+.mk{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:6px;padding:2px 8px;border-radius:7px;color:#645d7a;transition:background 200ms,color 200ms}
+.mk:hover,.mk.on{background:#f4f2f9;color:#241f33}
+.mk kbd{font:inherit;font-size:10.5px;color:#9a90b8;box-shadow:inset 0 0 0 1px #d9d4e8;border-radius:4px;padding:0 4px}
+.tl{display:flex;align-items:center;gap:18px;padding:10px 28px;border-bottom:1px solid #f1eff6}
+.tl .bane{flex:1;position:relative;height:30px}
+.seg2{position:absolute;top:6px;height:12px;border-radius:4px;background:#d9d4e8}
+.seg2.ferdig{background:#b2a8d2}.seg2.na{background:#fff;box-shadow:inset 0 0 0 1.5px #4a3d7d}.seg2.p{background:repeating-linear-gradient(135deg,#e3ddf0 0 4px,#fff 4px 8px)}
+.nal{position:absolute;top:0;width:2px;height:22px;background:#4a3d7d;border-radius:1px}
+.nal:before{content:"";position:absolute;top:-3px;left:-3px;width:8px;height:8px;border-radius:50%;background:#4a3d7d}
+.tlt{position:absolute;top:20px;font-size:10.5px;color:#9a90b8;transform:translateX(-50%)}
+.kropp{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 330px}
+.vk{overflow:auto;padding:12px 22px 20px}
+.hk{border-left:1px solid #f1eff6;overflow:auto;padding:16px 22px}
+.er{display:grid;grid-template-columns:96px 30px minmax(0,1fr) 46px;align-items:center;gap:10px;height:38px;padding:0 8px;border-radius:9px;font-size:13.5px;border-bottom:1px solid #f6f4f9;cursor:pointer;transition:background 200ms}
+.er:hover{background:#faf9fc}.er.v{background:#f4f2f9;box-shadow:inset 3px 0 0 #4a3d7d}
+.er .not{font-size:12px;color:#8a82a3;font-style:italic;margin-left:8px}
+.lys{display:flex;gap:10px}.lys i{width:13px;height:13px;border-radius:50%;opacity:.22;transition:opacity 160ms,transform 200ms}.lys i.on{opacity:1}
+.lys i.b{background:#3a3546;position:relative}.lys i.b.on:after{content:"×";position:absolute;inset:0;color:#fff;font-size:10px;line-height:13px;text-align:center;font-style:normal}
+.er.borte .nv{color:#b8b0cc}
+.av{width:26px;height:26px;border-radius:50%;background:#e3ddf0}
+.er small{font-size:11.5px;color:#9a90b8;text-align:right}
+.fil{display:flex;align-items:center;gap:10px;margin:4px 8px 8px;font-size:12.5px;color:#645d7a}
+.ph{font-size:12px;font-weight:600;color:#645d7a;margin:0 0 8px}
+.pr{display:flex;align-items:center;gap:10px;min-height:38px;font-size:13.5px;border-radius:9px;padding:0 8px;cursor:pointer}
+.pr i{width:16px;height:16px;border-radius:5px;box-shadow:inset 0 0 0 1.5px #c9c2dd;flex:none;display:grid;place-items:center}
+.pr.ok{color:#9a90b8}.pr.ok i{background:#b2a8d2;box-shadow:none}.pr.ok span.t{text-decoration:line-through;text-decoration-color:#d9d4e8}
+.pr.na{background:#f4f2f9}.pr small{margin-left:auto;font-size:12px;color:#9a90b8;white-space:nowrap}
+.ed{outline:none;min-height:130px;font-size:14px;line-height:1.6;padding:2px}
+.ed h4{font-size:14.5px;font-weight:600;margin:6px 0 2px}.ed ul{margin:0 0 4px;padding-left:22px}.ed li::marker{color:#9a90b8}.ed p{margin:0 0 4px}
+.ed ul.sj{list-style:none;padding-left:2px}.ed ul.sj li{position:relative;padding-left:24px}.ed ul.sj li:before{content:"";position:absolute;left:0;top:5px;width:14px;height:14px;border-radius:4px;box-shadow:inset 0 0 0 1.5px #c9c2dd}
+.tips{font-size:12px;color:#9a90b8;line-height:1.45}
+.fot{display:flex;gap:16px;align-items:center;padding:9px 22px;border-top:1px solid #f1eff6;background:#faf9fc;font-size:12px;color:#9a90b8}
+.fot kbd{font:inherit;padding:0 5px;border-radius:4px;box-shadow:inset 0 0 0 1px #d9d4e8;color:#645d7a;margin-right:4px}
+.pop{position:absolute;z-index:20;top:96px;width:340px;padding:12px;border-radius:16px;background:rgba(255,255,255,.98);box-shadow:0 18px 50px rgba(36,31,51,.24),0 0 0 1px rgba(36,31,51,.07);animation:pinn 200ms cubic-bezier(.22,1,.36,1);font-size:13px}
+@keyframes pinn{from{opacity:0;transform:translateY(-5px)}}
+.vo{display:flex;flex-direction:column;gap:2px}.vo button{all:unset;cursor:pointer;padding:8px 10px;border-radius:9px}.vo button:hover{background:#f4f2f9}.vo small{display:block;color:#9a90b8;font-size:12px}
+.kart{display:grid;grid-template-columns:repeat(3,1fr);gap:6px 14px}.kart .b{display:grid;grid-template-columns:1fr 1fr;gap:2px;padding:2px;border-radius:7px;background:#f4f2f9}
+.kart .b span{height:24px;border-radius:5px;background:#fff;font-size:10.5px;display:flex;align-items:center;padding:0 5px;white-space:nowrap;overflow:hidden}
+.kart .b span.x{color:#b8b0cc;text-decoration:line-through}.kart .b span.l{background:transparent;box-shadow:inset 0 0 0 1px #e3ddf0}
+.felt{display:flex;flex-direction:column;gap:4px;font-size:12px;color:#645d7a}.felt b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:400;font-size:13.5px;color:#241f33;padding:6px 10px;border-radius:8px;background:#f7f6fb;box-shadow:inset 0 0 0 1px #ece9f3}
+.ptl{display:flex;gap:3px;height:44px}.ptl div{border-radius:8px;background:#efecf6;padding:5px 8px;font-size:11.5px;overflow:hidden;white-space:nowrap}.ptl div small{display:block;color:#9a90b8}
+.ptl div.p{background:repeating-linear-gradient(135deg,#e3ddf0 0 4px,#fff 4px 8px)}
+
+</style>
+</helmet>
+<div style="position:relative;height:1060px;padding:24px;box-sizing:border-box;overflow:hidden;font-family:'Geist',-apple-system,sans-serif;color:#241f33;font-size:14px">
+<div aria-hidden="true" style="position:absolute;left:-120px;top:-80px;width:620px;height:620px;border-radius:50%;background:#8a7bc2;filter:blur(70px);opacity:.75"></div>
+<div aria-hidden="true" style="position:absolute;left:-60px;top:560px;width:520px;height:520px;border-radius:50%;background:#5f9e98;filter:blur(80px);opacity:.7"></div>
+<div aria-hidden="true" style="position:absolute;right:-100px;top:-60px;width:700px;height:500px;border-radius:50%;background:#b8aee0;filter:blur(90px);opacity:.6"></div>
+<div style="position:relative;display:flex;height:1012px;border-radius:16px;overflow:hidden;background:rgba(236,234,241,.42);backdrop-filter:blur(40px) saturate(160%);box-shadow:0 24px 70px rgba(36,31,51,.28),0 0 0 1px rgba(36,31,51,.14)">
+<nav aria-label="Hovedmeny" style="position:relative;width:236px;flex:none;margin:10px;padding:12px 8px;box-sizing:border-box;display:flex;flex-direction:column;gap:2px;border-radius:22px;background:rgba(255,255,255,.5);backdrop-filter:blur(28px) saturate(170%);border:1px solid rgba(255,255,255,.75);box-shadow:inset 0 1px 0 rgba(255,255,255,.95),0 10px 30px rgba(36,31,51,.14)">
+<div style="display:flex;align-items:center;gap:8px;padding:2px 8px 10px"><svg width="20" height="20" viewBox="0 0 1024 1024" aria-hidden="true"><rect x="40" y="40" width="944" height="944" rx="215" fill="#241F33"></rect><rect x="290" y="330" width="200" height="364" rx="44" fill="#EEEDFE"></rect><rect x="516" y="330" width="100" height="364" rx="40" fill="#C9C2DD"></rect><rect x="642" y="330" width="100" height="364" rx="40" fill="#9A90B8"></rect></svg><span style="font-weight:600;font-size:14px">Økta</span><span class="num" style="margin-left:auto;font-size:11px;color:#4b4560">2026/27</span></div>
+<div style="display:flex;align-items:center;gap:8px;height:30px;padding:0 12px;margin-bottom:10px;border-radius:999px;background:rgba(255,255,255,.55);border:1px solid rgba(255,255,255,.75);font-size:13px;color:#4b4560">Søk<span class="kbd">⌘K</span></div>
+<div class="navmark" style="top:231px;height:34px;left:30px"></div><div class="pt ">I dag<span class="kbd">G D</span></div><div class="pt on">Økter<span class="kbd">G Ø</span></div><div class="under "><span class="fk" style="background:#c9c2dd"></span>Alle fag<span class="kbd"></span></div><div class="under "><span class="fk" style="background:#2e6a8e"></span>MFL1<span class="kbd"></span></div><div class="under on"><span class="fk" style="background:#9a5a2c"></span>MFL2<span class="kbd"></span></div><div class="under "><span class="fk" style="background:#3d7a5a"></span>ENG1<span class="kbd"></span></div><div class="pt ">Elever<span class="kbd">G E</span></div><div class="pt ">Vurderinger og samtaler<span class="kbd">G V</span></div><div class="pt ">Plasser og grupper<span class="kbd">G P</span></div>
+<div style="flex:1"></div><div class="pt">Innstillinger<span class="kbd">⌘,</span></div></nav>
+<main style="position:relative;flex:1;margin:10px 10px 10px 0;border-radius:16px;background:rgba(255,255,255,.4)"><div class="bak"></div><div class="ark">
+<div class="topp">
+<div style="display:flex;align-items:center;gap:12px"><span class="fk" style="width:12px;height:12px;background:#7a4f2e"></span><b style="color:#7a4f2e;font-size:14px">HIS3</b><span style="font-size:26px;font-weight:300;letter-spacing:-.01em">Byene vokser: arbeid og bolig</span><span style="flex:1"></span>
+<span class="chip">{{status}}</span><span class="tips">esc</span><button class="btn pri">Ferdig ⌘↵</button></div>
+<div class="meta">Onsdag 21. oktober · 08:30–10:00 · Rom 118 · <span style="color:#2f9a8a">●</span> Industrialisering ·
+<button class="{{kKl}}" onClick="{{kT}}"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="1.5" y="3" width="5.5" height="4" rx="1"/><rect x="9" y="3" width="5.5" height="4" rx="1"/><rect x="1.5" y="9.5" width="5.5" height="4" rx="1"/><rect x="9" y="9.5" width="5.5" height="4" rx="1"/></svg>Klassekart<kbd>K</kbd></button>
+<button class="{{vKl}}" onClick="{{vT}}"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M4 2.5h6l2.5 2.5v8.5h-8.5z"/><path d="M6 8l1.5 1.5L10.5 6.5"/></svg>Vurdering<kbd>V</kbd></button>
+<span style="flex:1"></span>
+<div class="seg"><span class="tommel" style="left:{{mx}};width:{{mw}}"></span><button class="{{mS}}" style="width:120px" onClick="{{tilS}}">Skåring og logg</button><button class="{{mP}}" style="width:96px" onClick="{{tilP}}">Planlegging</button></div></div>
+<sc-if value="{{kApen}}" hint-placeholder-val="{{ false }}"><div class="pop" style="right:20px;width:420px"><div style="display:flex;align-items:center;margin-bottom:8px"><b>Klassekart · Rom 118</b><span style="flex:1"></span><span class="tips">16 til stede · 1 borte</span></div>
+<div class="kart"><div class="b"><span class="">Alex T.</span><span class="">Ella F.</span></div><div class="b"><span class="">Elias B.</span><span class="">Emil S.</span></div><div class="b"><span class="">Emma S.</span><span class="">Filip D.</span></div><div class="b"><span class="">Henrik A.</span><span class="">Ida M.</span></div><div class="b"><span class="">Ingeborg E.</span><span class="">Ingrid B.</span></div><div class="b"><span class="">Jakob N.</span><span class="">Jonas L.</span></div><div class="b"><span class="">Kim S.</span><span class="">Lukas B.</span></div><div class="b"><span class="">Maja L.</span><span class="">Mats H.</span></div><div class="b"><span class="x">Nora V.</span><span class="l"></span></div></div><div style="height:16px;border-radius:5px;background:#eeebf5;margin:8px auto 0;width:40%;font-size:9.5px;color:#8a82a3;display:grid;place-items:center">TAVLE · du står her</div></div></sc-if>
+<sc-if value="{{vApen}}" hint-placeholder-val="{{ false }}"><div class="pop" style="right:20px"><div class="ph">Vurdering i denne økta</div><div class="vo">
+<button><b>Skriftlig prøve nå</b><small>Elevene som er til stede blir lagt inn. Fører etterpå.</small></button>
+<button><b>Muntlig i økta</b><small>Tidsplan innenfor øktas tid.</small></button>
+<button><b>Knytt til en vurdering</b><small>Kampanjeplan · frist fre 13.11</small></button></div></div></sc-if>
+</div>
+<sc-if value="{{erS}}" hint-placeholder-val="{{ true }}">
+<div class="tl"><div style="width:170px"><div class="tips">Nå</div><b style="font-size:13.5px;font-weight:600">Gruppearbeid: kildekritikk</b></div><div class="bane"><div class="seg2 ferdig" style="left:0.0%;width:calc(11.11111111111111% - 3px)"></div><div class="seg2 ferdig" style="left:11.11111111111111%;width:calc(33.33333333333333% - 3px)"></div><div class="seg2 p" style="left:44.44444444444444%;width:calc(11.11111111111111% - 3px)"></div><div class="seg2 na" style="left:55.55555555555556%;width:calc(33.33333333333333% - 3px)"></div><div class="seg2" style="left:88.88888888888889%;width:calc(11.11111111111111% - 3px)"></div><div class="nal" style="left:67.77777777777779%"></div><span class="tlt" style="left:0;transform:none">08:30</span><span class="tlt" style="left:67.77777777777779%;color:#4a3d7d;font-weight:600">09:31</span><span class="tlt" style="right:0;left:auto;transform:none">10:00</span></div><div style="text-align:right"><b style="font-size:14px">9 av 30 min</b><div class="tips">i rute</div></div></div>
+<div class="kropp"><div class="vk">
+<div class="fil"><b style="color:#241f33">Elever</b><span>{{skaret}}</span><span style="flex:1"></span><div class="seg"><span class="tommel" style="left:{{fx}};width:{{fw}}"></span><sc-for list="{{filtre}}" as="f" hint-placeholder-count="3"><button class="{{f.kl}}" style="width:{{f.w}}" onClick="{{f.klikk}}">{{f.n}}</button></sc-for></div></div>
+<sc-for list="{{elever}}" as="e" hint-placeholder-count="17"><div class="{{e.kl}}" onClick="{{e.velg}}"><span class="lys"><sc-for list="{{e.d}}" as="d" hint-placeholder-count="4"><i class="{{d.kl}}" style="background:{{d.c}}"></i></sc-for></span><span class="av"></span><span class="nv ell">{{e.n}}<span class="not">{{e.not}}</span></span><small>{{e.k}}</small></div></sc-for>
+</div><div class="hk">
+<div class="ph">Plan <span class="tips" style="font-weight:400">krysses av når tida er ute</span></div>
+<sc-for list="{{plan}}" as="p" hint-placeholder-count="5"><div class="{{p.kl}}" onClick="{{p.t}}"><i><svg width="9" height="9" viewBox="0 0 10 10"><path d="M1.5 5.2l2.2 2.2L8.5 2.6" stroke="#fff" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></i><span class="t">{{p.n}}</span><small>{{p.tid}}</small></div></sc-for>
+<div class="ph" style="margin-top:18px">Øktlogg</div>
+<div class="ed" contenteditable="true" spellcheck="true"><p>Halve klassen ble ikke ferdig med kildene.</p><ul class="sj"><li>Start med kildene på fredag</li></ul></div>
+<div class="tips"># overskrift · - punkt · [] blir gjøremål på I dag · / meny</div>
+</div></div>
+<div class="fot"><span><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd>rød · gul · grønn</span><span><kbd>0</kbd>borte</span><span><kbd>N</kbd>notat</span><span><kbd>K</kbd>klassekart</span><span><kbd>V</kbd>vurdering</span><span><kbd>B</kbd><kbd>A</kbd>borte / alle</span><span style="flex:1"></span><span>esc lukk, alt er lagret</span></div>
+</sc-if>
+<sc-if value="{{erP}}" hint-placeholder-val="{{ false }}">
+<div class="kropp"><div class="vk" style="padding-top:18px">
+<div style="display:grid;grid-template-columns:118px 118px 64px minmax(0,1fr);gap:10px"><div class="felt">Dato<b>21.10.2026</b></div><div class="felt">Tid<b>08:30–10:00</b></div><div class="felt">Rom<b>118</b></div><div class="felt">Periode<b><span style="color:#2f9a8a">●</span> Industrialisering</b></div></div>
+<div class="ph" style="margin-top:20px">Til elevene <span class="tips" style="font-weight:400">går ut i kalenderen og årsplanen</span></div>
+<div class="ed" contenteditable="true" style="min-height:70px"><h4>Agenda</h4><ul><li>Repetisjon</li><li>Byene vokser</li><li>Kildekritikk i grupper</li><li>Oppsummering</li></ul><p><b>Lekse:</b> les s. 112–118</p></div>
+<div style="display:flex;align-items:baseline;gap:10px;margin-top:16px"><div class="ph" style="margin:0">Plan <span class="tips" style="font-weight:400">bare for deg</span></div><span style="flex:1"></span><span class="tips">90 av 90 min · går opp</span></div>
+<div class="ptl" style="margin-top:8px"><div style="flex:10">Repetisjon<small>10 min</small></div><div style="flex:30">Gjennomgang: byene vokser<small>30 min</small></div><div class="p" style="flex:10">Pause<small>10 min</small></div><div style="flex:30;box-shadow:inset 0 0 0 1.5px #4a3d7d;background:#fff">Gruppearbeid: kildekritikk<small>30 min</small></div><div style="flex:10">Oppsummering<small>10 min</small></div></div>
+<div class="tips" style="margin-top:6px">Dra i kantene for å endre tid, dra en bolk for å flytte. Klikk for beskrivelse.</div>
+<div class="ph" style="margin-top:20px">Kladd <span class="tips" style="font-weight:400">bare for deg · dra i håndtaket for mer plass</span></div>
+<div class="ed" contenteditable="true" style="min-height:60px;background:#faf9fc;border-radius:10px;padding:8px 12px"><p>Kildene ligger i Teams. Husk projektor til fotografiet.</p></div>
+<div class="ph" style="margin-top:20px">Kompetansemål <span class="tips" style="font-weight:400">1 valgt · periodens mål</span></div>
+<div class="pr ok" style="cursor:default"><i><svg width="9" height="9" viewBox="0 0 10 10"><path d="M1.5 5.2l2.2 2.2L8.5 2.6" stroke="#fff" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></i><span>8 · reflektere over hvordan teknologiske omveltninger har endret mennesker og samfunn</span></div>
+</div><div class="hk">
+<div class="ph">Fra forrige økt · man 19.10</div><div style="font-size:13.5px;line-height:1.5">Vi rakk ikke kildene om Christiania. Start med dem.</div>
+<div class="ph" style="margin-top:18px">Følg opp i økta</div><div style="font-size:13px;line-height:1.8"><span style="color:#c04a3d">●</span> Filip: rød to ganger på rad<br><span style="color:#9a90b8">●</span> Nora: borte sist</div>
+<div class="ph" style="margin-top:18px">Vurdering</div><div class="tips" style="color:#645d7a">Ingen i denne økta. <button class="lenke" style="all:unset;cursor:pointer;color:var(--pal)" onClick="{{vT}}">Legg til (V)</button></div>
+<div class="ph" style="margin-top:18px">Perioden</div><div style="font-size:13px">Industrialisering · økt 2 av 18</div>
+</div></div>
+<div class="fot"><span><kbd>⌘←</kbd><kbd>⌘→</kbd>forrige / neste økt</span><span><kbd>↵</kbd>ny aktivitet</span><span><kbd>K</kbd>klassekart</span><span><kbd>V</kbd>vurdering</span><span style="flex:1"></span><span>esc lukk, alt er lagret</span></div>
+</sc-if>
+</div></main>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1060}}'>
+var EL = [{"n": "Alex Tangen", "k": "1STA", "s": "3", "notat": "Ledet gruppa godt"}, {"n": "Ella Fjeld", "k": "1STA", "s": "3", "notat": ""}, {"n": "Elias Berg", "k": "1STA", "s": "2", "notat": ""}, {"n": "Emil Strand", "k": "1STA", "s": "3", "notat": ""}, {"n": "Emma Sand", "k": "1STA", "s": "3", "notat": ""}, {"n": "Filip Dahl", "k": "1STA", "s": "1", "notat": "Mobil, fikk beskjed to ganger"}, {"n": "Henrik Aas", "k": "1STA", "s": "3", "notat": ""}, {"n": "Ida Moe", "k": "1STA", "s": "2", "notat": ""}, {"n": "Ingeborg Eide", "k": "1STA", "s": "3", "notat": ""}, {"n": "Ingrid Bakken", "k": "1STB", "s": "", "notat": ""}, {"n": "Jakob Næss", "k": "1STB", "s": "", "notat": ""}, {"n": "Jonas Lie", "k": "1STB", "s": "", "notat": ""}, {"n": "Kim Solberg", "k": "1STB", "s": "", "notat": ""}, {"n": "Lukas Brekke", "k": "1STB", "s": "", "notat": ""}, {"n": "Maja Lund", "k": "1STB", "s": "", "notat": ""}, {"n": "Mats Hagen", "k": "1STB", "s": "", "notat": ""}, {"n": "Nora Vik", "k": "1STB", "s": "0", "notat": ""}], PLAN = [["Repetisjon fra sist", 10, true], ["Gjennomgang: byene vokser", 30, true], ["Pause", 10, true, "p"], ["Gruppearbeid: kildekritikk", 30, false], ["Oppsummering", 10, false]];
+var IC = { '1': '#c04a3d', '2': '#d9a92f', '3': '#3f9d49' };
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { e: EL.map(function (x) { return Object.assign({}, x); }), v: 9, modus: 's', f: 'alle', k: false, vo: false, plan: PLAN.map(function (p) { return p[2]; }) }; }
+  componentDidMount() { var self = this; this._t = function (e) { if (e.target && (/INPUT|TEXTAREA/.test(e.target.tagName) || e.target.isContentEditable)) return; var st = self.state;
+      if (e.key === 'k' || e.key === 'K') { self.setState({ k: !st.k, vo: false }); return; }
+      if (e.key === 'v' || e.key === 'V') { self.setState({ vo: !st.vo, k: false }); return; }
+      if (e.key === 'Escape' && (st.k || st.vo)) { self.setState({ k: false, vo: false }); return; }
+      if (st.modus !== 's') return;
+      if (/^[0-3]$/.test(e.key)) { var a = st.e.map(function (x) { return Object.assign({}, x); }); a[st.v].s = a[st.v].s === e.key ? '' : e.key; self.setState({ e: a, v: Math.min(a.length - 1, st.v + 1) }); }
+      if (e.key === 'ArrowDown') { e.preventDefault(); self.setState({ v: Math.min(st.e.length - 1, st.v + 1) }); }
+      if (e.key === 'ArrowUp') { e.preventDefault(); self.setState({ v: Math.max(0, st.v - 1) }); }
+      if (e.key === 'b' || e.key === 'B') self.setState({ f: st.f === 'borte' ? 'alle' : 'borte' });
+      if (e.key === 'a' || e.key === 'A') self.setState({ f: 'alle' }); };
+    window.addEventListener('keydown', this._t); }
+  componentWillUnmount() { window.removeEventListener('keydown', this._t); }
+  renderVals() { var self = this, st = this.state, o = {};
+    o.erS = st.modus === 's'; o.erP = st.modus === 'p'; o.mS = o.erS ? 'on' : ''; o.mP = o.erP ? 'on' : ''; o.mx = o.erS ? '2px' : '122px'; o.mw = o.erS ? '120px' : '96px';
+    o.tilS = function () { self.setState({ modus: 's' }); }; o.tilP = function () { self.setState({ modus: 'p' }); };
+    o.status = o.erS ? 'Pågår · 29 min igjen' : 'I dag · om 2 t';
+    o.kApen = st.k; o.vApen = st.vo; o.kKl = 'mk' + (st.k ? ' on' : ''); o.vKl = 'mk' + (st.vo ? ' on' : '');
+    o.kT = function (e) { e.stopPropagation(); self.setState({ k: !st.k, vo: false }); }; o.vT = function (e) { if (e) e.stopPropagation(); self.setState({ vo: !st.vo, k: false }); };
+    var F = [['alle', 'Alle', 52], ['her', 'Til stede', 78], ['borte', 'Borte', 60]], x = 2;
+    o.filtre = F.map(function (f) { if (f[0] === st.f) { o.fx = x + 'px'; o.fw = f[2] + 'px'; } x += f[2]; return { n: f[1], w: f[2] + 'px', kl: f[0] === st.f ? 'on' : '', klikk: function () { self.setState({ f: f[0] }); } }; });
+    var sk = st.e.filter(function (q) { return q.s && q.s !== '0'; }).length, b = st.e.filter(function (q) { return q.s === '0'; }).length;
+    o.skaret = sk + ' av ' + (st.e.length - b) + ' skåret · ' + b + ' borte';
+    o.elever = st.e.map(function (q, i) { return [q, i]; }).filter(function (p) { var q = p[0]; return st.f === 'alle' || (st.f === 'borte' ? q.s === '0' : q.s !== '0'); }).map(function (p) { var q = p[0], i = p[1];
+      return { n: q.n, k: q.k, not: q.notat, kl: 'er' + (i === st.v ? ' v' : '') + (q.s === '0' ? ' borte' : ''), velg: function () { self.setState({ v: i }); },
+        d: ['1', '2', '3', '0'].map(function (v) { return { kl: (v === '0' ? 'b' : '') + (q.s === v ? ' on' : ''), c: v === '0' ? '' : IC[v] }; }) }; });
+    var t = 0; o.plan = PLAN.map(function (p, i) { var fra = 510 + t; t += p[1]; var hm = Math.floor(fra / 60) + ':' + ('0' + fra % 60).slice(-2);
+      return { n: p[0], tid: i === 3 ? '21 min igjen' : (i > 3 ? hm : p[1] + ' min'), kl: 'pr' + (st.plan[i] ? ' ok' : '') + (i === 3 ? ' na' : ''), t: function () { var a = st.plan.slice(); a[i] = !a[i]; self.setState({ plan: a }); } }; });
+    return o; } }
+</script>
+</body>
+</html>

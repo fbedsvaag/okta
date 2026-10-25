@@ -2843,21 +2843,22 @@ textarea,
   list-style: none;
   padding-left: 0.1em;
 }
-.notat .notat-flate li[data-type="taskItem"] {
+/* TipTap merker ikke punktene med data-type; lista gjør det. */
+.notat .notat-flate ul[data-type="taskList"] > li {
   display: flex;
   gap: 0.5em;
   align-items: flex-start;
 }
-.notat .notat-flate li[data-type="taskItem"] > label {
+.notat .notat-flate ul[data-type="taskList"] > li > label {
   margin-top: 0.3em;
   flex: none;
 }
-.notat .notat-flate li[data-type="taskItem"] > label input {
+.notat .notat-flate ul[data-type="taskList"] > li > label input {
   accent-color: var(--color-aksent);
   width: 15px;
   height: 15px;
 }
-.notat .notat-flate li[data-type="taskItem"][data-checked="true"] > div {
+.notat .notat-flate ul[data-type="taskList"] > li[data-checked="true"] > div {
   color: var(--color-blekk-svak);
   text-decoration: line-through;
 }

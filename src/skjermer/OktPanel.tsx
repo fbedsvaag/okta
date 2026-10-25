@@ -2,8 +2,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Elevfoto } from "../ui/Elevfoto";
 import { Bryter, Fagfirkant } from "../ui/felles";
 import {
-  borteSist,
-  lesPlan,
   narTekst,
   standardModus,
   type Oktmodus,
@@ -15,7 +13,7 @@ import { Markdown, Markdownfelt } from "../ui/Notattekst";
 import { useArk } from "../ui/Arkstabel";
 import { visFraKateteret } from "./KlassekartKart";
 import { OktKlassekart } from "./OktKlassekart";
-import { iFelt, kartTast } from "../data/oktkart";
+import { iFelt, kartTast, vurderingTast } from "../data/oktkart";
 import { hentPerioder, type Periode } from "../data/perioder";
 import {
   endreOkt,
@@ -32,11 +30,11 @@ import { taster, type Skalaverdi } from "../skala";
 import { fagfarge, skalafarge } from "../ui/farger";
 import { hovedtast, harModifikator, tast as visTast } from "../ui/taster";
 import { Kladdfelt } from "./Okttekst";
-import { Liveplan, Nalinje, useMinutt, visesLive } from "./Oktlive";
+import { Liveplan, Nalinje, Tidsstripe, useMinutt, visesLive } from "./Oktlive";
 import { usePlanvisning } from "./Oktplan";
-import { hentOktrader } from "../data/oktrader";
 import { visToast } from "../ui/Toast";
 import { Skarprikk, slagFraVerdi } from "../ui/Skarprikk";
+import { OktVurderingKort } from "./OktVurderingKort";
 
 /**
  * Økta som ark, SPEC §4.4 og DESIGN.md §10 (lerretet «OktArk»).
@@ -93,11 +91,6 @@ export function OktPanel({
   const na = useMinutt();
   const pagar = minIgjen(okt, na);
   const visning = usePlanvisning();
-  // Full, den dagen økta er: planen som loddrett tidslinje (OktLiveVertikal).
-  const loddrett =
-    visning === "full" &&
-    visesLive(okt, na) &&
-    lesPlan(okt.plan).punkter.length > 0;
 
   // ⌘↵ = Ferdig, også fra et felt i arket. ⌘← / ⌘→ blar til forrige og
   // neste økt i faget, men ikke i et felt — der flytter de markøren.
@@ -132,26 +125,33 @@ export function OktPanel({
   const liste = useRef<HTMLDivElement>(null);
   // Kartkortet (27) og raden som blinker når en elev klikkes i det.
   const [kartApen, setKartApen] = useState(false);
+  // «Vurdering i denne økta» (30.1). Bare ett av kortene er åpent om gangen.
+  const [vurdApen, setVurdApen] = useState(false);
   const [blinkElev, setBlinkElev] = useState<string | null>(null);
   const lukkKart = useCallback(() => setKartApen(false), []);
-  // K veksler kortet, men ikke mens du skriver (27.1). Esc tar kortet selv.
+  const lukkVurd = useCallback(() => setVurdApen(false), []);
+  // K og V veksler kortene, men ikke mens du skriver (27.1, 30.1). Esc tar
+  // kortene selv.
   useEffect(() => {
     const tast = (e: KeyboardEvent) => {
-      if (
-        kartTast(
-          {
-            key: e.key,
-            metaKey: e.metaKey,
-            ctrlKey: e.ctrlKey,
-            altKey: e.altKey,
-            skriver: iFelt(e.target),
-          },
-          kartApen,
-        ) !== "veksle"
-      )
-        return;
-      e.preventDefault();
-      setKartApen((v) => !v);
+      // «G V» og «G K» er sidemenyen (App), ikke kortene.
+      if (e.defaultPrevented) return;
+      const t = {
+        key: e.key,
+        metaKey: e.metaKey,
+        ctrlKey: e.ctrlKey,
+        altKey: e.altKey,
+        skriver: iFelt(e.target),
+      };
+      if (kartTast(t, kartApen) === "veksle") {
+        e.preventDefault();
+        setVurdApen(false);
+        setKartApen((v) => !v);
+      } else if (vurderingTast(t)) {
+        e.preventDefault();
+        setKartApen(false);
+        setVurdApen((v) => !v);
+      }
     };
     window.addEventListener("keydown", tast);
     return () => window.removeEventListener("keydown", tast);
@@ -428,7 +428,10 @@ export function OktPanel({
             ·{/* Klassekartet på et blikk (27): et kort over økta, K. */}
             <span className="relative">
               <button
-                onClick={() => setKartApen((v) => !v)}
+                onClick={() => {
+                  setVurdApen(false);
+                  setKartApen((v) => !v);
+                }}
                 aria-expanded={kartApen}
                 title="Klassekartet (K)"
                 className={`inline-flex items-center gap-1.5 rounded-[7px] px-2 py-0.5 ${
@@ -481,6 +484,46 @@ export function OktPanel({
                 />
               )}
             </span>
+            <span className="relative">
+              <button
+                onClick={() => {
+                  setKartApen(false);
+                  setVurdApen((v) => !v);
+                }}
+                aria-expanded={vurdApen}
+                title="Vurdering i denne økta (V)"
+                className={`inline-flex items-center gap-1.5 rounded-[7px] px-2 py-0.5 ${
+                  vurdApen
+                    ? "bg-flate-svak text-blekk"
+                    : "text-blekk-dempet hover:bg-flate-svak hover:text-blekk"
+                }`}
+              >
+                <svg
+                  width="13"
+                  height="13"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.4"
+                  aria-hidden
+                >
+                  <path d="M4 2.5h6l2.5 2.5v8.5h-8.5z" />
+                  <path d="M6 8l1.5 1.5L10.5 6.5" />
+                </svg>
+                Vurdering
+                <kbd className="rounded px-1 text-[10.5px] text-blekk-svak shadow-[inset_0_0_0_1px_var(--color-linje)]">
+                  V
+                </kbd>
+              </button>
+              {vurdApen && (
+                <OktVurderingKort
+                  okt={okt}
+                  skolearId={skolearId}
+                  onLukk={lukkVurd}
+                  onEndret={onEndret}
+                />
+              )}
+            </span>
           </p>
           <Bryter
             storrelse="liten"
@@ -503,15 +546,21 @@ export function OktPanel({
           onEndret={onEndret}
           onLukk={onLukk}
           onVisIOkter={onVisIOkter}
+          onApneVurdering={() => {
+            setKartApen(false);
+            setVurdApen(true);
+          }}
         />
       ) : (
         <>
-          {/* Live tidslinje under arkhodet, den dagen økta er (15.6). */}
-          {/* Enkel: én linje om hva som skjer nå (15.10). Full viser det i
-              planen til høyre, som loddrett tidslinje. */}
-          {visning === "enkel" && visesLive(okt, na) && (
-            <Nalinje okt={okt} na={na} />
-          )}
+          {/* Den dagen økta er: stripa under arkhodet (30.4), eller med
+              Øktplan: Enkel én linje om hva som skjer nå (15.10). */}
+          {visesLive(okt, na) &&
+            (visning === "enkel" ? (
+              <Nalinje okt={okt} na={na} />
+            ) : (
+              <Tidsstripe okt={okt} na={na} />
+            ))}
           <div className="flex min-h-0 flex-1">
             <div
               ref={liste}
@@ -520,10 +569,21 @@ export function OktPanel({
               aria-label="Elevliste: skår med talltastene"
               className="uten-fokusring min-w-0 flex-1 overflow-auto px-[22px] pt-3 outline-none"
             >
-              <div className="flex items-center gap-3 border-b border-linje pb-2.5">
-                <span className="text-[calc(13px*var(--tekst-skala))] font-semibold">
+              {/*
+                «Elever · 9 av 16 skåret · 1 borte» og filteret til høyre
+                (30.3). Fremdrift, ikke statistikk (DESIGN.md §12).
+              */}
+              <div className="mx-2 mb-2 mt-1 flex items-center gap-2.5 text-[calc(12.5px*var(--tekst-skala))] text-blekk-dempet">
+                <span className="text-[calc(13px*var(--tekst-skala))] font-semibold text-blekk">
                   Elever
                 </span>
+                {elever.length > 0 && (
+                  <span className="tabular-nums">
+                    {antallSkaret - antallBorte} av {elever.length - antallBorte}{" "}
+                    skåret · {antallBorte} borte
+                  </span>
+                )}
+                <span className="flex-1" />
                 {/* Alle · Til stede · Borte (16.1), tastene A og B. */}
                 {borteverdi && elever.length > 0 && (
                   <Bryter
@@ -534,52 +594,16 @@ export function OktPanel({
                       liste.current?.focus();
                     }}
                     valg={[
-                      { id: "alle", navn: `Alle ${elever.length}` },
-                      {
-                        id: "tilstede",
-                        navn: `Til stede ${elever.length - antallBorte}`,
-                      },
-                      {
-                        id: "borte",
-                        navn: (
-                          <span className="inline-flex items-center gap-1.5">
-                            <Skarprikk slag="o" storrelse={9} />
-                            Borte {antallBorte}
-                          </span>
-                        ),
-                      },
+                      { id: "alle", navn: "Alle" },
+                      { id: "tilstede", navn: "Til stede" },
+                      { id: "borte", navn: "Borte" },
                       // Bare når økta er i gang: før det er alle «ikke sett».
                       ...(antallSkaret > 0
-                        ? [
-                            {
-                              id: "ikkesett",
-                              navn: (
-                                <span className="inline-flex items-center gap-1.5">
-                                  <Skarprikk slag="t" storrelse={9} />
-                                  Ikke sett {antallIkkeSett}
-                                </span>
-                              ),
-                            },
-                          ]
+                        ? [{ id: "ikkesett", navn: "Ikke sett" }]
                         : []),
                     ]}
                   />
                 )}
-                {/* Fremdrift, ikke statistikk (DESIGN.md §12): hvor mange som er skåret. */}
-                <span className="text-etikett tabular-nums text-blekk-dempet">
-                  {antallSkaret} av {elever.length} skåret
-                </span>
-                <span className="h-1 w-[120px] overflow-hidden rounded-sm bg-stripe">
-                  <span
-                    className="block h-full rounded-sm bg-aksent transition-[width] duration-[var(--tid-inn)]"
-                    style={{
-                      width: `${elever.length ? (antallSkaret / elever.length) * 100 : 0}%`,
-                    }}
-                  />
-                </span>
-                <span className="ml-auto text-etikett text-blekk-svak">
-                  Alfabetisk på fornavn
-                </span>
               </div>
 
               {filter === "borte" && (
@@ -679,64 +703,58 @@ export function OktPanel({
               <div className="h-4" />
             </div>
 
-            <aside
-              className={`flex ${loddrett ? "w-[360px]" : "w-80"} shrink-0 flex-col gap-[22px] overflow-auto border-l border-linje-medium bg-flate-svak/70 px-[22px] py-[18px]`}
-            >
-              {/* Mens økta pågår, tar den loddrette planen plassen. */}
-              {/* Hvem som var borte forrige gang, alle sammen. */}
-              <BorteSist
-                okt={okt}
-                skolearId={skolearId}
-                elever={elever}
-                onVelg={(elevId) => {
-                  const i = elever.findIndex((e) => e.elevId === elevId);
-                  if (i >= 0) {
-                    setFilter("alle");
-                    setMarkert(i);
-                    liste.current?.focus();
-                  }
-                }}
-              />
-              {!loddrett && <Forrigenotat okt={okt} />}
+            {/*
+              Høyre kolonne (30.4, 30.6): planen med tida igjen, og
+              øktloggen i notat-editoren. Kladden og forrige økts logg står
+              under når det står noe i dem.
+            */}
+            <aside className="flex w-[330px] shrink-0 flex-col gap-[22px] overflow-auto border-l border-linje-medium px-[22px] py-4">
               <Liveplan
                 okt={okt}
                 na={na}
-                loddrett={loddrett}
                 onLagre={async (plan) => {
                   await endreOkt(okt.id, { plan });
                   onEndret();
                 }}
                 onApnePlan={() => setModus("plan")}
               />
-              {/* Kladden vises også her, så lappen står foran deg i økta (16.7). */}
-              <div>
-                <p className="mb-2 text-etikett font-semibold text-blekk">
-                  Kladd
-                </p>
-                <Kladdfelt
-                  kompakt
-                  verdi={okt.kladd}
-                  onLagre={async (v) => {
-                    await endreOkt(okt.id, { kladd: v });
-                    onEndret();
-                  }}
-                />
-              </div>
-              <div className="flex min-h-[200px] flex-1 flex-col">
+              <div className="flex min-h-[180px] flex-col">
                 <p className="mb-2 text-etikett font-semibold text-blekk">
                   Øktlogg
                 </p>
-                <Markdownfelt
-                  key={`logg-${okt.id}`}
-                  verdi={okt.logg}
-                  minRader={6}
-                  plassholder="Hvordan gikk det? - [ ] blir et gjøremål på I dag."
-                  onLagre={async (v) => {
-                    await endreOkt(okt.id, { logg: v });
-                    onEndret();
-                  }}
-                />
+                <div className="text-[calc(14px*var(--tekst-skala))] leading-[1.6]">
+                  <Markdownfelt
+                    key={`logg-${okt.id}`}
+                    verdi={okt.logg}
+                    minRader={5}
+                    plassholder="Hvordan gikk det?"
+                    onLagre={async (v) => {
+                      await endreOkt(okt.id, { logg: v });
+                      onEndret();
+                    }}
+                  />
+                </div>
+                <p className="mt-1 text-[calc(12px*var(--tekst-skala))] leading-snug text-blekk-svak">
+                  # overskrift · - punkt · [] blir gjøremål på I dag · / meny
+                </p>
               </div>
+              {/* Kladden står foran deg i økta når du har skrevet noe (16.7). */}
+              {okt.kladd?.trim() && (
+                <div>
+                  <p className="mb-2 text-etikett font-semibold text-blekk">
+                    Kladd
+                  </p>
+                  <Kladdfelt
+                    kompakt
+                    verdi={okt.kladd}
+                    onLagre={async (v) => {
+                      await endreOkt(okt.id, { kladd: v });
+                      onEndret();
+                    }}
+                  />
+                </div>
+              )}
+              <Forrigenotat okt={okt} />
             </aside>
           </div>
 
@@ -756,11 +774,17 @@ export function OktPanel({
             </Tasthint>
             {nullverdi && (
               <Tasthint taster={[tastekart.get(nullverdi.id) ?? "0"]}>
-                {nullverdi.kode.toLowerCase()}
+                {nullverdi.teller_ikke === 1
+                  ? "borte"
+                  : nullverdi.kode.toLowerCase()}
               </Tasthint>
             )}
-            <Tasthint taster={["↑", "↓"]}>flytt</Tasthint>
             <Tasthint taster={["N"]}>notat</Tasthint>
+            <Tasthint taster={["K"]}>klassekart</Tasthint>
+            <Tasthint taster={["V"]}>vurdering</Tasthint>
+            {borteverdi && (
+              <Tasthint taster={["B", "A"]}>borte / alle</Tasthint>
+            )}
             <Tasthint taster={["⌫"]}>fjern</Tasthint>
             <span className="ml-auto">
               <Tasthint taster={["esc"]}>lukk, alt er lagret</Tasthint>
@@ -842,7 +866,7 @@ function ElevRad({
       onClick={onKlikk}
       // 38 px rader med 28 px bilde (DESIGN.md §3, bestemt 06.10). Høyden
       // er låst, så heller ikke notatfeltet i raden kan gjøre den høyere.
-      className={`group relative z-[1] grid h-[38px] cursor-default grid-cols-[132px_28px_minmax(150px,220px)_44px_minmax(0,1fr)] items-center gap-x-3 border-b border-linje-svak pl-2.5 text-[calc(13.5px*var(--tekst-skala))] hover:bg-[color-mix(in_srgb,var(--color-aksent)_3.5%,transparent)] ${
+      className={`group relative z-[1] grid h-[38px] cursor-default grid-cols-[132px_28px_minmax(0,1fr)_52px] items-center gap-x-3 border-b border-linje-svak pl-2.5 pr-2 text-[calc(13.5px*var(--tekst-skala))] hover:bg-[color-mix(in_srgb,var(--color-aksent)_3.5%,transparent)] ${
         blink ? "bytteblink" : ""
       }`}
     >
@@ -873,59 +897,60 @@ function ElevRad({
       >
         <Elevfoto elevId={elev.elevId} storrelse={28} />
       </span>
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          onApneElev();
-        }}
-        title={`${elev.fornavn} ${elev.etternavn}: åpne eleven`}
-        className={`truncate text-left hover:text-aksent ${
-          borte
-            ? "text-blekk-svak"
-            : eksplisitt || markert
-              ? "font-medium"
-              : "text-blekk-dempet"
-        }`}
-      >
-        {elev.fornavn} {elev.etternavn}
-      </button>
-
-      <span className="truncate text-etikett text-blekk-dempet">
-        {elev.klasse ?? ""}
-      </span>
-
       {/*
-        Notatet fra denne økta, i egen kolonne. N åpner feltet rett i raden.
-        Står markøren på en elev uten notat, vises forrige notat i grått —
-        det man skrev sist er ofte det man trenger å huske nå.
+        Navnet, og notatet fra økta i kursiv rett etter (30.3). N åpner
+        feltet i raden. Står markøren på en elev uten notat, vises forrige
+        notat i grått: det man skrev sist er ofte det man trenger å huske nå.
       */}
-      {skriverNotat ? (
-        <Notatfelt start={elev.notat ?? ""} onFerdig={onNotatFerdig} />
-      ) : (
+      <span className="flex min-w-0 items-center gap-2">
         <button
           onClick={(e) => {
             e.stopPropagation();
-            onNotat();
+            onApneElev();
           }}
-          title={
-            elev.notat ??
-            (elev.forrigeNotat
-              ? `Forrige økt: ${elev.forrigeNotat}`
-              : "Legg til notat (N)")
-          }
-          className="min-w-0 truncate text-left text-[calc(12.5px*var(--tekst-skala))]"
+          title={`${elev.fornavn} ${elev.etternavn}: åpne eleven`}
+          className={`max-w-[60%] shrink-0 truncate text-left hover:text-aksent ${
+            borte
+              ? "text-blekk-svak"
+              : eksplisitt || markert
+                ? "font-medium"
+                : "text-blekk-dempet"
+          }`}
         >
-          {elev.notat ? (
-            <span className="text-blekk">{elev.notat}</span>
-          ) : markert && elev.forrigeNotat ? (
-            <span className="italic text-blekk-svak">{elev.forrigeNotat}</span>
-          ) : (
-            <span className="text-blekk-svakest opacity-0 group-hover:opacity-100">
-              + notat
-            </span>
-          )}
+          {elev.fornavn} {elev.etternavn}
         </button>
-      )}
+        {skriverNotat ? (
+          <Notatfelt start={elev.notat ?? ""} onFerdig={onNotatFerdig} />
+        ) : (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onNotat();
+            }}
+            title={
+              elev.notat ??
+              (elev.forrigeNotat
+                ? `Forrige økt: ${elev.forrigeNotat}`
+                : "Legg til notat (N)")
+            }
+            className="min-w-0 flex-1 truncate text-left text-[calc(12px*var(--tekst-skala))] italic"
+          >
+            {elev.notat ? (
+              <span className="text-blekk-dempet">{elev.notat}</span>
+            ) : markert && elev.forrigeNotat ? (
+              <span className="text-blekk-svakest">{elev.forrigeNotat}</span>
+            ) : (
+              <span className="not-italic text-blekk-svakest opacity-0 group-hover:opacity-100">
+                + notat
+              </span>
+            )}
+          </button>
+        )}
+      </span>
+
+      <span className="truncate text-right text-[calc(11.5px*var(--tekst-skala))] text-blekk-svak">
+        {elev.klasse ?? ""}
+      </span>
     </div>
   );
 }
@@ -1003,7 +1028,7 @@ function Merke({
 }
 
 /**
- * Det du skrev i loggen forrige gang i faget, rett over dagens logg — så
+ * Det du skrev i loggen forrige gang i faget, nederst i høyre kolonne — så
  * beskjeden fra sist står der du er når timen begynner.
  */
 function Forrigenotat({ okt }: { okt: Okt }) {
@@ -1015,13 +1040,14 @@ function Forrigenotat({ okt }: { okt: Okt }) {
     void hentForrigeOkt(okt).then(setForrige);
   }, [okt.id, okt.dato, okt.klokkeslett]);
 
-  if (!forrige) return null;
+  // Står det ingenting, tar den ingen plass (30.4).
+  if (!forrige?.logg?.trim()) return null;
 
   return (
-    <div className="mb-3">
+    <div>
       <button
         onClick={() => ark.apneOkt(forrige.id)}
-        className="mb-1.5 block text-left text-[calc(13px*var(--tekst-skala))] font-semibold text-blekk hover:underline"
+        className="mb-1.5 block text-left text-etikett font-semibold text-blekk hover:underline"
       >
         Fra forrige økt
         <span className="font-normal text-blekk-svak">
@@ -1029,15 +1055,9 @@ function Forrigenotat({ okt }: { okt: Okt }) {
           · {kortDag(forrige.dato)}
         </span>
       </button>
-      {forrige.logg?.trim() ? (
-        <div className="text-[calc(13.5px*var(--tekst-skala))] text-blekk">
-          <Markdown tekst={forrige.logg} />
-        </div>
-      ) : (
-        <p className="text-liten text-blekk-svak">
-          Du skrev ikke noe notat forrige økt.
-        </p>
-      )}
+      <div className="text-[calc(13px*var(--tekst-skala))] text-blekk-dempet">
+        <Markdown tekst={forrige.logg} />
+      </div>
     </div>
   );
 }
@@ -1098,78 +1118,4 @@ function minIgjen(okt: Okt, na: Date): number | null {
   const naMin = na.getHours() * 60 + na.getMinutes();
   const slutt = start + okt.varighetMin;
   return naMin >= start && naMin < slutt ? slutt - naMin : null;
-}
-
-/**
- * «Borte sist»: alle elevene som var «ikke i økta» i forrige avholdte økt i
- * faget (ikke skåret er ikke borte, 19.4),
- * uten tak og uansett hva annet som gjelder dem. Bare fornavn (etternavnets
- * forbokstav når to har samme), fordi økta kan stå på skjerm i klasserommet.
- */
-function BorteSist({
-  okt,
-  skolearId,
-  elever,
-  onVelg,
-}: {
-  okt: Okt;
-  skolearId: string;
-  elever: OktElev[];
-  onVelg: (elevId: string) => void;
-}) {
-  const [sist, setSist] = useState<ReturnType<typeof borteSist>>(null);
-  useEffect(() => {
-    let avbrutt = false;
-    void hentOktrader(skolearId).then((r) => {
-      if (!avbrutt) setSist(borteSist(r, okt));
-    });
-    return () => {
-      avbrutt = true;
-    };
-  }, [okt.id, okt.dato, okt.klokkeslett, skolearId]);
-  if (!sist) return null;
-
-  const hvem = sist.elevIder
-    .map((id) => elever.find((e) => e.elevId === id))
-    .filter((e): e is OktElev => !!e)
-    .sort((a, b) => a.fornavn.localeCompare(b.fornavn, "nb-NO"));
-  const navn = (e: OktElev) =>
-    elever.filter((x) => x.fornavn === e.fornavn).length > 1
-      ? `${e.fornavn} ${e.etternavn.charAt(0)}.`
-      : e.fornavn;
-  const dag = new Date(`${sist.dato}T12:00:00`).toLocaleDateString("nb-NO", {
-    weekday: "short",
-    day: "numeric",
-    month: "numeric",
-  });
-
-  return (
-    <div>
-      <p className="mb-2 text-etikett font-semibold text-blekk">
-        Borte sist
-        <span className="font-normal text-blekk-svak">
-          {" "}
-          · {dag}
-          {hvem.length > 0 && ` · ${hvem.length}`}
-        </span>
-      </p>
-      {hvem.length === 0 ? (
-        <p className="text-liten text-blekk-svak">Alle var til stede.</p>
-      ) : (
-        <div className="flex flex-wrap gap-1.5">
-          {hvem.map((e) => (
-            <button
-              key={e.elevId}
-              onClick={() => onVelg(e.elevId)}
-              title={`${e.fornavn} ${e.etternavn}: vis i lista`}
-              className="inline-flex h-[26px] items-center gap-1.5 rounded-full bg-ark px-2.5 text-[calc(12.5px*var(--tekst-skala))] shadow-[inset_0_0_0_1px_var(--color-linje)] hover:shadow-[inset_0_0_0_1px_var(--color-aksent)]"
-            >
-              <Skarprikk slag="o" storrelse={9} />
-              {navn(e)}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
 }

@@ -1,13 +1,31 @@
 # Status
 
-Pr. 2026-10-22 (§28–29 bygget; siste utgivelse 0.5). Beskriver hvor appen faktisk står, ikke hva
+Pr. 2026-10-25 (§28–30 bygget; siste utgivelse 0.5). Beskriver hvor appen faktisk står, ikke hva
 den skal bli. Fila eies fritt, i motsetning til SPEC.md.
 
-**876 tester i `npm test` og 22 i `cargo test` (Mac), alle grønne.
+**879 tester i `npm test` og 22 i `cargo test` (Mac), alle grønne.
 `tsc --noEmit` er ren. `npm run build` går gjennom. 39 migrasjoner.** Testene kjører på GitHub ved hver push (`tester.yml`, Mac).
 
 Utseendet står i `DESIGN.md`, som beskriver appen slik den er bygget.
 Lerretet (`docs/lerret/`) er fasit for det som er tegnet.
+
+## Øktkortet (§30, 25.10)
+
+- Under tittelen: «Klassekart K» og «Vurdering V», kort over økta i begge
+  modusene (Esc og klikk utenfor lukker). V: Skriftlig prøve nå, Muntlig i
+  økta (samtaledag i økta, vurderingen åpnes over) og Knytt til en
+  vurdering (med «+ Ny vurdering …»). Kode: `OktVurderingKort.tsx`.
+- Skåring: «Elever · N av M skåret · b borte» og Alle · Til stede · Borte
+  (· Ikke sett) over lista; notatet i kursiv etter navnet, klassen til
+  høyre. Stripa (`Tidsstripe`) under arkhodet med Øktplan: Full; den
+  loddrette tidslinjen er borte. Høyre kolonne: Plan (minutter, «n min
+  igjen», starttid) og Øktlogg; kladd og forrige økts logg bare når de har
+  tekst. «Borte sist» er ute av høyre kolonne (står i Følg opp i økta).
+- Planlegging: Dato · Tid · Rom · Periode; «Til elevene» med agenda og
+  lekse i én blokk (fortsatt to felt, agendaen fortsatt ren tekst); Plan;
+  Kladd; Kompetansemål. Vurdering i høyre kolonne.
+- Feil rettet: sjekklistene i notat-editoren sto med boksen på egen linje
+  overalt (CSS-en ventet `data-type="taskItem"`, som TipTap ikke setter).
 
 ## Samme notat-editor overalt, og Kilde ut av Samarbeid (22.10)
 

@@ -22,10 +22,13 @@ export function Agendafelt({
   verdi,
   plassholder,
   onLagre,
+  flat = false,
 }: {
   verdi: string | null;
   plassholder: string;
   onLagre: (v: string | null) => void;
+  /** uten egen ramme, inne i «Til elevene» (30.7) */
+  flat?: boolean;
 }) {
   const felt = useRef<HTMLTextAreaElement>(null);
   const hoyde = () => {
@@ -47,7 +50,11 @@ export function Agendafelt({
         const v = e.target.value.replace(/\s+$/, "") || null;
         if (v !== verdi) onLagre(v);
       }}
-      className="block min-h-8 w-full resize-none overflow-hidden rounded-[7px] bg-ark px-2.5 py-[7px] text-[calc(13.5px*var(--tekst-skala))] leading-[1.55] shadow-[inset_0_0_0_1px_var(--color-linje)] outline-none placeholder:text-blekk-svak focus:shadow-[inset_0_0_0_1.5px_var(--color-aksent)]"
+      className={`block min-h-8 w-full resize-none overflow-hidden rounded-[7px] bg-ark px-2.5 py-[7px] text-[calc(13.5px*var(--tekst-skala))] leading-[1.55] outline-none placeholder:text-blekk-svak ${
+        flat
+          ? "bg-transparent"
+          : "shadow-[inset_0_0_0_1px_var(--color-linje)] focus:shadow-[inset_0_0_0_1.5px_var(--color-aksent)]"
+      }`}
     />
   );
 }

@@ -75,6 +75,21 @@ export function kartTast(
   return null;
 }
 
+/**
+ * V åpner og lukker «Vurdering i denne økta» (30.1), på samme vilkår som K:
+ * ikke i et felt, og ikke med ⌘/ctrl/alt.
+ */
+export function vurderingTast(e: {
+  key: string;
+  metaKey?: boolean;
+  ctrlKey?: boolean;
+  altKey?: boolean;
+  skriver: boolean;
+}): boolean {
+  if (e.metaKey || e.ctrlKey || e.altKey || e.skriver) return false;
+  return e.key === "v" || e.key === "V";
+}
+
 /** Om tastetrykket skjer i et skrivefelt. */
 export const iFelt = (mal: EventTarget | null) =>
   !!(mal as HTMLElement | null)?.closest?.(

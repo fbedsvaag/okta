@@ -907,17 +907,23 @@ så blikket ikke må hoppe:
     ○  ○  ●  ○   Benjamin Holm      2STA
 ```
 
-Til høyre: notatet fra forrige økt, planen med avkrysning og øktloggen.
+Til høyre: planen med avkrysning og øktloggen i notat-editoren; kladden
+og loggen fra forrige økt under, når det står noe i dem (ARBEIDSLISTE 30).
+Under tittelen står «Klassekart K» og «Vurdering V», som kort over økta i
+begge modusene: V gir skriftlig prøve nå, muntlig innenfor øktas tid, eller
+knytt til en vurdering.
 
-Den dagen økta er, står planen live i høyre kolonne: hva som skal skje nå,
+Den dagen økta er, står en stripe under arkhodet (Øktplan: Full; Enkel
+har én linje): aktiviteten nå, bolkene, nålen og «9 av 30 min · i rute».
+Planen står live i høyre kolonne: hva som skal skje nå,
 hvor langt man er kommet, og hvor mye tid som er igjen. En aktivitet
 krysses av når tida for den er ute, eller med et klikk når man er ferdig
 før tida (tidspunktet lagres). «+5 min» forlenger den som pågår, og resten
 flytter seg; det som havner etter slutt, sies uten alarm. Oppdateres én
 gang i minuttet, uten bevegelse: skåringen animeres aldri.
 
-**Planlegging.** Dato, tid, rom, periode og vurdering; lekse og agenda til
-elevene; planen med aktiviteter, pauser, minutter og en beskrivelse per
+**Planlegging.** Dato, tid, rom og periode; «Til elevene» med agenda og
+lekse i én blokk (lagret hver for seg, så leksa aldri går i kalenderen); planen med aktiviteter, pauser, minutter og en beskrivelse per
 aktivitet, summen mot øktas lengde og en tidslinje man drar i; øktas
 lengde endres aldri herfra. Kompetansemålene i økta med avkrysning, der
 periodens mål er merket; resten er foldet sammen.
@@ -931,8 +937,8 @@ beskrivelse går aldri ut av appen.
 Enkel er en liste med minutter («Film · 15 min» kan skrives inn) og én
 linje om hva som skjer nå i skåringen. Full har tidslinjen, beskrivelser
 og pauser. Det som er skrevet i Full, blir liggende i Enkel. Til høyre: forrige økt, «Følg opp i økta» (rød to ganger på rad,
-borte sist, åpent oppfølgingspunkt; bare fornavn og grunn) og hvor i
-perioden økta ligger.
+borte sist, åpent oppfølgingspunkt; bare fornavn og grunn), vurderingene i
+økta og hvor i perioden økta ligger.
 
 Tastene i skåringen:
 

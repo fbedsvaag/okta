@@ -12,10 +12,9 @@ import {
 } from "../data/oktplan";
 
 /**
- * Planen mens økta pågår (ARBEIDSLISTE 15.6–15.7): med Øktplan: Full en
- * loddrett tidslinje i høyre kolonne (lerretet OktLiveVertikal, valgt i
- * stedet for den vannrette stripa), med Enkel én linje under arkhodet og
- * lista med avkrysning.
+ * Planen mens økta pågår (ARBEIDSLISTE 15.6–15.7, 30.4): med Øktplan: Full
+ * en vannrett stripe under arkhodet (lerretet Oktkort), med Enkel én linje.
+ * I høyre kolonne står lista med avkrysning i begge.
  *
  * Skåringen animeres aldri (SPEC §13). Tidslinjen oppdateres én gang i
  * minuttet, uten overgang, så den ikke trekker blikket fra elevlista.
@@ -98,17 +97,11 @@ function igjenTekst(t: { hoyre: string }): string {
 export function Liveplan({
   okt,
   na,
-  loddrett = false,
   onLagre,
   onApnePlan,
 }: {
   okt: Okt;
   na: Date;
-  /**
-   * Øktplan: Full, den dagen økta er: planen som en loddrett tidslinje med
-   * nå-markøren (lerretet OktLiveVertikal, valgt 14.10 i stedet for stripa).
-   */
-  loddrett?: boolean;
   onLagre: (plan: string | null) => Promise<void>;
   onApnePlan: () => void;
 }) {
@@ -142,21 +135,6 @@ export function Liveplan({
         ferdig: start ? klokke(na.getHours() * 60 + na.getMinutes()) : null,
       });
   };
-
-  if (loddrett && start && inn !== null && punkter.length > 0)
-    return (
-      <Loddrett
-        punkter={punkter}
-        liste={liste}
-        aktiv={aktiv}
-        inn={inn}
-        start={start}
-        lengde={lengde}
-        klikkbar={klikkbar}
-        onKlikk={klikk}
-        onPluss={(i) => endre(i, { forlenget: punkter[i].forlenget + 5 })}
-      />
-    );
 
   return (
     <div>
@@ -280,193 +258,105 @@ export function Liveplan({
   );
 }
 
-/** Høyden på den loddrette tidslinjen, som i lerretet. */
-const HOYDE = 480;
-
 /**
- * Planen som loddrett tidslinje i høyre kolonne (lerretet OktLiveVertikal).
- * Klokkeslettene til venstre, ett felt per aktivitet med høyde etter
- * minuttene, en strek ved øktas slutt og nå-markøren tvers over. Den aktive
- * fylles ovenfra etter hvert som tida går, og har «+5 min» nederst.
+ * Stripa under arkhodet mens økta går (30.4, lerretet Oktkort): «Nå» og
+ * aktiviteten til venstre, bolkene med nålen i midten, og «9 av 30 min ·
+ * i rute» til høyre. Oppdateres én gang i minuttet, uten overgang.
  */
-function Loddrett({
-  punkter,
-  liste,
-  aktiv,
-  inn,
-  start,
-  lengde,
-  klikkbar,
-  onKlikk,
-  onPluss,
-}: {
-  punkter: Planpunkt[];
-  liste: ReturnType<typeof livePlan>["liste"];
-  aktiv: number;
-  inn: number;
-  start: string;
-  lengde: number;
-  klikkbar: (i: number) => boolean;
-  onKlikk: (i: number) => void;
-  onPluss: (i: number) => void;
-}) {
+export function Tidsstripe({ okt, na }: { okt: Okt; na: Date }) {
+  const inn = minutterInn(okt, na);
+  const start = okt.klokkeslett;
+  const { punkter } = lesPlan(okt.plan);
+  if (inn === null || !start || punkter.length === 0) return null;
+  const lengde = okt.varighetMin;
+  const { liste, aktiv } = livePlan(punkter, start, inn);
   const t = livetekst(punkter, start, lengde, inn);
   const slutt = liste[liste.length - 1].e;
   const skala = Math.max(lengde, slutt, 1);
-  const pst = (m: number) => `${(m / skala) * 100}%`;
+  const pst = (m: number) => (Math.max(0, Math.min(skala, m)) / skala) * 100;
   const kl = (m: number) => klokke(tilMinutter(start) + m);
   const visNa = inn >= 0 && inn < lengde;
+  const status =
+    t.etikett !== "Nå" || aktiv < 0
+      ? t.under
+      : t.etter > 0
+        ? `${t.etter} min etter planen`
+        : "i rute";
 
   return (
-    <div style={INGEN}>
-      <div className="flex items-baseline gap-2">
-        <p className="text-etikett font-semibold text-blekk">Plan</p>
-        <span className="text-[calc(12px*var(--tekst-skala))] text-blekk-svak">
-          krysses av når tida er ute
-        </span>
+    <div
+      style={INGEN}
+      className="flex shrink-0 items-center gap-[18px] border-b border-linje-medium px-[28px] py-2.5"
+    >
+      <div className="w-[170px] min-w-0 shrink-0">
+        <p className="text-[calc(12px*var(--tekst-skala))] text-blekk-svak">
+          {t.etikett}
+        </p>
+        <p className="truncate text-[calc(13.5px*var(--tekst-skala))] font-semibold">
+          {t.tittel}
+        </p>
       </div>
-      <p className="mt-0.5 text-[calc(12px*var(--tekst-skala))] tabular-nums text-blekk-dempet">
-        {t.etikett === "Nå" ? t.under : `${t.etikett} · ${t.tittel}`}
-      </p>
-
-      <div className="relative ml-11 mt-3.5" style={{ height: HOYDE }}>
+      <div className="relative h-[30px] min-w-0 flex-1">
         {liste.map((l, i) => {
           const p = punkter[i];
           const erAktiv = i === aktiv && p.type === "aktivitet";
-          const ute = l.e > lengde && !l.ferdig;
-          const fram = erAktiv
-            ? Math.min(100, ((inn - l.s) / Math.max(1, l.e - l.s)) * 100)
-            : 0;
           return (
-            <div key={i}>
-              <span
-                className="absolute -left-11 -translate-y-px text-[calc(11px*var(--tekst-skala))] tabular-nums text-blekk-svak"
-                style={{ top: pst(l.s) }}
-              >
-                {kl(l.s)}
-              </span>
-              <div
-                onClick={() => onKlikk(i)}
-                className={`absolute inset-x-0 overflow-hidden rounded-[8px] ${
-                  klikkbar(i) ? "cursor-pointer" : ""
-                }`}
-                style={{
-                  top: pst(l.s),
-                  height: `calc(${pst(l.e - l.s)} - 3px)`,
-                  background:
-                    p.type === "pause"
-                      ? "repeating-linear-gradient(135deg, color-mix(in srgb, var(--color-flate-svak) 50%, var(--color-ark)) 0 5px, color-mix(in srgb, var(--color-aksent) 8%, var(--color-ark)) 5px 10px)"
+            <span
+              key={i}
+              title={`${p.tekst} · ${kl(l.s)}–${kl(l.e)}`}
+              className="absolute top-1.5 h-3 rounded-[4px]"
+              style={{
+                left: `${pst(l.s)}%`,
+                width: `calc(${pst(l.e) - pst(l.s)}% - 3px)`,
+                background:
+                  p.type === "pause"
+                    ? "repeating-linear-gradient(135deg, var(--color-valgt) 0 4px, var(--color-ark) 4px 8px)"
+                    : erAktiv
+                      ? "var(--color-ark)"
                       : l.ferdig
-                        ? "var(--color-flate-svak)"
-                        : "var(--color-ark)",
-                  boxShadow: erAktiv
-                    ? "inset 0 0 0 1.5px var(--color-aksent)"
-                    : ute
-                      ? "inset 0 0 0 1px var(--color-linje-sterk)"
-                      : "inset 0 0 0 1px var(--color-linje-medium)",
-                  opacity: ute ? 0.6 : 1,
-                }}
-              >
-                {erAktiv && (
-                  <div
-                    className="absolute inset-x-0 top-0 border-b-[1.5px] border-[color-mix(in_srgb,var(--color-aksent)_40%,var(--color-ark))] bg-[color-mix(in_srgb,var(--color-aksent)_9%,var(--color-ark))]"
-                    style={{ height: `${fram}%` }}
-                  />
-                )}
-                <div className="relative grid grid-cols-[18px_minmax(0,1fr)_auto] items-center gap-2 px-[9px] py-[5px] text-[calc(13px*var(--tekst-skala))]">
-                  {p.type === "pause" ? (
-                    <span />
-                  ) : (
-                    <Hake ferdig={l.ferdig} auto={l.auto} />
-                  )}
-                  <span
-                    className={`truncate ${erAktiv ? "font-semibold text-blekk" : ""} ${
-                      l.ferdig || p.type === "pause" || l.e > lengde
-                        ? "text-blekk-svak"
-                        : erAktiv
-                          ? ""
-                          : "text-blekk"
-                    }`}
-                  >
-                    {p.tekst}
-                  </span>
-                  <span
-                    className={`whitespace-nowrap text-[calc(12px*var(--tekst-skala))] tabular-nums ${
-                      erAktiv ? "text-blekk" : "text-blekk-svak"
-                    }`}
-                  >
-                    {livetid(p, l, i === aktiv, inn, start, lengde)}
-                  </span>
-                </div>
-                {erAktiv && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onPluss(i);
-                    }}
-                    title="Trenger mer tid"
-                    className="absolute bottom-[7px] right-[9px] z-[2] h-[22px] whitespace-nowrap rounded-full bg-ark px-2 text-[calc(11.5px*var(--tekst-skala))] text-aksent shadow-[inset_0_0_0_1px_var(--color-linje)] hover:bg-flate"
-                  >
-                    +5 min
-                  </button>
-                )}
-              </div>
-            </div>
+                        ? "color-mix(in srgb, var(--color-aksent) 42%, var(--color-ark))"
+                        : "color-mix(in srgb, var(--color-aksent) 15%, var(--color-ark))",
+                boxShadow: erAktiv
+                  ? "inset 0 0 0 1.5px var(--color-aksent)"
+                  : undefined,
+                opacity: l.e > lengde && !l.ferdig ? 0.55 : 1,
+              }}
+            />
           );
         })}
-
-        {/* Øktas slutt. */}
-        <div
-          className="absolute -left-11 right-0 border-t-[1.5px] border-blekk/45"
-          style={{ top: pst(lengde) }}
-        >
-          <span className="absolute left-0 top-0.5 text-[calc(11px*var(--tekst-skala))] tabular-nums text-blekk-dempet">
-            {kl(lengde)}
-          </span>
-        </div>
-
-        {/* Nå-markøren, tvers over. */}
         {visNa && (
-          <div
-            className="absolute -left-12 -right-1.5 z-[3] h-0 border-t-2 border-aksent"
-            style={{ top: pst(inn) }}
-          >
-            <span className="absolute -top-2.5 left-0 rounded-lg bg-aksent px-1.5 py-px text-[calc(11px*var(--tekst-skala))] font-medium tabular-nums text-ark">
-              {kl(inn)}
-            </span>
-          </div>
+          <span
+            aria-hidden
+            className="absolute top-0 h-[22px] w-0.5 rounded-[1px] bg-aksent before:absolute before:-left-[3px] before:-top-[3px] before:h-2 before:w-2 before:rounded-full before:bg-aksent"
+            style={{ left: `${pst(inn)}%` }}
+          />
         )}
+        <span className="absolute left-0 top-5 text-[calc(10.5px*var(--tekst-skala))] tabular-nums text-blekk-svak">
+          {kl(0)}
+        </span>
+        {visNa && (
+          <span
+            className="absolute top-5 -translate-x-1/2 text-[calc(10.5px*var(--tekst-skala))] font-semibold tabular-nums text-aksent"
+            style={{ left: `${pst(inn)}%` }}
+          >
+            {kl(inn)}
+          </span>
+        )}
+        <span
+          className="absolute top-5 -translate-x-full text-[calc(10.5px*var(--tekst-skala))] tabular-nums text-blekk-svak"
+          style={{ left: `${pst(lengde)}%` }}
+        >
+          {kl(lengde)}
+        </span>
+      </div>
+      <div className="shrink-0 text-right">
+        <p className="text-[calc(14px*var(--tekst-skala))] font-semibold tabular-nums">
+          {t.hoyre}
+        </p>
+        <p className="text-[calc(12px*var(--tekst-skala))] text-blekk-svak">
+          {status}
+        </p>
       </div>
     </div>
-  );
-}
-
-/** Avkrysningen: lysere hake når tida krysset av, mørk når du gjorde det. */
-function Hake({ ferdig, auto }: { ferdig: boolean; auto: boolean }) {
-  return (
-    <span
-      role="checkbox"
-      aria-checked={ferdig}
-      className={`inline-grid h-[15px] w-[15px] place-items-center rounded-[4px] ${
-        !ferdig
-          ? "bg-ark shadow-[inset_0_0_0_1.5px_var(--color-linje-sterk)]"
-          : auto
-            ? "bg-[color-mix(in_srgb,var(--color-aksent)_45%,var(--color-ark))]"
-            : "bg-aksent"
-      }`}
-    >
-      {ferdig && (
-        <svg width="9" height="9" viewBox="0 0 10 10" aria-hidden>
-          <path
-            d="M1.8 5.2l2.2 2.2L8.4 2.8"
-            stroke="var(--color-ark)"
-            strokeWidth="2"
-            fill="none"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-      )}
-    </span>
   );
 }

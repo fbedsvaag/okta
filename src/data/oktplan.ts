@@ -475,9 +475,11 @@ export function livetid(
   const kl = (m: number) => (start ? klokke(tilMinutter(start) + m) : "");
   if (p.type === "pause") return aktiv ? "pågår" : `${p.min ?? 0} min`;
   if (!start || na === null) return p.min ? `${p.min} min` : "";
-  if (l.ferdig) return kl(l.e);
+  // Som i tegningen (30.4): minuttene på det som er ferdig, tida igjen på
+  // den som pågår, og når de neste begynner.
+  if (l.ferdig) return `${l.e - l.s} min`;
   if (aktiv) return `${Math.max(0, l.e - na)} min igjen`;
-  if (l.e <= lengde) return `${kl(l.s)}–${kl(l.e)}`;
+  if (l.e <= lengde) return kl(l.s);
   if (l.s < lengde) return `${l.e - lengde} min over slutt`;
   return "rekker ikke";
 }
@@ -494,6 +496,8 @@ export function livetekst(
   hoyre: string;
   under: string;
   status: string | null;
+  /** minutter den aktive slutter senere enn planen sa (stripa, 30.4) */
+  etter: number;
 } {
   const { liste, aktiv } = livePlan(punkter, start, na);
   const slutt = klokke(tilMinutter(start) + lengde);
@@ -510,6 +514,7 @@ export function livetekst(
         ? `${aktiviteter} ${aktiviteter === 1 ? "aktivitet" : "aktiviteter"}, ${sumTekst(punkter, lengde).split(" · ")[1]}`
         : "",
       status: null,
+      etter: 0,
     };
   if (na >= lengde) {
     const krysset = punkter.filter(
@@ -523,6 +528,7 @@ export function livetekst(
       hoyre: "Økta er slutt",
       under: "Skriv i øktloggen før du lukker",
       status: null,
+      etter: 0,
     };
   }
   const status = `Pågår · ${igjen} min igjen`;
@@ -533,6 +539,7 @@ export function livetekst(
       hoyre: `${igjen} min igjen`,
       under: "av økta",
       status,
+      etter: 0,
     };
   if (aktiv < 0)
     return {
@@ -543,6 +550,7 @@ export function livetekst(
       hoyre: `${igjen} min igjen`,
       under: "av økta",
       status,
+      etter: 0,
     };
   const l = liste[aktiv];
   // Hvor mye senere den aktive slutter enn planen sa.
@@ -562,6 +570,7 @@ export function livetekst(
           : `${etter} min etter planen · ${igjen} min igjen`
         : `${igjen} min igjen av økta`,
     status,
+    etter: Math.max(0, etter),
   };
 }
 

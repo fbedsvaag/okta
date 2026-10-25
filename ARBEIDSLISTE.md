@@ -1070,6 +1070,19 @@ Tegning: `docs/lerret/MuntligVurdering.dc.html`. Faglige samtaler bakes inn i en
 - [x] **29.8 Tomme sider.** Tegning: `docs/lerret/TommeSider.dc.html`. Hver side som kan være tom får en rolig strektegning, én setning om hva som mangler, én hovedknapp, en sekundær, og et hint. Minst: I dag (ingen økter i dag / helt nytt år), Elever, Vurderinger og samtaler, Plasser og grupper, Fag → Karakterer, Følg opp («Ingen å følge opp her»).
 - [x] **29.9 Fliser ut.** Fredrik liker ikke flise-uttrykket på I dag (§21.2, IDagOppsett). Behold Enkel/Full (§20.5), men dropp fliser/«Tilpass med S/M/L/XL». Fjern ordet «flis» fra UI og tekst.
 
+## 30. Øktkortet (23.10) — godkjent
+
+Tegning: `docs/lerret/Oktkort.dc.html`. Samme ark i to moduser, Skåring og logg · Planlegging. Gjenbruker klassekartet fra §27 og notat-editoren fra §29.1, og følger «bli der du er» (§29).
+
+- [x] **30.1 K og V som kort over økta.** I linja under tittelen: «Klassekart K» og «Vurdering V», i begge modusene. K åpner klassekartet (§27). V åpner «Vurdering i denne økta»: *Skriftlig prøve nå* (elevene som er til stede blir lagt inn, du fører etterpå), *Muntlig i økta* (tidsplan innenfor øktas tid) og *Knytt til en vurdering* (fagets vurderinger med frist, og «+ Ny vurdering …»). Bare ett kort åpent om gangen. Esc og klikk utenfor lukker kortet, og du blir i økta.
+- [x] **30.2 Fravær med tast 0.** Mørk prikk med ×, navnet tones ned, og eleven teller som «Borte» i Følg opp.
+- [x] **30.3 Filter over lista.** «Elever · N av M skåret · b borte» til venstre, og Alle · Til stede · Borte til høyre (B veksler Borte, A gir Alle). «Ikke sett» kommer i tillegg når økta er i gang (19.4). Notatet fra økta står i kursiv rett etter navnet, og klassen helt til høyre.
+- [x] **30.4 Planen mens økta pågår.** Under arkhodet en vannrett stripe: «Nå» og aktiviteten, bolkene (ferdig, nå, pause, senere), nålen med klokkeslettet og «9 av 30 min · i rute». Planen står i høyre kolonne med avkrysning, «21 min igjen» på den som pågår, minuttene på de ferdige og starttida på de neste. Øktplan: Enkel beholder én linje i stedet for stripa.
+- [x] **30.5 «Oppsummering» i stedet for «Exit-lapp»** i standardplanen og eksemplene.
+- [x] **30.6 Øktloggen i notat-editoren** (§29.1) i høyre kolonne, under planen, med hintet «# overskrift · - punkt · [] blir gjøremål på I dag · / meny».
+- [x] **30.7 Planlegging.** Venstre: Dato · Tid · Rom · Periode på én rad; **Til elevene** (agenda og lekse i én blokk, «går ut i kalenderen og årsplanen»); **Plan** som tidslinje («bare for deg», «90 av 90 min · går opp»); **Kladd** (bare for deg, håndtak for høyden); **Kompetansemål** (periodens mål). Høyre: Fra forrige økt · Følg opp i økta · Vurdering («Ingen i denne økta. Legg til (V)») · Perioden.
+- [x] **30.8 Tastestripa** viser 1 2 3, 0 borte, N notat, K klassekart, V vurdering, B A borte / alle i skåringen, og ⌘← ⌘→, ↵, K og V i planleggingen.
+
 ## Ikke nå
 
 Ting som er vurdert og lagt bort med vilje. Står her så de ikke dukker opp

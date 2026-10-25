@@ -314,6 +314,9 @@ describe("live", () => {
     expect(liste[4].e).toBe(96);
     const t = livetekst(p, "08:30", 90, 61);
     expect(t.under).toBe("6 min forlenget · siste går 6 min over");
+    // Stripa sier hvor mye etter planen den som pågår er (30.4).
+    expect(t.etter).toBe(6);
+    expect(livetekst(plan, "08:30", 90, 61).etter).toBe(0);
     expect(livetid(p[4], liste[4], false, 61, "08:30", 90)).toBe(
       "6 min over slutt",
     );
@@ -346,10 +349,8 @@ describe("live", () => {
     expect(livetid(plan[3], liste[3], true, 55, "08:30", 90)).toBe(
       "25 min igjen",
     );
-    expect(livetid(plan[4], liste[4], false, 55, "08:30", 90)).toBe(
-      "09:50–10:00",
-    );
-    expect(livetid(plan[0], liste[0], false, 55, "08:30", 90)).toBe("08:40");
+    expect(livetid(plan[4], liste[4], false, 55, "08:30", 90)).toBe("09:50");
+    expect(livetid(plan[0], liste[0], false, 55, "08:30", 90)).toBe("10 min");
     expect(livetekst(plan, "08:30", 90, 55)).toMatchObject({
       hoyre: "5 av 30 min",
       under: "35 min igjen av økta",

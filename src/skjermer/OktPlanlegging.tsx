@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Skarprikk } from "../ui/Skarprikk";
 import { confirm as bekreft } from "@tauri-apps/plugin-dialog";
 import {
@@ -21,15 +21,8 @@ import {
 import { finnFag, type Kompetansemaal } from "../data/grep";
 import {
   hentVurderingsvalg,
-  knyttOkt,
-  losOkt,
-  nyVurderingIOkt,
-  slettVurdering,
-  type Vurderingstype,
   type Vurderingsvalg,
 } from "../data/vurderinger";
-import { leggTilAngring } from "../ui/angre";
-import { visToast } from "../ui/Toast";
 import { hentOktrader, type Oktrad } from "../data/oktrader";
 import { hentApneOppfolginger } from "../data/elevnotat";
 import {
@@ -48,7 +41,7 @@ import { idag as dagensDato } from "../db";
 import { Velger } from "../ui/Velger";
 import { Oktplan, usePlanvisning } from "./Oktplan";
 import { Agendafelt, Kladdfelt } from "./Okttekst";
-import { vurderingsvalg } from "../ui/Vurderingsikon";
+import { Vurderingsikon } from "../ui/Vurderingsikon";
 
 /**
  * Økta i planlegging (ARBEIDSLISTE 11.5, lerretet «OktPlan»).
@@ -66,6 +59,7 @@ export function OktPlanlegging({
   onEndret,
   onLukk,
   onVisIOkter,
+  onApneVurdering,
 }: {
   okt: Okt;
   skolearId: string;
@@ -74,6 +68,8 @@ export function OktPlanlegging({
   onEndret: () => void;
   onLukk: () => void;
   onVisIOkter: () => void;
+  /** åpner «Vurdering i denne økta» (V) over arket */
+  onApneVurdering: () => void;
 }) {
   async function lagre(felt: Parameters<typeof endreOkt>[1]) {
     await endreOkt(okt.id, felt);
@@ -90,67 +86,68 @@ export function OktPlanlegging({
       <div className="flex min-h-0 flex-1">
         <div className="min-w-0 flex-1 overflow-y-auto px-[26px] pb-6 pt-[18px]">
           {/* Faktaraden: alt på én linje, med etiketter over (15.5). */}
-          <Fakta okt={okt} enkel={enkel} onLagre={lagre} />
+          <Fakta okt={okt} onLagre={lagre} />
+
           {/*
-            Lekse, agenda med avsnitt og kladd under hverandre (16.6–16.7,
-            lerretet OktTekst).
+            Til elevene (30.7): agendaen og leksa i én blokk. Agendaen går ut
+            i kalenderen, leksa står på årsplanen. De lagres hver for seg,
+            så leksa aldri havner i kalenderen (§8.1).
           */}
-          <div className="mt-4 space-y-3.5">
-            <Tekstfelt
-              etikett="Lekse"
-              hint={enkel ? undefined : "står på årsplanen"}
-              verdi={okt.lekse}
-              plassholder="Hva elevene skal ha gjort"
-              onLagre={(v) => lagre({ lekse: v })}
-            />
-            <div>
-              <div className="mb-[5px] flex items-baseline gap-1 text-[calc(12px*var(--tekst-skala))] text-blekk-dempet">
-                <span className="font-medium text-blekk">
-                  Agenda til elevene
-                </span>
-                {!enkel && (
-                  <span className="text-blekk-svak">
-                    · går ut i kalenderen, med avsnittene
-                  </span>
-                )}
-                <span className="ml-auto text-blekk-svak">↵ nytt avsnitt</span>
-              </div>
+          <section className="mt-5">
+            <div className="mb-[5px] flex items-baseline gap-1.5 text-[calc(12px*var(--tekst-skala))]">
+              <span className="font-semibold text-blekk-dempet">
+                Til elevene
+              </span>
+              <span className="text-blekk-svak">
+                går ut i kalenderen og årsplanen
+              </span>
+              <span className="ml-auto">
+                <Kopier okt={okt} />
+              </span>
+            </div>
+            <div className="rounded-[10px] bg-ark px-1 py-1 shadow-[inset_0_0_0_1px_var(--color-linje)] focus-within:shadow-[inset_0_0_0_1.5px_var(--color-aksent)]">
               <Agendafelt
+                flat
                 verdi={okt.agenda}
-                plassholder="Repetisjon · Case i grupper · Exit-lapp"
+                plassholder="Agenda: Repetisjon · Case i grupper · Oppsummering (↵ ny linje)"
                 onLagre={(v) => void lagre({ agenda: v })}
               />
-              <Kopier okt={okt} />
+              <label className="flex items-baseline gap-1.5 border-t border-linje-svak px-2.5 pb-1 pt-1.5 text-[calc(13.5px*var(--tekst-skala))]">
+                <span className="shrink-0 font-semibold">Lekse:</span>
+                <input
+                  defaultValue={okt.lekse ?? ""}
+                  key={okt.lekse ?? ""}
+                  placeholder="Hva elevene skal ha gjort"
+                  onBlur={(e) => {
+                    const v = e.target.value.trim() || null;
+                    if (v !== okt.lekse) void lagre({ lekse: v });
+                  }}
+                  className="min-w-0 flex-1 bg-transparent outline-none placeholder:text-blekk-svak"
+                />
+              </label>
             </div>
-            <div>
-              <div className="mb-[5px] flex items-baseline gap-1 text-[calc(12px*var(--tekst-skala))]">
-                <span className="font-medium text-blekk">Kladd</span>
-                <span className="text-blekk-svak">
-                  · bare for deg · havner ikke i kalenderen eller på årsplanen
-                </span>
-              </div>
-              <Kladdfelt
-                verdi={okt.kladd}
-                onLagre={(v) => void lagre({ kladd: v })}
-              />
-            </div>
-          </div>
+          </section>
 
           <Oktplan
             okt={okt}
             enkel={enkel}
             onLagre={(plan) => lagre({ plan })}
           />
-          <Mal okt={okt} periode={periode} enkel={enkel} />
-          {/* Enkel: vurderingen står her, ikke i faktaraden. */}
-          {enkel && (
-            <div className="mt-4 flex items-center gap-2.5 text-[calc(13.5px*var(--tekst-skala))]">
-              <span className="text-[calc(12px*var(--tekst-skala))] text-blekk-dempet">
-                Vurdering
+
+          <section className="mt-6">
+            <div className="mb-[5px] flex items-baseline gap-1.5 text-[calc(12px*var(--tekst-skala))]">
+              <span className="font-semibold text-blekk-dempet">Kladd</span>
+              <span className="text-blekk-svak">
+                bare for deg · dra i håndtaket for mer plass
               </span>
-              <Vurdering okt={okt} onEndret={() => void lagre({})} />
             </div>
-          )}
+            <Kladdfelt
+              verdi={okt.kladd}
+              onLagre={(v) => void lagre({ kladd: v })}
+            />
+          </section>
+
+          <Mal okt={okt} periode={periode} enkel={enkel} />
 
           <div className="mt-6 flex gap-4">
             <button
@@ -181,6 +178,7 @@ export function OktPlanlegging({
         <aside className="flex w-[300px] shrink-0 flex-col gap-[22px] overflow-auto border-l border-linje-medium bg-flate-svak/70 px-[22px] py-[18px]">
           <Forrige okt={okt} />
           <FolgOpp okt={okt} skolearId={skolearId} />
+          <Vurderinger okt={okt} onLeggTil={onApneVurdering} />
           <Perioden okt={okt} periode={periode} fagOkter={fagOkter} />
         </aside>
       </div>
@@ -196,6 +194,8 @@ export function OktPlanlegging({
         <Tasthint taster={[tast("⌥"), "↑", "↓"]}>
           {enkel ? "flytt linje" : "flytt aktivitet"}
         </Tasthint>
+        <Tasthint taster={["K"]}>klassekart</Tasthint>
+        <Tasthint taster={["V"]}>vurdering</Tasthint>
         <span className="ml-auto">
           <Tasthint taster={["esc"]}>lukk, alt er lagret</Tasthint>
         </span>
@@ -208,11 +208,9 @@ export function OktPlanlegging({
 
 function Fakta({
   okt,
-  enkel,
   onLagre,
 }: {
   okt: Okt;
-  enkel: boolean;
   onLagre: (felt: Parameters<typeof endreOkt>[1]) => Promise<void>;
 }) {
   const [perioder, setPerioder] = useState<Periode[]>([]);
@@ -294,240 +292,6 @@ function Fakta({
           ]}
         />
       </Rad>
-      {!enkel && (
-        <Rad etikett="Vurdering">
-          <Vurdering okt={okt} onEndret={() => void onLagre({})} />
-        </Rad>
-      )}
-    </div>
-  );
-}
-
-function Vurdering({ okt, onEndret }: { okt: Okt; onEndret: () => void }) {
-  const [valg, setValg] = useState<Vurderingsvalg[]>([]);
-  const ark = useArk();
-  const last = () => void hentVurderingsvalg(okt.skolearFagId).then(setValg);
-  useEffect(last, [okt.skolearFagId, okt.id]);
-  useEffect(() => lyttVurderinger(last), [okt.skolearFagId, okt.id]);
-  const her = valg.filter((v) => v.oktIder.includes(okt.id));
-  const andre = valg.filter((v) => !v.oktIder.includes(okt.id));
-  const [ny, setNy] = useState(false);
-
-  async function koble(id: string, pa: boolean) {
-    if (pa) await knyttOkt(id, okt.id);
-    else await losOkt(id, okt.id);
-    last();
-    onEndret();
-  }
-
-  return (
-    <span className="flex min-w-0 flex-wrap items-center gap-1.5">
-      {her.map((v) => (
-        <span
-          key={v.id}
-          className="inline-flex h-8 items-center gap-1.5 rounded-[7px] bg-[color-mix(in_srgb,var(--color-aksent)_7%,var(--color-ark))] px-2.5 text-[calc(13.5px*var(--tekst-skala))]"
-        >
-          <button
-            onClick={() => ark.apneVurdering(v.id)}
-            className="max-w-[220px] truncate hover:underline"
-          >
-            {v.tittel}
-          </button>
-          <button
-            onClick={() => void koble(v.id, false)}
-            title="Løs fra økta"
-            className="text-blekk-svak hover:text-blekk"
-          >
-            ×
-          </button>
-        </span>
-      ))}
-      {/*
-        Velgeren har alltid «+ Ny vurdering i denne økta» nederst (16.9),
-        også når faget ikke har noen vurderinger ennå.
-      */}
-      <span className="relative">
-        <Velger
-          etikett="Knytt til vurdering"
-          verdi=""
-          plassholder={her.length ? "+" : "+ Knytt til"}
-          settVerdi={(v) => void koble(v, true)}
-          valg={andre.map(vurderingsvalg)}
-          handling={{
-            tekst: "+ Ny vurdering i denne økta",
-            onKlikk: () => setNy(true),
-          }}
-        />
-        {ny && (
-          <NyVurdering
-            okt={okt}
-            onLukk={() => setNy(false)}
-            onLaget={async (id, tittel) => {
-              setNy(false);
-              last();
-              onEndret();
-              const angring = {
-                tekst: `Vurderingen «${tittel}»`,
-                angre: async () => {
-                  await slettVurdering(id);
-                  last();
-                  onEndret();
-                },
-              };
-              leggTilAngring(angring);
-              visToast(`Vurderingen «${tittel}» er laget og knyttet til økta`, {
-                angring,
-                handling: {
-                  tekst: "Åpne i Vurderinger",
-                  onKlikk: () => ark.apneVurdering(id),
-                },
-              });
-            }}
-          />
-        )}
-      </span>
-    </span>
-  );
-}
-
-/**
- * Det lille skjemaet for en ny vurdering i økta (16.9, lerretet
- * OktVurdering): navn fylt ut fra temaet med formen som prefiks, form og
- * når. Kriterier og vekt redigeres under Vurderinger.
- */
-const FORMER: { id: Vurderingstype | null; navn: string }[] = [
-  { id: "muntlig", navn: "Muntlig" },
-  { id: "skriftlig", navn: "Skriftlig" },
-  { id: "praktisk", navn: "Praktisk" },
-  { id: null, navn: "Annet" },
-];
-
-function NyVurdering({
-  okt,
-  onLukk,
-  onLaget,
-}: {
-  okt: Okt;
-  onLukk: () => void;
-  onLaget: (id: string, tittel: string) => void;
-}) {
-  const [form, setForm] = useState<Vurderingstype | null>("muntlig");
-  const prefiks = (f: Vurderingstype | null) =>
-    FORMER.find((x) => x.id === f)!.navn;
-  const tema = okt.tema?.trim() || okt.fagNavn;
-  const [navn, setNavn] = useState(`${prefiks("muntlig")}: ${tema}`);
-  const [flere, setFlere] = useState(false);
-  const boks = useRef<HTMLDivElement>(null);
-
-  // Lukkes av esc og klikk utenfor, uten å lukke arket under.
-  useEffect(() => {
-    const ut = (e: MouseEvent) => {
-      if (!boks.current?.contains(e.target as Node)) onLukk();
-    };
-    const tast = (e: KeyboardEvent) => {
-      if (e.key !== "Escape") return;
-      e.preventDefault();
-      e.stopImmediatePropagation();
-      onLukk();
-    };
-    window.addEventListener("mousedown", ut);
-    window.addEventListener("keydown", tast, true);
-    return () => {
-      window.removeEventListener("mousedown", ut);
-      window.removeEventListener("keydown", tast, true);
-    };
-  }, [onLukk]);
-
-  async function lag() {
-    const tittel = navn.trim() || `${prefiks(form)}: ${tema}`;
-    const id = await nyVurderingIOkt(okt, tittel, form);
-    onLaget(id, tittel);
-  }
-
-  const chip = (pa: boolean, tekst: string, klikk: () => void) => (
-    <button
-      key={tekst}
-      onClick={klikk}
-      className={`planvalg-knapp ${pa ? "pa" : ""}`}
-    >
-      {tekst}
-    </button>
-  );
-
-  return (
-    <div
-      ref={boks}
-      className="glass-meny absolute left-0 top-[calc(100%+6px)] z-[60] w-[380px] rounded-[14px] p-4 text-[calc(13px*var(--tekst-skala))]"
-    >
-      <div className="mb-3 flex items-baseline gap-2">
-        <span className="font-semibold">Ny vurdering</span>
-        <span className="text-[calc(12px*var(--tekst-skala))] text-blekk-svak">
-          knyttes til økta {kortDag(okt.dato)}
-        </span>
-      </div>
-      <p className="mb-1 text-[calc(12px*var(--tekst-skala))] text-blekk-dempet">
-        Navn
-      </p>
-      <input
-        autoFocus
-        value={navn}
-        onChange={(e) => setNavn(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") {
-            e.preventDefault();
-            void lag();
-          }
-        }}
-        className={`${felt} w-full`}
-      />
-      <p className="mb-1 mt-3 text-[calc(12px*var(--tekst-skala))] text-blekk-dempet">
-        Form
-      </p>
-      <div className="flex flex-wrap gap-1.5">
-        {FORMER.map((f) =>
-          chip(form === f.id, f.navn, () => {
-            // Formen er prefikset i navnet; byttes formen, byttes prefikset.
-            const rest = navn.replace(
-              /^(Muntlig|Skriftlig|Praktisk|Annet): /,
-              "",
-            );
-            setForm(f.id);
-            setNavn(`${f.navn}: ${rest}`);
-          }),
-        )}
-      </div>
-      <p className="mb-1 mt-3 text-[calc(12px*var(--tekst-skala))] text-blekk-dempet">
-        Når
-      </p>
-      <div className="flex flex-wrap gap-1.5">
-        {chip(!flere, `Denne økta · ${kortDag(okt.dato)}`, () =>
-          setFlere(false),
-        )}
-        {chip(flere, "Over flere økter …", () => setFlere(true))}
-      </div>
-      {flere && (
-        <p className="mt-2 text-[calc(12px*var(--tekst-skala))] leading-normal text-blekk-dempet">
-          Etter at den er laget, velger du de andre øktene i lista eller
-          kalenderen (Vurdering, V). Samtaledager settes opp i Samtaler.
-        </p>
-      )}
-      <div className="mt-4 flex items-center gap-2">
-        <span className="text-[calc(12px*var(--tekst-skala))] text-blekk-svak">
-          Kriterier og vekt: under Vurderinger
-        </span>
-        <button
-          onClick={onLukk}
-          className="ml-auto h-8 rounded-full px-3 text-blekk-dempet hover:bg-flate"
-        >
-          Avbryt
-        </button>
-        <button
-          onClick={() => void lag()}
-          className="h-8 rounded-full bg-aksent px-3.5 font-medium text-ark hover:bg-aksent-mork"
-        >
-          Lag vurdering ↵
-        </button>
-      </div>
     </div>
   );
 }
@@ -816,6 +580,63 @@ function FolgOpp({ okt, skolearId }: { okt: Okt; skolearId: string }) {
             {ikkeSettNavn.join(", ")}
           </span>
         </p>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Vurderingene i økta, i høyre kolonne (30.7). Et klikk åpner vurderingen
+ * over økta; «Legg til (V)» åpner kortet «Vurdering i denne økta».
+ */
+function Vurderinger({
+  okt,
+  onLeggTil,
+}: {
+  okt: Okt;
+  onLeggTil: () => void;
+}) {
+  const [valg, setValg] = useState<Vurderingsvalg[]>([]);
+  const ark = useArk();
+  useEffect(() => {
+    const last = () =>
+      void hentVurderingsvalg(okt.skolearFagId).then((v) =>
+        setValg(v.filter((x) => x.oktIder.includes(okt.id))),
+      );
+    last();
+    return lyttVurderinger(last);
+  }, [okt.skolearFagId, okt.id]);
+  return (
+    <div>
+      <h3 className="mb-1.5 text-[calc(13px*var(--tekst-skala))] font-semibold">
+        Vurdering
+      </h3>
+      {valg.length === 0 ? (
+        <p className="text-liten text-blekk-dempet">
+          Ingen i denne økta.{" "}
+          <button onClick={onLeggTil} className="text-aksent hover:underline">
+            Legg til (V)
+          </button>
+        </p>
+      ) : (
+        <div className="flex flex-col gap-1">
+          {valg.map((v) => (
+            <button
+              key={v.id}
+              onClick={() => ark.apneVurdering(v.id)}
+              className="flex items-center gap-2 text-left text-[calc(13px*var(--tekst-skala))] hover:underline"
+            >
+              <Vurderingsikon type={v.type} />
+              <span className="truncate">{v.tittel}</span>
+            </button>
+          ))}
+          <button
+            onClick={onLeggTil}
+            className="mt-0.5 self-start text-liten text-aksent hover:underline"
+          >
+            Legg til (V)
+          </button>
+        </div>
       )}
     </div>
   );
