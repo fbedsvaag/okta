@@ -921,6 +921,7 @@ function IngenIDag({
           : undefined
       }
       sekundar={{ tekst: "Se uka", onKlikk: onSeUka }}
+      hint="Har du ikke lagt inn øktene ennå? Gå til Økter og bruk «+ Serie» for å legge inn mange på en gang."
     />
   );
 }

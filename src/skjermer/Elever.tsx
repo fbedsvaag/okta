@@ -448,6 +448,7 @@ export function Elever({
           tittel="Ingen elever ennå"
           tekst="Lim inn en klasseliste fra Visma, Excel eller Teams. Navnene kjennes igjen av seg selv."
           hoved={{ tekst: "Importer klasseliste", onKlikk: onLimInn }}
+          sekundar={{ tekst: "Ny elev", onKlikk: () => setNyApen(true) }}
           hint="Navnene ligger bare på denne maskinen. Kjønn og bilde er valgfritt og blir aldri eksportert."
         />
       ) : (
