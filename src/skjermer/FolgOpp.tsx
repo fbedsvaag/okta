@@ -13,6 +13,7 @@ import {
   siden,
   type Folgopprad,
   type Grunnslag,
+  samtaletekst,
 } from "../data/folgopp";
 import { leggTilMal } from "../data/samtalerunde";
 import { lyttElever, lyttVurderinger } from "../data/endringer";
@@ -223,11 +224,8 @@ export function FolgOpp({
                 <Knapp
                   tittel={`Legges som punkt på neste ${MENTORORD.samtale}`}
                   onKlikk={async () => {
-                    await leggTilMal(
-                      r.elevId,
-                      null,
-                      r.grunner.map((g) => g.tekst).join(" · "),
-                    );
+                    const tekst = samtaletekst(r.grunner);
+                    if (tekst) await leggTilMal(r.elevId, null, tekst);
                     await ferdig(r);
                   }}
                 >

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { byggFolgOpp, grunnerFraOkter, siden } from "./folgopp";
+import { byggFolgOpp, grunnerFraOkter, siden, samtaletekst } from "./folgopp";
 import type { Oktrad } from "./oktrader";
 
 const rad = (
@@ -95,5 +95,20 @@ describe("Følg opp", () => {
     expect(siden("2026-10-22", "2026-10-22")).toBe("i dag");
     expect(siden("2026-10-16", "2026-10-22")).toBe("6 dager");
     expect(siden("2026-10-08", "2026-10-22")).toBe("2 uker");
+  });
+});
+
+describe("«Til samtale» (29.7)", () => {
+  it("tar ikke med avtaler på nytt, så teksten ikke pakkes inn igjen", () => {
+    expect(
+      samtaletekst([{ slag: "avtale", tekst: "Avtale: «Spørre om hjelp»" }]),
+    ).toBeNull();
+    expect(
+      samtaletekst([
+        { slag: "rod", tekst: "Rød i siste økt" },
+        { slag: "avtale", tekst: "Avtale: «Spørre om hjelp»" },
+        { slag: "borte", tekst: "Borte tor 15.10" },
+      ]),
+    ).toBe("Rød i siste økt · Borte tor 15.10");
   });
 });

@@ -1039,7 +1039,16 @@ function Verktoylinje({
         </span>
       ) : (
         visning !== "samtaler" && (
-          <span className="text-brod font-semibold">{SKJERMNAVN[visning]}</span>
+          <span className="flex items-center gap-2 text-brod font-semibold">
+            {/* Følg opp er en underside av I dag: «I dag › Følg opp» (29.7). */}
+            {visning === "folgopp" && (
+              <>
+                <span>I dag</span>
+                <span className="font-normal text-blekk-svak">›</span>
+              </>
+            )}
+            {SKJERMNAVN[visning]}
+          </span>
         )
       )}
       {bryter && <span className="ml-1 shrink-0">{bryter}</span>}

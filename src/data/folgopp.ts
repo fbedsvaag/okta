@@ -269,3 +269,16 @@ export async function settFulgtOpp(
     });
   varsleElever();
 }
+
+/**
+ * Teksten «Til samtale» legger på neste samtale. Avtaler står der fra før
+ * (de kommer fra en samtale), så de tas ikke med på nytt; ellers ville
+ * «Avtale: «…»» bli pakket inn én gang til ved hvert klikk. null = ingenting
+ * å legge til.
+ */
+export function samtaletekst(
+  grunner: { slag: Grunnslag; tekst: string }[],
+): string | null {
+  const t = grunner.filter((g) => g.slag !== "avtale").map((g) => g.tekst);
+  return t.length ? t.join(" · ") : null;
+}
