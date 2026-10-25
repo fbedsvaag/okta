@@ -977,7 +977,7 @@ function Mal({
 
 function Kort({ children }: { children: React.ReactNode }) {
   return (
-    <div className="rounded-[14px] bg-ark px-4 py-3.5 shadow-[inset_0_0_0_1px_var(--color-linje-svak)]">
+    <div className="rounded-[14px] bg-flate-svak px-4 py-3.5 shadow-[inset_0_0_0_1px_var(--color-linje-svak)]">
       {children}
     </div>
   );
