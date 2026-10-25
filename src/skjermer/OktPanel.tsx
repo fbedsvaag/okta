@@ -1,11 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Elevfoto } from "../ui/Elevfoto";
 import { Bryter, Fagfirkant } from "../ui/felles";
-import {
-  narTekst,
-  standardModus,
-  type Oktmodus,
-} from "../data/oktplan";
+import { narTekst, standardModus, type Oktmodus } from "../data/oktplan";
 import { kortDag } from "../data/fagside";
 import { OktPlanlegging } from "./OktPlanlegging";
 import { Tastestripe, Tasthint } from "../ui/Tastestripe";
@@ -579,8 +575,8 @@ export function OktPanel({
                 </span>
                 {elever.length > 0 && (
                   <span className="tabular-nums">
-                    {antallSkaret - antallBorte} av {elever.length - antallBorte}{" "}
-                    skåret · {antallBorte} borte
+                    {antallSkaret - antallBorte} av{" "}
+                    {elever.length - antallBorte} skåret · {antallBorte} borte
                   </span>
                 )}
                 <span className="flex-1" />

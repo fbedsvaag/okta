@@ -19,10 +19,7 @@ import {
   type Periode,
 } from "../data/perioder";
 import { finnFag, type Kompetansemaal } from "../data/grep";
-import {
-  hentVurderingsvalg,
-  type Vurderingsvalg,
-} from "../data/vurderinger";
+import { hentVurderingsvalg, type Vurderingsvalg } from "../data/vurderinger";
 import { hentOktrader, type Oktrad } from "../data/oktrader";
 import { hentApneOppfolginger } from "../data/elevnotat";
 import {
@@ -589,13 +586,7 @@ function FolgOpp({ okt, skolearId }: { okt: Okt; skolearId: string }) {
  * Vurderingene i økta, i høyre kolonne (30.7). Et klikk åpner vurderingen
  * over økta; «Legg til (V)» åpner kortet «Vurdering i denne økta».
  */
-function Vurderinger({
-  okt,
-  onLeggTil,
-}: {
-  okt: Okt;
-  onLeggTil: () => void;
-}) {
+function Vurderinger({ okt, onLeggTil }: { okt: Okt; onLeggTil: () => void }) {
   const [valg, setValg] = useState<Vurderingsvalg[]>([]);
   const ark = useArk();
   useEffect(() => {
