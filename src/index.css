@@ -2615,6 +2615,10 @@ textarea,
   padding: 10px 16px;
   border-top: 1px solid var(--color-linje-svak);
 }
+/* En meny som åpnes i gruppa (fargepaletten i Fag), skal ikke klippes. */
+.inn-grp:has(.glass-meny) {
+  overflow: visible;
+}
 .inn-grp > .inn-rad:first-child,
 .inn-grp > :first-child {
   border-top: none;

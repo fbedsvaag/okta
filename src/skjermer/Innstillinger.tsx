@@ -38,7 +38,7 @@ import { LAERERNAVN, SKOLENAVN } from "../data/arsplanark";
 import { Merke } from "../ui/logo";
 import { getVersion } from "@tauri-apps/api/app";
 import { open, confirm as bekreft } from "@tauri-apps/plugin-dialog";
-import { hentFagIAr, leggFagIAr, type FagIAr } from "../data/fag";
+import { endreFag, hentFagIAr, leggFagIAr, type FagIAr } from "../data/fag";
 import { Bryter, Fagfirkant, Knapp, Ikon } from "../ui/felles";
 import {
   bevegelseshjelp,
@@ -50,6 +50,7 @@ import {
 } from "../ui/plattformord";
 import { invoke } from "@tauri-apps/api/core";
 import { PLANVISNING, lesPlanvisning, type Planvisning } from "../data/oktplan";
+import { Fargevelger, bruktAv } from "../ui/Fargevelger";
 import { useArk } from "../ui/Arkstabel";
 import { IVerktoylinja } from "../ui/Verktoylinje";
 import { useLagretInnstilling } from "../ui/useLagretInnstilling";
@@ -886,6 +887,8 @@ function SideFag({
   onApneFag?: () => void;
 }) {
   const ark = useArk();
+  // Farger valgt her vises med en gang, før lista lastes på nytt.
+  const [farge, setFarge] = useState<Map<string, string>>(new Map());
   // Arkiverte fag står for seg, så de kan hentes tilbake (29.2).
   const [arkiverte, setArkiverte] = useState<FagIAr[]>([]);
   useEffect(() => {
@@ -894,16 +897,30 @@ function SideFag({
     );
   }, [skolearId, fag]);
   const rad = (f: FagIAr, i: number) => (
-    <div key={f.id} data-k={`fag-${f.id}`}>
+    <div
+      key={f.id}
+      data-k={`fag-${f.id}`}
+      className="inn-rad flex-nowrap !gap-0 !py-0 !pl-2"
+    >
+      {/*
+        Ruta åpner hele paletten med egen farge (29.2): her er «flere
+        farger», faginnstillingene har bare de tolv.
+      */}
+      <span data-k={i === 0 ? "fagfarge" : undefined}>
+        <Fargevelger
+          rute
+          farge={farge.get(f.id) ?? f.farge}
+          brukt={bruktAv(fag, f.id)}
+          onVelg={async (ny) => {
+            setFarge((m) => new Map(m).set(f.id, ny));
+            await endreFag(f.fagId, { farge: ny });
+          }}
+        />
+      </span>
       <button
         onClick={() => ark.apneFagInnstillinger(f.id)}
-        className="inn-rad w-full text-left"
-        data-k={i === 0 ? "fagfarge" : undefined}
+        className="flex min-h-[52px] flex-1 items-center gap-4 py-2.5 pl-2 text-left"
       >
-        <span
-          className="h-[22px] w-[22px] shrink-0 rounded-[7px] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.08)]"
-          style={{ background: f.farge ?? "var(--color-linje-sterk)" }}
-        />
         <span className="min-w-[220px] flex-1">
           <span className="text-[calc(13.5px*var(--tekst-skala))]">
             <b className="font-semibold">{f.kode}</b>{" "}

@@ -6,7 +6,7 @@ import { hentVurderingsskalaer } from "../data/vurderinger";
 import { hentSkalaer, type Skala } from "../skala";
 import { idag } from "../db";
 import { Fagfirkant } from "../ui/felles";
-import { Fargepalett, bruktAv } from "../ui/Fargevelger";
+import { Fargeutvalg, bruktAv } from "../ui/Fargevelger";
 import { Velger } from "../ui/Velger";
 
 const DAGER = ["ma", "ti", "on", "to", "fr"];
@@ -88,7 +88,7 @@ export function FagInnstillinger({
       </div>
 
       <Gruppe>Farge</Gruppe>
-      <Fargepalett
+      <Fargeutvalg
         farge={fag.farge}
         brukt={bruktAv(alle, fag.id)}
         onVelg={async (farge) => {
@@ -98,7 +98,7 @@ export function FagInnstillinger({
         }}
       />
       <p className="mt-1.5 text-liten text-blekk-svak">
-        Dempet = brukt av et annet fag.
+        Dempet = brukt av et annet fag. Flere farger i Innstillinger → Fag.
       </p>
 
       <Gruppe>Økter</Gruppe>

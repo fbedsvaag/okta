@@ -82,6 +82,71 @@ export function Fargepalett({
 }
 
 /**
+ * De tolv fargene i faginnstillingene (29.2, lerretet FagInnstillinger):
+ * to fra hver familie i paletten. Resten ligger i Innstillinger → Fag.
+ */
+export const FARGEUTVALG = [
+  "#9a5a2c",
+  "#b5703a",
+  "#c9922e",
+  "#c0607a",
+  "#a83f5f",
+  "#3d7a5a",
+  "#2f9a8a",
+  "#2e6a8e",
+  "#4f7ac0",
+  "#7d6bb0",
+  "#4a3d7d",
+  "#58507a",
+] as const;
+
+/**
+ * Utvalget som to rader. Har faget en farge utenfor utvalget, står den
+ * først, så du ser hva det har.
+ */
+export function Fargeutvalg({
+  farge,
+  brukt,
+  onVelg,
+}: {
+  farge: string | null;
+  brukt?: Map<string, string>;
+  onVelg: (farge: string) => void;
+}) {
+  const valgt = farge?.toLowerCase() ?? null;
+  const vis =
+    valgt && !FARGEUTVALG.includes(valgt as (typeof FARGEUTVALG)[number])
+      ? [valgt, ...FARGEUTVALG]
+      : [...FARGEUTVALG];
+  return (
+    <div className="grid w-fit grid-cols-6 gap-1.5">
+      {vis.map((f) => {
+        const av = brukt?.get(f);
+        const pa = valgt === f;
+        return (
+          <button
+            key={f}
+            onClick={() => onVelg(f)}
+            title={av ? `Brukt av ${av}` : f}
+            aria-label={av ? `${f}, brukt av ${av}` : `Farge ${f}`}
+            aria-pressed={pa}
+            className={`h-[26px] w-[26px] rounded-[7px] transition-transform ${
+              av && !pa ? "opacity-30" : ""
+            } ${pa ? "" : "hover:scale-110"}`}
+            style={{
+              background: f,
+              boxShadow: pa
+                ? "0 0 0 2px var(--color-ark), 0 0 0 3.5px var(--color-blekk)"
+                : undefined,
+            }}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+/**
  * Fargen på et fag: fagfirkanten er knappen, og et klikk åpner paletten.
  * Fargen hører til faget og følger med overalt.
  */
@@ -90,11 +155,14 @@ export function Fargevelger({
   storrelse = 12,
   brukt,
   onVelg,
+  rute = false,
 }: {
   farge: string | null;
   storrelse?: 8 | 10 | 12;
   brukt?: Map<string, string>;
   onVelg: (farge: string) => void;
+  /** en stor rute (22 px), som i Innstillinger → Fag */
+  rute?: boolean;
 }) {
   const [apen, setApen] = useState(false);
   const boks = useRef<HTMLSpanElement>(null);
@@ -126,7 +194,14 @@ export function Fargevelger({
         aria-expanded={apen}
         className="grid place-items-center rounded-[5px] p-1 hover:bg-flate"
       >
-        <Fagfirkant farge={farge} storrelse={storrelse} />
+        {rute ? (
+          <span
+            className="block h-[22px] w-[22px] rounded-[7px] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.08)]"
+            style={{ background: farge ?? "var(--color-linje-sterk)" }}
+          />
+        ) : (
+          <Fagfirkant farge={farge} storrelse={storrelse} />
+        )}
       </button>
       {apen && (
         <div className="glass-meny absolute left-0 top-[calc(100%+6px)] z-[60] w-[290px] rounded-[14px] p-3">
