@@ -112,6 +112,25 @@ export async function hentMentorelever(
   );
 }
 
+/**
+ * Klassen mentorgruppa går i, når alle mentorelevene går i samme klasse
+ * («2STA»). Går gruppa på tvers av klasser, eller er den tom: null, og
+ * appen skriver «Mentorgruppa».
+ */
+export async function hentMentorklasse(
+  skolearId: string,
+): Promise<string | null> {
+  const r = await hent<{ navn: string }>(
+    `SELECT DISTINCT k.navn
+       FROM elev_klasse ek
+       JOIN klasse k ON k.id = ek.klasse_id AND k.slettet IS NULL
+       JOIN elev e ON e.id = ek.elev_id AND e.slettet IS NULL
+      WHERE ek.skolear_id = $1 AND ek.mentor = 1 AND ek.slettet IS NULL`,
+    [skolearId],
+  );
+  return r.length === 1 ? r[0].navn : null;
+}
+
 // ------------------------------------------------------------ per samtale
 
 export type Samtaledetaljer = {

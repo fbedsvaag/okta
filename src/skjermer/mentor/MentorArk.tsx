@@ -19,6 +19,7 @@ import {
   settForesatt,
   settGuideStilt,
   settNadd,
+  hentMentorklasse,
   slettMal,
   slettRunde,
   type Elevoversikt,
@@ -94,6 +95,12 @@ export function MentorArk({
     const t = window.setInterval(() => setNaa(new Date()), 1000);
     return () => window.clearInterval(t);
   }, []);
+
+  // Klassen til mentorgruppa i arkhodet, når alle går i samme (29.6).
+  const [klasse, setKlasse] = useState<string | null>(null);
+  useEffect(() => {
+    void hentMentorklasse(skolearId).then(setKlasse);
+  }, [skolearId]);
 
   const last = useCallback(async () => {
     const [r, alle, e] = await Promise.all([
@@ -224,7 +231,7 @@ export function MentorArk({
           {runde.navn}
         </span>
         <span className="text-[calc(13px*var(--tekst-skala))] text-blekk-dempet">
-          {[spenn, "ikke en vurdering"].filter(Boolean).join(" · ")}
+          {[klasse, spenn, "ikke en vurdering"].filter(Boolean).join(" · ")}
         </span>
         <span className="ml-2.5">
           <Bryter

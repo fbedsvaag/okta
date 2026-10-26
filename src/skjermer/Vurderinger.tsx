@@ -30,6 +30,7 @@ import {
   opprettRunde,
   rundenavn,
   type Samtalerunde,
+  hentMentorklasse,
 } from "../data/samtalerunde";
 import { iDag } from "./tidsplan/Generator";
 import { oktetikett } from "./Vurderingsfelter";
@@ -75,6 +76,11 @@ export function Vurderinger({
   const [dager, setDager] = useState<Samtaledag[]>([]);
   const [runder, setRunder] = useState<Samtalerunde[]>([]);
   const [harMentor, setHarMentor] = useState(false);
+  // Klassen til mentorgruppa, når alle går i samme (28.0).
+  const [mentorklasse, setMentorklasse] = useState<string | null>(null);
+  useEffect(() => {
+    void hentMentorklasse(skolearId).then(setMentorklasse);
+  }, [skolearId]);
   // Skoleåret etter tittelen, som i tegningen (28.0).
   const [arNavn, setArNavn] = useState<string | null>(null);
   useEffect(() => {
@@ -318,6 +324,7 @@ export function Vurderinger({
                     rad={r}
                     valgt={valgt === r.id}
                     onVelg={() => apne(r)}
+                    mentorklasse={mentorklasse}
                   />
                 ))}
               </section>
@@ -537,10 +544,12 @@ function Rad({
   rad: r,
   valgt,
   onVelg,
+  mentorklasse,
 }: {
   rad: Oversiktsrad;
   valgt: boolean;
   onVelg: () => void;
+  mentorklasse: string | null;
 }) {
   const mentor = r.type === "mentor";
   const pst = r.av > 0 ? Math.min(100, Math.round((r.ant / r.av) * 100)) : 0;
@@ -568,9 +577,14 @@ function Rad({
         </div>
         <div className="mt-[3px] flex items-center gap-[7px] text-liten text-blekk-svak">
           {r.fagKode && <Fagfirkant farge={r.farge} />}
+          {mentor && mentorklasse && (
+            <span className="h-2 w-2 shrink-0 rounded-[2px] bg-aksent" />
+          )}
           <span className="truncate">
             {(mentor
-              ? [MENTORORD.gruppe, "ingen karakter"]
+              ? mentorklasse
+                ? [mentorklasse, MENTORORD.samtaler]
+                : [MENTORORD.gruppe, "ingen karakter"]
               : [r.fagKode, TYPENAVN[r.type], r.skalaNavn]
             )
               .filter(Boolean)

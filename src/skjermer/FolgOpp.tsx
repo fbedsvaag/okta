@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { hentMentorklasse } from "../data/samtalerunde";
 import type { Skolear } from "../data/skolear";
 import type { FagIAr } from "../data/fag";
 import { hentOktrader } from "../data/oktrader";
@@ -59,6 +60,11 @@ export function FolgOpp({
   const [filter, setFilter] = useState<Grunnslag | "alle">("alle");
   const [ut, setUt] = useState<Set<string>>(new Set());
   const ark = useArk();
+  // Mentoravtaler viser klassen når hele gruppa går i samme (29.7).
+  const [mentorklasse, setMentorklasse] = useState<string | null>(null);
+  useEffect(() => {
+    void hentMentorklasse(skolear.id).then(setMentorklasse);
+  }, [skolear.id]);
 
   const last = useCallback(async () => {
     const [o, f, a, fulgt, e] = await Promise.all([
@@ -182,6 +188,11 @@ export function FolgOpp({
                     <>
                       <Fagfirkant farge={f.farge} />
                       {f.kode}
+                    </>
+                  ) : mentorklasse ? (
+                    <>
+                      <span className="h-2 w-2 shrink-0 rounded-[2px] bg-aksent" />
+                      {mentorklasse}
                     </>
                   ) : (
                     MENTORORD.rolle
