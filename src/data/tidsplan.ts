@@ -200,18 +200,29 @@ export type Lesttidsplan = {
   tider: { minutter: number; pause: number } | null;
 };
 
+/**
+ * Samtalene dag for dag, i dagenes rekkefølge, og etter klokkeslett innen
+ * dagen. Ikke etter dato på tvers: to dager med samme dato, eller uten dato,
+ * ville da blitt flettet sammen etter klokkeslett, og hele lista stokket om
+ * hver gang én elev ble dratt.
+ */
+export function rekkefolgeIDagene<T extends { klokkeslett: string }>(
+  perDag: T[][],
+): { x: T; dag: number }[] {
+  return perDag.flatMap((s, dag) =>
+    [...s]
+      .sort((a, b) => a.klokkeslett.localeCompare(b.klokkeslett))
+      .map((x) => ({ x, dag })),
+  );
+}
+
 export async function lesTidsplan(
   dager: Samtaledag[],
   elever: { elevId: string; fornavn: string }[],
 ): Promise<Lesttidsplan> {
-  const alle = (await Promise.all(dager.map((d) => hentSamtaler(d.id))))
-    .map((s, i) => s.map((x) => ({ x, dato: dager[i].dato })))
-    .flat()
-    .sort(
-      (a, b) =>
-        a.dato.localeCompare(b.dato) ||
-        a.x.klokkeslett.localeCompare(b.x.klokkeslett),
-    );
+  const alle = rekkefolgeIDagene(
+    await Promise.all(dager.map((d) => hentSamtaler(d.id))),
+  );
   const tider = tiderITrekning(
     dager.map((d) =>
       alle
@@ -260,4 +271,20 @@ export async function skrivTidsplan(
     if (!d.dag.oktId)
       await endreSamtaledag(d.dag.id, { til: d.slutt ?? d.dag.fra });
   }
+}
+
+/**
+ * Dagene i en tidsplan i fast rekkefølge: dato (uten dato sist), så
+ * starttid, så id. Uten de to siste kunne to dager med samme dato bytte
+ * plass mellom to innlesninger, og elevene med dem.
+ */
+export function dagrekkefolge(
+  a: { dato: string; fra: string; id: string },
+  b: { dato: string; fra: string; id: string },
+): number {
+  return (
+    (a.dato || "9").localeCompare(b.dato || "9") ||
+    a.fra.localeCompare(b.fra) ||
+    a.id.localeCompare(b.id)
+  );
 }

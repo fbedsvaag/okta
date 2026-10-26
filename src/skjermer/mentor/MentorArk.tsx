@@ -29,6 +29,7 @@ import {
 import {
   framdrift,
   leggUtTidsplan,
+  dagrekkefolge,
   lesTidsplan,
   type Lesttidsplan,
   type Utlagtdag,
@@ -102,7 +103,7 @@ export function MentorArk({
     ]);
     const d = alle
       .filter((x) => x.samtalerundeId === rundeId)
-      .sort((a, b) => (a.dato || "9").localeCompare(b.dato || "9"));
+      .sort(dagrekkefolge);
     const p = await lesTidsplan(d, e);
     setRunde(r.find((x) => x.id === rundeId) ?? null);
     setDager(d);

@@ -19,6 +19,7 @@ import {
   type Oppgavekort,
 } from "../../data/muntlig";
 import {
+  dagrekkefolge,
   lesTidsplan,
   leggUtTidsplan,
   type Tidsplandag,
@@ -89,7 +90,7 @@ export function MuntligArk({
       ]);
     const dager = alleDager
       .filter((d) => d.vurderingId === vurdering.id)
-      .sort((a, b) => (a.dato || "9").localeCompare(b.dato || "9"));
+      .sort(dagrekkefolge);
     const plan = await lesTidsplan(dager, elever);
     // En tidsplan som er trukket i samtaletrekkeren, har sine egne tider.
     // De gjelder til noe settes her.
