@@ -2092,6 +2092,15 @@ textarea,
   font-weight: 500;
   color: var(--color-blekk-dempet);
 }
+/* Ukenummer nederst i stripa, over vurderingsmerkene (31.3). */
+.aret-uke {
+  position: absolute;
+  bottom: 33px;
+  font-size: 9.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-blekk-svak);
+  pointer-events: none;
+}
 .aret-na {
   position: absolute;
   top: 22px;

@@ -554,10 +554,34 @@ export function Aret({ skolear, fag }: { skolear: Skolear; fag: FagIAr }) {
                 nyMnd ? "mnd" : nyUke ? "uke" : ""
               }`}
               style={{ left: `calc(${i} * var(--w))` }}
-              title={`${kort(p.dato)}${p.slag === "ferie" ? ` · ${p.navn}` : ""}`}
+              title={`${kort(p.dato)} · uke ${ukenummer(p.dato)}${p.slag === "ferie" ? ` · ${p.navn}` : ""}`}
             />
           );
         })}
+        {/*
+          Ukenummeret ved starten av hver uke (31.3). Er stripa trang, står
+          det med jevne mellomrom, så tallene ikke krasjer.
+        */}
+        {(() => {
+          const gap = Math.max(1, Math.ceil(N / 45));
+          let sist = -Infinity;
+          return stripe.map((p, i) => {
+            const forrige = stripe[i - 1];
+            if (forrige && ukenummer(p.dato) === ukenummer(forrige.dato))
+              return null;
+            if (i - sist < gap) return null;
+            sist = i;
+            return (
+              <span
+                key={`u${i}`}
+                className="aret-uke"
+                style={{ left: `calc(${i} * var(--w) + 2px)` }}
+              >
+                {ukenummer(p.dato)}
+              </span>
+            );
+          });
+        })()}
         {stripe.map((p, i) => {
           const forrige = stripe[i - 1];
           if (forrige && forrige.dato.slice(5, 7) === p.dato.slice(5, 7))
@@ -1077,7 +1101,10 @@ function Periodekort({
               )
             ) : x.okt.periodeId !== p.id ? null : (
               <div key={x.okt.id} className="aret-or">
-                <span className="text-etikett tabular-nums text-blekk-svak">
+                <span
+                  className="text-etikett tabular-nums text-blekk-svak"
+                  title={`Uke ${ukenummer(x.dato)}`}
+                >
                   {kort(x.dato)}
                 </span>
                 <span className="grid place-items-center">
