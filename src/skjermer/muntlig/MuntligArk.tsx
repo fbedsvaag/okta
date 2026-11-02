@@ -30,6 +30,7 @@ import { Bryter, Fagfirkant } from "../../ui/felles";
 import { kortDag } from "../../data/vurderingsoversikt";
 import { Tidsplanliste } from "../tidsplan/Tidsplanliste";
 import { useLagrePlan } from "../tidsplan/bruk";
+import { Ferdigkort, ferdiglinje } from "../tidsplan/Ferdigkort";
 import { Planlegg } from "./Planlegg";
 import { Gjennomfor } from "./Gjennomfor";
 import { Resultater } from "./Resultater";
@@ -180,6 +181,11 @@ export function MuntligArk({
   useEffect(() => {
     if (valgt === null && gjeldende) setValgt(gjeldende);
   }, [valgt, gjeldende]);
+  // Alle er ført: «Alle samtalene er holdt» (31.4).
+  const [ferdig, setFerdig] = useState(false);
+  useEffect(() => {
+    if (modus !== "gj") setFerdig(false);
+  }, [modus]);
   const valgtElev = valgt ?? gjeldende;
 
   const lagrePlan = useLagrePlan({
@@ -270,6 +276,7 @@ export function MuntligArk({
             }}
             valgt={modus === "gj" ? valgtElev : null}
             onVelg={(id) => {
+              setFerdig(false);
               setValgt(id);
               if (modus === "res") setModus("gj");
             }}
@@ -289,7 +296,45 @@ export function MuntligArk({
               onEndret={onEndret}
             />
           )}
-          {modus === "gj" && valgtElev && (
+          {modus === "gj" && ferdig && (
+            <Ferdigkort
+              {...(() => {
+                const fort = data.elever.filter(
+                  (e) => data.resultater.get(e.elevId)?.skalaverdiId,
+                ).length;
+                const ikke = data.elever.filter(
+                  (e) => data.samtale.get(e.elevId)?.motte === false,
+                ).length;
+                const n = data.elever.length;
+                // Alle har karakter eller møtte ikke: da er runden ferdig.
+                return fort + ikke >= n
+                  ? {
+                      tittel: "Alle samtalene er holdt",
+                      linje: ferdiglinje({
+                        holdt: fort,
+                        motteIkke: ikke,
+                        karakterer: data.elever
+                          .map(
+                            (e) => data.resultater.get(e.elevId)?.skalaverdiId,
+                          )
+                          .map((id) => data.verdier.find((v) => v.id === id))
+                          .filter((v): v is NonNullable<typeof v> => !!v),
+                      }),
+                    }
+                  : {
+                      tittel: "Du er gjennom tidsplanen",
+                      linje: `${fort} av ${n} ført · ${n - fort - ikke} mangler karakter`,
+                    };
+              })()}
+              hoved="Se resultatene"
+              onHoved={() => {
+                setFerdig(false);
+                setModus("res");
+              }}
+              onTilbake={() => setFerdig(false)}
+            />
+          )}
+          {modus === "gj" && !ferdig && valgtElev && (
             <Gjennomfor
               key={valgtElev}
               data={data}
@@ -308,13 +353,15 @@ export function MuntligArk({
                     !data.resultater.get(id)?.skalaverdiId &&
                     data.samtale.get(id)?.motte !== false,
                 );
-                setValgt(neste ?? null);
+                // Siste elev: gratulerer før resultatene (31.4).
+                if (neste) setValgt(neste);
+                else setFerdig(true);
               }}
               onApneElev={onApneElev}
               last={last}
             />
           )}
-          {modus === "gj" && !valgtElev && (
+          {modus === "gj" && !ferdig && !valgtElev && (
             <p className="mt-10 text-center text-brod text-blekk-dempet">
               Ingen tidsplan ennå. Sett den opp under Planlegg.
             </p>

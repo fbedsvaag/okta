@@ -2901,3 +2901,19 @@ textarea,
     transition: none;
   }
 }
+
+/* Alle samtalene er holdt (31.4): glir rolig inn, ingen sprett. */
+.ferdig-inn {
+  animation: ferdig-inn 420ms var(--ease-inn, cubic-bezier(0.22, 1, 0.36, 1));
+}
+@keyframes ferdig-inn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ferdig-inn {
+    animation: none;
+  }
+}

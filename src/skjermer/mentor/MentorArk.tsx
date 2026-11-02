@@ -52,6 +52,7 @@ import { kortDag, MENTORORD } from "../../data/vurderingsoversikt";
 import { Generator, iDag, tilTidsplandager } from "../tidsplan/Generator";
 import { Tidsplanliste } from "../tidsplan/Tidsplanliste";
 import { useLagrePlan } from "../tidsplan/bruk";
+import { Ferdigkort, ferdiglinje } from "../tidsplan/Ferdigkort";
 import { Elevsok } from "../Elevsok";
 import { hentAlleElever } from "../../data/elever";
 import { somMarkdown, somTeamsHtml } from "../../data/samtale";
@@ -163,6 +164,11 @@ export function MentorArk({
     return utlagt[0]?.rader[0]?.elevId ?? null;
     // holdt avhenger av klokka; et nytt valg per minutt holder.
   }, [plan, utlagt]);
+  // Siste samtale er holdt: «Alle samtalene er holdt» (31.4).
+  const [ferdig, setFerdig] = useState(false);
+  useEffect(() => {
+    if (modus !== "gj") setFerdig(false);
+  }, [modus]);
   useEffect(() => {
     if (valgt === null && gjeldende) setValgt(gjeldende);
   }, [valgt, gjeldende]);
@@ -192,7 +198,9 @@ export function MentorArk({
     const ny = rekke
       .slice(i + 1)
       .find((id) => plan!.samtale.get(id)?.motte !== false);
+    // Siste samtale: gratulerer før oppsummeringen (31.4).
     if (ny) setValgt(ny);
+    else setFerdig(true);
   }
 
   async function kopierTidsplan() {
@@ -285,6 +293,7 @@ export function MentorArk({
               };
             }}
             onVelg={(id) => {
+              setFerdig(false);
               setValgt(id);
               if (modus !== "gj") setModus("gj");
             }}
@@ -314,7 +323,44 @@ export function MentorArk({
               detaljer={detaljer}
             />
           )}
-          {modus === "gj" && valgt && valgtSamtale && (
+          {modus === "gj" && ferdig && (
+            <Ferdigkort
+              {...(() => {
+                // Samme telling som «n av m holdt» øverst; den som nettopp
+                // var inne, regnes med selv om tida ikke er helt ute.
+                const s = elever
+                  .map((e) => ({ e, x: plan.samtale.get(e.elevId) }))
+                  .filter((y) => !!y.x);
+                const ok = s.filter(
+                  (y) =>
+                    y.x!.motte && (holdt(y.e.elevId) || y.e.elevId === valgt),
+                );
+                const ikke = s.filter((y) => !y.x!.motte).length;
+                const alle = ok.length + ikke === s.length;
+                return {
+                  tittel: alle
+                    ? `Alle ${MENTORORD.samtalerSmaa} er holdt`
+                    : "Du er gjennom tidsplanen",
+                  linje: alle
+                    ? ferdiglinje({
+                        holdt: ok.length,
+                        motteIkke: ikke,
+                        medForesatt: ok.filter(
+                          (y) => detaljer.get(y.x!.id)?.medForesatt,
+                        ).length,
+                      })
+                    : `${ok.length} av ${s.length} holdt · resten har ikke vært ennå`,
+                };
+              })()}
+              hoved="Se oppsummeringen"
+              onHoved={() => {
+                setFerdig(false);
+                setModus("sum");
+              }}
+              onTilbake={() => setFerdig(false)}
+            />
+          )}
+          {modus === "gj" && !ferdig && valgt && valgtSamtale && (
             <Gjennomfor
               key={valgt}
               skolearId={skolearId}
@@ -331,7 +377,7 @@ export function MentorArk({
               last={last}
             />
           )}
-          {modus === "gj" && !valgtSamtale && (
+          {modus === "gj" && !ferdig && !valgtSamtale && (
             <p className="mt-10 text-center text-brod text-blekk-dempet">
               Ingen tidsplan ennå. Sett den opp under Planlegg.
             </p>
