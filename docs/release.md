@@ -4,6 +4,37 @@ En release er en nedlastbar versjon på GitHub
 (<https://github.com/fbedsvaag/okta/releases>). Mac-versjonen bygges på
 din egen Mac; Windows-versjonen bygges av GitHub når releasen publiseres.
 
+## 0. Engangsoppsett: signering og notarisering (Mac)
+
+Med Apple Developer-kontoen signeres Økta med et «Developer ID»-sertifikat
+og godkjennes (notariseres) av Apple. Da åpner den uten advarsel hos
+kolleger. `npm run dmg` gjør resten selv når dette er på plass.
+
+1. **Sertifikatet.** Xcode → Settings → Accounts → velg Apple-ID-en og
+   teamet → *Manage Certificates…* → **+** → *Developer ID Application*.
+   Sjekk i Terminal:
+
+   ```
+   security find-identity -v -p codesigning
+   ```
+
+   Det skal stå en linje med «Developer ID Application: …».
+
+2. **Innlogging for notariseringen.** Lag et app-spesifikt passord på
+   <https://account.apple.com> (Logg på og sikkerhet → App-spesifikke
+   passord), og lagre det i nøkkelringen under navnet `okta`:
+
+   ```
+   xcrun notarytool store-credentials okta --apple-id <din Apple-ID> --team-id <team-ID>
+   ```
+
+   Team-ID-en står i parentes etter navnet i sertifikatet, eller på
+   developer.apple.com under Membership. Passordet limes inn når den spør,
+   og ligger bare i nøkkelringen, aldri i repoet.
+
+Uten sertifikatet bygger `npm run dmg` som før, med lokal signatur, og
+sier fra.
+
 ## 1. Nytt versjonsnummer
 
 Hver release får et nytt nummer, også om det bare er en liten retting.
@@ -25,8 +56,10 @@ Commit og push.
 npm run dmg
 ```
 
-Tar rundt ti minutter. Fila havner i `dist-dmg/Økta 0.3.0.dmg`, med
-guiden, testheftet og den oppdiktede klasselista inni.
+Tar rundt ti minutter, og noen minutter til mens Apple sjekker appen og
+dmg-en. Fila havner i `dist-dmg/Økta 0.3.0.dmg`, med guiden, testheftet og
+den oppdiktede klasselista inni. Til slutt skriver skriptet hva Gatekeeper
+sier: «accepted · source=Notarized Developer ID» betyr at alt er i orden.
 
 ## 3. Publiser
 
