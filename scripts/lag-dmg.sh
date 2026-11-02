@@ -33,7 +33,9 @@ fi
 
 versjon=$(node -p "require('./package.json').version")
 app="src-tauri/target/universal-apple-darwin/release/bundle/macos/Økta.app"
-ut="dist-dmg"
+# UT=<mappe> legger dmg-en et annet sted, til en prøvebygging som ikke
+# skal skrive over en utgitt versjon.
+ut="${UT:-dist-dmg}"
 dmg="$ut/Økta $versjon.dmg"
 
 if [[ "${HOPP_OVER_BYGG:-}" != "1" ]]; then

@@ -35,6 +35,9 @@ kolleger. `npm run dmg` gjør resten selv når dette er på plass.
 Uten sertifikatet bygger `npm run dmg` som før, med lokal signatur, og
 sier fra.
 
+En prøvebygging som ikke skal skrive over en utgitt dmg, legges et annet
+sted med `UT=<mappe> npm run dmg`.
+
 ## 1. Nytt versjonsnummer
 
 Hver release får et nytt nummer, også om det bare er en liten retting.
