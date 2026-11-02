@@ -9,6 +9,7 @@ vi.mock("@tauri-apps/plugin-sql", () => ({
 const {
   finnEllerOpprettKlasse,
   hentElever,
+  hentElevvalg,
   opprettElev,
   opprettElevMed,
   passerFagfilter,
@@ -299,5 +300,33 @@ describe("slett elevene fra et tidligere år (23.9)", () => {
       [fjorFag],
     );
     expect(fag.slettet).toBeNull();
+  });
+});
+
+describe("elevene i «Trives med» (31.2)", () => {
+  it("har alle elevene, på tvers av klasser, med klassen i året", async () => {
+    await elevIKlasse("Tony", "1STA");
+    await elevIKlasse("Meadow", "2STB");
+    await opprettElev("Ola", "Nordmann");
+    const alle = await hentElevvalg(skolearId);
+    expect(alle.map((e) => [e.fornavn, e.klasse])).toEqual([
+      ["Meadow", "2STB"],
+      ["Ola", null],
+      ["Tony", "1STA"],
+    ]);
+  });
+
+  it("en ny elev fra søket får klassen som ble valgt", async () => {
+    const klasseId = await finnEllerOpprettKlasse(skolearId, "3STC");
+    const id = await opprettElevMed({
+      fornavn: "Legolas",
+      etternavn: "Greenleaf",
+      skolearId,
+      klasseId,
+      fagIder: [],
+      mentor: false,
+    });
+    const e = (await hentElevvalg(skolearId)).find((x) => x.id === id);
+    expect(e?.klasse).toBe("3STC");
   });
 });

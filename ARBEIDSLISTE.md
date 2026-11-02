@@ -1104,7 +1104,8 @@ Tegning: `docs/lerret/Oktkort.dc.html`. Samme ark i to moduser, Skåring og logg
 ## 31. Tilbakemeldinger 2.11 — godkjent
 
 - [x] **31.1 Sitter foran i klassekartet.** Enkelte elever må sitte langt fram. I panelet til klassekartet: «Sitter foran», elevene som brikker og «+ Legg til». Hører til eleven og gjelder i alle kart. Et krav, som en lås: eleven havner alltid i de to fremste radene (regnet fra tavla); er det flere enn plassene der, tas neste rad med, og appen sier fra. En låst elev blir sittende der den er låst. Bare *at* eleven skal sitte foran lagres, aldri hvorfor (SPEC §6). Migrasjon 040 (`elev.plass_foran`).
-- [ ] **31.2 «Trives med» på tvers.** På elevkortet skal man kunne velge elever fra andre klasser og fag, og opprette en ny elev rett derfra, fordi elever henger sammen på tvers.
+- [x] **31.2 «Trives med» på tvers.** På elevkortet skal man kunne velge elever fra andre klasser og fag, og opprette en ny elev rett derfra, fordi elever henger sammen på tvers.
+  - Bygget 2.11: felles elevsøk (`Elevsok`) på elevkortet og i mentorsamtalen. Søker i alle elevene med klassen ved navnet; «+ Ny elev «Navn»» lager eleven (navnet deles som i lim-inn, valgfri klasse) og legger den til. Mentorsamtalen viste før bare mentorelevene.
 - [ ] **31.3 Ukenummer i «Året».**
 - [ ] **31.4 Gratulerer etter siste samtale.** Når den siste muntlige samtalen (fagsamtale eller mentorsamtale) er holdt, et kort, rolig «Alle samtalene er holdt»-bilde før oppsummeringen.
 

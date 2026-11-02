@@ -47,12 +47,13 @@ import { idag } from "../../db";
 import { Bryter } from "../../ui/felles";
 import { Elevfoto } from "../../ui/Elevfoto";
 import { Notat } from "../../ui/Notat";
-import { Velger } from "../../ui/Velger";
 import { tast as visTast } from "../../ui/taster";
 import { kortDag, MENTORORD } from "../../data/vurderingsoversikt";
 import { Generator, iDag, tilTidsplandager } from "../tidsplan/Generator";
 import { Tidsplanliste } from "../tidsplan/Tidsplanliste";
 import { useLagrePlan } from "../tidsplan/bruk";
+import { Elevsok } from "../Elevsok";
+import { hentAlleElever } from "../../data/elever";
 import { somMarkdown, somTeamsHtml } from "../../data/samtale";
 
 type Modus = "plan" | "gj" | "sum";
@@ -541,7 +542,6 @@ function Gjennomfor({
   skolearId,
   runde,
   elev,
-  elever,
   samtaleId,
   motte,
   detaljer,
@@ -575,6 +575,12 @@ function Gjennomfor({
   const [onsker, setOnsker] = useState<Onske[]>([]);
   const [oversikt, setOversikt] = useState<Elevoversikt | null>(null);
   const [leggerTil, setLeggerTil] = useState(false);
+  const [alleNavn, setAlleNavn] = useState<
+    { id: string; fornavn: string; etternavn: string }[]
+  >([]);
+  useEffect(() => {
+    void hentAlleElever().then(setAlleNavn);
+  }, []);
   const rad = dag?.rader.find((r) => r.elevId === elev.elevId);
 
   const lastMal = () => void hentMal(elev.elevId).then(setMal);
@@ -644,8 +650,9 @@ function Gjennomfor({
   const p = rad && dag ? framdrift(rad, dag.dag.dato, naa) : null;
   const sek = p !== null ? Math.floor(p * (tilMinutter(rad!) * 60)) : 0;
   const { fraForrige, tilNeste } = delMal(mal, samtaleId);
+  // Ønskene kan gjelde elever utenfor mentorgruppa (31.2).
   const navn = new Map(
-    elever.map((e) => [e.elevId, `${e.fornavn} ${e.etternavn}`]),
+    alleNavn.map((e) => [e.id, `${e.fornavn} ${e.etternavn}`]),
   );
 
   return (
@@ -842,27 +849,20 @@ function Gjennomfor({
             </div>
             {leggerTil && (
               <div className="mt-2">
-                <Velger
-                  verdi=""
+                {/* Alle elevene, på tvers av klasser og fag (31.2). */}
+                <Elevsok
+                  skolearId={skolearId}
                   startApen
                   onLukk={() => setLeggerTil(false)}
-                  settVerdi={async (id) => {
+                  utenom={
+                    new Set([elev.elevId, ...onsker.map((o) => o.onskerElevId)])
+                  }
+                  onVelg={async (id) => {
                     await leggTilOnske(elev.elevId, id, "samtale", samtaleId);
                     setLeggerTil(false);
                     lastOnsker();
+                    void hentAlleElever().then(setAlleNavn);
                   }}
-                  valg={elever
-                    .filter(
-                      (e) =>
-                        e.elevId !== elev.elevId &&
-                        !onsker.some((o) => o.onskerElevId === e.elevId),
-                    )
-                    .map((e) => ({
-                      verdi: e.elevId,
-                      tekst: `${e.fornavn} ${e.etternavn}`,
-                    }))}
-                  plassholder="Velg en elev …"
-                  bredde="w-full"
                 />
               </div>
             )}

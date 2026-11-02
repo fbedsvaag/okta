@@ -9,6 +9,7 @@ import {
 import { lyttElever, lyttKlassekart } from "../data/endringer";
 import { Bryter } from "../ui/felles";
 import { hentAlleElever } from "../data/elever";
+import { Elevsok } from "./Elevsok";
 import {
   fjernAvtale,
   fjernOnske,
@@ -88,6 +89,7 @@ export function ElevSamarbeid({
       fornavn={fornavn}
       onsker={onsker}
       alle={alle}
+      skolearId={skolearId}
     />
   );
   if (data.length === 0)
@@ -506,11 +508,13 @@ function Onskebokser({
   fornavn,
   onsker,
   alle,
+  skolearId,
 }: {
   elevId: string;
   fornavn: string;
   onsker: Onske[];
   alle: Navn[];
+  skolearId: string;
 }) {
   const [hensyn, setHensyn] = useLagretInnstilling(
     ONSKER_VED_STOKK,
@@ -563,13 +567,13 @@ function Onskebokser({
               </span>
             );
           })}
-          <Navnesok
-            tekst="+ Legg til"
-            kandidater={alle.filter(
-              (k) =>
-                k.id !== elevId && !mine.some((o) => o.onskerElevId === k.id),
-            )}
-            onVelg={(id) => void leggTilOnske(elevId, id, "eleven")}
+          {/* Alle elevene, på tvers av klasser og fag, og ny elev (31.2). */}
+          <Elevsok
+            skolearId={skolearId}
+            utenom={new Set([elevId, ...mine.map((o) => o.onskerElevId)])}
+            onVelg={async (id) => {
+              await leggTilOnske(elevId, id, "eleven");
+            }}
           />
         </div>
         {andre.length > 0 && (

@@ -56,6 +56,28 @@ export async function hentAlleElever(): Promise<
   );
 }
 
+/**
+ * Alle elevene, med klassen de går i dette året (31.2): til «Trives med»,
+ * der elever henger sammen på tvers av klasser og fag.
+ */
+export async function hentElevvalg(
+  skolearId: string,
+): Promise<
+  { id: string; fornavn: string; etternavn: string; klasse: string | null }[]
+> {
+  return hent(
+    `SELECT e.id, e.fornavn, e.etternavn,
+            (SELECT k.navn FROM elev_klasse ek
+               JOIN klasse k ON k.id = ek.klasse_id AND k.slettet IS NULL
+              WHERE ek.elev_id = e.id AND ek.skolear_id = $1
+                AND ek.slettet IS NULL) AS klasse
+       FROM elev e
+      WHERE e.slettet IS NULL
+      ORDER BY e.fornavn COLLATE NOCASE, e.etternavn COLLATE NOCASE`,
+    [skolearId],
+  );
+}
+
 export async function hentKlasser(skolearId: string): Promise<Klasse[]> {
   return hent<Klasse>(
     `SELECT k.id, k.navn,
