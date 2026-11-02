@@ -80,6 +80,18 @@ jobs:
           # Tom ved manuell kjøring: da bygges det uten opplasting.
           releaseId: ${{ github.event.release.id }}
 
+      # En kopi med fast navn, så hjemmesiden kan lenke rett til den nyeste:
+      # releases/latest/download/Okta-windows.exe (docs/release.md).
+      - name: Last opp med fast navn
+        if: github.event_name == 'release'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          f=$(ls src-tauri/target/release/bundle/nsis/*.exe | head -1)
+          cp "$f" Okta-windows.exe
+          gh release upload "${{ github.event.release.tag_name }}" Okta-windows.exe --repo "${{ github.repository }}"
+
       - name: Legg installeren ved kjøringen
         if: github.event_name == 'workflow_dispatch'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
