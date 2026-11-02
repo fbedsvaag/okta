@@ -24,18 +24,14 @@
   <a class="tilbake" href="./">← Til forsiden</a>
   <p class="merke" style="margin-top:28px">Hjelp</p>
   <h1>Første gang du åpner <i>Økta</i></h1>
-  <p class="ingress">Mac og Windows advarer mot programmer som ikke er signert av en betalt utviklerkonto. Økta er ikke signert ennå, så du får en advarsel første gang. Det er bare første gang. Etterpå åpnes appen som vanlig.</p>
+  <p class="ingress">På Mac er Økta signert og godkjent av Apple, så den åpner som alle andre apper. Windows-versjonen er ikke signert ennå, så Windows advarer første gang. Det er bare første gang.</p>
 
   <h2 id="mac">Mac</h2>
   <ol class="steg">
     <li>Åpne fila du lastet ned (<code>.dmg</code>), og dra <b>Økta</b> over til <b>Programmer</b>.</li>
-    <li>Åpne Økta fra Programmer. Mac sier at den ikke kan bekrefte appen. Trykk <b>Ferdig</b>, ikke «Flytt til papirkurv».</li>
-    <li>Åpne <b>Systeminnstillinger</b> og velg <b>Personvern og sikkerhet</b> i lista til venstre.</li>
-    <li>Rull ned til <b>Sikkerhet</b>. Der står det at Økta ble blokkert. Trykk <b>Åpne likevel</b>, og bekreft med passordet eller Touch ID.</li>
-    <li>Økta spør en gang til. Trykk <b>Åpne likevel</b>. Nå er det gjort for godt.</li>
+    <li>Åpne Økta fra Programmer. Mac spør om du vil åpne en app lastet ned fra internett. Trykk <b>Åpne</b>. Nå er det gjort for godt.</li>
   </ol>
-  <p class="tips"><b>Står det at Økta er skadet?</b> Da har Mac lagt fila i karantene. Åpne Terminal (finnes under Programmer › Verktøy), lim inn linja under og trykk Enter. Åpne så Økta på nytt.</p>
-  <p><code>xattr -dr com.apple.quarantine /Applications/Økta.app</code></p>
+  <p class="tips"><b>Står det at Økta ikke kan åpnes?</b> Da har du sannsynligvis en eldre versjon fra før Økta ble signert. Last ned den nyeste og erstatt den gamle i Programmer.</p>
 
   <h2 id="windows">Windows</h2>
   <ol class="steg">
@@ -45,8 +41,8 @@
     <li>Følg installasjonen. Mangler maskinen Microsofts WebView2, henter installasjonen den selv. Windows 11 har den fra før.</li>
   </ol>
 
-  <h2>Hvorfor advarer maskinen?</h2>
-  <p>Apple og Microsoft vil at utviklere skal kjøpe et sertifikat og la dem sjekke programmet. Uten det kan ikke maskinen vite hvem som har laget appen, og den sier fra. Advarselen betyr ikke at noe er galt med Økta. Kildekoden ligger åpent på <a href="https://github.com/fbedsvaag/okta">GitHub</a>, så du eller IKT-ansvarlig kan se nøyaktig hva den gjør.</p>
+  <h2>Hvorfor advarer Windows?</h2>
+  <p>Microsoft vil at utviklere skal kjøpe et sertifikat og la dem sjekke programmet. Uten det kan ikke maskinen vite hvem som har laget appen, og den sier fra. (Mac-versjonen har dette fra Apple.) Advarselen betyr ikke at noe er galt med Økta. Kildekoden ligger åpent på <a href="https://github.com/fbedsvaag/okta">GitHub</a>, så du eller IKT-ansvarlig kan se nøyaktig hva den gjør.</p>
   <p>Får du det ikke til? Spør IKT-ansvarlig på skolen, eller send en melding via «Gi tilbakemelding» når appen først er åpen.</p>
 </main>
 

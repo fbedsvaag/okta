@@ -68,8 +68,16 @@ sier: «accepted · source=Notarized Developer ID» betyr at alt er i orden.
 
 Beta (testversjon for kolleger) får `--prerelease`:
 
+Lag først en kopi av dmg-en med fast navn. Hjemmesiden lenker rett til
+`releases/latest/download/Okta-mac.dmg` (og `Okta-windows.exe`, som
+Windows-bygget laster opp selv), så navnet må være likt i hver release:
+
 ```
-gh release create v0.3.0 "dist-dmg/Økta 0.3.0.dmg" \
+cp "dist-dmg/Økta 0.3.0.dmg" dist-dmg/Okta-mac.dmg
+```
+
+```
+gh release create v0.3.0 "dist-dmg/Økta 0.3.0.dmg" dist-dmg/Okta-mac.dmg \
   docs/guide/guide_read_me_windows.pdf \
   docs/guide/betatest.pdf \
   docs/guide/oppdiktet-klasseliste-1STA-1STB.pdf \
@@ -87,6 +95,17 @@ Når releasen er publisert, starter Windows-bygget av seg selv på GitHub
 (`.github/workflows/windows.yml`). Etter 15–20 minutter ligger
 `.exe`-installeren i den samme releasen. Følg med på
 <https://github.com/fbedsvaag/okta/actions>.
+
+## 4. Hjemmesiden
+
+Knappene lenker til den nyeste releasen og trenger ingen endring. Bare
+versjonsnummeret i nedlastingskortene i `site/index.html` («Versjon
+0.3.0 · …») endres. Hjemmesiden publiseres av seg selv når `site/` pushes.
+Push den når Windows-installeren ligger i releasen, ellers peker
+Windows-knappen på en fil som ikke finnes ennå.
+
+Bare releaser *uten* `--prerelease` blir «latest». En beta som skal på
+hjemmesiden, publiseres derfor som vanlig release med «beta» i tittelen.
 
 ## Aldri
 
