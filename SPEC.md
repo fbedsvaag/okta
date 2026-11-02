@@ -1487,8 +1487,12 @@ sammen før. Ingen lister limes inn.
   hyppigste paret («Meadow og Jackie, 3 ganger»).
 - **Hold fra hverandre:** par som aldri skal dele pult eller gruppe. Regelen
   hører til kilden (faget/klassen) og gjelder i alle kart for den.
-- Reglene er ønsker med vekt, ikke absolutte, bortsett fra låser og «hold
-  fra hverandre», som alltid holdes. Går det ikke, sier appen hvilken regel
+- **Sitter foran** (31.1): elever som alltid skal ha plass i de to fremste
+  radene. Hører til eleven (`elev.plass_foran`) og gjelder i alle kart. Bare
+  *at*, aldri hvorfor. Er det flere enn plassene der, brukes neste rad, og
+  appen sier fra.
+- Reglene er ønsker med vekt, ikke absolutte, bortsett fra låser, «hold
+  fra hverandre» og «sitter foran», som alltid holdes. Går det ikke, sier appen hvilken regel
   som ikke kunne holdes.
 
 Algoritme: tilfeldige forsøk (for eksempel 400) med straffepoeng for brudd

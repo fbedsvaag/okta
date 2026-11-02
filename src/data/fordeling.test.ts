@@ -498,3 +498,64 @@ describe("avtaler (26.13)", () => {
     }
   });
 });
+
+describe("sitter foran (31.1)", () => {
+  // Rad 0 og 1 er de fremste: plass 1–12 (tre dobbeltpulter per rad).
+  const fremst = (nr: number) => nr <= 12;
+
+  it("setter de som skal sitte foran, i de to fremste radene, hver gang", () => {
+    const e = elever(30, (i) => ({ foran: i === 7 || i === 23 || i === 29 }));
+    for (let frø = 1; frø <= 40; frø++) {
+      const r = fordelPlasser({
+        ...felles,
+        frø,
+        elever: e,
+        plasser: rom(),
+        laste: new Map(),
+      });
+      for (const id of ["e7", "e23", "e29"])
+        expect(fremst(r.plass.get(id)!)).toBe(true);
+      expect(r.brudd.filter((b) => b.regel === "foran")).toEqual([]);
+    }
+  });
+
+  it("holder kravet også mot «hold fra hverandre» og modus", () => {
+    const e = elever(30, (i) => ({ foran: i < 4, innsats: i / 30 }));
+    const r = fordelPlasser({
+      ...felles,
+      modus: "samle",
+      holdFra: [["e0", "e1"]],
+      elever: e,
+      plasser: rom(),
+      laste: new Map(),
+    });
+    for (const id of ["e0", "e1", "e2", "e3"])
+      expect(fremst(r.plass.get(id)!)).toBe(true);
+    expect(r.brudd.filter((b) => b.regel === "hold")).toEqual([]);
+  });
+
+  it("tar neste rad med og sier fra når det ikke er plass i de to fremste", () => {
+    const e = elever(30, (i) => ({ foran: i < 14 }));
+    const r = fordelPlasser({
+      ...felles,
+      elever: e,
+      plasser: rom(),
+      laste: new Map(),
+    });
+    for (let i = 0; i < 14; i++)
+      expect(r.plass.get(`e${i}`)!).toBeLessThanOrEqual(18);
+    expect(r.brudd.some((b) => b.regel === "foranrad")).toBe(true);
+    expect(r.brudd.filter((b) => b.regel === "foran")).toEqual([]);
+  });
+
+  it("en låst elev blir sittende der den er låst", () => {
+    const e = elever(30, (i) => ({ foran: i === 5 }));
+    const r = fordelPlasser({
+      ...felles,
+      elever: e,
+      plasser: rom(),
+      laste: new Map([["e5", 30]]),
+    });
+    expect(r.plass.get("e5")).toBe(30);
+  });
+});

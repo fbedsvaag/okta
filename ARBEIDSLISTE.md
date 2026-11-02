@@ -1101,6 +1101,13 @@ Tegning: `docs/lerret/Oktkort.dc.html`. Samme ark i to moduser, Skåring og logg
   - Avklart 26.10: lista under tidslinjen blir stående, selv om tegningen ikke har den. Lista og tidslinjen hører sammen, og du kan jobbe i begge.
 - [x] **30.8 Tastestripa** viser 1 2 3, 0 borte, N notat, K klassekart, V vurdering, B A borte / alle i skåringen, og ⌘← ⌘→, ↵, K og V i planleggingen.
 
+## 31. Tilbakemeldinger 2.11 — godkjent
+
+- [x] **31.1 Sitter foran i klassekartet.** Enkelte elever må sitte langt fram. I panelet til klassekartet: «Sitter foran», elevene som brikker og «+ Legg til». Hører til eleven og gjelder i alle kart. Et krav, som en lås: eleven havner alltid i de to fremste radene (regnet fra tavla); er det flere enn plassene der, tas neste rad med, og appen sier fra. En låst elev blir sittende der den er låst. Bare *at* eleven skal sitte foran lagres, aldri hvorfor (SPEC §6). Migrasjon 040 (`elev.plass_foran`).
+- [ ] **31.2 «Trives med» på tvers.** På elevkortet skal man kunne velge elever fra andre klasser og fag, og opprette en ny elev rett derfra, fordi elever henger sammen på tvers.
+- [ ] **31.3 Ukenummer i «Året».**
+- [ ] **31.4 Gratulerer etter siste samtale.** Når den siste muntlige samtalen (fagsamtale eller mentorsamtale) er holdt, et kort, rolig «Alle samtalene er holdt»-bilde før oppsummeringen.
+
 ## Ikke nå
 
 Ting som er vurdert og lagt bort med vilje. Står her så de ikke dukker opp

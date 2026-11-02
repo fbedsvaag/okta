@@ -18,6 +18,8 @@ export type Fordelingselev = {
   kjonn: "j" | "g" | null;
   /** 0 (rødt) til 1 (grønt); 0,5 uten skår */
   innsats: number;
+  /** skal sitte foran (31.1), i alle kart; et krav, ikke et ønske */
+  foran?: boolean;
 };
 
 export type Fordelingsplass = {
@@ -55,7 +57,7 @@ type Felles = {
 };
 
 export type Brudd = {
-  regel: "hold" | "bland" | "unnga" | "plass" | "maa";
+  regel: "hold" | "bland" | "unnga" | "plass" | "maa" | "foran" | "foranrad";
   tekst: string;
 };
 
@@ -196,6 +198,30 @@ export function makkere(plasser: Fordelingsplass[]): [number, number][] {
   return ut;
 }
 
+/**
+ * Plassene «foran» (31.1): de to fremste radene blant plassene som brukes,
+ * regnet fra tavla (øverst i rommet, minst y). Er det flere som skal sitte
+ * foran enn det er plasser der, tas neste rad med, til alle får plass.
+ * Gir indeksene og hvor mange rader som trengtes.
+ */
+export function fremstePlasser(
+  plasser: { y: number }[],
+  ledige: number[],
+  antall: number,
+): { seter: Set<number>; rader: number } {
+  const nivaer = [...new Set(ledige.map((i) => Math.round(plasser[i].y)))].sort(
+    (a, b) => a - b,
+  );
+  const seter = new Set<number>();
+  let rader = 0;
+  for (const y of nivaer) {
+    if (rader >= 2 && seter.size >= antall) break;
+    for (const i of ledige) if (Math.round(plasser[i].y) === y) seter.add(i);
+    rader++;
+  }
+  return { seter, rader };
+}
+
 export type Plassresultat = {
   /** elev → plassnummer */
   plass: Map<string, number>;
@@ -237,6 +263,10 @@ export function fordelPlasser(
     .map((_, i) => i)
     .filter((i) => fast[i] === null && iBruk.has(plasser[i].nr));
 
+  // Foran (31.1): de som skal sitte foran, og plassene der.
+  const foranIder = new Set(frie.filter((id) => elev.get(id)?.foran));
+  const foran = fremstePlasser(plasser, ledige, foranIder.size);
+
   const nabopar = naboer(plasser).map(
     ([a, b]) => [indeks.get(a)!, indeks.get(b)!] as const,
   );
@@ -254,6 +284,10 @@ export function fordelPlasser(
 
   function poeng(sete: (string | null)[]): number {
     let p = 0;
+    if (foranIder.size > 0)
+      for (let i = 0; i < n; i++)
+        if (sete[i] && foranIder.has(sete[i]!) && !foran.seter.has(i))
+          p += V_HOLD;
     for (const [a, b] of nabopar) {
       const x = sete[a];
       const y = sete[b];
@@ -308,10 +342,28 @@ export function fordelPlasser(
 
   function forsokEtt(): (string | null)[] {
     const sete = [...fast];
-    const rekke = stokk(frie, tilf);
-    const steder = stokk(ledige, tilf);
-    rekke.forEach((id, i) => {
-      if (i < steder.length) sete[steder[i]] = id;
+    // De som skal sitte foran, får plassene der først.
+    const forst = stokk(
+      frie.filter((id) => foranIder.has(id)),
+      tilf,
+    );
+    const resten = stokk(
+      frie.filter((id) => !foranIder.has(id)),
+      tilf,
+    );
+    const fremme = stokk(
+      ledige.filter((i) => foran.seter.has(i)),
+      tilf,
+    );
+    const bak = stokk(
+      ledige.filter((i) => !foran.seter.has(i)),
+      tilf,
+    );
+    const steder = [...fremme.slice(0, forst.length)];
+    const ovrige = stokk([...fremme.slice(forst.length), ...bak], tilf);
+    [...forst, ...resten].forEach((id, i) => {
+      const sted = i < forst.length ? steder[i] : ovrige[i - forst.length];
+      if (sted !== undefined) sete[sted] = id;
     });
     return sete;
   }
@@ -391,6 +443,14 @@ export function fordelPlasser(
         tekst: `${n} par har sittet sammen før.`,
       });
   }
+  for (const id of foranIder)
+    if (!foran.seter.has(best.indexOf(id)))
+      brudd.push({ regel: "foran", tekst: id });
+  if (foran.rader > 2)
+    brudd.push({
+      regel: "foranrad",
+      tekst: `${foranIder.size} skal sitte foran, flere enn de to fremste radene har plass til. Noen sitter i rad ${foran.rader}.`,
+    });
   for (const [x, y] of inn.maa ?? []) {
     const a = plass.get(x);
     const b = plass.get(y);

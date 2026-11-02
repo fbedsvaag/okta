@@ -256,6 +256,12 @@ fn migrations() -> Vec<Migration> {
             sql: include_str!("../migrations/039_fulgt_opp.sql"),
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 40,
+            description: "klassekart: sitter foran",
+            sql: include_str!("../migrations/040_plass_foran.sql"),
+            kind: MigrationKind::Up,
+        },
     ]
 }
 

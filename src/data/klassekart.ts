@@ -552,6 +552,8 @@ export type Kartelev = {
   innsats: number;
   /** om eleven har noen skår å regne innsats av */
   harSkar: boolean;
+  /** skal sitte foran (31.1), i alle kart */
+  foran: boolean;
 };
 
 /**
@@ -566,23 +568,35 @@ export async function hentKildeElever(
 ): Promise<Kartelev[]> {
   const elever =
     kildeType === "fag"
-      ? await hent<Omit<Kartelev, "innsats" | "harSkar">>(
-          `SELECT e.id, e.fornavn, e.etternavn, e.kjonn
+      ? await hent<
+          Omit<Kartelev, "innsats" | "harSkar" | "foran"> & {
+            plassForan: number;
+          }
+        >(
+          `SELECT e.id, e.fornavn, e.etternavn, e.kjonn, e.plass_foran AS plassForan
              FROM elev_fag ef
              JOIN elev e ON e.id = ef.elev_id AND e.slettet IS NULL
             WHERE ef.skolear_fag_id = $1 AND ef.slettet IS NULL`,
           [kildeId],
         )
       : kildeType === "klasse"
-        ? await hent<Omit<Kartelev, "innsats" | "harSkar">>(
-            `SELECT e.id, e.fornavn, e.etternavn, e.kjonn
+        ? await hent<
+            Omit<Kartelev, "innsats" | "harSkar" | "foran"> & {
+              plassForan: number;
+            }
+          >(
+            `SELECT e.id, e.fornavn, e.etternavn, e.kjonn, e.plass_foran AS plassForan
                FROM elev_klasse ek
                JOIN elev e ON e.id = ek.elev_id AND e.slettet IS NULL
               WHERE ek.klasse_id = $1 AND ek.slettet IS NULL`,
             [kildeId],
           )
-        : await hent<Omit<Kartelev, "innsats" | "harSkar">>(
-            `SELECT e.id, e.fornavn, e.etternavn, e.kjonn
+        : await hent<
+            Omit<Kartelev, "innsats" | "harSkar" | "foran"> & {
+              plassForan: number;
+            }
+          >(
+            `SELECT e.id, e.fornavn, e.etternavn, e.kjonn, e.plass_foran AS plassForan
                FROM elev_klasse ek
                JOIN elev e ON e.id = ek.elev_id AND e.slettet IS NULL
               WHERE ek.skolear_id = $1 AND ek.mentor = 1
@@ -617,6 +631,7 @@ export async function hentKildeElever(
       kjonn: e.kjonn === "j" || e.kjonn === "g" ? e.kjonn : null,
       innsats: snitt.get(e.id) ?? 0.5,
       harSkar: snitt.has(e.id),
+      foran: e.plassForan === 1,
     }))
     .sort(
       (a, b) =>
@@ -801,6 +816,11 @@ export async function hentRegler(
       ORDER BY r.opprettet`,
     [kildeType, kildeId],
   );
+}
+
+/** Skal eleven sitte foran (31.1)? Gjelder i alle kart. */
+export async function settForan(elevId: string, pa: boolean): Promise<void> {
+  await oppdater("elev", elevId, { plass_foran: pa ? 1 : 0 });
 }
 
 /** «Hold fra hverandre». Finnes regelen fra før, gis den tilbake. */

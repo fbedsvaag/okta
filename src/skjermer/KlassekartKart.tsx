@@ -13,6 +13,7 @@ import {
   lagreOppsett,
   lagrePlassfarger,
   leggTilRegel,
+  settForan,
   plasserIRom,
   sammenFor,
   slettRegel,
@@ -1306,6 +1307,18 @@ export function KlassekartKart({
                   : "Ingen har sittet sammen ennå"}
               </p>
             </Blokk>
+            <Blokk tittel="Sitter foran">
+              <Foran
+                elever={elever}
+                navnPa={navnPa}
+                onSett={async (id, pa) => {
+                  await settForan(id, pa);
+                  setElever((l) =>
+                    l.map((e) => (e.id === id ? { ...e, foran: pa } : e)),
+                  );
+                }}
+              />
+            </Blokk>
             <Blokk tittel="Hold fra hverandre">
               <Regler
                 regler={regler}
@@ -1403,17 +1416,19 @@ export function KlassekartKart({
                     key={i}
                     className="text-[calc(12px*var(--tekst-skala))] text-varsel"
                   >
-                    {b.regel === "hold"
-                      ? `${b.tekst
-                          .split("|")
-                          .map(navnPa)
-                          .join(" og ")} sitter sammen, og begge er låst.`
-                      : b.regel === "maa"
-                        ? `📌 ${b.tekst
+                    {b.regel === "foran"
+                      ? `${navnPa(b.tekst)} fikk ikke plass foran.`
+                      : b.regel === "hold"
+                        ? `${b.tekst
                             .split("|")
                             .map(navnPa)
-                            .join(" og ")} fikk ikke samme bord.`
-                        : b.tekst}
+                            .join(" og ")} sitter sammen, og begge er låst.`
+                        : b.regel === "maa"
+                          ? `📌 ${b.tekst
+                              .split("|")
+                              .map(navnPa)
+                              .join(" og ")} fikk ikke samme bord.`
+                          : b.tekst}
                   </p>
                 ))}
               <Avtalelinje
@@ -1534,6 +1549,76 @@ export function Avkrysning({
       />
       {children}
     </label>
+  );
+}
+
+/**
+ * «Sitter foran» (31.1): elevene som alltid skal ha plass i de to fremste
+ * radene, som chips, og «+ Legg til». Gjelder eleven i alle kart. Bare at
+ * eleven skal sitte foran, aldri hvorfor.
+ */
+function Foran({
+  elever,
+  navnPa,
+  onSett,
+}: {
+  elever: Kartelev[];
+  navnPa: (id: string) => string;
+  onSett: (id: string, pa: boolean) => Promise<void>;
+}) {
+  const [velger, setVelger] = useState(false);
+  const foran = elever.filter((e) => e.foran);
+  return (
+    <div>
+      <div className="flex flex-wrap gap-1.5">
+        {foran.map((e) => (
+          <span
+            key={e.id}
+            className="inline-flex h-[26px] items-center gap-1.5 rounded-full bg-flate px-2.5 text-[calc(12.5px*var(--tekst-skala))]"
+          >
+            {navnPa(e.id)}
+            <button
+              aria-label={`${e.fornavn} trenger ikke sitte foran`}
+              onClick={() => void onSett(e.id, false)}
+              className="text-blekk-svak hover:text-feil"
+            >
+              ×
+            </button>
+          </span>
+        ))}
+        {velger ? (
+          <span className="w-full">
+            <Velger
+              verdi=""
+              settVerdi={(id) => {
+                setVelger(false);
+                if (id) void onSett(id, true);
+              }}
+              variant="liten"
+              bredde="w-full"
+              etikett="Elev"
+              plassholder="Velg elev"
+              valg={elever
+                .filter((e) => !e.foran)
+                .map((e) => ({
+                  verdi: e.id,
+                  tekst: `${e.fornavn} ${e.etternavn}`,
+                }))}
+            />
+          </span>
+        ) : (
+          <button
+            onClick={() => setVelger(true)}
+            className="inline-flex h-[26px] items-center rounded-full px-2.5 text-[calc(12.5px*var(--tekst-skala))] text-blekk-dempet shadow-[inset_0_0_0_1px_var(--color-linje)] hover:text-blekk"
+          >
+            + Legg til
+          </button>
+        )}
+      </div>
+      <p className="mt-1.5 text-[calc(12px*var(--tekst-skala))] text-blekk-dempet">
+        Alltid i de to fremste radene, i alle kart. Skriv ikke hvorfor.
+      </p>
+    </div>
   );
 }
 
