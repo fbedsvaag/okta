@@ -136,3 +136,26 @@ describe("de fire dummylistene", () => {
     expect(navn.size).toBe(sopranoer.length);
   });
 });
+
+describe("klasse etter komma (4.11)", () => {
+  it("leser «Navn, 2STC» som navn og klasse, ikke etternavn og fornavn", () => {
+    const [a, b, c] = parseListe(
+      "Amelia Andresen, 2STC\nAndresen, Amelia, 2STC\nAndresen, Amelia",
+    ).elever;
+    expect([a.fornavn, a.etternavn, a.klasse]).toEqual([
+      "Amelia",
+      "Andresen",
+      "2STC",
+    ]);
+    expect([b.fornavn, b.etternavn, b.klasse]).toEqual([
+      "Amelia",
+      "Andresen",
+      "2STC",
+    ]);
+    expect([c.fornavn, c.etternavn, c.klasse]).toEqual([
+      "Amelia",
+      "Andresen",
+      null,
+    ]);
+  });
+});

@@ -113,6 +113,8 @@ export function parseListe(tekst: string): Parseresultat {
  *   "Anna Reistad;1STC"  -> navn "Anna Reistad", klasse "1STC"
  *   "Anna\tReistad"      -> navn "Anna Reistad", ingen klasse
  *   "Anna\tReistad\t1STC" -> navn "Anna Reistad", klasse "1STC"
+ *   "Anna Reistad, 1STC" -> navn "Anna Reistad", klasse "1STC"
+ *   "Reistad, Anna, 1STC" -> navn "Reistad, Anna", klasse "1STC"
  */
 function delFelter(linje: string): {
   navnefelt: string;
@@ -125,6 +127,16 @@ function delFelter(linje: string): {
   if (semi.length > 1) {
     rest = semi[0];
     klasse = semi.slice(1).find((f) => f !== "") ?? null;
+  }
+
+  // «Amelia Andresen, 2STC»: et komma-felt sist med siffer er klassen, ikke
+  // et fornavn. Navn har ikke siffer i seg (se over).
+  if (klasse === null) {
+    const komma = rest.split(",").map((f) => f.trim());
+    if (komma.length > 1 && HAR_SIFFER.test(komma[komma.length - 1])) {
+      klasse = komma.pop()!;
+      rest = komma.join(", ");
+    }
   }
 
   const navnedeler: string[] = [];

@@ -62,3 +62,22 @@ describe("navnet fra lista slår det som ble skrevet inn", () => {
     expect(`${e.fornavn} ${e.etternavn}`).toBe("Per Person");
   });
 });
+
+describe("klasse uten fag og uten mentor (bug 4.11)", () => {
+  it("lager elevene i klassen, uten fag og uten mentormerke", async () => {
+    const tekst = "Amelia Andresen, 2STC\nScott Milde Berland";
+    const v = vurderImport(
+      parseListe(tekst).elever,
+      await hentForDuplikatsjekk(ar),
+      { skolearFagId: null, valgtKlasse: "2STC" },
+    );
+    await utforImport(tilImportrader(v, "2STC"), ar, null, false);
+    const elever = await hentElever(ar);
+    expect(
+      elever.map((e) => [e.fornavn, e.etternavn, e.klasseNavn, e.mentor]),
+    ).toEqual([
+      ["Amelia", "Andresen", "2STC", false],
+      ["Scott Milde", "Berland", "2STC", false],
+    ]);
+  });
+});

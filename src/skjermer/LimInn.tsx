@@ -404,7 +404,7 @@ export function LimInn({
                 farge: f.farge,
                 firkant: true,
               })),
-              { verdi: "", tekst: "Uten fag (mentorelever)" },
+              { verdi: "", tekst: "Uten fag" },
             ]}
           />
         </label>
@@ -449,7 +449,8 @@ export function LimInn({
       {fagId === "" && !somMentor && (
         <p className="mt-1 text-liten text-blekk-dempet">
           Uten fag opprettes elevene og plasseres i klassen, men kobles ikke til
-          noe fag. Limer du dem inn i et fag senere, blir de gjenkjent.
+          noe fag, og de blir ikke mentorelever. Limer du dem inn i et fag
+          senere, blir de gjenkjent.
         </p>
       )}
 
@@ -493,7 +494,7 @@ export function LimInn({
         <Knapp
           variant="primar"
           onClick={forhandsvis}
-          disabled={tekst.trim() === "" || !fagId}
+          disabled={tekst.trim() === ""}
         >
           Forhåndsvis
         </Knapp>
