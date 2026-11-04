@@ -948,7 +948,14 @@ function Verktoylinje({
 }) {
   const dag = useIdag();
   // Sveip med to fingre: til høyre tilbake, til venstre fram.
-  const sveip = useSveip(onTilbake, onFram, kanTilbake, kanFram);
+  // Av i Plasser og grupper, der man lett tar seg ut av kartet (test 4.11).
+  const sveip = useSveip(
+    onTilbake,
+    onFram,
+    kanTilbake,
+    kanFram,
+    visning === "klassekart",
+  );
 
   // Får ikke skjermens knapper plass, kommer en pil ytterst til høyre.
   // Den bretter linja ut over flere rader, og sammen igjen. Ny skjerm:

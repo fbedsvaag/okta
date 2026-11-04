@@ -1111,6 +1111,11 @@ Tegning: `docs/lerret/Oktkort.dc.html`. Samme ark i to moduser, Skåring og logg
 - [x] **31.4 Gratulerer etter siste samtale.** Når den siste muntlige samtalen (fagsamtale eller mentorsamtale) er holdt, et kort, rolig «Alle samtalene er holdt»-bilde før oppsummeringen.
   - Bygget 2.11 (forslag, ikke tegnet): «Neste elev» på den siste viser kortet (`Ferdigkort`) i stedet for å hoppe til første elev. Strektegning av tidsplanen med alle prikkene fylt og en hake, «Alle samtalene er holdt» / «Alle mentorsamtaler er holdt», én linje med tallene («31 samtaler holdt · 1 møtte ikke · snitt 4,2», foresatt for mentorsamtaler), og «Se resultatene ↵» / «Se oppsummeringen ↵» og «Tilbake til tidsplanen». Mangler noen, står det «Du er gjennom tidsplanen» og hvor mange som mangler. Glir rolig inn, ingen konfetti.
 
+## 32. Tilbakemeldinger 4.11 (brukertest)
+
+- [x] **32.1 Elever i en klasse uten fag og uten mentor.** «Forhåndsvis» var grå med «Uten fag» valgt, så man fikk ikke lagt inn 2STC uten å være mentor for dem. Rettet; valget heter nå «Uten fag». Parseren leser også «Navn, 2STC» som navn og klasse (før ble «2STC» fornavnet).
+- [x] **32.2 Sveip tilbake er for lett.** En kollega ble tatt ut av klassekartet igjen og igjen. Sveipet må nå være dobbelt så langt (340), gjør ingenting mens noe dras, og er av i Plasser og grupper. ‹ › og ⌘[ ⌘] virker overalt.
+
 ## Ikke nå
 
 Ting som er vurdert og lagt bort med vilje. Står her så de ikke dukker opp
